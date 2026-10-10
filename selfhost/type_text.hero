@@ -13,14 +13,14 @@
 # last words, so a comment's own dots are between them. Any other type's text
 # comes back as it is.
 function named_text(text: str) -> str
-    first: i64 @ 0
+    first: i64 @= 0
 
     while first < text.len() && name_byte(text[first])
         first @ first + 1
 
     if first == 0 || first >= text.len() || text[first] == '['
         return text
-    last: i64 @ text.len()
+    last: i64 @= text.len()
 
     while last > first && name_byte(text[last - 1])
         last @ last - 1
@@ -30,7 +30,7 @@ function named_text(text: str) -> str
     return text.slice(from: 0, to: first) + "." + text.slice(from: last, to: text.len())
 
 function dotted(text: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == '.'

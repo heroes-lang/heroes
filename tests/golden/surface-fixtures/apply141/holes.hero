@@ -4,5 +4,5 @@
 # `--in-place` it printed that report too.
 
 function main()
-    n: i64 @ ???
+    n: i64 @= ???
     print(n)

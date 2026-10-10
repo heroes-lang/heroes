@@ -80,8 +80,8 @@ function beside_the_library() -> source.Source
 test "exactly one declaration is the library's exit, and `main` is not it (defect 507)"
     s = beside_the_library()
     decls = parse.parse_source(s).decls
-    found: [i64] @ []
-    index: i64 @ 0
+    found: [i64] @= []
+    index: i64 @= 0
 
     for _ in decls
         if is_exit(s, decls, decl: index)
@@ -93,14 +93,14 @@ test "exactly one declaration is the library's exit, and `main` is not it (defec
 
     # What is written after a call: the claim for `exit` and nothing for any
     # other declaration of the program.
-    ended: writer.Writer @ writer.new_writer("t")
+    ended: writer.Writer @= writer.new_writer("t")
     after(@ended, s, decls, decl: found[0])
     assert writer.finish(ended) == "    hero_unreachable();\n"
     index @ 0
 
     for _ in decls
         if index != found[0]
-            quiet: writer.Writer @ writer.new_writer("t")
+            quiet: writer.Writer @= writer.new_writer("t")
             after(@quiet, s, decls, decl: index)
             assert writer.finish(quiet) == ""
         index @ index + 1
@@ -109,7 +109,7 @@ test "exactly one declaration is the library's exit, and `main` is not it (defec
 # `hero_exit` and no statement after it, so the claim written after a call of
 # it is what the runtime's `_Noreturn` already makes true.
 test "the library's exit is a call of hero_exit alone (defect 507)"
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < library_source.LINES.len() && library_source.LINES[at] != "function exit(code: i64)"
         at @ at + 1

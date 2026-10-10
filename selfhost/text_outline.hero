@@ -127,9 +127,9 @@ function top_above(o: Outline, line: i64) -> i64
 
 # Both lists, in one pass over the text.
 function outline_of(text: str) -> Outline
-    opens: [i64] @ []
-    depth: i64 @ 0
-    i: i64 @ 0
+    opens: [i64] @= []
+    depth: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if depth > 0 && begins_a_line(text, at: i)
@@ -175,12 +175,12 @@ function outline_of(text: str) -> Outline
 function line_start(@o: Outline, text: str, at: i64) -> i64
     if o.line_from >= 0 && o.line_from <= at && at <= o.line_to
         return o.line_from
-    from: i64 @ at
+    from: i64 @= at
 
     while from > 0 && text[from - 1] != '\n'
         from @ from - 1
 
-    to: i64 @ at
+    to: i64 @= at
 
     while to < text.len() && text[to] != '\n'
         to @ to + 1
@@ -194,7 +194,7 @@ function line_start(@o: Outline, text: str, at: i64) -> i64
 function start_of(o: Outline, text: str, at: i64) -> i64
     if o.line_from >= 0 && o.line_from <= at && at <= o.line_to
         return o.line_from
-    from: i64 @ at
+    from: i64 @= at
 
     while from > 0 && text[from - 1] != '\n'
         from @ from - 1
@@ -207,8 +207,8 @@ function begins_a_line(text: str, at: i64) -> bool
 
 # The start of every line that opens at the margin with a mark of its own.
 function margin_lines(text: str) -> [i64]
-    out: [i64] @ []
-    at: i64 @ 0
+    out: [i64] @= []
+    at: i64 @= 0
 
     while at < text.len()
         b = text[at]
@@ -225,8 +225,8 @@ function margin_lines(text: str) -> [i64]
 
 # The index of the last of `ascending` that is at most `at`, or -1.
 function last_at_most(ascending: [i64], at: i64) -> i64
-    low: i64 @ 0
-    high: i64 @ ascending.len()
+    low: i64 @= 0
+    high: i64 @= ascending.len()
 
     while low < high
         middle = (low + high) / 2
@@ -249,8 +249,8 @@ function foreign_to_the_end(text: str, at: i64, bracketed: bool) -> bool
 # The walk this module replaces, kept as the definition its answers are held
 # to: the brackets of the text before `at`, counted from its first byte.
 function walked_inside(text: str, at: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ 0
+    depth: i64 @= 0
+    i: i64 @= 0
 
     while i < at
         ch = text[i]
@@ -278,15 +278,15 @@ function walked_inside(text: str, at: i64) -> bool
 # The walk back to the margin this module replaces: the nearest line above
 # that opens there with a mark of its own.
 function walked_top(text: str, line: i64) -> i64
-    at: i64 @ line
+    at: i64 @= line
 
     while at > 0
-        above: i64 @ at - 1
+        above: i64 @= at - 1
 
         while above > 0 && text[above - 1] != '\n'
             above @ above - 1
 
-        first: i64 @ above
+        first: i64 @= above
 
         while first < text.len() && (text[first] == ' ' || text[first] == '\t')
             first @ first + 1
@@ -299,7 +299,7 @@ function walked_top(text: str, line: i64) -> i64
 
 function agrees_with_the_walks(text: str) -> bool
     o = outline_of(text)
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len()
         if inside(o, at: at) != walked_inside(text, at: at) || top_above(o, line: at) != walked_top(text, line: at)
@@ -335,7 +335,7 @@ test "the outline answers at every line what the walks from the text's start ans
 
 test "one pass reads the outline, and a second read keeps it"
     text = "function f(x: i64\nfn g()\n"
-    o: Outline @ unread()
+    o: Outline @= unread()
     assert !o.read
     read(@o, text)
     assert o.read

@@ -23,8 +23,8 @@
 # |---|---|---|
 # | `@v = e`, `@p.x = e`, `@v @ e` | the mutation `v @ e` | `@` written for the `=`, `certain`: the one statement that writes a value into a name |
 # | `@_ = e` | the discard `_ = e` | nothing more, `certain`: `_` is never a place |
-# | `@v: T @ e` | the declaration | nothing more, `certain` |
-# | `@v: T = e` | the declaration | nothing more, a `guess`: `v: T @ e` is as likely |
+# | `@v: T @= e` | the declaration | nothing more, `certain` |
+# | `@v: T = e` | the declaration | nothing more, a `guess`: `v: T @= e` is as likely |
 # | anything else: `@v`, `@v += 1`, `@f(x)` | the line as it stands | none: what the rest computes is the checker's to judge |
 # | `@return 1`, `@for x in xs`: a statement's word | that statement | nothing more, `certain` (defect 179) |
 #
@@ -72,7 +72,7 @@ function opens_a_line(c: cursor.Cursor) -> bool
 # How many `@` stand under the cursor before a name or a word that begins a
 # statement, 0 where they stand before anything else.
 function sigils(c: cursor.Cursor) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     while cursor.peek(c, n) == .at
         n @ n + 1
@@ -90,8 +90,8 @@ function begins_a_statement(k: token.TokenKind) -> bool
 function passed(@c: cursor.Cursor) -> token.Span
     n = sigils(c)
     first = cursor.bump(@c).span
-    last: token.Span @ first
-    i: i64 @ 1
+    last: token.Span @= first
+    i: i64 @= 1
 
     while i < n
         last @ cursor.bump(@c).span
@@ -105,13 +105,13 @@ function passed(@c: cursor.Cursor) -> token.Span
 function told(@c: cursor.Cursor, text: str) -> Reading
     at = passed(@c)
     name = cursor.slice_of(text, cursor.current_span(c))
-    after: cursor.Cursor @ cursor.trial(c)
-    reading: Reading @ .statement
+    after: cursor.Cursor @= cursor.trial(c)
+    reading: Reading @= .statement
 
     if cursor.at(c, .ident)
         _ = cursor.bump(@after)
         reading @ past_the_place(@after, discarding: name == "_")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "expected_expression",
         message: "expected an expression, found `@` before `" + name + "` — " + words(reading, name),
         span: at
@@ -127,8 +127,8 @@ function told(@c: cursor.Cursor, text: str) -> Reading
 function past_the_place(@c: cursor.Cursor, discarding: bool) -> Reading
     if cursor.at(c, .colon)
         return .declaration
-    walked: bool @ false
-    walking: bool @ true
+    walked: bool @= false
+    walking: bool @= true
 
     while walking
         if cursor.at(c, .dot) && cursor.peek(c, 1) == .ident
@@ -151,8 +151,8 @@ function past_the_place(@c: cursor.Cursor, discarding: bool) -> Reading
 # At a `[`, the copy passed over its index to the `]` that closes it, stopping
 # at the line's end where none does.
 function past_the_index(@c: cursor.Cursor)
-    depth: i64 @ 0
-    going: bool @ true
+    depth: i64 @= 0
+    going: bool @= true
 
     while going && !cursor.at(c, .eof) && !cursor.at(c, .terminator)
         k = cursor.bump(@c).kind
@@ -168,7 +168,7 @@ function words(reading: Reading, name: str) -> str
     return match reading
         .mutation => "a name is written bare, and a mutation writes it first and `@` after it: `" + name + " @ e`"
         .discard  => "`_` is written bare: `_ = e` discards a value on purpose"
-        .declaration => "a name is declared bare, and `@` after its type makes the cell mutable: `" + name + ": <type> @ <value>`"
+        .declaration => "a name is declared bare, and `@=` after its type makes the cell mutable: `" + name + ": <type> @= <value>`"
         .value => read_bare(name)
         .statement => "a statement begins with its word bare, `" + name + "`, and `@` before a name marks only an argument lent to a mutable parameter, `f(@x)`"
 
@@ -179,11 +179,11 @@ function read_bare(name: str) -> str
 # The fixes of a sigil's report, by its line's reading; `after` stands at the
 # token after the place, the `=` a mutation's second fix writes over.
 function fixes(reading: Reading, text: str, at: token.Span, after: cursor.Cursor) -> [diag.Fix]
-    found: [diag.Fix] @ []
+    found: [diag.Fix] @= []
 
     if reading == .value
         return found
-    gone: diag.Fix @ deletion(text, at: at)
+    gone: diag.Fix @= deletion(text, at: at)
 
     if reading == .declaration && !a_cell(after, text)
         gone.certainty @ .guess
@@ -195,15 +195,15 @@ function fixes(reading: Reading, text: str, at: token.Span, after: cursor.Cursor
         )
     return found
 
-# Does the declaration at the `:` under the cursor write `@` after its type?
+# Does the declaration at the `:` under the cursor write `@=` after its type?
 # The type is read on a copy, so its own mistakes are told once, by the
 # declaration's parse.
 function a_cell(c: cursor.Cursor, text: str) -> bool
-    ahead: cursor.Cursor @ c
-    scratch: ast.Ast @ ast.new_ast()
+    ahead: cursor.Cursor @= c
+    scratch: ast.Ast @= ast.new_ast()
     _ = cursor.bump(@ahead)
     _ = type.parse_type(@ahead, @scratch, text)
-    return cursor.at(ahead, .at)
+    return cursor.at(ahead, .at_eq)
 
 # At an `@` before a name in a value: the `@` passed over, for the caller to
 # read the name, and its deletion one more certain fix of the sigil's report
@@ -211,6 +211,9 @@ function a_cell(c: cursor.Cursor, text: str) -> bool
 # value, or of its own where there is none. False, and nothing moved, before
 # anything but a name.
 function in_value(@c: cursor.Cursor, text: str) -> bool
+    if cursor.at(c, .at_eq) && cursor.peek(c, 1) == .ident
+        return lent_with_eq(@c, text)
+
     if !before_a_place(c)
         return false
     at = passed(@c)
@@ -221,7 +224,7 @@ function in_value(@c: cursor.Cursor, text: str) -> bool
         c.diagnostics[last].fixes @ c.diagnostics[last].fixes.push(gone)
         return true
     name = cursor.slice_of(text, cursor.current_span(c))
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "expected_expression",
         message: "expected an expression, found `@` before `" + name + "` — " + read_bare(name),
         span: at
@@ -236,7 +239,7 @@ function sigil(d: diag.Diagnostic, text: str) -> bool
 
     if d.code != "expected_expression" || s.end <= s.start
         return false
-    i: i64 @ s.start
+    i: i64 @= s.start
 
     while i < s.end
         if text[i] != '@'
@@ -250,7 +253,7 @@ function sigil(d: diag.Diagnostic, text: str) -> bool
 
 # The sigil at `at` deleted, and the spaces between it and the name.
 function deletion(text: str, at: token.Span) -> diag.Fix
-    end: i64 @ at.end
+    end: i64 @= at.end
 
     while end < text.len() && text[end] == ' '
         end @ end + 1
@@ -261,3 +264,19 @@ function deletion(text: str, at: token.Span) -> diag.Fix
         span: token.Span(start: at.start, end: end),
         certainty: .certain
     )
+
+# `f(@=n)`: the `@=` that declares a cell, written where an argument's `@`
+# stands. One message at the `@=` and the `=` gone, `certain`: no value
+# begins with `@=` (panel 209). The cursor is left at the name, as `passed`
+# leaves it.
+function lent_with_eq(@c: cursor.Cursor, text: str) -> bool
+    at = cursor.bump(@c).span
+    name = cursor.slice_of(text, cursor.current_span(c))
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "expected_expression",
+        message: "expected an expression, found `@=` before `" + name + "` — an argument lent to an `@` parameter is written `@" + name + "`; `@=` declares a cell",
+        span: at
+    )
+    d.fixes @ d.fixes.push(diag.Fix(title: "write `@" + name + "`", replacement: "@", span: at, certainty: .certain))
+    cursor.say(@c, d)
+    return true

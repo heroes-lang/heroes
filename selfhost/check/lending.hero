@@ -123,8 +123,8 @@ function record_arguments(a: ast.Ast, at: i64, @into: {i64: i64})
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return
 
 function argument_of(a: ast.Ast) -> {i64: i64}
-    into: {i64: i64} @ {}
-    at: i64 @ 0
+    into: {i64: i64} @= {}
+    at: i64 @= 0
 
     while at < a.exprs.len()
         record_arguments(a, at, @into)
@@ -204,7 +204,7 @@ function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
     if !holds_a_lend(a, r)
         return
     into = argument_of(a)
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < a.exprs.len()
         # A record's construction is an argument position that KEEPS (defect
@@ -298,7 +298,7 @@ function rooted_at_a_name(a: ast.Ast, at: i64) -> bool
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return false
 
 function holds_a_lend(a: ast.Ast, r: resolved.Resolved) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < a.exprs.len()
         if is_lend(a, r, at)
@@ -314,8 +314,8 @@ function swept(text: str) -> i64
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
@@ -343,7 +343,7 @@ test "the legal shape stays quiet: a lend as an argument of a `lent` parameter, 
 # what the flip leaves standing.
 test "a lend at a parameter not marked lent is refused, and what is not a lend stays quiet"
     assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    return n(s: x.cstr())\n") == 1
-    assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    l: cstr @ x.lease()\n    k = n(s: l)\n    end_lease(@l)\n    return k\n") == 0
+    assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    l: cstr @= x.lease()\n    k = n(s: l)\n    end_lease(@l)\n    return k\n") == 0
     assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n\nfunction f() -> u64\n    return n(s: nullptr)\n") == 0
     assert swept("extern \"s.h\"\n    function n(s: cstr) -> u64\n    function g() -> cstr\n\nfunction f() -> u64\n    return n(s: g())\n") == 0
 
@@ -358,7 +358,7 @@ test "a cstr lend handed to a function of this program is refused, and the wrapp
 # beside it. The legal case is third on purpose: a rule with no quiet case is a
 # rule nobody can tell from "refuse everything".
 test "a lent field kept in a binding is refused"
-    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    k: ptr @ s.b.ptr()\n    return f(p: k, n: 4)\n") == 1
+    assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n, n: i64) -> i64\n\nfunction g(s: S) -> i64\n    k: ptr @= s.b.ptr()\n    return f(p: k, n: 4)\n") == 1
 
 test "a lent field of a value nothing holds is refused"
     assert swept("extern \"s.h\"\n    record S\n        b: u8[4]\n    function f(p: ptr counted_by n lent, n: i64) -> i64\n    function make() -> S\n\nfunction g() -> i64\n    return f(p: make().b.ptr(), n: 4)\n") == 1

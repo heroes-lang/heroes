@@ -21,7 +21,7 @@ use diag
 
 function told(s: source.Source, decl: ast.Decl, span: token.Span) -> diag.Diagnostic
     name = source.span_text(s, decl.name)
-    pointee: str @ name
+    pointee: str @= name
 
     match decl.kind
         .record_decl rec =>
@@ -29,7 +29,7 @@ function told(s: source.Source, decl: ast.Decl, span: token.Span) -> diag.Diagno
                 pointee @ source.span_text(s, rec.tag.must())
         .constant_decl | .function_decl | .variant_decl | .test_decl => pointee @ pointee
 
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "handle_built",
         message: "`" + name + "` is a handle, C's pointer to `" + pointee + "`, and a handle is never built: only C makes one and hands it to the program",
         span: span

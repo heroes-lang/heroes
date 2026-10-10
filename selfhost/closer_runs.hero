@@ -29,18 +29,18 @@ use diag
 # `said`, the parser's reports in the order it said them, each run of closers
 # told alike told once, at its first.
 function told_once(said: [diag.Diagnostic], text: str) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
-    i: i64 @ 0
+    out: [diag.Diagnostic] @= []
+    i: i64 @= 0
 
     while i < said.len()
-        j: i64 @ i + 1
+        j: i64 @= i + 1
 
         while j < said.len() && follows(first: said[j - 1], next: said[j], text: text)
             j @ j + 1
 
         if j - i > 1
-            told: diag.Diagnostic @ said[i]
-            outward: str @ ""
+            told: diag.Diagnostic @= said[i]
+            outward: str @= ""
 
             if said[j - 1].message != said[i].message && j - i > 2
                 outward @ ", each for the next opener out"
@@ -74,7 +74,7 @@ function follows(first: diag.Diagnostic, next: diag.Diagnostic, text: str) -> bo
 
     if !closer_at(text, first.span) || !closer_at(text, next.span) || next.span.start < first.span.end
         return false
-    i: i64 @ first.span.end
+    i: i64 @= first.span.end
 
     while i < next.span.start
         if text[i] != ' ' && !closer_byte(text[i])
@@ -86,9 +86,9 @@ function follows(first: diag.Diagnostic, next: diag.Diagnostic, text: str) -> bo
 # `message` with every decimal digit left out: the words two reports share
 # where each names its own opener's place.
 function without_digits(message: str) -> str
-    kept: [str] @ []
-    from: i64 @ 0
-    at: i64 @ 0
+    kept: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
 
     while at <= message.len()
         if at == message.len() || message[at] >= '0' && message[at] <= '9'
@@ -123,7 +123,7 @@ test "closers told alike one after another are told once, at the first"
     assert told_once([said_at(8, "a"), said_at(9, "b")], text: text).len() == 2
     assert told_once([said_at(8, "m"), said_at(10, "m")], text: "x = (((1]x]\n").len() == 2
     assert told_once([said_at(1, "m"), said_at(5, "m")], text: "x]\n  ]\n").len() == 2
-    owned: diag.Diagnostic @ said_at(9, "m")
+    owned: diag.Diagnostic @= said_at(9, "m")
     owned.notes @ owned.notes.push("n")
     assert told_once([said_at(8, "m"), owned], text: text).len() == 2
 

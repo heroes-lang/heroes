@@ -44,7 +44,7 @@ function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
     # zero-initialised T? whose tag = 0 is OK (the f32 defect one cause
     # up).
     given = containers.args_of(f, run)
-    source_value: i64 @ 0 - 1
+    source_value: i64 @= 0 - 1
 
     if given.len() > 0
         match given[0]
@@ -82,8 +82,8 @@ function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
     # would be two spellings of one range test, two chances to
     # disagree. (The arm that matched only f64 made an f32 fall through
     # and produce ok(0) at exit 0 — panel 060.)
-    is_float: bool @ false
-    float_value: str @ arguments[0]
+    is_float: bool @= false
+    float_value: str @= arguments[0]
 
     match table.get(c.types, result_ty)
         .float_ty fk =>
@@ -110,8 +110,8 @@ function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
         )
         writer.line(@w, text: "    }")
         return
-    from: widths.IntKind @ .i64
-    is_int: bool @ false
+    from: widths.IntKind @= .i64
+    is_int: bool @= false
 
     match table.get(c.types, result_ty)
         .int_ty ik =>
@@ -132,12 +132,12 @@ function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
     # min magnitude exceeds the target's); it goes above the ceiling
     # iff its max magnitude does.
     value = arguments[0]
-    suffix: str @ "ULL"
+    suffix: str @= "ULL"
 
     if widths.int_signed(from)
         suffix @ "LL"
-    tests: [str] @ []
-    goes_below: bool @ false
+    tests: [str] @= []
+    goes_below: bool @= false
 
     if widths.int_signed(from)
         if !widths.int_signed(to.must())
@@ -201,7 +201,7 @@ function kind_named(short: str) -> widths.IntKind?
 ## Tests
 
 test "narrowing tests both bounds, widening emits none, u64 tests only the floor"
-    text = "function main()\n    n: i64 @ 200\n    small = n.to_i8()\n    big = n.to_u64()\n    _ = small.is_err()\n    _ = big.is_err()\n    print(n)\n"
+    text = "function main()\n    n: i64 @= 200\n    small = n.to_i8()\n    big = n.to_u64()\n    _ = small.is_err()\n    _ = big.is_err()\n    print(n)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -227,7 +227,7 @@ test "narrowing tests both bounds, widening emits none, u64 tests only the floor
         instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     width(@w, c, names, f, name: "to_i8", run: ir.Run(start: 0, length: 1), arguments: ["t0"], into: "t7")
     got = writer.finish(w)
     i8_opt = table.lookup(
@@ -238,7 +238,7 @@ test "narrowing tests both bounds, widening emits none, u64 tests only the floor
     assert got == "    if (t0 >= -128LL && t0 <= 127LL) {\n        t7 = (" + i8_union + "){.tag = INT64_C(0), .as.ok = (int8_t)t0};\n    } else {\n        t7 = (" + i8_union + "){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};\n    }\n"
 
     # i64 -> u64: only the floor can be crossed.
-    uw: writer.Writer @ writer.new_writer("t")
+    uw: writer.Writer @= writer.new_writer("t")
     width(@uw, c, names, f, name: "to_u64", run: ir.Run(start: 0, length: 1), arguments: ["t0"], into: "t8")
     u64_got = writer.finish(uw)
     u64_opt = table.lookup(

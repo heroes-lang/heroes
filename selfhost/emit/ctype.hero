@@ -110,13 +110,13 @@ function new_names(s: source.Source, decls: [ast.Decl]) -> Names
 # the seed and the blessed emissions write the author's word; `handles.spelled`
 # is where it is read.
 function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}) -> Names
-    aggregates: {i64: str} @ {}
-    satellites: {i64: str} @ {}
-    foreign_decls: {i64: bool} @ {}
-    partial_decls: {i64: bool} @ {}
-    handle_decls: {i64: bool} @ {}
-    cases: {str: str} @ {}
-    index: i64 @ 0
+    aggregates: {i64: str} @= {}
+    satellites: {i64: str} @= {}
+    foreign_decls: {i64: bool} @= {}
+    partial_decls: {i64: bool} @= {}
+    handle_decls: {i64: bool} @= {}
+    cases: {str: str} @= {}
+    index: i64 @= 0
 
     for decl in decls
         # Each type is named in its OWN module, never the root's: two
@@ -155,7 +155,7 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
                     aggregates[index] @ name
             .variant_decl v =>
                 satellites[index] @ name
-                at: i64 @ 0
+                at: i64 @= 0
 
                 for one_case in v.cases
                     cases[case_key(decl: index, at: at)] @ mangle.case_type(
@@ -201,13 +201,13 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
 # declaration, as monomorphisation leaves the templates' A? in the arena;
 # that is read from one walk of the arena (defect 229), not one per type.
 function with_options(names: Names, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Names
-    out: Names @ names
+    out: Names @= names
     kinds = phases.type_kinds(c)
-    id: i64 @ 0
+    id: i64 @= 0
 
     while id < kinds.len()
         if !phases.names_generic(kinds, ty: id)
-            is_fallible: bool @ false
+            is_fallible: bool @= false
 
             match table.get(c.types, id)
                 .fallible                                                 => is_fallible @ true
@@ -241,9 +241,9 @@ function with_options(names: Names, c: state.Checked, s: source.Source, decls: [
 # build, so a dependency's interface can spell it and a clean re-emit
 # matches a cached one byte for byte.
 function with_functions(names: Names, c: state.Checked, s: source.Source, decls: [ast.Decl], p: containers.Program) -> Names
-    out: Names @ names
-    used: {i64: bool} @ {}
-    seen: {i64: bool} @ {}
+    out: Names @= names
+    used: {i64: bool} @= {}
+    seen: {i64: bool} @= {}
 
     for f in p.functions
         for slot in f.slots
@@ -287,7 +287,7 @@ record OptionEntry
     at: i64
 
 function option_entries(names: Names, c: state.Checked) -> [OptionEntry]
-    out: [OptionEntry] @ []
+    out: [OptionEntry] @= []
 
     # ORDER: ascending TyId — the per-option generated functions are
     # emitted in this order, so the order is IN the emitted C.
@@ -469,14 +469,14 @@ test "a group's record keeps the header's spelling, satellites stay ours"
 test "options and function typedefs carry the leading digit"
     text = "function pick(ready: bool) -> i64?\n    if ready\n        return ok(1)\n    return fail(code: \"e\", msg: \"m\")\n\nfunction apply_twice(f: (function(i64) -> i64), x: i64) -> i64\n    return f(f(x))\n\nfunction main()\n    print(pick(true).default(0))\n    print(apply_twice(double_it, 3))\n\nfunction double_it(n: i64) -> i64\n    return n * 2\n"
     names = named_up(text)
-    found_opt: bool @ false
+    found_opt: bool @= false
 
     for id in keys(names.options)
         if names.options[id].must() == "h_0opt_e201354"
             found_opt @ true
 
     assert found_opt
-    found_fn: bool @ false
+    found_fn: bool @= false
 
     for id in keys(names.funcs)
         if names.funcs[id].must() == "h_0fn_48ac9712"
@@ -519,20 +519,20 @@ test "a container walked once per seen set finds the function types a fresh walk
     # where it remembered records alone and walked an array again for every
     # slot and value carrying it. The oracle: every type of the table
     # collected afresh, one set each, against all of them through one.
-    text = "record S\n    f: (function(i64) -> i64)\n\nfunction twice(v: i64) -> i64\n    return v * 2\n\nfunction main()\n    fs: [(function(i64) -> i64)] = [twice]\n    gs: [[(function(i64) -> i64)?]] @ []\n    m: {str: [S]} @ {}\n    m[\"a\"] @ [S(f: twice)]\n    print(fs.len() + gs.len() + m.len())\n"
+    text = "record S\n    f: (function(i64) -> i64)\n\nfunction twice(v: i64) -> i64\n    return v * 2\n\nfunction main()\n    fs: [(function(i64) -> i64)] = [twice]\n    gs: [[(function(i64) -> i64)?]] @= []\n    m: {str: [S]} @= {}\n    m[\"a\"] @ [S(f: twice)]\n    print(fs.len() + gs.len() + m.len())\n"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
     c: state.Checked = checker.check(p.tree, out, s, p.decls)
     assert c.diagnostics.len() == 0
-    alone: {i64: bool} @ {}
-    shared: {i64: bool} @ {}
-    seen: {i64: bool} @ {}
-    ty: i64 @ 0
+    alone: {i64: bool} @= {}
+    shared: {i64: bool} @= {}
+    seen: {i64: bool} @= {}
+    ty: i64 @= 0
 
     while ty < table.len_of(c.types)
-        one: {i64: bool} @ {}
-        fresh: {i64: bool} @ {}
+        one: {i64: bool} @= {}
+        fresh: {i64: bool} @= {}
         synth.collect(c, p.decls, ty: ty, into: @one, seen: @fresh)
 
         # ORDER: none, the union of two sets.

@@ -56,7 +56,7 @@ function first<T>(items: [T]) -> T
 function main()
     p = P(x: 1)
     print(p.x)
-    xs: [i64] @ [1, 2]
+    xs: [i64] @= [1, 2]
     xs[0] @ 7
     print(xs[0], len(xs))
     m = {"a": 1}

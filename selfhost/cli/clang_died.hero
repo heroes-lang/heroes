@@ -24,7 +24,7 @@ function ending(signal: i64) -> str
 function died_by(noise: str) -> str
     if !has_text(text: noise, needle: "failed due to signal")
         return ""
-    current: [str] @ []
+    current: [str] @= []
 
     for ch in noise.chars()
         if ch == "\n"
@@ -48,11 +48,11 @@ function rest_after(line: [str], marker: str) -> str
 
     if want.len() == 0 || want.len() > line.len()
         return ""
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= line.len() - want.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < want.len()
             if line[start + offset] != want[offset]
@@ -76,11 +76,11 @@ function has_text(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

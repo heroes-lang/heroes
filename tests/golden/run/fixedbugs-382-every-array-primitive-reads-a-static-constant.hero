@@ -36,7 +36,7 @@ function handed() -> [i64]
     return DIGITS
 
 function main()
-    total: i64 @ 0
+    total: i64 @= 0
 
     for d in DIGITS
         total @ total + d
@@ -49,13 +49,13 @@ function main()
     print(DIGITS.find(big).must(), " ", DIGITS.any(big), " ", DIGITS.all(odd))
 
     # A write to a copy copies the block first; the constant stays.
-    xs: [i64] @ DIGITS
+    xs: [i64] @= DIGITS
     xs[0] @ 99
     print(xs[0], " ", DIGITS[0])
     xs @ xs.push(5)
     grow(@xs)
     print(xs.len(), " ", xs[9], " ", DIGITS.len())
-    ys: [i64] @ ONE
+    ys: [i64] @= ONE
     ys @ ys.push(8)
     print(ys.len(), " ", ys[1], " ", ONE.len())
 
@@ -63,9 +63,9 @@ function main()
     h = Holder(xs: DIGITS)
     both = [DIGITS, ONE, DIGITS]
     print(h.xs[2], " ", both[2][4] + both.len(), " ", both[1] == ONE)
-    seen: {[i64]: i64} @ {}
+    seen: {[i64]: i64} @= {}
     seen[ONE] @ 1
     seen[DIGITS] @ 2
-    named: {str: [i64]} @ {}
+    named: {str: [i64]} @= {}
     named["d"] @ DIGITS
     print(seen[[7]].default(0), " ", seen[DIGITS].default(0), " ", named["d"].must()[1])

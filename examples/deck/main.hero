@@ -31,8 +31,8 @@
 # program declared the record, and `error[empty_record]` refused it at the
 # `<T>` — the parser reading `<` where a field list belongs.
 function dealt<T>(deck: [T], count: i64) -> [T]
-    out: [T] @ []
-    i: i64 @ 0
+    out: [T] @= []
+    i: i64 @= 0
 
     while i < deck.len() && i < count
         out @ out.push(deck[i])
@@ -41,8 +41,8 @@ function dealt<T>(deck: [T], count: i64) -> [T]
     return out
 
 function kept<T>(deck: [T], count: i64) -> [T]
-    out: [T] @ []
-    i: i64 @ count
+    out: [T] @= []
+    i: i64 @= count
 
     while i < deck.len()
         if i >= 0
@@ -56,14 +56,14 @@ function kept<T>(deck: [T], count: i64) -> [T]
 function cut<T>(deck: [T], at: i64) -> [T]
     if at <= 0 || at >= deck.len()
         return deck
-    out: [T] @ []
-    i: i64 @ at
+    out: [T] @= []
+    i: i64 @= at
 
     while i < deck.len()
         out @ out.push(deck[i])
         i @ i + 1
 
-    j: i64 @ 0
+    j: i64 @= 0
 
     while j < at
         out @ out.push(deck[j])
@@ -72,8 +72,8 @@ function cut<T>(deck: [T], at: i64) -> [T]
     return out
 
 function reversed<T>(deck: [T]) -> [T]
-    out: [T] @ []
-    i: i64 @ deck.len() - 1
+    out: [T] @= []
+    i: i64 @= deck.len() - 1
 
     while i >= 0
         out @ out.push(deck[i])
@@ -85,8 +85,8 @@ function reversed<T>(deck: [T]) -> [T]
 # spent. The uneven case keeps the longer half's tail, which is the only
 # decision in this file that a reader could get wrong, so it has its own case.
 function riffle<T>(left: [T], right: [T]) -> [T]
-    out: [T] @ []
-    i: i64 @ 0
+    out: [T] @= []
+    i: i64 @= 0
 
     while i < left.len() || i < right.len()
         if i < left.len()
@@ -166,8 +166,8 @@ test "every operation gives the same shape at str and at i64"
     assert dealt(cards, 3).len() == dealt(numbers, 3).len()
 
     # And the positions match, which len alone would not catch.
-    i: i64 @ 0
-    walked: i64 @ 0
+    i: i64 @= 0
+    walked: i64 @= 0
 
     while i < cards.len()
         if cut(cards, 2)[i] == cards[(i + 2) % cards.len()]

@@ -60,10 +60,10 @@ function main()
     print(fs[0](5) + fs[1](5))
     mixed = [twice, ident]
     print(mixed[1](6))
-    grown: [(function(i64) -> i64)] @ []
+    grown: [(function(i64) -> i64)] @= []
     grown @ grown.push(ident)
     print(grown[0](7))
-    cell: (function(i64) -> i64) @ twice
+    cell: (function(i64) -> i64) @= twice
     cell @ ident
     print(cell(9))
 

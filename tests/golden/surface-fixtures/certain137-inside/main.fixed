@@ -23,7 +23,7 @@ function one() -> i64
 function main()
     xs = 4
     print(total(xs))  #~ bad_operand bad_operand
-    k: Counter @ Counter(n: 0)
+    k: Counter @= Counter(n: 0)
     print(bump(@k))  #~ bad_operand marker_mismatch
     print(copy_text(from: "a", to: "b"))  #~ bad_operand needs_label
     print(one())  #~ bad_operand

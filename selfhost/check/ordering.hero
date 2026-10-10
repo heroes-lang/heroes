@@ -133,7 +133,7 @@ function first_unordered(c: state.Checker, s: source.Source, decls: [ast.Decl], 
         # path, so the note ends at a field the reader can actually
         # change; if every field of it is ordered, the record ITSELF is
         # the cause — there is nothing further in to name.
-        inner_decl: i64 @ -1
+        inner_decl: i64 @= -1
 
         match table.get(c.out.types, field_ty)
             .named inner                                              => inner_decl @ inner.decl
@@ -161,8 +161,8 @@ function lowered(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
@@ -175,7 +175,7 @@ test "the twelve are ordered, and only the reported error is exempt"
     assert is_ordered(c, table.int_ty_id(c.out.types))
     assert is_ordered(c, table.str_ty(c.out.types))
     assert is_ordered(c, table.bool_ty(c.out.types))
-    c2: state.Checker @ c
+    c2: state.Checker @= c
     u8_id = table.intern(@c2.out.types, .int_ty(kind: .u8))
     assert is_ordered(c2, u8_id)
     xs = table.intern(@c2.out.types, .array(element: table.int_ty_id(c2.out.types)))
@@ -192,8 +192,8 @@ test "the note threads one dotted path down to the cause"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
@@ -209,11 +209,11 @@ test "the note threads one dotted path down to the cause"
     only_numbers = lowered("record P\n    x: i64\n    y: i64\n")
     p2 = parse.parse("record P\n    x: i64\n    y: i64\n")
     s2 = source.new_source(name: "t.hero", text: "record P\n    x: i64\n    y: i64\n")
-    c3: state.Checker @ only_numbers
+    c3: state.Checker @= only_numbers
     p_ty = table.intern(@c3.out.types, .named(decl: 0))
     assert why_unordered(c3, s2, p2.decls, ty: p_ty).is_err()
 
     # And a bare array is not a record: no note, the type prints whole.
-    c4: state.Checker @ c3
+    c4: state.Checker @= c3
     xs = table.intern(@c4.out.types, .array(element: table.int_ty_id(c4.out.types)))
     assert why_unordered(c4, s2, p2.decls, ty: xs).is_err()

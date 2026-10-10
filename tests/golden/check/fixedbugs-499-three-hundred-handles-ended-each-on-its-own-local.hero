@@ -625,7 +625,7 @@ function many()
     f_close(x: a299)  #~ handle_used_after_end
 
 function parts()
-    p: Pair @ p_open()
+    p: Pair @= p_open()
     f_close(x: p.left)
     f_close(x: p.right)
     p.left @ f_open()

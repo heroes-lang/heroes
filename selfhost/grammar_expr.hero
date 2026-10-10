@@ -44,7 +44,7 @@
 # statement half:
 #
 #     x = 5            name  =        immutable binding
-#     v: i64 @ 0       name  :        declaration (the type is mandatory)
+#     v: i64 @= 0      name  :        declaration (the type is mandatory)
 #     v @ v + 1        place @        mutation
 #
 # That third line is why the type is mandatory on a mutable declaration: a typo
@@ -176,7 +176,7 @@ function binary_op(kind: token.TokenKind) -> Operator?
             code: "not_an_operator",
             msg: "a keyword is not an operator"
         )
-        .eq | .at | .colon | .colon_colon | .comma | .dot | .question | .hole => fail(
+        .eq | .at | .at_eq | .colon | .colon_colon | .comma | .dot | .question | .hole => fail(
             code: "not_an_operator",
             msg: "punctuation is not an operator"
         )
@@ -197,7 +197,7 @@ function parse_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # left-associative, so the recursive call asks for `power + 1`.
 function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i64
     first = cursor.current_span(c).start
-    left: i64 @ unary(@c, @a, text)
+    left: i64 @= unary(@c, @a, text)
 
     # A CONTROL FORM ENDS THE EXPRESSION, and this is panel 007's rule
     # enforced instead of remembered: *"at bracket depth zero every line's
@@ -224,7 +224,7 @@ function binary(@c: cursor.Cursor, @a: ast.Ast, text: str, min_power: i64) -> i6
     # from the printer's side).
     if expr_kinds.ends_the_expression(a, left)
         return left
-    climbing: bool @ true
+    climbing: bool @= true
 
     while climbing
         found = binary_op(cursor.current_kind(c))
@@ -257,7 +257,7 @@ function unary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     if k != .minus && k != .bang && k != .tilde
         return postfix(@c, @a, text)
-    op: ast.UnaryOp @ .neg
+    op: ast.UnaryOp @= .neg
 
     if k == .bang
         op @ .not
@@ -276,7 +276,7 @@ function unary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # left to right.
 function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     first = cursor.current_span(c).start
-    base: i64 @ primary(@c, @a, text)
+    base: i64 @= primary(@c, @a, text)
 
     # **A suffix never reaches across a block that just closed.** `.ok v =>
     # match v` with the inner arms indented under it: the inner `match` consumes
@@ -296,7 +296,7 @@ function postfix(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     # begins with.
     if cursor.previous_kind(c) == .dedent
         return base
-    chaining: bool @ true
+    chaining: bool @= true
 
     while chaining
         k = cursor.current_kind(c)
@@ -406,8 +406,8 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     s = cursor.current_span(c)
     k = cursor.current_kind(c)
 
-    # `@v` in a value is the sigil habit, read as the name (`parse/at_prefix`).
-    if k == .at && at_prefix.in_value(@c, text)
+    # `@v` in a value is the sigil habit, `@=v` too, read as the name (`parse/at_prefix`).
+    if (k == .at || k == .at_eq) && at_prefix.in_value(@c, text)
         return primary(@c, @a, text)
 
     if k == .lparen
@@ -441,8 +441,8 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         # Closers that begin a statement close nothing its line opened, nor
         # do the ones after them there: the run is told at once (defect 368,
         # the run defect 306 tells past a statement).
-        run: token.Span @ s
-        found: str @ cursor.found(c, text)
+        run: token.Span @= s
+        found: str @= cursor.found(c, text)
 
         if token.is_closer(k) && cursor.at_fresh_line(c)
             run @ stray_closers.stray_run(c, text, at: c.pos)
@@ -469,9 +469,9 @@ function primary(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # lets the decided ceiling move by these lines with the reason written.
 function interpolation(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     first = cursor.bump(@c)
-    pieces: [token.Span] @ [first.span]
-    holes: [i64] @ []
-    last: token.Span @ first.span
+    pieces: [token.Span] @= [first.span]
+    holes: [i64] @= []
+    last: token.Span @= first.span
 
     while !lex_interp.ends_closed(cursor.slice_of(text, last))
         holes @ holes.push(parse_expr(@c, @a, text))
@@ -544,9 +544,9 @@ function array_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     at = c.pos
     open_ended = unclosed.never_closed(c, text, open: at)
     open = cursor.bump(@c).span
-    items: [i64] @ []
-    reading: bool @ true
-    ended: bool @ false
+    items: [i64] @= []
+    reading: bool @= true
+    ended: bool @= false
 
     while reading
         cursor.skip_terminators(@c)
@@ -585,9 +585,9 @@ function map_literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     at = c.pos
     open_ended = unclosed.never_closed(c, text, open: at)
     open = cursor.bump(@c).span
-    entries: [ast.MapEntry] @ []
-    reading: bool @ true
-    ended: bool @ false
+    entries: [ast.MapEntry] @= []
+    reading: bool @= true
+    ended: bool @= false
 
     while reading
         cursor.skip_terminators(@c)
@@ -634,7 +634,7 @@ function case_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         past_a_range(@c, @a, text, dot: dot)
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: dot))
     name = cursor.bump(@c).span
-    arguments: [ast.Arg] @ []
+    arguments: [ast.Arg] @= []
 
     if cursor.at(c, .lparen)
         arguments @ call_args(@c, @a, text)
@@ -648,8 +648,8 @@ function case_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # `(x, name: y, @l)` — the argument list of a call, of a record construction,
 # and of a variant case, which are the same thing (§4.9).
 function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
-    arguments: [ast.Arg] @ []
-    ended: bool @ false
+    arguments: [ast.Arg] @= []
+    ended: bool @= false
     at = c.pos
     open_ended = unclosed.never_closed(c, text, open: at)
     _ = cursor.bump(@c)
@@ -657,7 +657,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
 
     if cursor.eat(@c, .rparen) || open_ended && swallowed.body_below(c, text, open: at)
         return arguments
-    reading: bool @ true
+    reading: bool @= true
 
     while reading
         cursor.skip_terminators(@c)
@@ -670,7 +670,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
             reading @ false
         else
             first = c.pos
-            name: token.Span? @ fail(code: "unnamed", msg: "a bare argument")
+            name: token.Span? @= fail(code: "unnamed", msg: "a bare argument")
 
             if cursor.at(c, .ident) && cursor.peek(c, 1) == .colon
                 name @ ok(cursor.bump(@c).span)
@@ -680,7 +680,7 @@ function call_args(@c: cursor.Cursor, @a: ast.Ast, text: str) -> [ast.Arg]
 
             # A binding or a mutation on a line below a `(` the lexer named
             # never closed is a statement its reach took in (`unclosed`).
-            if open_ended && (cursor.at(c, .at) || cursor.at(c, .eq)) && unclosed.a_line_below(c, text, open: at, at: first)
+            if open_ended && (cursor.at(c, .at) || cursor.at(c, .at_eq) || cursor.at(c, .eq)) && unclosed.a_line_below(c, text, open: at, at: first)
                 unclosed.past_the_reach(@c, open: at)
                 reading @ false
                 continue
@@ -756,8 +756,8 @@ function block(@c: cursor.Cursor, @a: ast.Ast, text: str, owner: str, head: open
 function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
     at = c.pos
     open = cursor.bump(@c).span
-    stmts: [i64] @ []
-    reading: bool @ true
+    stmts: [i64] @= []
+    reading: bool @= true
 
     while reading
         cursor.skip_terminators(@c)
@@ -779,7 +779,7 @@ function indented_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
 # A body in braces, its `{` under the cursor and its `}` at `close`, or the lines a
 # head's bracket swallowed, to `close`, read as `parse/braced_lines` lays them out.
 function in_braces(@c: cursor.Cursor, @a: ast.Ast, text: str, close: i64) -> ast.Block
-    lines: cursor.Cursor @ braced_lines.view_to(c, text, close: close)
+    lines: cursor.Cursor @= braced_lines.view_to(c, text, close: close)
     body = indented_block(@lines, @a, text)
     braced_lines.took_to(c: @c, view: lines, close: close)
     return body
@@ -788,7 +788,7 @@ function in_braces(@c: cursor.Cursor, @a: ast.Ast, text: str, close: i64) -> ast
 # and of a block below them, which the lexer opened one level too deep.
 function tabbed_block(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Block
     open = cursor.current_span(c)
-    stmts: [i64] @ []
+    stmts: [i64] @= []
 
     while opening.tabbed_line(c, text) || cursor.at(c, .indent)
         if cursor.at(c, .indent)
@@ -831,12 +831,12 @@ function under(@c: cursor.Cursor, @a: ast.Ast, text: str, word: i64)
 # indented or in braces: each line's head by `parse/heads`, its body by `block`.
 function declarations(@c: cursor.Cursor, @a: ast.Ast, text: str)
     if brace_habit.opens_here(c, text)
-        lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+        lines: cursor.Cursor @= braced_lines.laid_out(c, text)
         declarations(@lines, @a, text)
         braced_lines.took(c: @c, view: lines)
         return
     _ = cursor.bump(@c)
-    owed: heads.Owed @ heads.next(@c, @a, text)
+    owed: heads.Owed @= heads.next(@c, @a, text)
 
     while owed.owes != .done
         if owed.owes == .body
@@ -935,7 +935,7 @@ function return_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 function while_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     head = opening.mark(c)
     _ = cursor.bump(@c)
-    cond: i64 @ -1
+    cond: i64 @= -1
 
     # C's clauses in its `(`, told by the lexer, are passed whole (defect 365).
     if loop_habit.passed_clauses(@c, text)
@@ -970,8 +970,8 @@ function for_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
         return .for_in(name: name, iterable: iterable, block: body.must())
 
     if !cursor.at_reported_error(c) || loop_habit.c_header(c, text)
-        read: cursor.Cursor @ cursor.trial(c)
-        scratch: ast.Ast @ ast.new_ast()
+        read: cursor.Cursor @= cursor.trial(c)
+        scratch: ast.Ast @= ast.new_ast()
         _ = parse_expr(@read, @scratch, text)
         loop_habit.refuse(c: @c, text: text, keyword: keyword, read: read)
 
@@ -994,10 +994,11 @@ function bind_stmt(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     _ = cursor.bump(@c)
     return .bind(name: name, ty: fail(code: "inferred", msg: "no written type"), value: parse_expr(@c, @a, text))
 
-# `v: i64 @ 0` — a mutable cell, type mandatory. `xs: [i64] = []` — an
-# immutable binding that needs its annotation because an empty literal cannot
-# say what it holds (§4.5). A type that failed is one mistake, and what it
-# owes the `@` or `=` after it is `parse/annotation`'s (defect 131's class).
+# `v: i64 @= 0` — a mutable cell, type mandatory (`@`, the symbol until panel
+# 209, is told with a certain fix and still read, `annotation.cell_symbol`).
+# `xs: [i64] = []` — an immutable binding that needs its annotation because an
+# empty literal cannot say what it holds (§4.5). A type that failed is one
+# mistake, and what it owes after it is `parse/annotation`'s (defect 131).
 function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     name = cursor.bump(@c).span
     _ = cursor.bump(@c)
@@ -1006,7 +1007,7 @@ function annotated(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
     annotation.past_a_refused_type(@c, typed)
     at = cursor.current_span(c)
 
-    if cursor.eat(@c, .at)
+    if annotation.cell_symbol(@c, text)
         return .declare(name: name, ty: ty, value: parse_expr(@c, @a, text), symbol: at)
 
     if cursor.eat(@c, .eq)
@@ -1057,7 +1058,7 @@ function prefixed(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.StmtKind
 function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     head = opening.mark(c)
     start = cursor.bump(@c).span
-    branches: [ast.Branch] @ []
+    branches: [ast.Branch] @= []
     cond = parse_expr(@c, @a, text)
 
     if bracket_head.in_brackets(@c, text, head: head, missing: opening.missing_body("an `if`"))
@@ -1068,13 +1069,13 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     if whole
         branches @ branches.push(ast.Branch(cond: cond, block: first.must()))
-    otherwise: ast.Block? @ fail(code: "no_else", msg: "the `if` has no `else`")
+    otherwise: ast.Block? @= fail(code: "no_else", msg: "the `if` has no `else`")
 
     # `else` closes the `if`'s block, so the cursor is back at this level. A
     # branch whose body was missing leaves it at the line below too, and the
     # `else` there is still this `if`'s: read on its own it was a second
     # mistake, at the column of the first (defect 130).
-    chaining: bool @ true
+    chaining: bool @= true
 
     # And `elif` opening its line is read as the `else if` its certain swap
     # writes, where it cost `unexpected_block` and a stray `else` beside the
@@ -1101,7 +1102,7 @@ function if_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 
     if !whole
         return ast.push_expr(@a.exprs, ast.Expr(kind: .error, span: start))
-    end: token.Span @ branches[branches.len() - 1].block.span
+    end: token.Span @= branches[branches.len() - 1].block.span
 
     if !otherwise.is_err()
         end @ otherwise.must().span
@@ -1123,10 +1124,10 @@ function match_expr(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     colon_habit.read_below(@c, text)
     eat_python_colon(@c)
     brace = brace_habit.ending(c, text)
-    arms: [ast.Arm] @ []
+    arms: [ast.Arm] @= []
 
     if brace >= 0
-        lines: cursor.Cursor @ braced_arms.lines_of(@c, text, head: head, failed: failed, brace: brace)
+        lines: cursor.Cursor @= braced_arms.lines_of(@c, text, head: head, failed: failed, brace: brace)
         arms @ arms_of(@lines, @a, text, tabbed: false)
         braced_arms.taken(c: @c, lines: lines)
     else
@@ -1148,7 +1149,7 @@ function misplaced(@c: cursor.Cursor, @a: ast.Ast, text: str, head: i64)
     if margin_arms.below(c, text, head)
         _ = arms_of(@c, @a, text, tabbed: false)
     else if past >= 0
-        lines: cursor.Cursor @ margin_arms.on(c, at: past)
+        lines: cursor.Cursor @= margin_arms.on(c, at: past)
         _ = arms_of(@lines, @a, text, tabbed: false)
         margin_arms.taken(c: @c, lines: lines, from: past)
 
@@ -1160,11 +1161,11 @@ function arms_of(@c: cursor.Cursor, @a: ast.Ast, text: str, tabbed: bool) -> [as
 
     if !tabbed && !at_margin
         _ = cursor.bump(@c)
-    arms: [ast.Arm] @ []
-    reading: bool @ true
-    failed: bool @ false
-    in_tabs: bool @ tabbed
-    run: i64 @ -1
+    arms: [ast.Arm] @= []
+    reading: bool @= true
+    failed: bool @= false
+    in_tabs: bool @= tabbed
+    run: i64 @= -1
 
     while reading
         cursor.skip_terminators(@c)
@@ -1237,7 +1238,7 @@ function arm(@c: cursor.Cursor, @a: ast.Ast, text: str, own_block: bool) -> ast.
     # `break` and `return`, and what stops the printer from having a second path
     # that cannot render a block under a control head. Never across a line
     # end: an arm's body is on its line or in the block below it.
-    body: ast.ArmBody @ .one_stmt(at: 0)
+    body: ast.ArmBody @= .one_stmt(at: 0)
 
     if cursor.at(c, .indent) || opening.tabbed_line(c, text) || braced_arms.body_opens(c, text)
         inner = block(@c, @a, text: text, owner: "a `match` arm", head: head)
@@ -1273,8 +1274,8 @@ test "multiplication binds tighter than addition, and both are left-associative"
         token.made(.int_lit, start: 8, end: 9)
         token.made(.eof, start: 9, end: 9)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = parse_expr(@c, @a, "1 + 2 * 3")
     assert expr_render.render(a, at, "1 + 2 * 3") == "(1 + (2 * 3))"
 
@@ -1287,8 +1288,8 @@ test "multiplication binds tighter than addition, and both are left-associative"
         token.made(.int_lit, start: 8, end: 9)
         token.made(.eof, start: 9, end: 9)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(left)
-    b: ast.Ast @ ast.new_ast()
+    d: cursor.Cursor @= cursor.new_cursor(left)
+    b: ast.Ast @= ast.new_ast()
     at2 = parse_expr(@d, @b, "1 - 2 - 3")
     assert expr_render.render(b, at2, "1 - 2 - 3") == "((1 - 2) - 3)"
 
@@ -1302,8 +1303,8 @@ test "comparisons sit above &&, so a < b && c needs no parentheses"
         token.made(.ident, start: 9, end: 10)
         token.made(.eof, start: 10, end: 10)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = parse_expr(@c, @a, "a < b && c")
     assert expr_render.render(a, at, "a < b && c") == "((a < b) && c)"
 
@@ -1317,8 +1318,8 @@ test "C's own mistake is not inherited: & binds tighter than =="
         token.made(.int_lit, start: 9, end: 10)
         token.made(.eof, start: 10, end: 10)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = parse_expr(@c, @a, "x & 1 == 0")
     assert expr_render.render(a, at, "x & 1 == 0") == "((x & 1) == 0)"
 
@@ -1333,8 +1334,8 @@ test "the suffixes chain left to right"
         token.made(.ident, start: 6, end: 7)
         token.made(.eof, start: 7, end: 7)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = parse_expr(@c, @a, "xs[0].f")
     assert expr_render.render(a, at, "xs[0].f") == "((xs[0]).f)"
 
@@ -1346,8 +1347,8 @@ test "the suffixes chain left to right"
         token.made(.int_lit, start: 5, end: 6)
         token.made(.eof, start: 6, end: 6)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(q)
-    b: ast.Ast @ ast.new_ast()
+    d: cursor.Cursor @= cursor.new_cursor(q)
+    b: ast.Ast @= ast.new_ast()
     at2 = parse_expr(@d, @b, "e? + 1")
     assert expr_render.render(b, at2, "e? + 1") == "((e?) + 1)"
 
@@ -1362,8 +1363,8 @@ test "a dot with parentheses is UFCS, without them a field"
         token.made(.rparen, start: 5, end: 6)
         token.made(.eof, start: 6, end: 6)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = parse_expr(@c, @a, "x.f(y)")
     assert expr_render.render(a, at, "x.f(y)") == "(x.f()/1)"
 
@@ -1377,8 +1378,8 @@ test "a trailing comma is refused with the deletion as its fix"
         token.made(.rparen, start: 4, end: 5)
         token.made(.eof, start: 5, end: 5)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     _ = parse_expr(@c, @a, "f(a,)")
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "trailing_comma"
@@ -1395,8 +1396,8 @@ test "a name before `@` reads as f(a: @n) and as f(a, @n), neither certain"
         token.made(.rparen, start: 7, end: 8)
         token.made(.eof, start: 8, end: 8)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     _ = parse_expr(@c, @a, "f(a @ n)")
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "misplaced_mutable_marker"
@@ -1416,8 +1417,8 @@ test "inside brackets a newline is a separator, not a statement end"
         token.made(.rbracket, start: 4, end: 5)
         token.made(.eof, start: 5, end: 5)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = parse_expr(@c, @a, "[1\n2]")
     assert expr_render.render(a, at, "[1\n2]") == "[2]"
     assert c.diagnostics.len() == 0
@@ -1430,16 +1431,16 @@ test "a pattern's operand never consumes the join, which is what | is there"
         token.made(.int_lit, start: 4, end: 5)
         token.made(.eof, start: 5, end: 5)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = arm_pattern.literal(@c, @a, "1 | 2").must()
     assert expr_render.render(a, at, "1 | 2") == "1"
     assert cursor.current_kind(c) == .pipe
 
     # The full expression parser DOES consume it — which is the defect the
     # split prevents.
-    d: cursor.Cursor @ cursor.new_cursor(stream)
-    b: ast.Ast @ ast.new_ast()
+    d: cursor.Cursor @= cursor.new_cursor(stream)
+    b: ast.Ast @= ast.new_ast()
     at2 = parse_expr(@d, @b, "1 | 2")
     assert expr_render.render(b, at2, "1 | 2") == "(1 | 2)"
 
@@ -1454,8 +1455,8 @@ test "the three name-shaped lines are told apart by one token"
         token.made(.terminator, start: 5, end: 5)
         token.made(.eof, start: 5, end: 5)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(bind_line)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(bind_line)
+    a: ast.Ast @= ast.new_ast()
     at = statement(@c, @a, "x = 5")
 
     match a.stmts[at].kind
@@ -1475,8 +1476,8 @@ test "the three name-shaped lines are told apart by one token"
         token.made(.terminator, start: 9, end: 9)
         token.made(.eof, start: 9, end: 9)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(mutate_line)
-    b: ast.Ast @ ast.new_ast()
+    d: cursor.Cursor @= cursor.new_cursor(mutate_line)
+    b: ast.Ast @= ast.new_ast()
     at2 = statement(@d, @b, "v @ v + 1")
 
     match b.stmts[at2].kind
@@ -1498,8 +1499,8 @@ test "only a place can be mutated"
         token.made(.terminator, start: 8, end: 8)
         token.made(.eof, start: 8, end: 8)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     _ = statement(@c, @a, "f(x) @ 1")
     assert c.diagnostics[0].code == "not_a_place"
 
@@ -1517,8 +1518,8 @@ test "the Python colon is eaten with its fix, so the block still parses"
         token.made(.dedent, start: 19, end: 19)
         token.made(.eof, start: 19, end: 19)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = statement(@c, @a, "while c:\n    break\n")
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "trailing_colon"
@@ -1543,8 +1544,8 @@ test "for over a condition is met with while, and the certainty says how sure"
         token.made(.dedent, start: 20, end: 20)
         token.made(.eof, start: 20, end: 20)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(sure)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(sure)
+    a: ast.Ast @= ast.new_ast()
     _ = statement(@c, @a, "for !done\n    break\n")
     assert c.diagnostics[0].code == "for_missing_in"
     assert c.diagnostics[0].fixes[0].replacement == "while"
@@ -1563,8 +1564,8 @@ test "for over a condition is met with while, and the certainty says how sure"
         token.made(.dedent, start: 20, end: 20)
         token.made(.eof, start: 20, end: 20)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(unsure)
-    b: ast.Ast @ ast.new_ast()
+    d: cursor.Cursor @= cursor.new_cursor(unsure)
+    b: ast.Ast @= ast.new_ast()
     _ = statement(@d, @b, "for x > 0\n    break\n")
     assert d.diagnostics[0].fixes[0].certainty == .guess
 
@@ -1585,8 +1586,8 @@ test "for over a condition is met with while, and the certainty says how sure"
         token.made(.dedent, start: 22, end: 22)
         token.made(.eof, start: 22, end: 22)
     ]
-    e: cursor.Cursor @ cursor.new_cursor(c_style)
-    f: ast.Ast @ ast.new_ast()
+    e: cursor.Cursor @= cursor.new_cursor(c_style)
+    f: ast.Ast @= ast.new_ast()
     _ = statement(@e, @f, "for (i = 0)\n    break\n")
     assert e.diagnostics.len() == 1
     assert e.diagnostics[0].code == "for_missing_in"
@@ -1615,8 +1616,8 @@ test "the ring is closed: if is an expression with a block inside it"
         token.made(.dedent, start: 34, end: 34)
         token.made(.eof, start: 34, end: 34)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     at = statement(@c, @a, "x = if c\n        1\n    else\n        2\n")
     assert c.diagnostics.len() == 0
 
@@ -1651,10 +1652,10 @@ test "a match arm may not declare a name where nothing can read it"
         token.made(.dedent, start: 24, end: 24)
         token.made(.eof, start: 24, end: 24)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     _ = parse_expr(@c, @a, "match e\n    .a => x = 5\n")
-    codes: [str] @ []
+    codes: [str] @= []
 
     for d in c.diagnostics
         codes @ codes.push(d.code)
@@ -1675,8 +1676,8 @@ test "only a place can be passed as @"
         token.made(.terminator, start: 8, end: 8)
         token.made(.eof, start: 8, end: 8)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     _ = statement(@c, @a, "f(@g(x))")
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "not_a_place"
@@ -1760,8 +1761,8 @@ test "an expression begins exactly where begins_an_expression says it can"
 
     for k in kinds
         stream: [token.Token] = [token.made(k, start: 0, end: 1), token.made(.eof, start: 1, end: 1)]
-        c: cursor.Cursor @ cursor.new_cursor(stream)
-        a: ast.Ast @ ast.new_ast()
+        c: cursor.Cursor @= cursor.new_cursor(stream)
+        a: ast.Ast @= ast.new_ast()
         _ = parse_expr(@c, @a, "x ")
         refused_first = c.diagnostics.len() > 0 && c.diagnostics[0].code == "expected_expression" && c.diagnostics[0].span.start == 0
         assert refused_first == !token.begins_an_expression(k)

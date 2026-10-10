@@ -14,8 +14,8 @@ use ir/containers
 # The index just past this slot's last whole-slot store, 0 when it was
 # never written: the sweep's load must come after it.
 function last_write(blk: containers.Block, slot_at: i64) -> i64
-    floor: i64 @ 0
-    at: i64 @ 0
+    floor: i64 @= 0
+    at: i64 @= 0
 
     for inst in blk.insts
         # The no-op arms MUST NOT say continue: the counter at the
@@ -35,7 +35,7 @@ function last_write(blk: containers.Block, slot_at: i64) -> i64
     return floor
 
 function released_after(blk: containers.Block, slot_at: i64, floor: i64) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     for inst in blk.insts
         if at >= floor
@@ -60,7 +60,7 @@ function released_after(blk: containers.Block, slot_at: i64, floor: i64) -> bool
 # Was `value` produced by a whole-slot load of this slot, between the
 # floor and the decref?
 function loaded_from(blk: containers.Block, value: i64, slot_at: i64, floor: i64, before: i64) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     for inst in blk.insts
         if at >= floor && at < before
@@ -81,8 +81,8 @@ function loaded_from(blk: containers.Block, value: i64, slot_at: i64, floor: i64
 # incref took: a call's hold (`ir/held.hero`), added to the reading above on
 # 2026-10-07 by panel 196's R1, and to `releases` in the same words.
 function balanced(blk: containers.Block, value: i64, at: i64) -> bool
-    retained: i64 @ 0
-    position: i64 @ 0
+    retained: i64 @= 0
+    position: i64 @= 0
 
     for inst in blk.insts
         if position == at
@@ -117,7 +117,7 @@ function step(@seed: i64) -> i64
 function generated(@seed: i64, slots: i64) -> containers.Block
     span = token.Span(start: 0, end: 1)
     void: i64? = fail(code: "none", msg: "void")
-    insts: [ir.Inst] @ []
+    insts: [ir.Inst] @= []
     wanted = step(@seed) % 41
 
     while insts.len() < wanted

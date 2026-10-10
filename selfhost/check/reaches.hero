@@ -110,10 +110,10 @@ record Reached
 # set individually, so releasing them one by one balances and releasing the
 # composite balances, while doing both is a double release the set can name.
 function handle_suffixes(out: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> [str]
-    found: [str] @ []
-    route: {i64: bool} @ {}
-    stack: [Visit] @ [Visit(ty: ty, prefix: "", leaving: -1)]
-    live: i64 @ 1
+    found: [str] @= []
+    route: {i64: bool} @= {}
+    stack: [Visit] @= [Visit(ty: ty, prefix: "", leaving: -1)]
+    live: i64 @= 1
 
     while live > 0
         live @ live - 1
@@ -125,7 +125,7 @@ function handle_suffixes(out: state.Checked, s: source.Source, decls: [ast.Decl]
         if here.leaving >= 0
             route[here.leaving] @ false
             continue
-        inner: [Visit] @ []
+        inner: [Visit] @= []
 
         match table.get(out.types, here.ty)
             .named n =>
@@ -151,7 +151,7 @@ function handle_suffixes(out: state.Checked, s: source.Source, decls: [ast.Decl]
                     Visit(ty: -1, prefix: "", leaving: n.decl)
                 )
             .fixed x =>
-                at: i64 @ 0
+                at: i64 @= 0
 
                 while at < x.length
                     inner @ inner.push(Visit(ty: x.element, prefix: here.prefix + "[" + at.to_str() + "]", leaving: -1))
@@ -160,7 +160,7 @@ function handle_suffixes(out: state.Checked, s: source.Source, decls: [ast.Decl]
             .array | .map | .fallible | .function_ty                  => continue
             .case_ty | .failure | .generic | .error                   => continue
 
-        back: i64 @ inner.len() - 1
+        back: i64 @= inner.len() - 1
 
         while back >= 0
             if live < stack.len()
@@ -183,7 +183,7 @@ record Visit
 # The fields below one declaration, each under its own prefix. A record's
 # only: a variant's case is not a place a suffix can name.
 function fields_of(out: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, prefix: str) -> [Visit]
-    below: [Visit] @ []
+    below: [Visit] @= []
 
     match decls[decl].kind
         .record_decl rec =>
@@ -213,7 +213,7 @@ function on_route(seen: {i64: bool}, decl: i64) -> bool
 # `""` when the type IS one, and otherwise the dotted path anchored at the first
 # declaration on the route: `Font.recs`, `Outer.p.s`.
 function reaches_handle(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64) -> Reached?
-    seen: {i64: bool} @ {}
+    seen: {i64: bool} @= {}
 
     return walk(c, s, decls, ty: ty, anchor: true, @seen)
 
@@ -223,13 +223,13 @@ function reaches_handle(c: state.Checker, s: source.Source, decls: [ast.Decl], t
 # once, where the route begins. It is a fact about the MESSAGE and not about
 # the world, which is why it is a parameter rather than a second walk.
 function walk(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, anchor: bool, @seen: {i64: bool}) -> Reached?
-    stack: [Step] @ [Step(ty: ty, path: "", anchor: anchor)]
-    live: i64 @ 1
+    stack: [Step] @= [Step(ty: ty, path: "", anchor: anchor)]
+    live: i64 @= 1
 
     while live > 0
         live @ live - 1
         here = stack[live]
-        inner: [Step] @ []
+        inner: [Step] @= []
 
         match table.get(c.out.types, here.ty)
             .named n =>
@@ -241,7 +241,7 @@ function walk(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, an
                 if !seen[n.decl].is_err()
                     continue
                 seen[n.decl] @ true
-                start: str @ here.path
+                start: str @= here.path
 
                 if here.anchor
                     start @ source.span_text(s, decls[n.decl].name)
@@ -257,7 +257,7 @@ function walk(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, an
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
             .function_ty | .case_ty | .failure | .generic | .error    => continue
 
-        back: i64 @ inner.len() - 1
+        back: i64 @= inner.len() - 1
 
         while back >= 0
             if live < stack.len()
@@ -281,7 +281,7 @@ record Step
 # that type may be in any case and the diagnostic needs a route the reader can
 # follow.
 function steps_below(c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, start: str) -> [Step]
-    below: [Step] @ []
+    below: [Step] @= []
 
     match decls[decl].kind
         .record_decl rec => below @ field_steps(c, s, fields: rec.fields, start: start)
@@ -298,7 +298,7 @@ function steps_below(c: state.Checker, s: source.Source, decls: [ast.Decl], decl
 # and the interned id is what the checker knows, and only the second can be
 # asked what KIND of type it is.
 function field_steps(c: state.Checker, s: source.Source, fields: [ast.Field], start: str) -> [Step]
-    out: [Step] @ []
+    out: [Step] @= []
 
     for field in fields
         written = state.written_type(c.out, field.ty)
@@ -306,7 +306,7 @@ function field_steps(c: state.Checker, s: source.Source, fields: [ast.Field], st
         if written.is_err()
             continue
         name = source.span_text(s, field.name)
-        path: str @ name
+        path: str @= name
 
         if start != ""
             path @ start + "." + name
@@ -324,7 +324,7 @@ function suffixes_of(text: str, producer: str) -> [str]
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
 
     check_decls.file(@c, p.tree, out, s, p.decls)
 

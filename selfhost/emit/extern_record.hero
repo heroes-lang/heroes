@@ -33,7 +33,7 @@ use checker
 # the error mapper splits on whitespace; the declaration's name is one
 # token by construction.
 function extern_record_assertions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], records: {i64: bool}?)
-    wrote: bool @ false
+    wrote: bool @= false
 
     for index in emit_externs.walked(decls, records: records)
         decl = decls[index]
@@ -87,11 +87,11 @@ function has(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
@@ -113,7 +113,7 @@ test "assertions land on the field's line, the probe counts positionally"
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     every: {i64: bool}? = fail(code: "every", msg: "every group record")
     extern_record_assertions(@w, c, names, s, parsed.decls, records: every)
     got = writer.finish(w)
@@ -140,7 +140,7 @@ test "an array field's two assertions are two counted lines, each under the fiel
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     every: {i64: bool}? = fail(code: "every", msg: "every group record")
     extern_record_assertions(@w, c, names, s, parsed.decls, records: every)
     rows = rows_of(writer.finish(w))
@@ -169,14 +169,14 @@ test "an array field's two assertions are two counted lines, each under the fiel
 # counting one a row after each, and "" for a directive or a row no
 # directive placed.
 function landed_at(rows: [str]) -> [str]
-    out: [str] @ []
-    file: str @ ""
-    next: i64 @ 0
+    out: [str] @= []
+    file: str @= ""
+    next: i64 @= 0
 
     for row in rows
         if row.len() > 6 && row.slice(from: 0, to: 6) == "#line "
-            at: i64 @ 6
-            number: i64 @ 0
+            at: i64 @= 6
+            number: i64 @= 0
 
             while row[at] >= '0' && row[at] <= '9'
                 number @ number * 10 + (row[at] - '0').to_i64().must()
@@ -197,9 +197,9 @@ function landed_at(rows: [str]) -> [str]
 # The output's lines, split at each newline the bytes hold, so a line
 # carrying a newline of its own is two rows here, as it is two lines to C.
 function rows_of(text: str) -> [str]
-    rows: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    rows: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == '\n'

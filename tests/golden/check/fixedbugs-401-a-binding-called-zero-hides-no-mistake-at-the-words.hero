@@ -47,7 +47,7 @@ function a_parameter(zero: i64) -> i64  #~ unused_binding
     return 1.add(b: 2, rest: zero)  #~ rest_not_a_construction
 
 function a_loop_variable(xs: [i64]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for zero in xs  #~ unused_binding
         total @ total + Point(x: 1, y: 2, rest: zero).x  #~ rest_outside_a_group

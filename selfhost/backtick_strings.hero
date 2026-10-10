@@ -119,9 +119,9 @@ function bound(text: str, at: i64) -> i64
 # and not the array: read over lines, a template is read for up to `READ`
 # bytes from every backtick that opens none.
 function template_end(text: str, at: i64, limit: i64) -> i64
-    open: [i64] @ []
-    top: i64 @ 0
-    i: i64 @ at + 1
+    open: [i64] @= []
+    top: i64 @= 0
+    i: i64 @= at + 1
 
     while i < limit
         b = text[i]
@@ -168,7 +168,7 @@ function template_end(text: str, at: i64, limit: i64) -> i64
 # `limit`, a `\` taking the character after it, or -1.
 function quote_end(text: str, at: i64, limit: i64) -> i64
     quote = text[at]
-    i: i64 @ at + 1
+    i: i64 @= at + 1
 
     while i < limit && i < text.len() && !literals.ends_line(text, at: i)
         if text[i] == '\\'
@@ -188,7 +188,7 @@ function quote_end(text: str, at: i64, limit: i64) -> i64
 function agreed(text: str, from: i64, to: i64) -> bool
     if text[to - 1] == '\'' && to + 1 < text.len() && text[to + 1] == '\''
         return false
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to
         b = text[i]
@@ -208,7 +208,7 @@ function agreed(text: str, from: i64, to: i64) -> bool
 
 # Whether a line end stands between `from` and `to`.
 function spans_lines(text: str, from: i64, to: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to
         if text[i] == '\n'
@@ -221,7 +221,7 @@ function spans_lines(text: str, from: i64, to: i64) -> bool
 # at `to`, holds no line a declaration opens at column 0, and the line it
 # closes on goes on as JavaScript reads one (`goes_on`).
 function over_lines(text: str, from: i64, to: i64, limit: i64, hole: bool) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to
         if text[i] == '\n' && next_line.opens_a_declaration(text, at: i + 1)
@@ -236,7 +236,7 @@ function over_lines(text: str, from: i64, to: i64, limit: i64, hole: bool) -> bo
 # closes on it, and anything else as itself. In a hole of an `f"…"` literal
 # it goes on as that literal, and holds no backtick to its end.
 function goes_on(text: str, from: i64, limit: i64, hole: bool) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < limit
         b = text[i]
@@ -279,9 +279,9 @@ function open_end(text: str, at: i64, hole: bool) -> i64
 
     if line > at + READ || template_end(text, at: at, limit: line) > 0
         return -1
-    depth: i64 @ 0
-    last: i64 @ at + 1
-    i: i64 @ at + 1
+    depth: i64 @= 0
+    last: i64 @= at + 1
+    i: i64 @= at + 1
 
     while i < line
         b = text[i]
@@ -307,7 +307,7 @@ function open_end(text: str, at: i64, hole: bool) -> i64
 # Where the line holding `from` ends, before its `\r\n` or its `\n`, or the
 # text's end.
 function line_end(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && text[i] != '\n'
         i @ i + 1

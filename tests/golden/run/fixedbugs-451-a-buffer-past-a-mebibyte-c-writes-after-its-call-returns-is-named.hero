@@ -13,7 +13,7 @@ extern "fixedbugs-451-keepers.h"
     function bytes_write_later() -> i64
 
 function fill() -> i64
-    md: [u8] @ []
+    md: [u8] @= []
     _ = bytes_keep(@md)
     return md.len()
 

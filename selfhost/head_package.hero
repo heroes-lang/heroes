@@ -37,7 +37,7 @@ function cannot_carry(value: str, span: token.Span) -> diag.Diagnostic?
 # inside one name (pkgconf 3.0.7 and 1.8.1, panel 188's sweep), the two
 # line ends among them and told above.
 function package_split(value: str) -> str
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < value.len()
         b = value[i]
@@ -66,7 +66,7 @@ function thesis(written: str, value: str, span: token.Span) -> diag.Diagnostic?
         return ok(
             diag.new_diagnostic(code: "machine_locked_path", message: "`" + written + "` names a `.pc` file, which `pkg-config` reads from the directory `heroes` runs in, not the program's\n  name the package, as `package \"raylib\"`, and say where its `.pc` is with `PKG_CONFIG_PATH`", span: span)
         )
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < value.len()
         b = value[i]

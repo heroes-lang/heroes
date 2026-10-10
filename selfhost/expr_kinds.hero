@@ -78,7 +78,7 @@ function depth(a: ast.Ast, at: i64) -> i64
 # The deepest hole, or nothing: an interpolated literal is one node whose
 # children are its holes.
 function holes_depth(a: ast.Ast, holes: [i64]) -> i64
-    deepest: i64 @ 0
+    deepest: i64 @= 0
 
     for h in holes
         d = depth(a, h)
@@ -94,7 +94,7 @@ function max_of(a: i64, b: i64) -> i64
     return b
 
 test "a walk over the arena is an ordinary recursive function"
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     zero = token.Span(start: 0, end: 1)
     x = ast.push_expr(@a.exprs, ast.Expr(kind: .int_lit, span: zero))
     y = ast.push_expr(@a.exprs, ast.Expr(kind: .int_lit, span: zero))

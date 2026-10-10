@@ -23,7 +23,7 @@ function one() -> i64
 function main()
     xs = 4
     print(total(xs.must()).must())  #~ bad_operand bad_operand
-    k: Counter @ Counter(n: 0)
+    k: Counter @= Counter(n: 0)
     print(bump(k).must())  #~ bad_operand marker_mismatch
     print(copy_text("a", to: "b").default("none"))  #~ bad_operand needs_label
     print(one().must().must().must())  #~ bad_operand

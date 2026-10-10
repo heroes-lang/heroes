@@ -24,9 +24,9 @@ use text_outline
 # Does the line from `from` bind or mutate: a lone `=` or an `@` outside
 # brackets?
 function holds_a_binding(text: str, from: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ from
-    quote: u8 @ 0
+    depth: i64 @= 0
+    i: i64 @= from
+    quote: u8 @= 0
 
     while i < text.len() && text[i] != '\n'
         b = text[i]
@@ -52,9 +52,9 @@ function holds_a_binding(text: str, from: i64) -> bool
 
 # Does the line from `from` hold an arm's `=>` outside brackets?
 function holds_an_arrow(text: str, from: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ from
-    quote: u8 @ 0
+    depth: i64 @= 0
+    i: i64 @= from
+    quote: u8 @= 0
 
     while i + 1 < text.len() && text[i] != '\n'
         b = text[i]
@@ -85,7 +85,7 @@ function holds_an_arrow(text: str, from: i64) -> bool
 # never a subtraction going on with the arm above. Past lines that hold
 # operators alone, each one more stray above the same arm (defects 351, 369).
 function arrow_below(text: str, from: i64) -> bool
-    i: i64 @ past_the_line(text, from: past_blanks(text, from: from))
+    i: i64 @= past_the_line(text, from: past_blanks(text, from: from))
 
     while i < text.len() && text[i] == '\n'
         i @ past_blanks(text, from: i + 1)
@@ -121,7 +121,7 @@ function nothing_joins_below(text: str, at: i64) -> bool
     if alone < 0
         first = keywords.keyword(word_at(text, at: at))
         return !first.is_err() && starts_afresh(first.must()) || stands_alone(text, from: at)
-    i: i64 @ past_the_line(text, from: alone)
+    i: i64 @= past_the_line(text, from: alone)
 
     while i < text.len() && text[i] == '\n'
         i @ past_blanks(text, from: i + 1)
@@ -136,11 +136,11 @@ function nothing_joins_below(text: str, at: i64) -> bool
 # above (`token.can_only_go_on`), and the spaces between and after them; -1
 # where `at` holds none. `- -` is two, `->` and `=>` are none.
 function past_operators(text: str, at: i64) -> i64
-    found: punctuation.Punct @ punctuation.punct_at(text, at: at)
+    found: punctuation.Punct @= punctuation.punct_at(text, at: at)
 
     if found.width == 0 || !token.can_only_go_on(found.kind)
         return -1
-    i: i64 @ at
+    i: i64 @= at
 
     while found.width > 0 && token.can_only_go_on(found.kind)
         i @ past_blanks(text, from: i + found.width)
@@ -150,7 +150,7 @@ function past_operators(text: str, at: i64) -> i64
 
 # `from`, past spaces and carriage returns.
 function past_blanks(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\r')
         i @ i + 1
@@ -161,7 +161,7 @@ function past_blanks(text: str, from: i64) -> i64
 function past_the_line(text: str, from: i64) -> i64
     if from >= text.len() || text[from] != '#'
         return from
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && text[i] != '\n'
         i @ i + 1
@@ -177,11 +177,11 @@ function stands_alone(text: str, from: i64) -> bool
 
     if !first.is_err() && (first.must() == .kw_if || first.must() == .kw_match)
         return true
-    depth: i64 @ 0
-    i: i64 @ from
-    quote: u8 @ 0
-    last: u8 @ 0
-    called: bool @ false
+    depth: i64 @= 0
+    i: i64 @= from
+    quote: u8 @= 0
+    last: u8 @= 0
+    called: bool @= false
 
     while i < text.len() && text[i] != '\n' && (quote != 0 || text[i] != '#')
         b = text[i]
@@ -214,8 +214,8 @@ function stands_alone(text: str, from: i64) -> bool
 
 # `???` and nothing else but spaces.
 function only_a_hole(line: str) -> bool
-    start: i64 @ 0
-    end: i64 @ line.len()
+    start: i64 @= 0
+    end: i64 @= line.len()
 
     while start < end && line[start] == ' '
         start @ start + 1
@@ -227,18 +227,18 @@ function only_a_hole(line: str) -> bool
 
 # `=` alone, not a byte of `==`, `!=`, `<=`, `>=` or `=>`.
 function lone_eq(text: str, at: i64) -> bool
-    before: u8 @ 0
+    before: u8 @= 0
 
     if at > 0
         before @ text[at - 1]
-    after: u8 @ 0
+    after: u8 @= 0
 
     if at + 1 < text.len()
         after @ text[at + 1]
     return before != '=' && before != '!' && before != '<' && before != '>' && after != '=' && after != '>'
 
 function word_at(text: str, at: i64) -> str
-    end: i64 @ at
+    end: i64 @= at
 
     while end < text.len() && (bytes.is_alnum(text[end]) || text[end] == '_')
         end @ end + 1
@@ -285,7 +285,7 @@ function opens_a_declaration(text: str, at: i64) -> bool
 
     if k == .kw_function
         after = at + word.len()
-        name: i64 @ after
+        name: i64 @= after
 
         while name < text.len() && text[name] == ' '
             name @ name + 1
@@ -328,7 +328,7 @@ function ends_a_reach(text: str, at: i64, spaces: i64, margin: i64) -> bool
 
 # Is the next thing after `after`, past spaces, one `:` and not a `::`?
 function before_a_colon(text: str, after: i64) -> bool
-    at: i64 @ after
+    at: i64 @= after
 
     while at < text.len() && text[at] == ' '
         at @ at + 1
@@ -350,7 +350,7 @@ function starts_afresh(kind: token.TokenKind) -> bool
         .kw_return | .kw_break | .kw_continue | .kw_assert | .kw_for | .kw_while | .kw_else      => true
         .kw_match | .kw_if | .kw_in | .kw_nullptr | .kw_true | .kw_false | .kw_fail              => false
         .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                       => false
-        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe          => false
+        .eq | .at | .at_eq | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
         .hole | .question | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace        => false
         .plus | .minus | .star | .slash | .percent                                               => false
         .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                                => false

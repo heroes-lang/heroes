@@ -19,7 +19,7 @@ extern "dead-handle-a-place-the-same-call-writes-is-not-poisoned.h"
     function node_swap(n: Node consumes, @out: Node acquires node_free)
 
 function main()
-    a: Node @ node_new()
+    a: Node @= node_new()
     node_swap(n: a, out: @a)
     print("after the swap: ", node_value(n: a))
     node_free(n: a)

@@ -29,8 +29,8 @@ use check/state
 # (`emit/func_ref.hero`); the checker refuses it as `builtin_as_value`.
 function check(p: containers.Program, f: containers.Function, blk: containers.Block, c: state.Checked, held: instances.Index, at: str, @problems: [str])
     for inst in blk.insts
-        what: str @ ""
-        decl: i64 @ 0 - 1
+        what: str @= ""
+        decl: i64 @= 0 - 1
 
         match inst.op
             .call cl =>

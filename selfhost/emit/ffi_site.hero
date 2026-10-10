@@ -60,8 +60,8 @@ function location(s: source.Source, line: str) -> Located?
     if head.is_err()
         return fail(code: "none", msg: "not a file:line:col report")
     end = head.must()
-    stops: [i64] @ []
-    index: i64 @ 0
+    stops: [i64] @= []
+    index: i64 @= 0
 
     while index < end
         if cs[index] == ":"
@@ -78,8 +78,8 @@ function location(s: source.Source, line: str) -> Located?
 
     if row.is_err() || col.is_err()
         return fail(code: "none", msg: "the position is not numeric")
-    at: i64 @ -1
-    counter: i64 @ 0
+    at: i64 @= -1
+    counter: i64 @= 0
 
     for entry in s.files
         if entry.name == file_name && !entry.is_library && at == -1
@@ -93,8 +93,8 @@ function location(s: source.Source, line: str) -> Located?
     )
 
 function slice_chars(cs: [str], from: i64, to: i64) -> str
-    kept: [str] @ []
-    index: i64 @ from
+    kept: [str] @= []
+    index: i64 @= from
 
     while index < to
         kept @ kept.push(cs[index])
@@ -122,9 +122,9 @@ function extern_at_line(p: containers.Program, s: source.Source, decls: [ast.Dec
 # type, which is what the parameter should be declared as.
 function last_quoted(text: str) -> str?
     cs = text.chars()
-    close: i64 @ -1
-    open: i64 @ -1
-    index: i64 @ cs.len() - 1
+    close: i64 @= -1
+    open: i64 @= -1
+    index: i64 @= cs.len() - 1
 
     while index >= 0
         if cs[index] == "'"

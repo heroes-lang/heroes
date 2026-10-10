@@ -61,7 +61,7 @@ function owns_case(c: state.Checked, decls: [ast.Decl], decl: i64, at: i64) -> b
 
 function any_field_is_counted(c: state.Checked, fields: [ast.Field]) -> bool
     for field in fields
-        ty: i64 @ table.error_ty(c.types)
+        ty: i64 @= table.error_ty(c.types)
         written = state.written_type(c, field.ty)
 
         if !written.is_err()
@@ -77,7 +77,7 @@ function any_field_is_counted(c: state.Checked, fields: [ast.Field]) -> bool
 # question is the same one and two answers to it is the refcount bug
 # ir_layout documents.
 function reference_line(c: state.Checked, names: ctype.Names, ty: i64, place: str, keep: bool) -> str?
-    verb: str @ "release"
+    verb: str @= "release"
 
     if keep
         verb @ "retain"
@@ -120,7 +120,7 @@ function reference_body(@w: writer.Writer, c: state.Checked, names: ctype.Names,
         writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_release(" + at.c_type + " *v) {")
 
     for field in fields
-        ty: i64 @ table.error_ty(c.types)
+        ty: i64 @= table.error_ty(c.types)
         written = state.written_type(c, field.ty)
 
         if !written.is_err()
@@ -148,7 +148,7 @@ function reference_body(@w: writer.Writer, c: state.Checked, names: ctype.Names,
 # the counted cases have anything to do — and it satisfies -Wswitch
 # without listing rows that would be empty.
 function variant_reference_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, at: ctype.Aggregate, keep: bool)
-    verb: str @ "release"
+    verb: str @= "release"
 
     if keep
         verb @ "retain"
@@ -159,7 +159,7 @@ function variant_reference_body(@w: writer.Writer, c: state.Checked, names: ctyp
     else
         writer.line(@w, text: "HERO_TU_LOCAL void " + at.prefix + "_release(" + at.c_type + " *v) {")
     writer.line(@w, text: "    switch (v->tag) {")
-    case_at: i64 @ 0
+    case_at: i64 @= 0
 
     for one_case in types.cases_of(decls, decl: decl)
         if one_case.fields.len() > 0 && owns_case(c, decls, decl: decl, at: case_at)
@@ -198,7 +198,7 @@ test "ownership is the declaration's fact, and the walk is one line per counted 
     )
     assert owns(got.c, got.decls, decl: 0)
     assert !owns(got.c, got.decls, decl: 1)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     at = ctype.aggregate(got.names, decl: 0)
     reference_body(@w, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0), keep: false)
     text = writer.finish(w)
@@ -211,7 +211,7 @@ test "a variant switches on the tag and touches only the counted case"
     assert owns(got.c, got.decls, decl: 0)
     assert owns_case(got.c, got.decls, decl: 0, at: 0)
     assert !owns_case(got.c, got.decls, decl: 0, at: 1)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     at = ctype.aggregate(got.names, decl: 0)
     variant_reference_body(@w, got.c, got.names, got.s, got.decls, decl: 0, at: at, keep: true)
     text = writer.finish(w)

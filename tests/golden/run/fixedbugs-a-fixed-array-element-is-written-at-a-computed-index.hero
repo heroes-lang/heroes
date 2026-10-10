@@ -24,7 +24,7 @@ function bump(@q: Quad, at: i64)
     q.a[0] @ q.a[0] + 1
 
 function main()
-    q: Quad @ Quad(a: [1, 2, 3, 4], after: 1000)
+    q: Quad @= Quad(a: [1, 2, 3, 4], after: 1000)
 
     for i in range(from: 0, to: 4)
         q.a[i] @ q.a[i] * 10

@@ -20,21 +20,21 @@
 # Whether each number up to `limit` is prime, indexed by the number itself,
 # so `flags[7]` answers about 7 and there is nothing to translate.
 function sieve(limit: i64) -> [bool]
-    flags: [bool] @ []
-    i: i64 @ 0
+    flags: [bool] @= []
+    i: i64 @= 0
 
     while i <= limit
         flags @ flags.push(i >= 2)
         i @ i + 1
 
-    at: i64 @ 2
+    at: i64 @= 2
 
     # `at * at <= limit` and not `at <= limit`: everything below `at * at`
     # has already been crossed out by a smaller factor, which is the whole
     # reason this is faster than trial division.
     while at * at <= limit
         if flags[at]
-            multiple: i64 @ at * at
+            multiple: i64 @= at * at
 
             while multiple <= limit
                 flags[multiple] @ false
@@ -48,8 +48,8 @@ function primes_below(limit: i64) -> [i64]
         empty: [i64] = []
         return empty
     flags = sieve(limit - 1)
-    out: [i64] @ []
-    i: i64 @ 0
+    out: [i64] @= []
+    i: i64 @= 0
 
     while i < flags.len()
         if flags[i]
@@ -68,8 +68,8 @@ function is_prime(n: i64) -> bool
 # being obvious: 2 and 3 are one apart and nothing else ever is again.
 function gaps(limit: i64) -> [i64]
     found = primes_below(limit)
-    out: [i64] @ []
-    i: i64 @ 1
+    out: [i64] @= []
+    i: i64 @= 1
 
     while i < found.len()
         out @ out.push(found[i] - found[i - 1])
@@ -91,7 +91,7 @@ function main()
     print(is_prime(2))
 
 function shown(numbers: [i64]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in numbers
         out @ out.push(one.to_str())
@@ -143,7 +143,7 @@ test "the primes near a hundred are what a table says"
 test "two and three are the only primes one apart"
     said = gaps(100)
     assert said[0] == 1
-    ones: i64 @ 0
+    ones: i64 @= 0
 
     for one in said
         if one == 1
@@ -153,8 +153,8 @@ test "two and three are the only primes one apart"
 
 test "every gap after the first is even, because every prime after two is odd"
     said = gaps(200)
-    odd_gaps: i64 @ 0
-    i: i64 @ 1
+    odd_gaps: i64 @= 0
+    i: i64 @= 1
 
     while i < said.len()
         if said[i] % 2 != 0
@@ -166,7 +166,7 @@ test "every gap after the first is even, because every prime after two is odd"
 test "the sieve and a trial division agree, which is two implementations of one answer"
     # The strongest check available without leaving the program: a second,
     # slower algorithm that shares no line with the first.
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i <= 200
         assert is_prime(i) == by_division(i)
@@ -175,7 +175,7 @@ test "the sieve and a trial division agree, which is two implementations of one 
 function by_division(n: i64) -> bool
     if n < 2
         return false
-    d: i64 @ 2
+    d: i64 @= 2
 
     while d * d <= n
         if n % d == 0

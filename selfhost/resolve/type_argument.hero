@@ -35,14 +35,14 @@ function declares_a_type(decl: ast.Decl) -> bool
 
 # Whether the name at `span` stands in a list of types written after a name.
 function in_list(s: source.Source, span: token.Span) -> bool
-    after: i64 @ span.end
+    after: i64 @= span.end
 
     while after < s.text.len() && argument_byte(s.text[after])
         after @ after + 1
 
     if after >= s.text.len() || s.text[after] != '>'
         return false
-    at: i64 @ span.start - 1
+    at: i64 @= span.start - 1
 
     while at > 0 && argument_byte(s.text[at])
         at @ at - 1
@@ -63,7 +63,7 @@ function name_byte(b: u8) -> bool
     return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
 
 function told(text: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unknown_name",
         message: "`" + text + "` is a type, written where a value stands: a generic function's type arguments are never written at a call, each is taken from the arguments or from the type the context asks for, so this `<` reads as less-than",
         span: span

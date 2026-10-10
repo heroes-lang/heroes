@@ -133,9 +133,9 @@ function new_writer(module: str) -> Writer
 # than allowed to drift.
 function line(@w: Writer, text: str)
     flush(@w)
-    needs_restore: bool @ false
-    restore_file: str @ ""
-    restore_line: i64 @ 1
+    needs_restore: bool @= false
+    restore_file: str @= ""
+    restore_line: i64 @= 1
 
     match w.intent
         .at intended =>
@@ -203,11 +203,11 @@ function blank(@w: Writer)
 # is actually written, so asking again for what is already intended
 # emits nothing here, and nothing at all if no line follows.
 function at_file(@w: Writer, file: str, at: i64)
-    wanted: i64 @ at
+    wanted: i64 @= at
 
     if wanted < 1
         wanted @ 1
-    already: bool @ false
+    already: bool @= false
 
     match w.intent
         .at intended =>
@@ -223,7 +223,7 @@ function at_file(@w: Writer, file: str, at: i64)
 # Point the next line at the generated file — around a prologue, a
 # copy-out, the shim: code no user line is responsible for.
 function at_generated(@w: Writer)
-    settled: bool @ false
+    settled: bool @= false
 
     match w.pending
         .generated_line => settled @ true
@@ -250,7 +250,7 @@ function flush(@w: Writer)
         .none_pending => return
         .source_line asked =>
             w.pending @ .none_pending
-            holds: bool @ false
+            holds: bool @= false
 
             match w.claim
                 .at believed =>
@@ -264,7 +264,7 @@ function flush(@w: Writer)
             directive(@w, file: asked.file, at: asked.line)
         .generated_line =>
             w.pending @ .none_pending
-            settled: bool @ false
+            settled: bool @= false
 
             match w.claim
                 .at believed =>
@@ -308,14 +308,14 @@ function at_span(@w: Writer, s: source.Source, offset: i64)
 ## Tests
 
 test "a second line under a source claim gets its restore, the first does not"
-    w: Writer @ new_writer("m")
+    w: Writer @= new_writer("m")
     at_file(@w, file: "a.hero", at: 3)
     line(@w, text: "x;")
     line(@w, text: "y;")
     assert finish(w) == "#line 3 \"a.hero\"\nx;\n#line 3 \"a.hero\"\ny;\n"
 
 test "a claim on the generated file rides auto-increment for free"
-    w: Writer @ new_writer("m")
+    w: Writer @= new_writer("m")
     at_generated(@w)
     line(@w, text: "int a;")
     line(@w, text: "int b;")
@@ -324,7 +324,7 @@ test "a claim on the generated file rides auto-increment for free"
     assert finish(w) == "#line 2 \"m.c\"\nint a;\nint b;\n"
 
 test "asking for what is already intended emits nothing"
-    w: Writer @ new_writer("m")
+    w: Writer @= new_writer("m")
     at_file(@w, file: "a.hero", at: 5)
     at_file(@w, file: "a.hero", at: 5)
     line(@w, text: "z;")
@@ -332,14 +332,14 @@ test "asking for what is already intended emits nothing"
 
     # A different line IS a new directive, and the one it replaces, which no
     # line followed, is never written (defect 263).
-    again: Writer @ new_writer("m")
+    again: Writer @= new_writer("m")
     at_file(@again, file: "a.hero", at: 5)
     at_file(@again, file: "a.hero", at: 6)
     line(@again, text: "z;")
     assert finish(again) == "#line 6 \"a.hero\"\nz;\n"
 
 test "a file's #line spelling is kept across a restore, the generated file and a turn to another file (defect 262)"
-    w: Writer @ new_writer("m")
+    w: Writer @= new_writer("m")
     at_file(@w, file: "dé/a\"b.hero", at: 3)
     line(@w, text: "x;")
     line(@w, text: "y;")
@@ -357,8 +357,8 @@ test "a file's #line spelling is kept across a restore, the generated file and a
     assert finish(w) == "#line 3 \"dé/a\\\"b.hero\"\nx;\n#line 3 \"dé/a\\\"b.hero\"\ny;\n#line 6 \"m.c\"\nz;\n#line 4 \"dé/a\\\"b.hero\"\nu;\n#line 1 \"t?\\?).hero\"\nv;\n#line 5 \"dé/a\\\"b.hero\"\nw;\n"
 
 test "the chunk flush loses no line and adds none"
-    w: Writer @ new_writer("m")
-    n: i64 @ 0
+    w: Writer @= new_writer("m")
+    n: i64 @= 0
 
     while n < CHUNK_LINES + 3
         line(@w, text: "x;")
@@ -370,8 +370,8 @@ test "the chunk flush loses no line and adds none"
     assert finish(w) == repeat("x;\n\n", (CHUNK_LINES + 3).to_u64().must())
 
 test "a writer that ends exactly on a chunk boundary adds nothing"
-    w: Writer @ new_writer("m")
-    n: i64 @ 0
+    w: Writer @= new_writer("m")
+    n: i64 @= 0
 
     while n < CHUNK_LINES
         line(@w, text: "y;")
@@ -382,9 +382,9 @@ test "a writer that ends exactly on a chunk boundary adds nothing"
 test "defect 409: forty chunks and a ragged one keep every line once, in order"
     # Both arrays are lent to `add_line` now; a line out of place, lost or
     # written twice across forty flushes would show in the numbers.
-    w: Writer @ new_writer("m")
-    want: [str] @ []
-    n: i64 @ 0
+    w: Writer @= new_writer("m")
+    want: [str] @= []
+    n: i64 @= 0
 
     while n < CHUNK_LINES * 40 + 5
         line(@w, text: n.to_str())
@@ -398,7 +398,7 @@ test "a request no line follows writes no #line (defect 263)"
     # A retain or a release after a release asked for its instruction's
     # source line and then for the generated file's: two directives, the
     # first followed by nothing but the second.
-    w: Writer @ new_writer("m")
+    w: Writer @= new_writer("m")
     at_file(@w, file: "a.hero", at: 4)
     line(@w, text: "x;")
     at_file(@w, file: "a.hero", at: 9)
@@ -410,14 +410,14 @@ test "a request no line follows writes no #line (defect 263)"
     assert finish(w) == "#line 4 \"a.hero\"\nx;\n#line 4 \"m.c\"\nhero_str_decref(h1);\nhero_str_decref(h2);\n"
 
     # And a request the output ends on is never written at all.
-    tail: Writer @ new_writer("m")
+    tail: Writer @= new_writer("m")
     line(@tail, text: "a;")
     at_file(@tail, file: "a.hero", at: 2)
     at_generated(@tail)
     assert finish(tail) == "a;\n"
 
     # A source line the claim already holds is not stated twice.
-    held: Writer @ new_writer("m")
+    held: Writer @= new_writer("m")
     at_file(@held, file: "a.hero", at: 7)
     line(@held, text: "p;")
     at_generated(@held)

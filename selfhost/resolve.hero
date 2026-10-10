@@ -38,7 +38,7 @@ use resolve/rest_zero
 use resolve/asked
 
 function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use]) -> resolved.Resolved
-    asking: asked.Asking @ asked.new_asking()
+    asking: asked.Asking @= asked.new_asking()
     return resolve_asking(a, s, decls, uses, @asking)
 
 # The same, the did-you-mean answering from `asking` and keeping its new
@@ -46,7 +46,7 @@ function resolve(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use
 # asked: `rename_fit.fits` reads each trial so (defect 386). The resolver
 # holds the one reference while it works, so the answers grow in place.
 function resolve_asking(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [ast.Use], @asking: asked.Asking) -> resolved.Resolved
-    r: state.Resolver @ state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
+    r: state.Resolver @= state.new_resolver(expr_count: a.exprs.len(), type_count: a.types.len())
     r.asking @ asking
     asking @ asked.new_asking()
 
@@ -65,7 +65,7 @@ function resolve_asking(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [
             resolved.note_hole(@r.out, source.module_at(s, expr.span.start))
 
     top.collect(@r, s, decls, uses)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for decl in decls
         r.owner @ index
@@ -102,12 +102,12 @@ function resolve_asking(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [
 # they were found (`stable.order`, defect 105: the insertion this was
 # copied the list at every diagnostic, quadratic in them).
 function by_position(diagnostics: [diag.Diagnostic]) -> [diag.Diagnostic]
-    starts: [i64] @ []
+    starts: [i64] @= []
 
     for d in diagnostics
         starts @ starts.push(d.span.start)
 
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
 
     for at in stable.order(by: starts)
         taken = diagnostics[at]
@@ -129,7 +129,7 @@ test "a clean program resolves end-to-end, every table filled"
     assert out.diagnostics.len() == 0
 
     # The two Point mentions in the signature landed in type_uses.
-    tops: i64 @ 0
+    tops: i64 @= 0
 
     for u in out.type_uses
         found = match u
@@ -197,12 +197,12 @@ test "an @ handed to a construction is told at the name stage"
     assert out.diagnostics[0].code == "marker_mismatch"
     assert out.diagnostics[0].fixes[0].certainty == .guess
     in_a_case = resolved_source(
-        "variant V\n    one\n        x: i64\n\nfunction f() -> V\n    n: i64 @ 1\n    return .one(x: @n)\n"
+        "variant V\n    one\n        x: i64\n\nfunction f() -> V\n    n: i64 @= 1\n    return .one(x: @n)\n"
     )
     assert in_a_case.diagnostics.len() == 1
     assert in_a_case.diagnostics[0].code == "marker_mismatch"
     called = resolved_source(
-        "function g(x: i64) -> i64\n    return x\n\nfunction f() -> i64\n    n: i64 @ 1\n    return g(@n)\n"
+        "function g(x: i64) -> i64\n    return x\n\nfunction f() -> i64\n    n: i64 @= 1\n    return g(@n)\n"
     )
     assert called.diagnostics.len() == 0
 
@@ -228,7 +228,7 @@ test "a reading handed another's answers says what it says alone"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     alone = resolve(p.tree, s, p.decls, p.uses)
-    asking: asked.Asking @ asked.new_asking()
+    asking: asked.Asking @= asked.new_asking()
     first = resolve_asking(p.tree, s, p.decls, p.uses, @asking)
     answered = keys(asking.answers).len()
     second = resolve_asking(p.tree, s, p.decls, p.uses, @asking)
@@ -244,7 +244,7 @@ test "a reading handed another's answers says what it says alone"
 # called needs a second file, which a golden case cannot hold.
 test "an @ no parameter takes asks nothing of the name it marks"
     past = resolved_source(
-        "function f(@x: i64)\n    x @ x + 1\n\nfunction g()\n    n: i64 @ 1\n    m = 2\n    f(@n, @m)\n    f(@n, @n)\n"
+        "function f(@x: i64)\n    x @ x + 1\n\nfunction g()\n    n: i64 @= 1\n    m = 2\n    f(@n, @m)\n    f(@n, @n)\n"
     )
     assert past.diagnostics.len() == 0
     inputs: [source.InputFile] = [

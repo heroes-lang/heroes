@@ -30,12 +30,12 @@ extern "hero_os.h"
     function hero_thread_join(handle: i64) -> i64
 
 function inner()
-    y: i32 @ 0
+    y: i32 @= 0
     put_one(x: @y, v: 5)
     print("inner ", y)
 
 function depth(n: i64) -> i64
-    x: i32 @ 0
+    x: i32 @= 0
     put_one(x: @x, v: n.to_i32().must())
 
     if n == 0
@@ -44,7 +44,7 @@ function depth(n: i64) -> i64
     return below + x.to_i64().must()
 
 function early(flag: bool) -> i32
-    x: i32 @ 0
+    x: i32 @= 0
     put_one(x: @x, v: 3)
 
     if flag
@@ -53,7 +53,7 @@ function early(flag: bool) -> i32
     return x
 
 function on_a_thread(n: i64) -> i64
-    x: i32 @ 0
+    x: i32 @= 0
     put_one(x: @x, v: n.to_i32().must())
     count_up(@x)
     return x.to_i64().must()
@@ -68,29 +68,29 @@ function step_twice(@k: Keeper) -> i32
     return step(@k) + step(@k)
 
 function main()
-    n: i32 @ 0
-    round: i64 @ 0
+    n: i32 @= 0
+    round: i64 @= 0
 
     while round < 5
         count_up(@n)
         round @ round + 1
 
     print(n)
-    k: Keeper @ Keeper(self: nullptr, count: 0)
+    k: Keeper @= Keeper(self: nullptr, count: 0)
     keeper_init(@k)
     print(keeper_step(@k), " ", keeper_step(@k), " ", k.count)
     print(depth(10))
-    late: i32 @ 0
+    late: i32 @= 0
     put_after(@late, cb: inner)
     print(late)
     print(early(flag: true), " ", early(flag: false))
     t = hero_thread_spawn(body: on_a_thread, arg: 41)
     print(hero_thread_join(handle: t))
-    md: [u8] @ []
-    m: i32 @ 0
+    md: [u8] @= []
+    m: i32 @= 0
     stamp32(@md, seed: 1)
     put_one(x: @m, v: md.len().to_i32().must())
     print(m, " ", md[0])
-    w: Keeper @ Keeper(self: nullptr, count: 0)
+    w: Keeper @= Keeper(self: nullptr, count: 0)
     start(@w)
     print(step_twice(@w), " ", w.count)

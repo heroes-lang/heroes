@@ -49,8 +49,8 @@ function put(path: str, bytes: [i64]) -> bool
 # digits each, the first's then the second's.
 function digest(text: str) -> str
     m = 2147483647
-    a: i64 @ 0
-    b: i64 @ 0
+    a: i64 @= 0
+    b: i64 @= 0
 
     for k in range(from: 0, to: text.len())
         v = text[k].to_i64().must()
@@ -61,8 +61,8 @@ function digest(text: str) -> str
 
 function hex8(number: i64) -> str
     ds = "0123456789abcdef"
-    out: str @ ""
-    value: i64 @ number
+    out: str @= ""
+    value: i64 @= number
 
     for _ in range(from: 0, to: 8)
         d = value % 16
@@ -73,8 +73,8 @@ function hex8(number: i64) -> str
 
 # The key the Heroes route made of the file at `path`.
 function keyed(path: str) -> str
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
 
     if status == HERO_OS_OK
@@ -85,7 +85,7 @@ function said(name: str, bytes: [i64])
     if !put(path: AT, bytes: bytes)
         print("cannot build the fixture")
         return
-    status: i64 @ 0
+    status: i64 @= 0
     key = hero_file_key(path: AT.cstr(), status: @status)
     print(name, " ", key, " ", key == keyed(AT), " ", status == HERO_OS_NOT_TEXT)
 
@@ -99,12 +99,12 @@ function main()
     # character cut short by the end of the file.
     said(name: "mixed", bytes: [97, 233, 98, 239, 191, 189, 10, 195])
     said(name: "NUL and high bytes", bytes: [0, 1, 2, 255, 254, 128, 191, 192, 245])
-    every: [i64] @ []
+    every: [i64] @= []
 
     for k in range(from: 0, to: 300)
         every @ every.push(k % 256)
 
     said(name: "every byte", bytes: every)
-    status: i64 @ 0
+    status: i64 @= 0
     missing = hero_file_key(path: "build/heroes-golden-key-484-not-there.bin".cstr(), status: @status)
     print("missing [", missing, "] ", status == HERO_OS_NOT_FOUND)

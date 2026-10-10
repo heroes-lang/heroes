@@ -28,8 +28,8 @@ use cli/two_ways_ask
 # The diagnostics for every undefined symbol the linker named that a group
 # binds and the header lists of `asking` give only an inline definition of.
 function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, asking: [probing.Probing]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
-    seen: {str: bool} @ {}
+    out: [diag.Diagnostic] @= []
+    seen: {str: bool} @= {}
 
     for line in ffi_lookup.lines(text: message)
         name = ffi_build.undefined_symbol(line)
@@ -51,12 +51,12 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
     return out
 
 function diagnostic(name: str, bound: ffi_lookup.Declared, answer: two_ways_ask.Answer?) -> diag.Diagnostic
-    place: str @ "`" + bound.header + "`"
+    place: str @= "`" + bound.header + "`"
 
     if !answer.is_err() && answer.must().row > 0
         found = answer.must()
         place @ "`" + clang_place.shown(path: found.path, directory: clang_place.found_in(path: found.path, spelled: bound.header)) + "` line " + found.row.to_str()
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_link",
         message: "`" + name + "` is defined only `inline` in " + place + ", and nothing else defines it: C wants one external definition of it in the program, which a call reaches wherever it is not inlined, and an `inline` definition alone in a header gives none",
         span: bound.span

@@ -44,12 +44,12 @@ record Read
 # splits them.
 function read_dump(dump: str, lines: [str]) -> Read?
     rows = json_fields.items_of(json_read.read_json(dump)?)?
-    out: [Tok] @ []
-    misplaced: [str] @ []
-    index: i64 @ 0
+    out: [Tok] @= []
+    misplaced: [str] @= []
+    index: i64 @= 0
 
     for row in rows
-        t: Tok @ Tok(
+        t: Tok @= Tok(
             kind: json_fields.text_field(row, name: "kind")?,
             text: json_fields.text_field(row, name: "text")?,
             line: json_fields.whole_field(row, name: "line")?,
@@ -90,8 +90,8 @@ function closer(kind: str) -> bool
 # begins, its length where `chars` is the count of all of them, or -1 past
 # that. A character is every byte but a continuation byte.
 function byte_of_char(text: str, count: i64) -> i64
-    at: i64 @ 0
-    counted: i64 @ 0
+    at: i64 @= 0
+    counted: i64 @= 0
 
     while counted < count
         if at >= text.len()
@@ -107,7 +107,7 @@ function byte_of_char(text: str, count: i64) -> i64
 
 # How many characters `text` holds.
 function characters(text: str) -> i64
-    count: i64 @ 0
+    count: i64 @= 0
 
     for at in range(from: 0, to: text.len())
         if text[at] < 128 || text[at] >= 192

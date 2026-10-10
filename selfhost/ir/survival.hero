@@ -77,7 +77,7 @@ function writes_nothing(f: containers.Function, op: ir.OpKind) -> bool
         .decref_slot | .hole | .missing                                      => true
 
 function any_inout(f: containers.Function, over: ir.Run) -> bool
-    at: i64 @ over.start
+    at: i64 @= over.start
 
     while at < over.start + over.length
         if at < 0 || at >= f.arguments.len()
@@ -91,7 +91,7 @@ function any_inout(f: containers.Function, over: ir.Run) -> bool
 
 # The root of every `@` argument a run holds.
 function inout_roots(f: containers.Function, over: ir.Run) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for arg in containers.args_of(f, over)
         match arg
@@ -110,19 +110,19 @@ record Survivors
 
 function survivors(f: containers.Function, insts: [ir.Inst], term: ir.Term) -> Survivors
     n = insts.len()
-    survive: [bool] @ []
+    survive: [bool] @= []
 
     while survive.len() < n
         survive @ survive.push(false)
 
     # Each value's last read, the terminator's at position n.
-    last: {i64: i64} @ {}
-    visits: i64 @ 0
+    last: {i64: i64} @= {}
+    visits: i64 @= 0
 
     for v in uses.terminator_operands(term)
         last[v] @ n
 
-    at: i64 @ n - 1
+    at: i64 @= n - 1
 
     while at >= 0
         for v in uses.operands(f, insts[at].op)
@@ -136,14 +136,14 @@ function survivors(f: containers.Function, insts: [ir.Inst], term: ir.Term) -> S
     # Each root's nearest write below the position, and the nearest write to
     # every root at once; -1 where there is none. A load is answered before
     # its own position's writes are taken, since a write must follow it.
-    below: {i64: i64} @ {}
-    every: i64 @ 0 - 1
+    below: {i64: i64} @= {}
+    every: i64 @= 0 - 1
     at @ n - 1
 
     while at >= 0
         visits @ visits + 1
         one = insts[at]
-        root: i64 @ 0 - 1
+        root: i64 @= 0 - 1
 
         match one.op
             .load ld                                                               => root @ ld.place.root
@@ -153,7 +153,7 @@ function survivors(f: containers.Function, insts: [ir.Inst], term: ir.Term) -> S
             .hole | .missing                                                       => root @ root
 
         if root >= 0 && !one.dest.is_err()
-            write: i64 @ below[root].default(0 - 1)
+            write: i64 @= below[root].default(0 - 1)
 
             if every >= 0 && (write < 0 || every < write)
                 write @ every
@@ -185,8 +185,8 @@ function survivors(f: containers.Function, insts: [ir.Inst], term: ir.Term) -> S
 # per load cost the block's length squared; this reading stays as the
 # oracle `ir/own.hero`'s test holds that one to.
 function load_survives_write(f: containers.Function, insts: [ir.Inst], term: ir.Term, load_at: i64, root: i64, value: i64) -> bool
-    written: bool @ false
-    at: i64 @ load_at + 1
+    written: bool @= false
+    at: i64 @= load_at + 1
 
     while at < insts.len()
         if written

@@ -25,7 +25,7 @@
 # `check --brief` 11.5 billion instructions more than the same messages on
 # 2,000 lines (this Mac, the base's compiler).
 function at(text: str, continuations: [i64], start: i64, offset: i64) -> i64
-    col: i64 @ offset - start - (first_from(continuations, bound: offset) - first_from(continuations, bound: start)) + 1
+    col: i64 @= offset - start - (first_from(continuations, bound: offset) - first_from(continuations, bound: start)) + 1
 
     if ends_crlf(text: text, start: start, offset: offset)
         col @ col - 1
@@ -34,8 +34,8 @@ function at(text: str, continuations: [i64], start: i64, offset: i64) -> i64
 # The offset of every byte of `text` that continues a character, 0x80 to 0xBF
 # in UTF-8, ascending: what a column leaves out of a line's bytes.
 function continuations_of(text: str) -> [i64]
-    out: [i64] @ []
-    i: i64 @ 0
+    out: [i64] @= []
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] >= 128 && text[i] < 192
@@ -47,8 +47,8 @@ function continuations_of(text: str) -> [i64]
 # The index of the first entry of `sorted` at or past `bound`, `sorted.len()`
 # where none is.
 function first_from(sorted: [i64], bound: i64) -> i64
-    lo: i64 @ 0
-    hi: i64 @ sorted.len()
+    lo: i64 @= 0
+    hi: i64 @= sorted.len()
 
     while lo < hi
         mid = (lo + hi) / 2
@@ -94,14 +94,14 @@ function of(text: str, start: i64, offset: i64) -> i64
 test "a column from the table is the characters of its line before it (defect 372)"
     text = "a\té€😀 x\r\n\r\nü = 1 # ✓\nend"
     table = continuations_of(text)
-    start: i64 @ 0
-    offset: i64 @ 0
+    start: i64 @= 0
+    offset: i64 @= 0
 
     while offset <= text.len()
         if offset < text.len() && text[offset] >= 128 && text[offset] < 192
             offset @ offset + 1
             continue
-        counted: i64 @ text.slice(from: start, to: offset).chars().len() + 1
+        counted: i64 @= text.slice(from: start, to: offset).chars().len() + 1
 
         if ends_crlf(text: text, start: start, offset: offset)
             counted @ counted - 1

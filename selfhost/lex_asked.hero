@@ -98,7 +98,7 @@ constant SIZE: i64
 
 # Nothing remembered.
 function fresh() -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for _ in range(from: 0, to: SIZE)
         out @ out.push(-1)
@@ -121,7 +121,7 @@ test "a fresh memory holds nothing, and a rewrite of the tokens empties what was
     assert asked[PUSHES] == 0
     assert asked[NONE_AT] == -1 && asked[NONE_AT + 2] == -1 && asked[NONE_FLOOR + 1] == -1
     assert asked[LINE_SEEN] == -1 && asked[LINE_IN] == 0 && asked[SEMI_AT] == -1
-    read: [i64] @ asked
+    read: [i64] @= asked
     read[LINE_SEEN] @ 9
     read[FOR_SEEN] @ 4
     read[LINE_FROM] @ 3

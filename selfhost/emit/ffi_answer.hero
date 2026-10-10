@@ -12,14 +12,14 @@ use emit/field_asked
 # clang's answer, read: a question's line is an answer, the rest was said again.
 # ORDER: none, the walk over `reached` fills a map, and nothing reads its order.
 function read(stderr: str) -> ffi_asked.Asked
-    said: [str] @ []
-    values: {str: bool} @ {}
-    macros: {str: bool} @ {}
-    reached: {str: bool} @ {}
-    refused: {str: str} @ {}
-    results: {str: ffi_asked.Typed} @ {}
-    fields: {str: ffi_asked.Typed} @ {}
-    widths: {str: i64} @ {}
+    said: [str] @= []
+    values: {str: bool} @= {}
+    macros: {str: bool} @= {}
+    reached: {str: bool} @= {}
+    refused: {str: str} @= {}
+    results: {str: ffi_asked.Typed} @= {}
+    fields: {str: ffi_asked.Typed} @= {}
+    widths: {str: i64} @= {}
 
     for row in ffi_lookup.lines(text: stderr)
         if !begins(text: row, prefix: ffi_asked.ASK)
@@ -60,7 +60,7 @@ function read(stderr: str) -> ffi_asked.Asked
             else if ffi_lookup.has(text: row, needle: "unknown type name")
                 refused[name] @ "neither"
 
-    types: {str: str} @ {}
+    types: {str: str} @= {}
 
     for name in keys(reached)
         types[name] @ refused[name].default("type")
@@ -80,8 +80,8 @@ function read(stderr: str) -> ffi_asked.Asked
 # question's own words, up to the colon that opens the position.
 function asked_name(row: str, prefix: str) -> str
     cs = row.chars()
-    index: i64 @ prefix.chars().len()
-    kept: [str] @ []
+    index: i64 @= prefix.chars().len()
+    kept: [str] @= []
 
     while index < cs.len() && cs[index] != ":"
         kept @ kept.push(cs[index])
@@ -99,8 +99,8 @@ function begins(text: str, prefix: str) -> bool
 # the module whose unit was refused, is the one its reader is about.
 # ORDER: none — each walk fills a table keyed by name.
 function merged(first: ffi_asked.Asked, then: ffi_asked.Asked) -> ffi_asked.Asked
-    out: ffi_asked.Asked @ first
-    said: [str] @ []
+    out: ffi_asked.Asked @= first
+    said: [str] @= []
 
     for one in [first.said, then.said]
         if one.len() > 0

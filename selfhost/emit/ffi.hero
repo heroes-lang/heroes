@@ -78,7 +78,7 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     # type spells itself without a table. `struct_tags` is the same
     # reason one level up: the round that failed spelled its handles with
     # it, so the table rebuilt here has to (defect 037).
-    names: ctype.Names @ ctype.with_functions(
+    names: ctype.Names @= ctype.with_functions(
         ctype.new_names_qualified(s, decls, struct_tags: struct_tags),
         c: c,
         s: s,
@@ -89,8 +89,8 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     # And the casts the round wrote its lends with, read from the same answers
     # (defect 427), so a probe line rebuilt here is the one clang read.
     names.lend_units @ lend_type.with_read_casts(names.lend_units, answered)
-    found: [diag.Diagnostic] @ []
-    text: str @ stderr
+    found: [diag.Diagnostic] @= []
+    text: str @= stderr
 
     if asked.said.len() > 0
         text @ stderr + "\n" + asked.said

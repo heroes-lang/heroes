@@ -123,7 +123,7 @@ record Run
     stride: i64
 
 function start(families: [str], stride: i64) -> Run
-    tallies: [Tally] @ []
+    tallies: [Tally] @= []
 
     for family in families
         tallies @ tallies.push(Tally(family: family, generated: 0, judged: 0, parsing: 0, held: 0, guard: 0, reader: 0))
@@ -133,9 +133,9 @@ function start(families: [str], stride: i64) -> Run
 # Every variant of `s` in the families `r` counts, counted, and the ones
 # its stride picks judged.
 function probe_seed(@r: Run, s: seed.Seed)
-    tallies: [Tally] @ r.tallies
-    discards: [Discard] @ r.discards
-    failures: [Failure] @ r.failures
+    tallies: [Tally] @= r.tallies
+    discards: [Discard] @= r.discards
+    failures: [Failure] @= r.failures
 
     for k in range(from: 0, to: tallies.len())
         family = tallies[k].family
@@ -171,7 +171,7 @@ function probe_seed(@r: Run, s: seed.Seed)
 
 # `discards` with one more of `code` in `family`.
 function discarded(discards: [Discard], family: str, code: str) -> [Discard]
-    out: [Discard] @ discards
+    out: [Discard] @= discards
 
     for k in range(from: 0, to: out.len())
         if out[k].family == family && out[k].code == code
@@ -207,7 +207,7 @@ function reader_fails(text: str) -> bool
 
 # Every family over `seeds`, judged whole: the run and what it counted.
 function every_family(seeds: [str]) -> Run
-    r: Run @ start(FAMILIES, stride: 1)
+    r: Run @= start(FAMILIES, stride: 1)
 
     for text in seeds
         done = guard.checked(path: "t.hero", s: source.new_source(name: "t.hero", text: text))

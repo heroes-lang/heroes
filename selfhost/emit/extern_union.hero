@@ -92,7 +92,7 @@ record Site
 # with one `sort` per walk (design.md §4.9).
 function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl])
     u = used(p, c, decls)
-    wanted: {i64: bool} @ {}
+    wanted: {i64: bool} @= {}
 
     for site in u.sites
         if site.given.len() >= 2
@@ -101,7 +101,7 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
     for decl in sort(keys(u.operated))
         wanted[decl] @ true
 
-    wrote: bool @ false
+    wrote: bool @= false
 
     for decl in sort(keys(wanted))
         match decls[decl].kind
@@ -127,7 +127,7 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
                 # where that defect was fixed. With tag, c_type is two
                 # words, and the mapper reads token 1 as the name.
                 hero_name = source.span_text(s, decls[decl].name)
-                parts: [str] @ []
+                parts: [str] @= []
 
                 for field in rec.fields
                     parts @ parts.push(source.span_text(s, field.name))
@@ -154,8 +154,8 @@ function union_assertions(@w: writer.Writer, p: containers.Program, c: state.Che
                     for field in rec.fields
                         name = source.span_text(s, field.name)
                         written = state.written_type(c, field.ty)
-                        holds: str @ not_union
-                        marker: str @ UNION_KIND
+                        holds: str @= not_union
+                        marker: str @= UNION_KIND
 
                         if !written.is_err() && layout_compare.compares_bitwise(c, decls, ty: written.must())
                             holds @ not_union + " || sizeof(((" + c_type + " *)0)->" + name + ") == sizeof(" + c_type + ")"
@@ -212,11 +212,11 @@ function omits(u: Used, decl: i64, count: i64) -> bool
 # reachable is WORSE than refusing neither, because the wrong answer
 # moves from a comparison the author wrote to a bucket they never see.
 function used(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Used
-    operated: {i64: bool} @ {}
-    sites: [Site] @ []
+    operated: {i64: bool} @= {}
+    sites: [Site] @= []
 
     # One set of walked types for every `reach` below (defect 229).
-    seen: {i64: bool} @ {}
+    seen: {i64: bool} @= {}
 
     for f in p.functions
         for blk in f.blocks
@@ -269,11 +269,11 @@ function has(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
@@ -296,7 +296,7 @@ test "constructed and compared records are asked, read-only ones are not"
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     union_assertions(@w, low.program, c, names, s, parsed.decls)
     got = writer.finish(w)
 
@@ -331,7 +331,7 @@ test "a compared handle asks C nothing, a union's handle included (defect 419)"
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     union_assertions(@w, low.program, c, names, s, parsed.decls)
     got = writer.finish(w)
     assert !has(text: got, needle: "_Static_assert")

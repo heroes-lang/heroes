@@ -25,8 +25,8 @@ use print/owners
 # One entry per comment of the file, in order: `"<word> <count>"` for one
 # inside a set, the empty text for every other.
 function in_sets(lines: owners.Lines, decls: [ast.Decl]) -> [str]
-    out: [str] @ []
-    ordinal: [i64] @ []
+    out: [str] @= []
+    ordinal: [i64] @= []
 
     for t in lines.tokens
         if t.kind == .comment
@@ -54,11 +54,11 @@ function mark(@out: [str], lines: owners.Lines, ordinal: [i64], word: str, set: 
     if set.is_err()
         return
     span = set.must()
-    at: i64 @ owners.index_at(lines, offset: span.start)
+    at: i64 @= owners.index_at(lines, offset: span.start)
 
     if at < 0
         return
-    count: i64 @ 0
+    count: i64 @= 0
 
     while at < lines.tokens.len() && lines.tokens[at].span.start < span.end
         if lines.tokens[at].kind == .comment

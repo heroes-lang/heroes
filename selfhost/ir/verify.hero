@@ -69,7 +69,7 @@ function from_c(decls: [ast.Decl], f: containers.Function) -> bool
 # message, because "which pass produced this" is the first question a
 # violation raises and the compiler already knows the answer.
 function verify(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> [str]
-    problems: [str] @ []
+    problems: [str] @= []
     kinds = phases.type_kinds(c)
     held = instances.indexed(p)
 
@@ -86,7 +86,7 @@ function verify(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> [
             continue
         known = phases.facts(p, f, c, kinds: kinds)
         jumps = graph.jumps_into(f.blocks)
-        index: i64 @ 0
+        index: i64 @= 0
 
         for blk in f.blocks
             at = label + "bb" + index.to_str() + ": "
@@ -105,7 +105,7 @@ function verify(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> [
     return problems
 
 function check_terminator(f: containers.Function, blk: containers.Block, at: str, @problems: [str])
-    is_open: bool @ false
+    is_open: bool @= false
 
     match blk.term
         .open                                                        => is_open @ true
@@ -138,7 +138,7 @@ function check_preds(jumps: graph.Edges, index: i64, blk: containers.Block, at: 
         problems @ problems.push(at + "preds " + render_list(blk.preds) + " but " + render_list(wanted) + " jump here")
 
 function render_list(list: [i64]) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for v in list
         rendered @ rendered.push(v.to_str())
@@ -146,11 +146,11 @@ function render_list(list: [i64]) -> str
     return "[" + rendered.join(", ") + "]"
 
 function check_instructions(f: containers.Function, blk: containers.Block, at: str, @problems: [str])
-    index: i64 @ 0
+    index: i64 @= 0
 
     for inst in blk.insts
-        is_missing: bool @ false
-        is_abort: bool @ false
+        is_missing: bool @= false
+        is_abort: bool @= false
 
         # NOT `continue` in any arm: this loop keeps its own position,
         # and a `continue` — even from inside the nested match below —
@@ -203,7 +203,7 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
         if is_abort
             if index + 1 != blk.insts.len()
                 problems @ problems.push(at + "an abort with instructions after it")
-            ends_unreachable: bool @ false
+            ends_unreachable: bool @= false
 
             match blk.term
                 .unreachable                                          => ends_unreachable @ true
@@ -228,7 +228,7 @@ function check_instructions(f: containers.Function, blk: containers.Block, at: s
 # passed, which is precisely the wrong program §4.8 exists to refuse
 # (sweep 001 audit S8's class, one milestone apart).
 function check_copy_out(f: containers.Function, blk: containers.Block, at: str, @problems: [str])
-    is_return: bool @ false
+    is_return: bool @= false
 
     match blk.term
         .return_term                                          => is_return @ true
@@ -236,7 +236,7 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
 
     if !is_return
         return
-    owed: [i64] @ []
+    owed: [i64] @= []
 
     for slot_id in f.params
         match f.slots[slot_id].kind
@@ -247,7 +247,7 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
 
     if owed.len() == 0
         return
-    written: [i64] @ []
+    written: [i64] @= []
 
     for inst in blk.insts
         match inst.op
@@ -263,10 +263,10 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
 
     if written == owed
         return
-    missing: [str] @ []
+    missing: [str] @= []
 
     for slot_id in owed
-        seen: bool @ false
+        seen: bool @= false
 
         for w in written
             if w == slot_id
@@ -278,13 +278,13 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
     # A duplicate is an adjacent pair once sorted — multiplicity, not
     # membership: copying s0 out twice and s1 never is two writes for
     # two parameters, which is exactly what counting could not see.
-    extra: [str] @ []
-    pair: i64 @ 1
+    extra: [str] @= []
+    pair: i64 @= 1
 
     while pair < written.len()
         if written[pair] == written[pair - 1]
             name = "s" + written[pair].to_str()
-            already: bool @ false
+            already: bool @= false
 
             for e in extra
                 if e == name
@@ -295,7 +295,7 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
         pair @ pair + 1
 
     for w in written
-        in_owed: bool @ false
+        in_owed: bool @= false
 
         for o in owed
             if o == w
@@ -303,7 +303,7 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
 
         if !in_owed
             name = "s" + w.to_str()
-            already: bool @ false
+            already: bool @= false
 
             for e in extra
                 if e == name
@@ -312,7 +312,7 @@ function check_copy_out(f: containers.Function, blk: containers.Block, at: str, 
             if !already
                 extra @ extra.push(name)
 
-    said: str @ at + "returns after copying out " + written.len().to_str() + " of " + owed.len().to_str() + " `@` parameters"
+    said: str @= at + "returns after copying out " + written.len().to_str() + " of " + owed.len().to_str() + " `@` parameters"
 
     if missing.len() > 0
         said @ said + " — never " + missing.join(", ")
@@ -359,7 +359,7 @@ function verified(text: str) -> [str]
 
 test "the port's own lowering verifies clean, loops and matches included"
     clean = verified(
-        "record Point\n    x: i64\n    y: i64\n\nvariant Tok\n    word\n        text: str\n    plus\n\nfunction dist2(a: Point, b: Point) -> i64\n    dx = a.x - b.x\n    dy = a.y - b.y\n    return dx*dx + dy*dy\n\nfunction shout(t: Tok) -> str\n    return match t\n        .word w => w.text\n        .plus => \"+\"\n\nfunction total(xs: [i64]) -> i64\n    sum: i64 @ 0\n    for x in xs\n        if x == 0\n            continue\n        sum @ sum + x\n    return sum\n\nfunction bump(@n: i64)\n    n @ n + 1\n\nfunction main()\n    v: i64 @ 0\n    bump(@v)\n    print(total([1, 2, v]))\n"
+        "record Point\n    x: i64\n    y: i64\n\nvariant Tok\n    word\n        text: str\n    plus\n\nfunction dist2(a: Point, b: Point) -> i64\n    dx = a.x - b.x\n    dy = a.y - b.y\n    return dx*dx + dy*dy\n\nfunction shout(t: Tok) -> str\n    return match t\n        .word w => w.text\n        .plus => \"+\"\n\nfunction total(xs: [i64]) -> i64\n    sum: i64 @= 0\n    for x in xs\n        if x == 0\n            continue\n        sum @ sum + x\n    return sum\n\nfunction bump(@n: i64)\n    n @ n + 1\n\nfunction main()\n    v: i64 @= 0\n    bump(@v)\n    print(total([1, 2, v]))\n"
     )
     assert clean.len() == 0
 
@@ -444,7 +444,7 @@ test "a return block that skips one @ parameter is caught by identity"
 
 test "an @ argument through an index verifies clean, because a call hands over the element itself"
     clean = verified(
-        "record Bag\n    n: i64\n\nfunction bump(@b: Bag)\n    b.n @ b.n + 1\n\nfunction main()\n    bs: [Bag] @ [Bag(n: 1)]\n    bump(@bs[0])\n    print(bs[0].n)\n"
+        "record Bag\n    n: i64\n\nfunction bump(@b: Bag)\n    b.n @ b.n + 1\n\nfunction main()\n    bs: [Bag] @= [Bag(n: 1)]\n    bump(@bs[0])\n    print(bs[0].n)\n"
     )
     assert clean.len() == 0
 
@@ -535,7 +535,7 @@ test "a call and a value naming no function of the program are refused once mono
     assert verify(mono, c, parsed.decls) == ["main (after monomorphisation): bb0: a function value at bytes 30 to 34 names declaration 1 at the types [], and the program holds no such function: C would have no name for it", "main (after monomorphisation): bb0: a call at bytes 40 to 46 names declaration 1 at the types [], and the program holds no such function: C would have no name for it"]
 
     # With `gone` in the program, both name it.
-    gone_fn: containers.Function @ f
+    gone_fn: containers.Function @= f
     gone_fn.name @ "gone"
     gone_fn.decl @ 1
     gone_fn.blocks @ [
@@ -633,20 +633,20 @@ test "a merged function's return type is read where each way out stores into the
         ir.Inst(dest: void, op: .store(place: one_exit.whole(1), value: 0), ty: text_ty, span: span)
     ]
     closing: [ir.Inst] = [ir.Inst(dest: ok(2), op: .load(place: one_exit.whole(1)), ty: text_ty, span: span)]
-    f: containers.Function @ one_exit.merged(c, first: site, second: .jump(to: 2), closing: closing)
-    quiet: [str] @ []
+    f: containers.Function @= one_exit.merged(c, first: site, second: .jump(to: 2), closing: closing)
+    quiet: [str] @= []
     check_return_type(f, f.blocks[2], c, at: "f: bb2: ", problems: @quiet)
     assert quiet.len() == 0
 
     # bb1 stores a number where the function returns a string.
     f.values[1] @ table.int_ty_id(c.types)
-    wrong: [str] @ []
+    wrong: [str] @= []
     check_return_type(f, f.blocks[2], c, at: "f: bb2: ", problems: @wrong)
     assert wrong == ["f: bb2: returns the return slot `$ret0`, and bb1 stores a value of the wrong type into it"]
 
     # And the slot itself of another type than the result.
     f.values[1] @ text_ty
     f.slots[1].ty @ table.int_ty_id(c.types)
-    slot: [str] @ []
+    slot: [str] @= []
     check_return_type(f, f.blocks[2], c, at: "f: bb2: ", problems: @slot)
     assert slot == ["f: bb2: returns the return slot `$ret0`, which is not of the function's result type"]

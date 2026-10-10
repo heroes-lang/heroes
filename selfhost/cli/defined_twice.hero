@@ -55,17 +55,17 @@ record Defining
 # define, in the order of the names. `skip` are names already told, by
 # `cli/two_ways.hero`, of the same declarations.
 function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl], skip: {str: bool}) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
     lists = two_ways.own_headers(probings)
-    units: i64 @ 0
+    units: i64 @= 0
 
     for one in lists
         units @ units + one.modules.len()
 
     if units < 2
         return out
-    defining: {str: [Defining]} @ {}
-    at: i64 @ 0
+    defining: {str: [Defining]} @= {}
+    at: i64 @= 0
 
     for one in lists
         defined = definitions(t, one.probe.must())
@@ -81,7 +81,7 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
     # in this order, so a program's refusals read alike on every run.
     for name in sort(keys(defining))
         found = defining[name].must()
-        count: i64 @ 0
+        count: i64 @= 0
 
         for one in found
             count @ count + lists[one.list].modules.len()
@@ -94,8 +94,8 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
 # The diagnostic: on the first defining list's group, each defining file and
 # its line, and the modules whose units compile it.
 function diagnostic(t: toolchain.Toolchain, lists: [probing.Probing], name: str, found: [Defining], s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic
-    places: [str] @ []
-    first: two_ways.Side? @ fail(code: "none", msg: "no side yet")
+    places: [str] @= []
+    first: two_ways.Side? @= fail(code: "none", msg: "no side yet")
 
     for one in found
         list = lists[one.list]
@@ -105,17 +105,17 @@ function diagnostic(t: toolchain.Toolchain, lists: [probing.Probing], name: str,
 
         if first.is_err()
             first @ ok(side)
-        compiled: str @ ", which the unit of " + named(s, modules: list.modules) + " compiles"
+        compiled: str @= ", which the unit of " + named(s, modules: list.modules) + " compiles"
 
         if list.modules.len() > 1
             compiled @ ", which the units of " + named(s, modules: list.modules) + " each compile"
         places @ places.push(two_ways.where(side) + compiled)
 
-    what: str @ "a function"
+    what: str @= "a function"
 
     if !found[0].is_function
         what @ "an object"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_defined_twice",
         message: "`" + name + "` is defined " + places.join(", and ") + ": a C program holds one external definition of " + what + ", and the link would find more",
         span: first.must().span
@@ -134,10 +134,10 @@ function diagnostic(t: toolchain.Toolchain, lists: [probing.Probing], name: str,
 # Modules named as a `use` line spells them, `a` and `b`, or `a`, `b` and
 # `c`: each component by the module its first file is.
 function named(s: source.Source, modules: [str]) -> str
-    shown: [str] @ []
+    shown: [str] @= []
 
     for one in modules
-        spelled: str @ one
+        spelled: str @= one
 
         for entry in s.files
             if entry.component == one
@@ -210,9 +210,9 @@ function external_definitions(dumped: str) -> {str: bool}
 # The dump's top-level declarations, each with its body and GNU mark read
 # from the lines under it.
 function tops_of(dumped: str) -> [Top]
-    tops: [Top] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    tops: [Top] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at <= dumped.len()
         if at == dumped.len() || dumped[at] == 10
@@ -239,7 +239,7 @@ function child(row: str) -> bool
 
 # A top-level line: `|-FunctionDecl 0x… <range> loc [used] name 'type'[:'type'] flags`.
 function top_of(row: str) -> Top
-    kind_end: i64 @ 2
+    kind_end: i64 @= 2
 
     while kind_end < row.len() && row[kind_end] != 32
         kind_end @ kind_end + 1
@@ -250,16 +250,16 @@ function top_of(row: str) -> Top
 
     if quote < 0
         return Top(kind: kind, name: "", flags: none, body: false, gnu: false)
-    name_start: i64 @ quote
+    name_start: i64 @= quote
 
     while name_start > 0 && row[name_start - 1] != 32
         name_start @ name_start - 1
 
-    after: i64 @ closing(row, from: quote + 2)
+    after: i64 @= closing(row, from: quote + 2)
 
     if after + 1 < row.len() && row[after] == 58 && row[after + 1] == 39
         after @ closing(row, from: after + 2)
-    flags: [str] @ []
+    flags: [str] @= []
 
     for word in ffi_lookup.words(row.slice(from: after, to: row.len()))
         flags @ flags.push(word)
@@ -268,7 +268,7 @@ function top_of(row: str) -> Top
 
 # The byte after the `'` that closes a quoted type opened before `from`.
 function closing(row: str, from: i64) -> i64
-    at: i64 @ from
+    at: i64 @= from
 
     while at < row.len() && row[at] != 39
         at @ at + 1
@@ -284,13 +284,13 @@ record Merged
     inline_only: {str: bool}
 
 function merged(tops: [Top]) -> Merged
-    first_static: {str: bool} @ {}
-    seen: {str: bool} @ {}
-    function_body: {str: bool} @ {}
-    not_inline: {str: bool} @ {}
-    gnu: {str: bool} @ {}
-    object_defined: {str: bool} @ {}
-    functions: {str: bool} @ {}
+    first_static: {str: bool} @= {}
+    seen: {str: bool} @= {}
+    function_body: {str: bool} @= {}
+    not_inline: {str: bool} @= {}
+    gnu: {str: bool} @= {}
+    object_defined: {str: bool} @= {}
+    functions: {str: bool} @= {}
 
     for top in tops
         if top.name.len() == 0 || top.kind != "FunctionDecl" && top.kind != "VarDecl"
@@ -316,8 +316,8 @@ function merged(tops: [Top]) -> Merged
         else if !holds(top.flags, word: "extern") || holds(top.flags, word: "cinit") || holds(top.flags, word: "callinit")
             object_defined[top.name] @ true
 
-    out: {str: bool} @ {}
-    inline: {str: bool} @ {}
+    out: {str: bool} @= {}
+    inline: {str: bool} @= {}
 
     # ORDER: none — two sets are built, keyed by name.
     for name in keys(seen)
@@ -342,7 +342,7 @@ function holds(words: [str], word: str) -> bool
 
 # The byte offset of `needle` in `text`, or -1.
 function found_at(text: str, needle: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if bytes.bytes_at(text: text, at: at, needle: needle)

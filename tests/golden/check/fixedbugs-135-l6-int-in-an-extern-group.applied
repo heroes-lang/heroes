@@ -29,7 +29,7 @@ extern "time.h"
         tm_sec: int  #~ reserved_word
 
 function twice(n: i64) -> i64  #~ reserved_word reserved_word
-    local: i64 @ n  #~ reserved_word
+    local: i64 @= n  #~ reserved_word
     return local + n
 
 function main()

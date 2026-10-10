@@ -13,6 +13,6 @@ extern "fixedbugs-163-a-plain-char-pointee-bound-as-i8.h"
     function fill(@p: i8)
 
 function main()
-    v: i8 @ 0
+    v: i8 @= 0
     fill(@v)
     print(v)

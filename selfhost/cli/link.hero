@@ -45,7 +45,7 @@ use cli/units
 # `response_file.for_link`): they name every object, and Windows refuses a
 # line past 32,767 characters, which the compiler's own build passed.
 function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> str?
-    line: [str] @ link_line(
+    line: [str] @= link_line(
         objects: objects,
         level: level,
         sanitize: sanitize,
@@ -54,13 +54,13 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         link_names: link_names
     )
     home = binary_home(t, line: line, name: module + process.exe_suffix())
-    binary: str @ home
+    binary: str @= home
 
     # Where the binary lands, which is `binary` itself but for an author's
     # `-o` that is a link: that one is written through to the file it names
     # and stays a link (defect 136), where the rename used to replace it.
-    at: str @ binary
-    keyed: bool @ true
+    at: str @= binary
+    keyed: bool @= true
 
     if !output.is_err()
         binary @ output.must()
@@ -146,7 +146,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # directories and a package's whole answer, whose `-F` clang on Linux
 # called *argument unused during compilation*.
 function link_line(objects: [str], level: str, sanitize: bool, search_library: [str], package_flags: [str], link_names: [str]) -> [str]
-    line: [str] @ strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
+    line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
     line @ strings.with_all(list: line, more: link_flags.link_flags())
 
     for dir in search_library
@@ -207,7 +207,7 @@ function link_code(failed: ()?) -> str
 function with_suffix(path: str, suffix: str) -> str
     if suffix.len() == 0
         return path
-    at: i64 @ path.len()
+    at: i64 @= path.len()
 
     while at > 0 && path[at - 1] != '/' && path[at - 1] != '\\'
         if path[at - 1] == '.'
@@ -222,7 +222,7 @@ function with_suffix(path: str, suffix: str) -> str
 # link line, every word counted by its length so no two lines share one,
 # and the layout word and the compiler that links in the key as well.
 function binary_home(t: toolchain.Toolchain, line: [str], name: str) -> str
-    words: [str] @ [t.fingerprint, t.compiler_key, name]
+    words: [str] @= [t.fingerprint, t.compiler_key, name]
 
     for word in line
         words @ words.push(word.len().to_str() + ":" + word)
@@ -254,7 +254,7 @@ function pdb_words(suffix: str, at: str, inner: str, module: str) -> [str]
 # The last part of a path, cut at Windows' two separators, `/` and `\`, the
 # one platform `pdb_words` asks it for.
 function last_part(path: str) -> str
-    at: i64 @ path.len()
+    at: i64 @= path.len()
 
     while at > 0 && path[at - 1] != '/' && path[at - 1] != '\\'
         at @ at - 1
@@ -295,11 +295,11 @@ function build_beside(index: i64) -> i64
 
     if found.is_err()
         return 0
-    t: toolchain.Toolchain @ found.must()
+    t: toolchain.Toolchain @= found.must()
     t.build @ TOGETHER_BUILD + "-" + process.pid().to_str()
     none: [str] = []
-    memo: {str: str} @ {}
-    told: {str: bool} @ {}
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false)
     made = units.tu_object(
         t,
@@ -341,19 +341,19 @@ function build_beside(index: i64) -> i64
 test "six builds of one cold program started at once all succeed, and publish one object and one binary (defect 134)"
     dir = TOGETHER_BUILD + "-" + process.pid().to_str()
     assert !process.remove_tree(dir).is_err()
-    handles: [i64] @ []
+    handles: [i64] @= []
 
     for i in range(from: 0, to: 6)
         handles @ handles.push(hero_thread_spawn(body: build_beside, arg: i))
 
-    done: i64 @ 0
+    done: i64 @= 0
 
     for h in handles
         done @ done + hero_thread_join(handle: h)
 
     assert done == 6
-    objects: i64 @ 0
-    binaries: i64 @ 0
+    objects: i64 @= 0
+    binaries: i64 @= 0
 
     for path in process.files_under(dir).must()
         assert !strings.ends_with(text: path, suffix: ".tmp")
@@ -370,7 +370,7 @@ test "six builds of one cold program started at once all succeed, and publish on
     assert !process.remove_tree(dir).is_err()
 
 test "a binary's home is named by every word of its link line, and an author's -o is theirs (defect 134)"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-link"
     assert !process.remove_tree(t.build).is_err()
     assert binary_home(t, line: ["clang", "a.o"], name: "p") == binary_home(t, line: ["clang", "a.o"], name: "p")
@@ -379,8 +379,8 @@ test "a binary's home is named by every word of its link line, and an author's -
     # Two words are never one: each is counted by its length.
     assert binary_home(t, line: ["a b"], name: "p") != binary_home(t, line: ["a", "b"], name: "p")
     none: [str] = []
-    memo: {str: str} @ {}
-    told: {str: bool} @ {}
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
     made = units.tu_object(
         t,
@@ -471,12 +471,12 @@ test "an -o whose last part has no suffix takes the platform's, and one that has
 # `link_objects` runs carries none of a package's `-F -I -D -U` when no
 # framework is linked, and clang, run over it, says nothing.
 test "a link over a package's compile words carries none of them and prints nothing (defect 206)"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-link-words"
     assert !process.remove_tree(t.build).is_err()
     none: [str] = []
-    memo: {str: str} @ {}
-    told: {str: bool} @ {}
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
     made = units.tu_object(
         t,
@@ -524,12 +524,12 @@ test "a Windows link records the published PDB's own name, and a POSIX link reco
 # words it ran with are the file's, and the file holds every one of them but
 # `clang`, each object among them.
 test "a link whose objects pass what one Windows command line holds reads every word from its file (defect 583)"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-link-long"
     assert !process.remove_tree(t.build).is_err()
     none: [str] = []
-    memo: {str: str} @ {}
-    told: {str: bool} @ {}
+    memo: {str: str} @= {}
+    told: {str: bool} @= {}
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
     made = units.tu_object(
         t,
@@ -557,8 +557,8 @@ test "a link whose objects pass what one Windows command line holds reads every 
         @memo,
         @told
     ).must()
-    objects: [str] @ [runtime, made]
-    length: i64 @ runtime.len() + made.len() + 2
+    objects: [str] @= [runtime, made]
+    length: i64 @= runtime.len() + made.len() + 2
 
     while length <= 32767
         objects @ objects.push(filler)
@@ -592,7 +592,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
     assert response_file.for_link(line: line, home: home).must() == ["clang", "--rsp-quoting=posix", "@" + words]
     held = read_file(words).must()
     assert held == response_file.text_of(line)
-    ends: i64 @ 0
+    ends: i64 @= 0
 
     for i in range(from: 0, to: held.len())
         if held[i] == 10

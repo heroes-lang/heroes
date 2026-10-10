@@ -59,11 +59,11 @@ function indexed(names: [str]) -> Index
     return indexed_by(names, modulus: MODULUS)
 
 function indexed_by(names: [str], modulus: i64) -> Index
-    deleted: {i64: i64} @ {}
-    lowered: {i64: i64} @ {}
-    at: [i64] @ []
-    before: [i64] @ []
-    position: i64 @ 0
+    deleted: {i64: i64} @= {}
+    lowered: {i64: i64} @= {}
+    at: [i64] @= []
+    before: [i64] @= []
+    position: i64 @= 0
 
     for name in names
         link(@lowered, at: @at, before: @before, key: lowered_hash(name, modulus: modulus), position: position)
@@ -83,7 +83,7 @@ function link(@heads: {i64: i64}, @at: [i64], @before: [i64], key: i64, position
 # How many entries `indexed(names)` makes: a lowered key and
 # `1 + m + m (m - 1) / 2` deletions for a name of `m` bytes.
 function weight(names: [str]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for name in names
         m = name.len()
@@ -92,8 +92,8 @@ function weight(names: [str]) -> i64
     return total
 
 function lowered_hash(name: str, modulus: i64) -> i64
-    h: i64 @ 0
-    i: i64 @ 0
+    h: i64 @= 0
+    i: i64 @= 0
 
     while i < name.len()
         h @ (h * BASE + bytes.lower(name[i]).to_i64().must()) % modulus
@@ -108,23 +108,23 @@ function lowered_hash(name: str, modulus: i64) -> i64
 # is its three pieces joined, each piece's hash read off the prefixes.
 function deletion_hashes(name: str, modulus: i64) -> [i64]
     m = name.len()
-    prefix: [i64] @ [0]
-    power: [i64] @ [1]
-    t: i64 @ 0
+    prefix: [i64] @= [0]
+    power: [i64] @= [1]
+    t: i64 @= 0
 
     while t < m
         prefix @ prefix.push((prefix[t] * BASE + name[t].to_i64().must()) % modulus)
         power @ power.push(power[t] * BASE % modulus)
         t @ t + 1
 
-    out: [i64] @ [prefix[m]]
-    i: i64 @ 0
+    out: [i64] @= [prefix[m]]
+    i: i64 @= 0
 
     while i < m
         left = prefix[i]
         rest = piece(prefix: prefix, power: power, from: i + 1, to: m, modulus: modulus)
         out @ out.push(joined(first: left, second: rest, shift: power[m - i - 1], modulus: modulus))
-        k: i64 @ i + 1
+        k: i64 @= i + 1
 
         while k < m
             between = piece(prefix: prefix, power: power, from: i + 1, to: k, modulus: modulus)
@@ -148,14 +148,14 @@ function joined(first: i64, second: i64, shift: i64, modulus: i64) -> i64
 
 # The positions chained under `key` in `heads`.
 function chained(index: Index, heads: {i64: i64}, key: i64, @found: [i64])
-    entry: i64 @ heads[key].default(-1)
+    entry: i64 @= heads[key].default(-1)
 
     while entry >= 0
         found @ found.push(index.at[entry])
         entry @ index.before[entry]
 
 function ascending_once(xs: [i64]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for x in sort(xs)
         if out.len() == 0 || out[out.len() - 1] != x
@@ -174,11 +174,11 @@ function ascending_once(xs: [i64]) -> [i64]
 # asks it.
 function nearest_over(name: str, lists: [[str]], indexes: [Index?], @compared: [i64]) -> [str]
     size = name.len()
-    allowed: i64 @ 2
+    allowed: i64 @= 2
 
     if name.chars().len() < 4
         allowed @ 1
-    k: i64 @ 0
+    k: i64 @= 0
 
     for candidates in lists
         index = indexes[k]
@@ -188,7 +188,7 @@ function nearest_over(name: str, lists: [[str]], indexes: [Index?], @compared: [
                 if twin(name: name, candidate: candidate, size: size)
                     return [candidate]
         else
-            found: [i64] @ []
+            found: [i64] @= []
             held = index.must()
             chained(held, heads: held.lowered, key: lowered_hash(name, modulus: held.modulus), @found)
 
@@ -198,8 +198,8 @@ function nearest_over(name: str, lists: [[str]], indexes: [Index?], @compared: [
 
         k @ k + 1
 
-    near: [str] @ []
-    band: [i64] @ []
+    near: [str] @= []
+    band: [i64] @= []
     k @ 0
 
     for candidates in lists
@@ -213,7 +213,7 @@ function nearest_over(name: str, lists: [[str]], indexes: [Index?], @compared: [
                     if near_names.within(@band, a: name, b: candidate, most: allowed)
                         near @ near.push(candidate)
         else
-            found: [i64] @ []
+            found: [i64] @= []
             held = index.must()
 
             for key in deletion_hashes(name, modulus: held.modulus)
@@ -243,13 +243,13 @@ function fits(name: str, candidate: str, allowed: i64, near: [str]) -> bool
 # Every spelling `name` takes with at most two of its bytes deleted, built
 # as strings: what `deletion_hashes` must hash.
 function deletions(name: str) -> [str]
-    out: [str] @ [name]
-    i: i64 @ 0
+    out: [str] @= [name]
+    i: i64 @= 0
 
     while i < name.len()
         one = name.slice(from: 0, to: i) + name.slice(from: i + 1, to: name.len())
         out @ out.push(one)
-        j: i64 @ i
+        j: i64 @= i
 
         while j < one.len()
             out @ out.push(one.slice(from: 0, to: j) + one.slice(from: j + 1, to: one.len()))
@@ -266,7 +266,7 @@ test "a deletion's hash is the hash of the spelling it leaves"
     words = near_names.words_of(letters: ["a", "b", "Z"], longest: 4)
 
     for word in words.push("validated_bytes").push("to_i64")
-        hashes: [i64] @ []
+        hashes: [i64] @= []
 
         for spelling in deletions(word)
             hashes @ hashes.push(deletion_hashes(spelling, modulus: MODULUS)[0])
@@ -312,9 +312,9 @@ test "a list read through its index answers what its walk answered"
 
             for name in set
                 reference = near_names.nearest_in(name, lists: split)
-                one: [i64] @ [0]
+                one: [i64] @= [0]
                 assert near_names.nearest_in(name, lists: [set]) == nearest_over(name, lists: [set], indexes: [whole], @one)
 
                 for chosen in [[no_index, no_index, no_index], [first, none_held, last], [first, no_index, no_index], [no_index, none_held, last]]
-                    compared: [i64] @ [0, 0, 0]
+                    compared: [i64] @= [0, 0, 0]
                     assert nearest_over(name, lists: split, indexes: chosen, @compared) == reference

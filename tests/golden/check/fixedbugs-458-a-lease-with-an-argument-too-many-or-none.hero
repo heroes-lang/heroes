@@ -6,7 +6,7 @@
 
 function main()
     x = "abc"
-    c: cstr @ x.lease(1)  #~ builtin_shape
-    d: cstr @ lease()  #~ builtin_shape
+    c: cstr @= x.lease(1)  #~ builtin_shape
+    d: cstr @= lease()  #~ builtin_shape
     end_lease(@c)
     end_lease(@d)

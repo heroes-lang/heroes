@@ -36,8 +36,8 @@ constant WIDTH: str
 # files `records` holds (`emit_externs.held`), each named `<record> <field>`
 # after its prefix.
 function questions(names: ctype.Names, s: source.Source, decls: [ast.Decl], records: {i64: bool}?) -> [str]
-    out: [str] @ []
-    at: i64 @ 0
+    out: [str] @= []
+    at: i64 @= 0
 
     for decl in decls
         match decl.kind
@@ -71,9 +71,9 @@ function sizing(place: str) -> str
 
 # The number inside clang's `char (*)[N]`, 0 where there is none.
 function bracketed(spelled: str) -> i64
-    n: i64 @ 0
-    at: i64 @ 0
-    inside: bool @ false
+    n: i64 @= 0
+    at: i64 @= 0
+    inside: bool @= false
 
     while at < spelled.len()
         b = spelled[at]

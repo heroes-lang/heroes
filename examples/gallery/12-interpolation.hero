@@ -22,12 +22,12 @@ function line(at: i64, of: i64, star: Star) -> str
 
 function main()
     stars = [Star(name: "Sirius", magnitude: -1.46), Star(name: "Vega", magnitude: 0.03)]
-    at: i64 @ 1
+    at: i64 @= 1
 
     for star in stars
         print(line(at: at, of: stars.len(), star: star))
         at @ at + 1
 
-    seen: {str: i64} @ {"Sirius": 2}
+    seen: {str: i64} = {"Sirius": 2}
     print(f"seen Sirius {seen["Sirius"].must()} times, {{like this}}")
     print(f"nested: {f"{stars.len()} stars"}")

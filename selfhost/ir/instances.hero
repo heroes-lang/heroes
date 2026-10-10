@@ -40,7 +40,7 @@ function named_at(f: containers.Function, c: state.Checked, at: i64) -> [i64]
 # one per declaration and type arguments, or an error where the program holds
 # none, which is the emitter's loud fallback and the verifier's refusal.
 function index_of(p: containers.Program, decl: i64, instance: [i64]) -> i64?
-    index: i64 @ 0
+    index: i64 @= 0
 
     for f in p.functions
         if f.decl == decl && f.instance == instance
@@ -60,9 +60,9 @@ record Index
     instances: [[i64]]
 
 function indexed(p: containers.Program) -> Index
-    by_decl: {i64: [i64]} @ {}
-    held: [[i64]] @ []
-    at: i64 @ 0
+    by_decl: {i64: [i64]} @= {}
+    held: [[i64]] @= []
+    at: i64 @= 0
 
     for f in p.functions
         some = by_decl[f.decl]
@@ -120,7 +120,7 @@ function last_of(h: Held, decl: i64) -> i64?
 # The type arguments as a message writes them, their type ids in brackets:
 # the verifier holds no source text to spell a type with.
 function spelled(instance: [i64]) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     for one in instance
         parts @ parts.push(one.to_str())
@@ -147,7 +147,7 @@ test "a call names its callee at the type arguments the checker recorded"
 
     # Lowered, the generic is still its template: no function holds it at
     # any type arguments yet, and `ident` at none is the template itself.
-    named: [[i64]] @ []
+    named: [[i64]] @= []
 
     for blk in p.functions[main_at.must()].blocks
         for inst in blk.insts

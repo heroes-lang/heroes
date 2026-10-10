@@ -21,7 +21,7 @@ use mutate/json_read
 function field(j: json_read.Json, name: str) -> json_read.Json?
     match j
         .fields f =>
-            at: i64 @ 0
+            at: i64 @= 0
 
             for one in f.names
                 if one == name
@@ -64,11 +64,11 @@ function whole_of(j: json_read.Json) -> i64?
     if spelled.len() == 0
         return fail(code: "not_whole", msg: "not a number")
     negative = spelled[0] == '-'
-    at: i64 @ 0
+    at: i64 @= 0
 
     if negative
         at @ 1
-    out: i64 @ 0
+    out: i64 @= 0
 
     while at < spelled.len()
         b = spelled[at]
@@ -115,7 +115,7 @@ function items_field(j: json_read.Json, name: str) -> [json_read.Json]?
 
 # An array of strings, or of whole numbers, under `name`.
 function texts_field(j: json_read.Json, name: str) -> [str]?
-    out: [str] @ []
+    out: [str] @= []
 
     for one in items_field(j, name: name)?
         out @ out.push(text_of(one)?)
@@ -123,7 +123,7 @@ function texts_field(j: json_read.Json, name: str) -> [str]?
     return ok(out)
 
 function wholes_field(j: json_read.Json, name: str) -> [i64]?
-    out: [i64] @ []
+    out: [i64] @= []
 
     for one in items_field(j, name: name)?
         out @ out.push(whole_of(one)?)
@@ -139,7 +139,7 @@ function string(v: str) -> json_read.Json
     return .text(v: v)
 
 function strings(vs: [str]) -> json_read.Json
-    out: [json_read.Json] @ []
+    out: [json_read.Json] @= []
 
     for v in vs
         out @ out.push(.text(v: v))
@@ -147,7 +147,7 @@ function strings(vs: [str]) -> json_read.Json
     return .items(all: out)
 
 function wholes(vs: [i64]) -> json_read.Json
-    out: [json_read.Json] @ []
+    out: [json_read.Json] @= []
 
     for v in vs
         out @ out.push(whole(v))
@@ -156,7 +156,7 @@ function wholes(vs: [i64]) -> json_read.Json
 
 # A value as one line of text, as `json.dumps` writes it.
 function written(j: json_read.Json) -> str
-    parts: [str] @ []
+    parts: [str] @= []
     write_into(@parts, j: j)
     return parts.join("")
 
@@ -174,7 +174,7 @@ function write_into(@parts: [str], j: json_read.Json)
         .text t   => parts @ parts.push("\"" + json_text.json_string(t.v) + "\"")
         .items l =>
             parts @ parts.push("[")
-            at: i64 @ 0
+            at: i64 @= 0
 
             for one in l.all
                 if at > 0
@@ -185,7 +185,7 @@ function write_into(@parts: [str], j: json_read.Json)
             parts @ parts.push("]")
         .fields f =>
             parts @ parts.push("{")
-            at: i64 @ 0
+            at: i64 @= 0
 
             for name in f.names
                 if at > 0

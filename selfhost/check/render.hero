@@ -46,9 +46,9 @@ function render_ty(t: table.Types, s: source.Source, decls: [ast.Decl], id: i64,
         .map m => "{" + render_ty(t, s, decls, m.key, generics) + ": " + render_ty(t, s, decls, m.value, generics) + "}"
         .fallible o => render_ty(t, s, decls, o.payload, generics) + "?"
         .function_ty f =>
-            rendered: [str] @ []
+            rendered: [str] @= []
             names = table.labels_of(t, f.labels)
-            at: i64 @ 0
+            at: i64 @= 0
 
             for p in table.params_of(t, f.params)
                 one = render_ty(t, s, decls, p, generics)
@@ -100,7 +100,7 @@ function fixture(text: str) -> parse.ParseOutput
 test "a compound type prints as the author would write it"
     p = fixture("record Point\n    x: i64\n")
     s = source.new_source(name: "t.hero", text: "record Point\n    x: i64\n")
-    t: table.Types @ table.new_types()
+    t: table.Types @= table.new_types()
     point = table.intern(@t, .named(decl: 0))
     keyed = table.intern(@t, .map(key: table.str_ty(t), value: point))
     maybe = table.intern(@t, .fallible(payload: keyed))
@@ -114,7 +114,7 @@ test "a compound type prints as the author would write it"
 test "a function type keeps its mandatory parentheses"
     p = fixture("record Point\n    x: i64\n")
     s = source.new_source(name: "t.hero", text: "record Point\n    x: i64\n")
-    t: table.Types @ table.new_types()
+    t: table.Types @= table.new_types()
     ps: [i64] = [table.int_ty_id(t), table.str_ty(t)]
     none: [str] = []
     f = table.intern_function(@t, ps, none, result: table.bool_ty(t))
@@ -130,7 +130,7 @@ test "a case prints its variant's dot spelling, a generic its own name"
     text = "variant Token\n    num\n        v: i64\n    plus\n"
     p = fixture(text)
     s = source.new_source(name: "t.hero", text: text)
-    t: table.Types @ table.new_types()
+    t: table.Types @= table.new_types()
     num = table.intern(@t, .case_ty(decl: 0, at: 0))
     plus = table.intern(@t, .case_ty(decl: 0, at: 1))
     none: [str] = []

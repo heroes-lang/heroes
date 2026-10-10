@@ -20,7 +20,7 @@ function thrice(n: i64) -> i64
     return n * 3
 
 function worker(n: i64) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for f in STEPS
         total @ total + f(n)

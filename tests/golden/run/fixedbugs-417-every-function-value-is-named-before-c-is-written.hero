@@ -61,7 +61,7 @@ function main()
     print(keep("x"))
     rec: (function(P) -> P) = ident
     print(rec(P(x: 12)).x)
-    m: {str: (function(i64) -> i64)} @ {}
+    m: {str: (function(i64) -> i64)} @= {}
     m["a"] @ ident
     print(m["a"].must()(16))
     print(STEPS[0](17) + STEPS[1](1))

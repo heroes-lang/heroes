@@ -40,7 +40,7 @@ function closed_well(@h: Holder)
     free(h.cell)
 
 function main()
-    a: Holder @ Holder(cell: malloc(size: 8))
+    a: Holder @= Holder(cell: malloc(size: 8))
     closed(a)
     fine()
     closed_well(@a)

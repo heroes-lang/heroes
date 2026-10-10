@@ -46,7 +46,7 @@ function an_assert()
         print(1)  #~ unexpected_block
 
 function a_mutation()
-    x: i64 @ 1
+    x: i64 @= 1
     x @ x + 1 )  #~ expected_end_of_line
         print(x)  #~ unexpected_block
 

@@ -96,11 +96,11 @@ function overstated_record(s: source.Source, rest: str) -> diag.Diagnostic?
         return fail(code: "none", msg: "a position is not numeric")
     extent = token.Span(start: extent_start.must(), end: extent_end.must())
     header_type = trim_quote(tail_from(parts, at: 6))
-    counted_in: str @ "in what it points at: C read both sizes from the header"
+    counted_in: str @= "in what it points at: C read both sizes from the header"
 
     if parts[5] == "bytes"
         counted_in @ "in bytes: C read the record's own size from the header"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "record_lend_extent",
         message: "`" + parts[2] + "` states " + source.span_text(s, extent) + ", outside the record lent whole to `" + parts[1] + "` of `" + parts[0] + "` — `" + parts[1] + "` is declared `counted_by " + parts[2] + "`, and the header's `" + header_type + "` counts it " + counted_in,
         span: extent
@@ -130,9 +130,9 @@ function short_place(s: source.Source, rest: str, whole: bool) -> diag.Diagnosti
     lend = token.Span(start: lend_start.must(), end: lend_end.must())
     header_type = trim_quote(tail_from(parts, at: 7))
     declared = "`" + parts[1] + "` of `" + parts[0] + "` is declared `counted_by " + parts[2] + "`, an extent the declaration states"
-    unit: str @ "bytes"
-    counted_in: str @ "bytes"
-    measured: str @ "C read its size from the header"
+    unit: str @= "bytes"
+    counted_in: str @= "bytes"
+    measured: str @= "C read its size from the header"
 
     if parts[6] != "bytes"
         unit @ "of what the header's `" + header_type + "` points at"
@@ -140,7 +140,7 @@ function short_place(s: source.Source, rest: str, whole: bool) -> diag.Diagnosti
         measured @ "C read both sizes from the header"
 
     if whole
-        r: diag.Diagnostic @ diag.new_diagnostic(
+        r: diag.Diagnostic @= diag.new_diagnostic(
             code: "record_lend_extent",
             message: "the record lent whole here holds fewer than " + parts[2] + " " + unit + " — " + declared + ", so C reaches past the record: " + measured,
             span: lend
@@ -149,7 +149,7 @@ function short_place(s: source.Source, rest: str, whole: bool) -> diag.Diagnosti
             "the declaration says how far C reaches, whatever the call hands it, so a record shorter than that is written past, over whatever the stack holds beside it. Lend a record that holds the extent; if C reaches less, the declaration is what is wrong"
         )
         return ok(r)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "field_lend_extent",
         message: "`" + source.span_text(s, lend) + "` lends a field of " + length.must().to_str() + " bytes, and " + declared + ", counted in " + counted_in + ", so C reaches past the field: " + measured,
         span: lend
@@ -174,7 +174,7 @@ function buffer_pointee(rest: str) -> diag.Diagnostic?
     if start.is_err() || end.is_err()
         return fail(code: "none", msg: "a position is not numeric")
     header_type = trim_quote(tail_from(parts, at: 5))
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: "`" + parts[1] + "` of `" + parts[0] + "` is a buffer of `" + parts[4] + "`, and the header's `" + header_type + "` points at something else — C writes what its pointer points at, so the buffer's element is held to it",
         span: token.Span(start: start.must(), end: end.must())
@@ -187,8 +187,8 @@ function buffer_pointee(rest: str) -> diag.Diagnostic?
 # A marker's words from `at` on, joined back: a header's type may be several
 # words (`struct pfd *`).
 function tail_from(parts: [str], at: i64) -> str
-    tail: [str] @ []
-    index: i64 @ at
+    tail: [str] @= []
+    index: i64 @= at
 
     while index < parts.len()
         tail @ tail.push(parts[index])
@@ -206,7 +206,7 @@ function trim_quote(text: str) -> str
 ## Tests
 
 test "the marker's tail lands the diagnostic on the number the author wrote, with the field's length as the guess"
-    text = "extern \"s.h\"\n    record S\n        b: u8[8]\n    function fill(p: ptr counted_by n, n: i64)\n\nfunction main()\n    t: S @ S(b: [1, 2, 3, 4, 5, 6, 7, 8])\n    fill(p: t.b.ptr(), n: 64)\n"
+    text = "extern \"s.h\"\n    record S\n        b: u8[8]\n    function fill(p: ptr counted_by n, n: i64)\n\nfunction main()\n    t: S @= S(b: [1, 2, 3, 4, 5, 6, 7, 8])\n    fill(p: t.b.ptr(), n: 64)\n"
     s = source.new_source(name: "t.hero", text: text)
     lend = ffi_lookup.char_index_of(text: text, needle: "t.b.ptr()").must()
     stated = ffi_lookup.char_index_of(text: text, needle: "64)").must()

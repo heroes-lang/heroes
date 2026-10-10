@@ -67,7 +67,7 @@ function check_label(@c: state.Checker, s: source.Source, name: str, position: i
         # position's name alone; one naming nothing could be any position
         # no label writes, all of one type here.
         elsewhere = names_a_position(params, seen)
-        readings: [str] @ others
+        readings: [str] @= others
 
         if elsewhere
             readings @ []
@@ -79,9 +79,9 @@ function check_label(@c: state.Checker, s: source.Source, name: str, position: i
 # The labelled positions of a built-in other than `position` that no label of
 # the call writes: what else its argument could be.
 function unwritten(params: [str], position: i64, taken: [str]) -> [str]
-    others: [str] @ []
+    others: [str] @= []
     written = label_set(taken)
-    q: i64 @ 0
+    q: i64 @= 0
 
     for label in params
         if q != position && label.len() > 0 && written[label].is_err()
@@ -101,7 +101,7 @@ function names_a_position(params: [str], written: str) -> bool
 
 # The labels a call writes, in order.
 function written_labels(s: source.Source, given: [ast.Arg]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for arg in given
         if !arg.name.is_err()
@@ -127,7 +127,7 @@ function holds(xs: [i64], x: i64) -> bool
 # of every position, so a position asks it once (defect 477): asked of the
 # list, a call of n arguments half of them unlabelled cost the cube of n.
 function label_set(taken: [str]) -> {str: bool}
-    out: {str: bool} @ {}
+    out: {str: bool} @= {}
 
     for label in taken
         out[label] @ true
@@ -148,7 +148,7 @@ function misnamed(c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.De
     written = source.span_text(s, label)
     expected = asked.every[at]
     elsewhere = !asked.named[written].is_err()
-    others: [str] @ []
+    others: [str] @= []
 
     if !elsewhere
         others @ other_labels(c, a, decls, asked, types: types, at: at, from: from, value: value)
@@ -195,9 +195,9 @@ function asked_of(every: [str], open: [str], taken: [str]) -> Asked
 # because a type parameter's position takes what the argument's type does
 # not name.
 function other_labels(c: state.Checker, a: ast.Ast, decls: [ast.Decl], asked: Asked, types: [i64], at: i64, from: i64, value: i64) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     names = asked.open
-    q: i64 @ from
+    q: i64 @= from
 
     while q < names.len() && q < types.len()
         fits = types[q] == types[at] || could_take(c, a, decls, value: value, ty: types[q])
@@ -222,7 +222,7 @@ function asked_of_declared(s: source.Source, declared: [ast.Param], shared: [boo
 # type no other shares holding an unlabelled argument, which stands there by
 # §4.9's rule and not by the order written.
 function parameter_names(s: source.Source, declared: [ast.Param]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for p in declared
         out @ out.push(source.span_text(s, p.name))
@@ -230,11 +230,11 @@ function parameter_names(s: source.Source, declared: [ast.Param]) -> [str]
     return out
 
 function open_names(s: source.Source, declared: [ast.Param], shared: [bool], given: [ast.Arg], from: i64) -> [str]
-    out: [str] @ []
-    q: i64 @ 0
+    out: [str] @= []
+    q: i64 @= 0
 
     for p in declared
-        name: str @ source.span_text(s, p.name)
+        name: str @= source.span_text(s, p.name)
         argument = q - from
 
         if name == "_"
@@ -256,10 +256,10 @@ function open_names(s: source.Source, declared: [ast.Param], shared: [bool], giv
 # `swap(@a, @b)` lacks both markers, which is `marker_mismatch`'s to say and
 # says nothing about the order.
 function other_parameters(s: source.Source, declared: [ast.Param], types: [i64], shared: [bool], at: i64, from: i64, taken: [str], mutable: bool) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     marker_tells = declared[at].mutable == mutable
     written = label_set(taken)
-    q: i64 @ 0
+    q: i64 @= 0
 
     while q < shared.len()
         if shared[q]
@@ -275,9 +275,9 @@ function other_parameters(s: source.Source, declared: [ast.Param], types: [i64],
 # The same through a function value, whose type carries the names: a named
 # position of the same type, past the receiver, that no label takes.
 function other_names(names: [str], types: [i64], at: i64, from: i64, taken: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     written = label_set(taken)
-    q: i64 @ from
+    q: i64 @= from
 
     while q < names.len() && q < types.len()
         if q != at && names[q].len() > 0 && types[q] == types[at] && written[names[q]].is_err()
@@ -292,9 +292,9 @@ function other_names(names: [str], types: [i64], at: i64, from: i64, taken: [str
 # checked to have. Asked once every argument is checked, since the fields
 # may be of several types and only the argument tells which it can be.
 function other_fields(c: state.Checker, a: ast.Ast, decls: [ast.Decl], names: [str], types: [i64], at: i64, value: i64, taken: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     written = label_set(taken)
-    q: i64 @ 0
+    q: i64 @= 0
 
     while q < names.len() && q < types.len()
         if q != at && written[names[q]].is_err() && could_take(c, a, decls, value: value, ty: types[q])
@@ -323,11 +323,11 @@ function could_take(c: state.Checker, a: ast.Ast, decls: [ast.Decl], value: i64,
 # beside the rule that reads labels at a call: it calls nothing back in the
 # walk, and the walk's decided ceiling had no room for panel 185's R4.
 function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) -> [str]
-    names: [str] @ []
+    names: [str] @= []
     none: [str] = []
-    any_shared: bool @ false
+    any_shared: bool @= false
     shared = type_fit.shared(lowered)
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < lowered.len()
         written = source.span_text(s, params[i].name)
@@ -358,7 +358,7 @@ function declared_labels(s: source.Source, params: [ast.Param], lowered: [i64]) 
 
 test "a positional argument of fail is refused with the label to write"
     r = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "    return fail(\"empty_list\", \"there is no first element\")\n")
     none: token.Span? = fail(code: "absent", msg: "written positionally")
     nothing: [str] = []
@@ -384,7 +384,7 @@ test "a positional argument of fail is refused with the label to write"
     assert c.out.diagnostics[0].fixes[0].span.end == 16
 
     # With `msg:` written elsewhere, `code` is all this one can be.
-    one: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    one: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     taken: [str] = ["msg"]
     check_label(
         @one,
@@ -400,7 +400,7 @@ test "a positional argument of fail is refused with the label to write"
 
 test "a label in the wrong position is the swap, and it is refused too"
     r = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "fail(msg: \"m\", code: \"c\")\n")
     at: token.Span? = ok(token.Span(start: 5, end: 8))
     taken: [str] = ["msg", "code"]
@@ -412,7 +412,7 @@ test "a label in the wrong position is the swap, and it is refused too"
 
 test "the receiver's position is exempt and the right label passes"
     r = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "xs.slice(from: 1, to: 3)\n")
     none: token.Span? = fail(code: "absent", msg: "the receiver is the dot")
     taken: [str] = ["from", "to"]
@@ -447,7 +447,7 @@ test "the receiver's position is exempt and the right label passes"
 # rename is applied. With `msg` in its place, `code` is all `cdoe` can be.
 test "a built-in's label naming nothing is certain only where nothing else could stand there"
     r = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "fail(msg: \"m\", cdoe: \"e\")\n")
     at: token.Span? = ok(token.Span(start: 15, end: 19))
     swapped: [str] = ["msg", "cdoe"]
@@ -465,7 +465,7 @@ test "a built-in's label naming nothing is certain only where nothing else could
     assert c.out.diagnostics[0].fixes.len() == 2
     assert c.out.diagnostics[0].fixes[0].certainty == .guess
     assert c.out.diagnostics[0].fixes[1].replacement == "code"
-    placed: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    placed: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     t = source.new_source(name: "t.hero", text: "fail(cdoe: \"e\", msg: \"m\")\n")
     first: token.Span? = ok(token.Span(start: 5, end: 9))
     in_place: [str] = ["cdoe", "msg"]

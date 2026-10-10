@@ -1,7 +1,7 @@
 # Fixed 2026-10-02, defect 149, lane checker, the same caret in the constant's
 # own message. Symptom: a constant's body of more than one line that leaves
 # by a `return` was told *its body jumps before it gives one* at its first
-# line: `x: i64 @ 1` over `return x` at the binding, and a body whose `if`
+# line: `x: i64 @= 1` over `return x` at the binding, and a body whose `if`
 # returns on both branches before its value, at the line above the `if`.
 # Cause: the message took the body's span. Now it stands at the statement
 # through which the body left, the first that does, whatever follows it.

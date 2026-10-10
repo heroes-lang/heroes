@@ -71,7 +71,7 @@ function plan(f: page.Fmt, c: elements.Code, text: str, from: i64, to: i64) -> P
     return ok(Plan(written: written, full: full, printed: again, matched: matched))
 
 function lexed(text: str) -> [token.Token]
-    out: [token.Token] @ []
+    out: [token.Token] @= []
 
     for t in lexer.lex_one(text).tokens
         if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment
@@ -82,8 +82,8 @@ function lexed(text: str) -> [token.Token]
 # The printed token the line breaks after for comment `k`: the last one the
 # author wrote before it, or -1 where none is.
 function cut_at(c: elements.Code, p: Plan, k: i64) -> i64
-    upto: i64 @ -1
-    at: i64 @ 0
+    upto: i64 @= -1
+    at: i64 @= 0
 
     for i in p.written
         if c.lines.tokens[i].span.start < c.comments[k].start && p.matched[at] >= 0
@@ -105,7 +105,7 @@ function loose(f: page.Fmt, c: elements.Code, text: str, from: i64, to: i64) -> 
     if got.is_err()
         return false
     p = got.must()
-    k: i64 @ f.next_comment
+    k: i64 @= f.next_comment
 
     while k < c.comments.len() && c.comments[k].start >= from && c.comments[k].start < to
         upto = cut_at(c, p, k: k)
@@ -118,7 +118,7 @@ function loose(f: page.Fmt, c: elements.Code, text: str, from: i64, to: i64) -> 
 
 # How many brackets of the text are open after its token `upto`.
 function open_at(printed: [token.Token], upto: i64) -> i64
-    depth: i64 @ 0
+    depth: i64 @= 0
 
     for i in range(from: 0, to: upto + 1)
         kind = printed[i].kind
@@ -141,9 +141,9 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
     p = got.must()
     full = p.full
     printed = p.printed
-    line: [str] @ [head]
-    cut: i64 @ 0
-    margin: i64 @ indent
+    line: [str] @= [head]
+    cut: i64 @= 0
+    margin: i64 @= indent
 
     while elements.holds(f, c, from: from, to: to)
         k = f.next_comment
@@ -152,7 +152,7 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
         # A piece after a break starts its line, with no space before it
         # (the second skeptic seat's `i01`: one column too far).
         if upto >= 0 && printed[upto].span.end > cut
-            piece: str @ full.slice(from: cut, to: printed[upto].span.end)
+            piece: str @= full.slice(from: cut, to: printed[upto].span.end)
 
             if line.join("").len() == 0
                 piece @ unspaced(piece)
@@ -190,7 +190,7 @@ function pieces(@f: page.Fmt, c: elements.Code, head: str, text: str, from: i64,
 # value, so those inside a kept one are kept too.
 function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], printed: [token.Token], matched: [i64], to: i64) -> str
     partner = aligned.written_pairs(c, written: written)
-    back: [bool] @ []
+    back: [bool] @= []
 
     for _ in written
         back @ back.push(false)
@@ -201,7 +201,7 @@ function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], prin
         if c.lines.tokens[written[at]].kind == .lparen && other > at && matched[at] < 0 && matched[other] < 0
             open = c.lines.tokens[written[at]].span.start
             shut = c.lines.tokens[written[other]].span.start
-            k: i64 @ f.next_comment
+            k: i64 @= f.next_comment
 
             while k < c.comments.len() && c.comments[k].start < to && !back[at]
                 if c.comments[k].start > open && c.comments[k].start < shut
@@ -214,17 +214,17 @@ function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], prin
             back[at + 1] @ true
             back[other - 1] @ true
 
-    parts: [str] @ []
-    cut: i64 @ 0
+    parts: [str] @= []
+    cut: i64 @= 0
 
     for at in range(from: 0, to: written.len())
         if back[at]
-            place: i64 @ text.len()
-            mark: str @ ")"
+            place: i64 @= text.len()
+            mark: str @= ")"
 
             if c.lines.tokens[written[at]].kind == .lparen
                 mark @ "("
-                later: i64 @ at + 1
+                later: i64 @= at + 1
 
                 while later < written.len() && matched[later] < 0
                     later @ later + 1
@@ -233,7 +233,7 @@ function restored(f: page.Fmt, c: elements.Code, text: str, written: [i64], prin
                     place @ printed[matched[later]].span.start
             else
                 place @ 0
-                earlier: i64 @ at - 1
+                earlier: i64 @= at - 1
 
                 while earlier >= 0 && matched[earlier] < 0
                     earlier @ earlier - 1
@@ -253,7 +253,7 @@ function shuts(text: str) -> bool
     return text.len() > 0 && (text[0] == ')' || text[0] == ']' || text[0] == '}')
 
 function unspaced(text: str) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len() && text[at] == ' '
         at @ at + 1

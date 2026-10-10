@@ -52,7 +52,7 @@ record Plan
 # `target` is the build's: a program's, or `heroes test`'s, whose units define
 # their modules' tests and whose root runs them (defect 560).
 function plans(components: [str], p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], whole: members.Whole, target: emit_decls.BuildTarget) -> [Plan]
-    out: [Plan] @ []
+    out: [Plan] @= []
 
     for component in components
         out @ out.push(plan(component, p, c, s, decls, whole: whole, target: target))
@@ -77,7 +77,7 @@ function plan(module: str, p: containers.Program, c: state.Checked, s: source.So
     # built — asked of the value in hand (these exact functions) rather
     # than argued from "an argument must be a local anyway", which is
     # true today and is a premise about the world (CLAUDE.md §11).
-    reached: {i64: bool} @ walked.reached
+    reached: {i64: bool} @= walked.reached
 
     # A PROBE names types too, and no loop above can see them: an extern
     # is nobody's Heroes function, so it is in neither `defined` nor
@@ -118,7 +118,7 @@ function plan(module: str, p: containers.Program, c: state.Checked, s: source.So
             reached[f.slots[slot].ty] @ true
 
     declared = members.declared_reach(c, decls, seed: reach.closed_over(c, reached: reached))
-    records: {i64: bool} @ {}
+    records: {i64: bool} @= {}
 
     for decl in groups.decls
         records[decl] @ true
@@ -174,9 +174,9 @@ record Groups
     types: [i64]
 
 function group_records(module: str, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> Groups
-    found: [i64] @ []
-    typed: [i64] @ []
-    index: i64 @ 0
+    found: [i64] @= []
+    typed: [i64] @= []
+    index: i64 @= 0
 
     for decl in decls
         match decl.kind

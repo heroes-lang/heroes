@@ -18,7 +18,7 @@ function main()
     a: V = .has(w: make_w())
     b: V = .none
     print(a == a, " ", a == b)
-    m: {V: i64} @ {}
+    m: {V: i64} @= {}
     m[a] @ 1
     m[b] @ 2
     m[a] @ 3

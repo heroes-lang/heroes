@@ -84,8 +84,8 @@ constant REGIONS: [str]
 # The team table as values. Two arrays walked in step, which is what the
 # language gives you without a tuple.
 function teams() -> [Team]
-    out: [Team] @ []
-    at: i64 @ 0
+    out: [Team] @= []
+    at: i64 @= 0
 
     while at < TEAMS.len()
         out @ out.push(Team(team: TEAMS[at], region: REGIONS[at]))
@@ -116,9 +116,9 @@ function spread(seed: i64) -> i64
 # whose output depends on who called it first — and there are no mutable
 # globals in this language anyway (spec § Top-level declarations).
 function generated(rows: i64) -> [Row]
-    out: [Row] @ []
-    seed: i64 @ SEED
-    id: i64 @ 1
+    out: [Row] @= []
+    seed: i64 @= SEED
+    id: i64 @= 1
 
     while id <= rows
         seed @ stepped(seed)
@@ -166,7 +166,7 @@ constant HEADER: str
 # in a loop: `spec:174` says a concatenation loop is quadratic, and five
 # thousand rows is where that stops being a remark.
 function written(rows: [Row]) -> str
-    lines: [str] @ [HEADER]
+    lines: [str] @= [HEADER]
 
     for r in rows
         lines @ lines.push(line_of(r))

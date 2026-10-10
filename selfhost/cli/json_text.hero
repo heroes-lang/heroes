@@ -73,13 +73,13 @@ function nibble(value: i64) -> str
 # the JSON receives is unchanged. A C1 character is two bytes, 0xC2 and its
 # code, so the walk asks the pair and cuts before 0xC2, a lead byte.
 function json_string(text: str) -> str
-    parts: [str] @ []
-    at: i64 @ 0
-    plain: i64 @ 0
+    parts: [str] @= []
+    at: i64 @= 0
+    plain: i64 @= 0
 
     while at < text.len()
-        one: str @ escaped_byte(text[at])
-        width: i64 @ 1
+        one: str @= escaped_byte(text[at])
+        width: i64 @= 1
 
         if one.len() == 0 && c1_at(text, at: at)
             one @ code_escaped(to_i64(text[at + 1]).must())

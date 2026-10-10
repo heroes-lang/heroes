@@ -1,7 +1,7 @@
 # Fixed 2026-10-02, defect 153, panel 185 R3, lane arm: the shapes the
 # refusal still owes. Symptom: `.blue => _ = 0` was refused as
 # `declaration_in_arm`, *`_` would be bound where nothing can read it*, where
-# spec § 5 says `_` binds nothing; so were `_: i64 = 5` and `_: i64 @ 5`,
+# spec § 5 says `_` binds nothing; so were `_: i64 = 5` and `_: i64 @= 5`,
 # which a block takes. Cause: `declared_name` read the statement's kind and
 # never its name. Now `_` stands on an arm's line, and every name the rule
 # still refuses is one that would be bound: a binding, a typed one, a cell,
@@ -12,17 +12,17 @@ function pick(n: i64) -> i64
     return match n
         0 => k = 5  #~ declaration_in_arm
         1 => k: i64 = 5  #~ declaration_in_arm
-        2 => k: i64 @ 5  #~ declaration_in_arm
+        2 => k: i64 @= 5  #~ declaration_in_arm
         3 => _x = 0  #~ declaration_in_arm
         _ => __ = 0  #~ declaration_in_arm
 
 function main()
-    m: i64 @ 0
+    m: i64 @= 0
 
     match m
         0 => m = 1  #~ declaration_in_arm
         1 => _ = 0
         2 => _: i64 = 2
-        _ => _: i64 @ 3
+        _ => _: i64 @= 3
 
     print(pick(n: m))

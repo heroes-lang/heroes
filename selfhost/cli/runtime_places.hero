@@ -26,8 +26,8 @@ record Beside
     why: str
 
 function beside_the_compiler() -> Beside
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_exe_path_shown(status: @status, marks: @marks)
     none: [str] = []
 
@@ -47,8 +47,8 @@ function beside_the_compiler() -> Beside
 # being a byte of a name elsewhere (`deps.under`'s rule). Cut at a separator,
 # a byte of ASCII, so never inside a character.
 function ancestors(path: str, either: bool) -> [str]
-    out: [str] @ []
-    at: i64 @ path.len() - 1
+    out: [str] @= []
+    at: i64 @= path.len() - 1
 
     while at >= 0
         if path[at] == '/' || either && path[at] == '\\'
@@ -61,7 +61,7 @@ function ancestors(path: str, either: bool) -> [str]
 # both of its files read. Present is what is asked, and a C source that is
 # not UTF-8 is present (panel 189): `reading.source_text` reads one.
 function missing_at(dir: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for name in ["heroes_runtime.h", "runtime.c"]
         path = dir + "/" + name
@@ -84,7 +84,7 @@ function unheld(hint: str, missing: [str]) -> str
 # The places named, as they were looked in, and the way to name another:
 # where no `HEROES_RUNTIME` is set, since one that is set is the only place.
 function not_found(beside: Beside) -> str
-    places: [str] @ ["./runtime"]
+    places: [str] @= ["./runtime"]
 
     if beside.above.len() > 0
         places @ places.push("runtime/ in `" + beside.above[0] + "` and every directory above it")

@@ -5,7 +5,7 @@
 #
 #   panic: entered unreachable code — this is a compiler bug, please report it
 #
-# — `xs: [()] @ []`, `xs: [ptr] @ []`, and `m: {str: ptr} @ {}`. The generated C
+# — `xs: [()] @ []`, `xs: [ptr] @= []`, and `m: {str: ptr} @= {}`. The generated C
 # said what was wrong and nobody read it: `hero_unreachable(); /* not an array */`.
 #
 # CAUSE: `emit/gate.rs`'s `check_type` answered `Ty::Array(_) => return` without

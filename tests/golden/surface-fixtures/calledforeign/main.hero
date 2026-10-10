@@ -38,7 +38,7 @@
 # correctly.
 
 function main()
-    n: i64 @ 0
+    n: i64 @= 0
     n @ int(3)     #~ reserved_word
     n @ switch(3)  #~ reserved_word
     n @ const(3)   #~ reserved_word

@@ -18,7 +18,7 @@ use ir/containers
 # Every value an operation reads. One function, so a new op that
 # forgets to list its operands fails the exhaustiveness check.
 function operands(f: containers.Function, op: ir.OpKind) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match op
         .lit | .hole | .missing | .copy_out | .func_ref => return out
@@ -76,7 +76,7 @@ function operands(f: containers.Function, op: ir.OpKind) -> [i64]
     return out
 
 function terminator_operands(term: ir.Term) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match term
         .branch br      => out @ out.push(br.cond)
@@ -89,7 +89,7 @@ function terminator_operands(term: ir.Term) -> [i64]
     return out
 
 function arg_values(f: containers.Function, run: ir.Run) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     if run.start + run.length > f.arguments.len()
         return out
@@ -104,7 +104,7 @@ function arg_values(f: containers.Function, run: ir.Run) -> [i64]
     return out
 
 function path_values(f: containers.Function, place: ir.Place) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     if place.path.start + place.path.length > f.steps.len()
         return out
@@ -120,7 +120,7 @@ function path_values(f: containers.Function, place: ir.Place) -> [i64]
 # for signature stability and ignores it; Heroes refuses an unread
 # parameter, so the honest signature is the one without it.
 function slots_of(op: ir.OpKind) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match op
         .load ld       => out @ out.push(ld.place.root)

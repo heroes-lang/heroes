@@ -97,14 +97,14 @@ record Cursor
 function new_cursor(tokens: [token.Token]) -> Cursor
     none: [i64] = []
     no_swaps: [swap_words.Swap] = []
-    c: Cursor @ lexed_cursor(tokens: tokens, root_end: -1, closes: none, swaps: no_swaps)
+    c: Cursor @= lexed_cursor(tokens: tokens, root_end: -1, closes: none, swaps: no_swaps)
     c.lexed @ false
     return c
 
 # The same over a stream the lexer made, told where it closed the brackets a
 # mistake left open and what each word it refused reads as.
 function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64], swaps: [swap_words.Swap]) -> Cursor
-    c: Cursor @ Cursor(
+    c: Cursor @= Cursor(
         tokens: tokens,
         pos: 0,
         diagnostics: [],
@@ -148,8 +148,8 @@ function at(c: Cursor, kind: token.TokenKind) -> bool
 # The kind `ahead` significant tokens on. Comments are skipped here too, so
 # lookahead sees what the grammar sees.
 function peek(c: Cursor, ahead: i64) -> token.TokenKind
-    left: i64 @ ahead
-    i: i64 @ c.pos
+    left: i64 @= ahead
+    i: i64 @= c.pos
 
     while i + 1 < c.tokens.len() && left > 0
         i @ i + 1
@@ -235,7 +235,7 @@ function skip_terminators(@c: Cursor)
 # once a head in a file of refused heads (defect 184).
 function trial(c: Cursor) -> Cursor
     none: [diag.Diagnostic] = []
-    copy: Cursor @ c
+    copy: Cursor @= c
     copy.diagnostics @ none
     copy.marks @ report_marks.none()
     return copy
@@ -244,7 +244,7 @@ function trial(c: Cursor) -> Cursor
 # is no refusal: the program keeps a meaning without one, and a recovery keyed
 # on it would drop, from `check --permissive`, what it hides (defect 130).
 function refused_since(c: Cursor, said: i64) -> bool
-    i: i64 @ said
+    i: i64 @= said
 
     while i < c.diagnostics.len()
         if !diag.is_thesis_rule(c.diagnostics[i])
@@ -308,7 +308,7 @@ test "bump stops at eof forever"
         token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
         token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     first = bump(@c)
     assert first.kind == .ident
     _ = bump(@c)
@@ -321,7 +321,7 @@ test "expect reports what it found, and says nothing at an error token"
         token.Token(kind: .ident, span: token.Span(start: 0, end: 3))
         token.Token(kind: .eof, span: token.Span(start: 3, end: 3))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     ok_taken = expect(@c, text: "abc", kind: .lparen, code: "expected_args_open", what: "`(`")
     assert !ok_taken
     assert c.diagnostics.len() == 1
@@ -335,7 +335,7 @@ test "expect reports what it found, and says nothing at an error token"
         token.Token(kind: .error, span: token.Span(start: 0, end: 1))
         token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
     ]
-    e: Cursor @ new_cursor(quiet)
+    e: Cursor @= new_cursor(quiet)
     _ = expect(@e, text: "?", kind: .lparen, code: "expected_args_open", what: "`(`")
     assert e.diagnostics.len() == 0
 
@@ -359,7 +359,7 @@ test "the caret underlines what a reader can see"
         token.Token(kind: .terminator, span: token.Span(start: 10, end: 10))
         token.Token(kind: .eof, span: token.Span(start: 10, end: 10))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     _ = bump(@c)
     _ = bump(@c)
     assert previous_significant_span(@c) == token.Span(start: 0, end: 3)
@@ -379,8 +379,8 @@ test "the caret underlines what a reader can see"
 # of the ENCLOSING block.
 function balanced_block(@c: Cursor) -> token.Span
     open = bump(@c)
-    depth: i64 @ 1
-    last: token.Span @ open.span
+    depth: i64 @= 1
+    last: token.Span @= open.span
 
     while depth > 0 && !at(c, .eof)
         k = current_kind(c)
@@ -410,7 +410,7 @@ function skip_line(@c: Cursor)
 # line, a line end, an indent or a dedent. A construct that ended there has
 # nothing of its line left, and this line is the NEXT one's (defect 130).
 function at_fresh_line(c: Cursor) -> bool
-    i: i64 @ c.pos - 1
+    i: i64 @= c.pos - 1
 
     while i >= 0 && c.tokens[i].kind == .comment
         i @ i - 1
@@ -432,7 +432,7 @@ function drop_rest_of_line(@c: Cursor, from: i64)
 # keyword-first shape made the token stream carry it.
 function recover_to_next_decl(@c: Cursor)
     if !at_fresh_line(c)
-        scanning: bool @ true
+        scanning: bool @= true
 
         while scanning && !at(c, .eof) && !at(c, .indent)
             if bump(@c).kind == .terminator
@@ -452,7 +452,7 @@ test "a balanced block takes its nested blocks with it"
         token.Token(kind: .kw_function, span: token.Span(start: 14, end: 22))
         token.Token(kind: .eof, span: token.Span(start: 22, end: 22))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     _ = balanced_block(@c)
 
     # It resumes on the next line of the ENCLOSING block, not inside.
@@ -466,7 +466,7 @@ test "a broken line is dropped without leaving the block"
         token.Token(kind: .ident, span: token.Span(start: 4, end: 5))
         token.Token(kind: .eof, span: token.Span(start: 5, end: 5))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     skip_line(@c)
     assert current_kind(c) == .ident
     assert c.pos == 3
@@ -477,7 +477,7 @@ test "a broken line is dropped without leaving the block"
         token.Token(kind: .dedent, span: token.Span(start: 1, end: 1))
         token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
     ]
-    d: Cursor @ new_cursor(stopping)
+    d: Cursor @= new_cursor(stopping)
     skip_line(@d)
     assert current_kind(d) == .dedent
 
@@ -496,7 +496,7 @@ test "a failed construct drops only its own line, past a comment line"
         token.Token(kind: .terminator, span: token.Span(start: 14, end: 14))
         token.Token(kind: .eof, span: token.Span(start: 15, end: 15))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     assert at_fresh_line(c)
     _ = bump(@c)
     assert !at_fresh_line(c)
@@ -516,7 +516,7 @@ test "a failed construct drops only its own line, past a comment line"
 
 test "a thesis rule is no refusal to a recovery"
     tokens: [token.Token] = [token.Token(kind: .eof, span: token.Span(start: 0, end: 0))]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     here = token.Span(start: 0, end: 0)
     error(@c, code: "declaration_in_arm", message: "m", span: here)
     assert !refused_since(c, 0)
@@ -532,9 +532,9 @@ test "a trial copy holds none of the cursor's reports, and its own stay its own"
         token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
         token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     error(@c, code: "expected_expression", message: "said before", span: current_span(c))
-    t: Cursor @ trial(c)
+    t: Cursor @= trial(c)
     assert t.pos == c.pos
     assert t.diagnostics.len() == 0
     assert !refused_since(t, 0)
@@ -557,7 +557,7 @@ test "one bad declaration costs one, and never costs the next"
         token.Token(kind: .kw_record, span: token.Span(start: 18, end: 24))
         token.Token(kind: .eof, span: token.Span(start: 24, end: 24))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     _ = bump(@c)
     _ = bump(@c)
     _ = bump(@c)
@@ -584,7 +584,7 @@ test "fixedbugs: past the boundary, the fallback is what the caret gets"
 
     # Bounded: a token at or past the author's end yields the fallback.
     none: [i64] = []
-    bounded: Cursor @ lexed_cursor(tokens: tokens, root_end: 20, closes: none, swaps: [])
+    bounded: Cursor @= lexed_cursor(tokens: tokens, root_end: 20, closes: none, swaps: [])
     _ = bump(@bounded)
     assert current_span(bounded).start == 40
     assert here_or(bounded, keyword).start == 0

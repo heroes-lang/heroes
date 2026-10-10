@@ -17,5 +17,5 @@ extern "fixedbugs-191-types.h"
     function hero_191_take(@p: opaque191_t) -> i32
 
 function main()
-    v: opaque191_t @ opaque191_t(a: 1)
+    v: opaque191_t @= opaque191_t(a: 1)
     print(hero_191_take(@v))

@@ -57,7 +57,7 @@ function eat(@c: cursor.Cursor)
     if !cursor.at(c, .colon) || line_end.said_here(c) || !ends_its_line(c)
         return
     s = cursor.current_span(c)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "trailing_colon",
         message: "a block is opened by the indentation alone — drop the `:` (this is not Python)",
         span: s
@@ -105,7 +105,7 @@ function read_below(@c: cursor.Cursor, text: str)
         return
 
     if !nested
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "trailing_colon",
             message: "a block is opened by the indentation alone — drop the `:` and write what follows it on the line below, one level deeper (this is not Python)",
             span: c.tokens[colon].span
@@ -121,7 +121,7 @@ function read_below(@c: cursor.Cursor, text: str)
 # fix, for the `:` at `written`, one level deeper than its own; false where
 # no report wrote a suite there.
 function deeper(@said: [diag.Diagnostic], written: token.Span, at: i64) -> bool
-    i: i64 @ said.len() - 1
+    i: i64 @= said.len() - 1
 
     while i >= 0
         for fix in said[i].fixes
@@ -147,8 +147,8 @@ function suite_ended(c: cursor.Cursor, text: str, open: i64) -> bool
 # walking back over the brackets closed before it and past a line the lexer
 # joined to it; -1 where the `:` stands inside a bracket.
 function line_head(c: cursor.Cursor, colon: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ colon - 1
+    depth: i64 @= 0
+    i: i64 @= colon - 1
 
     while i >= 0
         k = c.tokens[i].kind
@@ -170,8 +170,8 @@ function line_head(c: cursor.Cursor, colon: i64) -> i64
 # brackets the lexer lays out no block, so a body in braces holds no line the
 # fix could write one level deeper: `function main() {` over `if c: x`.
 function inside_a_bracket(c: cursor.Cursor, at: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ at - 1
+    depth: i64 @= 0
+    i: i64 @= at - 1
 
     while i >= 0 && c.tokens[i].kind != .indent && c.tokens[i].kind != .dedent
         k = c.tokens[i].kind
@@ -187,7 +187,7 @@ function inside_a_bracket(c: cursor.Cursor, at: i64) -> bool
     return false
 
 function past_comments(c: cursor.Cursor, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while c.tokens[i].kind == .comment
         i @ i + 1
@@ -198,8 +198,8 @@ function past_comments(c: cursor.Cursor, at: i64) -> i64
 # its brackets; -1 where a block's edge or the stream's end comes first. In a
 # suite `nested` in one on its line, the dedent that suite made of the end.
 function line_end_after(c: cursor.Cursor, colon: i64, nested: bool) -> i64
-    depth: i64 @ 0
-    i: i64 @ colon + 1
+    depth: i64 @= 0
+    i: i64 @= colon + 1
 
     while c.tokens[i].kind != .eof
         k = c.tokens[i].kind
@@ -220,7 +220,7 @@ function line_end_after(c: cursor.Cursor, colon: i64, nested: bool) -> i64
 
 # Whether a block stands below the line whose line end is at `end`.
 function block_below(c: cursor.Cursor, end: i64) -> bool
-    i: i64 @ end + 1
+    i: i64 @= end + 1
 
     while c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator
         i @ i + 1
@@ -231,7 +231,7 @@ function block_below(c: cursor.Cursor, end: i64) -> bool
 
 # The cursor on the `:` of `text`'s first line, in the lexer's own stream.
 function on_the_colon(text: str) -> cursor.Cursor
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
 
     while !cursor.at(c, .colon)
         _ = cursor.bump(@c)
@@ -239,21 +239,21 @@ function on_the_colon(text: str) -> cursor.Cursor
     return c
 
 test "a colon that ends its line is eaten with its certain fix, and one in mid-line is not"
-    ended: cursor.Cursor @ on_the_colon("if c:  # a note\n    x = 1\n")
+    ended: cursor.Cursor @= on_the_colon("if c:  # a note\n    x = 1\n")
     eat(@ended)
     assert ended.diagnostics.len() == 1
     assert ended.diagnostics[0].fixes[0].certainty == .certain
     assert cursor.at(ended, .indent)
 
     # `record P: i64` over its fields: left for the head, which names its junk.
-    mid: cursor.Cursor @ on_the_colon("record P: i64\n    x: i64\n")
+    mid: cursor.Cursor @= on_the_colon("record P: i64\n    x: i64\n")
     eat(@mid)
     assert mid.diagnostics.len() == 0
     assert cursor.at(mid, .colon)
 
 test "the one-line suite is laid out as the body below, and the fix writes it there"
     text = "    if c: f(1,\n        2)  # a note\n    y = 2\n"
-    c: cursor.Cursor @ on_the_colon(text)
+    c: cursor.Cursor @= on_the_colon(text)
     before = c.tokens.len()
     read_below(@c, text)
     assert c.diagnostics.len() == 1
@@ -263,7 +263,7 @@ test "the one-line suite is laid out as the body below, and the fix writes it th
     assert cursor.at(c, .indent)
 
     # The line end after `2)`, past the comment, is the body's dedent.
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while c.tokens[i].kind != .dedent
         i @ i + 1
@@ -272,7 +272,7 @@ test "the one-line suite is laid out as the body below, and the fix writes it th
 
     # A block below the line, and a `:` that ends its line: left as they stand.
     for kept in ["if c: x\n    y\n", "if c:\n    y\n"]
-        k: cursor.Cursor @ on_the_colon(kept)
+        k: cursor.Cursor @= on_the_colon(kept)
         read_below(@k, kept)
         assert k.diagnostics.len() == 0
         assert cursor.at(k, .colon)
@@ -280,6 +280,6 @@ test "the one-line suite is laid out as the body below, and the fix writes it th
     # Inside a body in braces, laid out as without them (ruling 1,
     # 2026-10-01), the suite is the habit it is anywhere.
     braced = "function f() {\n    if c: x\n}\n"
-    b: cursor.Cursor @ on_the_colon(braced)
+    b: cursor.Cursor @= on_the_colon(braced)
     read_below(@b, braced)
     assert b.diagnostics.len() == 1

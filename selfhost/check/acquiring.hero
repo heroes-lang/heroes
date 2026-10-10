@@ -93,7 +93,7 @@ use check/decls as declared
 # transfer function as the taker, and the note prescribed `acquires <that
 # function>`, which `unread_releaser` then refused.
 function consumed_types(c: state.Checker, s: source.Source, decls: [ast.Decl]) -> {i64: bool}
-    taken: {i64: bool} @ {}
+    taken: {i64: bool} @= {}
 
     for decl in decls
         match decl.kind
@@ -187,7 +187,7 @@ function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Dec
                             # `@p: H consumes` with `unmarked_handle_producer`,
                             # a message that denied the word on the line.
                             if p.consumes || !p.transfers.is_err()
-                                word: str @ "consumes"
+                                word: str @= "consumes"
 
                                 if !p.transfers.is_err()
                                     word @ "transfers"
@@ -209,15 +209,15 @@ function bindings_say_which(@c: state.Checker, s: source.Source, decls: [ast.Dec
 # repairs: the two marks a cell can carry, or dropping the `@` when the call
 # really takes the handle in (design.md §4.17: everything needed, on one line).
 function cell_cannot_end(word: str, param: str, producer: str, handle: str, route: str, span: token.Span) -> diag.Diagnostic
-    does: str @ "says the call ends the life of the `" + handle + "` it takes in"
+    does: str @= "says the call ends the life of the `" + handle + "` it takes in"
 
     if word == "transfers"
         does @ "says the call hands the life of the `" + handle + "` it takes in into another value"
-    inside: str @ ""
+    inside: str @= ""
 
     if route != ""
         inside @ " inside `" + route + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cell_cannot_end",
         message: "`" + word + "` on `@" + param + "` of `" + producer + "` " + does + ", and `@` says the opposite: `" + param + "` is a cell `" + producer + "` writes into, where the `" + handle + "` comes out to the program" + inside + ", and a cell that receives a handle cannot end one",
         span: span
@@ -238,8 +238,8 @@ function cell_cannot_end(word: str, param: str, producer: str, handle: str, rout
 # answer: silent when the taker is on screen, `slots.hero:14` when it is not.
 function refusal_for(c: state.Checker, s: source.Source, decls: [ast.Decl], handle: i64, producer: token.Span, route: str, at: token.Span) -> diag.Diagnostic
     taker = taker_of(c, s, decls, handle: handle)
-    taker_name: str @ ""
-    where_taken: str @ ""
+    taker_name: str @= ""
+    where_taken: str @= ""
 
     if !taker.is_err()
         taker_name @ source.span_text(s, taker.must())
@@ -258,11 +258,11 @@ function refusal_for(c: state.Checker, s: source.Source, decls: [ast.Decl], hand
     )
 
 function unmarked(producer: str, taker: str, where_taken: str, handle: str, route: str, span: token.Span) -> diag.Diagnostic
-    where: str @ "hands back a handle of type `" + handle + "`"
+    where: str @= "hands back a handle of type `" + handle + "`"
 
     if route != ""
         where @ "hands back a handle of type `" + handle + "` inside `" + route + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unmarked_handle_producer",
         message: "`" + producer + "` " + where + " and does not say whether the program owes it — `" + taker + "` takes one back" + where_taken + ", so this binding has said how the `" + handle + "` ends and not how it begins",
         span: span
@@ -283,12 +283,12 @@ function unmarked(producer: str, taker: str, where_taken: str, handle: str, rout
 function driven(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    c: state.Checker @ declared.checked_file(text)
+    c: state.Checker @= declared.checked_file(text)
     bindings_say_which(@c, s, p.decls)
     return c
 
 function codes_of(c: state.Checker) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for d in c.out.diagnostics
         out @ out.push(d.code)

@@ -30,7 +30,7 @@ function read_corpus(run: str) -> {str: json_read.Json}?
 
 # The same record at `path`, the one pinned with the plan among them.
 function read_corpus_at(path: str) -> {str: json_read.Json}?
-    out: {str: json_read.Json} @ {}
+    out: {str: json_read.Json} @= {}
     text = read_file(path)
 
     if text.is_err()
@@ -67,14 +67,14 @@ function program_used(corpus: {str: json_read.Json}, file: str) -> str
 function own(diags: [json_read.Json], used: str, theirs: [json_read.Json], their_used: str, applied: hunks.Applied) -> [json_read.Json]
     if theirs.len() == 0
         return diags
-    owed: {str: i64} @ {}
+    owed: {str: i64} @= {}
 
     for d in theirs
         line = json_fields.whole_field(d, name: "line").default(-1)
         k = key(d, used: their_used, line: hunks.mapped(applied, line: line))
         owed[k] @ owed[k].default(0) + 1
 
-    out: [json_read.Json] @ []
+    out: [json_read.Json] @= []
 
     for d in diags
         k = key(d, used: used, line: json_fields.whole_field(d, name: "line").default(-1))
@@ -102,7 +102,7 @@ function named_alike(text: str, used: str) -> str
     return replaced(text: whole, from: base, to: "F")
 
 function base_name(path: str) -> str
-    at: i64 @ path.len() - 1
+    at: i64 @= path.len() - 1
 
     while at >= 0
         if path[at] == '/'
@@ -115,9 +115,9 @@ function base_name(path: str) -> str
 function replaced(text: str, from: str, to: str) -> str
     if from.len() == 0
         return text
-    parts: [str] @ []
-    plain: i64 @ 0
-    at: i64 @ 0
+    parts: [str] @= []
+    plain: i64 @= 0
+    at: i64 @= 0
 
     while at + from.len() <= text.len()
         if bytes.bytes_at(text: text, at: at, needle: from)

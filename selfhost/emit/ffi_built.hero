@@ -49,8 +49,8 @@ record Gathered
 
 # Every construction a marker names, told once per kind.
 function at_constructions(s: source.Source, decls: [ast.Decl], c: state.Checked, p: containers.Program, text: str) -> [diag.Diagnostic]
-    gathered: [Gathered] @ []
-    unions: [str] @ []
+    gathered: [Gathered] @= []
+    unions: [str] @= []
 
     for line in ffi_lookup.lines(text: text)
         if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
@@ -77,14 +77,14 @@ function at_constructions(s: source.Source, decls: [ast.Decl], c: state.Checked,
             if tail.is_err()
                 continue
             parts = bare_words(tail.must())
-            wanted: i64 @ 2
+            wanted: i64 @= 2
 
             if marker == layout_sites.SHARED
                 wanted @ 3
 
             if parts.len() < wanted
                 continue
-            name: str @ parts[1]
+            name: str @= parts[1]
 
             if marker == layout_sites.SHARED
                 name @ parts[1] + " " + parts[2]
@@ -103,7 +103,7 @@ function at_constructions(s: source.Source, decls: [ast.Decl], c: state.Checked,
             else if !listed(gathered[found].names, name)
                 gathered[found].names @ gathered[found].names.push(name)
 
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
 
     if gathered.len() == 0 && unions.len() == 0
         return out
@@ -129,7 +129,7 @@ function at_constructions(s: source.Source, decls: [ast.Decl], c: state.Checked,
 
         if holder.is_err()
             continue
-        sites: i64 @ 0
+        sites: i64 @= 0
 
         for site in u.sites
             if site.given.len() >= 2 && source.span_text(s, decls[site.decl].name) == union_name
@@ -150,13 +150,13 @@ function told(g: Gathered, header: str, span: token.Span) -> diag.Diagnostic
     t = g.record_name
 
     if g.kind == layout_sites.OMITTED
-        share: str @ "shares"
-        them: str @ "`" + g.names[0] + "`"
+        share: str @= "shares"
+        them: str @= "`" + g.names[0] + "`"
 
         if g.names.len() > 1
             share @ "share"
             them @ "them"
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "missing_fields",
             message: "this construction of `" + t + "` leaves out " + quoted(g.names) + ", which " + share + " no byte with the fields it names, so C would build it with " + them + " zero: `" + header + "` puts " + them + " in no union with any of those",
             span: span
@@ -165,26 +165,26 @@ function told(g: Gathered, header: str, span: token.Span) -> diag.Diagnostic
             "a group's `record` is built naming every field outside the header's unions and exactly one member of each union, an anonymous struct's fields counting as one (§ 13)"
         )
         return d
-    named: [str] @ []
+    named: [str] @= []
 
     for pair in g.names
         both = ffi_lookup.words(text: pair)
         named @ named.push("`" + both[0] + "` and `" + both[1] + "`")
 
-    which: str @ ", which are the same bytes: `" + header + "` puts them in one union inside the struct, so C would keep only the one written last"
+    which: str @= ", which are the same bytes: `" + header + "` puts them in one union inside the struct, so C would keep only the one written last"
 
     if named.len() > 1
         which @ ", which are the same bytes pair by pair: `" + header + "` puts each pair in one union inside the struct, so C would keep only the one written last of each"
 
     if g.kind == extern_union.UNION_ASSERTION
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_union_field",
             message: "`" + t + "` is a `union` in `" + header + "`, and a construction of it names two or more of its members, which are the same bytes, so C would keep only the one written last",
             span: span
         )
         d.notes @ d.notes.push(BUILT_NOTE)
         return d
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_union_field",
         message: "this construction of `" + t + "` names " + named.join(", and ") + which,
         span: span
@@ -196,7 +196,7 @@ function told(g: Gathered, header: str, span: token.Span) -> diag.Diagnostic
 # members, at the construction.
 function union_built(s: source.Source, decls: [ast.Decl], site: extern_union.Site, header: str) -> diag.Diagnostic
     t = source.span_text(s, decls[site.decl].name)
-    names: [str] @ []
+    names: [str] @= []
 
     match decls[site.decl].kind
         .record_decl rec =>
@@ -204,7 +204,7 @@ function union_built(s: source.Source, decls: [ast.Decl], site: extern_union.Sit
                 names @ names.push(source.span_text(s, rec.fields[k].name))
         .constant_decl | .function_decl | .variant_decl | .test_decl => names @ names
 
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_union_field",
         message: "this construction of `" + t + "` names " + quoted(names) + ", which are the same bytes: `" + header + "` declares `" + t + "` a `union`, so C would keep only the one written last",
         span: site.span
@@ -227,7 +227,7 @@ function site_span(s: source.Source, decls: [ast.Decl], u: extern_union.Used, re
     return otherwise
 
 function gathered_at(gathered: [Gathered], kind: str, record_name: str, file: i64, line: i64) -> i64
-    index: i64 @ 0
+    index: i64 @= 0
 
     for g in gathered
         if g.kind == kind && g.record_name == record_name && g.file == file && g.line == line
@@ -240,8 +240,8 @@ function gathered_at(gathered: [Gathered], kind: str, record_name: str, file: i6
 function quoted(names: [str]) -> str
     if names.len() == 1
         return "`" + names[0] + "`"
-    heads: [str] @ []
-    at: i64 @ 0
+    heads: [str] @= []
+    at: i64 @= 0
 
     while at < names.len() - 1
         heads @ heads.push("`" + names[at] + "`")
@@ -251,10 +251,10 @@ function quoted(names: [str]) -> str
 
 # A marker's tail as words, any quote clang wraps the message in dropped.
 function bare_words(text: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for word in ffi_lookup.words(text: text)
-        kept: [str] @ []
+        kept: [str] @= []
 
         for ch in word.chars()
             if ch != "\""

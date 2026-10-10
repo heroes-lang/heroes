@@ -31,7 +31,7 @@ function first_at_least(xs: [i64], least: i64) -> i64
     return -1
 
 function count_down(n: i64) -> i64
-    i: i64 @ n
+    i: i64 @= n
 
     while i > 0
         if i == 3
@@ -41,7 +41,7 @@ function count_down(n: i64) -> i64
     return 0
 
 function until_found(n: i64) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while true
         if i * i >= n

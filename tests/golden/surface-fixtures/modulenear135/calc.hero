@@ -7,7 +7,7 @@ function mean(xs: [i64]) -> i64
     return average(xs)
 
 function average(xs: [i64]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for x in xs
         total @ total + x

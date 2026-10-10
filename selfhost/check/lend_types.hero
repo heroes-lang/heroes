@@ -40,7 +40,7 @@ function lend_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name:
         if table.get(c.out.types, given[0]) == .cstr
             return ok(table.unit_ty(c.out.types))
         return ok(
-            refused_operand(@c, s, decls, name: name, allowed: "`@x` where `x: cstr @ s.lease()`", got: given[0], span: span)
+            refused_operand(@c, s, decls, name: name, allowed: "`@x` where `x: cstr @= s.lease()`", got: given[0], span: span)
         )
 
     # **A run of bytes becomes a `str?`** (panel 162, M-readable-bytes). It is
@@ -100,7 +100,7 @@ function lend_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], name:
 # as `u8[N]` and one binding it as `i8[N]` are the same question (panel 162,
 # and `.claude/rules/module-shape.md`'s rule that a narrowing asks the value).
 function byte_run(c: state.Checker, ty: i64) -> bool
-    element: i64 @ -1
+    element: i64 @= -1
 
     match table.get(c.out.types, ty)
         .fixed x                                                  => element @ x.element

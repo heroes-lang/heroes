@@ -36,7 +36,7 @@ function render(d: diag.Diagnostic, s: source.Source) -> str
     # find in it.
     found = source.locate(s, d.span.start)
     absolute = source.line_of(s, d.span.start)
-    rows: [str] @ [
+    rows: [str] @= [
         diag.word(d.kind) + "[" + d.code + "]: " + d.message + "\n  at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n"
     ]
     number = found.line.to_str()
@@ -50,7 +50,7 @@ function render(d: diag.Diagnostic, s: source.Source) -> str
         rows @ rows.push("  note: " + note + "\n")
 
     for fix in d.fixes
-        tag: str @ "guess"
+        tag: str @= "guess"
 
         if fix.certainty == .certain
             tag @ "certain"
@@ -72,7 +72,7 @@ function elsewhere(s: source.Source, d: diag.Diagnostic, fix: diag.Fix) -> str
 
 # Every diagnostic, in source order, separated by a blank line.
 function render_all(diagnostics: [diag.Diagnostic], s: source.Source) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for d in diagnostics
         rendered @ rendered.push(render(d, s))
@@ -105,7 +105,7 @@ function source_line(s: source.Source, line: i64) -> str
     if line < 1 || line > s.line_starts.len()
         return ""
     start = s.line_starts[line - 1]
-    end: i64 @ s.text.len()
+    end: i64 @= s.text.len()
 
     if line < s.line_starts.len()
         end @ s.line_starts[line] - 1
@@ -134,7 +134,7 @@ function source_line(s: source.Source, line: i64) -> str
 function caret(s: source.Source, d: diag.Diagnostic, col: i64) -> str
     end_pos = source.line_col(s, d.span.end)
     start_line = source.line_of(s, d.span.start)
-    width: i64 @ 1
+    width: i64 @= 1
 
     if end_pos.line == start_line && end_pos.col > col
         width @ 0
@@ -143,7 +143,7 @@ function caret(s: source.Source, d: diag.Diagnostic, col: i64) -> str
             width @ width + shown_char.width(ch)
     start = source.line_start_of(s, d.span.start)
     before = s.text.slice(from: start, to: d.span.start)
-    padding: [str] @ []
+    padding: [str] @= []
 
     for ch in before.chars()
         if ch == "\t"
@@ -161,7 +161,7 @@ test "the rich form: caret on the span, notes and tagged fixes below"
 
     # The span of "x" including quotes: line 2, after `    return `.
     at = token.Span(start: 40, end: 43)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "type_mismatch", message: "expected `i64`, found `str`", span: at)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "type_mismatch", message: "expected `i64`, found `str`", span: at)
     d.notes @ d.notes.push("`half` is declared `-> i64` at line 1")
     d.fixes @ d.fixes.push(diag.Fix(title: "rename to `total`", replacement: "total", span: at, certainty: .guess))
     got = render(d, s)
@@ -181,7 +181,7 @@ test "a fix that applies on another line says where, and one on the message's li
     s = source.new_source(name: "t.hero", text: text)
     first = token.Span(start: 25, end: 26)
     second = token.Span(start: 36, end: 37)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "expected_end_of_line", message: "m", span: first)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "expected_end_of_line", message: "m", span: first)
     d.fixes @ d.fixes.push(diag.Fix(title: "delete the `,`", replacement: "", span: first, certainty: .certain))
     d.fixes @ d.fixes.push(diag.Fix(title: "delete the `,`", replacement: "", span: second, certainty: .certain))
     got = render(d, s)
@@ -227,7 +227,7 @@ test "the excerpt writes a control character by its code, and the caret stands u
     assert diag_has(text: cr, needle: "# one<U+000D>FAKE")
 
     # A message, a note and a fix that quote one, and the one-line form.
-    quoted: diag.Diagnostic @ diag.new_diagnostic(
+    quoted: diag.Diagnostic @= diag.new_diagnostic(
         code: "unknown_escape",
         message: "`\\" + esc + "` is not an escape",
         span: at
@@ -264,11 +264,11 @@ function diag_has(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

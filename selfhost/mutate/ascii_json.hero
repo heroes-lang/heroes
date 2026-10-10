@@ -15,7 +15,7 @@ use mutate/json_read
 use mutate/spaces
 
 function written(j: json_read.Json) -> str
-    parts: [str] @ []
+    parts: [str] @= []
     write_into(@parts, j: j)
     return parts.join("")
 
@@ -31,7 +31,7 @@ function write_into(@parts: [str], j: json_read.Json)
         .text t   => parts @ parts.push(quoted(t.v))
         .items l =>
             parts @ parts.push("[")
-            at: i64 @ 0
+            at: i64 @= 0
 
             for one in l.all
                 if at > 0
@@ -42,7 +42,7 @@ function write_into(@parts: [str], j: json_read.Json)
             parts @ parts.push("]")
         .fields f =>
             parts @ parts.push("{")
-            at: i64 @ 0
+            at: i64 @= 0
 
             for name in f.names
                 if at > 0
@@ -55,9 +55,9 @@ function write_into(@parts: [str], j: json_read.Json)
 
 # `text` as a JSON string, quotes included, in printable ASCII alone.
 function quoted(text: str) -> str
-    parts: [str] @ ["\""]
-    plain: i64 @ 0
-    at: i64 @ 0
+    parts: [str] @= ["\""]
+    plain: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         b = text[at]
@@ -106,8 +106,8 @@ function escaped(code: i64) -> str
 
 function unit(code: i64) -> str
     digits = "0123456789abcdef"
-    out: [str] @ ["\\u"]
-    shift: i64 @ 12
+    out: [str] @= ["\\u"]
+    shift: i64 @= 12
 
     while shift >= 0
         d = code >> shift & 15

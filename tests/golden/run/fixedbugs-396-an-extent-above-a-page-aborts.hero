@@ -7,7 +7,7 @@ extern "fixedbugs-396-buffers.h"
     function fill_one_more(@buf: [u8] counted_by n lent, n: u64) -> i64
 
 function main()
-    buf: [u8] @ []
+    buf: [u8] @= []
     print("before")
     print(fill_one_more(@buf, n: 20000))
     print("not reached ", buf.len())

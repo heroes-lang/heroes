@@ -794,7 +794,7 @@ constant QUOTES_THE_ITALIAN: [str]
     ]
 
 function run_all(scratch: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
 
     # The quoting files leave the walk ONCE, for every check — which is
     # what the Rust `walk` does and what the first draft of this port got
@@ -814,7 +814,7 @@ function run_all(scratch: str) -> report.Report?
     # the cost of not saying so. A closed issue is a record and leaves the
     # living walk; an open one stays in it, because it is a list's item.
     issues = read_issues(walked)?
-    closed: {str: bool} @ {}
+    closed: {str: bool} @= {}
 
     for issue in issues
         if !issue.open
@@ -831,7 +831,7 @@ function run_all(scratch: str) -> report.Report?
             if !strings.starts_with(text: question, prefix: "- [ ] ")
                 closed[path] @ true
 
-    living: [str] @ []
+    living: [str] @= []
 
     for path in walked
         if !quoting(path) && !is_record(path) && !is_generated(path) && closed[path].is_err()
@@ -959,14 +959,14 @@ function tagged(@r: report.Report, scratch: str, present: [str], issues: [cards.
     standing = counted_at(text: list_then.must(), at: placed.must()[0], before: before.must())
 
     if standing.len() > 0
-        rows: [str] @ []
-        told: [str] @ []
+        rows: [str] @= []
+        told: [str] @= []
 
         for one in standing
             rows @ rows.push(one.row)
             told @ told.push(one.row + "\n      " + one.why)
 
-        refusal: str @ tag_is_excused(tag: newest, open_rows: rows, present: present, issues: issues)
+        refusal: str @= tag_is_excused(tag: newest, open_rows: rows, present: present, issues: issues)
 
         if refusal != ""
             carried = tag_is_carried(
@@ -1007,10 +1007,10 @@ function tagged(@r: report.Report, scratch: str, present: [str], issues: [cards.
             detail: "  cannot read " + EXECUTOR + " at " + newest + "\n  Without it this check cannot tell whether that tag was placed under the\n  strict reading of a ratification or the historical one, and reading the\n  silence as either would weaken this check without saying so."
         )
         return
-    unqueued: [str] @ []
+    unqueued: [str] @= []
 
     for row in open_decisions.must()
-        held: bool @ strings.contains(text: row, needle: "panel ")
+        held: bool @= strings.contains(text: row, needle: "panel ")
 
         if strict.must()
             held @ is_ratification(row: row)
@@ -1019,7 +1019,7 @@ function tagged(@r: report.Report, scratch: str, present: [str], issues: [cards.
             unqueued @ unqueued.push(row)
 
     if unqueued.len() > 0
-        reading: str @ "the historical reading, the substring `panel `, because that tag's own\n  tree did not carry the strict one"
+        reading: str @= "the historical reading, the substring `panel `, because that tag's own\n  tree did not carry the strict one"
 
         if strict.must()
             reading @ "the strict reading: the origin field is `panel NNN` and nothing more, so\n  a sitting's FINDING does not count as its ratification"
@@ -1042,7 +1042,7 @@ function tagged(@r: report.Report, scratch: str, present: [str], issues: [cards.
 # those defects may be open TODAY. That last one is what keeps this from being an
 # amnesty: reopen 061 and the row stops working.
 function tag_is_excused(tag: str, open_rows: [str], present: [str], issues: [cards.Issue]) -> str
-    numbers: [str] @ []
+    numbers: [str] @= []
 
     for row in open_rows
         n = defect_number(row)
@@ -1050,7 +1050,7 @@ function tag_is_excused(tag: str, open_rows: [str], present: [str], issues: [car
         if n != ""
             numbers @ numbers.push(n)
 
-    found: str @ ""
+    found: str @= ""
 
     for row in TAGGED_OVER
         fields = strings.split_text(text: row, separator: "|")
@@ -1084,7 +1084,7 @@ function same_numbers(listed: [str], numbers: [str]) -> bool
         return false
 
     for one in numbers
-        seen: bool @ false
+        seen: bool @= false
 
         for other in listed
             if one == other
@@ -1141,7 +1141,7 @@ function open_items_at(scratch: str, tag: str, path: str) -> [str]?
 
 # The `- [ ] ` lines of a list's text, trimmed: what every count here reads.
 function open_rows_in(text: str) -> [str]
-    open_rows: [str] @ []
+    open_rows: [str] @= []
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "- [ ] ")
@@ -1200,8 +1200,8 @@ function list_text_at(scratch: str, tag: str) -> str?
     # cards, so that every reader after this one meets the text it always
     # met: a body ends at the next item, and no card falls into the item
     # before it.
-    kept: [str] @ []
-    i: i64 @ 0
+    kept: [str] @= []
+    i: i64 @= 0
 
     while i < texts.len()
         issue = cards.issue_of(path: shape.files[i], text: texts[i])
@@ -1214,7 +1214,7 @@ function list_text_at(scratch: str, tag: str) -> str?
 
 # The paths under `roots` in a tag's tree, as `git ls-tree` names them.
 function listed_at(scratch: str, tag: str, roots: [str]) -> [str]?
-    words: [str] @ ["git", "ls-tree", "--full-tree", "-r", "-z", "--name-only", tag, "--"]
+    words: [str] @= ["git", "ls-tree", "--full-tree", "-r", "-z", "--name-only", tag, "--"]
 
     for root in roots
         words @ words.push(root)
@@ -1226,7 +1226,7 @@ function listed_at(scratch: str, tag: str, roots: [str]) -> [str]?
             code: "git",
             msg: "`git ls-tree` at " + tag + " exited " + listed.code.to_str() + ": " + strings.trimmed(listed.err)
         )
-    paths: [str] @ []
+    paths: [str] @= []
 
     for piece in strings.split_on(text: listed.out, byte: 0)
         if piece.len() > 0
@@ -1237,7 +1237,7 @@ function listed_at(scratch: str, tag: str, roots: [str]) -> [str]?
 # The texts of `paths` at a tag, in the order asked, read by ONE `git cat-file
 # --batch` whatever their number.
 function blobs_at(scratch: str, tag: str, paths: [str]) -> [str]?
-    asked: [str] @ []
+    asked: [str] @= []
 
     for path in paths
         asked @ asked.push(tag + ":" + path)
@@ -1271,8 +1271,8 @@ function decision_rows_at(scratch: str, tag: str) -> [str]?
     if paths.len() == 0
         return open_items_at(scratch: scratch, tag: tag, path: DECISIONS)
     texts = blobs_at(scratch: scratch, tag: tag, paths: paths)?
-    rows: [str] @ []
-    i: i64 @ 0
+    rows: [str] @= []
+    i: i64 @= 0
 
     while i < texts.len()
         issue = cards.issue_of(path: paths[i], text: texts[i])
@@ -1299,7 +1299,7 @@ function shape_listed(paths: [str]) -> ListAt
         if strings.starts_with(text: path, prefix: ISSUES + "/")
             return ListAt(directory: true, issues: true, files: issue_files(paths))
 
-    directory: bool @ false
+    directory: bool @= false
 
     for path in paths
         if strings.starts_with(text: path, prefix: DEFECT_FILES + "/")
@@ -1307,7 +1307,7 @@ function shape_listed(paths: [str]) -> ListAt
 
     if directory
         return ListAt(directory: true, issues: false, files: defect_files(paths))
-    files: [str] @ []
+    files: [str] @= []
 
     for path in paths
         if path == DEFECTS
@@ -1324,11 +1324,11 @@ function shape_listed(paths: [str]) -> ListAt
 # never a shorter list: a defect left unread at a tag is a defect the tag is
 # said not to have stood over, which is the direction this check refuses.
 function blobs_in(out: str) -> [str]?
-    texts: [str] @ []
-    at: i64 @ 0
+    texts: [str] @= []
+    at: i64 @= 0
 
     while at < out.len()
-        end: i64 @ at
+        end: i64 @= at
 
         while end < out.len() && out[end] != '\n'
             end @ end + 1
@@ -1367,7 +1367,7 @@ function blobs_in(out: str) -> [str]?
 # the old list held its items. Every file opens with its item's line, so an
 # item's body ends where the next file begins (`open_regions`, `item_region`).
 function joined_files(texts: [str]) -> str
-    ended: [str] @ []
+    ended: [str] @= []
 
     for text in texts
         if text == "" || strings.ends_with(text: text, suffix: "\n")
@@ -1488,7 +1488,7 @@ constant CARRIED_MARKER: str
 # parameter so the test below holds its own row and does not move each time
 # the real one does.
 function tag_is_carried(tag: str, open_rows: [str], text: str, present: [str], rows: [str]) -> str
-    numbers: [str] @ []
+    numbers: [str] @= []
 
     for row in open_rows
         n = defect_number(row)
@@ -1496,7 +1496,7 @@ function tag_is_carried(tag: str, open_rows: [str], text: str, present: [str], r
         if n != ""
             numbers @ numbers.push(n)
 
-    found: str @ ""
+    found: str @= ""
 
     for row in rows
         fields = strings.split_text(text: row, separator: "|")
@@ -1532,8 +1532,8 @@ function log_is_present(entry: str, present: [str]) -> bool
 # The directory's files joined (`joined_files`) end each item at the next
 # file's line, so one reading serves both shapes a tag can hold.
 function item_region(text: str, number: str) -> str
-    region: str @ ""
-    inside: bool @ false
+    region: str @= ""
+    inside: bool @= false
 
     for row in strings.lines(text)
         trimmed = strings.trimmed(row)
@@ -1575,7 +1575,7 @@ constant AGED_AT: i64
 # listing rather than dropping out of it: a tag left out is a tag that ages
 # nothing, which is the direction this check refuses to fail in.
 function placed_tags(out: str) -> [Placed]?
-    tags: [Placed] @ []
+    tags: [Placed] @= []
 
     for row in strings.lines(out)
         if strings.trimmed(row) == ""
@@ -1598,7 +1598,7 @@ function placed_tags(out: str) -> [Placed]?
 # neither `DEFECT_FILES` nor `DEFECTS.md` held no item of it; any other failure
 # to read is a failure, never an empty list.
 function earlier_tags(scratch: str, text: str, tags: [Placed]) -> [Placed]?
-    latest: i64 @ 0
+    latest: i64 @= 0
 
     for region in open_regions(text)
         item = classed(region.text)
@@ -1606,12 +1606,12 @@ function earlier_tags(scratch: str, text: str, tags: [Placed]) -> [Placed]?
         if item.kind == "adjacent" && item.day > latest
             latest @ item.day
 
-    before: [Placed] @ []
-    i: i64 @ 1
+    before: [Placed] @= []
+    i: i64 @= 1
 
     while i < tags.len()
         tag = tags[i]
-        held: [str] @ []
+        held: [str] @= []
 
         if latest > 0 && tag.day <= latest
             got = defect_rows_at(scratch: scratch, tag: tag.name)
@@ -1637,7 +1637,7 @@ function earlier_tags(scratch: str, text: str, tags: [Placed]) -> [Placed]?
 # division `list_offences` keeps for the same reason: a check nobody has
 # watched fail is a check nobody has watched.
 function counted_at(text: str, at: Placed, before: [Placed]) -> [Standing]
-    out: [Standing] @ []
+    out: [Standing] @= []
 
     for region in open_regions(text)
         why = counts_because(item: classed(region.text), number: defect_number(region.head), at: at, before: before)
@@ -1667,7 +1667,7 @@ function counts_because(item: Classed, number: str, at: Placed, before: [Placed]
 
     if item.day > at.day
         return "`adjacent`, classed " + cards.day_text(item.day) + ", after " + at.name + "'s own day " + cards.day_text(at.day) + ", which no item standing at it can be: it counts as `blocking`"
-    since: [str] @ [at.name]
+    since: [str] @= [at.name]
 
     for tag in before
         if tag.day > item.day || holds(numbers: tag.open, number: number)
@@ -1795,7 +1795,7 @@ function is_generated(path: str) -> bool
 function redirects(@r: report.Report, present: [str])
     if !floors.sound(@r, label: "records/redirects", found: MOVED.len(), floor: LEAST_MOVED, what: "rows in MOVED")
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     for row in MOVED
         at = strings.index_of(text: row, needle: " -> ")
@@ -1829,7 +1829,7 @@ function redirects(@r: report.Report, present: [str])
         report.keep_pass(@r)
 
 function exemptions(@r: report.Report, present: [str])
-    dead: [str] @ []
+    dead: [str] @= []
 
     for entry in RECORD
         if !selects_tree(entry: entry, present: present)
@@ -1925,8 +1925,8 @@ function selects_suffix(entry: str, present: [str]) -> bool
 # `selfhost/emit/ffi` and is a partial FILE name, so the test is a plain prefix
 # and not a tree.
 function rules(@r: report.Report, present: [str])
-    dead: [str] @ []
-    globs: i64 @ 0
+    dead: [str] @= []
+    globs: i64 @= 0
 
     # The walk is already in hand, so this asks nobody: a `shell.run` here would
     # spend a process AND write `stdout`, `stderr` and a listing into whatever
@@ -1940,7 +1940,7 @@ function rules(@r: report.Report, present: [str])
         if text.is_err()
             dead @ dead.push("    cannot read " + rule)
             continue
-        fences: i64 @ 0
+        fences: i64 @= 0
 
         for row in strings.lines(text.must())
             if strings.trimmed(row) == "---"
@@ -1989,7 +1989,7 @@ function prefix_of(glob: str) -> str
     return cut
 
 function unquoted(text: str) -> str
-    out: str @ text
+    out: str @= text
 
     if strings.starts_with(text: out, prefix: "\"")
         out @ out.slice(from: 1, to: out.len())
@@ -2034,7 +2034,7 @@ constant APPEND_ONLY: [str]
     ]
 
 function appended(@r: report.Report, scratch: str)
-    offences: [str] @ []
+    offences: [str] @= []
 
     if APPEND_ONLY.len() == 0
         report.keep_failure(
@@ -2085,7 +2085,7 @@ function appended(@r: report.Report, scratch: str)
     if tree_diff.is_err()
         offences @ offences.push("    cannot ask git what the working tree changed in " + ISSUES + " and " + LEARNING)
     else
-        floors_at: {str: i64} @ {}
+        floors_at: {str: i64} @= {}
 
         for removal in removed_by_file(tree_diff.must().out)
             if !is_entry_name(strings.base_name(removal.path))
@@ -2118,10 +2118,10 @@ record Removal
 # `removed_below` never had to know: it reads a diff of one file, and there
 # `--- a/x` comes before the first `@@`. Here it comes after another file's.
 function removed_by_file(text: str) -> [Removal]
-    out: [Removal] @ []
-    path: str @ ""
-    old: i64 @ 0
-    started: bool @ false
+    out: [Removal] @= []
+    path: str @= ""
+    old: i64 @= 0
+    started: bool @= false
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "diff --git ")
@@ -2167,9 +2167,9 @@ function closed_floor_at_head(scratch: str, path: str) -> i64
 # the same bytes as a removal and an addition, and reading them as content is
 # how a diff parser reports the file header as a deleted line.
 function removed_below(text: str, floor: i64) -> [str]
-    out: [str] @ []
-    old: i64 @ 0
-    started: bool @ false
+    out: [str] @= []
+    old: i64 @= 0
+    started: bool @= false
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "@@ -")
@@ -2191,7 +2191,7 @@ function removed_below(text: str, floor: i64) -> [str]
 # hunk rather than none. The loud direction (`.claude/rules/module-shape.md`).
 function hunk_start(row: str) -> i64
     rest = strings.without_prefix(text: row, prefix: "@@ -")
-    end: i64 @ 0
+    end: i64 @= 0
 
     while end < rest.len()
         byte = rest[end]
@@ -2250,7 +2250,7 @@ function readable(entry: str, present: [str]) -> [str]
         if path == entry
             return [entry]
 
-    under: [str] @ []
+    under: [str] @= []
 
     for path in present
         if strings.starts_with(text: path, prefix: entry + "/")
@@ -2259,8 +2259,8 @@ function readable(entry: str, present: [str]) -> [str]
     return under
 
 function numbering(@r: report.Report, present: [str])
-    rows: [str] @ []
-    sources: [str] @ []
+    rows: [str] @= []
+    sources: [str] @= []
 
     for entry in DEFECT_NUMBERED
         for path in readable(entry: entry, present: present)
@@ -2306,7 +2306,7 @@ function numbering(@r: report.Report, present: [str])
 # `list_offences`'s reason: a reader of the check sees what it decides, and a
 # reader of the test sees every shape it has decided about.
 function numbers_issued(rows: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for row in rows
         number = defect_number(row)
@@ -2317,8 +2317,8 @@ function numbers_issued(rows: [str]) -> [str]
     return out
 
 function issued_twice(numbers: [str]) -> [str]
-    seen: [str] @ []
-    twice: [str] @ []
+    seen: [str] @= []
+    twice: [str] @= []
 
     for number in numbers
         if is_among(number, seen: seen) && !is_among(number, seen: twice)
@@ -2332,7 +2332,7 @@ function issued_twice(numbers: [str]) -> [str]
 # never how many defects the project is supposed to have. The number is read
 # as `issued_digits` reads one, so the thousandth defect's line has one.
 function defect_number(row: str) -> str
-    marker: str @ ""
+    marker: str @= ""
 
     if strings.starts_with(text: row, prefix: "- [ ] **")
         marker @ "- [ ] **"
@@ -2363,7 +2363,7 @@ function defect_number(row: str) -> str
 # defect 280 (2026-10-04)**, so the thousandth defect would have had no name
 # `records/defects` accepted and no line any count could read.
 function issued_digits(text: str) -> i64
-    count: i64 @ 0
+    count: i64 @= 0
 
     while count < text.len() && text[count] >= '0' && text[count] <= '9'
         count @ count + 1
@@ -2427,7 +2427,7 @@ function unmerged(@r: report.Report, scratch: str)
             detail: "  git grep exited " + run.code.to_str() + ", so nothing was searched:\n    " + strings.trimmed(run.err)
         )
         return
-    files: [str] @ []
+    files: [str] @= []
 
     for row in strings.lines(run.out)
         if strings.trimmed(row) != ""
@@ -2458,10 +2458,10 @@ constant ENTRY_TREES: [str]
     ]
 
 function entries(@r: report.Report, present: [str])
-    offences: [str] @ []
+    offences: [str] @= []
 
     for tree in ENTRY_TREES
-        held: i64 @ 0
+        held: i64 @= 0
 
         for path in present
             if strings.starts_with(text: path, prefix: tree + "/")
@@ -2498,7 +2498,7 @@ function is_entry_name(name: str) -> bool
     if name.len() < 20
         return false
     shape = "nnnn-nn-nn-nnnn-"
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < shape.len()
         want = shape[i]
@@ -2515,7 +2515,7 @@ function is_entry_name(name: str) -> bool
 
     if rest.len() == 0
         return false
-    j: i64 @ 0
+    j: i64 @= 0
 
     while j < rest.len()
         byte = rest[j]
@@ -2535,7 +2535,7 @@ function is_entry_name(name: str) -> bool
 # §14. If the file is a dated record, add it to RECORD and say why in the
 # commit.
 function numbered(@r: report.Report, living: [str])
-    offenders: [str] @ []
+    offenders: [str] @= []
 
     for path in living
         text = read_file(path)
@@ -2570,7 +2570,7 @@ function named(@r: report.Report, living: [str])
             label: "records/table",
             detail: "  the alias table has " + table.len().to_str() + " rows, not " + ROWS.to_str()
         )
-    known: {str: bool} @ {}
+    known: {str: bool} @= {}
 
     for row in table
         known[row] @ true
@@ -2578,7 +2578,7 @@ function named(@r: report.Report, living: [str])
     for name in REFUSED
         known[name] @ true
 
-    unknown: [str] @ []
+    unknown: [str] @= []
 
     for path in living
         text = read_file(path)
@@ -2639,12 +2639,12 @@ function sections(@r: report.Report, living: [str])
             detail: "  " + CONTRACT + " has no `## N.` heading this reader can see, so every citation in the tree would pass vacuously"
         )
         return
-    known: {str: bool} @ {}
+    known: {str: bool} @= {}
 
     for number in present
         known[number] @ true
 
-    offenders: [str] @ []
+    offenders: [str] @= []
 
     for path in living
         body = read_file(path)
@@ -2666,7 +2666,7 @@ function sections(@r: report.Report, living: [str])
 
 # The `## N.` headings of the contract, by number.
 function numbered_headings(text: str) -> [str]
-    found: [str] @ []
+    found: [str] @= []
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "## ")
@@ -2682,7 +2682,7 @@ function numbered_headings(text: str) -> [str]
 
 # The sections a text cites and the contract does not have.
 function unknown_sections(text: str, known: {str: bool}) -> [str]
-    missing: [str] @ []
+    missing: [str] @= []
 
     for number in sections_cited(text)
         state = known[number]
@@ -2696,20 +2696,20 @@ function unknown_sections(text: str, known: {str: bool}) -> [str]
 # in this file, and it has to know that `§` is TWO bytes in UTF-8, 0xC2 0xA7:
 # there is no character index here to trust.
 function sections_cited(text: str) -> [str]
-    found: [str] @ []
+    found: [str] @= []
     marker = CONTRACT + " "
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == marker[0] && marked_at(text: text, at: i, needle: marker)
-            at: i64 @ i + marker.len()
+            at: i64 @= i + marker.len()
 
             if at + 1 < text.len() && text[at] == 194 && text[at + 1] == 167
                 at @ at + 2
 
                 if at < text.len() && text[at] == 32
                     at @ at + 1
-                last: i64 @ at
+                last: i64 @= at
 
                 while last < text.len() && is_digit(text[last])
                     last @ last + 1
@@ -2729,7 +2729,7 @@ function sections_cited(text: str) -> [str]
 function marked_at(text: str, at: i64, needle: str) -> bool
     if at + needle.len() > text.len()
         return false
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < needle.len()
         if text[at + k] != needle[k]
@@ -2767,12 +2767,12 @@ function c_files(@r: report.Report, living: [str])
     # machine lives with that machine's page, as defect 463's does, run on a
     # Linux with SELinux enforcing, which no leg of the net is.
     owns: [str] = ["runtime/", "tools/spike/", "seed/", "docs/platforms/"]
-    strays: [str] @ []
+    strays: [str] @= []
 
     for path in living
         if !strings.ends_with(text: path, suffix: ".c") && !strings.ends_with(text: path, suffix: ".h")
             continue
-        owned: bool @ false
+        owned: bool @= false
 
         for dir in owns
             if strings.starts_with(text: path, prefix: dir)
@@ -2970,7 +2970,7 @@ function is_prose(document: str, row: str) -> bool
 # The punctuation a citation sits inside, turned to space so `words` can cut it:
 # backticks, quotes, brackets and the separators prose puts between two paths.
 function unpunctuated(row: str) -> str
-    out: [str] @ []
+    out: [str] @= []
 
     for ch in row.chars()
         if ch == "`" || ch == "\"" || ch == "'" || ch == "(" || ch == ")" || ch == "[" || ch == "]" || ch == "," || ch == ";"
@@ -2989,7 +2989,7 @@ function unpunctuated(row: str) -> str
 # function read a character index into a byte slice and the suite died with
 # `panic: string slice splits a character` on the real tree.
 function without_position(token: str) -> str
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i + 1 < token.len()
         if token[i] == ':' && is_digit(token[i + 1])
@@ -3001,8 +3001,8 @@ function without_position(token: str) -> str
 # Leading and trailing prose punctuation. A sentence ends and a citation does
 # not: `runtime/parts/desc.c.` names a file whose name has no full stop.
 function unedged(token: str) -> str
-    first: i64 @ 0
-    past: i64 @ token.len()
+    first: i64 @= 0
+    past: i64 @= token.len()
 
     while first < past && (token[first] == '*' || token[first] == ':')
         first @ first + 1
@@ -3030,7 +3030,7 @@ function expanded(token: str) -> [str]
         return []
     before = token.slice(from: 0, to: open_at.must())
     after = token.slice(from: close_at.must() + 1, to: token.len())
-    out: [str] @ []
+    out: [str] @= []
 
     for part in strings.split_text(text: token.slice(from: open_at.must() + 1, to: close_at.must()), separator: ",")
         for one in expanded(before + strings.trimmed(part) + after)
@@ -3046,7 +3046,7 @@ function expanded(token: str) -> [str]
 # repository's record is a long account of second places going stale.
 function is_dated(row: str) -> bool
     cs = row.chars()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i + 9 < cs.len()
         if four_digits(cs, at: i) && cs[i + 4] == "-" && two_digits(cs, at: i + 5) && cs[i + 7] == "-" && two_digits(cs, at: i + 8)
@@ -3089,7 +3089,7 @@ function moved_to(part: str) -> str
             continue
         written = strings.trimmed(row.slice(from: 0, to: at.must()))
         mark = strings.index_of(text: written, needle: " §")
-        head: str @ written
+        head: str @= written
 
         if !mark.is_err()
             head @ strings.trimmed(written.slice(from: 0, to: mark.must()))
@@ -3164,8 +3164,8 @@ function one_names(part: str, document: str, known: {str: bool}) -> bool
         if !known[home + part].is_err()
             return true
 
-    dir: str @ document
-    walking: bool @ true
+    dir: str @= document
+    walking: bool @= true
 
     while walking
         at = last_slash(dir)
@@ -3192,7 +3192,7 @@ function issue_redirect(part: str, known: {str: bool}) -> str
 
     for root in ["docs/records/done/", "docs/records/log/", "docs/done/", "docs/log/"]
         if strings.starts_with(text: part, prefix: root) && strings.without_prefix(text: part, prefix: root) == name
-            landed: str @ issue_home(name)
+            landed: str @= issue_home(name)
 
             if part == SHARED_NAME
                 landed @ issue_home(strings.without_suffix(text: name, suffix: ".md") + "-decided.md")
@@ -3213,8 +3213,8 @@ constant SHARED_NAME: str
     "docs/records/log/2026-09-23-1215-a-seats-copy-is-its-own.md"
 
 function last_slash(text: str) -> i64?
-    at: i64? @ fail(code: "none", msg: "no slash")
-    i: i64 @ 0
+    at: i64? @= fail(code: "none", msg: "no slash")
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '/'
@@ -3269,7 +3269,7 @@ function is_claim(token: str, roots: {str: bool}) -> bool
 
 # Every path claim on one line of prose.
 function claims_on(row: str, roots: {str: bool}) -> [str]
-    found: [str] @ []
+    found: [str] @= []
 
     for piece in strings.words(unpunctuated(row))
         token = unedged(without_position(without_member(piece)))
@@ -3280,7 +3280,7 @@ function claims_on(row: str, roots: {str: bool}) -> [str]
     return found
 
 function slashes(token: str) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     for ch in token.chars()
         if ch == "/"
@@ -3381,12 +3381,12 @@ function slashes(token: str) -> i64
 # is the second defect in one afternoon that only the third platform showed, and
 # the reason the contract asks for all three before a commit rather than after.
 function ignored_by_git(scratch: str, tokens: [str]) -> {str: bool}
-    out: {str: bool} @ {}
-    at: i64 @ 0
+    out: {str: bool} @= {}
+    at: i64 @= 0
 
     while at < tokens.len()
-        words: [str] @ ["git", "check-ignore"]
-        taken: i64 @ 0
+        words: [str] @= ["git", "check-ignore"]
+        taken: i64 @= 0
 
         while at < tokens.len() && taken < IGNORE_BATCH
             token = tokens[at]
@@ -3420,8 +3420,8 @@ function ignored_by_git(scratch: str, tokens: [str]) -> {str: bool}
     return out
 
 function citations(@r: report.Report, scratch: str, present: [str], closed: {str: bool})
-    known: {str: bool} @ {}
-    roots: {str: bool} @ {}
+    known: {str: bool} @= {}
+    roots: {str: bool} @= {}
 
     for path in present
         known[path] @ true
@@ -3432,8 +3432,8 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
 
         # every directory above it, so that naming a directory is a LOOKUP and
         # not a scan over every path the repository has
-        dir: str @ path
-        walking: bool @ true
+        dir: str @= path
+        walking: bool @= true
 
         while walking
             cut = last_slash(dir)
@@ -3444,12 +3444,12 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
                 dir @ dir.slice(from: 0, to: cut.must())
                 known[dir] @ true
 
-    dead: [str] @ []
+    dead: [str] @= []
 
     # In lockstep with `dead`: entry i of one is the token of entry i of the
     # other, so the git pass below can excuse a line without re-parsing the
     # message written for a human.
-    tokens: [str] @ []
+    tokens: [str] @= []
 
     for document in present
         if is_record(document) || is_generated(document) || !closed[document].is_err()
@@ -3458,7 +3458,7 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
 
         if text.is_err()
             continue
-        number: i64 @ 0
+        number: i64 @= 0
 
         for row in strings.lines(text.must())
             number @ number + 1
@@ -3484,8 +3484,8 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
     # carries the measurement that made this the last step rather than the
     # first.
     excused = ignored_by_git(scratch: scratch, tokens: tokens)
-    speaking: [str] @ []
-    at: i64 @ 0
+    speaking: [str] @= []
+    at: i64 @= 0
 
     while at < dead.len()
         token = tokens[at]
@@ -3507,7 +3507,7 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
 # One line's verdict. Split out because `citations` is already a walk inside a
 # walk inside a walk, and this is the part with the rule in it.
 function read_the_line(@dead: [str], @tokens: [str], row: str, found: [str], document: str, number: i64, known: {str: bool})
-    missing: [str] @ []
+    missing: [str] @= []
 
     for token in found
         if !names_something(token: token, document: document, known: known)
@@ -3546,7 +3546,7 @@ function read_the_line(@dead: [str], @tokens: [str], row: str, found: [str], doc
 # four hundred English ones, which is exactly the case that got past every reader
 # for a month.
 function english(@r: report.Report, present: [str], closed: {str: bool})
-    found: [str] @ []
+    found: [str] @= []
 
     for path in present
         if is_record(path) || is_generated(path) || !closed[path].is_err()
@@ -3626,10 +3626,10 @@ function same_folded(word: str, marker: str) -> bool
     if word.len() != marker.len()
         return false
 
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < word.len()
-        b: u8 @ word[i]
+        b: u8 @= word[i]
 
         if b >= 65 && b <= 90
             b @ b + 32
@@ -3650,10 +3650,10 @@ function same_folded(word: str, marker: str) -> bool
 # Stripping code spans also drops identifiers, paths and emitted C, none of
 # which is prose in any language.
 function latin_words(line: str) -> [str]
-    out: [str] @ []
-    piece: [str] @ []
-    inside_code: bool @ false
-    i: i64 @ 0
+    out: [str] @= []
+    piece: [str] @= []
+    inside_code: bool @= false
+    i: i64 @= 0
 
     while i < line.len()
         byte = line[i]
@@ -3667,7 +3667,7 @@ function latin_words(line: str) -> [str]
             i @ i + 1
             continue
 
-        letter: bool @ false
+        letter: bool @= false
 
         if !inside_code
             if is_lower(byte) || byte >= 65 && byte <= 90
@@ -3706,9 +3706,9 @@ function without_member(token: str) -> str
 # `application/json`.
 function has_extension(token: str) -> bool
     cs = token.chars()
-    dot: i64 @ -1
-    slash: i64 @ -1
-    i: i64 @ 0
+    dot: i64 @= -1
+    slash: i64 @= -1
+    i: i64 @= 0
 
     while i < cs.len()
         if cs[i] == "."
@@ -3723,7 +3723,7 @@ function has_extension(token: str) -> bool
 
     if cs.len() - 1 - dot > 9
         return false
-    j: i64 @ dot + 1
+    j: i64 @= dot + 1
 
     while j < cs.len()
         if cs[j].len() != 1 || !is_lower(cs[j][0]) && !is_digit(cs[j][0])
@@ -3767,7 +3767,7 @@ function expectations(@r: report.Report, scratch: str)
     if listing.is_err()
         report.keep_failure(@r, label: "records/expected", detail: "  cannot walk tests/golden")
         return
-    offenders: [str] @ []
+    offenders: [str] @= []
 
     for path in listing.must()
         if !strings.ends_with(text: path, suffix: ".expected")
@@ -3826,8 +3826,8 @@ function expectations(@r: report.Report, scratch: str)
 # given a verdict section saying so — a rule with an exception is a rule the next
 # exception breaks.
 function verdicts(@r: report.Report, present: [str], issues: [cards.Issue])
-    offenders: [str] @ []
-    seen: i64 @ 0
+    offenders: [str] @= []
+    seen: i64 @= 0
 
     for path in present
         if !is_sitting(path)
@@ -4088,7 +4088,7 @@ constant CARDS_FLOOR: i64
 # Every issue file in the walk, the front page aside, in the walk's order,
 # which is the names' and so the order of birth.
 function issue_files(present: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for path in present
         if strings.starts_with(text: path, prefix: ISSUES + "/") && strings.ends_with(text: path, suffix: ".md") && path != ISSUES_PAGE
@@ -4097,7 +4097,7 @@ function issue_files(present: [str]) -> [str]
     return out
 
 function read_issues(present: [str]) -> [cards.Issue]?
-    out: [cards.Issue] @ []
+    out: [cards.Issue] @= []
 
     for path in issue_files(present)
         text = read_file(path)?
@@ -4143,9 +4143,9 @@ function carded(@r: report.Report, scratch: str, present: [str], issues: [cards.
 
     if !floors.sound(@r, label: "records/cards", found: issues.len(), floor: CARDS_FLOOR, what: "issue files")
         return
-    offenders: [str] @ []
-    hashes: [str] @ []
-    owners: [str] @ []
+    offenders: [str] @= []
+    hashes: [str] @= []
+    owners: [str] @= []
 
     for issue in issues
         for complaint in card_offences(issue: issue, chain: chain)
@@ -4155,7 +4155,7 @@ function carded(@r: report.Report, scratch: str, present: [str], issues: [cards.
             hashes @ hashes.push(issue.card.commit)
             owners @ owners.push(issue.path)
 
-    unnamed: [str] @ []
+    unnamed: [str] @= []
 
     for path in present
         if strings.starts_with(text: path, prefix: ISSUES + "/") && !strings.ends_with(text: path, suffix: ".md")
@@ -4207,10 +4207,10 @@ function carded(@r: report.Report, scratch: str, present: [str], issues: [cards.
             detail: "  cannot ask git for the cards' commits: " + failure_of(missing)
         )
         return
-    told: [str] @ []
+    told: [str] @= []
 
     for one in missing.must()
-        i: i64 @ 0
+        i: i64 @= 0
 
         while i < hashes.len()
             if hashes[i] == one
@@ -4233,7 +4233,7 @@ function card_offences(issue: cards.Issue, chain: {str: bool}) -> [str]
 
     if found.complaints.len() > 0
         return found.complaints
-    out: [str] @ []
+    out: [str] @= []
     home = issue_home(issue.name)
 
     if home == ""
@@ -4280,7 +4280,7 @@ function card_offences(issue: cards.Issue, chain: {str: bool}) -> [str]
     repairs = cards.repaired_hashes(issue.body)
 
     if repairs.len() > 0
-        agrees: bool @ false
+        agrees: bool @= false
 
         for one in repairs
             if strings.starts_with(text: found.commit, prefix: one)
@@ -4320,7 +4320,7 @@ function unresolved(scratch: str, hashes: [str]) -> [str]?
             code: "git",
             msg: "`git cat-file --batch-check` exited " + answered.code.to_str() + ": " + strings.trimmed(answered.err)
         )
-    out: [str] @ []
+    out: [str] @= []
 
     for row in strings.lines(answered.out)
         fields = strings.words(row)
@@ -4372,7 +4372,7 @@ function queued(path: str, issues: [cards.Issue]) -> bool
 # opens with `digits`, as the record spells it or as the integer it is.
 function names_sitting(text: str, digits: str) -> bool
     padded = "panel " + digits
-    bare: str @ padded
+    bare: str @= padded
     number = strings.to_number(text: digits)
 
     if !number.is_err()
@@ -4437,7 +4437,7 @@ function is_sitting(path: str) -> bool
 # what they wrote about, which is a different question and not this one.
 function opens_pending(text: str) -> bool
     for line in strings.lines(text: text)
-        bare: str @ ""
+        bare: str @= ""
 
         for ch in line.chars()
             if ch != "*" && ch != " " && ch != "\t" && ch != "_"
@@ -4496,10 +4496,10 @@ record WhereScan
 # exercised by breaking the real ROADMAP, which is why the defect it missed went
 # unnoticed for as long as it existed.
 function scan_where(text: str) -> WhereScan
-    counted: i64 @ 0
-    mangled: i64 @ 0
-    inside: bool @ false
-    closed: bool @ false
+    counted: i64 @= 0
+    mangled: i64 @= 0
+    inside: bool @= false
+    closed: bool @= false
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "## Where we are")
@@ -4551,7 +4551,7 @@ function roadmap_counts(text: str) -> OpenCounts?
             return fail(code: "shape", msg: "no ` defect` after the first count")
         head = strings.to_number(text: rest.slice(from: 0, to: cut.must()))
         after = rest.slice(from: cut.must(), to: rest.len())
-        tail: str @ ""
+        tail: str @= ""
 
         # **Both nouns are read in the singular, since 2026-09-19**, because the
         # plural needles obliged the line to say *1 decisions* on the first day a
@@ -4589,8 +4589,8 @@ function counts(@r: report.Report, issues: [cards.Issue])
             detail: "  docs/ROADMAP.md has no `" + OPEN_LINE_PREFIX + "N defects · M decisions.**` line.\n  The author asked for a preamble, the two open counts and the tables, and a\n  check that finds no line at all passes whatever the file holds."
         )
         return
-    defects: i64 @ 0
-    decisions: i64 @ 0
+    defects: i64 @= 0
+    decisions: i64 @= 0
 
     for issue in issues
         if issue.open && issue.card.kind == "defect"
@@ -4614,7 +4614,7 @@ function counts(@r: report.Report, issues: [cards.Issue])
 # number that disagrees: the open defects and the open decisions, counted by
 # their cards' kind. Pure, so the test below drives it with numbers.
 function count_trouble(stated: OpenCounts, defects: i64, decisions: i64) -> [str]
-    trouble: [str] @ []
+    trouble: [str] @= []
 
     if stated.defects != defects
         trouble @ trouble.push(
@@ -4726,7 +4726,7 @@ function homed(@r: report.Report, present: [str], issues: [cards.Issue])
             detail: "  `docs/work/SCHEDULED.md` is back, and two places now claim to hold the\n  scheduled work. It became `" + MILESTONES + "` on 2026-09-12, one file per\n  milestone; a list in two homes is the shape this repository's record is a\n  long account of."
         )
         return
-    offenders: [str] @ []
+    offenders: [str] @= []
 
     for path in files
         own = strings.without_suffix(text: strings.base_name(path), suffix: ".md")
@@ -4772,7 +4772,7 @@ function homed(@r: report.Report, present: [str], issues: [cards.Issue])
 # with a `done` cell is closed. The summary rows above the chain carry no row
 # number and are not read (`chain_row_name`).
 function chain_states(text: str) -> {str: bool}
-    is_open: {str: bool} @ {}
+    is_open: {str: bool} @= {}
 
     for row in strings.lines(text)
         found = chain_row_name(row)
@@ -4789,7 +4789,7 @@ constant MILESTONES: str
 # A milestone's page, `M-<name>.md` directly in the tree: its reasoning, the
 # description of the milestone it becomes on GitHub, and no item.
 function milestone_pages(present: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for path in present
         rest = strings.without_prefix(text: path, prefix: MILESTONES + "/")
@@ -4848,7 +4848,7 @@ function item_milestone(row: str) -> str?
 function all_digits(text: str) -> bool
     if text.len() == 0
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if !is_digit(text[i])
@@ -4908,8 +4908,8 @@ function head_of(row: str) -> str
 # held to holding no item, and the milestone pages with them, whose items left
 # for the issues that day.
 function lists(@r: report.Report, present: [str], issues: [cards.Issue])
-    offenders: [str] @ []
-    unclassed: bool @ false
+    offenders: [str] @= []
+    unclassed: bool @= false
     front = read_file(ISSUES_PAGE)
 
     if front.is_err()
@@ -4952,7 +4952,7 @@ function lists(@r: report.Report, present: [str], issues: [cards.Issue])
         for complaint in front_page_offences(text: learning_page.must(), files: LEARNING, ceiling: PREAMBLE_CEILING)
             offenders @ offenders.push("    " + LEARNING_PAGE + ": " + complaint)
 
-    asked: i64 @ 0
+    asked: i64 @= 0
 
     for path in present
         if !is_question(path)
@@ -4990,8 +4990,8 @@ function lists(@r: report.Report, present: [str], issues: [cards.Issue])
 # above; a milestone's page is given none, its preamble being the milestone's
 # reasoning, which `/step` § 1 calls the thing that must not be lost.
 function front_page_offences(text: str, files: str, ceiling: i64) -> [str]
-    out: [str] @ []
-    number: i64 @ 0
+    out: [str] @= []
+    number: i64 @= 0
 
     for row in strings.lines(text)
         number @ number + 1
@@ -5019,7 +5019,7 @@ function front_page_offences(text: str, files: str, ceiling: i64) -> [str]
 # other line blank or indented under it, and **no card**, because a card is
 # what makes a file one GitHub issue and a question never becomes one.
 function learn_offences(path: str, text: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     name = strings.base_name(path)
 
     if !is_entry_name(name)
@@ -5048,7 +5048,7 @@ function learn_offences(path: str, text: str) -> [str]
     if rows.len() == 0 || !strings.starts_with(text: rows[0], prefix: "- [ ] ") && !strings.starts_with(text: rows[0], prefix: "- [x] ")
         out @ out.push("line 1 is not the question's line, and a question opens with it, `- [ ]` or `- [x]`")
         return out
-    i: i64 @ 1
+    i: i64 @= 1
 
     while i < rows.len()
         row = rows[i]
@@ -5075,14 +5075,14 @@ function item_offences(text: str, first: i64) -> [str]
 
     if rows.len() == 0
         return ["holds no item, and an open issue holds exactly one"]
-    out: [str] @ []
+    out: [str] @= []
     opening = rows[0]
 
     if !strings.starts_with(text: opening, prefix: "- [ ] ")
         out @ out.push(
             "line " + first.to_str() + " is not the item's line, and an open issue's item stands first under its card: " + head_of(opening)
         )
-    i: i64 @ 1
+    i: i64 @= 1
 
     while i < rows.len()
         row = rows[i]
@@ -5104,7 +5104,7 @@ function item_offences(text: str, first: i64) -> [str]
 # that defect; and the line's own shape between its number and its class
 # (`line_shape`, defect 190).
 function defect_line_offences(issue: cards.Issue) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     opening = first_item_line(issue.body)
 
     if !strings.starts_with(text: opening, prefix: "- [ ] ")
@@ -5147,7 +5147,7 @@ function line_shape(first: str) -> str
 
     if !strings.starts_with(text: after, prefix: " | ")
         return "its title's closing `**` is not followed by ` | `, which sets it apart from what the defect does"
-    fields: str @ strings.without_prefix(text: after, prefix: " | ")
+    fields: str @= strings.without_prefix(text: after, prefix: " | ")
     token = strings.index_of(text: fields, needle: CLASS_TOKEN)
 
     if !token.is_err()
@@ -5168,7 +5168,7 @@ function line_shape(first: str) -> str
 
 # Where the last ` | ` of `fields` stands; the caller has found one.
 function last_bar_at(fields: str) -> i64
-    at: i64 @ fields.len() - 3
+    at: i64 @= fields.len() - 3
 
     while at > 0 && !(fields[at] == 32 && fields[at + 1] == 124 && fields[at + 2] == 32)
         at @ at - 1
@@ -5195,8 +5195,8 @@ function last_bar_at(fields: str) -> i64
 #     cannot see at all. The number the record issued twice is its exception
 #     there and here.
 function defect_register(@r: report.Report, issues: [cards.Issue])
-    offences: [str] @ []
-    first: {str: str} @ {}
+    offences: [str] @= []
+    first: {str: str} @= {}
 
     for issue in issues
         number = defect_in_name(issue.name)
@@ -5263,7 +5263,7 @@ function defect_in_name(name: str) -> str
 # The open defects' files: every path under `DEFECT_FILES` but its keeper, in
 # the walk's order, which is the names' and so the numbers'.
 function defect_files(present: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for path in present
         if strings.starts_with(text: path, prefix: DEFECT_FILES + "/") && path != DEFECT_KEEPER
@@ -5329,12 +5329,12 @@ record Classed
 # tag stood over. A body runs to the next item, to a banner, or to a line at
 # column zero, the three things a body is not.
 function open_regions(text: str) -> [Region]
-    out: [Region] @ []
+    out: [Region] @= []
     none: [str] = []
-    rows: [str] @ none
-    head: str @ ""
-    start: i64 @ 0
-    number: i64 @ 0
+    rows: [str] @= none
+    head: str @= ""
+    start: i64 @= 0
+    number: i64 @= 0
 
     for row in strings.lines(text)
         number @ number + 1
@@ -5360,7 +5360,7 @@ function open_regions(text: str) -> [Region]
 # One item's class, from its line and its body (`Classed`).
 function classed(text: str) -> Classed
     rows = strings.lines(text)
-    complaints: [str] @ []
+    complaints: [str] @= []
 
     if rows.len() == 0
         return Classed(kind: "", day: 0, complaints: ["there is no item line"])
@@ -5368,15 +5368,15 @@ function classed(text: str) -> Classed
 
     if on_line.is_err()
         complaints @ complaints.push(failure_of(on_line))
-    marked: [i64] @ []
-    i: i64 @ 1
+    marked: [i64] @= []
+    i: i64 @= 1
 
     while i < rows.len()
         if strings.starts_with(text: strings.trimmed(rows[i]), prefix: CLASS_LINE)
             marked @ marked.push(i)
         i @ i + 1
 
-    day: i64 @ 0
+    day: i64 @= 0
 
     if marked.len() == 0
         complaints @ complaints.push("its body holds no line opening `**Class: <name>**, YYYY-MM-DD` and its reason")
@@ -5473,8 +5473,8 @@ function class_stated(rows: [str], at: i64) -> Classed?
 
     # `day_of` read the first ten bytes as ASCII, so the eleventh starts a
     # character and the cut is safe.
-    reason: str @ dated.slice(from: 10, to: dated.len())
-    next: i64 @ at + 1
+    reason: str @= dated.slice(from: 10, to: dated.len())
+    next: i64 @= at + 1
 
     while next < rows.len() && strings.trimmed(rows[next]) != ""
         reason @ reason + " " + rows[next]
@@ -5497,7 +5497,7 @@ function classes_told() -> str
     return "`" + CLASSES.join("`, `") + "`"
 
 function has_letter(text: str) -> bool
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         byte = text[i]
@@ -5517,7 +5517,7 @@ function class_offences(text: str) -> [str]
 # The same, for a text that starts on line `first` of its file, which is an
 # issue's below its card: the complaint names the line a reader opens.
 function class_offences_from(text: str, first: i64) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for region in open_regions(text)
         for complaint in classed(region.text).complaints
@@ -5582,7 +5582,7 @@ test "the ROADMAP's two counts are read, and a line that is not there is not a p
 # The ` — ` after the number is the list's own format, which `defect_number`
 # reads. (It held the one-item list, banners and count, until that day.)
 function one_defect(head: str, body: [str]) -> str
-    rows: [str] @ [head]
+    rows: [str] @= [head]
 
     for line in body
         if line == ""
@@ -5787,7 +5787,7 @@ test "fixedbugs: a defect item's line is read whole, its title closed and its tw
         "its field of where to look is empty"
         "its title is never closed by `**`"
     ]
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < shapes.len()
         got = defect_line_offences(defect_issue(name: name, text: one_defect(head: shapes[at], body: body)))
@@ -5820,8 +5820,8 @@ test "a front page holds its rules and no item, no banner and no count"
 
     # Held whole to a ceiling where one is given, at the line and one past it;
     # a milestone's page is given none, its preamble being its reasoning.
-    at_ceiling: str @ ""
-    written: i64 @ 0
+    at_ceiling: str @= ""
+    written: i64 @= 0
 
     while written < PREAMBLE_CEILING
         at_ceiling @ at_ceiling + "a rule\n"
@@ -5835,7 +5835,7 @@ test "a front page holds its rules and no item, no banner and no count"
     assert front_page_offences(text: at_ceiling + at_ceiling + at_ceiling, files: ISSUES, ceiling: 0).len() == 0
 
 test "the names are the register: one name per number, carried by every open defect"
-    held: report.Report @ report.empty()
+    held: report.Report @= report.empty()
     defect_register(
         @held,
         issues: [defect_issue(name: "2026-10-02-0000-defect-177-a.md", text: "- [ ] **177 — a** | b | c\n"), defect_issue(name: "2026-10-02-0001-defect-178-b.md", text: "- [ ] **178 — b** | b | c\n"), defect_issue(name: "2026-08-13-0003-defect-fixed-2026-08-12-panel-035.md", text: "- [x] closed before names carried numbers\n")]
@@ -5844,7 +5844,7 @@ test "the names are the register: one name per number, carried by every open def
     assert held.failed == 0
 
     # Two lanes that each took 238: two names, one number, no git conflict.
-    twice: report.Report @ report.empty()
+    twice: report.Report @= report.empty()
     defect_register(
         @twice,
         issues: [defect_issue(name: "2026-10-04-0000-defect-238-one-lane.md", text: "- [ ] **238 — one** | b | c\n"), defect_issue(name: "2026-10-04-0001-defect-238-another-lane.md", text: "- [ ] **238 — two** | b | c\n")]
@@ -5854,7 +5854,7 @@ test "the names are the register: one name per number, carried by every open def
 
     # An open defect whose name carries no number, and a name that carries one
     # on a card that says the file is something else.
-    unnamed: report.Report @ report.empty()
+    unnamed: report.Report @= report.empty()
     defect_register(
         @unnamed,
         issues: [defect_issue(name: "2026-10-04-0000-a-thing.md", text: "- [ ] **239 — x** | b | c\n")]
@@ -5863,7 +5863,7 @@ test "the names are the register: one name per number, carried by every open def
 
     # A decision ABOUT a defect may carry its number in its slug, as the log's
     # did, and shares it with the defect's own file without being a second one.
-    about: report.Report @ report.empty()
+    about: report.Report @= report.empty()
     defect_register(
         @about,
         issues: [defect_issue(name: "2026-09-04-0612-defect-011-two-arguments.md", text: "- [x] **011 — two** | b | c\n"), issue_with(name: "2026-09-05-0001-defect-011-repaired.md", kind: "decision", text: "# Defect 011 repaired\n")]
@@ -5898,7 +5898,7 @@ test "fixedbugs: the thousandth defect has a name and a line every check reads (
     filed = "- [ ] **1000 — the thousandth** | what | where · **class: adjacent**\n\n    **Class: adjacent**, 2026-10-04, a reason.\n"
     assert defect_line_offences(defect_issue(name: "2026-10-04-0000-defect-1000-the-thousandth.md", text: filed)).len() == 0
     assert class_offences(filed).len() == 0
-    twice: report.Report @ report.empty()
+    twice: report.Report @= report.empty()
     defect_register(
         @twice,
         issues: [defect_issue(name: "2026-10-04-0000-defect-1000-one.md", text: filed), defect_issue(name: "2026-10-04-0001-defect-1000-two.md", text: filed)]
@@ -5992,7 +5992,7 @@ function boundary(@r: report.Report)
         "M-selfhost-fixpoint is v1"
         "hero_desc_str"
     ]
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     for text in caught
         if numbered_in(text).is_err()
@@ -6012,7 +6012,7 @@ function boundary(@r: report.Report)
 # `STAC-M3`, kdb+'s benchmark suite: the one genuine false positive a
 # word-anchored search hits, and the reason the rule looks behind.
 function numbered_in(text: str) -> str?
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == 77 && opens_at(text: text, at: i) && i + 1 < text.len() && is_digit(text[i + 1])
@@ -6023,7 +6023,7 @@ function numbered_in(text: str) -> str?
             # window stops at the first byte above ASCII — every byte in the
             # answer is then one character wide. Found 2026-08-19 the first time
             # this walk read a file with an em dash three bytes after an `M8a`.
-            last: i64 @ i + 1
+            last: i64 @= i + 1
 
             while last < text.len() && last < i + 4 && text[last] < 128
                 last @ last + 1
@@ -6035,12 +6035,12 @@ function numbered_in(text: str) -> str?
 
 # Every `M-<name>` in the text, with a trailing hyphen left to the prose.
 function names_used(text: str) -> [str]
-    found: [str] @ []
-    i: i64 @ 0
+    found: [str] @= []
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == 77 && opens_at(text: text, at: i) && i + 2 < text.len() && text[i + 1] == 45 && is_lower(text[i + 2])
-            last: i64 @ i + 2
+            last: i64 @= i + 2
 
             while last < text.len() && (is_lower(text[last]) || text[last] == 45)
                 last @ last + 1
@@ -6092,7 +6092,7 @@ function alias_table() -> [str]
     if text.is_err()
         none: [str] = []
         return none
-    rows: [str] @ []
+    rows: [str] @= []
 
     for row in strings.lines(text.must())
         if strings.starts_with(text: row, prefix: "| `M-")
@@ -6105,10 +6105,10 @@ function alias_table() -> [str]
     return rows
 
 test "a dead citation is caught, and the anchored rule ignores what it must"
-    roots: {str: bool} @ {}
+    roots: {str: bool} @= {}
     roots["docs"] @ true
     roots["selfhost"] @ true
-    known: {str: bool} @ {}
+    known: {str: bool} @= {}
     known["docs/ROADMAP.md"] @ true
     known["docs/panel/086-the-ledger-that-outlives-its-file.md"] @ true
     known["selfhost/main.hero"] @ true
@@ -6161,7 +6161,7 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
     assert !is_dated("# it is `docs/debrief/QUEUE.md`")
 
     # The check itself, firing: a stand-in document citing something absent.
-    fired: report.Report @ report.empty()
+    fired: report.Report @= report.empty()
     no_closed: {str: bool} = {}
     citations(@fired, scratch: "build/harness-selftest", present: ["design.md"], closed: no_closed)
     assert fired.failed + fired.passed == 1
@@ -6210,14 +6210,14 @@ test "a pointer into a section the contract does not have is caught, and both sp
     # The detection firing: a document pointing at a section that is not on the
     # map. It is tested here rather than by writing a broken file into the tree,
     # because the walk would then read that file as a real offender.
-    known: {str: bool} @ {}
+    known: {str: bool} @= {}
     known["7"] @ true
     assert unknown_sections(text: "CLAUDE.md §7 is fine", known: known) == []
     assert unknown_sections(text: "CLAUDE.md §16 is not", known: known) == ["16"]
 
     # And the vacuous-pass floor: a contract whose headings this reader cannot
     # see must fail rather than bless every citation in the tree.
-    blind: report.Report @ report.empty()
+    blind: report.Report @= report.empty()
     sections(@blind, living: ["design.md"])
     assert blind.failed + blind.passed == 1
 
@@ -6318,7 +6318,7 @@ function italian_quote(span: str) -> bool
     if words.len() < 3
         return false
 
-    marked: i64 @ 0
+    marked: i64 @= 0
 
     for word in words
         if is_quoted_marker(word)
@@ -6337,13 +6337,13 @@ function is_quoted_marker(word: str) -> bool
 # — most of the long ones do — so this reads the whole text rather than a line,
 # and an unterminated `*"` is simply not a span.
 function quoted_spans(text: str) -> [str]
-    out: [str] @ []
-    i: i64 @ 0
+    out: [str] @= []
+    i: i64 @= 0
 
     while i + 1 < text.len()
         if text[i] == 42 && text[i + 1] == 34
-            j: i64 @ i + 2
-            closed: bool @ false
+            j: i64 @= i + 2
+            closed: bool @= false
 
             while j + 1 < text.len()
                 if text[j] == 34 && text[j + 1] == 42
@@ -6365,7 +6365,7 @@ function italian_line(line: str) -> bool
     if words.len() < 6
         return false
 
-    marked: i64 @ 0
+    marked: i64 @= 0
 
     for word in words
         if is_marker(word)
@@ -6482,7 +6482,7 @@ test "a citation that names a member is checked at its file, and that is the hol
 
     # And with the member cut, the dead one anchors on its extension — which is
     # the whole repair: it becomes visible to the check rather than skipped.
-    roots: {str: bool} @ {}
+    roots: {str: bool} @= {}
     roots["selfhost"] @ true
     assert is_claim(token: without_member("commands/flags.rs::FLAGS"), roots: roots)
     assert !is_claim(token: "commands/flags.rs::FLAGS", roots: roots)
@@ -6506,7 +6506,7 @@ test "the ROADMAP's § Where we are is counted to its own ceiling"
     # was 31 lines against a rule nobody measured. The rule said 15 then and
     # says 32 since 2026-09-12; the reason for both numbers is above
     # `WHERE_CEILING`, which is the one place either is written.
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     where_we_are(@r)
     assert r.failed == 0
 
@@ -6734,7 +6734,7 @@ test "a carried defect is excused at its tag only where its own item says so"
 
 # A `docs/work/DEFECTS.md` holding exactly these items, for the tag tests below.
 function defects_holding(items: [str]) -> str
-    rows: [str] @ [BANNER, "**OPEN: " + items.len().to_str() + "**", ""]
+    rows: [str] @= [BANNER, "**OPEN: " + items.len().to_str() + "**", ""]
 
     for item in items
         rows @ rows.push(item)
@@ -6836,7 +6836,7 @@ test "an item without a class at a tag counts as blocking, and the excuses read 
         defect_item(number: "161", kind: "adjacent", day: "2026-09-27")
     ]
     list_then = defects_holding(pair_and_one)
-    rows: [str] @ []
+    rows: [str] @= []
 
     for one in counted_at(text: list_then, at: tag, before: no_tags)
         rows @ rows.push(one.row)
@@ -6917,7 +6917,7 @@ test "a tag's directory is read as its single file was, so a tag counts the same
         defect_item(number: "164", kind: "blocking", day: "2026-10-02")
         defect_item(number: "165", kind: "systemic", day: "2026-10-03")
     ]
-    files: [str] @ []
+    files: [str] @= []
 
     for item in items
         files @ files.push(item + "\n")
@@ -6942,7 +6942,7 @@ test "a tag's directory is read as its single file was, so a tag counts the same
 # THE ISSUES, held as tests (2026-10-04). Each rule `records/cards` states of
 # a card is made to fire on an issue written for it.
 test "an issue's card agrees with its name, its folder, its origin, its repairs and its first field"
-    chain: {str: bool} @ {}
+    chain: {str: bool} @= {}
     chain["M-ir-lowering"] @ false
     chain["M-issue-files"] @ true
     body = "- [ ] **231 — a** | b | c · **class: blocking**\n\n    **Origin:** lane x, 2026-10-03.\n"
@@ -7025,7 +7025,7 @@ test "an issue lives in the folder of its name's day, and a name with no day has
     assert issue_files(["issues/README.md", "issues/2026-10/04/2026-10-04-0000-x.md", "issues/notes.txt", "docs/x.md"]) == ["issues/2026-10/04/2026-10-04-0000-x.md"]
 
 test "a citation of a file that moved into the issues is followed by the rule, and still dies with its file"
-    known: {str: bool} @ {}
+    known: {str: bool} @= {}
     known["issues/2026-10/04/2026-10-04-1440-defect-239-a.md"] @ true
     known["issues/2026-09/23/2026-09-23-1215-a-seats-copy-is-its-own-decided.md"] @ true
     known["issues/2026-10/02/2026-10-02-0000-defect-187-four.md"] @ true
@@ -7081,7 +7081,7 @@ test "a milestone's page stands directly in its tree, and the chain says which m
     assert states["M-other"].is_err()
 
 test "a file under a directory that moved is found under the directory it moved to, and a gone file is not"
-    known: {str: bool} @ {}
+    known: {str: bool} @= {}
     known["docs/roadmap/milestones/M-issue-files.md"] @ true
     assert moved_under(part: "docs/work/milestones/M-issue-files.md", known: known)
     assert !moved_under(part: "docs/work/milestones/M-never-written.md", known: known)
@@ -7118,7 +7118,7 @@ test "a question of comprehension lives in its day's folder, holds one item, and
     )
 
 test "a question cited in the learning list's old flat shape is found in its day's folder"
-    known: {str: bool} @ {}
+    known: {str: bool} @= {}
     known["docs/learn/2026-08/03/2026-08-03-0000-first-ir.md"] @ true
     assert one_names(part: "docs/learn/2026-08/03/2026-08-03-0000-first-ir.md", document: "x.md", known: known)
     assert one_names(part: "docs/learn/2026-08-03-0000-first-ir.md", document: "x.md", known: known)

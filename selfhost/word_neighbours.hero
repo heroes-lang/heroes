@@ -23,7 +23,7 @@ use word_place
 # Whether what follows the word names a C header: a string that ends in
 # `.h`, or `<`, as `include <stdio.h>` writes it.
 function header_after(text: str, end: i64) -> bool
-    i: i64 @ end
+    i: i64 @= end
 
     while i < text.len() && text[i] == ' '
         i @ i + 1
@@ -36,7 +36,7 @@ function header_after(text: str, end: i64) -> bool
 
     if text[i] != '"'
         return false
-    close: i64 @ i + 1
+    close: i64 @= i + 1
 
     while close < text.len() && text[close] != '"' && text[close] != '\n'
         close @ close + 1
@@ -51,7 +51,7 @@ function header_after(text: str, end: i64) -> bool
 function continues_an_if(text: str, span: token.Span) -> bool
     begins = word_place.line_start(text, at: span.start)
     margin = span.start - begins
-    at: i64 @ begins
+    at: i64 @= begins
 
     while at > 0
         above = word_place.line_start(text, at: at - 1)
@@ -75,7 +75,7 @@ function continues_an_if(text: str, span: token.Span) -> bool
 # characters and comment: the value `return if c` and `x = if c` begin,
 # which the lines below it continue as a chain does.
 function holds_an_if(text: str, from: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i + 1 < text.len() && text[i] != '\n' && text[i] != '#'
         ch = text[i]
@@ -101,7 +101,7 @@ function arms_below(text: str, span: token.Span) -> bool
     at = word_place.first_mark(text, from: span.end)
     begins = word_place.line_start(text, at: span.start)
     margin = word_place.first_mark(text, from: begins) - begins
-    line: i64 @ at
+    line: i64 @= at
 
     while line < text.len() && text[line] != '\n'
         line @ line + 1
@@ -140,7 +140,7 @@ function begins_a_value(ch: u8) -> bool
     return bytes.is_alnum(ch) || ch == '_' || ch == '(' || ch == '[' || ch == '"' || ch == '\'' || ch == '-' || ch == '!' || ch == '.'
 
 function holds_an_arrow(text: str, from: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i + 1 < text.len() && text[i] != '\n'
         if text[i] == '=' && text[i + 1] == '>'
@@ -152,7 +152,7 @@ function holds_an_arrow(text: str, from: i64) -> bool
 ## Tests
 
 function at_word(text: str, word: str) -> token.Span
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i + word.len() <= text.len()
         if bytes.bytes_at(text: text, at: i, needle: word) && (i == 0 || !bytes.is_alnum(text[i - 1]))

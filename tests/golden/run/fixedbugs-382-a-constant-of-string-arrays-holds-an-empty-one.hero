@@ -8,13 +8,13 @@ constant NESTS: [[str]]
     [["a", "b"], [], ["c"], [""]]
 
 function main()
-    total: i64 @ 0
+    total: i64 @= 0
 
     for inner in NESTS
         total @ total + inner.len()
 
     print(total, " ", NESTS[2][0], " ", NESTS[1].len(), " ", NESTS[3][0].len(), " ", NESTS[0].join("+"))
-    copy: [[str]] @ NESTS
+    copy: [[str]] @= NESTS
     copy[1] @ copy[1].push("d")
     copy[0][1] @ "e"
     print(copy[1][0], " ", copy[0].join("+"), " ", NESTS[1].len(), " ", NESTS[0].join("+"))

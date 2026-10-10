@@ -26,18 +26,18 @@ function later(n: i64, xs: [i64]) -> i64
     return xs.len() * 1000 + n
 
 function main()
-    a: [i64] @ []
+    a: [i64] @= []
     a @ a.push(5)
     print(total(a, half(4).must() + clear(@a)), " ", a.len())
-    b: [i64] @ []
+    b: [i64] @= []
     b @ b.push(5)
     print(total(b, half(4).must() + total(b, bump(@b))))
-    c: [i64] @ []
+    c: [i64] @= []
     c @ c.push(5)
     print(later(bump(@c) + half(4).must(), c))
-    d: [i64] @ []
+    d: [i64] @= []
     d @ d.push(5)
-    sum: i64 @ 0
+    sum: i64 @= 0
 
     for at in range(from: 0, to: 4)
         sum @ sum + total(d, half(at * 2).must() + bump(@d))

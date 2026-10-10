@@ -107,7 +107,7 @@ function two_deep(k: i64, j: i64) -> i64
 
 # b6: in a loop, by `break` and `continue`.
 function in_a_loop(xs: [i64]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for v in xs
         y = match v
@@ -155,8 +155,8 @@ function return_if(k: i64) -> i64
 
 # d5: a `while` whose arm leaves by `break` or `continue`.
 function while_tail(n: i64) -> i64
-    i: i64 @ 0
-    total: i64 @ 0
+    i: i64 @= 0
+    total: i64 @= 0
 
     while i < n
         i @ i + 1

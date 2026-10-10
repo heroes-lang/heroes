@@ -54,7 +54,7 @@ use cli/process
 function each_file(runtime: str) -> str?
     entry = runtime + "/runtime.c"
     root = reading.keyed(entry)?
-    each: [str] @ [root.key]
+    each: [str] @= [root.key]
 
     for name in included_names(text: root.text)
         each @ each.push(reading.key_of(runtime + "/" + name)?)
@@ -78,18 +78,18 @@ function each_file(runtime: str) -> str?
 # of every program, and so did a `#include` naming a file above ASCII.
 # The head and the quote are ASCII, so every cut made here is beside one.
 function included_names(text: str) -> [str]
-    found: [str] @ []
+    found: [str] @= []
     head = "#include \""
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len()
-        stop: i64 @ at
+        stop: i64 @= at
 
         while stop < text.len() && text[stop] != '\n'
             stop @ stop + 1
 
         if bytes.bytes_at(text: text, at: at, needle: head)
-            shut: i64 @ at + head.len()
+            shut: i64 @= at + head.len()
 
             while shut < stop && text[shut] != '"'
                 shut @ shut + 1
@@ -165,7 +165,7 @@ function is_part(name: str) -> bool
 test "every file under the runtime's parts is included by runtime.c, and every part it includes is there"
     included = included_names(text: read_file("runtime/runtime.c").must())
     found = process.files_under("runtime/parts").must()
-    parts: [str] @ []
+    parts: [str] @= []
 
     for path in found
         name = path.slice(from: "runtime/".len(), to: path.len())

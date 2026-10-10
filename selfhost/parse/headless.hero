@@ -43,7 +43,7 @@
 #
 # **A field line wins over a first line that looks like a case**, because a
 # record's first field can be the broken one (`y i64` over `x: i64`), and a
-# broken field reads as a statement too. And **`x: i64 @ 0` is a
+# broken field reads as a statement too. And **`x: i64 @= 0` is a
 # statement**, a mutable binding: a field has no `@` and no `=`.
 #
 # What each reader reports is what it reports under the head it belongs to,
@@ -148,7 +148,7 @@ function read_shaped(@c: cursor.Cursor, @a: ast.Ast, text: str, shape: Shape) ->
 # body or a block of declarations is the caller's, and the cursor is left on
 # the `{`.
 function braced(@c: cursor.Cursor, @a: ast.Ast, text: str, word: i64) -> Left
-    lines: cursor.Cursor @ braced_lines.laid_out(c, text)
+    lines: cursor.Cursor @= braced_lines.laid_out(c, text)
     shape = shape_of_block(c: c, text: text, word: word, block: lines)
 
     if shape == .members
@@ -192,8 +192,8 @@ function shape_below(c: cursor.Cursor, text: str) -> Shape
 # it is, so that `mach n` over its arms costs one diagnostic and not one per arm
 # (`grammar_expr.hanging`).
 function arms_below(c: cursor.Cursor) -> bool
-    i: i64 @ c.pos + 1
-    depth: i64 @ 0
+    i: i64 @= c.pos + 1
+    depth: i64 @= 0
 
     while i < c.tokens.len()
         k = c.tokens[i].kind
@@ -239,10 +239,10 @@ function opens_a_declaration(kind: token.TokenKind) -> bool
 
 # Where each line of the block begins, at the block's own depth.
 function line_starts(c: cursor.Cursor) -> [i64]
-    starts: [i64] @ []
-    depth: i64 @ 0
-    fresh: bool @ true
-    i: i64 @ c.pos + 1
+    starts: [i64] @= []
+    depth: i64 @= 0
+    fresh: bool @= true
+    i: i64 @= c.pos + 1
 
     while i < c.tokens.len()
         kind = c.tokens[i].kind
@@ -271,10 +271,10 @@ function line_starts(c: cursor.Cursor) -> [i64]
 function field_shaped(tokens: [token.Token], start: i64) -> bool
     if tokens[start].kind != .ident || next_kind(tokens, start) != .colon
         return false
-    i: i64 @ start
+    i: i64 @= start
 
     while i < tokens.len() && !token.ends_a_line(tokens[i].kind)
-        if tokens[i].kind == .at || tokens[i].kind == .eq
+        if tokens[i].kind == .at || tokens[i].kind == .at_eq || tokens[i].kind == .eq
             return false
         i @ i + 1
 
@@ -286,7 +286,7 @@ function case_shaped(tokens: [token.Token], start: i64) -> bool
 
 # The kind of the first token after `at` that is not a comment.
 function next_kind(tokens: [token.Token], at: i64) -> token.TokenKind
-    i: i64 @ at + 1
+    i: i64 @= at + 1
 
     while i < tokens.len() && tokens[i].kind == .comment
         i @ i + 1
@@ -301,8 +301,8 @@ function tok(kind: token.TokenKind, start: i64) -> token.Token
     return token.Token(kind: kind, span: token.Span(start: start, end: start + 1))
 
 function shape_of(kinds: [token.TokenKind]) -> Shape
-    tokens: [token.Token] @ []
-    i: i64 @ 0
+    tokens: [token.Token] @= []
+    i: i64 @= 0
 
     for kind in kinds
         tokens @ tokens.push(tok(kind, i))
@@ -327,8 +327,9 @@ test "a block is read as fields, cases or a body by the shape of its lines"
     # x = 3 / print(x): a body
     assert shape_of([.indent, .ident, .eq, .int_lit, .terminator, .ident, .lparen, .ident, .rparen, .terminator, .dedent, .eof]) == .statements
 
-    # v: i64 @ 0 is a binding, not a field
+    # v: i64 @= 0 is a binding, not a field
     assert shape_of([.indent, .ident, .colon, .ident, .at, .int_lit, .terminator, .dedent, .eof]) == .statements
+    assert shape_of([.indent, .ident, .colon, .ident, .at_eq, .int_lit, .terminator, .dedent, .eof]) == .statements
 
     # function q() -> i64: a group's member, whose head is not here to read it
     assert shape_of([.indent, .kw_function, .ident, .lparen, .rparen, .arrow, .ident, .terminator, .dedent, .eof]) == .members
@@ -341,8 +342,8 @@ test "a block in braces is read as the fields or cases its lines are, as without
     # braces around it, once, the broken field too, and the cursor is past the
     # braces (ruling 1, 2026-10-01: the habit's debris until then).
     fields = "class P {\n    x: i64,\n    y i64,\n}\n"
-    c: cursor.Cursor @ braced_lines.at_brace(fields)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= braced_lines.at_brace(fields)
+    a: ast.Ast @= ast.new_ast()
     assert read_below(@c, @a, fields, word: 0) == .nothing
     assert c.diagnostics.len() == 2
     assert c.diagnostics[0].code == "expected_end_of_line"
@@ -353,22 +354,22 @@ test "a block in braces is read as the fields or cases its lines are, as without
     # class C {  /  red  /  green  /  blue  /  }: three cases, and nothing to
     # tell.
     cases = "class C {\n    red\n    green\n    blue\n}\n"
-    d: cursor.Cursor @ braced_lines.at_brace(cases)
+    d: cursor.Cursor @= braced_lines.at_brace(cases)
     assert read_below(@d, @a, cases, word: 0) == .nothing
     assert d.diagnostics.len() == 0
     assert cursor.at(d, .eof)
 
     # class B {  /  x = 1  /  }: a body, left to the caller on its `{`.
     body = "class B {\n    x = 1\n}\n"
-    e: cursor.Cursor @ braced_lines.at_brace(body)
+    e: cursor.Cursor @= braced_lines.at_brace(body)
     assert read_below(@e, @a, body, word: 0) == .statements
     assert cursor.at(e, .lbrace)
 
 test "a block under a head that opens none is named and read"
     # let x = 5  /      print(1): the block is a mistake of its own.
     text = "let x = 5\n    print(1)\n"
-    c: cursor.Cursor @ lexed(text)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= lexed(text)
+    a: ast.Ast @= ast.new_ast()
 
     while !cursor.at(c, .indent)
         _ = cursor.bump(@c)

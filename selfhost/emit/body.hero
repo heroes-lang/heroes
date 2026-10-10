@@ -107,7 +107,7 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     # (defect 335). A group record's `deprecated` attribute needs no word
     # here: a header's deprecations are quiet over the whole unit after the
     # groups' close (`emit/deprecation.hero`, panel 208).
-    statements: [str] @ []
+    statements: [str] @= []
     guard = callback_guard.entry(s, f, guarded_decls: guarded_decls)
 
     if guard != ""
@@ -119,7 +119,7 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     statements @ statements.push("goto " + mangle.block(0) + ";")
     writer.line(@w, text: "    " + statements.join(" "))
     released = lend_local.releases(c, names, f)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for blk in f.blocks
         if live[index]
@@ -146,8 +146,8 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
 # Which blocks are reachable — a lookup, not an analysis: the IR
 # already carries the answer in preds.
 function reachable(f: containers.Function) -> [bool]
-    live: [bool] @ []
-    index: i64 @ 0
+    live: [bool] @= []
+    index: i64 @= 0
 
     for blk in f.blocks
         live @ live.push(index == 0 || blk.preds.len() > 0)
@@ -168,7 +168,7 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     names0 = ctype.new_names(s, parsed.decls)
     names1 = ctype.with_options(names0, c: c, s: s, decls: parsed.decls)
     names = ctype.with_functions(names1, c: c, s: s, decls: parsed.decls, p: low.program)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     none: {i64: bool} = {}
     definition(
         @w,
@@ -193,7 +193,7 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     assert strings.holds(text: got, needle: "    return t3;")
 
     # Deterministic: the same input prints the same bytes.
-    again: writer.Writer @ writer.new_writer("t")
+    again: writer.Writer @= writer.new_writer("t")
     definition(
         @again,
         instances.hold(low.program),
@@ -222,7 +222,7 @@ test "an unreachable join is omitted entirely, label and all"
         decls: parsed.decls,
         p: low.program
     )
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     none: {i64: bool} = {}
     definition(
         @w,

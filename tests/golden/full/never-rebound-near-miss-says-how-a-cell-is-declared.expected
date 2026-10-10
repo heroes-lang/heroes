@@ -3,5 +3,5 @@ error[unknown_name]: nothing named `totl` is in scope — did you mean `total`?
     |
   9 |         totl @ total + x     #~ unknown_name
     |         ^^^^
-  note: `totl @ …` changes a cell that already exists; a new cell is declared with its type, `totl: <type> @ <value>`, and a value bound once with `totl = <value>`
+  note: `totl @ …` changes a cell that already exists; a new cell is declared with its type, `totl: <type> @= <value>`, and a value bound once with `totl = <value>`
   fix (certain): rename to `total`

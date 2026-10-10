@@ -64,7 +64,7 @@ function write(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sourc
 
 function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, given: [i64], arguments: [str], target: str) -> [str]?
     name = ctype.of(names, decl: decl)
-    fields: [ast.Field] @ []
+    fields: [ast.Field] @= []
 
     match decls[decl].kind
         .record_decl rec =>
@@ -81,16 +81,16 @@ function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [a
     # as the records the group's record holds by value, which died at 1,000
     # (Apple clang 21, arm64 macOS) where `{}` builds, `-std=gnu11` taking the
     # empty braces as C23 does. Below it panel 194's C11 `{0}` stands.
-    whole: str @ "{0}"
-    known: {i64: i64} @ {}
+    whole: str @= "{0}"
+    known: {i64: i64} @= {}
 
     if depth_of(c, decls, decl: decl, cap: typeorder.IN_ORDER_FROM + 1, @known) > typeorder.IN_ORDER_FROM
         whole @ "{}"
-    out: [str] @ [
+    out: [str] @= [
         target + " = (" + name + ")" + whole + ";"
         "__builtin_memset(&" + target + ", 0, sizeof " + target + ");"
     ]
-    k: i64 @ 0
+    k: i64 @= 0
 
     for at in given
         if at < 0 || at >= fields.len()
@@ -119,7 +119,7 @@ function depth_of(c: state.Checked, decls: [ast.Decl], decl: i64, cap: i64, @kno
 
     if !known[key].is_err()
         return known[key].must()
-    deepest: i64 @ 1
+    deepest: i64 @= 1
 
     if cap > 1
         match decls[decl].kind
@@ -143,7 +143,7 @@ function held_record(c: state.Checked, ty: i64) -> i64?
 
     if written.is_err()
         return fail(code: "none", msg: "no written type")
-    at: i64 @ written.must()
+    at: i64 @= written.must()
 
     while true
         match table.get(c.types, at)

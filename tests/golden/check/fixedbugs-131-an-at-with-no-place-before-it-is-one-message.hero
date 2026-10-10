@@ -8,7 +8,7 @@
 # mistake is told.
 
 function main()
-    v: i64 @ 0
+    v: i64 @= 0
     @ 5  #~ expected_expression
     @1  #~ expected_expression
     @ 5 + )  #~ expected_expression expected_expression

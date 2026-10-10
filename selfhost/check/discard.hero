@@ -120,7 +120,7 @@ function own_place(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
 # arguments, an operator's operands. A comparison's value is a decision
 # about its operands rather than a new state of one, so it has none here.
 function parts(a: ast.Ast, value: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match a.exprs[value].kind
         .method m =>
@@ -138,7 +138,7 @@ function parts(a: ast.Ast, value: i64) -> [i64]
     return out
 
 function unmarked(out: [i64], given: [ast.Arg]) -> [i64]
-    kept: [i64] @ out
+    kept: [i64] @= out
 
     for arg in given
         if !arg.mutable

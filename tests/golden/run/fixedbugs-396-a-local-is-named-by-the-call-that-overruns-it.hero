@@ -8,7 +8,7 @@ extern "fixedbugs-396-buffers.h"
     function put_two(@x: i32 lent)
 
 function main()
-    x: i32 @ 0
+    x: i32 @= 0
     put_one(x: @x, v: 7)
     print(x)
     put_two(@x)

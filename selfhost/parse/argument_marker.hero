@@ -34,7 +34,7 @@ function a_name_before(a: ast.Ast, value: i64, labelled: bool, marked: bool) -> 
 # `@` passed over, the caller reading `n` as the argument `a` names.
 function misplaced(@c: cursor.Cursor, value_end: i64)
     between = token.Span(start: value_end, end: cursor.current_span(c).end)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "misplaced_mutable_marker",
         message: "a value before `@` is a named mutable argument's name, `name: @value`, or an argument whose `,` was left out, `value, @name` — `:` names the parameter, `@` marks the argument",
         span: cursor.current_span(c)
@@ -52,7 +52,7 @@ function misplaced(@c: cursor.Cursor, value_end: i64)
 # `@` left where it stands, so the caller reads `@n` as the next argument.
 function comma_missing(@c: cursor.Cursor, text: str, value_end: i64)
     between = token.Span(start: value_end, end: cursor.current_span(c).end)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "expected_args_close",
         message: "expected `)`, or `,` and another argument, found " + cursor.found(c, text),
         span: cursor.current_span(c)

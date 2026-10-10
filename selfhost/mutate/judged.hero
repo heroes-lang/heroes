@@ -68,7 +68,7 @@ function uproot(at: Place, rel: str) -> ()?
 
 # Check `rel` (a path inside the mirror) in one arm.
 function checked(at: Place, rel: str, permissive: bool) -> Arm?
-    words: [str] @ [at.compiler, "check"]
+    words: [str] @= [at.compiler, "check"]
 
     if permissive
         words @ words.push("--permissive")
@@ -100,8 +100,8 @@ function read_arm(answer: child.Answer, prefix: str) -> Arm
 
     if document.is_err()
         return Arm(exit: answer.exit, messages: none, other: told_lines(err), certain: [])
-    out: [Message] @ []
-    certain: [str] @ []
+    out: [Message] @= []
+    certain: [str] @= []
     no_fixes: [json_read.Json] = []
 
     for d in json_fields.items_field(document.must(), name: "diagnostics").default(no_fixes)
@@ -126,7 +126,7 @@ function absent_null(d: json_read.Json, name: str) -> json_read.Json
     return json_fields.field(d, name: name).default(.null_value)
 
 function first_brace(text: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == '{'
@@ -137,9 +137,9 @@ function first_brace(text: str) -> i64
 
 # The lines of `text` that hold more than whitespace.
 function told_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at <= text.len()
         if at == text.len() || text[at] == 10
@@ -165,9 +165,9 @@ function blank(line: str) -> bool
 function without(text: str, prefix: str) -> str
     if prefix.len() == 0
         return text
-    parts: [str] @ []
-    plain: i64 @ 0
-    at: i64 @ 0
+    parts: [str] @= []
+    plain: i64 @= 0
+    at: i64 @= 0
 
     while at + prefix.len() <= text.len()
         if bytes.bytes_at(text: text, at: at, needle: prefix)
@@ -222,7 +222,7 @@ function internal_in(normal: Arm) -> bool
 # Asked a byte at a time (`bytes.bytes_at`): a message holding a character
 # above ASCII must not split it (defect 296's shape).
 function contains(text: str, needle: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if bytes.bytes_at(text: text, at: at, needle: needle)
@@ -234,7 +234,7 @@ function contains(text: str, needle: str) -> bool
 # The codes of an arm's messages whose line is in `site`'s span, sorted,
 # each once (`replay.py`'s `alone_codes` and a pair's `_b_codes`).
 function codes_within(arm: Arm, site: [i64]) -> [str]
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
     none: [str] = []
 
     if site.len() == 0
@@ -251,7 +251,7 @@ function codes_within(arm: Arm, site: [i64]) -> [str]
 
 # Every code of an arm's messages, each once.
 function codes_of(arm: Arm) -> {str: bool}
-    out: {str: bool} @ {}
+    out: {str: bool} @= {}
 
     for m in arm.messages
         out[code_of(m)] @ true
@@ -276,7 +276,7 @@ function message_json(m: Message) -> json_read.Json
     )
 
 function arm_json(arm: Arm) -> json_read.Json
-    messages: [json_read.Json] @ []
+    messages: [json_read.Json] @= []
 
     for m in arm.messages
         messages @ messages.push(message_json(m))

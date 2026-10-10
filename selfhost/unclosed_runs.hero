@@ -42,11 +42,11 @@ use lexer
 # `said`, the lexer's reports in the order it said them, with each run of
 # openers left open told once, at its first.
 function told_once(said: [diag.Diagnostic], closes: [i64], text: str) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
-    i: i64 @ 0
+    out: [diag.Diagnostic] @= []
+    i: i64 @= 0
 
     while i < said.len()
-        j: i64 @ i + 1
+        j: i64 @= i + 1
 
         while j < said.len() && follows(first: said[j - 1], next: said[j], closes: closes, text: text)
             j @ j + 1
@@ -89,7 +89,7 @@ test "a run of openers one line left open is one report at its first"
     mixed = told("x = ([{1\n")
     assert mixed.len() == 1
     assert mixed[0].message == "`(` opened here and 2 more after it on its line are never closed"
-    openers: [str] @ []
+    openers: [str] @= []
 
     for _ in range(from: 0, to: 100)
         openers @ openers.push("[")

@@ -39,13 +39,13 @@ record Facts
 
 # For every declaration, by index: whether a call to it may end the program.
 function answers(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> [bool]
-    ends: [bool] @ []
-    names_of: [[i64]] @ []
-    at: i64 @ 0
+    ends: [bool] @= []
+    names_of: [[i64]] @= []
+    at: i64 @= 0
 
     for decl in decls
         none: [i64] = []
-        f: Facts @ Facts(owner: at, ends: false, names: none)
+        f: Facts @= Facts(owner: at, ends: false, names: none)
 
         match decl.kind
             .function_decl fd =>
@@ -59,11 +59,11 @@ function answers(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.
         names_of @ names_of.push(f.names)
         at @ at + 1
 
-    changed: bool @ true
+    changed: bool @= true
 
     while changed
         changed @ false
-        i: i64 @ 0
+        i: i64 @= 0
 
         while i < ends.len()
             if !ends[i]

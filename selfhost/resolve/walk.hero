@@ -293,12 +293,12 @@ function place(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Dec
 function walked(text: str) -> state.Resolver
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    r: state.Resolver @ state.new_resolver(
+    r: state.Resolver @= state.new_resolver(
         expr_count: p.tree.exprs.len(),
         type_count: p.tree.types.len()
     )
     r.module @ "t"
-    i: i64 @ 0
+    i: i64 @= 0
 
     for d in p.decls
         resolved.declare_top(@r.out, module: "t", name: source.span_text(s, d.name), decl: i)
@@ -343,7 +343,7 @@ test "for x in x does not find its own binding"
     assert r.out.diagnostics[0].code == "unknown_name"
 
 test "a write is not a read, and the sweep says written-never-read"
-    r = walked("function f()\n    v: i64 @ 0\n    v @ 1\n")
+    r = walked("function f()\n    v: i64 @= 0\n    v @ 1\n")
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "unused_binding"
     assert r.out.diagnostics[0].message == "`v` is written and never read — a cell nothing reads is a value nobody uses"
@@ -375,7 +375,7 @@ test "an unknown method name is answered without a type in hand"
     assert r.out.diagnostics[0].code == "unknown_function"
 
 test "an index on the way to the root is read, the root is written"
-    r = walked("function f()\n    xs: [i64] @ [1, 2]\n    i = 0\n    xs[i] @ 9\n    print(xs[i])\n")
+    r = walked("function f()\n    xs: [i64] @= [1, 2]\n    i = 0\n    xs[i] @ 9\n    print(xs[i])\n")
     assert r.out.diagnostics.len() == 0
 
 test "an @ argument is held to the rule of the left of @"
@@ -386,7 +386,7 @@ test "an @ argument is held to the rule of the left of @"
 
 test "an @ argument through an index writes the root, reads the index, and is clean on a cell"
     r = walked(
-        "function f(@n: i64)\n    n @ n + 1\n\nfunction g()\n    xs: [i64] @ [1]\n    i = 0\n    f(@xs[i])\n    print(xs[i])\n"
+        "function f(@n: i64)\n    n @ n + 1\n\nfunction g()\n    xs: [i64] @= [1]\n    i = 0\n    f(@xs[i])\n    print(xs[i])\n"
     )
     assert r.out.diagnostics.len() == 0
 
@@ -396,7 +396,7 @@ test "an @ argument on a plain binding and on a loop variable each say why"
     )
     assert r.out.diagnostics.len() == 2
     assert r.out.diagnostics[0].code == "not_mutable"
-    assert r.out.diagnostics[0].message == "`y` was bound with `=`, which binds once, forever — a cell is declared with its type: `y: <type> @ <value>`"
+    assert r.out.diagnostics[0].message == "`y` was bound with `=`, which binds once, forever — a cell is declared with its type: `y: <type> @= <value>`"
     assert r.out.diagnostics[1].message == "`e` is the loop variable, and it is bound afresh for each element — write to a cell declared outside the loop"
 
 ## Panel 010's alias refusal (defect 011)
@@ -406,7 +406,7 @@ test "an @ argument on a plain binding and on a loop variable each say why"
 # `needs_label` to the alias question at all.
 test "two @ arguments of one call may not name one cell"
     r = walked(
-        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    n: i64 @ 0\n    shift(a: @n, b: @n)\n    print(n)\n"
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    n: i64 @= 0\n    shift(a: @n, b: @n)\n    print(n)\n"
     )
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "aliased_mutable_arguments"
@@ -417,13 +417,13 @@ test "two @ arguments of one call may not name one cell"
 
 test "one field twice and one literal index twice are the same refusal"
     field = walked(
-        "record P\n    x: i64\n\nfunction shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    p: P @ P(x: 0)\n    shift(a: @p.x, b: @p.x)\n    print(p.x)\n"
+        "record P\n    x: i64\n\nfunction shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    p: P @= P(x: 0)\n    shift(a: @p.x, b: @p.x)\n    print(p.x)\n"
     )
     assert field.out.diagnostics.len() == 1
     assert field.out.diagnostics[0].code == "aliased_mutable_arguments"
     assert field.out.diagnostics[0].message == "`p.x` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
     index = walked(
-        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @ [0, 0]\n    shift(a: @xs[0], b: @xs[0])\n    print(xs[0])\n"
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @= [0, 0]\n    shift(a: @xs[0], b: @xs[0])\n    print(xs[0])\n"
     )
     assert index.out.diagnostics.len() == 1
     assert index.out.diagnostics[0].code == "aliased_mutable_arguments"
@@ -431,12 +431,12 @@ test "one field twice and one literal index twice are the same refusal"
 # The over-rejection design.md:1299 authorises, and the one it does not.
 test "variable indices are refused and distinct literal indices are not"
     variable = walked(
-        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g(i: i64, j: i64)\n    xs: [i64] @ [0, 0]\n    shift(a: @xs[i], b: @xs[j])\n    print(xs[0])\n"
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g(i: i64, j: i64)\n    xs: [i64] @= [0, 0]\n    shift(a: @xs[i], b: @xs[j])\n    print(xs[0])\n"
     )
     assert variable.out.diagnostics.len() == 1
     assert variable.out.diagnostics[0].code == "aliased_mutable_arguments"
     literal = walked(
-        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @ [0, 0]\n    shift(a: @xs[0], b: @xs[1])\n    print(xs[0])\n"
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @= [0, 0]\n    shift(a: @xs[0], b: @xs[1])\n    print(xs[0])\n"
     )
     assert literal.out.diagnostics.len() == 0
 
@@ -445,14 +445,14 @@ test "variable indices are refused and distinct literal indices are not"
 # made two working programs wrong.
 test "distinct fields of one record are two places"
     r = walked(
-        "record P\n    x: i64\n    y: i64\n\nfunction shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    p: P @ P(x: 0, y: 0)\n    shift(a: @p.x, b: @p.y)\n    print(p.x)\n"
+        "record P\n    x: i64\n    y: i64\n\nfunction shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    p: P @= P(x: 0, y: 0)\n    shift(a: @p.x, b: @p.y)\n    print(p.x)\n"
     )
     assert r.out.diagnostics.len() == 0
 
 # A prefix is an overlap: writing `p` and writing `p.x` land on one record.
 test "a place and a place inside it overlap"
     r = walked(
-        "record P\n    x: i64\n\nfunction shift(@a: P, @b: i64)\n    a.x @ a.x + 1\n    b @ b + 10\n\nfunction g()\n    p: P @ P(x: 0)\n    shift(a: @p, b: @p.x)\n    print(p.x)\n"
+        "record P\n    x: i64\n\nfunction shift(@a: P, @b: i64)\n    a.x @ a.x + 1\n    b @ b + 10\n\nfunction g()\n    p: P @= P(x: 0)\n    shift(a: @p, b: @p.x)\n    print(p.x)\n"
     )
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "aliased_mutable_arguments"
@@ -461,7 +461,7 @@ test "a place and a place inside it overlap"
 # keeps a literal's TEXT (`ast.hero:109`) and `0x0` is `0`.
 test "a literal index in another base is not proof of a different element"
     r = walked(
-        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @ [0, 0]\n    shift(a: @xs[0], b: @xs[0x0])\n    print(xs[0])\n"
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    xs: [i64] @= [0, 0]\n    shift(a: @xs[0], b: @xs[0x0])\n    print(xs[0])\n"
     )
     assert r.out.diagnostics.len() == 1
     assert r.out.diagnostics[0].code == "aliased_mutable_arguments"
@@ -470,7 +470,7 @@ test "a literal index in another base is not proof of a different element"
 # FIRST, so the count is the number of arguments that have to change.
 test "three @ arguments of one cell are two findings"
     r = walked(
-        "function bump(@a: i64, @b: i64, @c: i64)\n    a @ a + 1\n    b @ b + 10\n    c @ c + 100\n\nfunction g()\n    n: i64 @ 0\n    bump(a: @n, b: @n, c: @n)\n    print(n)\n"
+        "function bump(@a: i64, @b: i64, @c: i64)\n    a @ a + 1\n    b @ b + 10\n    c @ c + 100\n\nfunction g()\n    n: i64 @= 0\n    bump(a: @n, b: @n, c: @n)\n    print(n)\n"
     )
     assert r.out.diagnostics.len() == 2
     assert r.out.diagnostics[0].message == "`n` overlaps this call's `a` argument — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
@@ -479,11 +479,11 @@ test "three @ arguments of one cell are two findings"
 # Two cells are two places, and an unlabelled call says so without a label.
 test "distinct cells are clean and an unlabelled pair names no label"
     clean = walked(
-        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    n: i64 @ 0\n    m: i64 @ 0\n    shift(a: @n, b: @m)\n    print(n + m)\n"
+        "function shift(@a: i64, @b: i64)\n    a @ a + 1\n    b @ b + 10\n\nfunction g()\n    n: i64 @= 0\n    m: i64 @= 0\n    shift(a: @n, b: @m)\n    print(n + m)\n"
     )
     assert clean.out.diagnostics.len() == 0
     bare = walked(
-        "function shift(@a: i64, @b: str)\n    a @ a + 1\n    b @ b + \"x\"\n\nfunction g()\n    n: i64 @ 0\n    shift(@n, @n)\n    print(n)\n"
+        "function shift(@a: i64, @b: str)\n    a @ a + 1\n    b @ b + \"x\"\n\nfunction g()\n    n: i64 @= 0\n    shift(@n, @n)\n    print(n)\n"
     )
     assert bare.out.diagnostics.len() == 1
     assert bare.out.diagnostics[0].message == "`n` overlaps an earlier `@` argument of this call — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last"
@@ -493,6 +493,6 @@ test "distinct cells are clean and an unlabelled pair names no label"
 # its arguments are evaluated. One `@` argument per call, two calls.
 test "an @ argument inside another call's arguments is a different call"
     r = walked(
-        "function bump(@n: i64) -> str\n    n @ n + 1\n    return \"x\"\n\nfunction outer(@n: i64, k: str)\n    n @ n + 1000\n    _ = k\n\nfunction g()\n    n: i64 @ 0\n    outer(@n, k: bump(@n))\n    print(n)\n"
+        "function bump(@n: i64) -> str\n    n @ n + 1\n    return \"x\"\n\nfunction outer(@n: i64, k: str)\n    n @ n + 1000\n    _ = k\n\nfunction g()\n    n: i64 @= 0\n    outer(@n, k: bump(@n))\n    print(n)\n"
     )
     assert r.out.diagnostics.len() == 0

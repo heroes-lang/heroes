@@ -144,7 +144,7 @@ function inside(spelled: str) -> str
 # What no group head's string may hold, named, or "" (panel 188, measured
 # with the value carried): a NUL, and a line end.
 function unwritable_byte(value: str) -> str
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < value.len()
         if value[i] == 0
@@ -157,7 +157,7 @@ function unwritable_byte(value: str) -> str
     return ""
 
 function unwritable(what: str, held: str) -> str
-    reason: str @ "C's `#include <...>` ends at the line's end, before the name does"
+    reason: str @= "C's `#include <...>` ends at the line's end, before the name does"
 
     if what == "link"
         reason @ "the linker reports a missing library on one line"
@@ -268,7 +268,7 @@ function header_undefined(spelled: str, value: str, span: token.Span) -> diag.Di
 
     if mark.len() == 0
         return fail(code: "none", msg: "a header's name C reads as itself")
-    advice: str @ "rename the header without it"
+    advice: str @= "rename the header without it"
 
     if mark == "//"
         advice @ "write one `/`"
@@ -284,19 +284,19 @@ function header_undefined(spelled: str, value: str, span: token.Span) -> diag.Di
 function carried(spelled: str, value: str, span: token.Span) -> diag.Diagnostic
     written = inside(spelled)
     what = c_spelling(value)
-    cut: i64 @ 1
-    why: str @ "the `>` would end the name C reads"
+    cut: i64 @= 1
+    why: str @= "the `>` would end the name C reads"
 
     if what == "quotes"
         cut @ 2
         why @ "a `\"` stands in no file's name on Windows and is undefined in a header's name in C (C11 6.4.7)"
     bare = written.slice(from: cut, to: written.len() - cut)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unwritable_name",
         message: "`" + written + "` is C's own `#include` spelling carried into the string, " + what + " and all, and " + why + ": the group's string holds the name alone, as `extern \"" + bare + "\"`",
         span: span
     )
-    sure: diag.Certainty @ .certain
+    sure: diag.Certainty @= .certain
 
     if !judged(spelled: "\"" + bare + "\"", span: span, what: "header").is_err()
         sure @ .guess
@@ -327,7 +327,7 @@ function between(value: str) -> str
 # The first of C11 6.4.7's undefined marks in a header's name, or "", but the
 # `\`, which `header_unwritable` refuses apart.
 function undefined_mark(value: str) -> str
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < value.len()
         b = value[i]
@@ -342,7 +342,7 @@ function undefined_mark(value: str) -> str
     return ""
 
 function contains_byte(s: str, b: u8) -> bool
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < s.len()
         if s[i] == b

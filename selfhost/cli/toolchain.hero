@@ -101,7 +101,7 @@ function locate_toolchain(hint: str, fingerprint: str) -> Toolchain?
         if missing.len() > 0
             return fail(code: "hint", msg: runtime_places.unheld(hint: hint, missing: missing))
         return toolchain_at(runtime: hint, fingerprint: fingerprint)
-    candidates: [str] @ ["runtime"]
+    candidates: [str] @= ["runtime"]
     beside = runtime_places.beside_the_compiler()
 
     for above in beside.above
@@ -179,7 +179,7 @@ function asked_through(program: str, words: [str], what: str, err_path: str) -> 
     # that outlives it goes on holding that file: `docs/panel/174` route F, and
     # defect 074 is what it cost.
     ran = process.run(program: program, words: words, out: process.discard(), err: err_path)
-    noise: str @ ""
+    noise: str @= ""
 
     # **clang's words are read back where the bytes enter**, by
     # `read_back.words`, so every reader after it has the two repairs it
@@ -220,7 +220,7 @@ function asked_through(program: str, words: [str], what: str, err_path: str) -> 
 
     if ran.code == 0
         return ok(noise)
-    died: str @ clang_died.died_by(noise)
+    died: str @= clang_died.died_by(noise)
 
     # **A C COMPILER THAT DIED REFUSED NOTHING** (defect 170, 2026-10-03), and
     # it says so in one of two ways: Apple clang 21 catches its own compiler's
@@ -285,7 +285,7 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     process.mkdir_all(t.build)?
     stem = t.build + "/runtime-" + key
     listed = stem + ".deps.txt"
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
     known = deps.vouched(listed, @memo)
 
     # Served only as its compile wrote it (defect 443, `cli/served.hero`).
@@ -294,7 +294,7 @@ function runtime_object(t: Toolchain, level: str, sanitize: bool) -> str?
     depfile = publish.private_name(stem + ".d")
     staged = publish.private_name(stem + ".o")
     err_path = publish.private_name(stem + ".clang-stderr.txt")
-    line: [str] @ strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
+    line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
     line @ strings.with_all(
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, t.runtime + "/runtime.c", "-I", t.runtime, "-o", staged]
@@ -423,7 +423,7 @@ test "the toolchain finds the real runtime and compiles it through system()"
             assert strings.holds(text: e.msg, needle: "undeclared_name")
 
 test "the runtime's object is named by what it read, beside the record that names it, and nothing private is left (defect 134)"
-    t: Toolchain @ locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: Toolchain @= locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-runtime-object"
     assert !process.remove_tree(t.build).is_err()
     object = runtime_object(t, level: "-O0", sanitize: false).must()
@@ -451,11 +451,11 @@ test "the runtime's object is named by what it read, beside the record that name
 # read. The key holds the runtime's contents, never its path, which is what
 # this test rests on; one that keyed the path would fail here first.
 test "a warm ask for the runtime's object compiles nothing and reads no runtime (defect 435)"
-    t: Toolchain @ locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: Toolchain @= locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-runtime-warm-435"
     assert !process.remove_tree(t.build).is_err()
     object = runtime_object(t, level: "-O0", sanitize: false).must()
-    gone: Toolchain @ t
+    gone: Toolchain @= t
     gone.runtime @ "build/selftest-runtime-warm-435-no-runtime"
     assert !process.path_exists(path: gone.runtime)
     assert runtime_object(gone, level: "-O0", sanitize: false).must() == object
@@ -481,7 +481,7 @@ test "an object compiled under one clang answer is never served under another (d
     more = strings.with_all(list: flags.level_words(level: "-O0", sanitize: false), more: ["-DHEROES_KEY_PROBE=1"])
     said = clang_floor.identity(build_dir: "build", runtime: here.runtime, words: more)
     assert !said.is_err()
-    other: Toolchain @ here
+    other: Toolchain @= here
     other.compiler_key @ digest.digest(more.join(" ") + "|" + answer_text(said))
     assert other.compiler_key != here.compiler_key
 

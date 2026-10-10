@@ -185,18 +185,18 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     t5 = INT64_C(8);
 #line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap)), "heroes-ffi-extent slot_fill p n 674 686 691 692 8");
+    _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap)), "heroes-ffi-extent slot_fill p n 675 687 692 693 8");
 #line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_t.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 674 686 691 692 8 void *");
+    _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_t.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 675 687 692 693 8 void *");
 #line 19 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     (void)slot_fill(t4, t5);
     t8 = (void *)(h0_t.nsap);
 #line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     t9 = INT64_C(8);
 #line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap)), "heroes-ffi-extent slot_sum p n 716 728 733 734 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_t.nsap)), "heroes-ffi-extent slot_sum p n 717 729 734 735 8");
 #line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_t.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 716 728 733 734 8 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_t.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 717 729 734 735 8 const void *");
 #line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     t10 = slot_sum(t8, t9);
 #line 20 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"

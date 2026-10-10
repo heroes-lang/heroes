@@ -8,6 +8,6 @@ record One
     x: i64
 
 function main()
-    n: i64 @ 1
+    n: i64 @= 1
     o = One(x: @n)       #~ marker_mismatch
     print(o.x + n)

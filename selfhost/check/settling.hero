@@ -65,7 +65,7 @@ variant Next
 
 function next(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: Call, @pending: Pending, @bindings: [i64?]) -> Next
     while pending.left.len() > 0
-        k: i64 @ 0
+        k: i64 @= 0
 
         while k < pending.left.len()
             ready = pending.left[k]
@@ -77,7 +77,7 @@ function next(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 
         if !pending.asked
             pending.asked @ true
-            after: [i64?] @ bindings
+            after: [i64?] @= bindings
             check_generics.bind_missing(c, @after, param: call.result, got: call.expected.must())
 
             if waiting.context_taken(@c, a, decls, params: call.params, left: pending.left, before: bindings, after: after)

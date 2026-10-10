@@ -5,5 +5,5 @@
 # code, `<U+202E>`, the caret padded by that width; an isolate likewise.
 
 function main()
-    x: i64 @ "‮abc"  #~ invisible_character
+    x: i64 @= "‮abc"  #~ invisible_character
     print("⁦x⁩")  #~ invisible_character invisible_character

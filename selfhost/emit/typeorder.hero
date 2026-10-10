@@ -50,17 +50,17 @@ use emit/type_needs
 # million calls with its other per-unit loop, and the square of a type's
 # depth for one written 2,000 deep.
 function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], want: synth.Wanted, kinds: [i64])
-    seeds: [i64] @ []
+    seeds: [i64] @= []
 
     for decl in types.aggregates(c, decls)
         if synth.wants_decl(w: want, decl: decl)
             seeds @ seeds.push(decl * 2)
 
-    id: i64 @ 0
+    id: i64 @= 0
 
     while id < kinds.len()
         if !phases.names_generic(kinds, ty: id)
-            wanted: bool @ false
+            wanted: bool @= false
 
             match table.get(c.types, id)
                 .fallible => wanted @ true
@@ -81,7 +81,7 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
     # A struct typedef ends with its own blank line and a
     # function-pointer typedef does not, so the group owes one exactly
     # when the last thing written was the latter.
-    owed_blank: bool @ false
+    owed_blank: bool @= false
 
     for item in out
         if item % 2 == 0
@@ -232,11 +232,11 @@ function struct_named(c: state.Checked, names: ctype.Names, decls: [ast.Decl], i
 # group's record count none: C keeps a pointer to the one, and the header
 # lays out the other.
 function deepest(c: state.Checked, names: ctype.Names, decls: [ast.Decl], out: [i64], graph: {i64: [i64]}) -> i64
-    depth: {i64: i64} @ {}
-    most: i64 @ 0
+    depth: {i64: i64} @= {}
+    most: i64 @= 0
 
     for item in out
-        held: i64 @ 0
+        held: i64 @= 0
 
         if struct_named(c, names, decls, item: item).len() > 0
             for need in graph[item].must()
@@ -280,10 +280,10 @@ record Frame
 # recursion dies at. The test below walks a chain a million deep, given as
 # data, which no machine stack this compiler runs on holds as a recursion.
 function visit(seeds: [i64], graph: {i64: [i64]}) -> [i64]
-    done: {i64: bool} @ {}
-    out: [i64] @ []
-    frames: [Frame] @ []
-    live: i64 @ 0
+    done: {i64: bool} @= {}
+    out: [i64] @= []
+    frames: [Frame] @= []
+    live: i64 @= 0
 
     for seed in seeds
         if done[seed].is_err()
@@ -328,10 +328,10 @@ test "cross-kind containment lands each typedef after what it holds"
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    names: ctype.Names @ ctype.new_names(s, parsed.decls)
+    names: ctype.Names @= ctype.new_names(s, parsed.decls)
     names @ ctype.with_options(names, c: c, s: s, decls: parsed.decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: parsed.decls, p: low.program)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     definitions(@w, c, names, s, parsed.decls, want: synth.everything(), kinds: phases.type_kinds(c))
     got = writer.finish(w)
 
@@ -345,7 +345,7 @@ test "cross-kind containment lands each typedef after what it holds"
 
 # The typedefs of `n` records, each holding the one before by value.
 function chain_text(n: i64) -> str
-    parts: [str] @ ["record R0\n    v: i64\n"]
+    parts: [str] @= ["record R0\n    v: i64\n"]
 
     for i in range(from: 1, to: n)
         parts @ parts.push("record R" + i.to_str() + "\n    inner: R" + (i - 1).to_str() + "\n")
@@ -357,10 +357,10 @@ function chain_text(n: i64) -> str
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    names: ctype.Names @ ctype.new_names(s, parsed.decls)
+    names: ctype.Names @= ctype.new_names(s, parsed.decls)
     names @ ctype.with_options(names, c: c, s: s, decls: parsed.decls)
     names @ ctype.with_functions(names, c: c, s: s, decls: parsed.decls, p: low.program)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     definitions(@w, c, names, s, parsed.decls, want: synth.everything(), kinds: phases.type_kinds(c))
     return writer.finish(w)
 
@@ -401,7 +401,7 @@ test "the walk writes each item after its needs, in the order they are listed, w
     # already written, so 1; then 5. From 4: 0, then 1 already written, then
     # 4. A recursion writes the same sequence, which is what the emitted C's
     # order has been since panel 023.
-    graph: {i64: [i64]} @ {}
+    graph: {i64: [i64]} @= {}
     none: [i64] = []
     graph[5] @ [3, 1]
     graph[3] @ [2]
@@ -417,10 +417,10 @@ test "the walk keeps a stack of its own: a chain a hundred thousand deep, given 
     # Windows' 64 MiB reserve is eight times that: no machine stack this
     # compiler runs on holds 100,000 frames of it.
     n: i64 = 100000
-    graph: {i64: [i64]} @ {}
+    graph: {i64: [i64]} @= {}
     none: [i64] = []
     graph[0] @ none
-    at: i64 @ 1
+    at: i64 @= 1
 
     while at < n
         graph[at] @ [at - 1]

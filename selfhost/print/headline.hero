@@ -36,7 +36,7 @@ function signature_lines(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments
     first = source.line_of(s, name.start)
     last = source.line_of(s, fd.signature_end.start)
     open = list_open(f.lines, name: name)
-    shut: i64 @ fd.signature_end.start
+    shut: i64 @= fd.signature_end.start
 
     if open >= 0 && f.lines.pair[open] >= 0
         shut @ f.lines.tokens[f.lines.pair[open]].span.start
@@ -46,7 +46,7 @@ function signature_lines(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments
     if closed > first && waiting
         opened(@f, tree, s, comments, name: source.span_text(s, name), fd: fd, indent: indent, first: first, shut: shut)
     else
-        rendered: [str] @ []
+        rendered: [str] @= []
 
         for param in fd.params
             text = signature.parameter(tree, s, param: param)
@@ -68,7 +68,7 @@ function signature_lines(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments
 # The token of the parameter list's `(`: the first after the name, past any
 # type parameters, which hold none.
 function list_open(lines: owners.Lines, name: token.Span) -> i64
-    at: i64 @ owners.index_at(lines, offset: name.start)
+    at: i64 @= owners.index_at(lines, offset: name.start)
 
     while at >= 0 && at < lines.tokens.len() && lines.tokens[at].kind != .lparen
         at @ at + 1
@@ -85,7 +85,7 @@ function list_open(lines: owners.Lines, name: token.Span) -> i64
 function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], name: str, fd: ast.FunctionDecl, indent: i64, first: i64, shut: i64)
     page.put_line(@f, indent: indent, text: signature.opening(s, name: name, fd: fd))
     f.last_line @ first
-    starts: [i64] @ []
+    starts: [i64] @= []
 
     # A parameter starts at its `@`: a comment after the `@` is inside it,
     # and given to the `(` line it moved above the parameter (the seat's
@@ -101,18 +101,18 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
     # parameter shares that line. Given to the first, it moved (defect 101).
     if source.line_of(s, starts[0]) > first
         page.trailing_comment(@f, s, comments, line: first)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for param in fd.params
         page.comments_before(@f, s, comments, line: source.line_of(s, starts[index]), indent: indent + 4)
-        separator: str @ ","
+        separator: str @= ","
 
         if index == fd.params.len() - 1
             separator @ ""
 
         # A comma after a comment keeps its own line (`owners.lone_comma`),
         # and so does one with a comment after it (`margins.commented_comma`).
-        comma: i64 @ -1
+        comma: i64 @= -1
 
         if index + 1 < fd.params.len()
             mark = owners.code_before(f.lines, index: owners.index_at(f.lines, offset: starts[index + 1]))
@@ -129,7 +129,7 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 
         # A comment inside the parameter's type stays inside it, the marks
         # after the type going on its last line.
-        written: str @ source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s)
+        written: str @= source.span_text(s, param.name) + ": " + types.render_type(tree, param.ty, s)
 
         if param.mutable
             written @ "@" + written
@@ -151,7 +151,7 @@ function opened(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
         # set took the comment past its last name, where a guard that
         # leaves the marks out could not see it. The line's pieces are
         # pushed and joined once (defect 105's spelling).
-        line: [str] @ [text]
+        line: [str] @= [text]
 
         for w in signature.parameter_words(s, param: param)
             if w.set.is_err()
@@ -204,11 +204,11 @@ function begins(f: page.Fmt, param: ast.Param) -> i64
 # Where a parameter's tokens end, its type ending at `type_end`: the last
 # token before the `,` or `)` after it, since its words hold no bracket.
 function ends(f: page.Fmt, type_end: i64) -> i64
-    last: i64 @ owners.index_at(f.lines, offset: type_end - 1)
+    last: i64 @= owners.index_at(f.lines, offset: type_end - 1)
 
     if last < 0
         return type_end
-    next: i64 @ owners.code_after(f.lines, index: last)
+    next: i64 @= owners.code_after(f.lines, index: last)
 
     while next >= 0 && f.lines.tokens[next].kind != .comma && f.lines.tokens[next].kind != .rparen
         last @ next

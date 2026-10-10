@@ -86,7 +86,7 @@ function a_class(text: str, span: token.Span, one: keywords.ForeignWord, @outlin
 
     if place != .statement && !methods
         return one
-    message: str @ "`class` is not a word in this language — use `record` (there is no inheritance)"
+    message: str @= "`class` is not a word in this language — use `record` (there is no inheritance)"
 
     if place == .statement
         message @ "`class` is not a word in this language — a `record` is declared at the top level of a file, never inside a body or another declaration (there is no inheritance)"
@@ -101,14 +101,14 @@ function a_class(text: str, span: token.Span, one: keywords.ForeignWord, @outlin
 function functions_below(text: str, span: token.Span) -> bool
     begins = word_place.line_start(text, at: span.start)
     margin = span.start - begins
-    i: i64 @ span.end
+    i: i64 @= span.end
 
     while i < text.len() && text[i] != '\n'
         i @ i + 1
 
     while i < text.len()
         i @ i + 1
-        col: i64 @ 0
+        col: i64 @= 0
 
         while i + col < text.len() && text[i + col] == ' '
             col @ col + 1
@@ -172,13 +172,13 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
             repair: .guidance
         )
     holder = holder_of(text: text, span, outline: outline)
-    message: str @ misplaced(word: word, writes: writes, place: place)
+    message: str @= misplaced(word: word, writes: writes, place: place)
 
     # Among a record's fields or a variant's cases, the one message says what
     # the parser's said before the lexer's was the one (`parse/heads`): what
     # the holder holds, and the route, the holder as a parameter (defect 311).
     if writes == "function" && place == .statement && holder != ""
-        members: str @ "its fields"
+        members: str @= "its fields"
 
         if holder == "variant"
             members @ "its cases"
@@ -232,7 +232,7 @@ function in_a_group(text: str, span: token.Span, word: str) -> keywords.ForeignW
 # report says them for `record {` (`parse/heads.in_braces`; ruling 2 of the
 # recovery batches, 2026-10-01); nothing elsewhere.
 function in_braces(text: str, span: token.Span, writes: str, place: word_place.Place) -> str
-    i: i64 @ span.end
+    i: i64 @= span.end
 
     while i < text.len() && text[i] == ' '
         i @ i + 1
@@ -241,7 +241,7 @@ function in_braces(text: str, span: token.Span, writes: str, place: word_place.P
 
     if i >= text.len() || text[i] != '{' || !named_there || writes == "use"
         return ""
-    held: str @ "its cases on the lines below it"
+    held: str @= "its cases on the lines below it"
 
     if writes == "record"
         held @ "its fields on the lines below it"
@@ -352,12 +352,12 @@ function certain_swap(text: str, span: token.Span, @outline: text_outline.Outlin
 
 # The certain swap at `span`, the text's outline read for the one question.
 function swap_in(text: str, span: token.Span) -> str?
-    outline: text_outline.Outline @ text_outline.unread()
+    outline: text_outline.Outline @= text_outline.unread()
     return certain_swap(text, span, @outline)
 
 # The repair at `span`, the same way.
 function repair_in(text: str, span: token.Span) -> keywords.ForeignWord?
-    outline: text_outline.Outline @ text_outline.unread()
+    outline: text_outline.Outline @= text_outline.unread()
     return repair_at(text, span, @outline)
 
 # The parser reads a construct as the certain swap writes it, so the swap it
@@ -404,7 +404,7 @@ test "a swap is certain only where the word it writes is right"
     assert swap_in(field, word_place.at_word(text: field, word: "int")).is_err()
     after = "extern \"m.h\"\n    function q() -> f64\n\nfunction f(n: int)\n"
     assert swap_in(after, word_place.at_word(text: after, word: "int")).must() == "i64"
-    local = "function main()\n    x: int @ 0\n"
+    local = "function main()\n    x: int @= 0\n"
     assert swap_in(local, word_place.at_word(text: local, word: "int")).must() == "i64"
     named = "function fn(x: i64)"
     assert swap_in(named, token.Span(start: 9, end: 11)).is_err()
@@ -430,7 +430,7 @@ test "the repair where the word stands is the table's answer where that answer i
 # Defect 146: a word in the middle of its line is placed from that line, and
 # a text's outline is read only for a word that opens its line, once.
 test "the outline is read once, and only for a word that opens its line"
-    outline: text_outline.Outline @ text_outline.unread()
+    outline: text_outline.Outline @= text_outline.unread()
     mid = "x: int\n"
     assert certain_swap(mid, token.Span(start: 3, end: 6), @outline).must() == "i64"
     assert !outline.read
@@ -449,7 +449,7 @@ test "the outline is read once, and only for a word that opens its line"
 # Defect 526: the words of one line ask their line's start of the outline,
 # which walks to it once and keeps the line.
 test "the words of one line find its start once, and a word of another line walks to its own"
-    outline: text_outline.Outline @ text_outline.unread()
+    outline: text_outline.Outline @= text_outline.unread()
     text = "x = 1\n    fn fn fn\n"
     assert text_outline.line_start(@outline, text, at: 13) == 6
     assert outline.line_from == 6

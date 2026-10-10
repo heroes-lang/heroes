@@ -23,7 +23,7 @@ function ident<A>(x: A) -> A
     return x
 
 function total(m: {str: u8}) -> u8
-    sum: u8 @ 0
+    sum: u8 @= 0
 
     for k in keys(m)
         sum @ sum + m[k].must()
@@ -39,7 +39,7 @@ function maybe() -> {str: u8}?
 function main()
     m: {str: u8} = {"a": 1}
     print(m["a"].must())
-    cell: {str: u8} @ {"b": 2}
+    cell: {str: u8} @= {"b": 2}
     cell @ {"b": 3}
     print(cell["b"].must())
     print(total({"c": 4, "d": 1}))

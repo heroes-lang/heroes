@@ -8,7 +8,7 @@ extern "fixedbugs-396-buffers.h"
     function fill_a5(@s: [i8] counted_by 16 lent, n: i32)
 
 function main()
-    s: [i8] @ []
+    s: [i8] @= []
     print("before")
     fill_a5(@s, n: 48)
     print("not reached ", s.len())

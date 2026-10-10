@@ -64,14 +64,14 @@ function add(acc: i64, item: Tree) -> i64
     return acc + sum(item)
 
 function main()
-    total: i64 @ 0
-    at: i64 @ 0
+    total: i64 @= 0
+    at: i64 @= 0
 
     while at < 700
         total @ total + weight(SHAPES[at % 7])
         at @ at + 1
 
     print(total, " ", sum(FOREST[0]), " ", sum(FOREST[1]), " ", SHAPES[4] == .small(b: 255, flag: true))
-    copy: [Shape] @ SHAPES
+    copy: [Shape] @= SHAPES
     copy[1] @ .named(label: "mars")
     print(weight(copy[1]), " ", weight(SHAPES[1]), " ", copy == SHAPES, " ", SHAPES == SHAPES)

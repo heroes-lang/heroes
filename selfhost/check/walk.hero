@@ -166,7 +166,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             # and what gives the ??? in `"n = " + ???` a type to report.
             # A generic call, `ok(…)` and an operator of literals have none
             # either (defect 564), asked of the whole operator tree at once.
-            takes: [{i64: bool}] @ []
+            takes: [{i64: bool}] @= []
 
             if !operands.small(a, id: id)
                 takes @ operands.taking(a, r, s, decls, id)
@@ -230,7 +230,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 state.push_diagnostic(@c, contextless_errors.empty_array_literal(span))
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             first = synth(@c, a, r, s, decls, items.elements[0])
-            n: i64 @ 1
+            n: i64 @= 1
 
             while n < items.elements.len()
                 check(@c, a, r, s, decls, id: items.elements[n], expected: first)
@@ -243,7 +243,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             key = synth(@c, a, r, s, decls, entries.entries[0].key)
             value = synth(@c, a, r, s, decls, entries.entries[0].value)
-            n: i64 @ 1
+            n: i64 @= 1
 
             while n < entries.entries.len()
                 check(@c, a, r, s, decls, id: entries.entries[n].key, expected: key)
@@ -263,7 +263,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 ty: access.try_type(@c, s, decls, inner: inner_ty, span: span, operand: a.exprs[t.value].span)
             )
         .if_expr branches =>
-            collected: [join.Branch] @ []
+            collected: [join.Branch] @= []
 
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
@@ -337,7 +337,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
     # nullptr at the type the context asked for (panel 053): adopts is
     # ASKED here, not assumed — recording unconditionally made
-    # `s: str @ nullptr` compile for one afternoon.
+    # `s: str @= nullptr` compile for one afternoon.
     is_null = match a.exprs[id].kind
         .null_ptr                                                                   => true
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .hole  => false
@@ -361,7 +361,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             .int_ty k =>
                 text = source.span_text(s, span)
                 literal = contextual.literal_value(a, s, id)
-                fits: bool @ false
+                fits: bool @= false
 
                 if !literal.is_err()
                     v = literal.must()
@@ -490,7 +490,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         # a .case, an ok(…) or a [] can be written in an arm at all.
 
         .if_expr branches =>
-            leaving: join.Leaves @ .jumps
+            leaving: join.Leaves @= .jumps
 
             for branch in branches.branches
                 condition(@c, a, r, s, decls, branch.cond)
@@ -616,8 +616,8 @@ function operator_type(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
     match a.exprs[id].kind
         .binary b =>
             which = operands.pair(a, r, s, decls, takes, left: b.left, right: b.right)
-            left_ty: i64 @ 0
-            right_ty: i64 @ 0
+            left_ty: i64 @= 0
+            right_ty: i64 @= 0
 
             if which == operands.RIGHT
                 left_ty @ operand_type(@c, a, r, s, decls, id: b.left, takes: takes)
@@ -712,10 +712,10 @@ function checked_map_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved
 # block may produce one; every other line is a statement, and §4.14
 # wants it to be ().
 function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, want: Want) -> Outcome
-    leaves: join.Leaves @ .falls
-    value: i64? @ fail(code: "none", msg: "no last value yet")
+    leaves: join.Leaves @= .falls
+    value: i64? @= fail(code: "none", msg: "no last value yet")
     last = body.stmts.len() - 1
-    index: i64 @ 0
+    index: i64 @= 0
 
     # A function's tail runs through the last statement of a body run for
     # effect, and nowhere else (`Checker.tail`, defect 135).
@@ -729,11 +729,11 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     # 208). Read through `path_end.broke_of`: a field of `c` read here copies
     # the whole `Checker` into this frame, which every nested block recurses
     # through.
-    jumped: bool @ false
-    broke: bool @ false
+    jumped: bool @= false
+    broke: bool @= false
 
     for sid in body.stmts
-        here: Want @ .nothing
+        here: Want @= .nothing
 
         if index == last
             here @ want
@@ -779,7 +779,7 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
 
     match a.stmts[id].kind
         .bind b =>
-            bound: i64 @ 0
+            bound: i64 @= 0
 
             if !b.ty.is_err()
                 declared = lower.lower_ty(@c, a, r, b.ty.must())
@@ -869,7 +869,7 @@ function while_loop(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
 
 function for_loop(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], name: token.Span, iterable: i64, body: ast.Block) -> Outcome
     over = synth(@c, a, r, s, decls, iterable)
-    element: i64 @ 0
+    element: i64 @= 0
 
     match table.get(c.out.types, over)
         .array arr => element @ arr.element
@@ -943,7 +943,7 @@ function expression_statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
     match a.exprs[value].kind
         .if_expr branches =>
             if want == .nothing
-                leaving: join.Leaves @ .jumps
+                leaving: join.Leaves @= .jumps
 
                 for branch in branches.branches
                     condition(@c, a, r, s, decls, branch.cond)
@@ -1070,10 +1070,10 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
 # value either jumped or ended on a statement, and only the first may
 # stand in a `match` used as a value.
 function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], match_arms: [ast.Arm], subject: i64, want: Want, span: token.Span) -> [join.Branch]
-    branches: [join.Branch] @ []
-    covered: {i64: bool} @ {}
-    wildcard_seen: bool @ false
-    seen: reach.Seen @ reach.none()
+    branches: [join.Branch] @= []
+    covered: {i64: bool} @= {}
+    wildcard_seen: bool @= false
+    seen: reach.Seen @= reach.none()
 
     for arm in match_arms
         for pattern in arm.patterns
@@ -1099,8 +1099,8 @@ function arms(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 .literal l => literal_pattern(@c, a, r, s, decls, subject: subject, value: l.value)
                 .error     => continue
 
-        value: i64? @ fail(code: "none", msg: "nothing produced yet")
-        leaves: join.Leaves @ .falls
+        value: i64? @= fail(code: "none", msg: "nothing produced yet")
+        leaves: join.Leaves @= .falls
 
         match arm.body
             .one_stmt one =>
@@ -1217,7 +1217,7 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
 
 function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], index: i64, given: [ast.Arg], receiver: i64?, span: token.Span) -> i64
     name = inventory.name_of(index)
-    collected: [i64] @ []
+    collected: [i64] @= []
     taken = labels.written_labels(s, given)
 
     if !receiver.is_err()
@@ -1251,7 +1251,7 @@ function builtin_dispatch(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
             value_span: a.exprs[arg.value].span,
             taken: taken
         )
-        expected: i64? @ fail(code: "absent", msg: "no first argument yet")
+        expected: i64? @= fail(code: "absent", msg: "no first argument yet")
 
         if collected.len() > 0
             expected @ builtins.expectation(c, name, first: collected[0], index: collected.len())
@@ -1282,7 +1282,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
     match table.get(c.out.types, callee_ty)
         .function_ty f =>
             params = table.params_of(c.out.types, f.params)
-            offset: i64 @ 0
+            offset: i64 @= 0
 
             if !receiver.is_err()
                 offset @ 1
@@ -1296,8 +1296,8 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
             names = table.labels_of(c.out.types, f.labels)
             taken = labels.written_labels(s, given)
             shared = type_fit.shared(params)
-            asked: labels.Asked @ labels.unasked()
-            index: i64 @ 0
+            asked: labels.Asked @= labels.unasked()
+            index: i64 @= 0
 
             for arg in given
                 position = index + offset
@@ -1313,8 +1313,8 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 # argument was named or only the confusable ones — the two
                 # readings coincide on the text's one example — and this is
                 # the reading the compiler had better have.
-                wanted: str @ ""
-                carried: str @ ""
+                wanted: str @= ""
+                carried: str @= ""
 
                 if position < names.len()
                     carried @ names[position]
@@ -1326,7 +1326,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                 # `str`* — is not even true.
                 if shared[position]
                     wanted @ carried
-                misnamed: bool @ false
+                misnamed: bool @= false
 
                 if wanted.len() == 0
 
@@ -1433,8 +1433,8 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
     # A value whose form can hold no field is the first argument of the
     # function the call names, typed as every argument is, so `[].count()` is
     # `count([])` (spec § 9; panel 203 R1 (b), `check/waiting_order.hero`).
-    held: Receiver @ Receiver(at: receiver, ty: fail(code: "absent", msg: "typed by the call"))
-    receiver_ty: i64 @ state.error_ty_of(c)
+    held: Receiver @= Receiver(at: receiver, ty: fail(code: "absent", msg: "typed by the call"))
+    receiver_ty: i64 @= state.error_ty_of(c)
     name = source.span_text(s, called)
 
     if !settle_order.by_the_call(@c, a, r, s, decls, at: at, receiver: receiver)
@@ -1523,7 +1523,7 @@ record Receiver
 # printer; on canonical source the two agree byte for byte, and the
 # port's divergence on non-canonical input is this comment.)
 function header_line(s: source.Source, from: i64) -> str
-    end: i64 @ from
+    end: i64 @= from
 
     while end < s.text.len() && s.text[end] != '\n'
         end @ end + 1
@@ -1544,7 +1544,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             if !mark.is_err()
                 state.push_diagnostic(@c, freer.refusal(s, name: name, mark: mark.must(), span: span))
             arity = fd.value.params.len()
-            offset: i64 @ 0
+            offset: i64 @= 0
 
             if !receiver.is_err()
                 offset @ 1
@@ -1558,15 +1558,15 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                 )
                 return state.error_ty_of(c)
             generics = fd.value.generics.len()
-            bindings: [i64?] @ []
-            tainted: bool @ false
-            g: i64 @ 0
+            bindings: [i64?] @= []
+            tainted: bool @= false
+            g: i64 @= 0
 
             while g < generics
                 bindings @ bindings.push(fail(code: "unbound", msg: "not met yet"))
                 g @ g + 1
 
-            params: [i64] @ []
+            params: [i64] @= []
 
             for p in fd.value.params
                 # §4.19's `@` half, and it is what makes `error: @problem` on
@@ -1588,7 +1588,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
 
             # The arguments with no type of their own a generic callee's
             # others settle (defect 541, `check/waiting.hero`).
-            waiting: [waits.Held] @ []
+            waiting: [waits.Held] @= []
 
             if !receiver.is_err()
                 before = receiver.must()
@@ -1608,9 +1608,9 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                     check(@c, a, r, s, decls, id: before.at, expected: params[0])
                 else
                     waiting @ waiting.push(waits.Held(value: before.at, at: 0))
-            index: i64 @ 0
+            index: i64 @= 0
             taken = labels.written_labels(s, given)
-            asked: labels.Asked @ labels.unasked()
+            asked: labels.Asked @= labels.unasked()
 
             for arg in given
                 position = index + offset
@@ -1627,7 +1627,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
                     # Rendered with the CALLEE's type-parameter names: at a
                     # call site the enclosing function's letters are the
                     # wrong dictionary, and #0 is nobody's type.
-                    callee_generics: [str] @ []
+                    callee_generics: [str] @= []
 
                     for gspan in fd.value.generics
                         callee_generics @ callee_generics.push(source.span_text(s, gspan))
@@ -1692,7 +1692,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # parameter an argument bound keeps that binding, and a shape
             # that does not fit is `compare`'s message, not ours. The
             # arguments that wait take it first (panel 203).
-            dot: i64 @ -1
+            dot: i64 @= -1
 
             if !receiver.is_err()
                 dot @ receiver.must().at
@@ -1711,12 +1711,12 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # at all, or a type the result cannot be — never a type
             # argument, which the language has no syntax for.
             if generics > 0
-                callee_letters: [str] @ []
+                callee_letters: [str] @= []
 
                 for gspan in fd.value.generics
                     callee_letters @ callee_letters.push(source.span_text(s, gspan))
 
-                at_letter: i64 @ 0
+                at_letter: i64 @= 0
 
                 for b in bindings
                     # A letter that appears in NEITHER the result nor a
@@ -1743,7 +1743,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
             # would be a second answer to one question. Only a generic
             # call has any.
             if generics > 0
-                resolved_args: [i64] @ []
+                resolved_args: [i64] @= []
 
                 for b in bindings
                     if b.is_err()
@@ -1764,7 +1764,7 @@ function user_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
 function synth_argument(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64, held: waits.Held, param: i64, shape: generic_argument.Told, @bindings: [i64?]) -> bool
     said = c.out.diagnostics.len()
     got = synth(@c, a, r, s, decls, held.value)
-    told: generic_argument.Told @ shape
+    told: generic_argument.Told @= shape
     told.unsettled @ waits.unsettled(c, s, decls, decl: decl, ty: param, callee: bindings)
 
     if told.shadow
@@ -1778,8 +1778,8 @@ function synth_argument(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
 # what comes next, by form and never by position, and the walk checks or
 # synthesises it. Whether the call is tainted.
 function settle_waiting(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: settling.Call, waiting: [waits.Held], @bindings: [i64?]) -> bool
-    pending: settling.Pending @ settling.Pending(left: waiting, asked: call.expected.is_err())
-    tainted: bool @ false
+    pending: settling.Pending @= settling.Pending(left: waiting, asked: call.expected.is_err())
+    tainted: bool @= false
 
     while true
         match settling.next(@c, a, r, s, decls, call, @pending, @bindings)
@@ -1829,7 +1829,7 @@ function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
     match decls[decl].kind
         .record_decl rec =>
             name = source.span_text(s, decls[decl].name)
-            expected: [FieldSpec] @ []
+            expected: [FieldSpec] @= []
 
             for f in rec.fields
                 expected @ expected.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
@@ -1863,15 +1863,15 @@ function construct_record(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
 # Each argument checked against the field its label names, the labels told
 # where they name no field, one twice, or one out of the declared order.
 function built_from_some(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], label: str, expected: [FieldSpec], given: [ast.Arg])
-    names: [str] @ []
-    types: [i64] @ []
+    names: [str] @= []
+    types: [i64] @= []
 
     for f in expected
         names @ names.push(f.name)
         types @ types.push(lower.lower_ty(@c, a, r, f.ty))
 
     at = group_fields.fields_named(s, names: names, given: given)
-    k: i64 @ 0
+    k: i64 @= 0
 
     for arg in given
         if at[k] >= 0
@@ -1888,7 +1888,7 @@ function built_from_some(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
 function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, called: token.Span, given: [ast.Arg], expected: i64)
     span = a.exprs[at].span
     name = source.span_text(s, called)
-    decl: i64 @ -1
+    decl: i64 @= -1
 
     match table.get(c.out.types, expected)
         .named n                                                  => decl @ n.decl
@@ -1912,7 +1912,7 @@ function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
             found = reach.case_named(@c, s, decl: decl, cases: v.cases, name: name)
 
             if found < 0
-                known: [str] @ []
+                known: [str] @= []
 
                 for one_case in v.cases
                     known @ known.push(source.span_text(s, one_case.name))
@@ -1923,7 +1923,7 @@ function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
                 )
                 _ = state.record_expr(@c, at: at, ty: state.error_ty_of(c))
                 return
-            expected_fields: [FieldSpec] @ []
+            expected_fields: [FieldSpec] @= []
 
             for f in v.cases[found].fields
                 expected_fields @ expected_fields.push(FieldSpec(name: source.span_text(s, f.name), ty: f.ty))
@@ -1962,7 +1962,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
 
     if !callee_is_name
         return fail(code: "not_mine", msg: "the callee is not a bare name")
-    name: str @ ""
+    name: str @= ""
 
     match r.uses[callee]
         .builtin b                            => name @ inventory.name_of(b.at)
@@ -1970,7 +1970,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
 
     if name != "ok" && name != "fail"
         return fail(code: "not_mine", msg: "not one of the two constructors")
-    inner: i64 @ -1
+    inner: i64 @= -1
 
     match table.get(c.out.types, expected)
         .fallible o                                               => inner @ o.payload
@@ -1991,7 +1991,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
         # ok() is how a ()? succeeds — the arity is DERIVED from the
         # payload rather than fixed: ok carries as many arguments as its
         # payload has values, and () has none. Zero spec tokens.
-        wanted: i64 @ 1
+        wanted: i64 @= 1
 
         if inner == table.unit_ty(c.out.types)
             wanted @ 0
@@ -2014,7 +2014,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
         )
         return ok(state.error_ty_of(c))
     str_id = table.str_ty(c.out.types)
-    at: i64 @ 0
+    at: i64 @= 0
     taken = labels.written_labels(s, given)
 
     for arg in given
@@ -2037,7 +2037,7 @@ function fallible_constructor(@c: state.Checker, a: ast.Ast, r: resolved.Resolve
 # position.
 function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], label: str, declared_at: str, expected: [FieldSpec], given: [ast.Arg], span: token.Span)
     if given.len() != expected.len()
-        names: [str] @ []
+        names: [str] @= []
 
         for f in expected
             names @ names.push(f.name)
@@ -2051,9 +2051,9 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
             _ = synth(@c, a, r, s, decls, arg.value)
 
         return
-    index: i64 @ 0
-    spec_names: [str] @ []
-    spec_types: [i64] @ []
+    index: i64 @= 0
+    spec_names: [str] @= []
+    spec_types: [i64] @= []
 
     for arg in given
         spec = expected[index]
@@ -2067,7 +2067,7 @@ function check_named_fields(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
     # which other fields an argument could fill asks the type it has (defect
     # 135), and the label must be the field at its position.
     taken = labels.written_labels(s, given)
-    asked: labels.Asked @ labels.unasked()
+    asked: labels.Asked @= labels.unasked()
     index @ 0
 
     for arg in given
@@ -2110,12 +2110,12 @@ function checked_program(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
 
     for d in p.decls
         match d.kind
             .function_decl fd =>
-                names: [str] @ []
+                names: [str] @= []
 
                 for g in fd.value.generics
                     names @ names.push(source.span_text(s, g))
@@ -2159,9 +2159,9 @@ test "no promotions anywhere, and the width takes the literal"
     mixed = checked_program("function f() -> f64\n    return 1 + 2.0\n")
     assert mixed.out.diagnostics.len() == 1
     assert mixed.out.diagnostics[0].code == "mixed_arithmetic"
-    fits = checked_program("function f() -> u8\n    b: u8 @ 255\n    return b\n")
+    fits = checked_program("function f() -> u8\n    b: u8 @= 255\n    return b\n")
     assert fits.out.diagnostics.len() == 0
-    breaks = checked_program("function f() -> u8\n    b: u8 @ 300\n    return b\n")
+    breaks = checked_program("function f() -> u8\n    b: u8 @= 300\n    return b\n")
     assert breaks.out.diagnostics.len() == 1
     assert breaks.out.diagnostics[0].code == "int_out_of_range"
     assert breaks.out.diagnostics[0].message == "`300` does not fit a `u8`"
@@ -2198,7 +2198,7 @@ test "every case named, or the compiler names the missing ones"
     assert banned.out.diagnostics[0].code == "wildcard_on_variant"
 
 test "a discarded value names the receiver trap, both repairs guesses"
-    c = checked_program("function f()\n    xs: [i64] @ [1]\n    xs.push(4)\n    print(xs.len())\n")
+    c = checked_program("function f()\n    xs: [i64] @= [1]\n    xs.push(4)\n    print(xs.len())\n")
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "discarded_value"
     assert c.out.diagnostics[0].fixes.len() == 2
@@ -2207,17 +2207,17 @@ test "a discarded value names the receiver trap, both repairs guesses"
 # Defect 135: the receiver in any spelling, and an operator's operand, are
 # the place the value may have been meant for; a marked argument is not.
 test "a place of the value's own type is found in every spelling of the call"
-    called = checked_program("function f()\n    xs: [i64] @ [1]\n    push(xs, 4)\n    print(xs.len())\n")
+    called = checked_program("function f()\n    xs: [i64] @= [1]\n    push(xs, 4)\n    print(xs.len())\n")
     assert called.out.diagnostics[0].fixes[0].replacement == "xs @ "
     assert called.out.diagnostics[0].fixes[1].certainty == .guess
     field = checked_program(
-        "record Bag\n    items: [i64]\n\nfunction f()\n    b: Bag @ Bag(items: [])\n    b.items.push(4).push(5)\n    print(b.items.len())\n"
+        "record Bag\n    items: [i64]\n\nfunction f()\n    b: Bag @= Bag(items: [])\n    b.items.push(4).push(5)\n    print(b.items.len())\n"
     )
     assert field.out.diagnostics[0].fixes[0].replacement == "b.items @ "
-    summed = checked_program("function f()\n    total: i64 @ 0\n    total + 1\n    print(total)\n")
+    summed = checked_program("function f()\n    total: i64 @= 0\n    total + 1\n    print(total)\n")
     assert summed.out.diagnostics[0].fixes[0].replacement == "total @ "
     marked = checked_program(
-        "function step(@xs: [i64]) -> [i64]\n    return xs\n\nfunction f()\n    xs: [i64] @ []\n    step(@xs)\n    print(xs.len())\n"
+        "function step(@xs: [i64]) -> [i64]\n    return xs\n\nfunction f()\n    xs: [i64] @= []\n    step(@xs)\n    print(xs.len())\n"
     )
     assert marked.out.diagnostics[0].fixes.len() == 1
     assert marked.out.diagnostics[0].fixes[0].certainty == .certain
@@ -2244,16 +2244,16 @@ test "two parameters of one type make the labels mandatory"
     assert typed.out.diagnostics[0].fixes[0].certainty == .certain
     assert typed.out.diagnostics[1].fixes[0].certainty == .certain
     marked = checked_program(
-        "function add_to(@total: i64, amount: i64)\n    total @ total + amount\n\nfunction main()\n    t: i64 @ 1\n    add_to(@t, 5)\n    print(t)\n"
+        "function add_to(@total: i64, amount: i64)\n    total @ total + amount\n\nfunction main()\n    t: i64 @= 1\n    add_to(@t, 5)\n    print(t)\n"
     )
     assert marked.out.diagnostics[0].fixes[0].certainty == .certain
     assert marked.out.diagnostics[0].fixes[0].span.start == marked.out.diagnostics[0].span.start - 1
 
     # And markers both missing tell nothing about the order.
     unmarked = checked_program(
-        "function swap(@a: i64, @b: i64)\n    t = a\n    a @ b\n    b @ t\n\nfunction main()\n    x: i64 @ 1\n    y: i64 @ 2\n    swap(x, y)\n    print(x + y)\n"
+        "function swap(@a: i64, @b: i64)\n    t = a\n    a @ b\n    b @ t\n\nfunction main()\n    x: i64 @= 1\n    y: i64 @= 2\n    swap(x, y)\n    print(x + y)\n"
     )
-    labels_seen: i64 @ 0
+    labels_seen: i64 @= 0
 
     for d in unmarked.out.diagnostics
         if d.code == "needs_label"
@@ -2266,7 +2266,7 @@ test "two parameters of one type make the labels mandatory"
 # program may write, and where it cannot, a note says what answers instead.
 test "an argument takes the `@` its parameter asks only where it can stand"
     cell = checked_program(
-        "record C\n    n: i64\n\nfunction bump(@c: C)\n    c.n @ c.n + 1\n\nfunction f()\n    k: C @ C(n: 0)\n    bump(k)\n    print(k.n)\n"
+        "record C\n    n: i64\n\nfunction bump(@c: C)\n    c.n @ c.n + 1\n\nfunction f()\n    k: C @= C(n: 0)\n    bump(k)\n    print(k.n)\n"
     )
     assert cell.out.diagnostics[0].code == "marker_mismatch"
     assert cell.out.diagnostics[0].fixes.len() == 1
@@ -2287,7 +2287,7 @@ test "a generic call binds, substitutes, and is recorded by its span"
         "function first<A>(xs: [A], fallback: A) -> A\n    if len(xs) > 0\n        return xs[0]\n    return fallback\n\nfunction main()\n    print(first([3, 1], 9))\n"
     )
     assert c.out.diagnostics.len() == 0
-    recorded: i64 @ 0
+    recorded: i64 @= 0
 
     for k in keys(c.out.instantiations)
         _ = k
@@ -2375,7 +2375,7 @@ test "a poisoned argument reports once, and the parameter it left unbound is not
     # messages — the cascade the check/ golden `fixedbugs-builtin-as-value`
     # caught on the evening panel 105 landed.
     c = checked_program(
-        "function m<A, B>(xs: [A], f: (function(A) -> B)) -> [B]\n    out: [B] @ []\n    for x in xs\n        out @ out.push(f(x))\n    return out\n\nfunction main()\n    print(m([\"a\"], len).len())\n"
+        "function m<A, B>(xs: [A], f: (function(A) -> B)) -> [B]\n    out: [B] @= []\n    for x in xs\n        out @ out.push(f(x))\n    return out\n\nfunction main()\n    print(m([\"a\"], len).len())\n"
     )
     assert c.out.diagnostics.len() == 1
     assert c.out.diagnostics[0].code == "builtin_as_value"
@@ -2426,8 +2426,8 @@ test "an arm an earlier arm covers is refused, however its value is spelled"
 test "defect 409: forty holes are kept, each once and in the order they stand"
     # `c.out.holes` is lent to `state.append_hole` now, from both the
     # checked position (a hole with a type to meet) and the synthesised one.
-    lines: [str] @ ["function main()", "    total: i64 @ 0"]
-    k: i64 @ 0
+    lines: [str] @= ["function main()", "    total: i64 @= 0"]
+    k: i64 @= 0
 
     while k < 20
         lines @ lines.push("    total @ total + ???")

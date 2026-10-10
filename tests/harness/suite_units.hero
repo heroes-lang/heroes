@@ -102,7 +102,7 @@ record Emission
     texts: [str]
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     every_tu_is_emitted_identically_twice(@r, scratch: scratch, compiler: compiler)
     a_caller_compiles_the_prototype_the_definition_sits_beside(@r, scratch: scratch, compiler: compiler)
     a_tu_names_the_runtime_descriptors_and_defines_none(@r, scratch: scratch, compiler: compiler)
@@ -133,7 +133,7 @@ function tu_sources(scratch: str) -> [str]?
     _ = scratch
     shapes = shell.found_under(dir: "build", suffix: "unitshape.c", reference: "")?
     progs = shell.found_under(dir: "build", suffix: "unitprog.c", reference: "")?
-    out: [str] @ shapes
+    out: [str] @= shapes
 
     for one in progs
         out @ out.push(one)
@@ -180,7 +180,7 @@ function emitted(scratch: str, compiler: str, dir: str) -> Emission?
     if built.is_err() || built.must().code != 0
         return fail(code: "cannot_run", msg: "`build " + dir + "/unitprog.hero`: " + shell.ending(built))
     paths = tu_sources(scratch)?
-    texts: [str] @ []
+    texts: [str] @= []
 
     for path in paths
         texts @ texts.push(read_file(path)?)
@@ -225,7 +225,7 @@ function every_tu_is_emitted_identically_twice(@r: report.Report, scratch: str, 
             detail: "  the two emissions landed under different cache keys, so the emitted text differs:\n    " + first.paths.join("\n    ") + "\n  then\n    " + second.paths.join("\n    ") + "\n  The key is a digest of the TU's own text, so this is the determinism failure seen through the cache: a wobbling emitter means a cache that can never hit."
         )
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     for i in range(from: 0, to: first.paths.len())
         if first.texts[i] != second.texts[i]
@@ -268,7 +268,7 @@ function a_caller_compiles_the_prototype_the_definition_sits_beside(@r: report.R
     exported = prototype_of(text: calling, name: DECLARED)
     kept = prototype_of(text: declaring, name: DECLARED)
     defined = definition_of(text: declaring, name: DECLARED)
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     if exported.len() == 0
         wrong @ wrong.push(
@@ -318,8 +318,8 @@ function a_tu_names_the_runtime_descriptors_and_defines_none(@r: report.Report, 
         report.keep_failure(@r, label: label, detail: "  the program did not emit under " + dir.must())
         return
     seen = got.must()
-    carried: [str] @ []
-    named: i64 @ 0
+    carried: [str] @= []
+    named: i64 @= 0
 
     for i in range(from: 0, to: seen.paths.len())
         for row in strings.lines(seen.texts[i])

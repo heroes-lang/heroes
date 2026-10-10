@@ -40,8 +40,8 @@ record Swap
 # certain swap; a failure where it wrote none. `swaps` ascend by `at`, as the
 # lexer writes them.
 function word_at(swaps: [Swap], at: i64) -> str?
-    low: i64 @ 0
-    high: i64 @ swaps.len()
+    low: i64 @= 0
+    high: i64 @= swaps.len()
 
     while low < high
         middle = (low + high) / 2

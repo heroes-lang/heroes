@@ -45,7 +45,7 @@ function read(@c: cursor.Cursor)
 # orphan's own, read and not named twice, as a dangling `else`'s body at a
 # statement's own margin is (`flattened`).
 function passed(@c: cursor.Cursor)
-    i: i64 @ c.pos + 1
+    i: i64 @= c.pos + 1
 
     while c.tokens[i].kind == .comment
         i @ i + 1
@@ -60,15 +60,15 @@ function passed(@c: cursor.Cursor)
 # and comments, with its indent and its matching dedent made line ends; none
 # where a token of the line stands first.
 function flattened(@c: cursor.Cursor, from: i64)
-    i: i64 @ from
+    i: i64 @= from
 
     while c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator
         i @ i + 1
 
     if c.tokens[i].kind != .indent
         return
-    depth: i64 @ 0
-    j: i64 @ i
+    depth: i64 @= 0
+    j: i64 @= i
 
     while c.tokens[j].kind != .eof
         if c.tokens[j].kind == .indent
@@ -96,7 +96,7 @@ function named(@c: cursor.Cursor)
 
 # The cursor at the first indent of `text`, as the lexer cuts it.
 function at_indent(text: str) -> cursor.Cursor
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
 
     while !cursor.at(c, .indent) && !cursor.at(c, .eof)
         _ = cursor.bump(@c)
@@ -105,7 +105,7 @@ function at_indent(text: str) -> cursor.Cursor
 
 test "an orphan that goes on with the line above is named once, and its lines are read"
     # `and` is passed over, and the line `b )` is left to the caller.
-    c: cursor.Cursor @ at_indent("x = 1\n    and b )\n")
+    c: cursor.Cursor @= at_indent("x = 1\n    and b )\n")
     read(@c)
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "unexpected_block"
@@ -115,15 +115,15 @@ test "an orphan that goes on with the line above is named once, and its lines ar
 
     # A lone `else` opens its body, which is the orphan's own: no indent is
     # left below the orphan's for the caller to name a second time.
-    d: cursor.Cursor @ at_indent("x = 1\n    else\n        y = 3\n")
+    d: cursor.Cursor @= at_indent("x = 1\n    else\n        y = 3\n")
     read(@d)
-    i: i64 @ d.pos + 1
+    i: i64 @= d.pos + 1
 
     while d.tokens[i].kind != .eof
         assert d.tokens[i].kind != .indent
         i @ i + 1
 
     # A line that begins a statement is not passed over.
-    e: cursor.Cursor @ at_indent("x = 1\n    y = 3 )\n")
+    e: cursor.Cursor @= at_indent("x = 1\n    y = 3 )\n")
     read(@e)
     assert cursor.peek(e, 1) == .ident

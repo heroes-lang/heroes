@@ -39,7 +39,7 @@ function is_partial(decls: [ast.Decl], decl: i64) -> bool
 # container kinds would have missed. Returns the DECLARATION reached
 # rather than a boolean, so the diagnostic can name it (§4.17).
 function reaches(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64?
-    seen: {i64: bool} @ {}
+    seen: {i64: bool} @= {}
     return reaches_within(c, decls, ty: ty, @seen)
 
 # **THE BOUND WAS `depth > 16` UNTIL 2026-09-16 AND THAT WAS DEFECT 046**
@@ -68,8 +68,8 @@ function reaches(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64?
 # records do; the children are pushed last to first, so the walk enters
 # them in the recursion's order and names the partial record it named.
 function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, @seen: {i64: bool}) -> i64?
-    stack: [i64] @ [ty]
-    live: i64 @ 1
+    stack: [i64] @= [ty]
+    live: i64 @= 1
 
     while live > 0
         live @ live - 1
@@ -78,7 +78,7 @@ function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, @seen: {i6
         if !seen[at].is_err()
             continue
         seen[at] @ true
-        inner: [i64] @ []
+        inner: [i64] @= []
 
         match table.get(c.out.types, at)
             .named n =>
@@ -91,7 +91,7 @@ function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, @seen: {i6
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr                       => continue
             .unit | .fixed | .function_ty | .case_ty | .failure | .generic | .error => continue
 
-        back: i64 @ inner.len() - 1
+        back: i64 @= inner.len() - 1
 
         while back >= 0
             if live < stack.len()
@@ -107,7 +107,7 @@ function reaches_within(c: state.Checker, decls: [ast.Decl], ty: i64, @seen: {i6
 # variant, in declaration order. A field whose type was never lowered
 # already carries its own diagnostic and is left out.
 function field_types(c: state.Checker, decls: [ast.Decl], decl: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match decls[decl].kind
         .record_decl r =>
@@ -132,7 +132,7 @@ function field_types(c: state.Checker, decls: [ast.Decl], decl: i64) -> [i64]
 test "the reach is transitive through array, fallible and map"
     p = parse.parse("extern \"s.h\"\n    record Font partial\n        size: i64\n")
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     font = table.intern(@c.out.types, .named(decl: 0))
     assert reaches(c, p.decls, font).must() == 0
     xs = table.intern(@c.out.types, .array(element: font))

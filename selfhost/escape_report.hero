@@ -44,7 +44,7 @@ function report(@l: state.LexState, text: str, backslash: i64, literal: i64, ctx
         span: span,
         certainty: .guess
     )
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "unknown_escape", message: opening, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "unknown_escape", message: opening, span: span)
 
     match r
         .backslash =>
@@ -178,9 +178,9 @@ function hole_fix(text: str, hole: str, backslash: i64, close: i64, literal: i64
 function as_text(s: str, in_piece: bool) -> str
     if !in_piece
         return s
-    out: [str] @ []
-    run: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    run: i64 @= 0
+    i: i64 @= 0
 
     while i < s.len()
         if s[i] == '{' || s[i] == '}'

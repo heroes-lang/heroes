@@ -35,7 +35,7 @@ function returned(c: Color) -> i64
         .blue => assert false
 
 function mutated(c: Color) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     x = match c
         .red  => 1

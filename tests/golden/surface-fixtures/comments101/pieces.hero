@@ -7,7 +7,7 @@ function add(n: i64, m: i64) -> i64
     return n + m
 
 function f(xs: [i64], a: i64, b: i64, c: i64) -> i64
-    ys: [i64] @ xs
+    ys: [i64] @= xs
     ys[a +  # after the plus
         b -  # after the minus
         c] @ 1

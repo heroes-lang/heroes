@@ -45,7 +45,7 @@ function missing_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this name")
-    at: token.Span @ found.must().span
+    at: token.Span @= found.must().span
     named = ffi_lookup.name_span(s, decls, name: name)
 
     if !named.is_err()
@@ -64,7 +64,7 @@ function missing_tag(s: source.Source, decls: [ast.Decl], line: str) -> diag.Dia
     # who wrote `tag addrinfo` to write `tag addrinfo` — is not written.
     if handle_tagged(s, decls, name: name)
         return fail(code: "none", msg: "the tag is right and the driver supplies the qualifier")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_missing_tag",
         message: "`" + found.must().header + "` declares `" + name + "` as a struct **tag** and gives it no typedef, so C reaches it only as `struct " + name + "`",
         span: at
@@ -109,7 +109,7 @@ function handle_tagged(s: source.Source, decls: [ast.Decl], name: str) -> bool
 #
 # Distinct, in order of first appearance, so the set is a function of the text.
 function needs_struct(s: source.Source, decls: [ast.Decl], stderr: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for line in ffi_lookup.lines(text: stderr)
         quoted = ffi_lookup.after(text: line, marker: STRUCT_TAG)
@@ -120,7 +120,7 @@ function needs_struct(s: source.Source, decls: [ast.Decl], stderr: str) -> [str]
 
         if !handle_tagged(s, decls, name: name)
             continue
-        already: bool @ false
+        already: bool @= false
 
         for one in out
             if one == name
@@ -165,7 +165,7 @@ record TaggedRecord
 # A tag with only one record answers the same either way, which is every binding
 # in this tree today.
 function record_by_tag(s: source.Source, decls: [ast.Decl], tag_name: str, want_handle: bool) -> TaggedRecord?
-    fallback: TaggedRecord? @ fail(code: "none", msg: "no record names this tag")
+    fallback: TaggedRecord? @= fail(code: "none", msg: "no record names this tag")
 
     for decl in decls
         match decl.kind
@@ -247,8 +247,8 @@ function tag_of_another_kind(s: source.Source, decls: [ast.Decl], line: str, typ
 
         if !quoted.is_err()
             tag_name = ffi_lookup.up_to_quote(quoted.must())
-            found: TaggedRecord? @ record_by_tag(s, decls, tag_name: tag_name, want_handle: true)
-            by_name: bool @ false
+            found: TaggedRecord? @= record_by_tag(s, decls, tag_name: tag_name, want_handle: true)
+            by_name: bool @= false
 
             # A record NAMED for the tag, with no `tag`: its bare name is the
             # word C reads, `record utag` over `union utag`.
@@ -286,7 +286,7 @@ function another_kind(found: TaggedRecord, tag: str, kind: str, by_name: bool) -
     h = found.header
     name = found.name
     handle = found.handle
-    said: str @ "a tag of another kind"
+    said: str @= "a tag of another kind"
 
     # The question unit's answer for a tag that is also a typedef's name is
     # `type` (`emit/ffi_asked.hero`), which says no kind.
@@ -295,13 +295,13 @@ function another_kind(found: TaggedRecord, tag: str, kind: str, by_name: bool) -
         said @ "a `union`"
     else if kind == "enum"
         said @ "an `enum`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_tag_is_a_union",
         message: "`" + h + "` declares `" + tag + "` as " + said + ", not a struct — C keeps the two in one namespace and will not let one stand for the other",
         span: found.span
     )
     by_typedef = "If `" + h + "` gives `" + tag + "` a typedef, "
-    union_note: str @ "a `tag` names a struct (§4.19), and a `record` binds a union only by a typedef's name, as `record W` over `typedef union { … } W;` does. " + by_typedef + "bind that name; if not, give it one in a header of the program's own, `typedef union " + tag + " " + name + ";`, and bind `record " + name + "`, or reach it as a `ptr` through C functions"
+    union_note: str @= "a `tag` names a struct (§4.19), and a `record` binds a union only by a typedef's name, as `record W` over `typedef union { … } W;` does. " + by_typedef + "bind that name; if not, give it one in a header of the program's own, `typedef union " + tag + " " + name + ";`, and bind `record " + name + "`, or reach it as a `ptr` through C functions"
 
     if by_name
         union_note @ "C reads `" + tag + "` as a type's name, and `" + h + "` has it only as a union's tag, so a `record` binds it by a typedef. " + by_typedef + "bind that name; if not, give it one in a header of the program's own, `typedef union " + tag + " " + tag + ";`, and keep `record " + name + "`, or reach it as a `ptr` through C functions"
@@ -374,7 +374,7 @@ test "tag_is_a_union lands the caret on the tag token, and record_by_tag answers
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     u = "main.c:8:1: error: use of 'statt' with tag type that does not match previous declaration"
-    asked: {str: str} @ {}
+    asked: {str: str} @= {}
     asked["statt"] @ "union"
     k = tag_is_a_union(s, parsed.decls, line: u, types: asked)
     assert k.must().code == "ffi_tag_is_a_union"
@@ -446,7 +446,7 @@ test "a handle's tag clang called undeclared is told by the header's answer (def
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-    types: {str: str} @ {}
+    types: {str: str} @= {}
     types["utag"] @ "union"
     types["colour"] @ "enum"
     types["opaque"] @ "tag"

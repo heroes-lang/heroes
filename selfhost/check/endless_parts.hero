@@ -21,9 +21,9 @@ record Parts
 # function not asked is no edge.
 function components(asked: [bool], starts: [i64], edges: [i64]) -> Parts
     n = asked.len()
-    index: [i64] @ []
-    low: [i64] @ []
-    on: [bool] @ []
+    index: [i64] @= []
+    low: [i64] @= []
+    on: [bool] @= []
 
     for _ in asked
         index @ index.push(-1)
@@ -33,15 +33,15 @@ function components(asked: [bool], starts: [i64], edges: [i64]) -> Parts
     # Tarjan's stack, `height` deep, and the path the search stands on,
     # `depth` deep, each step with the next of its calls to follow; the lists
     # never shrink, a slot above the height being free.
-    stack: [i64] @ []
-    height: i64 @ 0
-    path: [i64] @ []
-    next: [i64] @ []
-    depth: i64 @ 0
-    count: i64 @ 0
-    nodes: [i64] @ []
-    ends: [i64] @ []
-    root: i64 @ 0
+    stack: [i64] @= []
+    height: i64 @= 0
+    path: [i64] @= []
+    next: [i64] @= []
+    depth: i64 @= 0
+    count: i64 @= 0
+    nodes: [i64] @= []
+    ends: [i64] @= []
+    root: i64 @= 0
 
     while root < n
         if asked[root] && index[root] < 0
@@ -78,7 +78,7 @@ function components(asked: [bool], starts: [i64], edges: [i64]) -> Parts
                             low[u] @ index[x]
                 else
                     if low[u] == index[u]
-                        popped: bool @ false
+                        popped: bool @= false
 
                         while !popped
                             height @ height - 1

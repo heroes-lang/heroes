@@ -53,9 +53,9 @@ constant EXAMPLES: str
     "examples"
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
-    judged: i64 @ 0
-    skipped: i64 @ 0
+    r: report.Report @= report.empty()
+    judged: i64 @= 0
+    skipped: i64 @= 0
 
     for dir in GOLDEN_DIRS
         for item in cases.collect(scratch: scratch, dir: dir)?
@@ -142,7 +142,7 @@ function judge(@r: report.Report, @skipped: i64, scratch: str, compiler: str, la
                 skipped @ skipped + 1
                 report.keep_skip(@r, label: label, detail: "  " + lacks.must())
                 return
-            detail: str @ "  `build " + main + " " + level + "` exited " + said.must().code.to_str() + ", so its C was never judged for warnings:\n    " + strings.trimmed(said.must().err)
+            detail: str @= "  `build " + main + " " + level + "` exited " + said.must().code.to_str() + ", so its C was never judged for warnings:\n    " + strings.trimmed(said.must().err)
             why = absence.refused(lacks)
 
             if why.len() > 0
@@ -171,7 +171,7 @@ function judge(@r: report.Report, @skipped: i64, scratch: str, compiler: str, la
     report.keep_pass(@r)
 
 function warnings_in(err: str) -> [str]
-    found: [str] @ []
+    found: [str] @= []
 
     for row in strings.lines(err)
         if strings.contains(text: row, needle: "warning:")
@@ -259,8 +259,8 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     assert !compiler.is_err()
     has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
     assert !has.is_err()
-    refuted: report.Report @ report.empty()
-    none: i64 @ 0
+    refuted: report.Report @= report.empty()
+    none: i64 @= 0
     judge(@refuted, @none, scratch: scratch, compiler: compiler.must(), label: "warnings/has", main: has.must())
     assert none == 0
     assert refuted.failed == 1
@@ -269,8 +269,8 @@ test "fixedbugs: a program that cannot build is skipped only where the machine l
     assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
-    excused: report.Report @ report.empty()
-    one: i64 @ 0
+    excused: report.Report @= report.empty()
+    one: i64 @= 0
     judge(@excused, @one, scratch: scratch, compiler: compiler.must(), label: "warnings/lacks", main: lacks.must())
     assert one == 1
     assert excused.failed == 0
@@ -296,8 +296,8 @@ test "fixedbugs: a build that fails is a failure at either level, and the skips 
         name: "stub-refuses.sh",
         body: "printf 'error[boom]: the build failed\\n  at x.hero:1:1\\n' 1>&2\nexit 1"
     ).must()
-    refused: report.Report @ report.empty()
-    none: i64 @ 0
+    refused: report.Report @= report.empty()
+    none: i64 @= 0
     judge(@refused, @none, scratch: scratch, compiler: always, label: "warnings/x", main: main)
     assert refused.passed == 0
     assert refused.failed == 1
@@ -311,12 +311,12 @@ test "fixedbugs: a build that fails is a failure at either level, and the skips 
         name: "stub-late.sh",
         body: "case \" $* \" in *' -O2 '*) printf 'error[boom]: at -O2 alone\\n' 1>&2; exit 1 ;; esac\nexit 0"
     ).must()
-    at_o2: report.Report @ report.empty()
+    at_o2: report.Report @= report.empty()
     judge(@at_o2, @none, scratch: scratch, compiler: late, label: "warnings/x", main: main)
     assert at_o2.failed == 1
     assert strings.starts_with(text: at_o2.failures[0], prefix: "FAIL warnings/x at -O2\n")
     clean = stub_compiler(scratch: scratch, name: "stub-clean.sh", body: "exit 0").must()
-    quiet: report.Report @ report.empty()
+    quiet: report.Report @= report.empty()
     judge(@quiet, @none, scratch: scratch, compiler: clean, label: "warnings/x", main: main)
     assert quiet.passed == 1
     assert quiet.failed == 0

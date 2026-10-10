@@ -75,8 +75,8 @@ function arrow(@c: cursor.Cursor, text: str, own_block: bool) -> bool
 # said as the message's tail: what stands before it is no pattern, and the
 # author is told where the arrow they wrote is (defect 308); none, nothing.
 function arrow_along(c: cursor.Cursor, text: str) -> str
-    depth: i64 @ 0
-    i: i64 @ c.pos
+    depth: i64 @= 0
+    i: i64 @= c.pos
 
     while !token.ends_a_line(c.tokens[i].kind)
         k = c.tokens[i].kind
@@ -95,8 +95,8 @@ function arrow_along(c: cursor.Cursor, text: str) -> str
 # The index of the line end at the cursor's line's end, outside brackets, or
 # -1 where a block's edge or the stream's end comes first.
 function line_end(c: cursor.Cursor) -> i64
-    depth: i64 @ 0
-    i: i64 @ c.pos
+    depth: i64 @= 0
+    i: i64 @= c.pos
 
     while c.tokens[i].kind != .eof && c.tokens[i].kind != .indent && c.tokens[i].kind != .dedent
         k = c.tokens[i].kind
@@ -119,7 +119,7 @@ function line_end(c: cursor.Cursor) -> i64
 function arrow_below(c: cursor.Cursor, end: i64, past_a_dedent: bool) -> i64
     if end < 0 || c.tokens[end].kind != .terminator
         return -1
-    i: i64 @ end
+    i: i64 @= end
 
     while c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
         i @ i + 1
@@ -140,7 +140,7 @@ function arrow_below(c: cursor.Cursor, end: i64, past_a_dedent: bool) -> i64
 function joined_after(c: cursor.Cursor, text: str, at: i64) -> token.Span?
     if at < 0
         return fail(code: "no_arrow", msg: "no `=>` below")
-    next: i64 @ at + 1
+    next: i64 @= at + 1
 
     while c.tokens[next].kind == .comment
         next @ next + 1
@@ -160,7 +160,7 @@ function joined_after(c: cursor.Cursor, text: str, at: i64) -> token.Span?
 # to read the arm's value for its own, where it told the line a second time
 # (defect 195).
 function told_above(c: cursor.Cursor) -> bool
-    i: i64 @ c.pos - 1
+    i: i64 @= c.pos - 1
 
     while i > 0 && (c.tokens[i].kind == .dedent || c.tokens[i].kind == .comment)
         i @ i - 1
@@ -177,7 +177,7 @@ function told_above(c: cursor.Cursor) -> bool
 # Whether the arm begun at token `from` read its `=>` past a dedent: the
 # arms' block ended before it, and the arms end with it.
 function crossed_its_dedent(c: cursor.Cursor, from: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < c.pos && c.tokens[i].kind != .fat_arrow
         if c.tokens[i].kind == .dedent
@@ -212,7 +212,7 @@ function close_its_block(@c: cursor.Cursor, from: i64)
 # Whether an indent stands between the arm's first token and its `=>`: the
 # lexer opened a block for the line the `=>` begins.
 function opened_for_the_arrow(c: cursor.Cursor, from: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < c.pos && c.tokens[i].kind != .fat_arrow
         if c.tokens[i].kind == .indent
@@ -225,14 +225,14 @@ function opened_for_the_arrow(c: cursor.Cursor, from: i64) -> bool
 
 # The cursor past an arm's first token, in the lexer's own stream of `text`.
 function past_the_pattern(text: str) -> cursor.Cursor
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
     _ = cursor.bump(@c)
     return c
 
 test "an arm broken before its `=>` goes on at the `=>` below, and nowhere else"
     # Junk before the line end is what the report names; the arm goes on.
     for text in ["0\n=> 5\n", "0\n# a note\n=> 5\n", "0\n\n=> 5\n", "0\n    => 5\n", "0 7\n=> 5\n"]
-        c: cursor.Cursor @ past_the_pattern(text)
+        c: cursor.Cursor @= past_the_pattern(text)
         assert arrow(@c, text, own_block: false)
         assert c.diagnostics.len() == 1
         assert c.diagnostics[0].code == "expected_arm_arrow"
@@ -240,28 +240,28 @@ test "an arm broken before its `=>` goes on at the `=>` below, and nowhere else"
 
     # No `=>` below, and no line below at all.
     for text in ["0\n5\n", "0\n"]
-        c: cursor.Cursor @ past_the_pattern(text)
+        c: cursor.Cursor @= past_the_pattern(text)
         stood = c.pos
         assert !arrow(@c, text, own_block: false)
         assert c.pos == stood
 
 test "a `=>` past the arms' dedent is taken where they have a block of their own"
     text = "match n\n    0\n=> 5\n"
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
 
     while !cursor.at(c, .int_lit)
         _ = cursor.bump(@c)
 
     from = c.pos
     _ = cursor.bump(@c)
-    arms: cursor.Cursor @ c
+    arms: cursor.Cursor @= c
     assert arrow(@arms, text, own_block: true)
     assert crossed_its_dedent(arms, from: from)
     assert !arrow(@c, text, own_block: false)
 
 test "a `=>` alone at its line's end, joined to the next, holds the missing one back"
     text = "0\n=>\n_ => 20\n"
-    c: cursor.Cursor @ past_the_pattern(text)
+    c: cursor.Cursor @= past_the_pattern(text)
     assert arrow(@c, text, own_block: false)
     assert c.diagnostics.len() == 0
     assert c.held.len() == 1

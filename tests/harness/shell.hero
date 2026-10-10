@@ -292,7 +292,7 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
     for word in words
         hero_run_arg(word: word)
 
-    status: i64 @ 0
+    status: i64 @= 0
     code = hero_run_go(
         program: program.cstr(),
         in_path: in_path.cstr(),
@@ -342,7 +342,7 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
     # wrote 0xE9 match an expectation that spells those six characters. So the
     # refusal names the program, how it ended and the bytes, and the case
     # fails with that sentence.
-    unshown: [str] @ []
+    unshown: [str] @= []
 
     for one in [read_out, read_err]
         if one.said.len() > 0
@@ -364,8 +364,8 @@ record Captured
 # The capture at `path` of the stream named `stream`, read as the shown read
 # reads it (`runtime/hero_os.h`), or why it could not be read at all.
 function captured(path: str, stream: str) -> Captured?
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
 
     if status == HERO_OS_OK
@@ -387,9 +387,9 @@ constant AROUND: i64
 # bytes at most either way, each such byte written by its value.
 function unshown_said(answer: str, marks: i64) -> str
     shown = answer.slice(from: marks, to: answer.len())
-    bad: i64 @ 0
-    first_pair: i64 @ -1
-    pair: i64 @ 0
+    bad: i64 @= 0
+    first_pair: i64 @= -1
+    pair: i64 @= 0
 
     while 2 * pair + 1 < marks
         if answer[2 * pair] != 45
@@ -403,19 +403,19 @@ function unshown_said(answer: str, marks: i64) -> str
 
     if bad == 0 || first < 0
         return "its bytes are not UTF-8"
-    start: i64 @ first
+    start: i64 @= first
 
     while start > 0 && !ends_a_piece(shown[start - 1]) && first - start < AROUND
         start @ start - 1
 
     start @ strings.boundary_at_or_below(text: shown, at: start)
-    end: i64 @ first + 3
+    end: i64 @= first + 3
 
     while end < shown.len() && !ends_a_piece(shown[end]) && end - first - 3 < AROUND
         end @ end + 1
 
     end @ strings.boundary_at_or_below(text: shown, at: end)
-    quoted: str @ written_part(answer: answer, marks: marks, from: start, to: end)
+    quoted: str @= written_part(answer: answer, marks: marks, from: start, to: end)
 
     if start > 0 && !ends_a_piece(shown[start - 1])
         quoted @ "…" + quoted
@@ -438,8 +438,8 @@ function ends_a_piece(byte: u8) -> bool
 function replacement_at(shown: str, index: i64) -> i64
     if index < 0
         return -1
-    seen: i64 @ 0
-    at: i64 @ 0
+    seen: i64 @= 0
+    at: i64 @= 0
 
     while at + 2 < shown.len()
         if shown[at] == 239 && shown[at + 1] == 191 && shown[at + 2] == 189
@@ -474,13 +474,13 @@ record Scanned
 # day (`selfhost/cli/process.hero`'s `walk`), and so does this one; each caller
 # says what such a name means to it.
 function scanned(count: i64) -> Scanned
-    found: [str] @ []
-    unnamed: [str] @ []
-    at: i64 @ 0
+    found: [str] @= []
+    unnamed: [str] @= []
+    at: i64 @= 0
 
     while at < count
-        status: i64 @ 0
-        marks: i64 @ 0
+        status: i64 @= 0
+        marks: i64 @= 0
         name = hero_dir_at_shown(index: at, status: @status, marks: @marks)
 
         if status == HERO_OS_OK
@@ -506,10 +506,10 @@ function written(answer: str, marks: i64) -> str
 # part's first one is.
 function written_part(answer: str, marks: i64, from: i64, to: i64) -> str
     shown = answer.slice(from: marks, to: answer.len())
-    pieces: [str] @ []
-    kept: i64 @ from
-    at: i64 @ from
-    mark: i64 @ 2 * replacements_before(shown: shown, at: from)
+    pieces: [str] @= []
+    kept: i64 @= from
+    at: i64 @= from
+    mark: i64 @= 2 * replacements_before(shown: shown, at: from)
 
     while at + 2 < to
         if shown[at] == 239 && shown[at + 1] == 191 && shown[at + 2] == 189
@@ -527,8 +527,8 @@ function written_part(answer: str, marks: i64, from: i64, to: i64) -> str
 
 # How many U+FFFD of `shown` stand before `at`, an offset between characters.
 function replacements_before(shown: str, at: i64) -> i64
-    seen: i64 @ 0
-    i: i64 @ 0
+    seen: i64 @= 0
+    i: i64 @= 0
 
     while i + 2 < at
         if shown[i] == 239 && shown[i + 1] == 191 && shown[i + 2] == 189
@@ -564,7 +564,7 @@ function list_entries(scratch: str, dir: str) -> [str]?
     # file, so a name it cannot open stops the listing, named.
     if scan.unnamed.len() > 0
         return fail(code: "not_text", msg: unnamed_said(dir + "/" + scan.unnamed[0]))
-    entries: [str] @ []
+    entries: [str] @= []
 
     for name in scan.names
         entries @ entries.push(dir + "/" + name)
@@ -582,7 +582,7 @@ function list_directories(scratch: str, dir: str) -> [str]?
 
     if scan.unnamed.len() > 0
         return fail(code: "not_text", msg: unnamed_said(dir + "/" + scan.unnamed[0]))
-    entries: [str] @ []
+    entries: [str] @= []
 
     for name in scan.names
         entries @ entries.push(dir + "/" + name)
@@ -628,7 +628,7 @@ function project_files(scratch: str) -> [str]?
             msg: "`git ls-files` could not list this project's files — the record checks ask git what belongs here, and there is no sound fallback: a `find` reported a gitignored TLS key as a milestone identifier, which is why this function exists"
         )
     write_file(path: listing, text: ran.out)?
-    entries: [str] @ []
+    entries: [str] @= []
 
     for piece in strings.split_on(text: ran.out, byte: 0)
         if piece.len() > 0
@@ -668,7 +668,7 @@ function walk_into(dir: str, skip: [str]) -> [str]?
     # either stops the walk, named.
     if scan.unnamed.len() > 0
         return fail(code: "not_text", msg: unnamed_said(dir + "/" + scan.unnamed[0]))
-    found: [str] @ []
+    found: [str] @= []
 
     for name in scan.names
         found @ found.push(dir + "/" + name)
@@ -791,7 +791,7 @@ function found_under(dir: str, suffix: str, reference: str) -> [str]?
         if suffix.len() == 0 || ends_with(text: name, tail: suffix)
             return fail(code: "not_text", msg: unnamed_said(dir + "/" + name))
 
-    out: [str] @ []
+    out: [str] @= []
 
     for name in scan.names
         full = dir + "/" + name
@@ -816,7 +816,7 @@ function ends_with(text: str, tail: str) -> bool
 # not overload it onto arrays, which is why this exists rather than
 # being written inline at six call sites.
 function both(first: [str], second: [str]) -> [str]
-    out: [str] @ first
+    out: [str] @= first
 
     for one in second
         out @ out.push(one)
@@ -835,8 +835,8 @@ function both(first: [str], second: [str]) -> [str]
 # `selfhost/cli/process.hero`) answers this way since the same day, through
 # the same runtime call.
 function env(name: str) -> str?
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
 
     if status == HERO_OS_NOT_FOUND
@@ -853,8 +853,8 @@ function env(name: str) -> str?
 # written by its value, `<0xE9>`; "" where it is unset. For a variable that
 # names a place, never for one that may hold a secret.
 function env_written(name: str) -> str
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_env_shown(name: name.cstr(), status: @status, marks: @marks)
     return written(answer: got, marks: marks)
 
@@ -1003,7 +1003,7 @@ function unstartable(scratch: str, path: str) -> str
     if is_directory(path)
         return "it is a directory"
     program = started_as(path)
-    said: str @ ""
+    said: str @= ""
 
     match attempted(scratch: scratch, program: program, words: [program, "--version"])
         .ok ran =>
@@ -1029,7 +1029,7 @@ function unstartable(scratch: str, path: str) -> str
 # this is.
 function started_as(name: str) -> str
     windows = exe_suffix() == ".exe"
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < name.len()
         if name[at] == '/' || windows && (name[at] == '\\' || name[at] == ':')
@@ -1236,7 +1236,7 @@ test "the directory walk keeps a filename that contains a newline"
     found = list_entries(scratch: scratch, dir: hostile)
     assert !found.is_err()
     assert found.must().len() == 3
-    readable: i64 @ 0
+    readable: i64 @= 0
 
     for entry in found.must()
         if !read_file(entry).is_err()
@@ -1312,7 +1312,7 @@ test "fixedbugs: a walk names a file whose name is not UTF-8, and never panics (
     made = run(scratch: scratch, program: maker, words: [maker])
     assert !made.is_err()
     assert made.must().code == 0 || made.must().code == 3 && !windows
-    byte: str @ "<0xE9>"
+    byte: str @= "<0xE9>"
 
     if windows
         byte @ "<0xED><0xA0><0x80>"
@@ -1679,7 +1679,7 @@ function said_by(scratch: str, script: str) -> str
     return refusal(run(scratch: scratch, program: "/bin/sh", words: ["/bin/sh", "-c", script]))
 
 function zeros(count: i64) -> str
-    pieces: [str] @ []
+    pieces: [str] @= []
 
     for _ in range(from: 0, to: count)
         pieces @ pieces.push("0")
@@ -1688,7 +1688,7 @@ function zeros(count: i64) -> str
 
 # How many capture files stand directly in `dir`, by their names' own start.
 function captures_left(dir: str) -> i64
-    left: i64 @ 0
+    left: i64 @= 0
 
     for path in list_entries(scratch: dir, dir: dir).must()
         name = strings.base_name(path: path)

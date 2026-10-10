@@ -71,7 +71,7 @@ function end_here(c: cursor.Cursor, @run: i64) -> bool
 # Whether the token behind the cursor, past any comment line, is a line end
 # that keeps the margin: a terminator, not an indent or a dedent.
 function after_a_line_end(c: cursor.Cursor) -> bool
-    i: i64 @ c.pos - 1
+    i: i64 @= c.pos - 1
 
     while i > 0 && c.tokens[i].kind == .comment
         i @ i - 1
@@ -94,7 +94,7 @@ function holds_an_arm(c: cursor.Cursor) -> bool
 # where there is none. The run is walked in one loop, each line once: a file
 # of such lines is no deeper a recursion than one.
 function arm_at(c: cursor.Cursor, from: i64) -> i64
-    at: i64 @ from
+    at: i64 @= from
 
     while true
         one = read_line(c, from: at)
@@ -119,9 +119,9 @@ record ArmRead
     next: i64
 
 function read_line(c: cursor.Cursor, from: i64) -> ArmRead
-    depth: i64 @ 0
-    i: i64 @ from
-    patterns: bool @ true
+    depth: i64 @= 0
+    i: i64 @= from
+    patterns: bool @= true
 
     while c.tokens[i].kind != .eof && !(depth == 0 && token.is_line_end(c.tokens[i].kind))
         k = c.tokens[i].kind
@@ -137,7 +137,7 @@ function read_line(c: cursor.Cursor, from: i64) -> ArmRead
 
     if broken_arm.arrow_below(c, end: i, past_a_dedent: false) >= 0
         return ArmRead(holds: true, patterns: false, next: -1)
-    next: i64 @ -1
+    next: i64 @= -1
 
     if c.tokens[i].kind == .terminator
         next @ unclosed.past_line_ends(on(c, at: i))
@@ -146,7 +146,7 @@ function read_line(c: cursor.Cursor, from: i64) -> ArmRead
 # Whether the `match` at token `head` is an arm's value: a `=>` stands before
 # it on its line.
 function an_arms_value(c: cursor.Cursor, head: i64) -> bool
-    i: i64 @ head - 1
+    i: i64 @= head - 1
 
     while i >= 0 && !token.is_line_end(c.tokens[i].kind)
         if c.tokens[i].kind == .fat_arrow
@@ -165,8 +165,8 @@ function an_arms_value(c: cursor.Cursor, head: i64) -> bool
 # mistake's one, and the arms its reach took in are read as arms, told again
 # at each `=>` until 2026-10-03 (defect 177); past its reach they are laid out.
 function inside_a_bracket(c: cursor.Cursor, text: str, head: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ head - 1
+    depth: i64 @= 0
+    i: i64 @= head - 1
 
     while i >= 0 && c.tokens[i].kind != .indent && c.tokens[i].kind != .dedent
         k = c.tokens[i].kind
@@ -191,7 +191,7 @@ function inside_a_bracket(c: cursor.Cursor, text: str, head: i64) -> bool
 function past_the_block(c: cursor.Cursor, text: str) -> i64
     if !cursor.at(c, .dedent)
         return -1
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while c.tokens[i].kind == .dedent || c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment
         i @ i + 1
@@ -202,7 +202,7 @@ function past_the_block(c: cursor.Cursor, text: str) -> i64
 
 # The cursor `c`, standing on token `at`.
 function on(c: cursor.Cursor, at: i64) -> cursor.Cursor
-    moved: cursor.Cursor @ c
+    moved: cursor.Cursor @= c
     moved.pos @ at
     return moved
 
@@ -211,8 +211,8 @@ function on(c: cursor.Cursor, at: i64) -> cursor.Cursor
 # the blocks closed before it, holds a `match` outside brackets, or a word
 # whose certain swap is `match` (`switch`). At the top level it is none.
 function in_arms(c: cursor.Cursor, text: str, at: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ at - 1
+    depth: i64 @= 0
+    i: i64 @= at - 1
 
     while i >= 0
         k = c.tokens[i].kind
@@ -230,7 +230,7 @@ function in_arms(c: cursor.Cursor, text: str, at: i64) -> bool
 # Whether the line before the indent at `indent` holds a `match` outside
 # brackets.
 function opens_arms(c: cursor.Cursor, text: str, indent: i64) -> bool
-    i: i64 @ indent - 1
+    i: i64 @= indent - 1
 
     while i >= 0 && (c.tokens[i].kind == .terminator || c.tokens[i].kind == .comment)
         i @ i - 1
@@ -248,7 +248,7 @@ function opens_arms(c: cursor.Cursor, text: str, indent: i64) -> bool
 function taken(@c: cursor.Cursor, lines: cursor.Cursor, from: i64)
     c.diagnostics @ lines.diagnostics
     c.held @ lines.held
-    i: i64 @ from
+    i: i64 @= from
 
     while i < lines.pos && c.tokens[i].kind != .eof
         stream_tables.relaid(@c.tokens, at: i, kind: .terminator, span: c.tokens[i].span)
@@ -263,8 +263,8 @@ record Placed
     head: i64
 
 function on_the_second_line(text: str) -> Placed
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
-    head: i64 @ -1
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
+    head: i64 @= -1
 
     while !cursor.at(c, .terminator)
         if cursor.at(c, .kw_match)
@@ -307,7 +307,7 @@ test "a line of patterns alone over an arm at the margin is an arm"
 test "the arms at a margin walk a run of patterns alone once, and end where it ends at no arm"
     text = "match n\n0\n1\n2 => 1\nprint(3)\n"
     p = on_the_second_line(text)
-    run: i64 @ -1
+    run: i64 @= -1
     assert !end_here(p.c, @run)
     assert run > p.c.pos
     kept = run
@@ -320,7 +320,7 @@ test "the arms at a margin walk a run of patterns alone once, and end where it e
 
 # The cursor on the first dedent of `text`, in the lexer's own stream.
 function on_the_dedent(text: str) -> cursor.Cursor
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
 
     while !cursor.at(c, .dedent)
         _ = cursor.bump(@c)

@@ -11,7 +11,7 @@ function past_the_width_read()
     print(names[300].is_err())  #~ int_out_of_range
 
 function past_the_width_stored()
-    names: {u8: str} @ {}
+    names: {u8: str} @= {}
     names[256] @ "x"  #~ int_out_of_range
     print(names.len())
 

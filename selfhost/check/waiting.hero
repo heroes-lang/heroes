@@ -118,7 +118,7 @@ function generic_call(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], id: i
 # Whether every letter of the callee that `ty` names is bound, and to a type
 # that is no mistake's shadow.
 function settled_all(c: state.Checker, ty: i64, callee: [i64?]) -> bool
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < callee.len()
         if !settled(c, callee: callee, at: k) && check_generics.mentions(c, ty: ty, at: k)
@@ -133,8 +133,8 @@ function settled(c: state.Checker, callee: [i64?], at: i64) -> bool
 # Whether every letter of the callee `ty` names is bound, one of them to a
 # mistake's shadow: an argument waiting on it is that mistake's shadow too.
 function shadowed(c: state.Checker, ty: i64, callee: [i64?]) -> bool
-    poisoned: bool @ false
-    k: i64 @ 0
+    poisoned: bool @= false
+    k: i64 @= 0
 
     while k < callee.len()
         if check_generics.mentions(c, ty: ty, at: k)
@@ -150,8 +150,8 @@ function shadowed(c: state.Checker, ty: i64, callee: [i64?]) -> bool
 # The callee's letters `ty` names that nothing has settled yet, as written.
 function unsettled(c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, ty: i64, callee: [i64?]) -> [str]
     letters = function_value.letters_of(s, decls, decl: decl)
-    out: [str] @ []
-    k: i64 @ 0
+    out: [str] @= []
+    k: i64 @= 0
 
     while k < letters.len() && k < callee.len()
         if !settled(c, callee: callee, at: k) && check_generics.mentions(c, ty: ty, at: k)
@@ -168,7 +168,7 @@ function unsettled(c: state.Checker, s: source.Source, decls: [ast.Decl], decl: 
 # which is the call answering a type the context does not ask for, one
 # mistake told once at the call (`compare`) and never at each literal.
 function context_taken(@c: state.Checker, a: ast.Ast, decls: [ast.Decl], params: [i64], left: [Held], before: [i64?], after: [i64?]) -> bool
-    newly: bool @ false
+    newly: bool @= false
 
     for w in left
         param = params[w.at]
@@ -190,7 +190,7 @@ function takes(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, ty: i64
 
     match a.exprs[id].kind
         .array el =>
-            element: i64 @ -1
+            element: i64 @= -1
 
             match table.get(c.out.types, ty)
                 .array w                                                  => element @ w.element

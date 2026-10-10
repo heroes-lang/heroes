@@ -22,9 +22,9 @@ use emit/types
 # as the program nests them); the order it finds them in reaches nothing,
 # since what it builds is a map.
 function graph_of(c: state.Checked, names: ctype.Names, decls: [ast.Decl], seeds: [i64]) -> {i64: [i64]}
-    found: {i64: [i64]} @ {}
-    queue: [i64] @ seeds
-    next: i64 @ 0
+    found: {i64: [i64]} @= {}
+    queue: [i64] @= seeds
+    next: i64 @= 0
 
     while next < queue.len()
         item = queue[next]
@@ -43,7 +43,7 @@ function graph_of(c: state.Checked, names: ctype.Names, decls: [ast.Decl], seeds
 # What an item must be declared AFTER: by-value containment only,
 # which is exactly what C needs a complete type for.
 function needs(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i64) -> [i64]
-    written: [i64] @ []
+    written: [i64] @= []
 
     if item % 2 == 0
         for field in types.fields_of(decls, decl: item / 2)
@@ -69,7 +69,7 @@ function needs(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i6
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written @ written
             .array | .fixed | .map | .named                           => written @ written
             .case_ty | .failure | .generic | .error                   => written @ written
-    out: [i64] @ []
+    out: [i64] @= []
 
     for ty in written
         match table.get(c.types, ty)

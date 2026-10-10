@@ -31,7 +31,7 @@ function told(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, dec
     header = found.header
 
     if found.is_constant
-        k: diag.Diagnostic @ diag.new_diagnostic(
+        k: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_constant_type",
             message: "`" + name + "` is " + shown + " in `" + header + "`, not `" + declared + "` — clang read the header and the types disagree",
             span: found.span
@@ -51,8 +51,8 @@ function told(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, dec
             title: "declare it `"
         )
     gives = typed.canonical != "void"
-    message: str @ "`" + name + "` returns " + shown + " in `" + header + "`, not `" + declared + "` — clang read the header"
-    note: str @ "an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `" + name + "`"
+    message: str @= "`" + name + "` returns " + shown + " in `" + header + "`, not `" + declared + "` — clang read the header"
+    note: str @= "an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `" + name + "`"
 
     if !gives
         message @ "`" + name + "` returns nothing in `" + header + "`, its C result being `void`, not `" + declared + "` — clang read the header"
@@ -60,7 +60,7 @@ function told(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str, dec
     else if declared == "()"
         message @ "`" + name + "` returns " + shown + " in `" + header + "`, and this declaration takes nothing back — clang read the header"
         note @ "a result the header gives is declared after `->`, as its type or one that holds every value of it (§4.19)"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_return_type", message: message, span: found.span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_return_type", message: message, span: found.span)
     d.notes @ d.notes.push(note)
 
     if !gives || declared == "()"
@@ -98,7 +98,7 @@ function offered(given: diag.Diagnostic, s: source.Source, decls: [ast.Decl], tr
 
     if word.is_err() || at.is_err() || word.must().heroes == declared
         return given
-    d: diag.Diagnostic @ given
+    d: diag.Diagnostic @= given
 
     if !word.must().caveat.is_err()
         d.notes @ d.notes.push(word.must().caveat.must())
@@ -152,7 +152,7 @@ function declaring(s: source.Source, decls: [ast.Decl], typed: ffi_asked.Typed, 
 # The struct a C type names, by value or through one pointer: its words but
 # `const`, `struct` and the `*`.
 function tag_of(c_type: str) -> str
-    kept: [str] @ []
+    kept: [str] @= []
 
     for word in ffi_lookup.words(text: c_type)
         if word != "const" && word != "struct" && word != "*"

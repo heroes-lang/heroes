@@ -69,7 +69,7 @@ function seal_of(object: str) -> str
 # is discarded with it, since it would be published with nothing to vouch.
 function seal(staged: str, object: str) -> ()?
     key = file_reading.key_of(staged)
-    sealed: ()? @ ok()
+    sealed: ()? @= ok()
 
     if key.is_err()
         sealed @ fail(code: "failed", msg: "cannot read the object clang wrote at " + staged)

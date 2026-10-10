@@ -100,7 +100,7 @@ function bind(@c: state.Checker, s: source.Source, decls: [ast.Decl], @bindings:
 
                     if ws.len() == gs.len()
                         said = c.out.diagnostics.len()
-                        i: i64 @ 0
+                        i: i64 @= 0
 
                         while i < ws.len()
                             bind(@c, s, decls, @bindings, param: ws[i], got: gs[i], span: span)
@@ -193,7 +193,7 @@ function bind_missing(c: state.Checker, @bindings: [i64?], param: i64, got: i64)
                     gs = table.params_of(c.out.types, actual.params)
 
                     if ws.len() == gs.len()
-                        i: i64 @ 0
+                        i: i64 @= 0
 
                         while i < ws.len()
                             bind_missing(c, @bindings, param: ws[i], got: gs[i])
@@ -270,7 +270,7 @@ function named(@c: state.Checker, wanted: table.Params, got: table.Params, span:
 
     if ws.len() != gs.len()
         return
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < ws.len()
         if gs[i].len() > 0 && ws[i].len() > 0 && gs[i] != ws[i]
@@ -300,7 +300,7 @@ function substitute(@c: state.Checker, ty: i64, bindings: [i64?]) -> i64
             value = substitute(@c, m.value, bindings)
             return table.intern(@c.out.types, .map(key: key, value: value))
         .function_ty f =>
-            rebuilt: [i64] @ []
+            rebuilt: [i64] @= []
 
             for p in table.params_of(c.out.types, f.params)
                 rebuilt @ rebuilt.push(substitute(@c, p, bindings))
@@ -316,13 +316,13 @@ function substitute(@c: state.Checker, ty: i64, bindings: [i64?]) -> i64
 
 test "a type parameter takes the first type it meets and holds it"
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
     a_param = table.intern(@c.out.types, .generic(at: 0))
     int_id = table.int_ty_id(c.out.types)
     str_id = table.str_ty(c.out.types)
-    bindings: [i64?] @ [fail(code: "unbound", msg: "A")]
+    bindings: [i64?] @= [fail(code: "unbound", msg: "A")]
     bind(@c, s, d, @bindings, param: a_param, got: int_id, span: token.Span(start: 0, end: 1))
     assert bindings[0].must() == int_id
 
@@ -336,7 +336,7 @@ test "a type parameter takes the first type it meets and holds it"
 
 test "binding descends the shapes: array, map, and a function type"
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
     a_param = table.intern(@c.out.types, .generic(at: 0))
@@ -352,7 +352,7 @@ test "binding descends the shapes: array, map, and a function type"
     fn_param = table.intern_function(@c.out.types, one, none, result: b_param)
     one_got: [i64] = [int_id]
     fn_got = table.intern_function(@c.out.types, one_got, none, result: str_id)
-    bindings: [i64?] @ [fail(code: "unbound", msg: "A"), fail(code: "unbound", msg: "B")]
+    bindings: [i64?] @= [fail(code: "unbound", msg: "A"), fail(code: "unbound", msg: "B")]
     bind(@c, s, d, @bindings, param: xs_param, got: xs_got, span: token.Span(start: 0, end: 1))
     bind(@c, s, d, @bindings, param: fn_param, got: fn_got, span: token.Span(start: 2, end: 3))
     assert c.out.diagnostics.len() == 0
@@ -366,7 +366,7 @@ test "binding descends the shapes: array, map, and a function type"
 
 test "the context fills only what the arguments left, and never reports"
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     a_param = table.intern(@c.out.types, .generic(at: 0))
     b_param = table.intern(@c.out.types, .generic(at: 1))
     int_id = table.int_ty_id(c.out.types)
@@ -375,20 +375,20 @@ test "the context fills only what the arguments left, and never reports"
     # wanted<A>(what: str) -> A? meeting an expected i64?: A := i64.
     result = table.intern(@c.out.types, .fallible(payload: a_param))
     asked = table.intern(@c.out.types, .fallible(payload: int_id))
-    bindings: [i64?] @ [fail(code: "unbound", msg: "A")]
+    bindings: [i64?] @= [fail(code: "unbound", msg: "A")]
     bind_missing(c, @bindings, param: result, got: asked)
     assert bindings[0].must() == int_id
 
     # A parameter the arguments bound keeps its binding whatever the
     # context says, and the disagreement is reported by nobody HERE.
-    bound: [i64?] @ [ok(str_id)]
+    bound: [i64?] @= [ok(str_id)]
     bind_missing(c, @bound, param: result, got: asked)
     assert bound[0].must() == str_id
     assert c.out.diagnostics.len() == 0
 
     # A shape that does not fit fills nothing: pick<A, B>(x: A) -> B? met
     # by an expected plain i64 leaves B unbound, and says nothing.
-    two: [i64?] @ [ok(int_id), fail(code: "unbound", msg: "B")]
+    two: [i64?] @= [ok(int_id), fail(code: "unbound", msg: "B")]
     other = table.intern(@c.out.types, .fallible(payload: b_param))
     bind_missing(c, @two, param: other, got: int_id)
     assert two[1].is_err()
@@ -402,7 +402,7 @@ test "the context fills only what the arguments left, and never reports"
 
 test "a signature either mentions a type parameter or it does not"
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     a_param = table.intern(@c.out.types, .generic(at: 0))
     str_id = table.str_ty(c.out.types)
     in_result = table.intern(@c.out.types, .fallible(payload: a_param))
@@ -414,7 +414,7 @@ test "a signature either mentions a type parameter or it does not"
 
 test "an unbound generic substitutes to the silent error id"
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     a_param = table.intern(@c.out.types, .generic(at: 0))
     bindings: [i64?] = [fail(code: "unbound", msg: "A")]
     assert substitute(@c, a_param, bindings) == 0

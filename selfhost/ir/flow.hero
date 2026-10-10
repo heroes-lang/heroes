@@ -9,7 +9,7 @@ use ir
 # terminators cannot drift apart — the verifier recomputes with this
 # same list.
 function successors(term: ir.Term) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match term
         .jump j => out @ out.push(j.to)

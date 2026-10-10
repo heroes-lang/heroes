@@ -31,8 +31,8 @@ use check/state
 # record it reaches in `out`, and walking it again for each of 2,000 nested
 # map literals cost 4 million steps.
 function reach(@out: {i64: bool}, @seen: {i64: bool}, c: state.Checked, decls: [ast.Decl], ty: i64)
-    queue: [i64] @ [ty]
-    next: i64 @ 0
+    queue: [i64] @= [ty]
+    next: i64 @= 0
 
     while next < queue.len()
         at = queue[next]

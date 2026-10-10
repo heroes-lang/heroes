@@ -17,18 +17,18 @@ function plain(n: i64)
 
 function through_a_local()
     g = plain
-    x: i64 @ 1
+    x: i64 @= 1
     g(@x)  #~ marker_mismatch
     g(x)
 
 function through_a_parameter(g: (function(i64) -> ()))
-    x: i64 @ 2
+    x: i64 @= 2
     g(@x)  #~ marker_mismatch
     g(x)
 
 function through_a_field()
     h = Holder(f: plain)
-    x: i64 @ 3
+    x: i64 @= 3
     h.f(@x)  #~ marker_mismatch
     h.f(x)
 

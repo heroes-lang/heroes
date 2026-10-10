@@ -24,7 +24,7 @@ record Single
 
 # The directory of a corpus path, "" at the top.
 function directory_of(path: str) -> str
-    at: i64 @ path.len() - 1
+    at: i64 @= path.len() - 1
 
     while at >= 0
         if path[at] == '/'
@@ -50,16 +50,16 @@ function single(at: judged.Place, one: plan.Single, original: str) -> Single?
     normal = judged.checked(at, rel: rel, permissive: false)?
     control = judged.checked(at, rel: rel, permissive: true)?
     internal = judged.internal_in(normal)
-    flags: [str] @ []
-    apply: json_read.Json @ .null_value
+    flags: [str] @= []
+    apply: json_read.Json @= .null_value
 
-    full: [str] @ []
+    full: [str] @= []
 
     if normal.messages.len() > 0
         answer = judged.child_apply(at, rel: rel)?
         printed = printed_by.judged_apply(at, applied_rel: beside(path: one.file, name: "zzm_" + one.key + "_applied.hero"), original_rel: beside(path: one.file, name: "zzm_" + one.key + "_original.hero"), text: text, original: original, normal: normal, answer: answer)?
-        names: [str] @ ["exit", "changed"]
-        values: [json_read.Json] @ [json_fields.whole(answer.exit), .truth(v: printed.changed)]
+        names: [str] @= ["exit", "changed"]
+        values: [json_read.Json] @= [json_fields.whole(answer.exit), .truth(v: printed.changed)]
 
         if printed.changed
             names @ names.push("stands_code")
@@ -95,8 +95,8 @@ function pair(at: judged.Place, p: plan.Pair, a: plan.Single, b: plan.Single, or
     control = judged.checked(at, rel: rel, permissive: true)?
     judged.uproot(at, rel: rel)?
     site_b = hunks.statement_site(applied, tag: "b", statements: b.statements)
-    names: [str] @ ["key", "a", "b", "a_op", "b_op", "file", "site_a", "site_b"]
-    values: [json_read.Json] @ [
+    names: [str] @= ["key", "a", "b", "a_op", "b_op", "file", "site_a", "site_b"]
+    values: [json_read.Json] @= [
         json_fields.string(key)
         json_fields.string(p.a)
         json_fields.string(p.b)
@@ -133,7 +133,7 @@ function pair(at: judged.Place, p: plan.Pair, a: plan.Single, b: plan.Single, or
     return ok(.fields(names: names, values: values))
 
 function diags_json(arm: judged.Arm) -> json_read.Json
-    out: [json_read.Json] @ []
+    out: [json_read.Json] @= []
 
     for m in arm.messages
         out @ out.push(judged.message_json(m))

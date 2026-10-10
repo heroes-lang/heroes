@@ -135,12 +135,12 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # What the header said each `@` parameter points at (defect 010): filled
     # by the pointee check inside the round, empty for the package failure
     # explained first, since no pointee has been asked about yet.
-    answered: [pointee_ask.Answered] @ []
+    answered: [pointee_ask.Answered] @= []
 
     # Asked before clang runs, so a package that is not installed is
     # reported as itself rather than as a header clang could not find.
     each = libraries.resolve_each(art.must().packages, build_dir: t.build)
-    package_flags: [str]? @ fail(code: "none", msg: "not asked")
+    package_flags: [str]? @= fail(code: "none", msg: "not asked")
 
     match each
         .ok words => package_flags @ ok(libraries.words_of(words, packages: art.must().packages))
@@ -166,7 +166,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             return fail(code: "diagnostics", msg: "the package could not answer")
         io.eprint(text: message)
         return fail(code: "diagnostics", msg: "the package could not answer")
-    names: [str] @ []
+    names: [str] @= []
 
     for name in art.must().link
         if !libraries.in_the_c_runtime(library: name)
@@ -176,7 +176,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # beside the .hero file — the unit lives under build/<hash>/ and
     # an angled include never searches the source's directory. An
     # empty parent is the current directory, not the absence of one.
-    source_dir: str @ modules.open_directory(path)
+    source_dir: str @= modules.open_directory(path)
 
     if source_dir.len() == 0
         source_dir @ "."
@@ -314,7 +314,7 @@ test "a failure that is not clang's refusal is not worded as one (defect 134)"
         # system's number for a missing directory and the link said this.
         # The binary's path takes the platform's suffix where the C's does
         # not (defect 359): `out.exe` on Windows, the file that would be.
-        landed: str @ "build/selftest-no-such-directory/out"
+        landed: str @= "build/selftest-no-such-directory/out"
 
         if !emit_c
             landed @ landed + process.exe_suffix()
@@ -343,11 +343,11 @@ test "kept texts a power cut zeroed are asked again, and the author's mistake is
     assert !process.remove_tree(dir).is_err()
     assert !process.mkdir_all(dir).is_err()
     assert !write_file(path: dir + "/p.h", text: "#include <stdint.h>\n#warning \"a header warning\"\nvoid fill(int64_t *out);\ntypedef struct { int32_t kind; int32_t x; } SA;\nstatic inline int32_t sa_x(SA s) { return s.x; }\nstatic inline int64_t six(void) { return 6; }\n").is_err()
-    pointee_wrong = "extern \"p.h\"\n    function fill(@out: i32)\n\nfunction main()\n    n: i32 @ 0\n    fill(@n)\n    print(n)\n"
+    pointee_wrong = "extern \"p.h\"\n    function fill(@out: i32)\n\nfunction main()\n    n: i32 @= 0\n    fill(@n)\n    print(n)\n"
     field_left_out = "extern \"p.h\"\n    record SA\n        kind: i32\n        x: i32\n    function sa_x(s: SA) -> i32\n\nfunction main()\n    b = SA(kind: 2)\n    print(sa_x(b))\n"
     warned = "extern \"p.h\"\n    function six() -> i64\n\nfunction main()\n    print(six())\n"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-zeroed").must()
-    each: i64 @ 0
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-zeroed").must()
+    each: i64 @= 0
     nul = read_file("tests/golden/surface-fixtures/notext357/one-nul.txt").must()
     none: [str] = []
     options = compile.Options(
@@ -369,7 +369,7 @@ test "kept texts a power cut zeroed are asked again, and the author's mistake is
         assert !write_file(path: path, text: program).is_err()
         s = input.read_compilation(path: path, library: library).must()
         first = produced_code(produce(path: path, s: s, options: options, t: t, version: "0.0.0-port"))
-        zeroed: i64 @ 0
+        zeroed: i64 @= 0
 
         for file in process.files_under(t.build).must()
             if zeroable(file)

@@ -123,20 +123,20 @@ function format_page(tree: ast.Ast, s: source.Source, all_comments: [token.Span]
 # the line of a comment no walk could keep where it was written. `lexed`
 # are the tokens the tree was parsed from, the root file's first.
 function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span], uses: [ast.Use], decls: [ast.Decl], lexed: [token.Token]) -> page.Fmt
-    f: page.Fmt @ page.blank_page()
+    f: page.Fmt @= page.blank_page()
 
     # The library's comments go with its declarations, and the
     # author's declarations, never the library's: with --in-place a
     # formatter that walked the whole Source would append the library
     # to their file, once per run (§1.11).
-    comments: [token.Span] @ []
+    comments: [token.Span] @= []
 
     for c in all_comments
         if source.is_root(s, c.start)
             comments @ comments.push(c)
 
-    items: [Item] @ []
-    index: i64 @ 0
+    items: [Item] @= []
+    index: i64 @= 0
 
     for used in uses
         if source.is_root(s, used.span.start)
@@ -157,12 +157,12 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
 
     # The logical lines and the owner of every comment, read with the heads
     # the merges drop left out, which the page does not have.
-    dropped: [i64] @ []
-    position: i64 @ 0
-    above: i64 @ 0
+    dropped: [i64] @= []
+    position: i64 @= 0
+    above: i64 @= 0
 
     for item in items
-        written: i64 @ 0
+        written: i64 @= 0
 
         if !item.is_use
             written @ head_line(s, decl: decls[item.at])
@@ -178,16 +178,16 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
     # 036), so the canonical form is a run of consecutive members
     # sharing a head line — the only rule that survives fmt(fmt(x)) ==
     # fmt(x).
-    open_group: str @ ""
-    have_previous: bool @ false
-    previous_was_use: bool @ false
+    open_group: str @= ""
+    have_previous: bool @= false
+    previous_was_use: bool @= false
     position @ 0
 
     for item in items
-        line: i64 @ source.line_of(s, item.start)
-        group: str @ ""
-        doc: [token.Span] @ []
-        head: i64 @ 0
+        line: i64 @= source.line_of(s, item.start)
+        group: str @= ""
+        doc: [token.Span] @= []
+        head: i64 @= 0
 
         if !item.is_use
             group @ group_key(s, decl: decls[item.at])
@@ -240,7 +240,7 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
             page.put_line(@f, indent: 0, text: use_line(s, used: uses[item.at]))
             page.ended(@f, s, comments, line: line)
         else
-            indent: i64 @ 0
+            indent: i64 @= 0
 
             if continues
                 indent @ 4
@@ -274,17 +274,17 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
 # unless the merge would move a comment (`page.keeps_head`). A member of the
 # group above written under its own head drops that head.
 function joins(s: source.Source, comments: [token.Span], items: [Item], decls: [ast.Decl]) -> [bool]
-    out: [bool] @ []
-    open_group: str @ ""
-    from: i64 @ 0
-    previous: i64 @ 0
+    out: [bool] @= []
+    open_group: str @= ""
+    from: i64 @= 0
+    previous: i64 @= 0
 
     for item in items
         while from < comments.len() && comments[from].start < previous
             from @ from + 1
 
-        group: str @ ""
-        continues: bool @ false
+        group: str @= ""
+        continues: bool @= false
 
         if !item.is_use
             decl = decls[item.at]
@@ -300,12 +300,12 @@ function joins(s: source.Source, comments: [token.Span], items: [Item], decls: [
 # The items in source order, a tie in the order given (`stable.order`;
 # defect 105: the insertion this was copied the list at every item).
 function sorted_items(items: [Item]) -> [Item]
-    starts: [i64] @ []
+    starts: [i64] @= []
 
     for item in items
         starts @ starts.push(item.start)
 
-    out: [Item] @ []
+    out: [Item] @= []
 
     for at in stable.order(by: starts)
         taken = items[at]
@@ -350,7 +350,7 @@ function use_line(s: source.Source, used: ast.Use) -> str
 # back as a link one — which would be fmt changing what the program
 # asks the machine.
 function extern_head(s: source.Source, header: token.Span, library: ast.Library?) -> str
-    out: str @ "extern " + source.span_text(s, header)
+    out: str @= "extern " + source.span_text(s, header)
 
     if !library.is_err()
         match library.must()
@@ -490,11 +490,11 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
                 library: rec.library,
                 continues: continues
             )
-            tag_text: str @ ""
+            tag_text: str @= ""
 
             if !rec.tag.is_err()
                 tag_text @ " tag " + source.span_text(s, rec.tag.must())
-            marker: str @ ""
+            marker: str @= ""
 
             if rec.partial
                 marker @ " partial"
@@ -635,14 +635,14 @@ function value_block_shape(tree: ast.Ast, id: i64) -> i64
     return NO_BLOCK
 
 function fmt_block(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], block: ast.Block, indent: i64)
-    first: bool @ true
+    first: bool @= true
 
     # RULE 2's state, and it is the only new state the air rules need: a
     # loop or match block just closed, so the next statement resumes at
     # the outer level and takes air above it. Nothing to thread through
     # the knot — the transition is observable right here, in the parent's
     # own loop.
-    closed_a_loop: bool @ false
+    closed_a_loop: bool @= false
 
     for id in block.stmts
         stmt = tree.stmts[id]
@@ -693,7 +693,7 @@ function fmt_block(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
         # And a logical line ends where its last continuation does, a `)`
         # alone on its line included (`page.ended`).
         end = literal_end_line(tree, s, lines: f.lines, id: id)
-        stop: i64 @ line
+        stop: i64 @= line
 
         if !end.is_err()
             stop @ end.must()
@@ -720,8 +720,8 @@ function statement(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
     match tree.stmts[id].kind
         # A comment inside a head's type or place stays there (`lead`).
         .bind b =>
-            written: str @ source.span_text(s, b.name)
-            end: i64 @ b.name.end
+            written: str @= source.span_text(s, b.name)
+            end: i64 @= b.name.end
 
             if !b.ty.is_err()
                 written @ written + ": " + types.render_type(tree, b.ty.must(), s)
@@ -752,7 +752,7 @@ function statement(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
                 to: end,
                 indent: indent
             )
-            valued(@f, tree, s, comments, head: lead + " @ ", value: dc.value, indent: indent, from: start)
+            valued(@f, tree, s, comments, head: lead + " @= ", value: dc.value, indent: indent, from: start)
         .mutate m =>
             place = groups.whole(f.lines, span: tree.exprs[m.place].span)
             written = parens.render(tree, s, id: m.place)
@@ -814,10 +814,10 @@ function statement(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [tok
 function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64, from: i64)
     match tree.exprs[value].kind
         .if_expr ie =>
-            index: i64 @ 0
+            index: i64 @= 0
 
             for branch in ie.branches
-                keyword: str @ "else "
+                keyword: str @= "else "
 
                 if index == 0
                     keyword @ head
@@ -832,7 +832,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                         line: owners.start_of(f.lines, line: source.line_of(s, tree.exprs[branch.cond].span.start)),
                         indent: indent
                     )
-                opening: i64 @ f.printed.size
+                opening: i64 @= f.printed.size
 
                 if index == 0
                     opening @ from
@@ -869,7 +869,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
             block_head(@f, tree, s, comments, head: head + "match ", value: me.scrutinee, indent: indent, from: from)
             lefts = arm_heads(tree, s, arms: me.arms)
             pads = arm_alignment(tree, s, lines: f.lines, arms: me.arms, lefts: lefts, indent: indent + 4)
-            index: i64 @ 0
+            index: i64 @= 0
 
             for arm in me.arms
                 left = lefts[index]
@@ -907,7 +907,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                         # (defect 004). The value's own extent is
                         # the question, and fmt_block already asks it. And
                         # never back: an inline `if` moved it past its blocks.
-                        stop: i64 @ line
+                        stop: i64 @= line
                         spread = literal_end_line(tree, s, lines: f.lines, id: one.at)
 
                         if !spread.is_err()
@@ -920,7 +920,7 @@ function valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
                         # A block arm never pads: its => ends the
                         # line, so there is nothing to line up with.
                         page.put_line(@f, indent: indent + 4, text: left + " =>")
-                        arrow: i64 @ line
+                        arrow: i64 @= line
 
                         if blk.block.stmts.len() > 0
                             arrow @ page.opener_line(
@@ -1004,7 +1004,7 @@ function plain_valued(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [
 # `from` on, it is deepened so no line of it reads as the block's.
 function block_head(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.Span], head: str, value: i64, indent: i64, from: i64)
     brackets.broken(@f, tree, s, comments, head: head, value: value, indent: indent, tail: "", open: false)
-    last: i64 @ owners.end_of(f.lines, line: source.line_of(s, tree.exprs[value].span.start))
+    last: i64 @= owners.end_of(f.lines, line: source.line_of(s, tree.exprs[value].span.start))
 
     if last < f.last_line
         last @ f.last_line
@@ -1074,10 +1074,10 @@ function prefix(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [token.
 
 # The left side of every arm — its patterns, joined by |.
 function arm_heads(tree: ast.Ast, s: source.Source, arms: [ast.Arm]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for arm in arms
-        patterns: [str] @ []
+        patterns: [str] @= []
 
         for pattern in arm.patterns
             patterns @ patterns.push(parens.pattern(tree, s, p: pattern))
@@ -1093,30 +1093,30 @@ function arm_heads(tree: ast.Ast, s: source.Source, arms: [ast.Arm]) -> [str]
 # test — deciding from source adjacency made fmt(fmt(x)) != fmt(x)
 # (sweep 001 audit S3).
 function arm_alignment(tree: ast.Ast, s: source.Source, lines: owners.Lines, arms: [ast.Arm], lefts: [str], indent: i64) -> [i64]
-    pads: [i64] @ []
+    pads: [i64] @= []
 
     for _ in arms
         pads @ pads.push(0)
 
-    run_index: [i64] @ []
-    run_len: [i64] @ []
-    previous_end: i64 @ 0
-    index: i64 @ 0
+    run_index: [i64] @= []
+    run_len: [i64] @= []
+    previous_end: i64 @= 0
+    index: i64 @= 0
 
     for arm in arms
         line = source.line_of(s, arm.span.start)
-        arm_end: i64 @ arm.span.end - 1
+        arm_end: i64 @= arm.span.end - 1
 
         if arm_end < 0
             arm_end @ 0
         end = source.line_of(s, arm_end)
-        inline: bool @ false
+        inline: bool @= false
 
         match arm.body
             .one_stmt => inline @ true
             .block    => inline @ false
 
-        width: i64? @ fail(code: "none", msg: "not inline")
+        width: i64? @= fail(code: "none", msg: "not inline")
 
         if inline
             width @ fits_on_one_line(tree, s, lines: lines, arm: arm, left: lefts[index].chars().len(), indent: indent)
@@ -1142,13 +1142,13 @@ function arm_alignment(tree: ast.Ast, s: source.Source, lines: owners.Lines, arm
 # format would drop that arm from the run: non-idempotence one door
 # down).
 function close_run(run_index: [i64], run_len: [i64], lefts: [str], indent: i64, pads: [i64]) -> [i64]
-    widest: i64 @ 0
+    widest: i64 @= 0
 
     for i in run_index
         if lefts[i].chars().len() > widest
             widest @ lefts[i].chars().len()
 
-    at: i64 @ 0
+    at: i64 @= 0
 
     for i in run_index
         grown = widest - lefts[i].chars().len()
@@ -1157,7 +1157,7 @@ function close_run(run_index: [i64], run_len: [i64], lefts: [str], indent: i64, 
             return pads
         at @ at + 1
 
-    out: [i64] @ pads
+    out: [i64] @= pads
 
     for i in run_index
         out[i] @ widest
@@ -1169,20 +1169,20 @@ function close_run(run_index: [i64], run_len: [i64], lefts: [str], indent: i64, 
 # The printer's one-line test for an arm — and, when it passes, the
 # length that test measured.
 function fits_on_one_line(tree: ast.Ast, s: source.Source, lines: owners.Lines, arm: ast.Arm, left: i64, indent: i64) -> i64?
-    stmt_at: i64 @ -1
+    stmt_at: i64 @= -1
 
     match arm.body
         .one_stmt one => stmt_at @ one.at
         .block        => return fail(code: "none", msg: "a block arm has no one-line form")
 
-    value: i64 @ -1
+    value: i64 @= -1
 
     # THE HEAD THE PRINTER WILL PUT BEFORE THE VALUE. It must be the same
     # string `statement()` puts there, and its width comes from the
     # literal rather than typed, so the two cannot drift in characters.
     # `return ` was missing here: the arm measured short, joined the run,
     # was padded past the margin and then broken (defect 004).
-    head: i64 @ 0
+    head: i64 @= 0
 
     match tree.stmts[stmt_at].kind
         .expr_stmt e => value @ e.value
@@ -1220,7 +1220,7 @@ function fits_on_one_line(tree: ast.Ast, s: source.Source, lines: owners.Lines, 
 # (fixedbugs: formatting twice grew a blank line after every one).
 function spans_lines(tree: ast.Ast, s: source.Source, lines: owners.Lines, value: i64) -> bool
     node = tree.exprs[value]
-    is_control: bool @ false
+    is_control: bool @= false
 
     match node.kind
         .if_expr | .match_expr                                                         => is_control @ true
@@ -1238,7 +1238,7 @@ function spans_lines(tree: ast.Ast, s: source.Source, lines: owners.Lines, value
     # `selfhost/digits.hero`).
     whole = groups.whole(lines, span: node.span)
     first = source.line_of(s, whole.start)
-    last_at: i64 @ whole.end - 1
+    last_at: i64 @= whole.end - 1
 
     if last_at < 0
         last_at @ 0
@@ -1250,7 +1250,7 @@ function spans_lines(tree: ast.Ast, s: source.Source, lines: owners.Lines, value
 # ending in a block ends at a Dedent on the next line, and asking it
 # made trailing_comment steal the following declaration's doc comment.
 function literal_end_line(tree: ast.Ast, s: source.Source, lines: owners.Lines, id: i64) -> i64?
-    value: i64 @ -1
+    value: i64 @= -1
 
     match tree.stmts[id].kind
         .bind b     => value @ b.value
@@ -1268,7 +1268,7 @@ function literal_end_line(tree: ast.Ast, s: source.Source, lines: owners.Lines, 
 
     if !spans_lines(tree, s, lines: lines, value: value)
         return fail(code: "none", msg: "ends where it started")
-    last_at: i64 @ groups.whole(lines, span: tree.exprs[value].span).end - 1
+    last_at: i64 @= groups.whole(lines, span: tree.exprs[value].span).end - 1
 
     if last_at < 0
         last_at @ 0
@@ -1334,40 +1334,40 @@ test "the blank line that decides remark from documentation survives"
 # match nested inside an arm of the outer one, and an `if` rather than a
 # `match` in the same position.
 test "a control form at a binary's right edge keeps its body"
-    plain = "function f(c: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => \"b\"\n        _ => c\n    return out\n"
+    plain = "function f(c: str) -> str\n    out: str @= \"\"\n    out @ out + match c\n        \"a\" => \"b\"\n        _ => c\n    return out\n"
     parsed = parse.parse(plain)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: plain)
     got = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
-    assert got == "function f(c: str) -> str\n    out: str @ \"\"\n\n    out @ out + match c\n        \"a\" => \"b\"\n        _   => c\n\n    return out\n"
+    assert got == "function f(c: str) -> str\n    out: str @= \"\"\n\n    out @ out + match c\n        \"a\" => \"b\"\n        _   => c\n\n    return out\n"
 
     # Two operators before the control form, and the prefix keeps its
     # minimum parentheses.
-    chain = "function f(c: str, p: str) -> str\n    out: str @ \"\"\n    out @ out + p + match c\n        \"a\" => \"b\"\n        _ => c\n    return out\n"
+    chain = "function f(c: str, p: str) -> str\n    out: str @= \"\"\n    out @ out + p + match c\n        \"a\" => \"b\"\n        _ => c\n    return out\n"
     pc = parse.parse(chain)
     assert pc.diagnostics.len() == 0
     sc = source.new_source(name: "t.hero", text: chain)
     gc = format_file(pc.tree, sc, pc.comments, pc.uses, pc.decls)
-    assert gc == "function f(c: str, p: str) -> str\n    out: str @ \"\"\n\n    out @ out + p + match c\n        \"a\" => \"b\"\n        _   => c\n\n    return out\n"
+    assert gc == "function f(c: str, p: str) -> str\n    out: str @= \"\"\n\n    out @ out + p + match c\n        \"a\" => \"b\"\n        _   => c\n\n    return out\n"
 
     # A match inside an arm of the match at the right edge: all four arms.
-    nested = "function f(c: str, e: str) -> str\n    out: str @ \"\"\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _ => e\n        _ => c\n    return out\n"
+    nested = "function f(c: str, e: str) -> str\n    out: str @= \"\"\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _ => e\n        _ => c\n    return out\n"
     pn = parse.parse(nested)
     assert pn.diagnostics.len() == 0
     sn = source.new_source(name: "t.hero", text: nested)
     gn = format_file(pn.tree, sn, pn.comments, pn.uses, pn.decls)
-    assert gn == "function f(c: str, e: str) -> str\n    out: str @ \"\"\n\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _   => e\n        _   => c\n\n    return out\n"
+    assert gn == "function f(c: str, e: str) -> str\n    out: str @= \"\"\n\n    out @ out + match c\n        \"a\" => match e\n            \"z\" => \"Z\"\n            _   => e\n        _   => c\n\n    return out\n"
 
     # The same position, an `if` instead: the else branch used to go.
     # AND it is the control case for panel 095's narrowing of rule 2:
     # `if` takes air BEFORE it, like the match above, and none AFTER,
     # where the match gets one. Same position, different air, on purpose.
-    branchy = "function f(c: str) -> str\n    out: str @ \"\"\n    out @ out + if c == \"a\"\n        \"b\"\n    else\n        c\n    return out\n"
+    branchy = "function f(c: str) -> str\n    out: str @= \"\"\n    out @ out + if c == \"a\"\n        \"b\"\n    else\n        c\n    return out\n"
     pb = parse.parse(branchy)
     assert pb.diagnostics.len() == 0
     sb = source.new_source(name: "t.hero", text: branchy)
     gb = format_file(pb.tree, sb, pb.comments, pb.uses, pb.decls)
-    assert gb == "function f(c: str) -> str\n    out: str @ \"\"\n\n    out @ out + if c == \"a\"\n        \"b\"\n    else\n        c\n    return out\n"
+    assert gb == "function f(c: str) -> str\n    out: str @= \"\"\n\n    out @ out + if c == \"a\"\n        \"b\"\n    else\n        c\n    return out\n"
 
 test "fmt keeps an alias, and this is a fixed defect"
     # **The formatter deleted `as` for one commit** (2026-09-02): it printed
@@ -1654,7 +1654,7 @@ test "a comment on a signature's open line, after an operator, after a name, in 
         lf[2]
         "function f(n: i64) -> i64\n    if n > g(\n                1  # inside the condition\n            )\n        return 1\n    return 0\n\nfunction g(n: i64) -> i64\n    return n\n"
     ]
-    index: i64 @ 0
+    index: i64 @= 0
 
     for text in lf
         for written in [text, crlf[index]]

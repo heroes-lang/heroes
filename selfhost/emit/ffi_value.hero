@@ -108,8 +108,8 @@ function refused_value(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: co
 # the header's line that spells the value, and what a record's constant is.
 # `program` is the file that declares the constant.
 function told(name: str, declared: str, struct_c: str, known: ffi_lookup.Declared, message: str, spelled: Spelled?, program: str) -> diag.Diagnostic
-    where: str @ ""
-    file: str @ known.header
+    where: str @= ""
+    file: str @= known.header
 
     if !spelled.is_err()
         file @ shown(path: spelled.must().path, header: known.header, program: program)
@@ -117,7 +117,7 @@ function told(name: str, declared: str, struct_c: str, known: ffi_lookup.Declare
 
         if file != known.header
             where @ where + " of `" + file + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_constant_type",
         message: "`" + name + "` in `" + known.header + "` cannot be declared `" + declared + "`: clang refuses the header's value" + where + ": " + without_flag(message),
         span: known.span
@@ -152,7 +152,7 @@ function without_flag(message: str) -> str
 # that is not one, and the line clang quoted under that note.
 function spelled_at(rows: [str], line: str, name: str) -> Spelled?
     target = clang_place.without_return(line)
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < rows.len() && clang_place.without_return(rows[index]) != target
         index @ index + 1
@@ -190,7 +190,7 @@ function shown(path: str, header: str, program: str) -> str
 
     p = clang_place.slashed(path)
     named = clang_place.slashed(program)
-    cut: i64 @ named.len()
+    cut: i64 @= named.len()
 
     while cut > 0 && named[cut - 1] != '/'
         cut @ cut - 1
@@ -214,7 +214,7 @@ function read_back(stderr: str) -> [diag.Diagnostic]
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
     names = ctype.new_names(s, parsed.decls)
-    found: [diag.Diagnostic] @ []
+    found: [diag.Diagnostic] @= []
 
     for line in ffi_lookup.lines(text: stderr)
         d = refused_value(

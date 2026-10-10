@@ -56,7 +56,7 @@ constant DEPTH: i64
 
 # The one value `text` holds, with nothing but whitespace around it.
 function read_json(text: str) -> Json?
-    r: Reader @ Reader(text: text, at: 0, depth: 0)
+    r: Reader @= Reader(text: text, at: 0, depth: 0)
     got = value(@r)?
     skip_space(@r)
 
@@ -66,10 +66,10 @@ function read_json(text: str) -> Json?
 
 # Every line of a JSON Lines text, each one value; a blank line is none.
 function read_lines(text: str) -> [Json]?
-    out: [Json] @ []
-    start: i64 @ 0
-    at: i64 @ 0
-    line_number: i64 @ 1
+    out: [Json] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+    line_number: i64 @= 1
 
     while at <= text.len()
         if at == text.len() || text[at] == 10
@@ -89,7 +89,7 @@ function read_lines(text: str) -> [Json]?
 # at a time: `chars()` made a string of every character of every line, a
 # third of the reading's cost (measured on the plan, 2026-10-07).
 function blank(line: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < line.len()
         if line[at] != 32 && line[at] != 9 && line[at] != 13
@@ -105,7 +105,7 @@ function refused(r: Reader, why: str) -> Json?
 # `r` at every byte cost a reference taken and dropped each time.
 function skip_space(@r: Reader)
     text = r.text
-    at: i64 @ r.at
+    at: i64 @= r.at
 
     while at < text.len() && (text[at] == 32 || text[at] == 9 || text[at] == 10 || text[at] == 13)
         at @ at + 1
@@ -147,7 +147,7 @@ function value(@r: Reader) -> Json?
 function listed(@r: Reader) -> Json?
     r.at @ r.at + 1
     r.depth @ r.depth + 1
-    out: [Json] @ []
+    out: [Json] @= []
     skip_space(@r)
 
     if r.at < r.text.len() && r.text[r.at] == ']'
@@ -174,8 +174,8 @@ function listed(@r: Reader) -> Json?
 function named(@r: Reader) -> Json?
     r.at @ r.at + 1
     r.depth @ r.depth + 1
-    names: [str] @ []
-    values: [Json] @ []
+    names: [str] @= []
+    values: [Json] @= []
     skip_space(@r)
 
     if r.at < r.text.len() && r.text[r.at] == '}'
@@ -213,9 +213,9 @@ function named(@r: Reader) -> Json?
 # escapes is copied once, and the pieces joined once (defect 105's rule).
 function string(@r: Reader) -> str?
     text = r.text
-    at: i64 @ r.at + 1
-    parts: [str] @ []
-    plain: i64 @ at
+    at: i64 @= r.at + 1
+    parts: [str] @= []
+    plain: i64 @= at
 
     while at < text.len()
         b = text[at]
@@ -283,7 +283,7 @@ function escaped(@r: Reader) -> str?
 function hex4(@r: Reader) -> i64?
     if r.at + 4 > r.text.len()
         return fail(code: "not_json", msg: "`\\u` cut short at byte " + r.at.to_str())
-    out: i64 @ 0
+    out: i64 @= 0
 
     for _ in range(from: 0, to: 4)
         d = hex_digit(r.text[r.at])
@@ -343,7 +343,7 @@ function number(@r: Reader) -> Json?
 function digits(@r: Reader) -> bool
     text = r.text
     start = r.at
-    at: i64 @ start
+    at: i64 @= start
 
     while at < text.len() && text[at] >= '0' && text[at] <= '9'
         at @ at + 1

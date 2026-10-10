@@ -29,13 +29,13 @@ function rows(g: [[i64]], n: i64) -> i64
     return g.len() * 1000 + g[0][0] * 100 + n
 
 function main()
-    out: [i64] @ []
+    out: [i64] @= []
     out @ out.push(5)
     out @ out.push(half(4).must() + bump(@out))
     print(out.len(), " ", out[0], " ", out[1])
-    ws: [str] @ []
+    ws: [str] @= []
     ws @ ws.push("a")
     print(count(ws, half(4).must() + more(@ws)))
-    g: [[i64]] @ []
+    g: [[i64]] @= []
     g @ g.push([5])
     print(rows(g, half(4).must() + deeper(@g)))

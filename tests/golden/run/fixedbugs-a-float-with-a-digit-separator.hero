@@ -1,6 +1,6 @@
 # fixedbugs, M-selfhost-fixpoint, 2026-08-18 (panel 085 R6's sweep).
 #
-# SYMPTOM: `x: f64 @ 1_0.5` compiled clean and printed **0.0**. At exit 0, with
+# SYMPTOM: `x: f64 @= 1_0.5` compiled clean and printed **0.0**. At exit 0, with
 # no diagnostic, under every flag this project passes. `1.5_5` printed 0.0 and
 # `1_000.000_1` printed 0.0 — a program that says one number and runs another,
 # which is the worst class this compiler has. The self-hosted compiler had the

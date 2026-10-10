@@ -59,8 +59,8 @@ function show(out: assemble.Assembled, given: [str])
 # The assembled words, three to a row, with the instruction's index beside them
 # — the view that shows a jump target is an offset and not a line number.
 function listing(code: [i64]) -> [str]
-    out: [str] @ []
-    at: i64 @ 0
+    out: [str] @= []
+    at: i64 @= 0
 
     while at + program.WORDS <= code.len()
         row = [(at / program.WORDS).to_str(), name_of(code[at]), code[at + 1].to_str(), code[at + 2].to_str()]

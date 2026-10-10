@@ -85,13 +85,13 @@ function refused(package: str, complained: str, build_dir: str) -> str
 # author after what pkg-config said it lacks, where it had said nothing.
 function worded(package: str, complained: str, present: bool) -> str
     said = strings.trimmed(complained)
-    note: str @ "\n  pkg-config said: " + shell_split.shown(said, keep_lines: true)
+    note: str @= "\n  pkg-config said: " + shell_split.shown(said, keep_lines: true)
 
     if said.len() == 0
         note @ "\n  pkg-config gave no reason"
 
     if present
-        way: str @ "install what pkg-config says it lacks, or name the library directly with `link`"
+        way: str @= "install what pkg-config says it lacks, or name the library directly with `link`"
 
         if said.len() == 0
             way @ "name the library directly with `link`"
@@ -154,7 +154,7 @@ function read_alone(words: [str]) -> bool
 # A value this compiler cannot read adds no directory, so the search can miss
 # a `.pc` and never invents one.
 function on_search_path(package: str, build_dir: str) -> bool
-    rest: str @ ""
+    rest: str @= ""
 
     if process.is_set(name: "PKG_CONFIG_LIBDIR")
         rest @ process.env(name: "PKG_CONFIG_LIBDIR").default("")
@@ -189,9 +189,9 @@ function default_path(build_dir: str) -> str
 # unmeasured: the Windows box has no `pkg-config`); an empty entry names none.
 # Each cut falls before or after an ASCII byte, so never inside a character.
 function entries(value: str, windows: bool) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at <= value.len()
         if at == value.len() || windows && value[at] == ';' || !windows && value[at] == ':'
@@ -205,7 +205,7 @@ function entries(value: str, windows: bool) -> [str]
 # Whether `<package>.pc`, or `<package>-uninstalled.pc` where `uninstalled`,
 # is a file in one of `dirs`, a link to one counting (Homebrew's are links).
 function pc_found(dirs: [str], package: str, uninstalled: bool) -> bool
-    names: [str] @ [package + ".pc"]
+    names: [str] @= [package + ".pc"]
 
     if uninstalled
         names @ names.push(package + "-uninstalled.pc")
@@ -222,7 +222,7 @@ function pc_found(dirs: [str], package: str, uninstalled: bool) -> bool
 # The answer on one line, its line ends dropped: pkg-config ends its answer
 # with one, and the message quotes the words.
 function one_line(text: str) -> str
-    kept: [str] @ []
+    kept: [str] @= []
 
     for ch in text.chars()
         if ch != "\n" && ch != "\r"

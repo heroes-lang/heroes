@@ -128,7 +128,7 @@ function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], su
                     at = case_named(@c, s, decl: n.decl, cases: v.cases, name: case_name)
 
                     if at < 0
-                        known: [str] @ []
+                        known: [str] @= []
 
                         for one_case in v.cases
                             known @ known.push(source.span_text(s, one_case.name))
@@ -152,7 +152,7 @@ function case_pattern(@c: state.Checker, s: source.Source, decls: [ast.Decl], su
 
         .fallible o =>
             if case_name == "ok" || case_name == "err"
-                at: i64 @ 0
+                at: i64 @= 0
 
                 if case_name == "err"
                     at @ 1
@@ -210,8 +210,8 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
         .named n =>
             match decls[n.decl].kind
                 .variant_decl v =>
-                    missing: [str] @ []
-                    index: i64 @ 0
+                    missing: [str] @= []
+                    index: i64 @= 0
 
                     for one_case in v.cases
                         if covered[index].is_err()
@@ -222,7 +222,7 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
                         state.push_diagnostic(@c, data_errors.non_exhaustive(missing, span))
                 .constant_decl | .function_decl | .record_decl | .test_decl => return
         .fallible =>
-            missing: [str] @ []
+            missing: [str] @= []
 
             if covered[0].is_err()
                 missing @ missing.push(".ok")
@@ -245,12 +245,12 @@ function exhaustive(@c: state.Checker, s: source.Source, decls: [ast.Decl], subj
 # later arm and construction asks the table (defects 512 and 513).
 function case_named(@c: state.Checker, s: source.Source, decl: i64, cases: [ast.Case], name: str) -> i64
     found = c.cases[decl]
-    names: {str: i64} @ {}
+    names: {str: i64} @= {}
 
     if !found.is_err()
         names @ found.must()
     else
-        at: i64 @ 0
+        at: i64 @= 0
 
         for one in cases
             names[source.span_text(s, one.name)] @ at

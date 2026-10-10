@@ -47,10 +47,10 @@ function written(f: containers.Function, into: graph.Edges, root: i64, from_bloc
         return true
 
     # The blocks wholly between, in the order the walk found them.
-    found: [i64] @ [to_block]
-    seen: {i64: bool} @ {}
-    looped: bool @ false
-    next: i64 @ 0
+    found: [i64] @= [to_block]
+    seen: {i64: bool} @= {}
+    looped: bool @= false
+    next: i64 @= 0
 
     while next < found.len()
         here = found[next]
@@ -65,7 +65,7 @@ function written(f: containers.Function, into: graph.Edges, root: i64, from_bloc
                 seen[before] @ true
                 found @ found.push(before)
 
-    at: i64 @ 1
+    at: i64 @= 1
 
     while at < found.len()
         whole = found[at]
@@ -74,7 +74,7 @@ function written(f: containers.Function, into: graph.Edges, root: i64, from_bloc
             return true
         at @ at + 1
 
-    head: i64 @ to_at
+    head: i64 @= to_at
 
     if looped
         head @ f.blocks[to_block].insts.len()
@@ -93,7 +93,7 @@ function sources(into: graph.Edges, block: i64) -> [i64]
 # write the root. `survival.writes_root` reads the one table of what an
 # operation writes, which the ownership pass reads too.
 function writes_in(f: containers.Function, block: i64, from: i64, to: i64, root: i64) -> bool
-    at: i64 @ from
+    at: i64 @= from
 
     while at < to
         if survival.writes_root(f, f.blocks[block].insts[at].op, root: root)
@@ -107,8 +107,8 @@ function writes_in(f: containers.Function, block: i64, from: i64, to: i64, root:
 # A function of the blocks the terminators and bodies give, one each. Its one
 # argument is `@` slot 0, which a call naming it writes.
 function blocks_of(terms: [ir.Term], bodies: [[ir.Inst]]) -> containers.Function
-    blocks: [containers.Block] @ []
-    at: i64 @ 0
+    blocks: [containers.Block] @= []
+    at: i64 @= 0
 
     for term in terms
         blocks @ blocks.push(containers.Block(preds: [], insts: bodies[at], term: term, note: "test"))

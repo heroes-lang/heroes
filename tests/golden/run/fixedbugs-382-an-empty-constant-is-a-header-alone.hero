@@ -14,17 +14,17 @@ constant HOLLOW: [[i64]]
     [[]]
 
 function main()
-    walked: i64 @ 0
+    walked: i64 @= 0
 
     for x in NONE
         walked @ walked + x
 
     print(walked, " ", NONE.len(), " ", NO_WORDS.len(), " ", HOLLOW.len(), " ", HOLLOW[0].len())
     print(NONE == [], " ", NO_WORDS.join(","), "|", HOLLOW[0] == NONE)
-    xs: [i64] @ NONE
+    xs: [i64] @= NONE
     xs @ xs.push(4)
-    words: [str] @ NO_WORDS
+    words: [str] @= NO_WORDS
     words @ words.push("mars")
-    deep: [[i64]] @ HOLLOW
+    deep: [[i64]] @= HOLLOW
     deep[0] @ deep[0].push(9)
     print(xs.len(), " ", words[0], " ", deep[0][0], " ", NONE.len(), " ", NO_WORDS.len(), " ", HOLLOW[0].len())

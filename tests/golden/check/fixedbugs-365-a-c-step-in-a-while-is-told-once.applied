@@ -15,55 +15,55 @@
 # on the head's line, nested; and a `;` that ends the line, as before.
 
 function bare(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     while i < n; i++  #~ unexpected_character
         print(i)
 
 function in_parentheses(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     while (i < n; i++)  #~ unexpected_character
         print(i)
 
 function plus_equals(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     while i < n; i += 1  #~ unexpected_character
         print(i)
 
 function minus_minus(n: i64)
-    i: i64 @ n
+    i: i64 @= n
     while i > 0; i--  #~ unexpected_character
         print(i)
 
 function a_heroes_step(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     while i < n; i @ i + 1  #~ unexpected_character
         print(i)
 
 function three_clauses(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     while (i = 0; i < n; i++)  #~ unexpected_character
         print(i)
 
 function a_brace(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     while i < n; i++ {  #~ unexpected_character missing_body
         print(i)
     }
 
 function the_body_on_the_heads_line(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     while i < n; i++; print(i)  #~ unexpected_character
     #~v missing_body
     print(n)
 
 function nested(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     if n > 0
         while i < n; i++  #~ unexpected_character
             print(i)
 
 function ending_its_line(n: i64)
-    i: i64 @ 0
+    i: i64 @= 0
     while i < n  #~ unexpected_character
         print(i)
 

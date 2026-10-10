@@ -32,7 +32,7 @@ function assert_false_arm(k: i64) -> i64
     return x
 
 function while_true_block(k: i64) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     x = match k
         0 =>
@@ -159,7 +159,7 @@ function named(k: i64) -> str
     exit(code: 1)
 
 function located(n: i64) -> P
-    i: i64 @ 0
+    i: i64 @= 0
 
     while true
         if i * i >= n
@@ -180,7 +180,7 @@ function main()
     print(else_if_chain(k: 13))
     print(text_arm(k: 5))
     print(counted_then_exit(k: 5))
-    v: i64 @ 1
+    v: i64 @= 1
     print(bump(@v))
     print(v)
     print(first(xs: [27, 28]))

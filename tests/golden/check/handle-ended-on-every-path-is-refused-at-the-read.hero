@@ -44,7 +44,7 @@ function every_arm(w: Way)
 function before_the_loop()
     n = node_new()
     node_free(n: n)
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < 2
         print(node_peek(n: n) + k)  #~ handle_used_after_end
@@ -52,7 +52,7 @@ function before_the_loop()
 
 # Ended earlier in the same turn of the loop.
 function the_same_turn()
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < 2
         n = node_new()

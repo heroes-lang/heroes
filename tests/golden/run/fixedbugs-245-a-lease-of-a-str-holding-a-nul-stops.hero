@@ -31,6 +31,6 @@ function held() -> str
 function main()
     s = held()
     print("the program holds ", s.len(), " bytes")
-    c: cstr @ s.lease()
+    c: cstr @= s.lease()
     print("C reads ", strlen(s: c))
     end_lease(@c)

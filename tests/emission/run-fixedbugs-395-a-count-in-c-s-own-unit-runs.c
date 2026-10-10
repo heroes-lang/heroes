@@ -288,9 +288,9 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t36 = UINT64_C(4);
 #line 40 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_ints a n 2080 2091 2096 2097 16");
+    _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_ints a n 2082 2093 2098 2099 16");
 #line 40 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2080 2091 2096 2097 16 int *");
+    _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2082 2093 2098 2099 16 int *");
 #line 40 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t37 = fill_ints(t35, t36);
 #line 40 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -301,9 +301,9 @@ bb0:
 #line 41 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t41 = h_fixedbugs395acountincsownunitruns_HELD_INTS();
 #line 41 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(HELD_INTS) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_ints a n 2123 2134 2139 2148 16");
+    _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(HELD_INTS) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_ints a n 2125 2136 2141 2150 16");
 #line 41 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(HELD_INTS) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2123 2134 2139 2148 16 int *");
+    _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(HELD_INTS) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2125 2136 2141 2150 16 int *");
 #line 41 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t42 = fill_ints(t40, t41);
 #line 41 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -327,9 +327,9 @@ bb0:
 #line 43 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t52 = UINT64_C(5);
 #line 43 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int16_t *)0) != 1 || ((uint64_t)(UINT64_C(5)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent fill_shorts a n 2235 2246 2251 2252 10");
+    _Static_assert(sizeof(*(int16_t *)0) != 1 || ((uint64_t)(UINT64_C(5)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent fill_shorts a n 2237 2248 2253 2254 10");
 #line 43 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int16_t *)0) == 1 || ((uint64_t)(UINT64_C(5)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(int16_t *)0))), "heroes-ffi-extent-unit fill_shorts a n 2235 2246 2251 2252 10 int16_t *");
+    _Static_assert(sizeof(*(int16_t *)0) == 1 || ((uint64_t)(UINT64_C(5)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(int16_t *)0))), "heroes-ffi-extent-unit fill_shorts a n 2237 2248 2253 2254 10 int16_t *");
 #line 43 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t53 = fill_shorts(t51, t52);
 #line 43 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -340,9 +340,9 @@ bb0:
 #line 44 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t57 = UINT64_C(2);
 #line 44 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent fill_ints a n 2278 2289 2294 2295 10");
+    _Static_assert(sizeof(*(int *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent fill_ints a n 2280 2291 2296 2297 10");
 #line 44 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2278 2289 2294 2295 10 int *");
+    _Static_assert(sizeof(*(int *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(int *)0))), "heroes-ffi-extent-unit fill_ints a n 2280 2291 2296 2297 10 int *");
 #line 44 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t58 = fill_ints(t56, t57);
 #line 44 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -353,9 +353,9 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t62 = UINT64_C(2);
 #line 45 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(struct pfd *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent poll_like fds nfds 2323 2334 2342 2343 16");
+    _Static_assert(sizeof(*(struct pfd *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent poll_like fds nfds 2325 2336 2344 2345 16");
 #line 45 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(struct pfd *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(struct pfd *)0))), "heroes-ffi-extent-unit poll_like fds nfds 2323 2334 2342 2343 16 struct pfd *");
+    _Static_assert(sizeof(*(struct pfd *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(struct pfd *)0))), "heroes-ffi-extent-unit poll_like fds nfds 2325 2336 2344 2345 16 struct pfd *");
 #line 45 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t63 = poll_like(t61, t62);
 #line 45 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -379,9 +379,9 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t73 = UINT64_C(1);
 #line 47 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int (*)[4])0) != 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_rows rows n 2439 2450 2455 2456 16");
+    _Static_assert(sizeof(*(int (*)[4])0) != 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_rows rows n 2441 2452 2457 2458 16");
 #line 47 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(int (*)[4])0) == 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int (*)[4])0))), "heroes-ffi-extent-unit fill_rows rows n 2439 2450 2455 2456 16 int (*)[4]");
+    _Static_assert(sizeof(*(int (*)[4])0) == 1 || ((uint64_t)(UINT64_C(1)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(int (*)[4])0))), "heroes-ffi-extent-unit fill_rows rows n 2441 2452 2457 2458 16 int (*)[4]");
 #line 47 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t74 = fill_rows(t72, t73);
 #line 47 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -392,9 +392,9 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t78 = UINT64_C(16);
 #line 48 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(char *)0) != 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_bytes buf n 2485 2496 2501 2503 16");
+    _Static_assert(sizeof(*(char *)0) != 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_bytes buf n 2487 2498 2503 2505 16");
 #line 48 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(char *)0) == 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(char *)0))), "heroes-ffi-extent-unit fill_bytes buf n 2485 2496 2501 2503 16 char *");
+    _Static_assert(sizeof(*(char *)0) == 1 || ((uint64_t)(UINT64_C(16)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(char *)0))), "heroes-ffi-extent-unit fill_bytes buf n 2487 2498 2503 2505 16 char *");
 #line 48 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t79 = fill_bytes(t77, t78);
 #line 48 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -418,9 +418,9 @@ bb0:
 #line 50 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t89 = UINT64_C(4);
 #line 50 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(wchar_t *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_wide dst n 2595 2606 2611 2612 16");
+    _Static_assert(sizeof(*(wchar_t *)0) != 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent fill_wide dst n 2597 2608 2613 2614 16");
 #line 50 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(wchar_t *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(wchar_t *)0))), "heroes-ffi-extent-unit fill_wide dst n 2595 2606 2611 2612 16 wchar_t *");
+    _Static_assert(sizeof(*(wchar_t *)0) == 1 || ((uint64_t)(UINT64_C(4)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(wchar_t *)0))), "heroes-ffi-extent-unit fill_wide dst n 2597 2608 2613 2614 16 wchar_t *");
 #line 50 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t90 = fill_wide(t88, t89);
 #line 50 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -433,13 +433,13 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t97 = UINT64_C(10);
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent copy_n dst n 2637 2648 2671 2673 16");
+    _Static_assert(sizeof(*(void *)0) != 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent copy_n dst n 2639 2650 2673 2675 16");
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))), "heroes-ffi-extent-unit copy_n dst n 2637 2648 2671 2673 16 void *");
+    _Static_assert(sizeof(*(void *)0) == 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(void *)0))), "heroes-ffi-extent-unit copy_n dst n 2639 2650 2673 2675 16 void *");
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent copy_n src n 2655 2666 2671 2673 10");
+    _Static_assert(sizeof(*(const void *)0) != 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)sizeof(h1_t.buf)), "heroes-ffi-extent copy_n src n 2657 2668 2673 2675 10");
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit copy_n src n 2655 2666 2671 2673 10 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || ((uint64_t)(UINT64_C(10)) <= (uint64_t)(sizeof(h1_t.buf) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit copy_n src n 2657 2668 2673 2675 10 const void *");
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t98 = copy_n(t93, t96, t97);
 #line 51 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -450,9 +450,9 @@ bb0:
 #line 52 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t102 = UINT64_C(2);
 #line 52 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(const int *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent read_ints a n 2699 2710 2715 2716 16");
+    _Static_assert(sizeof(*(const int *)0) != 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)sizeof(h0_h.buf)), "heroes-ffi-extent read_ints a n 2701 2712 2717 2718 16");
 #line 52 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    _Static_assert(sizeof(*(const int *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(const int *)0))), "heroes-ffi-extent-unit read_ints a n 2699 2710 2715 2716 16 const int *");
+    _Static_assert(sizeof(*(const int *)0) == 1 || ((uint64_t)(UINT64_C(2)) <= (uint64_t)(sizeof(h0_h.buf) / sizeof(*(const int *)0))), "heroes-ffi-extent-unit read_ints a n 2701 2712 2717 2718 16 const int *");
 #line 52 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     t103 = read_ints(t101, t102);
 #line 52 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"

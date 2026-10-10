@@ -84,8 +84,8 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     # written against a header this compiler does not own. The compiler's
     # own first; the groups' between the two lines that keep their macros
     # off every name this unit's own code uses (defect 361).
-    own: [str] @ []
-    groups: [str] @ []
+    own: [str] @= []
+    groups: [str] @= []
 
     for header in headers
         if emit_externs.is_own(header)
@@ -118,7 +118,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     # sections are compiled under `static` — the macro is the one knob,
     # and the fused unit defining it empty keeps the two paths one
     # printer (HERO_STR_STATIC's own precedent).
-    macro_line: str @ "#define HERO_TU_LOCAL"
+    macro_line: str @= "#define HERO_TU_LOCAL"
 
     if tu_local.len() > 0
         macro_line @ macro_line + " " + tu_local
@@ -130,7 +130,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     # always resolve), and the attribute is what keeps the unused
     # copies out of -Wunused-const-variable's mouth. The fused unit
     # keeps its reach trim and defines this empty.
-    quiet_line: str @ "#define HERO_TU_QUIET"
+    quiet_line: str @= "#define HERO_TU_QUIET"
 
     if tu_local.len() > 0
         quiet_line @ quiet_line + " __attribute__((unused))"
@@ -167,9 +167,9 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     # TU's text stays stable when another module's literals move.
 
     live = live_strings(p, target: target, s: s, prune_library: tu_local.len() == 0)
-    any_live: bool @ false
-    defined: {str: bool} @ {}
-    index: i64 @ 0
+    any_live: bool @= false
+    defined: {str: bool} @= {}
+    index: i64 @= 0
 
     for text in p.strings
         if !live[index].is_err()
@@ -201,7 +201,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
 # (the first per-module build of the library TU, 2026-08-25).
 function live_strings(p: containers.Program, target: BuildTarget, s: source.Source, prune_library: bool) -> {i64: bool}
     used = builtins.reachable(p, s)
-    live: {i64: bool} @ {}
+    live: {i64: bool} @= {}
 
     for f in p.functions
         if !emitted(f, target: target)
@@ -238,10 +238,10 @@ function test_shim(@w: writer.Writer, p: containers.Program, s: source.Source)
     writer.line(@w, text: "    hero_args_set(argc, argv);")
     writer.line(@w, text: "    int64_t which = hero_test_index(argc, argv);")
     writer.line(@w, text: "    switch (which) {")
-    position: i64 @ 0
+    position: i64 @= 0
 
     for f in p.functions
-        is_test: bool @ false
+        is_test: bool @= false
 
         match f.kind
             .test_kind                                     => is_test @ true
@@ -293,11 +293,11 @@ function has(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
@@ -319,7 +319,7 @@ test "the prelude stamps the ABI and emits only the strings a build reads"
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     names = ctype.new_names(s, parsed.decls)
     every: {i64: bool}? = fail(code: "every", msg: "every group record")
     prelude(
@@ -342,7 +342,7 @@ test "the prelude stamps the ABI and emits only the strings a build reads"
     # The test block's literal is invisible to a program build — and
     # the surviving index is the literal's own, not a renumbering.
     assert !has(text: got, needle: "only tests")
-    tw: writer.Writer @ writer.new_writer("t")
+    tw: writer.Writer @= writer.new_writer("t")
     prelude(
         @tw,
         low.program,
@@ -366,14 +366,14 @@ test "the shim calls the mangled main and gates leaks on the way out"
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     shim(@w, low.program.functions[0], s)
     got = writer.finish(w)
     assert has(text: got, needle: "int main(int argc, char **argv) {")
     assert has(text: got, needle: "    hero_args_set(argc, argv);")
     assert has(text: got, needle: "    h_t_main();")
     assert has(text: got, needle: "    hero_runtime_check_leaks();")
-    tw: writer.Writer @ writer.new_writer("t")
+    tw: writer.Writer @= writer.new_writer("t")
     test_shim(@tw, low.program, s)
     runner = writer.finish(tw)
     assert has(text: runner, needle: "    case 0:")

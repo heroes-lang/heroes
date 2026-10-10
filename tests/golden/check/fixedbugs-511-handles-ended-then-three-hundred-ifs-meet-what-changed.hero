@@ -619,7 +619,7 @@ function many(c: bool) -> i64
     f_close(x: a298)
     a299 = f_open()
     f_close(x: a299)
-    t: i64 @ 0
+    t: i64 @= 0
 
     if c
         t @ t + 1

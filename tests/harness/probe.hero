@@ -74,8 +74,8 @@ function probe(name: str, argv: str, code: i64) -> Probe
 # runs of spaces, with none of the quoting rules, because the table has
 # nothing to quote.
 function words_of(line: str) -> [str]
-    out: [str] @ []
-    word: str @ ""
+    out: [str] @= []
+    word: str @= ""
 
     for ch in line.chars()
         if ch == " "
@@ -160,7 +160,7 @@ function case_of(argv: str) -> str
 
 # Whether a row's needles ask about a missing-library message itself.
 function asks_about_absence(p: Probe) -> bool
-    asked: [str] @ [p.out_starts, p.err_starts, p.out_is, p.err_is]
+    asked: [str] @= [p.out_starts, p.err_starts, p.out_is, p.err_is]
 
     for needle in p.out_has
         asked @ asked.push(needle)
@@ -178,7 +178,7 @@ function asks_about_absence(p: Probe) -> bool
 function judged(p: Probe, said: shell.Run) -> str
     out = said.out
     err = said.err
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     if p.code >= 0 && said.code != p.code
         wrong @ wrong.push("    exited " + said.code.to_str() + ", not " + p.code.to_str())
@@ -251,7 +251,7 @@ function first_line(text: str) -> str
 # Run a table of probes into a report, with the skips floored: a machine
 # missing every library must say so rather than report green.
 function run_table(scratch: str, compiler: str, probes: [Probe], @r: report.Report)
-    skipped: i64 @ 0
+    skipped: i64 @= 0
 
     for p in probes
         got = outcome(scratch: scratch, compiler: compiler, p: p)
@@ -293,7 +293,7 @@ test "fixedbugs: a row that may skip is skipped only where the machine lacks wha
     assert !compiler.is_err()
     has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
     assert !has.is_err()
-    refuted: Probe @ probe(name: "has", argv: "build " + has.must(), code: 1)
+    refuted: Probe @= probe(name: "has", argv: "build " + has.must(), code: 1)
     refuted.library_skip @ true
     refuted.err_has @ ["error[ffi_return_type]"]
     got = outcome(scratch: scratch, compiler: compiler.must(), p: refuted)
@@ -301,18 +301,18 @@ test "fixedbugs: a row that may skip is skipped only where the machine lacks wha
     assert strings.contains(text: got.text, needle: "not skipped for a missing library: clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
-    excused: Probe @ probe(name: "lacks", argv: "build " + lacks.must(), code: 1)
+    excused: Probe @= probe(name: "lacks", argv: "build " + lacks.must(), code: 1)
     excused.library_skip @ true
     excused.err_has @ ["error[ffi_return_type]"]
     assert outcome(scratch: scratch, compiler: compiler.must(), p: excused).kind == "skipped"
     assert unmet(scratch: scratch, compiler: compiler.must(), p: excused) == "SKIP"
-    asking: Probe @ probe(name: "asking", argv: "build " + lacks.must(), code: 1)
+    asking: Probe @= probe(name: "asking", argv: "build " + lacks.must(), code: 1)
     asking.library_skip @ true
     asking.err_has @ ["error[ffi_missing_header]", "clang looked and found nothing"]
     assert outcome(scratch: scratch, compiler: compiler.must(), p: asking).kind == "failed"
 
     # And a table names the skip, beside the failure.
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     run_table(scratch: scratch, compiler: compiler.must(), probes: [excused, refuted], r: @r)
     assert r.skips.len() == 1
     assert strings.starts_with(text: r.skips[0], prefix: "SKIP surface/lacks\n")

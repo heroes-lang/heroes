@@ -54,8 +54,8 @@ function compared(plan_dir: str, base: run_records.Run, head: run_records.Run) -
             )
 
     frozen = run_records.Frozen(plan: plan.by_key(p), dir: plan_dir)
-    texts: {str: str} @ {}
-    r: Reading @ Reading(lines: [], findings: [], moved: [])
+    texts: {str: str} @= {}
+    r: Reading @= Reading(lines: [], findings: [], moved: [])
     singles(@r, frozen: frozen, base: base, head: head, @texts)?
     pairs(@r, frozen: frozen, base: base, head: head, @texts)?
     corpus(@r, base: base, head: head, pinned: own.read_corpus_at(plan_dir + "/corpus-messages.jsonl")?)
@@ -80,8 +80,8 @@ function singles(@r: Reading, frozen: run_records.Frozen, base: run_records.Run,
     )
 
     for arm in ["normal", "control"]
-        counts: {str: i64} @ {}
-        classes: {str: i64} @ {}
+        counts: {str: i64} @= {}
+        classes: {str: i64} @= {}
 
         for k in common
             a = base.singles[k]?
@@ -89,7 +89,7 @@ function singles(@r: Reading, frozen: run_records.Frozen, base: run_records.Run,
             x = run_records.own_single(a, arm: arm, run: base, frozen: frozen, @texts)?
             y = run_records.own_single(b, arm: arm, run: head, frozen: frozen, @texts)?
             op = json_fields.text_field(a, name: "op").default("")
-            word: str @ "same"
+            word: str @= "same"
 
             if y.len() < x.len()
                 word @ "fewer"
@@ -126,8 +126,8 @@ function singles(@r: Reading, frozen: run_records.Frozen, base: run_records.Run,
 # APPLY flag among them. `apply_flags` is the arm's alone (`mutate/applied.hero`):
 # where either run's record lacks the field, a Python run's, it is not read.
 function flag_moves(@r: Reading, field: str, common: [str], base: run_records.Run, head: run_records.Run)
-    flags: {str: i64} @ {}
-    read: i64 @ 0
+    flags: {str: i64} @= {}
+    read: i64 @= 0
 
     for k in common
         x = base.singles[k]
@@ -182,8 +182,8 @@ function pairs(@r: Reading, frozen: run_records.Frozen, base: run_records.Run, h
     )
 
     for arm in ["normal", "control"]
-        moved: {str: i64} @ {}
-        later: i64 @ 0
+        moved: {str: i64} @= {}
+        later: i64 @= 0
 
         for k in common
             a = base.pairs[k]?
@@ -228,7 +228,7 @@ function against(@r: Reading, label: str, was: {str: json_read.Json}, now: {str:
     if was.len() == 0 || now.len() == 0
         add(@r.lines, line: label + ": not read, one side recorded none")
         return
-    otherwise: [str] @ []
+    otherwise: [str] @= []
 
     # ORDER: `shared` sorts the programs, so they are named in path order.
     for file in shared(a: keys(was), b: keys(now))
@@ -253,12 +253,12 @@ function against(@r: Reading, label: str, was: {str: json_read.Json}, now: {str:
 
 # The keys both maps hold, sorted.
 function shared(a: [str], b: [str]) -> [str]
-    held: {str: bool} @ {}
+    held: {str: bool} @= {}
 
     for k in b
         held[k] @ true
 
-    out: [str] @ []
+    out: [str] @= []
 
     for k in a
         if !held[k].is_err()
@@ -267,7 +267,7 @@ function shared(a: [str], b: [str]) -> [str]
     return out.sort()
 
 function total(counts: {str: i64}) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     # ORDER: none observed; a sum.
     for k in keys(counts)
@@ -277,7 +277,7 @@ function total(counts: {str: i64}) -> i64
 
 # `fewer 24, same 284`: each count by its word, the words sorted.
 function tally(counts: {str: i64}) -> str
-    out: [str] @ []
+    out: [str] @= []
 
     # ORDER: the words ascending, so two readings print alike.
     for k in sort(keys(counts))

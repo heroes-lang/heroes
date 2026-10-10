@@ -1,5 +1,5 @@
 # Fixed defect 131's class, 2026-09-29, an annotated binding whose type
-# failed. Symptom: `n: 2 @ 3` cost `expected_type` and then
+# failed. Symptom: `n: 2 @= 3` cost `expected_type` and then
 # `expected_binding_symbol` at the same `2`, one mistake and two messages,
 # and the value after the `@` was never read, so a mistake inside it waited
 # for a second run. Cause: `parse_type` leaves the token it could not read
@@ -12,18 +12,18 @@
 
 function a_value_for_a_type()
     n : 2  #~ expected_type
-    m: 2 @ 3  #~ expected_type
+    m: 2 @= 3  #~ expected_type
     k: 2 = 3  #~ expected_type
-    j: ) @ 3  #~ expected_type
-    i: -1 @ 3  #~ expected_type
+    j: ) @= 3  #~ expected_type
+    i: -1 @= 3  #~ expected_type
     h: "x" = "y"  #~ expected_type
 
 function inside_the_type_s_brackets()
-    n: [2] @ [3]  #~ expected_type
+    n: [2] @= [3]  #~ expected_type
     m: [2] 3  #~ expected_type
 
 function the_value_is_read()
-    n: 2 @ f(3 +)  #~ expected_type expected_expression
+    n: 2 @= f(3 +)  #~ expected_type expected_expression
     m: [2] = [3, )]  #~ expected_type expected_expression
 
 function the_symbol_past_the_type_is_its_own(k: i64)
@@ -31,7 +31,7 @@ function the_symbol_past_the_type_is_its_own(k: i64)
     m: i64 5  #~ expected_binding_symbol
 
     match k
-        0 => j: 2 @ 3  #~ expected_type declaration_in_arm
+        0 => j: 2 @= 3  #~ expected_type declaration_in_arm
         _ => print(k)
 
 function main()

@@ -60,7 +60,7 @@ function escape_step(@l: state.LexState, text: str, ctx: escape.Quoted, literal:
     # read for what else it could be, and its `\\` is certain only where it
     # reads as nothing else (`escape_readings`, defect 135's class).
     if escaped == escape.bare_text(ctx)
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "escape_not_needed",
             message: "`\\" + escaped + "` is not an escape here — `" + escaped + "` needs no escape inside " + escape.ctx_word(ctx) + ", write it bare",
             span: span
@@ -136,9 +136,9 @@ function char_lit(@l: state.LexState, text: str)
     # or one whole escape sequence. Scanning past the closer in one go is what
     # keeps `'ab'` a single diagnostic instead of an unterminated literal
     # followed by debris.
-    units: i64 @ 0
-    closed: bool @ false
-    scanning: bool @ true
+    units: i64 @= 0
+    closed: bool @= false
+    scanning: bool @= true
 
     while scanning
         if l.pos >= text.len() || ends_line(text, at: l.pos)
@@ -209,7 +209,7 @@ function char_lit(@l: state.LexState, text: str)
 function unterminated_char(@l: state.LexState, text: str, start: i64)
     classic = l.pos == start + 3 && classic_backslash(text, at: start)
     span = token.Span(start: start, end: l.pos)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unterminated_char",
         message: "this character literal never closes — write one character between single quotes: 'a'",
         span: span
@@ -255,9 +255,9 @@ function opens_a_character(text: str, at: i64) -> bool
 # The lexer pops that many (`swallow`) and the parser counts the same
 # (`parse/unclosed.never_closed`), so the two agree on every bracket.
 function unmatched_closers(swallowed: str) -> i64
-    depth: i64 @ 0
-    unmatched: i64 @ 0
-    i: i64 @ 0
+    depth: i64 @= 0
+    unmatched: i64 @= 0
+    i: i64 @= 0
 
     while i < swallowed.len()
         b = swallowed[i]
@@ -285,8 +285,8 @@ function closers_taken(text: str, span: token.Span) -> i64
         return 0
 
     if span.end - span.start >= 2 && text[span.end - 1] == quote
-        slashes: i64 @ 0
-        i: i64 @ span.end - 2
+        slashes: i64 @= 0
+        i: i64 @= span.end - 2
 
         while i > span.start && text[i] == '\\'
             slashes @ slashes + 1
@@ -304,7 +304,7 @@ function closers_taken(text: str, span: token.Span) -> i64
 # the rest of a literal that ended its line (defect 131's class, lane
 # recovery-b2, U3).
 function swallow(@l: state.LexState, text: str, start: i64)
-    left: i64 @ unmatched_closers(text.slice(from: start, to: l.pos))
+    left: i64 @= unmatched_closers(text.slice(from: start, to: l.pos))
 
     while left > 0 && openers.depth(l.open_brackets) > 0
         openers.closed(@l.open_brackets)
@@ -330,7 +330,7 @@ function starts_with_backslash(s: str) -> bool
     return s.len() > 0 && s[0] == '\\'
 
 function all_ascii(s: str) -> bool
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < s.len()
         if s[i] > 127
@@ -340,12 +340,12 @@ function all_ascii(s: str) -> bool
     return true
 
 test "a string is one token and a bad escape does not poison it"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     string(@l, "\"abc\"")
     assert l.tokens.len() == 1
     assert l.tokens[0].kind == .str_lit
     assert l.tokens[0].span == token.Span(start: 0, end: 5)
-    b: state.LexState @ state.new_state()
+    b: state.LexState @= state.new_state()
     string(@b, "\"a\\db\"")
     assert b.tokens[0].kind == .str_lit
     assert b.diagnostics.len() == 1
@@ -353,39 +353,39 @@ test "a string is one token and a bad escape does not poison it"
     assert b.diagnostics[0].fixes[0].replacement == "\\\\d"
 
 test "the other context's escape is refused with the bare repair"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     string(@l, "\"a\\'b\"")
     assert l.diagnostics[0].code == "escape_not_needed"
     assert l.diagnostics[0].fixes[0].replacement == "'"
     assert l.tokens[0].kind == .str_lit
 
 test "an unterminated string is an error with a known extent"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     string(@l, "\"abc\nx = 1")
     assert l.tokens[0].kind == .error
     assert l.diagnostics[0].code == "unterminated_string"
     assert l.pos == 4
 
 test "a character literal holds exactly one character"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     char_lit(@l, "'a'")
     assert l.tokens[0].kind == .char_lit
-    e: state.LexState @ state.new_state()
+    e: state.LexState @= state.new_state()
     char_lit(@e, "'\\n'")
     assert e.tokens[0].kind == .char_lit
     assert e.tokens[0].span == token.Span(start: 0, end: 4)
-    two: state.LexState @ state.new_state()
+    two: state.LexState @= state.new_state()
     char_lit(@two, "'ab'")
     assert two.tokens[0].kind == .error
     assert two.diagnostics[0].code == "char_literal"
-    wide: state.LexState @ state.new_state()
+    wide: state.LexState @= state.new_state()
     char_lit(@wide, "'é'")
     assert wide.tokens[0].kind == .error
     assert wide.diagnostics[0].code == "char_literal"
 
 test "the backslash that ate the closing quote gets both readings, neither certain"
     # Defect 135's L3: a backslash and an apostrophe are one character away.
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     char_lit(@l, "'\\'")
     assert l.diagnostics[0].code == "unterminated_char"
     assert l.diagnostics[0].fixes.len() == 2
@@ -396,45 +396,45 @@ test "the backslash that ate the closing quote gets both readings, neither certa
 
     # A later quote on the line no longer makes it a wider literal, where
     # that quote opens a character of its own.
-    wide: state.LexState @ state.new_state()
+    wide: state.LexState @= state.new_state()
     char_lit(@wide, "'\\' || c == '\"'")
     assert wide.diagnostics.len() == 1
     assert wide.diagnostics[0].code == "unterminated_char"
     assert wide.pos == 3
-    listed: state.LexState @ state.new_state()
+    listed: state.LexState @= state.new_state()
     char_lit(@listed, "'\\', '\\n']")
     assert listed.pos == 3
-    word: state.LexState @ state.new_state()
+    word: state.LexState @= state.new_state()
     char_lit(@word, "'\\'a'")
     assert word.diagnostics[0].code == "char_literal"
-    plain: state.LexState @ state.new_state()
+    plain: state.LexState @= state.new_state()
     char_lit(@plain, "'a")
     assert plain.diagnostics[0].code == "unterminated_char"
     assert plain.diagnostics[0].fixes.len() == 0
 
 test "the carriage return that begins a CRLF line end ends a literal and is not its content"
     # Defect 135's L2: its certain `\r` wrote the line end into an open literal.
-    s: state.LexState @ state.new_state()
+    s: state.LexState @= state.new_state()
     string(@s, "\"abc\r\nx")
     assert s.diagnostics.len() == 1
     assert s.diagnostics[0].code == "unterminated_string"
     assert s.pos == 4
-    c: state.LexState @ state.new_state()
+    c: state.LexState @= state.new_state()
     char_lit(@c, "'a\r\n")
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "unterminated_char"
-    b: state.LexState @ state.new_state()
+    b: state.LexState @= state.new_state()
     string(@b, "\"ab\\\r\nx")
     assert b.diagnostics.len() == 1
     assert b.diagnostics[0].code == "unterminated_string"
-    k: state.LexState @ state.new_state()
+    k: state.LexState @= state.new_state()
     char_lit(@k, "'\\\r\n")
     assert k.diagnostics.len() == 1
     assert k.diagnostics[0].code == "unterminated_char"
 
     # A carriage return before anything else is content, refused, its `\r`
     # certain: here the first of two, the second beginning the line end.
-    raw: state.LexState @ state.new_state()
+    raw: state.LexState @= state.new_state()
     string(@raw, "\"a\r\r\n")
     assert raw.diagnostics.len() == 2
     assert raw.diagnostics[0].code == "raw_carriage_return"

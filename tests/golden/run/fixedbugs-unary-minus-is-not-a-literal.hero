@@ -4,7 +4,7 @@
 # parser): two programs the language plainly allows were refused, both by the
 # checker's ⇐ side and both about unary minus applied to a **name**.
 #
-#     x: f64 @ 1.5
+#     x: f64 @= 1.5
 #     x @ -x                  error[type_mismatch]: expected `f64`, found `i64`
 #
 #     function f(n: i64) -> i64?
@@ -41,9 +41,9 @@ function main()
     print("literal ", small)
 
     # The sign on a name, on both numeric types.
-    n: i64 @ 7
+    n: i64 @= 7
     n @ -n
-    x: f64 @ 1.5
+    x: f64 @= 1.5
     x @ -x
     print("names ", n, " ", x)
 

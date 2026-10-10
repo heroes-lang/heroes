@@ -136,7 +136,7 @@ function today() -> str?
 # Up to the first line break. `date` answers one line and a newline, and there
 # is no `trimmed` to reach for inside the compiler.
 function first_line(text: str) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len() && text[at] != 10 && text[at] != 13
         at @ at + 1

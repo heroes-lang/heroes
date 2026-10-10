@@ -32,7 +32,7 @@ constant CODE: str
 # The diagnostics, with the wrap added to each of the lexer's refusals it
 # repairs. `tokens` and `text` are the ones the spans index.
 function offer(diagnostics: [diag.Diagnostic], tokens: [token.Token], a: ast.Ast, text: str) -> [diag.Diagnostic]
-    refused: bool @ false
+    refused: bool @= false
 
     for d in diagnostics
         if d.code == CODE
@@ -40,13 +40,13 @@ function offer(diagnostics: [diag.Diagnostic], tokens: [token.Token], a: ast.Ast
 
     if !refused
         return diagnostics
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
 
     for d in diagnostics
         if d.code != CODE
             out @ out.push(d)
             continue
-        wrapped: diag.Diagnostic @ d
+        wrapped: diag.Diagnostic @= d
         around = spanning(tokens, a, text, at: d.span)
 
         if !around.is_err()
@@ -67,7 +67,7 @@ function spanning(tokens: [token.Token], a: ast.Ast, text: str, at: token.Span) 
 
     if i < 0 || tokens[i].span.end != at.end
         return fail(code: "no_token", msg: "no token has the diagnostic's span")
-    j: i64 @ i + 1
+    j: i64 @= i + 1
 
     while j < tokens.len() && tokens[j].kind == .comment
         j @ j + 1
@@ -109,7 +109,7 @@ function in_a_pattern(a: ast.Ast, span: token.Span) -> bool
     return false
 
 function holds_a_block(tokens: [token.Token], span: token.Span) -> bool
-    i: i64 @ first_at(tokens, start: span.start)
+    i: i64 @= first_at(tokens, start: span.start)
 
     while i >= 0 && i < tokens.len() && tokens[i].span.start < span.end
         if tokens[i].kind == .indent || tokens[i].kind == .dedent
@@ -121,8 +121,8 @@ function holds_a_block(tokens: [token.Token], span: token.Span) -> bool
 # The index of the first token that starts at `start`, or -1: the tokens are
 # in source order, so the search halves.
 function first_at(tokens: [token.Token], start: i64) -> i64
-    low: i64 @ 0
-    high: i64 @ tokens.len()
+    low: i64 @= 0
+    high: i64 @= tokens.len()
 
     while low < high
         middle = (low + high) / 2

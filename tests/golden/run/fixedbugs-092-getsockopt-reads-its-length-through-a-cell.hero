@@ -19,8 +19,8 @@ extern "sys/socket.h"
 
 function main()
     fd = socket(domain: AF_UNIX.to_i32().must(), kind: SOCK_STREAM.to_i32().must(), protocol: 0)
-    l: Linger @ Linger(l_onoff: 7, l_linger: 7)
-    n: u32 @ 8
+    l: Linger @= Linger(l_onoff: 7, l_linger: 7)
+    n: u32 @= 8
     print(getsockopt(fd: fd, level: SOL_SOCKET.to_i32().must(), name: SO_LINGER.to_i32().must(), value: @l, len: @n))
     print(l.l_onoff)
     print(n)

@@ -42,11 +42,11 @@ function for_header(@l: state.LexState, text: str) -> i64
 # with no push since is a prefix of the one read: 4,000 `(` over 4,000
 # lines read the stack at every line (defect 495).
 function opened_by(@l: state.LexState, text: str, word: str) -> i64
-    floor: i64 @ 0
+    floor: i64 @= 0
 
     if l.holes.len() > 0
         floor @ l.holes[l.holes.len() - 1]
-    slot: i64 @ -1
+    slot: i64 @= -1
 
     if word == "for"
         slot @ 0
@@ -55,7 +55,7 @@ function opened_by(@l: state.LexState, text: str, word: str) -> i64
 
     if slot >= 0 && l.asked[lex_asked.OPENED_AT + slot] == l.asked[lex_asked.PUSHES] && floor >= l.asked[lex_asked.OPENED_FLOOR + slot]
         return -1
-    k: i64 @ openers.depth(l.open_brackets) - 1
+    k: i64 @= openers.depth(l.open_brackets) - 1
 
     while k >= floor
         open = openers.opener(l.open_brackets, k).start
@@ -122,9 +122,9 @@ function in_a_while(@l: state.LexState, at: i64)
 # Past the clauses from `from` in a `while`'s `(`, to the `)` that closes
 # it, a comment or the line's end, the spaces before any of them left out.
 function clauses_end(text: str, from: i64) -> i64
-    i: i64 @ from
-    last: i64 @ from
-    depth: i64 @ 0
+    i: i64 @= from
+    last: i64 @= from
+    depth: i64 @= 0
 
     while i < text.len() && text[i] != '\n' && text[i] != '\r' && text[i] != '#'
         b = text[i]
@@ -164,7 +164,7 @@ function semicolons_of(@l: state.LexState, text: str, from: i64, at: i64) -> i64
 
 # Whether a line end stands from `from` up to `to`.
 function line_end_in(text: str, from: i64, to: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to
         if text[i] == '\n'
@@ -176,8 +176,8 @@ function line_end_in(text: str, from: i64, to: i64) -> bool
 # How many `;` stand from the header's `(` at `from` to the end of the line
 # that holds the offset `at`, strings and comments left out.
 function semicolons(text: str, from: i64, at: i64) -> i64
-    count: i64 @ 0
-    i: i64 @ from
+    count: i64 @= 0
+    i: i64 @= from
 
     while i < text.len() && (i < at || text[i] != '\n')
         b = text[i]
@@ -206,9 +206,9 @@ function begun_by(@l: state.LexState, text: str, at: i64, keyword: token.TokenKi
     seen = l.asked[lex_asked.LINE_SEEN]
 
     if l.asked[lex_asked.LINE] != start || seen < 0 || seen > l.tokens.len()
-        head: i64 @ -1
-        held: bool @ false
-        i: i64 @ l.tokens.len() - 1
+        head: i64 @= -1
+        held: bool @= false
+        i: i64 @= l.tokens.len() - 1
 
         while i >= 0 && l.tokens[i].span.start >= start
             if l.tokens[i].kind == .kw_in
@@ -225,7 +225,7 @@ function begun_by(@l: state.LexState, text: str, at: i64, keyword: token.TokenKi
         if held
             l.asked[lex_asked.LINE_IN] @ 1
     else
-        j: i64 @ seen
+        j: i64 @= seen
 
         while j < l.tokens.len()
             if l.tokens[j].span.start < start
@@ -246,8 +246,8 @@ function begun_by(@l: state.LexState, text: str, at: i64, keyword: token.TokenKi
 # line where that question stood before `at`, the bytes between read once,
 # else read back from `at`.
 function line_from(@l: state.LexState, text: str, at: i64) -> i64
-    from: i64 @ l.asked[lex_asked.LINE_AT]
-    start: i64 @ at
+    from: i64 @= l.asked[lex_asked.LINE_AT]
+    start: i64 @= at
 
     if from >= 0 && from <= at
         start @ l.asked[lex_asked.LINE_FROM]
@@ -271,8 +271,8 @@ function in_past(@l: state.LexState, open: i64) -> bool
     seen = l.asked[lex_asked.FOR_SEEN]
 
     if l.asked[lex_asked.FOR_OPEN] != open || seen < 0 || seen > l.tokens.len()
-        held: bool @ false
-        i: i64 @ l.tokens.len() - 1
+        held: bool @= false
+        i: i64 @= l.tokens.len() - 1
 
         while i > 0 && l.tokens[i].span.start > open
             if l.tokens[i].kind == .kw_in
@@ -285,7 +285,7 @@ function in_past(@l: state.LexState, open: i64) -> bool
         if held
             l.asked[lex_asked.FOR_IN] @ 1
     else
-        j: i64 @ seen
+        j: i64 @= seen
 
         while j < l.tokens.len()
             if l.tokens[j].span.start <= open
@@ -300,8 +300,8 @@ function in_past(@l: state.LexState, open: i64) -> bool
 # comment, the line's end, or a `{` that ends the line, a body's, which the
 # brace layout reads; the spaces before any of them left out.
 function header_end(text: str, from: i64) -> i64
-    i: i64 @ from
-    last: i64 @ from
+    i: i64 @= from
+    last: i64 @= from
 
     while i < text.len() && text[i] != '\n' && text[i] != '\r' && text[i] != '#' && !(text[i] == '{' && separator_runs.ends_its_line(text, at: i + 1))
         if text[i] == '"' || text[i] == '\''
@@ -330,7 +330,7 @@ test "a header holds two semicolons, its brackets' among them"
 # premise `lex_asked.hero` rests on, which this asks.
 test "a line's first word and its `in` are read once, read on, and read again past a rewrite"
     text = "x = 1\nfor i; j; k\n"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
 
     for t in [token.made(.ident, start: 0, end: 1), token.made(.eq, start: 2, end: 3), token.made(.int_lit, start: 4, end: 5), token.made(.terminator, start: 5, end: 5), token.made(.kw_for, start: 6, end: 9), token.made(.ident, start: 10, end: 11)]
         state.push_token(@l.tokens, t)

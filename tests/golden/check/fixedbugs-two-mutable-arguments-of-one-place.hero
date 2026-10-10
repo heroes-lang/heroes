@@ -37,13 +37,13 @@ function shift_boxes(@a: P, @b: i64)
     b @ b + 10
 
 function main()
-    n: i64 @ 0
+    n: i64 @= 0
     shift(a: @n, b: @n)             #~ aliased_mutable_arguments
     print(n)
-    p: P @ P(x: 0, y: 0)
+    p: P @= P(x: 0, y: 0)
     shift(a: @p.x, b: @p.x)         #~ aliased_mutable_arguments
     print(p.x)
-    xs: [i64] @ [0, 0]
+    xs: [i64] @= [0, 0]
     shift(a: @xs[0], b: @xs[0])     #~ aliased_mutable_arguments
     print(xs[0])
 

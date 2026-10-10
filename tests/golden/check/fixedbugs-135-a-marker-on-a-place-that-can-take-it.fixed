@@ -27,16 +27,16 @@ function twice(@c: Counter)
     bump(@c)
 
 function main()
-    k: Counter @ Counter(n: 0)
+    k: Counter @= Counter(n: 0)
     bump(@k)  #~ marker_mismatch
-    h: Holder @ Holder(inner: Counter(n: 0))
+    h: Holder @= Holder(inner: Counter(n: 0))
     bump(@h.inner)  #~ marker_mismatch
-    cs: [Counter] @ [Counter(n: 0)]
+    cs: [Counter] @= [Counter(n: 0)]
     bump(@cs[0])  #~ marker_mismatch
     twice(@k)
-    xs: [i64] @ []
+    xs: [i64] @= []
     put(4, @xs)  #~ marker_mismatch
-    a: i64 @ 0
-    b: i64 @ 0
+    a: i64 @= 0
+    b: i64 @= 0
     move_to(x: @a, y: @b)  #~ marker_mismatch
     print(k.n + h.inner.n + cs[0].n + xs.len() + a + b)

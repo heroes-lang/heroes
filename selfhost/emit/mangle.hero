@@ -46,7 +46,7 @@ constant HASH_MODULUS: i64
 # two instances mangling alike are two C definitions of one name,
 # which is a clang error — that is what makes 31 bits enough.
 function instance(rendered: str) -> str
-    h: i64 @ 0
+    h: i64 @= 0
 
     for i in range(from: 0, to: len(rendered))
         h @ (h * HASH_BASE + to_i64(rendered[i]).must()) % HASH_MODULUS
@@ -58,8 +58,8 @@ function hex(number: i64) -> str
     if number == 0
         return "0"
     digits = "0123456789abcdef"
-    out: str @ ""
-    left: i64 @ number
+    out: str @= ""
+    left: i64 @= number
 
     while left > 0
         d = left % 16
@@ -145,11 +145,11 @@ function tag_of(ty: str, case_name: str) -> str
 # must not be reachable by accident. $ is dropped: $i in slot 5 becomes
 # h5_i.
 function slot(index: i64, name: str) -> str
-    letters: [str] @ []
+    letters: [str] @= []
 
     for ch in name.chars()
         code = ch[0]
-        is_word: bool @ false
+        is_word: bool @= false
 
         if code >= 'a' && code <= 'z'
             is_word @ true
@@ -169,7 +169,7 @@ function slot(index: i64, name: str) -> str
             letters @ letters.push("_")
 
     kept = letters.join("")
-    first: i64 @ 0
+    first: i64 @= 0
 
     while first < kept.len() && kept[first] == '_'
         first @ first + 1
@@ -210,7 +210,7 @@ test "the typehash matches the witness golden, in hex"
     assert instance("pair<i64, str_x>") != instance("pair<i64_str, x>")
 
 function typehash_check(rendered: str) -> i64
-    h: i64 @ 0
+    h: i64 @= 0
 
     for i in range(from: 0, to: len(rendered))
         h @ (h * 131 + to_i64(rendered[i]).must()) % 2147483647
@@ -249,7 +249,7 @@ test "the library declares two names the inventory lacks, each spelled by its mo
     text = library_source.text()
     parsed = parse.parse(text)
     s = source.new_source(name: "library.hero", text: text)
-    outside: [str] @ []
+    outside: [str] @= []
 
     for d in parsed.decls
         match d.kind

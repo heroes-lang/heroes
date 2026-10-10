@@ -23,8 +23,8 @@ function built() -> Outer
 
 function main()
     dirty()
-    a: Outer @ left_out()
+    a: Outer @= left_out()
     print(a.k, " ", a.inner.kind, " ", outer_union(@a))
     dirty()
-    b: Outer @ built()
+    b: Outer @= built()
     print(b.k, " ", b.inner.kind, " ", outer_union(@b))

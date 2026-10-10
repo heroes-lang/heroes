@@ -135,9 +135,9 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, de
     )
 
     for ty in wanted
-        prefix: str @ ""
-        c_type: str @ ""
-        skip: bool @ false
+        prefix: str @= ""
+        c_type: str @= ""
+        skip: bool @= false
 
         match table.get(c.types, ty)
             .named n =>

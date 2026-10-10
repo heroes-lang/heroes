@@ -30,8 +30,8 @@ use emit/ctype
 # writes `typedef void CURL;`, so six of ten and not ten of ten — are in
 # `docs/panel/116-where-the-release-lives.md` and in the golden that pins it.
 function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl], f: containers.Function, frees: bool) -> [str]?
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for slot_id in f.params
         declared = f.slots[slot_id]
@@ -44,7 +44,7 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
         # and the probe must declare it the same way the call site
         # passes it or the probe itself would be the thing that does
         # not compile.
-        mutable: bool @ false
+        mutable: bool @= false
 
         match declared.kind
             .param_slot ps =>
@@ -52,7 +52,7 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
                     mutable @ true
             .local_slot | .synthetic_slot | .return_slot => mutable @ mutable
 
-        spelled: str @ c_type.must()
+        spelled: str @= c_type.must()
 
         if frees && spelled == "void *"
             spelled @ "char *"

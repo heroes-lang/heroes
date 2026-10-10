@@ -68,7 +68,7 @@ function lines_to(c: cursor.Cursor, text: str, from: i64) -> i64
     if open < 0 || !unclosed.in_reach(c, open: open) || below <= text_lines.line_margin(text, at: c.tokens[from].span.start)
         return -1
     ends = pairing.close_after(c, at: c.tokens[open].span.start)
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while i < c.tokens.len() - 1 && (ends < 0 || c.tokens[i].span.start < ends) && (c.root_end < 0 || c.tokens[i].span.start < c.root_end)
         i @ i + 1
@@ -83,7 +83,7 @@ function lines_to(c: cursor.Cursor, text: str, from: i64) -> i64
 # call's arguments and passed it over at its first binding, an over-indented
 # line in it unsaid (the audit's row 130-H-004, lane recovery-b8).
 function body_below(c: cursor.Cursor, text: str, open: i64) -> bool
-    next: i64 @ open + 1
+    next: i64 @= open + 1
 
     while next < c.tokens.len() - 1 && c.tokens[next].kind == .comment
         next @ next + 1
@@ -113,7 +113,7 @@ record Spilled
 # audit's row 130-34d, lane recovery-b8).
 function spilled(c: cursor.Cursor, text: str, from: i64, said: i64) -> Spilled
     none = Spilled(start: -1, close: -1)
-    ends: i64 @ c.tokens[from].span.start
+    ends: i64 @= c.tokens[from].span.start
 
     while ends < text.len() && text[ends] != '\n'
         ends @ ends + 1
@@ -122,14 +122,14 @@ function spilled(c: cursor.Cursor, text: str, from: i64, said: i64) -> Spilled
     # head refused it as a statement's first word deeper than the head: the
     # same for every opener on the line, so asked once, where each token of a
     # long head line read its line again (defect 495).
-    start: i64 @ from + 1
+    start: i64 @= from + 1
 
     while start < c.tokens.len() - 1 && (c.tokens[start].kind == .comment || c.tokens[start].span.start <= ends)
         start @ start + 1
 
     if !line_end.said_at(c, at: start, said: said) || text_lines.margin_width(text, at: c.tokens[start].span.start) <= text_lines.line_margin(text, at: c.tokens[from].span.start) || !opens_a_statement(c, at: start)
         return none
-    i: i64 @ from
+    i: i64 @= from
 
     while i < c.pos && i < c.tokens.len() - 1 && c.tokens[i].span.start <= ends
         k = c.tokens[i].kind

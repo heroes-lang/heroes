@@ -154,8 +154,8 @@ function hangs_below(@c: cursor.Cursor, text: str, from: i64) -> Below
 function orphan_below(c: cursor.Cursor, text: str, from: i64) -> bool
     if c.tokens[from].kind == .error
         return !refused_heads.opens_a_block(c, text, at: from)
-    depth: i64 @ 0
-    i: i64 @ from
+    depth: i64 @= 0
+    i: i64 @= from
 
     while i < c.pos
         k = c.tokens[i].kind
@@ -173,7 +173,7 @@ function orphan_below(c: cursor.Cursor, text: str, from: i64) -> bool
 # Whether the name at token `at` is followed, past comments, by a token that
 # begins a value no suffix of the name's begins: not `(`, `[`, `.` or `-`.
 function worded(c: cursor.Cursor, at: i64) -> bool
-    j: i64 @ at + 1
+    j: i64 @= at + 1
 
     while j < c.pos && c.tokens[j].kind == .comment
         j @ j + 1
@@ -193,7 +193,7 @@ function refused_operand(c: cursor.Cursor, a: ast.Ast, text: str, exprs: i64) ->
     if !refused_literal.here(c, text)
         return false
     here = cursor.current_span(c)
-    i: i64 @ exprs
+    i: i64 @= exprs
 
     while i < a.exprs.len()
         if a.exprs[i].kind == .error && a.exprs[i].span == here

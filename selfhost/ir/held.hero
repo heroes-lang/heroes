@@ -79,14 +79,14 @@ function read(f: containers.Function, counted: [bool]) -> Reading
 function hold(f: containers.Function, holds: {i64: [i64]}) -> containers.Function
     if holds.len() == 0
         return f
-    worked: containers.Function @ f
-    index: i64 @ 0
+    worked: containers.Function @= f
+    index: i64 @= 0
 
     while index < worked.blocks.len()
-        out: [ir.Inst] @ []
+        out: [ir.Inst] @= []
 
         for inst in worked.blocks[index].insts
-            holding: [i64] @ []
+            holding: [i64] @= []
 
             match inst.op
                 .call cl                                                                          => holding @ of_call(
@@ -123,7 +123,7 @@ function reference(f: containers.Function, value: i64, keep: bool, span: token.S
 # already read for its lenders (`borrowed.borrows`), so a function is read for
 # them once; a function whose loads no write follows holds nothing.
 function held(f: containers.Function, b: borrowed.Borrows, counted: [bool]) -> {i64: [i64]}
-    out: {i64: [i64]} @ {}
+    out: {i64: [i64]} @= {}
 
     if b.value.len() == 0
         return out
@@ -161,7 +161,7 @@ function of_call(holds: {i64: [i64]}, run: ir.Run) -> [i64]
 # The arguments of one call it holds: counted, and borrowed from a load whose
 # root the call writes through `@`.
 function held_by(f: containers.Function, b: borrowed.Borrows, counted: [bool], run: ir.Run) -> [i64]
-    taken: [i64] @ []
+    taken: [i64] @= []
 
     if !survival.any_inout(f, over: run)
         return taken
@@ -203,12 +203,12 @@ function holds_in_main(text: str) -> [i64]
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     resolved_out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, resolved_out, s, parsed.decls)
+    c: state.Checked @= checker.check(parsed.tree, resolved_out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-    p: containers.Program @ lower.lower(parsed.tree, resolved_out, c, s, parsed.decls).program
+    p: containers.Program @= lower.lower(parsed.tree, resolved_out, c, s, parsed.decls).program
     assert mono.run(@p, @c, s, parsed.decls).len() == 0
     place_store.run(@p)
-    sizes: [i64] @ []
+    sizes: [i64] @= []
 
     for f in p.functions
         if f.name == "main"
@@ -230,11 +230,11 @@ function holds_in_main(text: str) -> [i64]
     return sizes
 
 test "a counted argument borrowed from a root the call writes is held, a number read off it and another root are not"
-    text = "record B\n    items: [i64]\n\nfunction f(@b: B, items: [i64], n: i64) -> i64\n    return items[0] + n\n\nfunction main()\n    x: B @ B(items: [1])\n    y: B @ B(items: [2])\n    print(f(@x, x.items, x.items.len()))\n    print(f(@x, y.items, 0))\n    print(f(@y, x.items, y.items.len()))\n"
+    text = "record B\n    items: [i64]\n\nfunction f(@b: B, items: [i64], n: i64) -> i64\n    return items[0] + n\n\nfunction main()\n    x: B @= B(items: [1])\n    y: B @= B(items: [2])\n    print(f(@x, x.items, x.items.len()))\n    print(f(@x, y.items, 0))\n    print(f(@y, x.items, y.items.len()))\n"
     assert holds_in_main(text) == [1]
 
 test "an element lent beside its own array holds the array, and a call with no arguments holds nothing"
-    text = "function fresh() -> [i64]\n    return [1, 2]\n\nfunction f(@e: i64, q: [i64]) -> i64\n    return q[0] + e\n\nfunction main()\n    xs: [i64] @ fresh()\n    print(f(@xs[0], q: xs))\n    print(f(@xs[1], q: fresh()))\n"
+    text = "function fresh() -> [i64]\n    return [1, 2]\n\nfunction f(@e: i64, q: [i64]) -> i64\n    return q[0] + e\n\nfunction main()\n    xs: [i64] @= fresh()\n    print(f(@xs[0], q: xs))\n    print(f(@xs[1], q: fresh()))\n"
     assert holds_in_main(text) == [1]
 
 test "what one call holds is read from its own run, never from an empty one beside it"

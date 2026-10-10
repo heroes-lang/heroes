@@ -53,13 +53,13 @@ function apply(f: (function(i64) -> ()), v: i64)
 
 function discarded()
     _ = bump  #~ mutable_parameter_as_value
-    x: i64 @ 1
+    x: i64 @= 1
     bump(@x)
     print(x)
 
 function bound_and_called()
     f = bump  #~ mutable_parameter_as_value
-    x: i64 @ 1
+    x: i64 @= 1
     f(@x)
     print(x)
 

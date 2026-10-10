@@ -100,7 +100,7 @@ function all_code(p: model.Program, first: i64, last: i64) -> bool
 
 # Each child's first line, stripped.
 function kid_texts(p: model.Program, s: model.Statement) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for kid in s.children
         out @ out.push(model.stripped(model.line(p, no: p.stmts[kid].first).text))
@@ -115,7 +115,7 @@ function brace_else_chain(p: model.Program, @out: [mutant.Mutant])
 
         if chain.len() < 2 || !chain_ok(p, chain: chain)
             continue
-        hunks: [mutant.Hunk] @ []
+        hunks: [mutant.Hunk] @= []
         pad = op_base.spaces(op_base.indent_of(p, s: s))
 
         for i in range(from: 0, to: chain.len())
@@ -156,7 +156,7 @@ function semicolon(p: model.Program, @out: [mutant.Mutant])
 # A block re-indented two spaces a level (`two`), or with a tab for every
 # four spaces (`tab`); blank lines kept as they are.
 function reindented(p: model.Program, s: model.Statement, two: bool) -> [str]
-    lines: [str] @ []
+    lines: [str] @= []
     base = op_base.indent_of(p, s: s)
 
     for no in range(from: s.block_first, to: s.block_last + 1)
@@ -169,7 +169,7 @@ function reindented(p: model.Program, s: model.Statement, two: bool) -> [str]
         body = op_base.cut(l.text, from: ind, to: l.text.len())
 
         if two
-            new_ind: i64 @ ind
+            new_ind: i64 @= ind
 
             if ind >= base
                 new_ind @ base + (ind - base) / 2
@@ -183,7 +183,7 @@ function reindent(op: str, p: model.Program, two: bool, @out: [mutant.Mutant])
     for s in p.stmts
         if !op_base.block_ok(s) || s.kind == "top-constant"
             continue
-        site: [i64] @ []
+        site: [i64] @= []
 
         for no in range(from: s.block_first, to: s.block_last + 1)
             if model.code(model.line(p, no: no))
@@ -207,7 +207,7 @@ function over_indent(p: model.Program, @out: [mutant.Mutant])
 
 # The last binary operator at depth 0 with a token after it, or -1.
 function last_binary(s: model.Statement) -> i64
-    best: i64 @ -1
+    best: i64 @= -1
 
     for i in range(from: 0, to: s.toks.len())
         if s.toks[i].depth == 0 && op_base.binary_at(s.toks, i: i) && i + 1 < s.toks.len()
@@ -222,7 +222,7 @@ record Break
     at: i64
 
 function break_sites(p: model.Program) -> [Break]
-    out: [Break] @ []
+    out: [Break] @= []
 
     for s in p.stmts
         if s.head || !op_base.one_of(s.kind, set: ["bind", "declare", "mutate", "return", "expr", "assert", "arm"]) || !op_base.single_line(s)
@@ -257,8 +257,8 @@ function broken(style: str, p: model.Program, @out: [mutant.Mutant])
         prev = s.toks[b.at - 1]
         text = model.line(p, no: s.first).text
         pad = op_base.spaces(model.indent(model.line(p, no: s.first)) + 4)
-        l1: str @ op_base.cut(text, from: 0, to: op_t.c1)
-        l2: str @ pad + op_base.cut(text, from: next.c0, to: text.len())
+        l1: str @= op_base.cut(text, from: 0, to: op_t.c1)
+        l2: str @= pad + op_base.cut(text, from: next.c0, to: text.len())
 
         if style == "leading-operator"
             l1 @ op_base.cut(text, from: 0, to: prev.c1)
@@ -306,7 +306,7 @@ function missing_operand_in_brackets(p: model.Program, @out: [mutant.Mutant])
 
             if t.depth == 0 || !op_base.binary_at(toks, i: i)
                 continue
-            j: i64 @ i + 1
+            j: i64 @= i + 1
 
             while j < toks.len() && !(toks[j].depth == t.depth && ends_operand(toks[j].kind))
                 if toks[j].depth < t.depth

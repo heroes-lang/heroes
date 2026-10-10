@@ -1,6 +1,6 @@
 # The operands of an arithmetic operator that take their type from where the
 # operator stands (spec § 2: a literal takes the type its context asks for,
-# `b: u8 @ 255`, and `b + 1` is a `u8`; spec § 7: both sides one numeric
+# `b: u8 @= 255`, and `b + 1` is a `u8`; spec § 7: both sides one numeric
 # type; design.md §4.5; defect 564, panel 203 R3, panel 042's ruling 3).
 #
 # `y: u8 = 2 + 3`, `show(v: 2 + 3)` with `v: u8`, `e: u8 = 2 * (3 + 4)`, `d:
@@ -144,8 +144,8 @@ function taking(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.
 
     if small(a, id: id)
         return none
-    order: [i64] @ [id]
-    k: i64 @ 0
+    order: [i64] @= [id]
+    k: i64 @= 0
 
     while k < order.len()
         at = order[k]
@@ -164,7 +164,7 @@ function taking(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.
 
         k @ k + 1
 
-    out: {i64: bool} @ {}
+    out: {i64: bool} @= {}
     k @ order.len() - 1
 
     while k >= 0
@@ -238,7 +238,7 @@ function node_takes(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [
 # their own: `NEITHER`, `RIGHT` alone, `LEFT` alone or `BOTH`, from `takes`
 # where the walk above reached them and asked of each whole in a small tree.
 function pair(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], takes: [{i64: bool}], left: i64, right: i64) -> i64
-    which: i64 @ NEITHER
+    which: i64 @= NEITHER
 
     if takes.len() == 0
         if takes_context(a, r, s, decls, id: left)
@@ -260,8 +260,8 @@ function pair(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.De
 # `check/walk.hero` unchanged with defect 564, where it reaches nothing of the
 # walk.
 function record_through_neg(@c: state.Checker, a: ast.Ast, id: i64, ty: i64)
-    at: i64 @ id
-    walking: bool @ true
+    at: i64 @= id
+    walking: bool @= true
 
     while walking
         _ = state.record_expr(@c, at: at, ty: ty)

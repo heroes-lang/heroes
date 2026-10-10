@@ -67,7 +67,7 @@ use ir/released
 # Insert the reference counting. Idempotent by construction: advance_to
 # refuses a second run.
 function run(@p: containers.Program, c: state.Checked)
-    rewritten: [containers.Function] @ []
+    rewritten: [containers.Function] @= []
 
     for f in p.functions
         rewritten @ rewritten.push(rewrite(f, c))
@@ -97,9 +97,9 @@ function run(@p: containers.Program, c: state.Checked)
 # copied the whole table (now `slots` and `values`, grown in place and put
 # back before the sweep reads them).
 function rewrite(f: containers.Function, c: state.Checked) -> containers.Function
-    worked: containers.Function @ f
-    slots: [containers.Slot] @ worked.slots
-    values: [i64] @ worked.values
+    worked: containers.Function @= f
+    slots: [containers.Slot] @= worked.slots
+    values: [i64] @= worked.values
 
     # The counted loads whose header a read after a write to their root
     # borrows (defect 387), and the arguments a call holds for its duration
@@ -108,13 +108,13 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
     # `survival.survivors` answers in its block, and the test below holds
     # them to that.
     found = held.read(f, counted: c.counted)
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < worked.blocks.len()
-        out: [ir.Inst] @ []
+        out: [ir.Inst] @= []
 
         for inst in worked.blocks[index].insts
-            handled: bool @ false
+            handled: bool @= false
 
             match inst.op
                 # A borrowed load whose value outlives a write to its own
@@ -153,7 +153,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
                         out @ out.push(inst)
                         handled @ true
                     else if layout.is_refcounted(c, ty)
-                        indexed: bool @ false
+                        indexed: bool @= false
 
                         for step in containers.steps_of(worked, st.place.path)
                             match step
@@ -229,7 +229,7 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
     # @ parameter is copied out. Which slots are parameters is read once,
     # where every slot walked the parameters (defect 230), and this reading
     # stays its own: `released.owed_slots` is the verifier's of the same rules.
-    is_param: [bool] @ []
+    is_param: [bool] @= []
 
     while is_param.len() < worked.slots.len()
         is_param @ is_param.push(false)
@@ -238,11 +238,11 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
         if param >= 0 && param < is_param.len()
             is_param[param] @ true
 
-    sweep: [i64] @ []
-    slot_at: i64 @ 0
+    sweep: [i64] @= []
+    slot_at: i64 @= 0
 
     for slot in worked.slots
-        owed: bool @ false
+        owed: bool @= false
 
         match slot.kind
             .local_slot | .synthetic_slot => owed @ true
@@ -255,8 +255,8 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
     index @ 0
 
     while index < worked.blocks.len()
-        returns: bool @ false
-        returned: i64? @ fail(code: "none", msg: "no value")
+        returns: bool @= false
+        returned: i64? @= fail(code: "none", msg: "no value")
 
         match worked.blocks[index].term
             .return_term ret =>
@@ -265,11 +265,11 @@ function rewrite(f: containers.Function, c: state.Checked) -> containers.Functio
             .jump | .branch | .switch_term | .unreachable | .open => returns @ returns
 
         if returns
-            span: token.Span @ worked.span
+            span: token.Span @= worked.span
 
             if worked.blocks[index].insts.len() > 0
                 span @ worked.blocks[index].insts[worked.blocks[index].insts.len() - 1].span
-            out: [ir.Inst] @ worked.blocks[index].insts
+            out: [ir.Inst] @= worked.blocks[index].insts
 
             # Rule 4, before the sweep: the returned value is borrowed
             # by here — it lives in a slot — so the caller's reference
@@ -331,10 +331,10 @@ function owned(text: str) -> OwnedOut
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     resolved_out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, resolved_out, s, parsed.decls)
+    c: state.Checked @= checker.check(parsed.tree, resolved_out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, resolved_out, c, s, parsed.decls)
-    p: containers.Program @ low.program
+    p: containers.Program @= low.program
     mono_problems = mono.run(@p, @c, s, parsed.decls)
     assert mono_problems.len() == 0
     run(@p, c)
@@ -342,7 +342,7 @@ function owned(text: str) -> OwnedOut
 
 test "the whole chain verifies at owned: strings, loops, records, a generic"
     got = owned(
-        "record Pair\n    one: str\n    two: str\n\nfunction id<T>(x: T) -> T\n    return x\n\nfunction shout(name: str) -> str\n    prefix = \"hi \"\n    return prefix + name\n\nfunction main()\n    p = Pair(one: id(\"a\"), two: \"b\")\n    total: str @ \"\"\n    parts = [p.one, p.two]\n    for part in parts\n        total @ total + part\n    print(shout(total))\n"
+        "record Pair\n    one: str\n    two: str\n\nfunction id<T>(x: T) -> T\n    return x\n\nfunction shout(name: str) -> str\n    prefix = \"hi \"\n    return prefix + name\n\nfunction main()\n    p = Pair(one: id(\"a\"), two: \"b\")\n    total: str @= \"\"\n    parts = [p.one, p.two]\n    for part in parts\n        total @ total + part\n    print(shout(total))\n"
     )
     problems = verify.verify(got.program, got.checked, got.decls)
     assert problems.len() == 0
@@ -353,7 +353,7 @@ test "a store expands to load-incref-store-decref, and the sweep closes returns"
     f = got.program.functions[0]
 
     # The concatenation's result was moved into an $own slot.
-    moved: bool @ false
+    moved: bool @= false
 
     for slot in f.slots
         if slot.name == "$own2"
@@ -364,9 +364,9 @@ test "a store expands to load-incref-store-decref, and the sweep closes returns"
     # The returning block increfs the result and then decrefs every
     # owned slot — rule 4 before the sweep.
     last = f.blocks[f.blocks.len() - 1]
-    incref_at: i64 @ 0 - 1
-    last_decref: i64 @ 0 - 1
-    at: i64 @ 0
+    incref_at: i64 @= 0 - 1
+    last_decref: i64 @= 0 - 1
+    at: i64 @= 0
 
     for inst in last.insts
         match inst.op
@@ -387,7 +387,7 @@ test "a straight function of 400 chained strings verifies at owned, its sweep re
     # slots and sweeps all of them at the one return. Defect 218's shape: the
     # release check read that sweep in about slots x decrefs x instructions
     # / 2, 3e9 steps here (derived, not run), and now reads it in two walks.
-    lines: [str] @ ["function f(x: i64) -> str", "    s0 = x.to_str()"]
+    lines: [str] @= ["function f(x: i64) -> str", "    s0 = x.to_str()"]
 
     while lines.len() < 402
         lines @ lines.push("    s" + (lines.len() - 1).to_str() + " = s" + (lines.len() - 2).to_str() + " + x.to_str()")
@@ -395,7 +395,7 @@ test "a straight function of 400 chained strings verifies at owned, its sweep re
     lines @ lines.push("    return s400")
     got = owned(lines.join("\n") + "\n\nfunction main()\n    print(f(x: 3).len())\n")
     assert verify.verify(got.program, got.checked, got.decls).len() == 0
-    checked_one: bool @ false
+    checked_one: bool @= false
 
     for f in got.program.functions
         if f.name == "f"
@@ -426,39 +426,39 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
     # self-store whose load is read only by the store that writes it, and
     # straight functions of many counted loads, which made the old walk the
     # square of a block.
-    many: [str] @ ["function f(x: i64) -> i64", "    s0 = \"a\" + x.to_str()"]
+    many: [str] @= ["function f(x: i64) -> i64", "    s0 = \"a\" + x.to_str()"]
 
     while many.len() < 42
         many @ many.push("    s" + (many.len() - 1).to_str() + " = s" + (many.len() - 2).to_str() + " + x.to_str()")
 
     many @ many.push("    return s40.len()")
-    params: [str] @ []
-    grows: [str] @ []
-    calls: [str] @ []
-    decls: [str] @ []
+    params: [str] @= []
+    grows: [str] @= []
+    calls: [str] @= []
+    decls: [str] @= []
 
     while params.len() < 12
         n = params.len().to_str()
         params @ params.push("@p" + n + ": str")
         grows @ grows.push("    p" + n + " @ p" + n + " + \"!\"")
         calls @ calls.push("p" + n + ": @a" + n)
-        decls @ decls.push("    a" + n + ": str @ \"x\"")
+        decls @ decls.push("    a" + n + ": str @= \"x\"")
 
     texts: [str] = [
-        "function bump(@v: [i64]) -> i64\n    v @ v.push(99)\n    return v.len()\n\nfunction echo(@s: str) -> str\n    s @ s + \"!\"\n    return s\n\nfunction shout(@s: str, t: str) -> str\n    return s + echo(@s) + t\n\nfunction main()\n    qs: [i64] @ []\n    qs @ qs.push(1)\n    qs @ qs.push(bump(@qs))\n    ys = qs\n    qs @ qs.push(3)\n    s: str @ \"a\"\n    s @ s\n    t = shout(s: @s, t: \"b\")\n    print(qs.len(), \" \", ys.len(), \" \", t, \" \", s)\n"
+        "function bump(@v: [i64]) -> i64\n    v @ v.push(99)\n    return v.len()\n\nfunction echo(@s: str) -> str\n    s @ s + \"!\"\n    return s\n\nfunction shout(@s: str, t: str) -> str\n    return s + echo(@s) + t\n\nfunction main()\n    qs: [i64] @= []\n    qs @ qs.push(1)\n    qs @ qs.push(bump(@qs))\n    ys = qs\n    qs @ qs.push(3)\n    s: str @= \"a\"\n    s @ s\n    t = shout(s: @s, t: \"b\")\n    print(qs.len(), \" \", ys.len(), \" \", t, \" \", s)\n"
         many.join("\n") + "\n\nfunction main()\n    print(f(x: 3))\n"
         "function g(" + params.join(", ") + ")\n" + grows.join("\n") + "\n\nfunction main()\n" + decls.join("\n") + "\n    g(" + calls.join(", ") + ")\n    print(a0.len())\n"
     ]
-    survived: i64 @ 0
+    survived: i64 @= 0
 
     for text in texts
         parsed = parse.parse(text)
         s = source.new_source(name: "t.hero", text: text)
         resolved_out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-        c: state.Checked @ checker.check(parsed.tree, resolved_out, s, parsed.decls)
+        c: state.Checked @= checker.check(parsed.tree, resolved_out, s, parsed.decls)
         assert c.diagnostics.len() == 0
         low = lower.lower(parsed.tree, resolved_out, c, s, parsed.decls)
-        p: containers.Program @ low.program
+        p: containers.Program @= low.program
         assert mono.run(@p, @c, s, parsed.decls).len() == 0
         place_store.run(@p)
 
@@ -467,8 +467,8 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
 
             for blk in f.blocks
                 got = survival.survivors(f, blk.insts, blk.term)
-                operands: i64 @ uses.terminator_operands(blk.term).len()
-                at: i64 @ 0
+                operands: i64 @= uses.terminator_operands(blk.term).len()
+                at: i64 @= 0
 
                 for one in blk.insts
                     operands @ operands + uses.operands(f, one.op).len()
@@ -499,10 +499,10 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
                         .func_ref | .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => at @ at
 
                     written = survival.roots_written(f, one.op)
-                    root: i64 @ 0
+                    root: i64 @= 0
 
                     while root < f.slots.len()
-                        before: bool @ false
+                        before: bool @= false
 
                         match one.op
                             .store st      => before @ st.place.root == root
@@ -533,7 +533,7 @@ test "a block's survivors are the per-load walk's, the writer table is the per-r
                             .field | .index | .map_get | .len_of | .tag_of | .payload       => before @ false
                             .func_ref | .incref | .decref | .decref_slot | .hole | .missing => before @ false
 
-                        now: bool @ written.every
+                        now: bool @= written.every
 
                         for r in written.roots
                             if r == root
@@ -563,14 +563,14 @@ test "the return slot borrows: a store into it is a plain copy, rule 4 retains a
     parsed = parse.parse(text)
     src = source.new_source(name: "t.hero", text: text)
     resolved_out = resolve.resolve(parsed.tree, src, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, resolved_out, src, parsed.decls)
-    p: containers.Program @ lower.lower(parsed.tree, resolved_out, c, src, parsed.decls).program
+    c: state.Checked @= checker.check(parsed.tree, resolved_out, src, parsed.decls)
+    p: containers.Program @= lower.lower(parsed.tree, resolved_out, c, src, parsed.decls).program
     assert mono.run(@p, @c, src, parsed.decls).len() == 0
-    f: containers.Function @ p.functions[0]
+    f: containers.Function @= p.functions[0]
     ret = f.slots.len()
     f.slots @ f.slots.push(containers.Slot(name: "$ret0", ty: f.result, kind: .return_slot))
     whole = ir.Place(root: ret, path: ir.Run(start: 0, length: 0))
-    returned: i64 @ 0 - 1
+    returned: i64 @= 0 - 1
 
     match f.blocks[0].term
         .return_term r                                        => returned @ r.value.must()
@@ -602,10 +602,10 @@ test "the return slot borrows: a store into it is a plain copy, rule 4 retains a
 
     # Rule 4 retains the loaded value before the first release, and the
     # sweep names every owned slot but the return slot.
-    retained: i64 @ 0 - 1
-    first_release: i64 @ 0 - 1
-    swept: i64 @ 0
-    at: i64 @ 0
+    retained: i64 @= 0 - 1
+    first_release: i64 @= 0 - 1
+    swept: i64 @= 0
+    at: i64 @= 0
 
     for inst in got.blocks[1].insts
         match inst.op

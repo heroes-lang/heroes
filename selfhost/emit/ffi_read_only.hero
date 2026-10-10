@@ -76,8 +76,8 @@ function writable_pointee(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p:
     if found.is_err() || found.must().name != parts[0]
         return fail(code: "none", msg: "no extern of that name is declared at that line")
     f = found.must().f
-    tail: [str] @ []
-    index: i64 @ 2
+    tail: [str] @= []
+    index: i64 @= 2
 
     while index < parts.len()
         tail @ tail.push(parts[index])
@@ -122,7 +122,7 @@ function read_only_assertion(asked: pointee_ask.Pointee, header_type: str) -> st
     if !lend_type.casts(header_type)
         return line
     pointee = "__typeof__(*(" + header_type + ")0)"
-    bytes: [str] @ []
+    bytes: [str] @= []
 
     for one in ["char", "signed char", "unsigned char", "void"]
         bytes @ bytes.push("__builtin_types_compatible_p(" + pointee + ", " + one + ")")
@@ -149,18 +149,18 @@ function not_bytes(s: source.Source, decls: [ast.Decl], tree: ast.Ast, p: contai
 
     if parts.len() < 3 || found.is_err() || found.must().name != parts[0]
         return fail(code: "none", msg: "no extern of that name is declared at that line")
-    tail: [str] @ []
+    tail: [str] @= []
 
     for one in parts.slice(from: 2, to: parts.len())
         tail @ tail.push(one)
 
     header_type = lend_type.unqualified(ffi_pointee.trim_quote(tail.join(" ")))
     spans = ffi_mutable.spans_of(s, decls, tree, decl: found.must().f.decl, param: parts[1])
-    span: token.Span @ decls[found.must().f.decl].span
+    span: token.Span @= decls[found.must().f.decl].span
 
     if !spans.is_err()
         span @ spans.must().name
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: "`" + parts[1] + "` of `" + parts[0] + "` is declared `cstr`, and the header's `" + header_type + "` points at no kind of byte — a `cstr` hands C a string's bytes, and C would read them as something else",
         span: span
@@ -217,13 +217,13 @@ function no_prototype(s: source.Source, decls: [ast.Decl], p: containers.Program
     if found.is_err() || found.must().name != parts[0] || declared.is_err()
         return fail(code: "none", msg: "no extern of that name is declared at that line")
     count = ffi_pointee.trim_quote(parts[1])
-    words: str @ count + " parameters"
+    words: str @= count + " parameters"
 
     if count == "1"
         words @ "1 parameter"
     name = parts[0]
     header = declared.must().header
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_parameter_type",
         message: "`" + name + "` is declared with " + words + ", and `" + header + "` declares it with no prototype — clang read the header, and a call converts nothing it hands C, so no parameter can be held to the header's own type",
         span: decls[found.must().f.decl].span
@@ -246,13 +246,13 @@ function no_prototype(s: source.Source, decls: [ast.Decl], p: containers.Program
 # tells the count (`ffi_call_shape`), and the question is asked once the
 # counts agree. The count is the declaration's own, an `ARITY` ask's index.
 function lend_answers(out: [pointee_ask.Answered], wanted: [pointee_ask.Pointee], types: {str: [str]}, sugar: {str: [str]}) -> [pointee_ask.Answered]
-    counts: {str: i64} @ {}
+    counts: {str: i64} @= {}
 
     for one in wanted
         if one.declared == pointee_ask.ARITY
             counts[one.name] @ one.index
 
-    kept: [pointee_ask.Answered] @ out
+    kept: [pointee_ask.Answered] @= out
 
     for one in wanted
         if one.declared == pointee_ask.ARITY
@@ -275,7 +275,7 @@ function lend_answers(out: [pointee_ask.Answered], wanted: [pointee_ask.Pointee]
 
         if one.index >= params.must().len()
             continue
-        through: str @ ""
+        through: str @= ""
         bent = sugar[one.name]
 
         if !bent.is_err() && one.index < bent.must().len()
@@ -378,9 +378,9 @@ test "a read-only lend is asked only where the header's parameters line up with 
         line: 2,
         depth: false
     )
-    types: {str: [str]} @ {}
+    types: {str: [str]} @= {}
     types["f"] @ ["int", "ap"]
-    sugar: {str: [str]} @ {}
+    sugar: {str: [str]} @= {}
     sugar["f"] @ ["", "_Atomic(unsigned char *)"]
     none: [pointee_ask.Answered] = []
     agreed = lend_answers(none, [read, two], types: types, sugar: sugar)
@@ -403,7 +403,7 @@ test "a function the header declares with no prototype is asked so, and told on 
         depth: false
     )
     assert question(arity, header_type: "") == "_Static_assert(!__builtin_types_compatible_p(__typeof__(*kr_write), __typeof__((kr_write)()) (void *)), \"heroes-ffi-no-prototype kr_write 1\");"
-    types: {str: [str]} @ {}
+    types: {str: [str]} @= {}
     types["kr_write"] @ []
     none: [pointee_ask.Answered] = []
     sugar: {str: [str]} = {}

@@ -11,8 +11,8 @@
 
 function main()
     x = "abc"
-    c: cstr @ x.lease()
+    c: cstr @= x.lease()
     end_lease(@c, 1)  #~ builtin_shape
     end_lease(1, @c)  #~ builtin_shape
-    d: cstr @ x.lease()
+    d: cstr @= x.lease()
     end_lease(@c, @d)  #~ builtin_shape

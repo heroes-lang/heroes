@@ -43,8 +43,8 @@ record Layer
     kids: {i64: [Layer]}
 
 function deep(n: i64) -> Node
-    out: Node @ Node(label: 0, children: [])
-    i: i64 @ 0
+    out: Node @= Node(label: 0, children: [])
+    i: i64 @= 0
 
     while i < n
         out @ Node(label: i, children: [out])
@@ -53,11 +53,11 @@ function deep(n: i64) -> Node
     return out
 
 function alternating(n: i64) -> Layer
-    out: Layer @ Layer(kids: {})
-    i: i64 @ 0
+    out: Layer @= Layer(kids: {})
+    i: i64 @= 0
 
     while i < n
-        inner: {i64: [Layer]} @ {}
+        inner: {i64: [Layer]} @= {}
         inner[0] @ [out]
         out @ Layer(kids: inner)
         i @ i + 1

@@ -33,14 +33,14 @@ function put<T>(@x: T, y: T)
     x @ y
 
 function main()
-    s: str @ "ab"
+    s: str @= "ab"
     f(@s[0])  #~ str_element_write
     bump(@s[1])  #~ str_element_write
     k = 3
     k.add(@s[0])  #~ str_element_write
-    r: Named @ Named(name: "cd")
+    r: Named @= Named(name: "cd")
     f(@r.name[1])  #~ str_element_write
-    xs: [str] @ ["ef"]
+    xs: [str] @= ["ef"]
     f(@xs[0][1])  #~ str_element_write
     b: u8 = 66
     put(x: @s[0], y: b)  #~ str_element_write

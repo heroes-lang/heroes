@@ -49,7 +49,7 @@ function main()
     print(h.label)
 
     # Reassigning the field: the value is a function like any other (§4.13).
-    k: Holder @ h
+    k: Holder @= h
     k.f @ negate
     print(k.f(21))
 

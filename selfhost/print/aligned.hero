@@ -24,13 +24,13 @@ use print/owners
 # stands at its end, since the rendering prints the pair whole.
 function aligned(c: elements.Code, text: str, written: [i64], printed: [token.Token]) -> [i64]
     none: [i64] = []
-    kinds: [token.TokenKind] @ []
+    kinds: [token.TokenKind] @= []
 
     for i in written
         kind = c.lines.tokens[i].kind
         kinds @ kinds.push(kind)
 
-    shown: [token.TokenKind] @ []
+    shown: [token.TokenKind] @= []
 
     for t in printed
         kind = t.kind
@@ -38,14 +38,14 @@ function aligned(c: elements.Code, text: str, written: [i64], printed: [token.To
 
     ours = counted(kinds)
     theirs = counted(shown)
-    matched: [i64] @ []
+    matched: [i64] @= []
 
     for _ in written
         matched @ matched.push(-1)
 
     if ours[ours.len() - 1] != theirs[theirs.len() - 1]
         return none
-    j: i64 @ 0
+    j: i64 @= 0
 
     for at in range(from: 0, to: written.len())
         if !loose(kinds[at])
@@ -69,14 +69,14 @@ function aligned(c: elements.Code, text: str, written: [i64], printed: [token.To
     yours = pairs(shown, counts: theirs, partner: printed_pairs(shown))
 
     for p in range(from: 0, to: yours.len())
-        same_range: [i64] @ []
+        same_range: [i64] @= []
 
         for w in range(from: 0, to: mine.len())
             if mine[w].low == yours[p].low && mine[w].high == yours[p].high
                 same_range @ same_range.push(w)
 
-        rank: i64 @ 0
-        total: i64 @ 0
+        rank: i64 @= 0
+        total: i64 @= 0
 
         for q in range(from: 0, to: yours.len())
             if yours[q].low == yours[p].low && yours[q].high == yours[p].high
@@ -110,8 +110,8 @@ function loose(kind: token.TokenKind) -> bool
 # How many tokens but parentheses and commas stand before each place, one
 # more place at the end.
 function counted(kinds: [token.TokenKind]) -> [i64]
-    out: [i64] @ []
-    count: i64 @ 0
+    out: [i64] @= []
+    count: i64 @= 0
 
     for kind in kinds
         out @ out.push(count)
@@ -126,7 +126,7 @@ function counted(kinds: [token.TokenKind]) -> [i64]
 # position, or -2 for a `(` whose `)` is past the end, -3 for a `)` whose `(`
 # is before the start.
 function pairs(kinds: [token.TokenKind], counts: [i64], partner: [i64]) -> [Pair]
-    out: [Pair] @ []
+    out: [Pair] @= []
     end = counts[counts.len() - 1]
 
     for at in range(from: 0, to: kinds.len())
@@ -143,17 +143,17 @@ function pairs(kinds: [token.TokenKind], counts: [i64], partner: [i64]) -> [Pair
     return out
 
 function written_pairs(c: elements.Code, written: [i64]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for i in written
         other = c.lines.pair[i]
-        place: i64 @ -1
+        place: i64 @= -1
 
         if other >= 0 && other < i
             place @ -3
         else if other > i
             place @ -2
-        at: i64 @ 0
+        at: i64 @= 0
 
         for j in written
             if j == other
@@ -165,8 +165,8 @@ function written_pairs(c: elements.Code, written: [i64]) -> [i64]
     return out
 
 function printed_pairs(kinds: [token.TokenKind]) -> [i64]
-    out: [i64] @ []
-    open: [i64] @ []
+    out: [i64] @= []
+    open: [i64] @= []
 
     for _ in kinds
         out @ out.push(-1)
@@ -184,8 +184,8 @@ function printed_pairs(kinds: [token.TokenKind]) -> [i64]
 
 # The tokens but comments from offset `from` up to `to`, as indices.
 function within(lines: owners.Lines, from: i64, to: i64) -> [i64]
-    out: [i64] @ []
-    i: i64 @ owners.index_at(lines, offset: from)
+    out: [i64] @= []
+    i: i64 @= owners.index_at(lines, offset: from)
 
     if i < 0 || lines.tokens[i].span.start < from
         i @ i + 1
@@ -207,7 +207,7 @@ function same(s: source.Source, text: str, written: token.Token, printed: token.
 ## Tests
 
 function lexed(text: str) -> [token.Token]
-    out: [token.Token] @ []
+    out: [token.Token] @= []
 
     for t in lexer.lex_one(text).tokens
         if t.kind != .indent && t.kind != .dedent && t.kind != .terminator && t.kind != .eof && t.kind != .comment

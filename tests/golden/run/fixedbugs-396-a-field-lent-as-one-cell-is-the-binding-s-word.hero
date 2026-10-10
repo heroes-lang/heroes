@@ -17,5 +17,5 @@ extern "fixedbugs-396-buffers.h"
     function digest_cell(@md: u8) -> i32
 
 function main()
-    b: Cell @ Cell(m: 0, rest: [0, 0, 0, 0, 0, 0, 0], after: 7)
+    b: Cell @= Cell(m: 0, rest: [0, 0, 0, 0, 0, 0, 0], after: 7)
     print(digest_cell(@b.m), " ", b.m, " ", b.rest[6], " ", b.after)

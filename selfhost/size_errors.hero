@@ -25,11 +25,11 @@ use diag
 # mutual cycle is unreadable without it — Go printing only `invalid
 # recursive type T2` for a mutual pair was filed as a bug.
 function no_size(kind: str, holder: str, through: str, direct: bool, steps: [str], span: token.Span) -> diag.Diagnostic
-    message: str @ "`" + kind + " " + holder + "` contains itself through `" + through + "`, so it has no size"
+    message: str @= "`" + kind + " " + holder + "` contains itself through `" + through + "`, so it has no size"
 
     if direct
         message @ "`" + kind + " " + holder + "` contains itself, so it has no size"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "no_size", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "no_size", message: message, span: span)
 
     if !direct
         d.notes @ d.notes.push("the cycle is: " + steps.join(", then "))

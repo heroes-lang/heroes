@@ -89,7 +89,7 @@ function unknown_tag(s: source.Source, decls: [ast.Decl], line: str, stderr: str
 # The header declares `struct T` and gives it no fields: the type is opaque
 # on purpose, and the handle is the one repair.
 function opaque_tag(tagged: ffi_tag.TaggedRecord, tag: str) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_tag",
         message: "`struct " + tag + "` has no fields in `" + tagged.header + "` — clang read the header and cannot lay the type out",
         span: tagged.span
@@ -103,7 +103,7 @@ function opaque_tag(tagged: ffi_tag.TaggedRecord, tag: str) -> diag.Diagnostic
 # line. What else clang said decides the readings left, and where it showed
 # nothing, the question unit's `answer` does.
 function invented_tag(tagged: ffi_tag.TaggedRecord, tag: str, spelled: Spelling?, answer: str) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_tag",
         message: "`" + tagged.header + "` has no `struct " + tag + "` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line",
         span: tagged.span
@@ -136,7 +136,7 @@ function invented_tag(tagged: ffi_tag.TaggedRecord, tag: str, spelled: Spelling?
 # every reading is left, and the note gives all three, unless the question
 # unit answered (a real tag is `opaque_tag`'s, above).
 function unread_tag(tagged: ffi_tag.TaggedRecord, tag: str, answer: str) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_tag",
         message: "`struct " + tag + "` has no fields in `" + tagged.header + "` — clang read the header and cannot lay the type out",
         span: tagged.span
@@ -166,7 +166,7 @@ function partial_word(tagged: ffi_tag.TaggedRecord) -> str
 # A record with fields and NO tag, named after a typedef of an incomplete
 # type: clang names the typedef and, after `aka`, the type behind it.
 function incomplete_typedef(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagnostic?
-    word: str @ ""
+    word: str @= ""
 
     for marker in INCOMPLETE_NAMES
         quoted = ffi_lookup.after(text: line, marker: marker)
@@ -211,11 +211,11 @@ function no_layout(s: source.Source, decls: [ast.Decl], line: str) -> diag.Diagn
 # no layout; `behind` is the type its name stands for, or empty where clang's
 # JSON named none.
 function opaque_typedef(found: ffi_tag.TaggedRecord, word: str, behind: str) -> diag.Diagnostic
-    message: str @ "`" + word + "` has no fields in `" + found.header + "` — clang read the header and cannot lay the type out"
+    message: str @= "`" + word + "` has no fields in `" + found.header + "` — clang read the header and cannot lay the type out"
 
     if behind.len() > 0
         message @ "`" + word + "` is `" + behind + "` in `" + found.header + "`, and the header gives it no fields — clang read the header and cannot lay the type out"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_unknown_tag", message: message, span: found.span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_unknown_tag", message: message, span: found.span)
     d.notes @ d.notes.push(
         "the header keeps the type opaque: a program never holds one by value, only C's pointer to it, which is a HANDLE. Drop the field block and give the record the typedef as its tag, `record " + word + " tag " + word + "` (§ 13)"
     )
@@ -245,8 +245,8 @@ function forward_declared_in(stderr: str, tag: str) -> str?
 # `path:line:col` without its two numbers.
 function file_part(position: str) -> str
     cs = position.chars()
-    colons: [i64] @ []
-    index: i64 @ 0
+    colons: [i64] @= []
+    index: i64 @= 0
 
     while index < cs.len()
         if cs[index] == ":"
@@ -273,7 +273,7 @@ function written_here(s: source.Source, file: str) -> bool
 function header_spelling(stderr: str, tag: str) -> Spelling?
     as_parameter = "passing 'struct " + tag + " *' to parameter of type '"
     as_result = "__builtin_types_compatible_p(" + tag + ", struct " + tag + ")"
-    seen: bool @ false
+    seen: bool @= false
 
     for row in ffi_lookup.lines(text: stderr)
         if ffi_lookup.has(text: row, needle: as_result)
@@ -300,7 +300,7 @@ function header_spelling(stderr: str, tag: str) -> Spelling?
 
 # A type spelling without `const ` in front and ` *` behind.
 function bare(spelled: str) -> str
-    out: str @ spelled
+    out: str @= spelled
 
     if begins(text: out, prefix: "const ")
         out @ out.chars().slice(from: 6, to: out.chars().len()).join("")
@@ -389,7 +389,7 @@ test "where clang showed no spelling, the header's answer to the typedef questio
     )
     line = "t.hero:3:61: error: incomplete definition of type 'struct only_tagg'"
     invented = line + "\nt.hero:3:49: note: forward declaration of 'struct only_tagg'\n"
-    answers: {str: str} @ {}
+    answers: {str: str} @= {}
     answers["only_tagg"] @ "neither"
     misspelled = unknown_tag(p.s, p.decls, line: line, stderr: invented, types: answers).must().notes[0]
     assert ffi_lookup.has(text: misspelled, needle: "MISSPELLED")

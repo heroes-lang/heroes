@@ -80,10 +80,10 @@ function planned(t: toolchain.Toolchain, under: compiling.Compiling, p: containe
 # at every write; and every probe shares one memo of the headers' digests,
 # so a header two lists include is hashed once.
 function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], plans: [unit_plan.Plan], package_words: {str: [str]}, by_header: {str: [str]}) -> [Probing]
-    keys_seen: {str: i64} @ {}
-    lists: [[str]] @ []
-    packages: [[str]] @ []
-    group_of: [i64] @ []
+    keys_seen: {str: i64} @= {}
+    lists: [[str]] @= []
+    packages: [[str]] @= []
+    group_of: [i64] @= []
 
     # A header list's packages are those of the groups naming its headers
     # (`emit/header_packages.hero`, defect 572), so one list is one set of
@@ -97,15 +97,15 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
             packages @ packages.push(header_packages.of(by_header, listed: plan.headers))
         group_of @ group_of.push(keys_seen[key].must())
 
-    out: [Probing] @ []
-    memo: {str: str} @ {}
-    group: i64 @ 0
+    out: [Probing] @= []
+    memo: {str: str} @= {}
+    group: i64 @= 0
 
     for headers in lists
-        modules: [str] @ []
-        kept: {i64: bool} @ {}
-        records: {i64: bool} @ {}
-        at: i64 @ 0
+        modules: [str] @= []
+        kept: {i64: bool} @= {}
+        records: {i64: bool} @= {}
+        at: i64 @= 0
 
         for plan in plans
             if group_of[at] == group
@@ -120,7 +120,7 @@ function probings_of(t: toolchain.Toolchain, under: compiling.Compiling, p: cont
 
         program = members.tu_program(p, keep: sort(keys_of(kept)))
         unasked: compiling.Probe? = fail(code: "none", msg: "nothing to ask of these headers")
-        probe: compiling.Probe? @ unasked
+        probe: compiling.Probe? @= unasked
 
         words = compiling.Compiling(
             level: under.level,
@@ -180,13 +180,13 @@ record Checked
 # answers about what each `@` parameter points at gathered into `answered`.
 function check_all(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probings: [Probing], @answered: [pointee_ask.Answered]) -> Checked
     none: [str] = []
-    unread: ()? @ ok()
-    unread_modules: [str] @ none
+    unread: ()? @= ok()
+    unread_modules: [str] @= none
     answered @ []
 
     for one in probings
         if !one.probe.is_err()
-            these: [pointee_ask.Answered] @ []
+            these: [pointee_ask.Answered] @= []
             checked = pointee.check(t, one.program, c, s, decls, answered: @these, probe: one.probe.must())
 
             for answer in these
@@ -211,7 +211,7 @@ function check_all(t: toolchain.Toolchain, p: containers.Program, c: state.Check
 # Every module of the program, the modules a refusal no one unit made is
 # asked of (a link's).
 function every_module(probings: [Probing]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in probings
         out @ strings.with_all(list: out, more: one.modules)
@@ -220,10 +220,10 @@ function every_module(probings: [Probing]) -> [str]
 
 # The probings that hold any of `modules`.
 function holding(probings: [Probing], modules: [str]) -> [Probing]
-    out: [Probing] @ []
+    out: [Probing] @= []
 
     for one in probings
-        found: bool @ false
+        found: bool @= false
 
         for module in one.modules
             for wanted in modules
@@ -237,7 +237,7 @@ function holding(probings: [Probing], modules: [str]) -> [Probing]
 
 # Every probe's digests of the headers it read, for a round's memo.
 function digests_of(probings: [Probing]) -> {str: str}
-    out: {str: str} @ {}
+    out: {str: str} @= {}
 
     for one in probings
         if !one.probe.is_err()

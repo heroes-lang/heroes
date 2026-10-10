@@ -53,8 +53,8 @@ function escaped(code: i64) -> str
 
 function lower_hex(code: i64) -> str
     digits = "0123456789abcdef"
-    out: [str] @ []
-    shift: i64 @ 20
+    out: [str] @= []
+    shift: i64 @= 20
 
     while shift >= 0
         d = code >> shift & 15
@@ -81,7 +81,7 @@ function lower_hex(code: i64) -> str
 # changed the program's bytes and still compiled.
 function raw_carriage_return(@l: state.LexState, at: i64, ctx: escape.Quoted)
     span = token.Span(start: at, end: at + 1)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "raw_carriage_return",
         message: "a carriage return written as itself inside " + escape.ctx_word(ctx) + " — it is invisible on screen, so the next reader deletes it by retyping the line",
         span: span

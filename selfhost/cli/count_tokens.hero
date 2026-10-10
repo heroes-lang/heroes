@@ -59,8 +59,8 @@ function input_tokens(answer: str) -> i64?
     if at.is_err()
         return fail(code: "no_count", msg: "the answer carries no `input_tokens`: " + answer)
     from = at.must() + key.len()
-    end: i64 @ from
-    value: i64 @ 0
+    end: i64 @= from
+    value: i64 @= 0
 
     while end < answer.len() && answer[end] >= 48 && answer[end] <= 57
         value @ value * 10 + to_i64(answer[end]).must() - 48

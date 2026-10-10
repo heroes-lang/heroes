@@ -31,8 +31,8 @@ extern "hero_os.h"
     function hero_exe_path_shown(@status: i64, @marks: i64) -> str
 
 function itself() -> str
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     return hero_exe_path_shown(status: @status, marks: @marks)
 
 function main()
@@ -46,7 +46,7 @@ function main()
     hero_run_arg(word: program)
     hero_run_arg(word: "child")
     hero_run_limit(seconds: 2)
-    status: i64 @ 0
+    status: i64 @= 0
     code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
     hero_run_reset()
     print("a child that stopped itself was waited on until its watchdog ended it: ", code)

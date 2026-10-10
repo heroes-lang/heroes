@@ -72,7 +72,7 @@ function extern_callee(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], call
 function argument_position(a: ast.Ast, r: resolved.Resolved, call: i64, arg: i64) -> i64?
     match a.exprs[call].kind
         .call cl =>
-            i: i64 @ 0
+            i: i64 @= 0
 
             for one in cl.args
                 if one.value == arg
@@ -85,7 +85,7 @@ function argument_position(a: ast.Ast, r: resolved.Resolved, call: i64, arg: i64
 
             if !qualified && m.receiver == arg
                 return ok(0)
-            i: i64 @ 1
+            i: i64 @= 1
 
             if qualified
                 i @ 0
@@ -136,7 +136,7 @@ function landing_of(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [
             if position.must() >= fd.value.params.len()
                 return fail(code: "none", msg: "past the signature, which arity refuses")
             landed = fd.value.params[position.must()]
-            count: str? @ fail(code: "none", msg: "uncounted")
+            count: str? @= fail(code: "none", msg: "uncounted")
 
             if !landed.counted_by.is_err()
                 count @ ok(source.span_text(s, landed.counted_by.must()))
@@ -185,8 +185,8 @@ function landed_on_a_header(@c: state.Checker, a: ast.Ast, r: resolved.Resolved,
 
     if landed.lent
         return
-    lend: str @ "`.cstr()`"
-    count: str @ ""
+    lend: str @= "`.cstr()`"
+    count: str @= ""
 
     if field
         lend @ "`.ptr()`"
@@ -201,9 +201,9 @@ test "the landing: a counted parameter is quiet, an uncounted one is named, an u
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    landings: [str] @ []
-    kept: [str] @ []
-    at: i64 @ 0
+    landings: [str] @= []
+    kept: [str] @= []
+    at: i64 @= 0
 
     while at < p.tree.exprs.len()
         match p.tree.exprs[at].kind

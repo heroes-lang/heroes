@@ -95,7 +95,7 @@ constant STANDARD_USED: [str]
 function around(lines: [str], bound: {str: bool}) -> [str]
     if lines.len() == 0
         return lines
-    out: [str] @ strings.with_all(list: header_region.opening(), more: header_state.SAVED)
+    out: [str] @= strings.with_all(list: header_region.opening(), more: header_state.SAVED)
     out @ out.push(OPEN_LINE)
 
     for line in lines
@@ -130,13 +130,13 @@ function around(lines: [str], bound: {str: bool}) -> [str]
 # library's of `hero_os.h` among them, is no group's: its names keep the
 # runtime's meaning, whatever a group defines.
 function bound_names(s: source.Source, decls: [ast.Decl]) -> {str: bool}
-    out: {str: bool} @ {}
+    out: {str: bool} @= {}
 
     for decl in decls
         header = header_of(decl)
 
         if !header.is_err() && !emit_externs.is_own(emit_externs.unquoted(s, span: header.must()))
-            spans: [token.Span] @ [decl.name]
+            spans: [token.Span] @= [decl.name]
 
             match decl.kind
                 .function_decl fd =>
@@ -163,7 +163,7 @@ function bound_names(s: source.Source, decls: [ast.Decl]) -> {str: bool}
 
 # Every identifier of `text` into `out`: a releaser set's names, one each.
 function words_into(@out: {str: bool}, text: str)
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if starts_word(text[i])
@@ -199,7 +199,7 @@ function in_word(b: u8) -> bool
 # back after it, and none are nothing.
 test "the groups' includes stand between the guard's two, a bound name of the list pushed again"
     none: [str] = []
-    bound: {str: bool} @ {}
+    bound: {str: bool} @= {}
     assert around(none, bound: bound).len() == 0
     bound["INT64_C"] @ true
     bound["LIMIT"] @ true
@@ -226,12 +226,12 @@ test "the runtime's guard files hold the list, the open saving and the close giv
 # Every word the runtime's headers write is in the list, so a runtime macro's
 # expansion is guarded too; a word the runtime gains is named here.
 test "the list holds every word the runtime's headers write"
-    listed: {str: bool} @ {}
+    listed: {str: bool} @= {}
 
     for name in guarded_names.names()
         listed[name] @ true
 
-    missing: [str] @ []
+    missing: [str] @= []
 
     for path in ["runtime/heroes_runtime.h", "runtime/hero_os.h"]
         for word in sort(keys(used(read_file(path).must())))
@@ -269,7 +269,7 @@ test "the headers read before the groups are clang's own two, and the library's 
 # macro of `<stdint.h>` or `<math.h>` an emitter module writes is named here,
 # owed its guard and its definition after the groups.
 test "the unit's own C writes ten macros of the library's standard headers, each guarded and defined again"
-    listed: {str: bool} @ {}
+    listed: {str: bool} @= {}
 
     for name in guarded_names.names()
         listed[name] @ true
@@ -283,7 +283,7 @@ test "the unit's own C writes ten macros of the library's standard headers, each
     for name in guarded_names.left()
         assert listed[name].is_err()
 
-    written: [str] @ []
+    written: [str] @= []
     files = process.files_under("selfhost/emit").must().push("selfhost/emit.hero")
 
     for path in files
@@ -321,16 +321,16 @@ test "the names a program's groups write are left to their header"
 # Every identifier inside a string literal of `text`'s code, its comments
 # left out: what an emitter module writes into C.
 function quoted_words(text: str) -> {str: bool}
-    out: {str: bool} @ {}
+    out: {str: bool} @= {}
     n = text.len()
-    i: i64 @ 0
-    line_start: bool @ true
+    i: i64 @= 0
+    line_start: bool @= true
 
     while i < n
         b = text[i]
 
         if line_start
-            at: i64 @ i
+            at: i64 @= i
 
             while at < n && text[at] == 32
                 at @ at + 1
@@ -358,10 +358,10 @@ function quoted_words(text: str) -> {str: bool}
 
 # The names of a guard file's `#pragma <word>("...")` lines, in order.
 function pragmas(text: str, word: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     prefix = "#pragma " + word + "(\""
-    start: i64 @ 0
-    i: i64 @ 0
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i <= text.len()
         if i == text.len() || text[i] == 10
@@ -376,14 +376,14 @@ function pragmas(text: str, word: str) -> [str]
 
 # The targets of a header's `#include` lines, as written, in order.
 function includes_of(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i <= text.len()
         if i == text.len() || text[i] == 10
             line = text.slice(from: start, to: i)
-            at: i64 @ 0
+            at: i64 @= 0
 
             while at < line.len() && line[at] == 32
                 at @ at + 1
@@ -401,7 +401,7 @@ function includes_of(text: str) -> [str]
 function holds_at(text: str, at: i64, word: str) -> bool
     if at + word.len() > text.len()
         return false
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < word.len()
         if text[at + k] != word[k]
@@ -414,9 +414,9 @@ function holds_at(text: str, at: i64, word: str) -> bool
 # literal and a comment passed over, a number's letters too, and what C
 # reserves for the implementation, and `defined`, left out.
 function used(text: str) -> {str: bool}
-    out: {str: bool} @ {}
+    out: {str: bool} @= {}
     n = text.len()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < n
         b = text[i]

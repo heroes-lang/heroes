@@ -22,9 +22,9 @@ function take_docs(@c: cursor.Cursor, text: str, decl: token.Span) -> [token.Spa
     # `wanted` is how many lines above it the next doc comment must sit, so
     # the run is 1, 2, 3 … and nothing here needs a line number at all.
     decl_col = text_lines.column_of(text, decl.start)
-    wanted: i64 @ 1
-    docs: [token.Span] @ []
-    i: i64 @ c.comments.len() - 1
+    wanted: i64 @= 1
+    docs: [token.Span] @= []
+    i: i64 @= c.comments.len() - 1
 
     while i >= 0
         s = c.comments[i]
@@ -51,8 +51,8 @@ function take_docs(@c: cursor.Cursor, text: str, decl: token.Span) -> [token.Spa
     return reversed(docs)
 
 function reversed(spans: [token.Span]) -> [token.Span]
-    out: [token.Span] @ []
-    i: i64 @ spans.len() - 1
+    out: [token.Span] @= []
+    i: i64 @= spans.len() - 1
 
     while i >= 0
         out @ out.push(spans[i])
@@ -68,7 +68,7 @@ test "a doc comment is the run directly above, in the same column"
         token.Token(kind: .kw_function, span: token.Span(start: 12, end: 20))
         token.Token(kind: .eof, span: token.Span(start: 24, end: 24))
     ]
-    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c: cursor.Cursor @= cursor.new_cursor(tokens)
     docs = take_docs(@c, text, token.Span(start: 12, end: 20))
     assert docs.len() == 2
     assert cursor.slice_of(text, docs[0]) == "# one"
@@ -85,7 +85,7 @@ test "a section heading ends the run rather than documenting the declaration"
         token.Token(kind: .kw_function, span: token.Span(start: 17, end: 25))
         token.Token(kind: .eof, span: token.Span(start: 29, end: 29))
     ]
-    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c: cursor.Cursor @= cursor.new_cursor(tokens)
     docs = take_docs(@c, text, token.Span(start: 17, end: 25))
     assert docs.len() == 1
     assert cursor.slice_of(text, docs[0]) == "# doc"

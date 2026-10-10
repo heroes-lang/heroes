@@ -51,8 +51,8 @@ function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
         module: module,
         question: question
     )
-    out: diag.Diagnostic @ d
-    notes: [str] @ []
+    out: diag.Diagnostic @= d
+    notes: [str] @= []
 
     for note in d.notes
         if !strings.starts_with(text: note, prefix: ffi_declared.UNKNOWN)

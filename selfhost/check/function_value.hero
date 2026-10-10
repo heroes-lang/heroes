@@ -57,7 +57,7 @@ use check/generics as check_generics
 function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], decl: i64) -> i64
     match decls[decl].kind
         .function_decl fd =>
-            lowered: [i64] @ []
+            lowered: [i64] @= []
 
             for p in fd.value.params
                 # §4.19: a marked `@` cell is a `str?` on this side of the
@@ -114,7 +114,7 @@ function generic(decls: [ast.Decl], decl: i64) -> bool
 
 # The type parameters a function declares, as written; none for anything else.
 function letters_of(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     match decls[decl].kind
         .function_decl fd =>
@@ -177,7 +177,7 @@ function refused_argument(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
 # letters; a poisoned one is a mistake told already.
 function instance(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, expected: i64) -> i64
     span = a.exprs[id].span
-    decl: i64 @ 0
+    decl: i64 @= 0
 
     match r.uses[id]
         .top t                                    => decl @ t.at
@@ -187,7 +187,7 @@ function instance(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
         return state.error_ty_of(c)
     letters = letters_of(s, decls, decl: decl)
     signature = signature_of(@c, a, r, s, decls, decl: decl)
-    bindings: [i64?] @ []
+    bindings: [i64?] @= []
 
     for _ in letters
         bindings @ bindings.push(fail(code: "unbound", msg: "no context named it yet"))
@@ -196,13 +196,13 @@ function instance(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
 
     if table.poisoned(c.out.types, expected)
         return state.error_ty_of(c)
-    bound: [i64] @ []
+    bound: [i64] @= []
 
     for b in bindings
         if !b.is_err()
             bound @ bound.push(b.must())
 
-    shown: str @ render.render_ty(c.out.types, s, decls, signature, letters)
+    shown: str @= render.render_ty(c.out.types, s, decls, signature, letters)
 
     if bound.len() == letters.len()
         got = instance_type(@c, s, decls, decl: decl, signature: signature, bindings: bindings)
@@ -229,7 +229,7 @@ function instance(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
 function instance_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, signature: i64, bindings: [i64?]) -> i64
     match table.get(c.out.types, signature)
         .function_ty f =>
-            params: [i64] @ []
+            params: [i64] @= []
 
             for p in table.params_of(c.out.types, f.params)
                 params @ params.push(check_generics.substitute(@c, p, bindings))
@@ -256,13 +256,13 @@ function instance_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], d
 # with nothing to apply, as the call's is: which type is the author's.
 function unbound(name: str, letters: [str], signature: str, span: token.Span) -> diag.Diagnostic
     listed = spoken(letters)
-    are: str @ "is"
-    they: str @ "it"
+    are: str @= "is"
+    they: str @= "it"
 
     if letters.len() > 1
         are @ "are"
         they @ "they"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cannot_infer",
         message: "nothing here says what " + listed + " of `" + name + "` " + are + ": a generic function used as a value takes its types from the type the context asks for, and this position asks for none",
         span: span
@@ -276,19 +276,19 @@ function unbound(name: str, letters: [str], signature: str, span: token.Span) ->
 # it asks for, and which of the callee's letters no other argument and no
 # context says; the fix gives the name its type first and passes that.
 function unbound_argument(name: str, letters: [str], signature: str, asked: Asked, wanted: str, span: token.Span) -> diag.Diagnostic
-    are: str @ "is"
+    are: str @= "is"
 
     if letters.len() > 1
         are @ "are"
-    message: str @ "nothing here says what " + spoken(letters) + " of `" + name + "` " + are + ": a generic function used as a value takes its types from the type its position asks for, and `" + asked.parameter + "` of `" + asked.callee + "` asks for `" + wanted + "`"
+    message: str @= "nothing here says what " + spoken(letters) + " of `" + name + "` " + are + ": a generic function used as a value takes its types from the type its position asks for, and `" + asked.parameter + "` of `" + asked.callee + "` asks for `" + wanted + "`"
 
     if asked.unsettled.len() > 0
-        theirs: str @ "is"
+        theirs: str @= "is"
 
         if asked.unsettled.len() > 1
             theirs @ "are"
         message @ message + ", where no other argument and no context says what " + spoken(asked.unsettled) + " of `" + asked.callee + "` " + theirs
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
     d.fixes @ d.fixes.push(
         diag.Fix(title: "give it its type first, `v: " + signature + " = " + name + "` with a type written for " + spoken(letters) + ", and pass `v`", replacement: "", span: span, certainty: .guess)
     )
@@ -296,7 +296,7 @@ function unbound_argument(name: str, letters: [str], signature: str, asked: Aske
 
 # `A`, `A` and `B`, `A`, `B` and `C`: the letters as a sentence names them.
 function spoken(letters: [str]) -> str
-    quoted: [str] @ []
+    quoted: [str] @= []
 
     for l in letters
         quoted @ quoted.push("`" + l + "`")

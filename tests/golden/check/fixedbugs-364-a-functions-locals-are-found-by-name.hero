@@ -54,7 +54,7 @@ function over_a_parameter(n: i64) -> i64
     return n
 
 function loops(xs: [i64]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
     for x in xs
         total @ total + x
     for x in xs

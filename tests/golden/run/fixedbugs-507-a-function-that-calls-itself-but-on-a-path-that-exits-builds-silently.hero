@@ -33,7 +33,7 @@ function in_an_arm_with_an_else(n: i64) -> i64
     return in_an_arm_with_an_else(next(n))
 
 function in_a_loop(n: i64) -> i64
-    i: i64 @ n
+    i: i64 @= n
 
     while i < 10
         if i > 3

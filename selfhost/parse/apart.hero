@@ -80,16 +80,16 @@ record Item
 # in the order the parser said the rest, and the second by its offset.
 function weigh(@c: cursor.Cursor, @lexed: lexer.LexOutput, apart: lexer.LexOutput, text: str)
     lines = seams.lines_of(c.tokens, lexed: lexed)
-    froms: [i64] @ []
+    froms: [i64] @= []
 
     for line in lines
         froms @ froms.push(line.from)
 
     r = readings.readings(c, lines: lines, froms: froms, apart: apart, text: text)
     low = below.lines_below(lines, froms: froms, r: r, apart: apart, text: text, root_end: c.root_end)
-    items: [Item] @ []
-    next: i64 @ 0
-    i: i64 @ 0
+    items: [Item] @= []
+    next: i64 @= 0
+    i: i64 @= 0
 
     while i <= c.diagnostics.len()
         while next < c.held.len() && c.held[next].at == i
@@ -100,7 +100,7 @@ function weigh(@c: cursor.Cursor, @lexed: lexer.LexOutput, apart: lexer.LexOutpu
             d = c.diagnostics[i]
             at = seams.line_at(lines, froms: froms, at: d.span.start)
             alone = at >= 0 && join_alone(lines[at], d: d, r: r, low: low)
-            cause: token.Span @ d.span
+            cause: token.Span @= d.span
 
             if alone
                 cause @ seams.cause_of(lines[at], at: d.span.start)
@@ -108,8 +108,8 @@ function weigh(@c: cursor.Cursor, @lexed: lexer.LexOutput, apart: lexer.LexOutpu
         i @ i + 1
 
     added = apart_items(lines, froms: froms, r: r, low: low)
-    kept: [diag.Diagnostic] @ []
-    held: [diag.Held] @ []
+    kept: [diag.Diagnostic] @= []
+    held: [diag.Held] @= []
 
     for item in merged(items: items, added: added)
         if item.said
@@ -138,7 +138,7 @@ function weigh(@c: cursor.Cursor, @lexed: lexer.LexOutput, apart: lexer.LexOutpu
 # the `print`.
 function apart_items(lines: [seams.Line], froms: [i64], r: readings.Readings, low: below.Below) -> [Item]
     chosen = low.chosen
-    found: [diag.Diagnostic] @ []
+    found: [diag.Diagnostic] @= []
 
     for d in r.other.diagnostics
         at = seams.line_at(lines, froms: froms, at: d.span.start)
@@ -154,7 +154,7 @@ function apart_items(lines: [seams.Line], froms: [i64], r: readings.Readings, lo
         if region >= 0 && chosen.read_as[region] == .body && below.own(lines[at], d: d, r: r)
             found @ found.push(d)
 
-    items: [Item] @ []
+    items: [Item] @= []
 
     for d in readings.sorted(found).diagnostics
         line = lines[seams.line_at(lines, froms: froms, at: d.span.start)]
@@ -171,7 +171,7 @@ function apart_items(lines: [seams.Line], froms: [i64], r: readings.Readings, lo
 # 3, `.claude/rules/diagnostics-and-goldens.md`: a `certain` fix repairs the
 # defect it names).
 function joins_guessed(@lexed: lexer.LexOutput, lines: [seams.Line], froms: [i64], held: [diag.Held])
-    refused: [bool] @ []
+    refused: [bool] @= []
 
     for line in lines
         _ = line
@@ -189,8 +189,8 @@ function joins_guessed(@lexed: lexer.LexOutput, lines: [seams.Line], froms: [i64
             if at > 0 && where >= lines[at - 1].to && where <= lines[at - 1].after
                 refused[at - 1] @ true
 
-    statements: [i64] @ []
-    i: i64 @ 0
+    statements: [i64] @= []
+    i: i64 @= 0
 
     for line in lines
         if refused[i]
@@ -199,7 +199,7 @@ function joins_guessed(@lexed: lexer.LexOutput, lines: [seams.Line], froms: [i64
                     statements @ statements.push(one)
         i @ i + 1
 
-    next: i64 @ 0
+    next: i64 @= 0
 
     for b in lexed.breaks
         while next < statements.len() && statements[next] < b.statement
@@ -208,7 +208,7 @@ function joins_guessed(@lexed: lexer.LexOutput, lines: [seams.Line], froms: [i64
         # The break's join, by its title (`join_fix`): a deletion offered
         # beside it or in its place is no join, and a line the lexer ended
         # rather than refused (`diagnostic` -1) has neither.
-        at: i64 @ -1
+        at: i64 @= -1
 
         if b.diagnostic >= 0
             at @ join_fix.index(lexed.diagnostics[b.diagnostic])
@@ -219,8 +219,8 @@ function joins_guessed(@lexed: lexer.LexOutput, lines: [seams.Line], froms: [i64
 # `items` with each of `added`, which ascend, before the first item that stands
 # after it in the text.
 function merged(items: [Item], added: [Item]) -> [Item]
-    out: [Item] @ []
-    next: i64 @ 0
+    out: [Item] @= []
+    next: i64 @= 0
 
     for item in items
         while next < added.len() && added[next].entry.diagnostic.span.start < item.entry.diagnostic.span.start
@@ -303,19 +303,19 @@ test "a head alone over a line at its margin is told its body once, and the line
 
     for shape in shapes
         text = shape[0]
-        lexed: lexer.LexOutput @ lexer.lex_one(text)
-        c: cursor.Cursor @ cursor.lexed_cursor(
+        lexed: lexer.LexOutput @= lexer.lex_one(text)
+        c: cursor.Cursor @= cursor.lexed_cursor(
             tokens: lexed.tokens,
             root_end: -1,
             closes: lexed.closes,
             swaps: lexed.swaps
         )
-        a: ast.Ast @ ast.new_ast()
-        decls: [ast.Decl] @ []
-        uses: [ast.Use] @ []
+        a: ast.Ast @= ast.new_ast()
+        decls: [ast.Decl] @= []
+        uses: [ast.Use] @= []
         decl.file(@c, @a, @decls, @uses, text)
         weigh(@c, lexed: @lexed, apart: lexer.lex_apart(text), text: text)
-        codes: [str] @ []
+        codes: [str] @= []
 
         for d in which_arm.placed(c, lexed: lexed.diagnostics).normal
             codes @ codes.push(d.code)

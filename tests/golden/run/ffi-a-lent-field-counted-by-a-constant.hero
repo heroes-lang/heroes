@@ -28,7 +28,7 @@ extern "ffi-a-lent-field-counted-by-a-constant.h"
     function sl_fill(p: ptr counted_by n lent, n: i64)
 
 function main()
-    s: Sl @ sl_make()
+    s: Sl @= sl_make()
 
     # A literal, a header constant, and arithmetic over one.
     print(sum_n(p: s.name.ptr(), n: 8))

@@ -59,12 +59,12 @@ function eval_a(i: i64, j: i64) -> f64
 
 # `A · u`, a row at a time.
 function a_times(u: [f64]) -> [f64]
-    out: [f64] @ []
-    i: i64 @ 0
+    out: [f64] @= []
+    i: i64 @= 0
 
     while i < u.len()
-        total: f64 @ 0.0
-        j: i64 @ 0
+        total: f64 @= 0.0
+        j: i64 @= 0
 
         while j < u.len()
             total @ total + eval_a(i: i, j: j) * u[j]
@@ -78,12 +78,12 @@ function a_times(u: [f64]) -> [f64]
 # `Aᵀ · u` — the same walk with the indices swapped, which is the whole
 # difference between a matrix and its transpose when nothing is stored.
 function at_times(u: [f64]) -> [f64]
-    out: [f64] @ []
-    i: i64 @ 0
+    out: [f64] @= []
+    i: i64 @= 0
 
     while i < u.len()
-        total: f64 @ 0.0
-        j: i64 @ 0
+        total: f64 @= 0.0
+        j: i64 @= 0
 
         while j < u.len()
             total @ total + eval_a(i: j, j: i) * u[j]
@@ -100,8 +100,8 @@ function ata_times(u: [f64]) -> [f64]
 
 # A vector of ones, which is where the power iteration starts.
 function ones(n: i64) -> [f64]
-    out: [f64] @ []
-    at: i64 @ 0
+    out: [f64] @= []
+    at: i64 @= 0
 
     while at < n
         out @ out.push(1.0)
@@ -114,18 +114,18 @@ function ones(n: i64) -> [f64]
 # semantics make natural (spec § Types) — and the arithmetic is identical
 # to the reference's, which mutates two arrays through pointers.
 function spectral_norm(n: i64) -> f64
-    u: [f64] @ ones(n)
-    v: [f64] @ ones(n)
-    round: i64 @ 0
+    u: [f64] @= ones(n)
+    v: [f64] @= ones(n)
+    round: i64 @= 0
 
     while round < ROUNDS
         v @ ata_times(u)
         u @ ata_times(v)
         round @ round + 1
 
-    vbv: f64 @ 0.0
-    vv: f64 @ 0.0
-    at: i64 @ 0
+    vbv: f64 @= 0.0
+    vv: f64 @= 0.0
+    at: i64 @= 0
 
     while at < n
         vbv @ vbv + u[at] * v[at]
@@ -146,7 +146,7 @@ constant BILLION: f64
 
 function nine_places(v: f64) -> str
     negative = v < 0.0
-    size: f64 @ v
+    size: f64 @= v
 
     if negative
         size @ -v
@@ -161,7 +161,7 @@ function nine_places(v: f64) -> str
 
 # Nine digits, leading zeroes kept.
 function padded(rest: i64) -> str
-    digits: str @ rest.to_str()
+    digits: str @= rest.to_str()
 
     while digits.len() < 9
         digits @ "0" + digits
@@ -188,10 +188,10 @@ test "the entries walk the anti-diagonals, and every one of them is positive"
     # The pattern the description names: the matrix is filled diagonal by
     # diagonal, so every entry on one anti-diagonal is bigger than every
     # entry on the next.
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < 20
-        j: i64 @ 0
+        j: i64 @= 0
 
         while j < 20
             assert eval_a(i: i, j: j) > 0.0
@@ -207,10 +207,10 @@ test "the transpose really is the transpose"
     # Not an identity this program could get away with assuming: `at_times`
     # is a separate loop with the indices swapped, so a typo in one of them
     # would leave both plausible.
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < 12
-        j: i64 @ 0
+        j: i64 @= 0
 
         while j < 12
             assert eval_a(i: i, j: j) == eval_a(i: j, j: i) || i != j
@@ -228,18 +228,18 @@ test "the iteration converges rather than wandering"
     # says ten rounds is enough, and a program whose arithmetic drifted
     # would fail here while still printing something plausible.
     ten = spectral_norm(40)
-    u: [f64] @ ones(40)
-    v: [f64] @ ones(40)
-    round: i64 @ 0
+    u: [f64] @= ones(40)
+    v: [f64] @= ones(40)
+    round: i64 @= 0
 
     while round < ROUNDS + 2
         v @ ata_times(u)
         u @ ata_times(v)
         round @ round + 1
 
-    vbv: f64 @ 0.0
-    vv: f64 @ 0.0
-    at: i64 @ 0
+    vbv: f64 @= 0.0
+    vv: f64 @= 0.0
+    at: i64 @= 0
 
     while at < 40
         vbv @ vbv + u[at] * v[at]

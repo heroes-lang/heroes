@@ -50,7 +50,7 @@ function after_a_case(text: str, dot: i64) -> str
 function range_end(text: str, dot: i64) -> i64
     if dot + 1 >= text.len() || text[dot + 1] != '.'
         return -1
-    i: i64 @ dot + 1
+    i: i64 @= dot + 1
 
     while i < text.len() && text[i] == '.'
         i @ i + 1
@@ -63,14 +63,14 @@ function range_end(text: str, dot: i64) -> i64
 # before the `.` of `1.5.2`, or empty: digits, a point, digits, written
 # against the `.`.
 function number_before(text: str, dot: i64) -> str
-    i: i64 @ dot
+    i: i64 @= dot
 
     while i > 0 && (bytes.is_digit(text[i - 1]) || text[i - 1] == '_')
         i @ i - 1
 
     if i == dot || i < 2 || text[i - 1] != '.' || !bytes.is_digit(text[i - 2])
         return ""
-    start: i64 @ i - 1
+    start: i64 @= i - 1
 
     while start > 0 && (bytes.is_digit(text[start - 1]) || text[start - 1] == '_')
         start @ start - 1

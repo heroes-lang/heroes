@@ -19,7 +19,7 @@ use spec_text
 use strings
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     built_binary_runs(@r, scratch: scratch, compiler: compiler)
     a_retired_flag_leaves_the_file_alone(@r, scratch: scratch, compiler: compiler)
     the_split_program_prints_what_the_whole_one_prints(@r, scratch: scratch, compiler: compiler)
@@ -276,7 +276,7 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
             detail: "  `test " + path + "`: " + shell.refusal(said)
         )
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     if said.must().code != 1
         wrong @ wrong.push("    a failing test is exit 1, and it exited " + said.must().code.to_str())
@@ -364,7 +364,7 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
         if !lacks.is_err()
             report.keep_skip(@r, label: "special/the spec's example", detail: "  " + lacks.must())
             return
-        detail: str @ "  the spec's own example did not open a database: exit " + said.must().code.to_str() + ", stdout `" + said.must().out + "`\n" + said.must().err
+        detail: str @= "  the spec's own example did not open a database: exit " + said.must().code.to_str() + ", stdout `" + said.must().out + "`\n" + said.must().err
         why = absence.refused(lacks)
 
         if why.len() > 0
@@ -416,7 +416,7 @@ function specs_program() -> str?
     # it, and this check exists to prove the example is a program and not a
     # picture.
     return ok(
-        block + "\nfunction main()\n    db: Db @ nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
+        block + "\nfunction main()\n    db: Db @= nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
     )
 
 function unread(got: str?) -> str
@@ -558,7 +558,7 @@ test "fixedbugs: the spec's example is never a pass for a missing library"
         at: at
     )
     assert !write_file(path: scratch + "/spec-ffi.said", text: elsewhere).is_err()
-    unbound: report.Report @ report.empty()
+    unbound: report.Report @= report.empty()
     the_specs_own_example_opens_a_database(@unbound, scratch: scratch, compiler: compiler.must())
     assert unbound.passed == 0
     assert unbound.failed == 1
@@ -566,7 +566,7 @@ test "fixedbugs: the spec's example is never a pass for a missing library"
     assert strings.contains(text: unbound.failures[0], needle: "binds no such header")
     its_own = absence.missing_header_said(header: "sqlite3.h", tail: absence.HEADER_LOOKED, at: at)
     assert !write_file(path: scratch + "/spec-ffi.said", text: its_own).is_err()
-    claimed: report.Report @ report.empty()
+    claimed: report.Report @= report.empty()
     the_specs_own_example_opens_a_database(@claimed, scratch: scratch, compiler: compiler.must())
     assert claimed.passed == 0
     assert claimed.failed + claimed.skips.len() == 1
@@ -643,7 +643,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     if built(scratch: scratch, compiler: compiler, source: dir + "/checked.hero", binary: dir + "/checked").is_err() || built(scratch: scratch, compiler: compiler, source: dir + "/plain.hero", binary: dir + "/plain").is_err()
         report.keep_failure(@r, label: label, detail: "  the two programs did not build")
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     # **THIS CASE CANNOT BE BUILT WITH AN ARGUMENT LIST, AND THAT IS A
     # FACT ABOUT THE LANGUAGE RATHER THAN A GAP IN THE RUNTIME.** The
@@ -726,7 +726,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
 # ARRAY would have thrown the good arguments away with the bad one, which
 # is the failure this case exists to prove does not happen.
 constant CHECKED_PROGRAM: str
-    "function main()\n    n: i64 @ 0\n    for one in args_checked()\n        n @ n + 1\n        if one.is_err()\n            print(n.to_str() + \" not text\")\n        else\n            print(n.to_str() + \" \" + one.must())\n"
+    "function main()\n    n: i64 @= 0\n    for one in args_checked()\n        n @ n + 1\n        if one.is_err()\n            print(n.to_str() + \" not text\")\n        else\n            print(n.to_str() + \" \" + one.must())\n"
 
 constant PLAIN_PROGRAM: str
     "function main()\n    print(len(args()))\n"

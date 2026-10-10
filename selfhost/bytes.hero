@@ -36,7 +36,7 @@ test "the classes answer the scanner's questions"
 # in the file. A `str` is well-formed UTF-8 (spec § 3), so the lead byte says
 # how many follow; the end of the text bounds it either way.
 function char_at(text: str, at: i64) -> str
-    width: i64 @ 1
+    width: i64 @= 1
     lead = text[at]
 
     if lead >= 240
@@ -46,7 +46,7 @@ function char_at(text: str, at: i64) -> str
     else if lead >= 192
         width @ 2
 
-    last: i64 @ at + width
+    last: i64 @= at + width
 
     if last > text.len()
         last @ text.len()
@@ -65,7 +65,7 @@ function char_at(text: str, at: i64) -> str
 function bytes_at(text: str, at: i64, needle: str) -> bool
     if at < 0 || at + needle.len() > text.len()
         return false
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < needle.len()
         if text[at + k] != needle[k]
@@ -82,7 +82,7 @@ function bytes_at(text: str, at: i64, needle: str) -> bool
 function rfind(text: str, needle: str) -> i64?
     if needle.len() == 0 || needle.len() > text.len()
         return fail(code: "absent", msg: "nothing to find")
-    at: i64 @ text.len() - needle.len()
+    at: i64 @= text.len() - needle.len()
 
     while at >= 0
         if bytes_at(text: text, at: at, needle: needle)
@@ -108,7 +108,7 @@ test "a needle is found by its bytes at any offset, a character's middle include
     # Every offset of text above ASCII is asked, the middles of `é`, `€` and
     # `😀` among them, and only the true one answers yes.
     text = "é€😀.x("
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at <= text.len()
         assert bytes_at(text: text, at: at, needle: ".x(") == (at == 9)

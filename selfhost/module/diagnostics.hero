@@ -48,7 +48,7 @@ function use_shadows_a_declaration(name: str, declared_at: str, span: token.Span
 # The fix stays a **`guess`** for panel 101 R4's reason: either name may give
 # way, and §8 makes `certain` machine-applicable.
 function local_shadows_a_use(name: str, module: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "shadowed_binding",
         message: "`" + name + "` is what this file calls the module `" + module + "`, so a local may not take it — shadowing is an error here",
         span: span
@@ -60,7 +60,7 @@ function local_shadows_a_use(name: str, module: str, span: token.Span) -> diag.D
 
 # A `use` nothing read. The unused rule, reached the same way.
 function unused_use(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unused_binding",
         message: "`use " + name + "` is never used — nothing in this file names anything from `" + name + "`",
         span: span
@@ -83,7 +83,7 @@ function unused_use(name: str, span: token.Span) -> diag.Diagnostic
 # and the program it writes says nothing new (defect 220: `calc.totl(2.5)`
 # became `calc.total`, which takes `[i64]`, refused anew).
 function not_in_module(module: str, qualifier: str, name: str, near: [str], span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unknown_in_module",
         message: "module `" + module + "` declares nothing called `" + name + "`",
         span: span
@@ -126,7 +126,7 @@ function not_in_module(module: str, qualifier: str, name: str, near: [str], span
 # would name a line the author never wrote.
 function needs_qualifying(name: str, qualifier: str, module: str, span: token.Span) -> diag.Diagnostic
     binding = qualifier
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "needs_qualifying",
         message: "`" + name + "` is declared in module `" + module + "`, and a name from another module is always written qualified — `" + binding + "." + name + "`",
         span: span
@@ -147,7 +147,7 @@ function needs_qualifying(name: str, qualifier: str, module: str, span: token.Sp
 # other site asks `resolved.binding_in`, because every other site has a file.
 function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnostic
     binding = module_names.binding_of(module)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "needs_qualifying",
         message: "`" + name + "` is declared in module `" + module + "`, which this file does not name — add `use " + module + "` at the top and write `" + binding + "." + name + "`",
         span: span
@@ -166,7 +166,7 @@ function needs_a_use(name: str, module: str, span: token.Span) -> diag.Diagnosti
 # fires on the `use` line that made the name ambiguous, in the file being
 # edited, and its repair is one clause: `as`.
 function module_binding_taken(binding: str, first: str, second: str, has_alias: bool, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "module_binding_taken",
         message: "this file already calls `" + first + "` by the name `" + binding + "`, so `" + second + "` cannot have it too — a file may not bind one name twice",
         span: span
@@ -190,7 +190,7 @@ function module_binding_taken(binding: str, first: str, second: str, has_alias: 
     # panel 101's compiler-engineer on the build that had shipped hours
     # earlier; it was invisible because §8 makes CI apply only `certain` fixes,
     # and this one is a guess.
-    replacement: str @ binding + " as " + suggested
+    replacement: str @= binding + " as " + suggested
 
     if has_alias
         replacement @ suggested
@@ -216,9 +216,9 @@ function module_binding_taken(binding: str, first: str, second: str, has_alias: 
 # `build` on `f"é {x}"` (defect 110), so it is not kept where nothing but
 # today's lexer stands between it and a character above ASCII.
 function suggestion(module: str) -> str
-    parts: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    parts: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < module.len()
         if module[i] == '/'
@@ -243,7 +243,7 @@ function suggestion(module: str) -> str
 # does. The library arm names the route a reader can actually take: its
 # externs are all wrapped, and the wrapper is the Heroes function.
 function extern_across_modules(name: str, module: str, is_library: bool, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "extern_across_modules",
         message: "`" + name + "` is an `extern` of module `" + module + "` — an extern is never reachable across a module boundary, because only `" + module + "` carries the header that checks it",
         span: span
@@ -272,7 +272,7 @@ function module_is_not_a_value(name: str, span: token.Span) -> diag.Diagnostic
 
 # `geom.f` where `geom` is not a module this file names.
 function not_a_module(name: str, known: [str], span: token.Span) -> diag.Diagnostic
-    message: str @ "`" + name + "` is not a module this file names, and not a value either"
+    message: str @= "`" + name + "` is not a module this file names, and not a value either"
 
     if known.len() > 0
         message @ message + " — it names " + listed(known)
@@ -285,8 +285,8 @@ function listed(items: [str]) -> str
 
     if items.len() == 1
         return "`" + items[0] + "`"
-    head: [str] @ []
-    i: i64 @ 0
+    head: [str] @= []
+    i: i64 @= 0
 
     while i < items.len() - 1
         head @ head.push("`" + items[i] + "`")

@@ -82,7 +82,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    106
+    107
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -96,7 +96,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    7622
+    7634
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -146,7 +146,7 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    10021
+    10029
 
 constant REAL_MODEL: str
     "claude-opus-5"
@@ -193,7 +193,7 @@ constant DELTA_GATE: i64
 # rather than reassuring. `selfhost/cli/digest.hero` computes it and
 # `measure` refuses to give a verdict when it disagrees.
 constant SPEC_DIGEST: str
-    "64810ed51e4c21e6"
+    "3d6c4ce40daf8012"
 
 # The operating contract, weighed on the same scale as the language.
 #
@@ -350,7 +350,7 @@ constant SECTIONS: [str]
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     text = read_file(SPEC)
 
     if text.is_err()
@@ -501,7 +501,7 @@ function ledger(@r: report.Report, scratch: str, compiler: str)
 # (`| value | when | …`) and the `|---|` separator are excluded because their
 # first cell is not a number, not because they are counted and subtracted.
 function ledger_figures(text: str) -> [i64]
-    found: [i64] @ []
+    found: [i64] @= []
 
     for row in strings.lines(text)
         if !strings.starts_with(text: row, prefix: "| ")
@@ -640,12 +640,12 @@ function spendable(@r: report.Report, scratch: str, compiler: str)
 function named(@r: report.Report, spec: str, reserved: [str])
     if !floors.sound(@r, label: "spec/names", found: reserved.len(), floor: LEAST_BUILTINS, what: "built-ins read out of " + BUILTIN_SOURCE)
         return
-    mentioned: {str: bool} @ {}
+    mentioned: {str: bool} @= {}
 
     for word in spec_text.identifiers_in_code(spec)
         mentioned[word] @ true
 
-    missing: [str] @ []
+    missing: [str] @= []
 
     for name in reserved
         if mentioned[name].is_err()
@@ -688,12 +688,12 @@ function offered(@r: report.Report, spec: str, reserved: [str])
             detail: "  the built-in list no longer ends at `range` — the sentence delimiter found the wrong full stop, and every name after it is now unchecked: " + names.join(" ")
         )
         return
-    known: {str: bool} @ {}
+    known: {str: bool} @= {}
 
     for name in reserved
         known[name] @ true
 
-    absent: [str] @ []
+    absent: [str] @= []
 
     for name in names
         if known[name].is_err()
@@ -712,12 +712,12 @@ function offered(@r: report.Report, spec: str, reserved: [str])
 function rejected(@r: report.Report, spec: str, refused: [str])
     if !floors.sound(@r, label: "spec/rejected", found: refused.len(), floor: LEAST_FOREIGN, what: "refused words read out of " + KEYWORD_SOURCE)
         return
-    mentioned: {str: bool} @ {}
+    mentioned: {str: bool} @= {}
 
     for word in spec_text.identifiers_in_code(spec)
         mentioned[word] @ true
 
-    found: [str] @ []
+    found: [str] @= []
 
     for word in refused
         if !mentioned[word].is_err()
@@ -749,8 +749,8 @@ function inventory(@r: report.Report, spec: str)
 # The headings are the thirteen `SECTIONS` names, numbered from 1, in order,
 # and nothing else opens with `## `.
 function shape(@r: report.Report, spec: str)
-    found: [str] @ []
-    in_fence: bool @ false
+    found: [str] @= []
+    in_fence: bool @= false
 
     for line in strings.lines(spec)
         # A `## ` inside a fence is a Heroes section heading (spec § 1), not
@@ -772,8 +772,8 @@ function shape(@r: report.Report, spec: str)
 
 # `1. Files and layout` … `13. FFI`: what the headings read after `## `.
 function numbered_sections() -> [str]
-    out: [str] @ []
-    i: i64 @ 0
+    out: [str] @= []
+    i: i64 @= 0
 
     while i < SECTIONS.len()
         out @ out.push(to_str(i + 1) + ". " + SECTIONS[i])
@@ -789,7 +789,7 @@ function numbered_sections() -> [str]
 # one citation shape no instrument can see (CL-037), which is why
 # `.claude/rules/spec-shape.md` asks for the section instead.
 function anchors(@r: report.Report)
-    offenders: [str] @ []
+    offenders: [str] @= []
     other = other_headings()
 
     for dir in ["selfhost", "tests"]
@@ -809,7 +809,7 @@ function anchors(@r: report.Report)
 
             if body.is_err()
                 continue
-            number: i64 @ 1
+            number: i64 @= 1
 
             for line in strings.lines(body.must())
                 for bad in unknown_anchors(line, other: other)
@@ -838,8 +838,8 @@ function anchors(@r: report.Report)
 # headings passes through `other`, read from those files once by `anchors`.
 function unknown_anchors(line: str, other: [str]) -> [str]
     cs = line.chars()
-    out: [str] @ []
-    i: i64 @ 0
+    out: [str] @= []
+    i: i64 @= 0
 
     while i + 1 < cs.len()
         if cs[i] == "§" && cs[i + 1] == " "
@@ -862,7 +862,7 @@ function unknown_anchors(line: str, other: [str]) -> [str]
 # `inspect` and `respect` do not.
 function mentions_spec(before: str) -> bool
     cs = before.chars()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i + 4 <= cs.len()
         if cs.slice(from: i, to: i + 4).join("") == "spec"
@@ -888,7 +888,7 @@ function names_another_document(before: str) -> bool
 # spec's own file is the exception: `spec/heroes-spec.md` § 13 is judged as
 # `spec § 13` is.
 function names_a_markdown_file(before: str) -> bool
-    name: str @ strings.trimmed(before)
+    name: str @= strings.trimmed(before)
 
     while strings.ends_with(text: name, suffix: "`") || strings.ends_with(text: name, suffix: "\"")
         name @ name.slice(from: 0, to: name.len() - 1)
@@ -940,7 +940,7 @@ constant MISSING_DOCUMENT: str
     "a document this suite could not open: "
 
 function other_headings() -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for path in ["CLAUDE.md", "docs/ROADMAP.md", "site/README.md"]
         text = read_file(path)
@@ -974,8 +974,8 @@ function names_a_section(rest: [str]) -> bool
         return false
 
     if spec_text.is_digit(rest[0])
-        digits: [str] @ []
-        i: i64 @ 0
+        digits: [str] @= []
+        i: i64 @= 0
 
         while i < rest.len() && spec_text.is_digit(rest[i])
             digits @ digits.push(rest[i])
@@ -1020,7 +1020,7 @@ function names_in_table(path: str, marker: str) -> [str]
     if text.is_err()
         none: [str] = []
         return none
-    found: [str] @ []
+    found: [str] @= []
 
     for row in strings.lines(text.must())
         at = strings.index_of(text: row, needle: marker)
@@ -1063,13 +1063,13 @@ function words_in_arms(path: str, marker: str) -> [str]
     if text.is_err()
         none: [str] = []
         return none
-    found: [str] @ []
-    previous: str @ ""
+    found: [str] @= []
+    previous: str @= ""
 
     for row in strings.lines(text.must())
         at = strings.index_of(text: row, needle: marker)
-        source_row: str @ row
-        arrow: i64 @ -1
+        source_row: str @= row
+        arrow: i64 @= -1
 
         if !at.is_err()
             arrow @ at.must()
@@ -1088,7 +1088,7 @@ function words_in_arms(path: str, marker: str) -> [str]
         if arrow < 0
             continue
         head = source_row.slice(from: 0, to: arrow)
-        cursor: i64 @ 0
+        cursor: i64 @= 0
 
         while cursor < head.len()
             quoted = first_quoted(text: head, from: cursor)
@@ -1106,14 +1106,14 @@ function words_in_arms(path: str, marker: str) -> [str]
 
 # The text of the first `"…"` at or after `from`.
 function first_quoted(text: str, from: i64) -> str?
-    opens: i64 @ from
+    opens: i64 @= from
 
     while opens < text.len() && text[opens] != 34
         opens @ opens + 1
 
     if opens >= text.len()
         return fail(code: "unquoted", msg: "no quoted text here")
-    closes: i64 @ opens + 1
+    closes: i64 @= opens + 1
 
     while closes < text.len() && text[closes] != 34
         closes @ closes + 1
@@ -1125,8 +1125,8 @@ function first_quoted(text: str, from: i64) -> str?
 # How far past `from` the first quoted run ends — the cursor step that keeps
 # `words_in_arms` moving forward.
 function advance_past(text: str, from: i64) -> i64
-    i: i64 @ from
-    seen: i64 @ 0
+    i: i64 @= from
+    seen: i64 @= 0
 
     while i < text.len() && seen < 2
         if text[i] == 34
@@ -1250,7 +1250,7 @@ function braces(@r: report.Report, scratch: str, compiler: str)
         return
     pairs = regex_alternatives(text: text.must(), marker: "constant.character.escape.brace.hero")
     lone = regex_alternatives(text: text.must(), marker: "invalid.illegal.lone-brace.hero")
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     for brace in ["{", "}"]
         doubled = brace + brace
@@ -1370,8 +1370,8 @@ function escapes_painted(@r: report.Report, scratch: str, compiler: str, spec: s
 
     if !floors.sound(@r, label: "spec/colouring", found: spelled.len(), floor: LEAST_SPEC_ESCAPES, what: "escapes named by the code spans of " + SPEC + "'s § 2")
         return
-    said: [Lexed] @ []
-    probes: [str] @ spelled
+    said: [Lexed] @= []
+    probes: [str] @= spelled
     others = other_spellings(spelled)
 
     for other in others
@@ -1441,7 +1441,7 @@ function only_named(err: str) -> bool
 # other spellings of its escape by code, `said` the lexer's verdict on each
 # probe in each literal.
 function disagreements(grammar: str, spelled: [str], others: [str], said: [Lexed]) -> [str]?
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     for literal in LITERALS
         rules = textmate.rules_of(grammar: grammar, name: literal)?
@@ -1449,8 +1449,8 @@ function disagreements(grammar: str, spelled: [str], others: [str], said: [Lexed
         for one in said
             if one.literal != literal
                 continue
-            subject: str @ one.escape + "z\")"
-            whole: i64 @ one.escape.chars().len()
+            subject: str @= one.escape + "z\")"
+            whole: i64 @= one.escape.chars().len()
 
             if literal == "char"
                 subject @ "'" + one.escape + "')"
@@ -1472,7 +1472,7 @@ function disagreements(grammar: str, spelled: [str], others: [str], said: [Lexed
                 )
 
     for escape in spelled
-        read_somewhere: bool @ false
+        read_somewhere: bool @= false
 
         for one in said
             if one.escape == escape && one.read
@@ -1505,14 +1505,14 @@ function literal_said(literal: str) -> str
 # Every code span of § 2 that opens with a backslash, each once, in the order
 # met: the escapes the spec names, read where it names them.
 function spec_escapes(spec: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
     at = spec_text.section_named(text: spec, name: "Literals")
 
     if at.is_err()
         return out
     rows = strings.lines(spec.slice(from: at.must(), to: spec.len()))
-    kept_rows: [str] @ []
-    in_fence: bool @ false
+    kept_rows: [str] @= []
+    in_fence: bool @= false
 
     for row in rows.slice(from: 1, to: rows.len())
         if strings.starts_with(text: row, prefix: "## ")
@@ -1526,7 +1526,7 @@ function spec_escapes(spec: str) -> [str]
             kept_rows @ kept_rows.push(row)
 
     pieces = strings.split_text(text: kept_rows.join("\n"), separator: "`")
-    i: i64 @ 1
+    i: i64 @= 1
 
     while i < pieces.len()
         span = pieces[i]
@@ -1541,13 +1541,13 @@ function spec_escapes(spec: str) -> [str]
 # capitals, after a zero, none, without the closing brace, without either
 # brace, and run to seven. None of them is one of `spelled`.
 function other_spellings(spelled: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for escape in spelled
         if !strings.starts_with(text: escape, prefix: "\\u{") || !strings.ends_with(text: escape, suffix: "}")
             continue
         digits = escape.slice(from: 3, to: escape.len() - 1)
-        made: [str] @ [
+        made: [str] @= [
             "\\u{" + capitals(digits) + "}"
             "\\u{0" + digits + "}"
             "\\u{}"
@@ -1565,7 +1565,7 @@ function other_spellings(spelled: [str]) -> [str]
     return out
 
 function capitals(text: str) -> str
-    out: str @ ""
+    out: str @= ""
 
     for c in text.chars()
         at = strings.index_of(text: "abcdef", needle: c)
@@ -1589,7 +1589,7 @@ function lexed_escape(scratch: str, compiler: str, literal: str, escape: str) ->
 function escape_program(literal: str, escape: str) -> str
     if literal == "char"
         return "function main()\n    print('" + escape + "')\n"
-    opener: str @ "\""
+    opener: str @= "\""
 
     if literal == "interpolated"
         opener @ "f\""
@@ -1599,7 +1599,7 @@ function escape_program(literal: str, escape: str) -> str
 # literal texts joined by `|`, each with its regular expression's backslashes
 # taken off: `\\{\\{|\\}\\}` in the JSON reads as `{{` and `}}`.
 function regex_alternatives(text: str, marker: str) -> [str]
-    found: [str] @ []
+    found: [str] @= []
     source = json_unescape(match_value(text: text, marker: marker))
     opens = strings.index_of(text: source, needle: "\"")
 
@@ -1613,7 +1613,7 @@ function regex_alternatives(text: str, marker: str) -> [str]
 
     for one in strings.split_text(text: rest.slice(from: 0, to: closes.must()), separator: "|")
         cs = one.chars()
-        plain: str @ ""
+        plain: str @= ""
 
         for c in cs
             if c != "\\"
@@ -1640,12 +1640,12 @@ function escapes_agree(@r: report.Report, want: [str], got: [str], where: str)
 
 # What is in `want` and not in `got`.
 function absent_from(want: [str], got: [str]) -> [str]
-    here: {str: bool} @ {}
+    here: {str: bool} @= {}
 
     for one in got
         here[one] @ true
 
-    out: [str] @ []
+    out: [str] @= []
 
     for one in want
         if here[one].is_err()
@@ -1677,7 +1677,7 @@ function compiler_escapes(path: str) -> [str]
         none: [str] = []
         return none
     marker = "if after_backslash == \""
-    found: [str] @ []
+    found: [str] @= []
 
     for row in strings.lines(text.must())
         at = strings.index_of(text: row, needle: marker)
@@ -1719,8 +1719,8 @@ function compiler_escapes(path: str) -> [str]
 # own table would be comparing two notations rather than two claims.
 function json_unescape(text: str) -> str
     cs = text.chars()
-    out: str @ ""
-    i: i64 @ 0
+    out: str @= ""
+    i: i64 @= 0
 
     while i < cs.len()
         if cs[i] == "\\" && i + 1 < cs.len()
@@ -1739,7 +1739,7 @@ function json_unescape(text: str) -> str
 # the check could not see the quotes SWAPPED between the two classes, which the
 # review demonstrated passing at 20/0.
 function for_context(want: [str], delimiter: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in want
         if one == "\"" || one == "'"
@@ -1757,7 +1757,7 @@ function compiler_keywords(path: str) -> [str]
     if text.is_err()
         none: [str] = []
         return none
-    found: [str] @ []
+    found: [str] @= []
 
     for row in strings.lines(text.must())
         at = strings.index_of(text: row, needle: "=> ok(.kw_")
@@ -1799,8 +1799,8 @@ function compiler_keywords(path: str) -> [str]
 # rule with no `match` cannot borrow the previous rule's.
 function match_value(text: str, marker: str) -> str
     rows = strings.lines(text)
-    at: i64 @ -1
-    i: i64 @ 0
+    at: i64 @= -1
+    i: i64 @= 0
 
     while i < rows.len()
         if !strings.index_of(text: rows[i], needle: marker).is_err()
@@ -1812,7 +1812,7 @@ function match_value(text: str, marker: str) -> str
     if at < 0
         return ""
     key = "\"match\":"
-    back: i64 @ at
+    back: i64 @= at
 
     while back >= 0
         found = strings.index_of(text: rows[back], needle: key)
@@ -1833,7 +1833,7 @@ function match_value(text: str, marker: str) -> str
 # A doubled backslash in the JSON is one backslash in the regular expression, so
 # `\\\\` reads as one member and not two.
 function class_members(text: str, marker: str) -> [str]
-    found: [str] @ []
+    found: [str] @= []
     source = json_unescape(match_value(text: text, marker: marker))
     opens = strings.index_of(text: source, needle: "[")
 
@@ -1845,7 +1845,7 @@ function class_members(text: str, marker: str) -> [str]
     if closes.is_err()
         return found
     cs = rest.slice(from: 0, to: closes.must()).chars()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < cs.len()
         one = cs[i]
@@ -2046,7 +2046,7 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
 
     # The lexer's side is checked too: a spelled escape no literal reads, and a
     # second spelling one does, are each a sentence.
-    nowhere: [Lexed] @ []
+    nowhere: [Lexed] @= []
 
     for one in said
         if one.escape == "\\t"
@@ -2070,8 +2070,8 @@ test "the grammar paints an escape exactly where the lexer reads one, and each w
 # string literals only as a character a string writes otherwise, and a
 # surrogate and a code past Unicode as no escape.
 function said_by_section_two(spelled: [str]) -> [Lexed]
-    out: [Lexed] @ []
-    probes: [str] @ spelled
+    out: [Lexed] @= []
+    probes: [str] @= spelled
 
     for other in other_spellings(spelled)
         probes @ probes.push(other)
@@ -2081,8 +2081,8 @@ function said_by_section_two(spelled: [str]) -> [Lexed]
 
     for escape in probes
         for literal in LITERALS
-            read: bool @ false
-            by_code: bool @ false
+            read: bool @= false
+            by_code: bool @= false
 
             if escape == "\\n" || escape == "\\t" || escape == "\\r" || escape == "\\\\"
                 read @ true
@@ -2132,11 +2132,11 @@ test "the two sides of the colouring check are read out of the compiler's own so
     assert absent_from(want: ["elif"], got: reserved).len() == 1
 
 test "one side missing is reported in the direction it is missing"
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     escapes_agree(@r, want: ["n", "t", "r"], got: ["n", "t"], where: "a string")
     assert r.failed == 1
     assert r.passed == 0
-    ok_report: report.Report @ report.empty()
+    ok_report: report.Report @= report.empty()
     escapes_agree(@ok_report, want: ["n", "t", "r"], got: ["r", "n", "t"], where: "a string")
     assert ok_report.passed == 1
 
@@ -2197,7 +2197,7 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
 
     # A document that mentions no built-in at all: every reserved name is
     # missing, and the failure says so by name.
-    silent: report.Report @ report.empty()
+    silent: report.Report @= report.empty()
     named(@silent, spec: "a document with prose and no code spans", reserved: reserved)
     assert silent.failed == 1
     assert strings.contains(text: silent.failures[0], needle: "never mentions them")
@@ -2205,20 +2205,20 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
     # A document offering a name the compiler does not have. It trips the
     # truncation guard first, which is itself the check: a list that reads as
     # one name is a delimiter that broke.
-    invented: report.Report @ report.empty()
+    invented: report.Report @= report.empty()
     offered(@invented, spec: "Built-ins: `nosuchbuiltin` .", reserved: reserved)
     assert invented.failed == 1
     assert strings.contains(text: invented.failures[0], needle: "truncated")
 
     # A refused word inside a code span — `fn` is the case that happened.
-    foreign: report.Report @ report.empty()
+    foreign: report.Report @= report.empty()
     rejected(@foreign, spec: "the type is `(fn(A) -> B)` here", refused: refused)
     assert foreign.failed == 1
     assert strings.contains(text: foreign.failures[0], needle: "prescribed fix")
 
     # A letter above ASCII: the pre-tokeniser's premise dying, which is the
     # one thing this inventory exists to catch.
-    letter: report.Report @ report.empty()
+    letter: report.Report @= report.empty()
     inventory(@letter, spec: "a naïve sentence")
     assert letter.failed == 1
     assert strings.contains(text: letter.failures[0], needle: "is it a")
@@ -2226,7 +2226,7 @@ test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail 
     # And the floors: an extractor that reads the wrong shape reads nothing,
     # and two checks would then pass vacuously.
     empty_list: [str] = []
-    starved: report.Report @ report.empty()
+    starved: report.Report @= report.empty()
     named(@starved, spec: "`print`", reserved: empty_list)
     rejected(@starved, spec: "`print`", refused: empty_list)
     assert starved.failed == 2
@@ -2245,7 +2245,7 @@ test "the drift check fires when the two instruments disagree on the sum"
     stale = scratch + "/stub-stale.sh"
     assert !write_file(path: stale, text: "#!/bin/sh\necho '" + line + " is 1 and the check goes red at 4096'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", stale]).is_err()
-    drifted: report.Report @ report.empty()
+    drifted: report.Report @= report.empty()
     spendable(@drifted, scratch: scratch, compiler: stale)
     assert drifted.failed == 1
 
@@ -2267,7 +2267,7 @@ test "the drift check fires when the two instruments disagree on the sum"
     # it. The first version of this stub did exactly that.
     assert !write_file(path: good, text: "#!/bin/sh\necho '" + line + " " + want + "'\necho \"" + owns + "\"\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", good]).is_err()
-    agreed: report.Report @ report.empty()
+    agreed: report.Report @= report.empty()
     spendable(@agreed, scratch: scratch, compiler: good)
     assert agreed.failed == 0
     assert !shell.remove_tree(scratch).is_err()
@@ -2288,7 +2288,7 @@ test "the record has to be printed by the tool, and still be called the binding 
     speaks = scratch + "/stub-real.sh"
     assert !write_file(path: speaks, text: "#!/bin/sh\necho '" + row + " — the binding number'\necho '" + contract_row + " — the binding number'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", speaks]).is_err()
-    agrees: report.Report @ report.empty()
+    agrees: report.Report @= report.empty()
     recorded(@agrees, scratch: scratch, compiler: speaks)
     assert agrees.failed == 0
 
@@ -2298,7 +2298,7 @@ test "the record has to be printed by the tool, and still be called the binding 
     older = scratch + "/stub-older.sh"
     assert !write_file(path: older, text: "#!/bin/sh\necho '  real                 5094   " + REAL_MODEL + ", " + REAL_TAKEN + " — the binding number'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", older]).is_err()
-    drifted: report.Report @ report.empty()
+    drifted: report.Report @= report.empty()
     recorded(@drifted, scratch: scratch, compiler: older)
     assert drifted.failed == 1
     assert strings.contains(text: drifted.failures[0], needle: "one printed and one checked")
@@ -2309,7 +2309,7 @@ test "the record has to be printed by the tool, and still be called the binding 
     mislabelled = scratch + "/stub-label.sh"
     assert !write_file(path: mislabelled, text: "#!/bin/sh\necho '" + row + " — a lower bound, not the reader s tokeniser'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", mislabelled]).is_err()
-    trusted: report.Report @ report.empty()
+    trusted: report.Report @= report.empty()
     recorded(@trusted, scratch: scratch, compiler: mislabelled)
     assert trusted.failed == 1
     assert strings.contains(text: trusted.failures[0], needle: "cost 998 tokens")
@@ -2327,7 +2327,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     assert !write_file(path: fat, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            7000   a lower bound, not the reader s tokeniser'\necho '  real               9999   claude-opus-5, 2026-09-12 — the binding number'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", fat]).is_err()
 
-    over: report.Report @ report.empty()
+    over: report.Report @= report.empty()
     contract(@over, scratch: scratch, compiler: fat, ceiling: 5500)
     assert over.failed == 1
 
@@ -2339,7 +2339,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     # would never be noticed, because the gap it hides is exactly the one the
     # contract was already inside. 9999 is over, 7000 is not, so this one
     # assertion separates the two readings.
-    reads_real: report.Report @ report.empty()
+    reads_real: report.Report @= report.empty()
     contract(@reads_real, scratch: scratch, compiler: fat, ceiling: 9000)
     assert reads_real.failed == 1
     assert strings.contains(text: reads_real.failures[0], needle: "9999")
@@ -2349,7 +2349,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     vendored_only = scratch + "/stub-vendored.sh"
     assert !write_file(path: vendored_only, text: "#!/bin/sh\necho 'CLAUDE.md'\necho '  maximum            7000   a lower bound, not the reader s tokeniser'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", vendored_only]).is_err()
-    no_real: report.Report @ report.empty()
+    no_real: report.Report @= report.empty()
     contract(@no_real, scratch: scratch, compiler: vendored_only, ceiling: 9000)
     assert no_real.failed == 1
     assert strings.contains(text: no_real.failures[0], needle: "no `real` row")
@@ -2359,7 +2359,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     assert strings.contains(text: over.failures[0], needle: "docs/records/contract/case-law.md")
     assert strings.contains(text: over.failures[0], needle: ".claude/rules/")
 
-    under: report.Report @ report.empty()
+    under: report.Report @= report.empty()
     contract(@under, scratch: scratch, compiler: fat, ceiling: 10000)
     assert under.failed == 0
     assert under.passed == 1
@@ -2369,7 +2369,7 @@ test "the contract's ceiling fires, and a ceiling above it does not"
     mute = scratch + "/stub-silent.sh"
     assert !write_file(path: mute, text: "#!/bin/sh\necho 'no tables here'\n").is_err()
     assert !shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", mute]).is_err()
-    blind: report.Report @ report.empty()
+    blind: report.Report @= report.empty()
     contract(@blind, scratch: scratch, compiler: mute, ceiling: 10000)
     assert blind.failed == 1
     assert !shell.remove_tree(scratch).is_err()

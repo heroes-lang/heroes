@@ -9,8 +9,8 @@ extern "fixedbugs-396-buffers.h"
     function fill_cell(@buf: [u8] counted_by n lent, @n: i32) -> i64
 
 function main()
-    counts: [i32] @ [3, -1]
-    buf: [u8] @ []
+    counts: [i32] @= [3, -1]
+    buf: [u8] @= []
     print(fill_cell(@buf, @counts[0]), " ", buf.len(), " ", buf[2])
     print(fill_cell(@buf, @counts[1]))
     print("not reached")

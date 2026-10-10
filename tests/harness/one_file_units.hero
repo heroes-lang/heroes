@@ -46,7 +46,7 @@ function units_of(scratch: str, compiler: str, source: str, tag: str) -> [Unit]?
     if built.code != 0
         return fail(code: "unbuilt", msg: "`build " + source + "` exited " + built.code.to_str() + ":\n" + built.err)
     after = shell.list_directories(scratch: scratch, dir: "build")?
-    found: {str: Unit} @ {}
+    found: {str: Unit} @= {}
 
     for dir in after
         if before[dir].is_err() && strings.starts_with(text: strings.base_name(dir), prefix: "tu-")
@@ -62,7 +62,7 @@ function units_of(scratch: str, compiler: str, source: str, tag: str) -> [Unit]?
             code: "no_units",
             msg: "`build " + source + "` built, and no unit it compiled was found under build/, so nothing of it was asked"
         )
-    out: [Unit] @ []
+    out: [Unit] @= []
 
     # ORDER: by the unit's file name — the caller compares two emissions
     # unit by unit, and a map gives its keys in no order.
@@ -73,7 +73,7 @@ function units_of(scratch: str, compiler: str, source: str, tag: str) -> [Unit]?
 
 # The directories under `build/` now, as a set.
 function present(scratch: str) -> {str: bool}?
-    out: {str: bool} @ {}
+    out: {str: bool} @= {}
 
     if !shell.is_directory("build")
         return ok(out)
@@ -128,7 +128,7 @@ test "the units of a program whose one file is refused are found, alike twice (d
     two = units_of(scratch: scratch, compiler: compiler.must(), source: planted.must(), tag: "b")
     assert why_not(one) == ""
     assert why_not(two) == ""
-    names: [str] @ []
+    names: [str] @= []
 
     for unit in one.must()
         names @ names.push(unit.name)

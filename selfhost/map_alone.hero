@@ -50,14 +50,14 @@ function begins_a_value(tokens: [token.Token], before: i64, text: str, at: i64) 
 
     if !spaces(text, from: start, to: at) || margin % 4 != 0
         return false
-    last: i64 @ before - 1
+    last: i64 @= before - 1
 
     while last >= 0 && (tokens[last].kind == .comment || token.is_line_end(tokens[last].kind))
         last @ last - 1
 
     if last < 0
         return false
-    first: i64 @ last
+    first: i64 @= last
 
     while first > 0 && !token.is_line_end(tokens[first - 1].kind)
         first @ first - 1
@@ -79,9 +79,9 @@ function begins_a_value(tokens: [token.Token], before: i64, text: str, at: i64) 
 # one outside them or to a closer of a bracket it did not open, the map's
 # own `}` after its last entry.
 function entry_below(text: str, at: i64) -> bool
-    i: i64 @ code_below(text, at: at)
-    depth: i64 @ 0
-    colon: bool @ false
+    i: i64 @= code_below(text, at: at)
+    depth: i64 @= 0
+    colon: bool @= false
 
     while i < text.len() && !(text[i] == '\n' && depth == 0)
         b = text[i]
@@ -121,14 +121,14 @@ function compared(text: str, at: i64) -> bool
 # Where the first line below the one holding `at` that holds code begins its
 # code, past blank lines and lines of a comment alone.
 function code_below(text: str, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len()
         while i < text.len() && text[i] != '\n'
             i @ i + 1
 
         i @ i + 1
-        j: i64 @ i
+        j: i64 @= i
 
         while j < text.len() && (text[j] == ' ' || text[j] == '\t' || text[j] == '\r')
             j @ j + 1
@@ -143,7 +143,7 @@ function code_below(text: str, at: i64) -> i64
     return text.len()
 
 function line_start(text: str, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i > 0 && text[i - 1] != '\n'
         i @ i - 1
@@ -152,7 +152,7 @@ function line_start(text: str, at: i64) -> i64
 
 # Whether nothing but spaces stands from `from` up to `to`.
 function spaces(text: str, from: i64, to: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to
         if text[i] != ' '
@@ -167,7 +167,7 @@ test "a line below a lone brace is an entry where a colon stands outside its bra
     assert entry_below("{\n    \"ziggy\": 42\n", at: 0)
     assert entry_below("{\n    # a remark\n\n    ('a'  # c\n    ): 1}\n", at: 0)
     assert entry_below("{\n    Room::width: f(a: 1) == 2\n", at: 0)
-    assert !entry_below("{\n    x: i64 @ 0\n", at: 0)
+    assert !entry_below("{\n    x: i64 @= 0\n", at: 0)
     assert !entry_below("{\n    xs: [i64] = []\n", at: 0)
     assert !entry_below("{\n    print(a: 1)\n", at: 0)
     assert !entry_below("{\n    s = \"a: b\"\n", at: 0)

@@ -34,13 +34,13 @@ record Side
 # The diagnostic, on the string of the group whose header sorts first; `added`
 # are clang's other notes, already worded.
 function told(s: source.Source, one: Side, other: Side, message: str, added: [str]) -> diag.Diagnostic
-    first: Side @ one
-    second: Side @ other
+    first: Side @= one
+    second: Side @= other
 
     if sort([one.header, other.header])[0] != one.header
         first @ other
         second @ one
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_header_refused",
         message: "`" + first.header + "` and `" + second.header + "`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at " + at_line(first) + between(first) + " and " + at_line(second) + ": " + message,
         span: first.span
@@ -68,7 +68,7 @@ function told(s: source.Source, one: Side, other: Side, message: str, added: [st
 # rewrites a name the other declares, in one order. Told on the refused
 # group's string.
 function after(s: source.Source, refused: Side, earlier: token.Span, earlier_header: str, message: str, added: [str]) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_header_refused",
         message: "`" + refused.header + "`, the header this group names, compiles alone and not after `" + earlier_header + "`, the header another group names, where clang refuses it at " + at_line(refused) + ": " + message,
         span: refused.span

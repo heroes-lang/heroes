@@ -32,11 +32,11 @@ use parse/unclosed
 # constraints, never written at the call site (§4.12). Absent `<` means a
 # non-generic function.
 function generics(@c: cursor.Cursor, text: str) -> [token.Span]
-    names: [token.Span] @ []
+    names: [token.Span] @= []
 
     if !cursor.eat(@c, .lt)
         return names
-    reading: bool @ true
+    reading: bool @= true
 
     while reading
         if !cursor.at(c, .ident)
@@ -68,7 +68,7 @@ function generics(@c: cursor.Cursor, text: str) -> [token.Span]
 # `(a: i64, @l: Lex)` — always parenthesised, `()` when empty. `in_group` is
 # what lets `owned` be read after a parameter's type and nowhere else.
 function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [ast.Param]
-    out: [ast.Param] @ []
+    out: [ast.Param] @= []
     at = c.pos
 
     if !cursor.expect(@c, text: text, kind: .lparen, code: "expected_params", what: "`(` — a signature always has a parameter list, `()` when it takes nothing")
@@ -81,7 +81,7 @@ function params(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> [a
 
     if cursor.eat(@c, .rparen)
         return out
-    reading: bool @ true
+    reading: bool @= true
 
     while reading
         cursor.skip_terminators(@c)
@@ -203,8 +203,8 @@ function first_of(slot: token.Span?, got: token.Span?) -> token.Span?
 # checker's `one_mark_per_position`. `holder` names the position in the
 # message, the parameter or the result.
 function read_marks(@c: cursor.Cursor, text: str, in_group: bool, on_result: bool, holder: str) -> Marks
-    m: Marks @ no_marks()
-    reading: bool @ in_group
+    m: Marks @= no_marks()
+    reading: bool @= in_group
 
     while reading
         if !cursor.at(c, .ident)
@@ -212,7 +212,7 @@ function read_marks(@c: cursor.Cursor, text: str, in_group: bool, on_result: boo
             continue
         keyword = cursor.current_span(c)
         word = cursor.slice_of(text, keyword)
-        again: bool @ false
+        again: bool @= false
 
         if word == keywords.WORD_COUNTED_BY && !on_result
             again @ !m.counted_by.is_err()
@@ -277,14 +277,14 @@ test "generics are names and nothing else"
         token.made(.gt, start: 5, end: 6)
         token.made(.eof, start: 6, end: 6)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
+    c: cursor.Cursor @= cursor.new_cursor(stream)
     names = generics(@c, "<A, B>")
     assert names.len() == 2
     assert c.diagnostics.len() == 0
 
     # No `<` means no generics, and nothing is consumed.
     plain: [token.Token] = [token.made(.lparen, start: 0, end: 1), token.made(.eof, start: 1, end: 1)]
-    d: cursor.Cursor @ cursor.new_cursor(plain)
+    d: cursor.Cursor @= cursor.new_cursor(plain)
     assert generics(@d, "(").len() == 0
     assert cursor.current_kind(d) == .lparen
 
@@ -303,8 +303,8 @@ test "a signature is always parenthesised, and @ marks in-out"
         token.made(.rparen, start: 16, end: 17)
         token.made(.eof, start: 17, end: 17)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     out = params(@c, @a, "(a: i64, @l: Lex)", in_group: false)
     assert out.len() == 2
     assert !out[0].mutable
@@ -317,15 +317,15 @@ test "an empty parameter list is () and not nothing"
         token.made(.rparen, start: 1, end: 2)
         token.made(.eof, start: 2, end: 2)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(empty)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(empty)
+    a: ast.Ast @= ast.new_ast()
     assert params(@c, @a, "()", in_group: false).len() == 0
     assert c.diagnostics.len() == 0
 
     # A missing `(` says so rather than guessing.
     missing: [token.Token] = [token.made(.arrow, start: 0, end: 2), token.made(.eof, start: 2, end: 2)]
-    d: cursor.Cursor @ cursor.new_cursor(missing)
-    b: ast.Ast @ ast.new_ast()
+    d: cursor.Cursor @= cursor.new_cursor(missing)
+    b: ast.Ast @= ast.new_ast()
     _ = params(@d, @b, "->", in_group: false)
     assert d.diagnostics[0].code == "expected_params"
 
@@ -345,8 +345,8 @@ test "a signature may break across lines because the separator stays the comma"
         token.made(.rparen, start: 15, end: 16)
         token.made(.eof, start: 16, end: 16)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(stream)
-    a: ast.Ast @ ast.new_ast()
+    c: cursor.Cursor @= cursor.new_cursor(stream)
+    a: ast.Ast @= ast.new_ast()
     assert params(@c, @a, "(a: i64,\nb: i64)", in_group: false).len() == 2
     assert c.diagnostics.len() == 0
 
@@ -354,7 +354,7 @@ test "the words are read in the order the author wrote them"
     # `retains ob_put consumes` was a generic `)` error until 2026-09-25 while
     # `consumes retains ob_put` reached the checker: the order is not a rule.
     text = "retains ob_put consumes"
-    c: cursor.Cursor @ tokens_of(text)
+    c: cursor.Cursor @= tokens_of(text)
     m = read_marks(@c, text: text, in_group: true, on_result: false, holder: "`o`")
     assert m.consumes
     assert cursor.slice_of(text, m.retains.must()) == "ob_put"
@@ -363,7 +363,7 @@ test "the words are read in the order the author wrote them"
 
     # On a result, the clause before the mark it governs.
     result = "when 0 acquires ob_put"
-    d: cursor.Cursor @ tokens_of(result)
+    d: cursor.Cursor @= tokens_of(result)
     r = read_marks(@d, text: result, in_group: true, on_result: true, holder: "the result")
     assert cursor.slice_of(result, r.when.must()) == "0"
     assert cursor.slice_of(result, r.acquires.must()) == "ob_put"
@@ -371,13 +371,13 @@ test "the words are read in the order the author wrote them"
 
     # A parameter's word on a result is not read, and the loop stops there.
     stray = keywords.WORD_CONSUMES
-    e: cursor.Cursor @ tokens_of(stray)
+    e: cursor.Cursor @= tokens_of(stray)
     n = read_marks(@e, text: stray, in_group: true, on_result: true, holder: "the result")
     assert !n.consumes
     assert cursor.at(e, .ident)
 
     # Outside a group nothing is read, and the words stay names.
-    f: cursor.Cursor @ tokens_of(text)
+    f: cursor.Cursor @= tokens_of(text)
     o = read_marks(@f, text: text, in_group: false, on_result: false, holder: "`o`")
     assert !o.consumes && o.retains.is_err()
     assert cursor.at(f, .ident)
@@ -386,14 +386,14 @@ test "a word written twice is repeated_mark at the second, and the first is kept
     # Every word the position has, because the provoking case (`consumes
     # consumes`) is a witness and not the class: bare, named, freer, extent.
     for text in ["consumes consumes", "acquires a acquires b", "transfers a transfers b", "retains a retains b", "counted_by n counted_by m", "lent lent", "owned free owned free", "borrows borrows"]
-        c: cursor.Cursor @ tokens_of(text)
+        c: cursor.Cursor @= tokens_of(text)
         _ = read_marks(@c, text: text, in_group: true, on_result: false, holder: "`o`")
         assert c.diagnostics.len() == 1
         assert c.diagnostics[0].code == "repeated_mark"
         assert cursor.at(c, .terminator)
 
     text = "acquires a acquires b"
-    c: cursor.Cursor @ tokens_of(text)
+    c: cursor.Cursor @= tokens_of(text)
     m = read_marks(@c, text: text, in_group: true, on_result: false, holder: "`o`")
     assert cursor.slice_of(text, m.acquires.must()) == "a"
     assert c.diagnostics[0].span.start == 11
@@ -401,12 +401,12 @@ test "a word written twice is repeated_mark at the second, and the first is kept
     # On a result: the clause twice, and two DIFFERENT words with no
     # diagnostic here, since that pair is the checker's.
     twice = "when 0 when 1"
-    d: cursor.Cursor @ tokens_of(twice)
+    d: cursor.Cursor @= tokens_of(twice)
     r = read_marks(@d, text: twice, in_group: true, on_result: true, holder: "the result")
     assert cursor.slice_of(twice, r.when.must()) == "0"
     assert d.diagnostics[0].code == "repeated_mark"
     pair = "borrows acquires a"
-    e: cursor.Cursor @ tokens_of(pair)
+    e: cursor.Cursor @= tokens_of(pair)
     p = read_marks(@e, text: pair, in_group: true, on_result: true, holder: "the result")
     assert p.borrows && !p.acquires.is_err()
     assert e.diagnostics.len() == 0
@@ -415,7 +415,7 @@ test "the success clause after a parameter is refused and the `)` survives"
     # Finding 5 through the loop: `consumes` is kept, the clause is refused at
     # its word, and the reader stands on the `)` afterwards.
     text = "consumes when 0)"
-    c: cursor.Cursor @ tokens_of(text)
+    c: cursor.Cursor @= tokens_of(text)
     m = read_marks(@c, text: text, in_group: true, on_result: false, holder: "`o`")
     assert m.consumes
     assert c.diagnostics.len() == 1

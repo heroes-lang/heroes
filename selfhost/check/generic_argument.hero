@@ -61,12 +61,12 @@ function told_plainly(at: i64) -> Told
 # places, is dropped, and anything else said inside it is kept.
 function quiet(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, from: i64, id: i64)
     found = places(a, id)
-    kept: [diag.Diagnostic] @ []
-    k: i64 @ 0
+    kept: [diag.Diagnostic] @= []
+    k: i64 @= 0
 
     while k < c.out.diagnostics.len()
         d = c.out.diagnostics[k]
-        dropped: bool @ false
+        dropped: bool @= false
 
         if k >= from && d.code == "cannot_infer"
             for p in found
@@ -142,28 +142,28 @@ function told_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.
     span = a.exprs[id].span
     parameter = fd.params[told.at]
     found = places(a, id)
-    letters: [str] @ []
+    letters: [str] @= []
 
     for g in fd.generics
         letters @ letters.push(source.span_text(s, g))
 
     # The parameter's own type where its signature writes one the reader can
     # write too; `<type>` where it holds a type parameter of the callee.
-    written: str @ "<type>"
-    shown: str @ "<type>"
+    written: str @= "<type>"
+    shown: str @= "<type>"
     ty = state.written_type(c.out, parameter.ty)
 
     if !ty.is_err()
         written @ render.render_ty(c.out.types, s, decls, ty.must(), letters)
         shown @ written
-        n: i64 @ 0
+        n: i64 @= 0
 
         while n < letters.len()
             if check_generics.mentions(c, ty: ty.must(), at: n)
                 written @ "<type>"
             n @ n + 1
 
-    k: i64 @ from
+    k: i64 @= from
 
     while k < c.out.diagnostics.len()
         d = c.out.diagnostics[k]
@@ -205,8 +205,8 @@ record Place
 # the rule of its own position (a generic call's arguments by its own
 # `retell`).
 function places(a: ast.Ast, id: i64) -> [Place]
-    out: [Place] @ [Place(id: id, where: "")]
-    k: i64 @ 0
+    out: [Place] @= [Place(id: id, where: "")]
+    k: i64 @= 0
 
     while k < out.len()
         match a.exprs[out[k].id].kind
@@ -273,30 +273,30 @@ record Asked
 # the parameter's own type where the signature writes one, `<type>` where it
 # holds a type parameter.
 function argument_told(form: str, asked: Asked, written: str, text: str, span: token.Span, where: str) -> diag.Diagnostic
-    holder: str @ "`" + asked.parameter + "` of `" + asked.callee + "`"
-    pass: str @ "pass `v`"
-    whole: str @ "argument"
+    holder: str @= "`" + asked.parameter + "` of `" + asked.callee + "`"
+    pass: str @= "pass `v`"
+    whole: str @= "argument"
 
     if asked.told.dotted
         holder @ "the value written before `." + asked.callee + "(…)`, `" + asked.parameter + "`,"
         pass @ "call `v." + asked.callee + "(…)`"
         whole @ "value"
-    message: str @ "`" + form + "` takes its type from the type its position asks for, and " + holder + " asks for `" + asked.shown + "`"
+    message: str @= "`" + form + "` takes its type from the type its position asks for, and " + holder + " asks for `" + asked.shown + "`"
 
     if asked.told.unsettled.len() > 0
         message @ message + ": no other argument and no context says what " + spoken(asked.told.unsettled) + " " + are(asked.told.unsettled)
-    title: str @ "bind it first, `v: " + written + " = " + text + "`, and " + pass
+    title: str @= "bind it first, `v: " + written + " = " + text + "`, and " + pass
 
     if where != ""
         message @ message + ", and the literal written there takes its type from this " + where
         title @ "bind the " + whole + " first, `v: " + written + " = " + text + "`, and " + pass
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
     d.fixes @ d.fixes.push(diag.Fix(title: title, replacement: "", span: span, certainty: .guess))
     return d
 
 # `A`, `A` and `B`, `A`, `B` and `C`: the letters as a sentence names them.
 function spoken(letters: [str]) -> str
-    quoted: [str] @ []
+    quoted: [str] @= []
 
     for l in letters
         quoted @ quoted.push("`" + l + "`")
@@ -318,13 +318,13 @@ function none() -> [str]
 # written before the call's name gives none, for a form inside it that it
 # takes its type from this one, and the fix that binds the value first.
 function receiver_told(form: str, callee: str, written: str, text: str, span: token.Span, where: str) -> diag.Diagnostic
-    message: str @ "`" + form + "` takes its type from the type the context asks for, and the value written before `." + callee + "(…)` asks for none: its type is read first, to know what the call names"
-    title: str @ "bind it first, `v: " + written + " = " + text + "`, and call `v." + callee + "(…)`"
+    message: str @= "`" + form + "` takes its type from the type the context asks for, and the value written before `." + callee + "(…)` asks for none: its type is read first, to know what the call names"
+    title: str @= "bind it first, `v: " + written + " = " + text + "`, and call `v." + callee + "(…)`"
 
     if where != ""
         message @ message + ", and it takes its type from this " + where
         title @ "bind the value first, `v: " + written + " = " + text + "`, and call `v." + callee + "(…)`"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "cannot_infer", message: message, span: span)
     d.fixes @ d.fixes.push(diag.Fix(title: title, replacement: "", span: span, certainty: .guess))
     return d
 
@@ -411,7 +411,7 @@ test "a form inside the argument names the literal it gives its type to, and the
 
 test "the chain follows an array's first element and a map's first key and value, and stops at a call"
     p = parse.parse("function main()\n    print(g(x: [[ok(1)], [2]], m: {.a: [3]}, f: h(ok(4))))\n")
-    shown: [str] @ []
+    shown: [str] @= []
 
     for e in p.tree.exprs
         match e.kind

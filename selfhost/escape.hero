@@ -124,7 +124,7 @@ function letter_of(value: i64) -> str
 function brace_close(cs: [str], at: i64) -> i64
     if at + 3 >= cs.len() || cs[at + 1] != "u" || cs[at + 2] != "{"
         return -1
-    i: i64 @ at + 3
+    i: i64 @= at + 3
 
     while i < cs.len() && i - at - 3 <= 6 && digit(cs[i]) >= 0
         i @ i + 1
@@ -135,7 +135,7 @@ function brace_close(cs: [str], at: i64) -> i64
 
 # The code the hexadecimal digits `cs[from]` to `cs[to]` name.
 function code_of(cs: [str], from: i64, to: i64) -> i64
-    value: i64 @ 0
+    value: i64 @= 0
 
     for at in range(from: from, to: to)
         value @ value * 16 + digit(cs[at])
@@ -166,7 +166,7 @@ function digit(c: str) -> i64
 function encoded(code: i64) -> str
     if code < 0 || code > 1114111 || code >= 55296 && code <= 57343
         return ""
-    out: [u8] @ []
+    out: [u8] @= []
 
     if code < 128
         out @ out.push(to_u8(code).must())
@@ -189,7 +189,7 @@ function encoded(code: i64) -> str
 # reader of a literal's braces never takes an escape's for its own.
 function end_of(text: str, at: i64) -> i64
     if at + 2 < text.len() && text[at + 1] == 'u' && text[at + 2] == '{'
-        i: i64 @ at + 3
+        i: i64 @= at + 3
 
         while i < text.len() && text[i] != '}' && text[i] != '"' && text[i] != '\n' && text[i] != '\\'
             i @ i + 1
@@ -207,7 +207,7 @@ function end_of(text: str, at: i64) -> i64
 # decodes to the backslash itself, so a broken literal never panics a later
 # pass.
 function unescape(text: str) -> str
-    ctx: Quoted @ .in_str
+    ctx: Quoted @= .in_str
 
     if text.len() > 0 && text[0] == '\''
         ctx @ .in_char
@@ -216,8 +216,8 @@ function unescape(text: str) -> str
         return ""
     inner = text.slice(from: 1, to: text.len() - 1)
     cs = inner.chars()
-    parts: [str] @ []
-    i: i64 @ 0
+    parts: [str] @= []
+    i: i64 @= 0
 
     while i < cs.len()
         c = cs[i]

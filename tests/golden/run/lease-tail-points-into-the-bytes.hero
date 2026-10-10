@@ -19,8 +19,8 @@ function tail_of(s: cstr, @out: cstr)
     after_dash(s: s, tail: @out)
 
 function main()
-    label: cstr @ "row-payload".lease()
-    tail: cstr @ nullptr
+    label: cstr @= "row-payload".lease()
+    tail: cstr @= nullptr
     tail_of(s: label, out: @tail)
     print(strlen(s: tail))
     end_lease(@label)

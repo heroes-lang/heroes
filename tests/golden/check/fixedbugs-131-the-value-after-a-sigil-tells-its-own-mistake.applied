@@ -6,6 +6,6 @@
 # one message; the certain fix writes `v @ v + )`, which keeps it.
 
 function main()
-    v: i64 @ 0
+    v: i64 @= 0
     v @ v + )  #~ expected_expression expected_expression
     print(v)

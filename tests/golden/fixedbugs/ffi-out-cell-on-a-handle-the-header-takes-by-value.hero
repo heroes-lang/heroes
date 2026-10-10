@@ -28,6 +28,6 @@ extern "ffi-out-cell-on-a-handle-the-header-takes-by-value.h"
     function eat(@p: Mem borrows)  #~ ffi_parameter_type
 
 function main()
-    m: Mem @ make()
+    m: Mem @= make()
     eat(@m)
     print("after")

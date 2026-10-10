@@ -30,12 +30,12 @@ use bytes
 # `written` is the digits a zero opens, `span` where they stand, and `rest`
 # what joins them after (`joined_end`), "" where nothing does.
 function told(written: str, span: token.Span, rest: str) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "leading_zero",
         message: "`" + written + "` starts with a zero, and this language reads no meaning into that",
         span: span
     )
-    follows: str @ ""
+    follows: str @= ""
 
     if rest.len() > 0
         follows @ bytes.char_at(rest, 0)
@@ -59,7 +59,7 @@ function told(written: str, span: token.Span, rest: str) -> diag.Diagnostic
         )
         return d
     stray = not_octal(value)
-    readings: str @ "Write `0o" + value + "` for the octal value, or `" + value + "` for the decimal one"
+    readings: str @= "Write `0o" + value + "` for the octal value, or `" + value + "` for the decimal one"
 
     if stray.len() > 0
         readings @ "It has no octal reading, `" + stray + "` being no octal digit, so write `" + value + "` for the decimal value"
@@ -87,7 +87,7 @@ function told(written: str, span: token.Span, rest: str) -> diag.Diagnostic
 # nothing but zeros was written. `written` is a run the scanner accepted, so a
 # separator stands between two digits, and what is left opens with a digit.
 function significant(written: str) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < written.len() && (written[at] == '0' || written[at] == '_')
         at @ at + 1
@@ -98,7 +98,7 @@ function significant(written: str) -> str
 
 # The first of `value`'s digits that is no octal digit, `8` or `9`, or "".
 function not_octal(value: str) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < value.len()
         if value[at] == '8' || value[at] == '9'
@@ -126,7 +126,7 @@ function based_literal(written: str) -> bool
 
     if base.is_err()
         return false
-    at: i64 @ 2
+    at: i64 @= 2
 
     while at < written.len()
         if !digits.admits(base.must(), written[at])
@@ -146,7 +146,7 @@ function joining(b: u8) -> bool
 # literal. The run stops only between two characters. A decimal run whose
 # separator faulted is refused too, and `number` asks the same (defect 339).
 function joined_end(text: str, at: i64) -> i64
-    end: i64 @ at
+    end: i64 @= at
 
     while end < text.len()
         if joining(text[end])

@@ -129,7 +129,7 @@ function main()
     # works before and after `archive/bootstrap-rs/` is archived. A
     # `HEROES_COMPILER` that is not UTF-8 is told and ends the run, where until
     # defect 243 it read as unset and the net judged another compiler.
-    compiler: str @ ""
+    compiler: str @= ""
 
     if given.len() > 0
         compiler @ shell.started_as(given[0])
@@ -140,11 +140,11 @@ function main()
             print("harness: " + reason(found))
             exit(2)
         compiler @ found.must()
-    only: str @ ""
+    only: str @= ""
 
     if given.len() > 1
         only @ given[1]
-    pick: str @ ""
+    pick: str @= ""
 
     if given.len() > 2
         pick @ given[2]
@@ -219,8 +219,8 @@ function main()
         suite_golden.shape_full()
     ]
 
-    total: report.Report @ report.empty()
-    ran: i64 @ 0
+    total: report.Report @= report.empty()
+    ran: i64 @= 0
 
     for form in forms
         if only == "" || only == form.name

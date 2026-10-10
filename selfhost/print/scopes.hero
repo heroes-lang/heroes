@@ -26,7 +26,7 @@ use stable
 # declaration read the whole list of locals again (defect 105: both were
 # quadratic in the file).
 function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> str
-    rows: [str] @ ["file " + s.name + "\n"]
+    rows: [str] @= ["file " + s.name + "\n"]
     here = source.module_at(s, 0)
     rows @ rows.push("module " + here + "\n")
 
@@ -83,17 +83,17 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
 
     # The locals by owner, each owner's in the order the resolver recorded
     # them: a declaration's section is the run of them it owns.
-    owners_of: [i64] @ []
+    owners_of: [i64] @= []
 
     for local in r.locals
         owners_of @ owners_of.push(local.owner)
 
     by_owner = stable.order(by: owners_of)
-    next: i64 @ 0
-    index: i64 @ 0
+    next: i64 @= 0
+    index: i64 @= 0
 
     for decl in decls
-        section: [str] @ []
+        section: [str] @= []
 
         while next < by_owner.len() && r.locals[by_owner[next]].owner < index
             next @ next + 1
@@ -104,7 +104,7 @@ function dump_scopes(r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) 
 
             # Two spaces per scope, like every other dump here.
             indent = "  ".repeat((1 + local.depth).to_u64().must())
-            marker: str @ ""
+            marker: str @= ""
 
             if local.mutable
                 marker @ " @"
@@ -168,7 +168,7 @@ function shown_path(binding: str, module: str) -> str
 ## Tests
 
 test "the table is alphabetical, the indentation is the scope structure"
-    text = "function zeta() -> i64\n    return 1\n\nfunction alpha(n: i64) -> i64\n    total: i64 @ 0\n    for k in range(from: 0, to: n)\n        total @ total + k\n    return total\n\nfunction main()\n    print(alpha(n: zeta()))\n"
+    text = "function zeta() -> i64\n    return 1\n\nfunction alpha(n: i64) -> i64\n    total: i64 @= 0\n    for k in range(from: 0, to: n)\n        total @ total + k\n    return total\n\nfunction main()\n    print(alpha(n: zeta()))\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)

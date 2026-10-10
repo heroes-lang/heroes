@@ -36,8 +36,8 @@ function main()
     p: Point = Point(x: 1, y: 2)  #~ unknown_type
     a: Amont = 5  #~ unknown_type
     print(p.x + a.n)
-    counter: i64 @ 0
-    label: str @ ""
+    counter: i64 @= 0
+    label: str @= ""
     counter @ 5  #~ unknown_name
     lable @ 5  #~ unknown_name
     print(counter, label)

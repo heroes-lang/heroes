@@ -102,14 +102,14 @@ function render(t: Tree, at: i64) -> str
         .unreadable  => "???"
 
 test "a number is its own value and one level deep"
-    t: Tree @ new_tree()
+    t: Tree @= new_tree()
     n = add_node(@t, .number(value: 7))
     assert evaluate(t, n) == 7
     assert depth(t, n) == 1
     assert render(t, n) == "7"
 
 test "the arena links children by index"
-    t: Tree @ new_tree()
+    t: Tree @= new_tree()
     two = add_node(@t, .number(value: 2))
     three = add_node(@t, .number(value: 3))
     sum = add_node(@t, .add(left: two, right: three))
@@ -138,9 +138,9 @@ test "a note is a value like any other, when one is built"
     assert held != absent
 
 test "a whole tree is one value, copied and not shared"
-    t: Tree @ new_tree()
+    t: Tree @= new_tree()
     _ = add_node(@t, .number(value: 1))
-    u: Tree @ t
+    u: Tree @= t
     _ = add_node(@u, .number(value: 2))
     assert t.nodes.len() == 1
     assert u.nodes.len() == 2

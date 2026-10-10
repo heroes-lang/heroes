@@ -36,8 +36,8 @@ constant PICK: [i64]
         []
 
 function main()
-    total: i64 @ 0
-    at: i64 @ 0
+    total: i64 @= 0
+    at: i64 @= 0
 
     while at < 100
         total @ total + OUTER[at % 2][1] + ALIAS[0] + SCALED[at % 2] + PICK[1]
@@ -48,6 +48,6 @@ function main()
     match SHAPES[0]
         .line l => print(l.pts[1], " ", l.pts == INNER)
 
-    copy: [[i64]] @ OUTER
+    copy: [[i64]] @= OUTER
     copy[0][0] @ 9
     print(copy[0][0], " ", OUTER[0][0], " ", INNER[0], " ", copy[1][0])

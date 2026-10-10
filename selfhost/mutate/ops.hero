@@ -54,7 +54,7 @@ function known(id: str) -> bool
     return false
 
 function ids() -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in operators()
         out @ out.push(one.id)
@@ -170,7 +170,7 @@ test "argument inversion finds the call and swaps label with value"
     text = "function copy(from: i64, to: i64) -> i64\n    return from + to\n\nfunction main()\n    print(copy(from: 1, to: 2))\n"
     mutants = apply(id: "swap-args", name: "x.hero", text: text)
     assert mutants.len() >= 1
-    swapped: bool @ false
+    swapped: bool @= false
 
     for one in mutants
         if contains(text: one, needle: "copy(to: 2, from: 1)")
@@ -179,7 +179,7 @@ test "argument inversion finds the call and swaps label with value"
     assert swapped
 
 test "the one-character slip reaches an identifier and a mutation target"
-    text = "function main()\n    total: i64 @ 3\n    total @ total + 1\n    print(total)\n"
+    text = "function main()\n    total: i64 @= 3\n    total @ total + 1\n    print(total)\n"
     idents = apply(id: "typo-ident", name: "x.hero", text: text)
     assert idents.len() >= 1
     undeclared = apply(id: "mutate-undeclared", name: "x.hero", text: text)
@@ -206,10 +206,10 @@ function contains(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
     limit = text.len() - needle.len()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at <= limit
-        k: i64 @ 0
+        k: i64 @= 0
 
         while k < needle.len() && text[at + k] == needle[k]
             k @ k + 1

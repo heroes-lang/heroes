@@ -20,7 +20,7 @@ use emit/handle_text
 # (`hero_handle_kept`). An end made good poisons the argument's place when the
 # runtime answers that the life ended, one handle at a time.
 function ends(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], fd: ast.FunctionDecl, arguments: [str], places: [str?], entry: str, which: str)
-    at: i64 @ 0
+    at: i64 @= 0
 
     for p in fd.params
         if at < arguments.len()
@@ -28,11 +28,11 @@ function ends(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
             wanted = p.consumes && which != "transfers" || !p.transfers.is_err() && which != "consumes"
 
             if !written.is_err() && wanted
-                place: str? @ fail(code: "none", msg: "no place")
+                place: str? @= fail(code: "none", msg: "no place")
 
                 if at < places.len()
                     place @ places[at]
-                k: i64 @ 0
+                k: i64 @= 0
 
                 # Each end hands back the life its announcement kept, named by
                 # the same position and index (`handle_text.life_c`), so it

@@ -30,16 +30,16 @@ use digits
 # `counted_by` names, or -1: the pointer at position k is counted by the
 # integer at position `counted[k]`.
 function counted_siblings(s: source.Source, decls: [ast.Decl], decl: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match decls[decl].kind
         .function_decl fd =>
             for param in fd.value.params
-                at: i64 @ 0 - 1
+                at: i64 @= 0 - 1
 
                 if !param.counted_by.is_err()
                     wanted = source.span_text(s, param.counted_by.must())
-                    i: i64 @ 0
+                    i: i64 @= 0
 
                     for other in fd.value.params
                         if source.span_text(s, other.name) == wanted
@@ -106,7 +106,7 @@ function buffer_element(c: state.Checked, decls: [ast.Decl], decl: i64, index: i
     return fail(code: "none", msg: "unreached")
 
 function param_names(s: source.Source, decls: [ast.Decl], decl: i64) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     match decls[decl].kind
         .function_decl fd =>
@@ -146,7 +146,7 @@ function count_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: cont
 # (lane land-addr's finding, 2026-10-07): a negative count in a signed
 # element read as an unsigned one, past every bound instead of below zero.
 function place_type(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function, at: ir.Place) -> i64
-    ty: i64 @ f.slots[at.root].ty
+    ty: i64 @= f.slots[at.root].ty
 
     for step in containers.steps_of(f, at.path)
         match step
@@ -288,7 +288,7 @@ function fixed_length(c: state.Checked, f: containers.Function, value: i64) -> i
 # it can hold are the ones a path and a name can, and a quote or a backslash in
 # a file name is escaped rather than assumed away.
 function quoted(text: str) -> str
-    parts: [str] @ ["\""]
+    parts: [str] @= ["\""]
 
     for ch in text.chars()
         if ch == "\"" || ch == "\\"

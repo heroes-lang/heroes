@@ -15,7 +15,7 @@ extern "fixedbugs-559-int.h"
     function fill_wide(@x: i32)  #~ ffi_parameter_type
 
 function main()
-    y: i32 @ 0
+    y: i32 @= 0
     z: i32 = 7
     fill_wide(@y)
     print(long_twice.doubled(x: 3))

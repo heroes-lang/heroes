@@ -208,11 +208,11 @@ function an_extern_decl(name_start: i64, name_end: i64) -> ast.Decl
 
 test "a module in receiver position is decided before values are"
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     receiver = name_expr(@a, start: 0, end: 4)
     call_node = name_expr(@a, start: 5, end: 10)
     decls: [ast.Decl] = [a_function_decl(name_start: 5, name_end: 10)]
-    r: state.Resolver @ state.new_resolver(expr_count: 2, type_count: 0)
+    r: state.Resolver @= state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
@@ -224,11 +224,11 @@ test "a module in receiver position is decided before values are"
 
 test "a qualified extern is refused — the reference, so call and value alike"
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     receiver = name_expr(@a, start: 0, end: 4)
     call_node = name_expr(@a, start: 5, end: 10)
     decls: [ast.Decl] = [an_extern_decl(name_start: 5, name_end: 10)]
-    r: state.Resolver @ state.new_resolver(expr_count: 2, type_count: 0)
+    r: state.Resolver @= state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
@@ -251,10 +251,10 @@ test "a local wearing the module's name turns the dot back into UFCS — in a pr
     # refusal as an accomplished fact while nothing reported it: the rule
     # was designed, written down, and never given an executor.
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     receiver = name_expr(@a, start: 0, end: 4)
     decls: [ast.Decl] = []
-    r: state.Resolver @ state.new_resolver(expr_count: 1, type_count: 0)
+    r: state.Resolver @= state.new_resolver(expr_count: 1, type_count: 0)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     state.open_scope(@r)
@@ -264,11 +264,11 @@ test "a local wearing the module's name turns the dot back into UFCS — in a pr
 
 test "a name the module does not declare earns the module's own list"
     s = fixture()
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     receiver = name_expr(@a, start: 0, end: 4)
     call_node = name_expr(@a, start: 11, end: 12)
     decls: [ast.Decl] = [a_function_decl(name_start: 5, name_end: 10)]
-    r: state.Resolver @ state.new_resolver(expr_count: 2, type_count: 0)
+    r: state.Resolver @= state.new_resolver(expr_count: 2, type_count: 0)
     r.module @ "t"
     resolved.declare_use(@r.out, from: "t", binding: "geom", module: "geom")
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
@@ -278,7 +278,7 @@ test "a name the module does not declare earns the module's own list"
     assert r.out.diagnostics[0].code == "unknown_in_module"
 
 test "elsewhere splits on the use line, and neither repair is certain"
-    r: state.Resolver @ state.new_resolver(expr_count: 0, type_count: 0)
+    r: state.Resolver @= state.new_resolver(expr_count: 0, type_count: 0)
     r.module @ "t"
     resolved.declare_top(@r.out, module: "geom", name: "dist2", decl: 0)
     span = token.Span(start: 5, end: 10)

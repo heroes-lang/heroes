@@ -24,16 +24,16 @@ use shown_char
 # so a `$` or a backtick in a `.pc` runs nothing, and a word reaches clang
 # whole, as one argument, whatever it holds.
 function words(package: str, said: str) -> [str]?
-    out: [str] @ []
-    run: [str] @ []
-    in_word: bool @ false
-    quote: str @ ""
+    out: [str] @= []
+    run: [str] @= []
+    in_word: bool @= false
+    quote: str @= ""
     cs = said.chars()
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < cs.len()
         ch = cs[index]
-        next: str @ ""
+        next: str @= ""
 
         if index + 1 < cs.len()
             next @ cs[index + 1]
@@ -99,7 +99,7 @@ function no_flag(said: str, parts: [str], at: i64) -> str
 
     if word.len() > 0 && word[0] == '-'
         return ""
-    where: str @ ""
+    where: str @= ""
 
     if at > 0
         where @ ", where whitespace nothing escapes stands between `" + shown(parts[at - 1], keep_lines: false) + "` and it, and ends a word"
@@ -119,8 +119,8 @@ function one_line(text: str) -> str
 # unless `keep_lines` keeps the lines of `pkg-config`'s own report, `\r\n`
 # read as one line end there.
 function shown(text: str, keep_lines: bool) -> str
-    kept: [str] @ []
-    read: str @ text
+    kept: [str] @= []
+    read: str @= text
 
     if keep_lines
         read @ strings.without_returns(text)

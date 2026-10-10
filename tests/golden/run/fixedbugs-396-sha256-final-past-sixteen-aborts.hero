@@ -12,8 +12,8 @@ extern "fixedbugs-396-openssl.h" package "libcrypto"
     function SHA256_Final(@md: [u8] counted_by 16 lent, @c: Sha256Ctx) -> i32
 
 function main()
-    c: Sha256Ctx @ Sha256Ctx(num: 0)
-    md: [u8] @ []
+    c: Sha256Ctx @= Sha256Ctx(num: 0)
+    md: [u8] @= []
     print(SHA256_Init(@c), " ", SHA256_Update(@c, data: "abc".cstr(), len: 3))
     print(SHA256_Final(@md, @c))
     print("not reached ", md.len())

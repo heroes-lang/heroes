@@ -33,15 +33,15 @@ record Said
 # What `said` holds that `told` does not, as it is printed; `told` gains every
 # diagnostic `said` holds.
 function fresh(said: str, @told: {str: bool}) -> str
-    kept: [str] @ []
-    repeated: bool @ false
-    above: [str] @ []
-    above_file: str @ ""
-    above_shown: bool @ true
+    kept: [str] @= []
+    repeated: bool @= false
+    above: [str] @= []
+    above_file: str @= ""
+    above_shown: bool @= true
 
     for one in diagnostics_of(said)
         key = one.lines.join("\n")
-        chain: [str] @ one.chain
+        chain: [str] @= one.chain
 
         if chain.len() == 0 && one.file.len() > 0 && one.file == above_file
             chain @ above
@@ -74,10 +74,10 @@ function fresh(said: str, @told: {str: bool}) -> str
 # diagnostic it leads, and clang's tally is no diagnostic's. A line before
 # any diagnostic is one of its own.
 function diagnostics_of(said: str) -> [Said]
-    out: [Said] @ []
-    waiting: [str] @ []
-    current: Said @ Said(chain: [], lines: [], file: "")
-    open: bool @ false
+    out: [Said] @= []
+    waiting: [str] @= []
+    current: Said @= Said(chain: [], lines: [], file: "")
+    open: bool @= false
 
     for line in lines_of(said)
         if strings.starts_with(text: line, prefix: "In file included from ")
@@ -108,9 +108,9 @@ function diagnostics_of(said: str) -> [Said]
 
 # The text's lines, its last line end ending the last of them.
 function lines_of(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == '\n'
@@ -148,7 +148,7 @@ function level_at(line: str) -> i64
         if strings.starts_with(text: line, prefix: level)
             return 0
 
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 2 < line.len()
         if line[at] == ':' && line[at + 1] == ' '
@@ -181,7 +181,7 @@ function file_of(line: str) -> str
 
 # `place` without a last `:<digits>`, or `place` where it ends in none.
 function without_number(place: str) -> str
-    at: i64 @ place.len()
+    at: i64 @= place.len()
 
     while at > 0 && place[at - 1] >= '0' && place[at - 1] <= '9'
         at @ at - 1
@@ -203,7 +203,7 @@ constant HEADER_WARNING: str
 # Defect 327's shape, as Apple clang 21 wrote it for two units including one
 # header: the second unit's copy is not printed, its tally with it.
 test "a header's warning is told once a build, whichever units include it (defect 327)"
-    told: {str: bool} @ {}
+    told: {str: bool} @= {}
     first = "In file included from build/tu-1/rec.c:5:\n" + HEADER_WARNING + "1 warning generated.\n"
     second = "In file included from build/tu-2/library.c:5:\n" + HEADER_WARNING + "1 warning generated.\n"
     assert fresh(first, @told) == first
@@ -219,7 +219,7 @@ test "a header's warning is told once a build, whichever units include it (defec
 # clang leaves the include lines out of a diagnostic in the file of the one
 # above, so where that one is left out, the kept one is printed with them.
 test "a kept diagnostic is printed with the include lines its repeated neighbour led (defect 327)"
-    told: {str: bool} @ {}
+    told: {str: bool} @= {}
     other = "./warned.h:3:2: warning: \"a second warning\" [-W#warnings]\n    3 | #warning \"a second warning\"\n      |  ^\n"
     assert fresh("In file included from build/tu-1/a.c:5:\n" + HEADER_WARNING, @told).len() > 0
     later = "In file included from build/tu-2/b.c:5:\n" + HEADER_WARNING + other + "2 warnings generated.\n"

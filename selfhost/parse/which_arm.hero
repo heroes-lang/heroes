@@ -32,11 +32,11 @@ record Said
 # in both; and a join nobody refused leaves it to say it in both, the loud
 # direction.
 function placed(c: cursor.Cursor, lexed: [diag.Diagnostic]) -> Said
-    normal: [diag.Diagnostic] @ []
-    control: [diag.Diagnostic] @ []
-    next: i64 @ 0
-    i: i64 @ 0
-    by_start: [i64] @ []
+    normal: [diag.Diagnostic] @= []
+    control: [diag.Diagnostic] @= []
+    next: i64 @= 0
+    i: i64 @= 0
+    by_start: [i64] @= []
 
     if c.held.len() > 0
         by_start @ in_order(lexed)
@@ -66,8 +66,8 @@ function placed(c: cursor.Cursor, lexed: [diag.Diagnostic]) -> Said
 # order of `lexed` by where each begins, searched rather than walked, since a
 # file of many breaks holds many diagnostics back and the lexer refused each.
 function refusal_at(lexed: [diag.Diagnostic], by_start: [i64], cause: token.Span) -> diag.Diagnostic?
-    low: i64 @ 0
-    high: i64 @ by_start.len()
+    low: i64 @= 0
+    high: i64 @= by_start.len()
 
     while low < high
         middle = (low + high) / 2
@@ -77,7 +77,7 @@ function refusal_at(lexed: [diag.Diagnostic], by_start: [i64], cause: token.Span
         else
             high @ middle
 
-    first: i64 @ -1
+    first: i64 @= -1
 
     while low < by_start.len() && lexed[by_start[low]].span.start < cause.end
         if first < 0 || by_start[low] < first
@@ -90,7 +90,7 @@ function refusal_at(lexed: [diag.Diagnostic], by_start: [i64], cause: token.Span
 
 # The indices of `lexed` in the order of where each begins, stably.
 function in_order(lexed: [diag.Diagnostic]) -> [i64]
-    starts: [i64] @ []
+    starts: [i64] @= []
 
     for d in lexed
         starts @ starts.push(d.span.start)

@@ -77,7 +77,7 @@ function construct(c: state.Checked, names: ctype.Names, s: source.Source, decls
             # judged (`emit/layout_sites.hero`). An index the record does not
             # have is the lowering's fault, and refused here rather than
             # written as a different construction.
-            named: [ast.Field] @ []
+            named: [ast.Field] @= []
 
             for k in given
                 if k < 0 || k >= rec.fields.len()
@@ -145,8 +145,8 @@ function construct_case(c: state.Checked, names: ctype.Names, s: source.Source, 
 # .f_x = t1 per field, in declared order. Designated, never positional
 # — the redundancy is the point.
 function designators(c: state.Checked, s: source.Source, fields: [ast.Field], arguments: [str], foreign: bool, holder: str) -> [str]?
-    parts: [str] @ []
-    index: i64 @ 0
+    parts: [str] @= []
+    index: i64 @= 0
 
     for one_field in fields
         if index >= arguments.len()
@@ -185,7 +185,7 @@ function written_as(c: state.Checked, value: str, ty: i64, foreign: bool, holder
 
     if written.is_err()
         return value
-    is_cstr: bool @ false
+    is_cstr: bool @= false
 
     match table.get(c.types, written.must())
         .cstr                                                      => is_cstr @ true
@@ -203,7 +203,7 @@ function tag(base: i64) -> str
 
 # t5 = t4.as.c_num; — the payload of a case the match already selected.
 function payload_member(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, at: i64) -> str?
-    decl: i64 @ 0 - 1
+    decl: i64 @= 0 - 1
 
     match table.get(c.types, containers.value_type(f, base))
         .named n                                                     => decl @ n.decl
@@ -252,7 +252,7 @@ function retain_named(c: state.Checked, names: ctype.Names, ty: i64, name: str, 
 
     if found.is_err()
         return fail(code: "none", msg: "no generated retain")
-    verb: str @ "release"
+    verb: str @= "release"
 
     if keep
         verb @ "retain"
@@ -286,7 +286,7 @@ function ready(text: str) -> Setup
 
 test "designated construction, a walked place, and the failure's fixed pair"
     got = ready(
-        "record Point\n    x: i64\n    y: i64\n\nrecord Line\n    start_at: Point\n\nfunction main()\n    l: Line @ Line(start_at: Point(x: 1, y: 2))\n    l.start_at.x @ 3\n    print(l.start_at.x)\n"
+        "record Point\n    x: i64\n    y: i64\n\nrecord Line\n    start_at: Point\n\nfunction main()\n    l: Line @= Line(start_at: Point(x: 1, y: 2))\n    l.start_at.x @ 3\n    print(l.start_at.x)\n"
     )
     built = construct(got.c, got.names, got.s, got.decls, decl: 0, given: [0, 1], arguments: ["t1", "t2"])
     assert built.must() == "(h_t_Point){.f_x = t1, .f_y = t2}"

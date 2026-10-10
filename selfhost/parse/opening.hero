@@ -140,7 +140,7 @@ variant Body
 # indent, when the answer is not `.none`.
 function body_follows(@c: cursor.Cursor, text: str, head: Mark, failed: bool, missing: Missing) -> Body
     crossed = head_lines.crossed_a_line(@c, text, from: head.pos)
-    brace: i64 @ -1
+    brace: i64 @= -1
 
     if missing.braces
         brace @ brace_habit.ending(c, text)
@@ -228,7 +228,7 @@ function junk(@c: cursor.Cursor, text: str, missing: Missing)
 # rest of that line leaves the cursor, an indent or a line whose margin holds
 # a tab, read ahead in the tokens without moving.
 function body_below(c: cursor.Cursor, text: str) -> bool
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while c.tokens[i].kind != .eof && c.tokens[i].kind != .indent && c.tokens[i].kind != .dedent && c.tokens[i].kind != .terminator
         i @ i + 1
@@ -286,7 +286,7 @@ function missing_here(c: cursor.Cursor, text: str, missing: Missing) -> diag.Dia
 # named there is the same mistake at the same column.
 function refused_here(c: cursor.Cursor, head: Mark) -> bool
     here = cursor.current_span(c).start
-    i: i64 @ head.said
+    i: i64 @= head.said
 
     while i < c.diagnostics.len()
         if c.diagnostics[i].span.start == here

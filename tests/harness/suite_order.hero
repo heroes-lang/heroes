@@ -87,7 +87,7 @@ constant LEAST_WALKS: i64
     64
 
 function run_all(scratch: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
 
     # **`list_tree`, not `list_entries`** — see `suite_layout`'s note at the
     # same call. `list_entries` is `recursive: 0`, and M-selfhost-nesting put
@@ -98,15 +98,15 @@ function run_all(scratch: str) -> report.Report?
     # you the sweep shrank and not which files it stopped reading.
     nothing: [str] = []
     files = shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
-    modules: [str] @ []
+    modules: [str] @= []
 
     for path in files
         if strings.ends_with(text: path, suffix: ".hero")
             modules @ modules.push(path)
 
-    unmarked: [str] @ []
-    marks: i64 @ 0
-    walks: i64 @ 0
+    unmarked: [str] @= []
+    marks: i64 @= 0
+    walks: i64 @= 0
 
     for path in modules
         text = read_file(path)
@@ -116,7 +116,7 @@ function run_all(scratch: str) -> report.Report?
             continue
         rows = strings.lines(text.must())
         code = outside_tests(rows)
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < rows.len()
             if is_mark(rows[at])
@@ -148,8 +148,8 @@ function run_all(scratch: str) -> report.Report?
 # SECTIONS rather than of files. A `test "..."` at column 0 opens one, and
 # the next column-0 line that is not a comment closes it.
 function outside_tests(rows: [str]) -> [bool]
-    out: [bool] @ []
-    inside: bool @ false
+    out: [bool] @= []
+    inside: bool @= false
 
     for row in rows
         if strings.starts_with(text: row, prefix: "test \"")
@@ -170,8 +170,8 @@ function outside_tests(rows: [str]) -> [bool]
 # a mark directly above the loop, and a mark in the doc block — and a mark
 # belonging to the function above is not, which is the point.
 function marked_above(rows: [str], at: i64) -> bool
-    crossed: bool @ false
-    j: i64 @ at - 1
+    crossed: bool @= false
+    j: i64 @= at - 1
 
     while j >= 0
         row = rows[j]
@@ -219,7 +219,7 @@ function starts_indented(row: str) -> bool
 test "a mark covers the loop under it, and the doc comment above the header"
     body: [str] = [
         "function f(m: {i64: bool}) -> i64"
-        "    total: i64 @ 0"
+        "    total: i64 @= 0"
         "    # ORDER: ascending id — the sum is printed"
         "    for k in sort(keys(m))"
         "        total @ total + k"

@@ -42,8 +42,8 @@ constant ERR_UNNAMED: str
 function named_by(c: cursor.Cursor, text: str, word: i64) -> token.TokenKind?
     if c.tokens[word].kind == .indent || c.tokens[word].kind == .lbrace
         return fail(code: ERR_UNNAMED, msg: "the block has no head line")
-    depth: i64 @ 0
-    i: i64 @ word + 1
+    depth: i64 @= 0
+    i: i64 @= word + 1
 
     while i < c.tokens.len() && !(depth == 0 && token.ends_a_line(c.tokens[i].kind))
         k = c.tokens[i].kind
@@ -62,7 +62,7 @@ function named_by(c: cursor.Cursor, text: str, word: i64) -> token.TokenKind?
 
 # The one keyword of six letters or more that `name` is a slip of.
 function slip_of(name: str) -> token.TokenKind?
-    found: [str] @ []
+    found: [str] @= []
 
     for one in ["record", "variant", "function", "constant", "extern"]
         if near_names.distance(a: name, b: one) <= 1 || near_names.swapped(a: name, b: one)

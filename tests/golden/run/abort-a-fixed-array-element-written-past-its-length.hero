@@ -21,7 +21,7 @@ extern "abort-a-fixed-array-element-written-past-its-length.h"
     function nums_after(n: Nums) -> i64
 
 function main()
-    n: Nums @ Nums(a: [0, 0, 0, 0], after: 99)
+    n: Nums @= Nums(a: [0, 0, 0, 0], after: 99)
 
     for i in range(from: 0, to: 5)
         print("after: ", nums_after(n: n), " writing ", i)

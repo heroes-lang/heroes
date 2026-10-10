@@ -61,7 +61,7 @@ use stray_closers
 # The rest of the line is read in the tokens up to its line end, which a `{`
 # that ends its line never has after it, so the `{` is met first.
 function ending(c: cursor.Cursor, text: str) -> i64
-    i: i64 @ c.pos
+    i: i64 @= c.pos
 
     while !token.ends_a_line(c.tokens[i].kind)
         if c.tokens[i].kind == .lbrace && ends_line(text, c.tokens[i].span) && !opens_a_value(c, text, at: i)
@@ -78,7 +78,7 @@ function ending(c: cursor.Cursor, text: str) -> i64
 # Whether a `{` at `span` is the last thing on its line of the text: nothing
 # after it but blanks, or a comment.
 function ends_line(text: str, span: token.Span) -> bool
-    i: i64 @ span.end
+    i: i64 @= span.end
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\t' || text[i] == '\r')
         i @ i + 1
@@ -108,7 +108,7 @@ function opens_a_value(c: cursor.Cursor, text: str, at: i64) -> bool
 
     if map_alone.begins_a_value(c.tokens, before: at, text, at: c.tokens[at].span.start)
         return true
-    i: i64 @ at - 1
+    i: i64 @= at - 1
 
     while i > 0 && c.tokens[i].kind == .comment
         i @ i - 1
@@ -136,8 +136,8 @@ function alone(text: str, span: token.Span) -> bool
 function closer(c: cursor.Cursor, open: i64) -> i64
     if laid_braces.laid_out_by_lexer(c, open: open)
         return laid_braces.laid_block(c, open: open).past
-    depth: i64 @ 0
-    i: i64 @ open
+    depth: i64 @= 0
+    i: i64 @= open
     named = pairing.close_after(c, at: c.tokens[open].span.start)
 
     while i < c.tokens.len()
@@ -206,7 +206,7 @@ function drop_told(@c: cursor.Cursor, text: str, from: i64)
 # since defect 199, `if f(1 +) )` over its body, and moved here from
 # `parse/statement_end` for it, a module the head's reader cannot read.
 function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
-    dropped: cursor.Cursor @ c
+    dropped: cursor.Cursor @= c
     drop_rest_of_line(@dropped, text, from: from)
 
     # The openers the line holds are the first `depth` of `open`, and `have`
@@ -214,10 +214,10 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
     # at once and a cut to a prefix is a number (defect 482: `(` N times and
     # `]` N times walked and copied the stack N times, and read the run of
     # strays from every closer).
-    open: [token.TokenKind] @ []
-    have: [i64] @ [0, 0, 0]
-    depth: i64 @ 0
-    i: i64 @ from
+    open: [token.TokenKind] @= []
+    have: [i64] @= [0, 0, 0]
+    depth: i64 @= 0
+    i: i64 @= from
 
     while i < dropped.pos
         k = c.tokens[i].kind
@@ -230,7 +230,7 @@ function a_closer_too_many(@c: cursor.Cursor, text: str, from: i64)
             depth @ depth + 1
             have[kind_of(k)] @ have[kind_of(k)] + 1
         else if k == .rparen || k == .rbracket || k == .rbrace
-            at: i64 @ depth - 1
+            at: i64 @= depth - 1
 
             if have[kind_of(k)] == 0
                 at @ -1
@@ -322,7 +322,7 @@ test "a brace that ends the head's line opens its body, and the one it closes wi
         token.made(.terminator, start: 23, end: 23)
         token.made(.eof, start: 24, end: 24)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c: cursor.Cursor @= cursor.new_cursor(tokens)
     c.pos @ 2
     assert ending(c, text) == 2
     assert closer(c, open: 2) == 11
@@ -344,7 +344,7 @@ test "a brace alone on the line below a head that ended opens its body, and one 
         token.made(.terminator, start: 7, end: 7)
         token.made(.eof, start: 8, end: 8)
     ]
-    c: cursor.Cursor @ cursor.new_cursor(tokens)
+    c: cursor.Cursor @= cursor.new_cursor(tokens)
     c.pos @ 3
     assert ending(c, text) == 4
 
@@ -358,7 +358,7 @@ test "a brace alone on the line below a head that ended opens its body, and one 
         token.made(.ident, start: 6, end: 7)
         token.made(.eof, start: 10, end: 10)
     ]
-    d: cursor.Cursor @ cursor.new_cursor(more)
+    d: cursor.Cursor @= cursor.new_cursor(more)
     d.pos @ 3
     assert ending(d, shared) == -1
 

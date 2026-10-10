@@ -41,7 +41,7 @@ function nested(c: Color, d: Color) -> i64
     return x
 
 function first_nonzero(xs: [i64]) -> i64
-    found: i64 @ 0
+    found: i64 @= 0
 
     for x in xs
         y = match x
@@ -94,7 +94,7 @@ function typed_statements_before_values(b: bool) -> i64
     return x
 
 function statement_arms(c: Color) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     match c
         .red  => while n < 3

@@ -11,7 +11,7 @@ function f(ys: [i64], a: i64) -> i64
         a)]
 
 function g(xs: [i64], a: i64, b: i64, c: i64) -> i64
-    ys: [i64] @ xs
+    ys: [i64] @= xs
     ys[  # after the bracket
         (  # after the outer paren
         (a + b) * c)] @ 1

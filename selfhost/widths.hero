@@ -181,7 +181,7 @@ function float_c_type(kind: FloatKind) -> str
 test "one array lists the widths and the names round-trip"
     kinds = int_kinds()
     assert kinds.len() == 8
-    names: [str] @ []
+    names: [str] @= []
 
     for k in kinds
         names @ names.push(int_name(k))

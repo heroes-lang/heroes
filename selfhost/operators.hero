@@ -112,8 +112,8 @@ function unary_spelling(op: ast.UnaryOp) -> str
         .bit_not => "~"
 
 test "every binary operator has a distinct spelling and a distinct name"
-    seen_text: {str: bool} @ {}
-    seen_name: {str: bool} @ {}
+    seen_text: {str: bool} @= {}
+    seen_name: {str: bool} @= {}
     ops: [ast.BinaryOp] = [
         .add
         .sub

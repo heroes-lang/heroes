@@ -23,10 +23,10 @@ extern "ffi-a-stated-extent-past-the-place.h"
     function two_smalls(@p: Small counted_by 2)
 
 function main()
-    h: ShortOne @ ShortOne(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
+    h: ShortOne @= ShortOne(buf: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], after: 7)
     digest32(p: h.buf.ptr())  #~ field_lend_extent
     digest_const(p: h.buf.ptr())  #~ field_lend_extent
     fill_ints8(p: h.buf.ptr())  #~ field_lend_extent
-    s: Small @ Small(a: 0)
+    s: Small @= Small(a: 0)
     two_smalls(@s)  #~ record_lend_extent
     print(h.after, " ", s.a)

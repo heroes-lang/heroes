@@ -30,7 +30,7 @@ function told(header: str, name: str, decided: Switch, span: token.Span) -> diag
 # once, at the first of its headers a unit reads (panel 205's R3): told so,
 # with the one place the switch can stand.
 function hidden(header: str, name: str, macro: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_name",
         message: "`" + header + "` declares `" + name + "` only under `" + macro + "`: define it in a header of your own that this module's first group names",
         span: span
@@ -52,11 +52,11 @@ constant NARROWED_TAIL: str
 
 function narrowed(header: str, name: str, decided: Switch, span: token.Span) -> diag.Diagnostic
     by = quoted_list(decided.defined_by)
-    verb: str @ "defines"
+    verb: str @= "defines"
 
     if decided.defined_by.len() > 1
         verb @ "define"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_name",
         message: "`" + header + "` declares no `" + name + "` under `" + decided.macro + "`, which " + by + " " + verb + NARROWED_TAIL,
         span: span
@@ -68,8 +68,8 @@ function narrowed(header: str, name: str, decided: Switch, span: token.Span) -> 
 
 # `a`, `a` and `b`, or `a`, `b` and `c`, each in backticks.
 function quoted_list(names: [str]) -> str
-    pieces: [str] @ []
-    index: i64 @ 0
+    pieces: [str] @= []
+    index: i64 @= 0
 
     for name in names
         if index > 0 && index == names.len() - 1

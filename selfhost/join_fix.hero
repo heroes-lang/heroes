@@ -23,7 +23,7 @@ function made(glue: str, from: i64, to: i64, certainty: diag.Certainty) -> diag.
 
 # The index of the join among `d`'s fixes, or -1 where `d` offers none.
 function index(d: diag.Diagnostic) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     for fix in d.fixes
         if fix.title == TITLE
@@ -36,7 +36,7 @@ function index(d: diag.Diagnostic) -> i64
 
 test "the join is found by its title, wherever it stands among the fixes"
     span = token.Span(start: 0, end: 1)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "continuation_outside_brackets", message: "m", span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "continuation_outside_brackets", message: "m", span: span)
     assert index(d) == -1
     d.fixes @ d.fixes.push(diag.Fix(title: "delete the `-`", replacement: "", span: span, certainty: .certain))
     assert index(d) == -1

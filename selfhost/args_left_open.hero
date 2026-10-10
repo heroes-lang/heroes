@@ -36,8 +36,8 @@ use parse/bracket_head
 function told(@c: cursor.Cursor, text: str, open: i64) -> bool
     if cursor.at(c, .rparen) || cursor.at(c, .eof) || unclosed.never_closed(c, text, open: open) || !cursor.at_fresh_line(c)
         return false
-    left: [i64] @ []
-    i: i64 @ c.pos - 1
+    left: [i64] @= []
+    i: i64 @= c.pos - 1
 
     # The openers after the `(` the lexer named never closed, innermost first.
     while i > open
@@ -50,9 +50,9 @@ function told(@c: cursor.Cursor, text: str, open: i64) -> bool
     if left.len() == 0
         return false
     around = bracket_head.openers_around(c, text: text, open: open, own: ")", also_unclosed: true)
-    names: [str] @ []
-    closers: [str] @ []
-    carries: [token.Span] @ []
+    names: [str] @= []
+    closers: [str] @= []
+    carries: [token.Span] @= []
 
     for at in left
         written = cursor.slice_of(text, c.tokens[at].span)
@@ -71,7 +71,7 @@ function told(@c: cursor.Cursor, text: str, open: i64) -> bool
         carries @ carries.push(span)
 
     first = c.tokens[left[0]].span
-    report: diag.Diagnostic @ diag.new_diagnostic(
+    report: diag.Diagnostic @= diag.new_diagnostic(
         code: "expected_args_close",
         message: "expected `)`, or `,` and another argument, found " + cursor.found(c, text) + " — the line below a call's arguments is none of them: the `" + cursor.slice_of(text, first) + "` still open " + text_lines.place_above(text, at: first.start, from: cursor.current_span(c).start) + ", and " + names.join(" and ") + " it stands in, close on a line above, so write `" + closers.join("") + around.closers + "` there",
         span: cursor.current_span(c)

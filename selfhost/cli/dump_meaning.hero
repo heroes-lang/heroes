@@ -32,18 +32,18 @@ function read_of(t: toolchain.Toolchain, under: compiling.Compiling, headers: [s
 # Each wanted name's top-level declaration in a dump, every line beneath it
 # kept: the one with a body where there is one, else the last.
 function readings(dumped: str, names: [str]) -> {str: str}
-    wanted: {str: bool} @ {}
+    wanted: {str: bool} @= {}
 
     for name in names
         wanted[name] @ true
 
-    bodies: {str: str} @ {}
-    declared: {str: str} @ {}
-    taking: str @ ""
-    taken: [str] @ []
-    has_body: bool @ false
-    start: i64 @ 0
-    at: i64 @ 0
+    bodies: {str: str} @= {}
+    declared: {str: str} @= {}
+    taking: str @= ""
+    taken: [str] @= []
+    has_body: bool @= false
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at <= dumped.len()
         if at == dumped.len() || dumped[at] == 10
@@ -71,7 +71,7 @@ function readings(dumped: str, names: [str]) -> {str: str}
             start @ at + 1
         at @ at + 1
 
-    out: {str: str} @ {}
+    out: {str: str} @= {}
 
     for name in names
         if !bodies[name].is_err()
@@ -95,15 +95,15 @@ function kept(@bodies: {str: str}, @declared: {str: str}, name: str, text: str, 
 # of its parent's, which a declaration's place in the unit decides; it is
 # kept as its depth alone.
 function normalised(row: str) -> str
-    lead: i64 @ 0
+    lead: i64 @= 0
 
     while lead < row.len() && (row[lead] == '|' || row[lead] == ' ' || row[lead] == '`' || row[lead] == '-')
         lead @ lead + 1
 
-    words: [str] @ []
-    depth: i64 @ 0
-    from: i64 @ lead
-    index: i64 @ lead
+    words: [str] @= []
+    depth: i64 @= 0
+    from: i64 @= lead
+    index: i64 @= lead
 
     while index <= row.len()
         at_end = index == row.len()

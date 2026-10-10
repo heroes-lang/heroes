@@ -77,7 +77,7 @@ function unit_words(c: Compiling) -> [str]
 # "mylib.h"` finds a header beside the `.hero` file. The same headers must be
 # found from the same places, or the question is asked of another header.
 function search_words(c: Compiling) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in c.search_include
         out @ strings.with_all(list: out, more: ["-I", one])
@@ -113,7 +113,7 @@ record Probe
     digests: {str: str}
 
 function probe(build: str, under: Compiling, headers: [str]) -> Probe
-    digests: {str: str} @ {}
+    digests: {str: str} @= {}
     return probe_with(build, under: under, headers: headers, memo: @digests)
 
 # The same with the build's memo of what it hashed already, which the probes
@@ -144,7 +144,7 @@ function probe_flags() -> [str]
 # The words but the diagnostics, `-W` and every `-Werror=`: the one rule both
 # lists above are made by.
 function without_diagnostics(listed: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for word in listed
         if !strings.starts_with(text: word, prefix: "-W")
@@ -169,7 +169,7 @@ function reads(build: str, words: [str], headers: [str], @memo: {str: str}) -> s
     unit = dir + "/reads-" + digest.digest(text) + ".c"
     publish.write_whole(path: unit, text: text, keyed: true)?
     depfile = publish.private_name(dir + "/reads.d")
-    line: [str] @ strings.with_all(list: ["clang"], more: words)
+    line: [str] @= strings.with_all(list: ["clang"], more: words)
     line @ strings.with_all(list: line, more: ["-M", "-MT", "dep", "-MF", depfile, unit])
     ran = process.run(program: "clang", words: line, out: process.discard(), err: process.discard())
 
@@ -223,8 +223,8 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
         source_dir: root + "/src"
     )
     words = probe_words(c)
-    first: {str: str} @ {}
-    turned: [str] @ []
+    first: {str: str} @= {}
+    turned: [str] @= []
 
     for ch in reads(root + "/build", words: words, headers: ["x.h"], @first).must().chars()
         if ch == "\\"
@@ -237,8 +237,8 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
     assert !strings.holds(text: beside, needle: root + "/inc/x.h")
     assert !strings.holds(text: beside, needle: root + "/build/reads/")
     assert !write_file(path: root + "/inc/x.h", text: two).is_err()
-    second: {str: str} @ {}
-    again: [str] @ []
+    second: {str: str} @= {}
+    again: [str] @= []
 
     for ch in reads(root + "/build", words: words, headers: ["x.h"], @second).must().chars()
         if ch == "\\"
@@ -254,7 +254,7 @@ test "what a probe's headers resolve to is asked of clang, and a header that app
 
     # A header that is not there does not preprocess, and the answer is
     # absent rather than a listing of what was found.
-    third: {str: str} @ {}
+    third: {str: str} @= {}
     assert reads(root + "/build", words: words, headers: ["hero-no-such-header.h"], @third).is_err()
 
 # **A unit and a probe compile under one list** (defects 163 and 167): a
@@ -306,7 +306,7 @@ test "a probe's flags make a plain char signed for Linux arm64, as the program's
     )
     assert bare.started
     assert bare.code != 0
-    probed: [str] @ strings.with_all(list: ["clang", target], more: probe_flags())
+    probed: [str] @= strings.with_all(list: ["clang", target], more: probe_flags())
     probed @ strings.with_all(list: probed, more: ["-fsyntax-only", unit])
     signed = process.run(program: "clang", words: probed, out: process.discard(), err: process.discard())
     assert signed.code == 0
@@ -325,7 +325,7 @@ test "every flag a probe leaves out changes no predefined macro, here or on Linu
         base = macros(more: target)
 
         for flag in flags.flags()
-            kept: bool @ false
+            kept: bool @= false
 
             for one in probe_flags()
                 if one == flag
@@ -356,19 +356,19 @@ test "clang reads the emitter's spellings of a program's text as written, and sa
     assert !process.remove_tree(root).is_err()
     assert !process.mkdir_all(root + "/inc").is_err()
     odd = "t??=??(??/??)??'??<??!??>??-a*/x\"y\\q.hero"
-    wide: str @ "dé/€\t😀/p.hero"
+    wide: str @= "dé/€\t😀/p.hero"
 
     if process.exe_suffix() != ".exe"
         wide @ wide + "\r\n.hero"
     held = "what???) ??= ??( ??/ ??) ??' ??< ??! ??> ??- \"\\"
-    bytes_of: [str] @ []
-    i: i64 @ 0
+    bytes_of: [str] @= []
+    i: i64 @= 0
 
     while i < held.len()
         bytes_of @ bytes_of.push(held[i].to_str())
         i @ i + 1
 
-    unit: str @ "/* " + c_text.in_comment(odd) + " */\n#include <string.h>\n"
+    unit: str @= "/* " + c_text.in_comment(odd) + " */\n#include <string.h>\n"
 
     if process.exe_suffix() != ".exe"
         assert !write_file(path: root + "/inc/h??).h", text: "#define HEROES_C_TEXT 1\n").is_err()
@@ -380,7 +380,7 @@ test "clang reads the emitter's spellings of a program's text as written, and sa
     binary = root + "/unit" + process.exe_suffix()
 
     for dialect in ["-std=gnu11", "-std=c11"]
-        words: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
+        words: [str] @= strings.with_all(list: ["clang"], more: flags.flags())
         words @ strings.with_all(list: words, more: [dialect, "-I", root + "/inc", root + "/unit.c", "-o", binary])
         built = process.run(program: "clang", words: words, out: process.discard(), err: root + "/said.txt")
         assert built.code == 0
@@ -390,7 +390,7 @@ test "clang reads the emitter's spellings of a program's text as written, and sa
     # Each name, read back from clang's own diagnostic.
     for file in [odd, wide]
         assert !write_file(path: root + "/named.c", text: c_text.line_directive(at: 7, file: file) + "\n#error heroes-c-text\n").is_err()
-        named: [str] @ strings.with_all(list: ["clang"], more: flags.flags())
+        named: [str] @= strings.with_all(list: ["clang"], more: flags.flags())
         named @ strings.with_all(list: named, more: ["-fsyntax-only", root + "/named.c"])
         refused = process.run(program: "clang", words: named, out: process.discard(), err: root + "/said.txt")
         said = read_file(root + "/said.txt").must()
@@ -405,7 +405,7 @@ function macros(more: [str]) -> str
     empty = "build/selftest-probe-empty.c"
     said = "build/selftest-probe-macros.txt"
     assert !write_file(path: empty, text: "").is_err()
-    words: [str] @ strings.with_all(list: ["clang"], more: more)
+    words: [str] @= strings.with_all(list: ["clang"], more: more)
     words @ strings.with_all(list: words, more: ["-E", "-dM", "-x", "c", empty])
     ran = process.run(program: "clang", words: words, out: said, err: process.discard())
     assert ran.code == 0

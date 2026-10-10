@@ -53,7 +53,7 @@ constant ERR_UNKNOWN_NAME: str
 # because `map` is a built-in name and no file may redeclare one (panel 015);
 # the point here is generics, and any name demonstrates them.
 function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
-    out: [B] @ []
+    out: [B] @= []
 
     for x in xs
         out @ out.push(f(x))
@@ -63,7 +63,7 @@ function apply<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
 # Reduces the sequence to one value, from the left. `fold` is a built-in name
 # too, so this one is `reduce`.
 function reduce<A, B>(xs: [A], initial: B, f: (function(B, A) -> B)) -> B
-    acc: B @ initial
+    acc: B @= initial
 
     for x in xs
         acc @ f(acc, x)
@@ -114,7 +114,7 @@ function is_letter(c: u8) -> bool
 
 # Reads an integer, consuming it.
 function read_number(@l: Lex) -> i64
-    v: i64 @ 0
+    v: i64 @= 0
 
     while !l.at_end() && l.here().is_digit()
         v @ v * 10 + to_i64(l.here() - '0').must()
@@ -133,8 +133,8 @@ function read_name(@l: Lex) -> str
 
 # Splits the text into tokens. Fails on the first unknown character.
 function tokenize(text: str) -> [Token]?
-    l: Lex @ Lex(text: text, pos: 0)
-    out: [Token] @ []
+    l: Lex @= Lex(text: text, pos: 0)
+    out: [Token] @= []
 
     while !l.at_end()
         c = l.here()
@@ -237,7 +237,7 @@ function group(@p: Parse) -> Expr?
 # A product of one or more factors.
 function term(@p: Parse) -> Expr?
     first = factor(@p)?
-    children: [Expr] @ [first]
+    children: [Expr] @= [first]
 
     while !p.parse_at_end() && p.parse_here() == .times
         parse_advance(@p)
@@ -250,7 +250,7 @@ function term(@p: Parse) -> Expr?
 # A sum of one or more terms.
 function expression(@p: Parse) -> Expr?
     first = term(@p)?
-    children: [Expr] @ [first]
+    children: [Expr] @= [first]
 
     while !p.parse_at_end() && p.parse_here() == .plus
         parse_advance(@p)
@@ -269,7 +269,7 @@ function lookup(env: {str: i64}, name: str) -> i64?
     return ok(env[name].must())
 
 function sum_of(children: [Expr], env: {str: i64}) -> i64?
-    tot: i64 @ 0
+    tot: i64 @= 0
 
     for c in children
         tot @ tot + evaluate(c, env)?
@@ -277,7 +277,7 @@ function sum_of(children: [Expr], env: {str: i64}) -> i64?
     return ok(tot)
 
 function product_of(children: [Expr], env: {str: i64}) -> i64?
-    tot: i64 @ 1
+    tot: i64 @= 1
 
     for c in children
         tot @ tot * evaluate(c, env)?
@@ -301,7 +301,7 @@ function names_used(e: Expr) -> [str]
         .product q  => names_of(q.children)
 
 function names_of(children: [Expr]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for c in children
         for n in c.names_used()
@@ -314,7 +314,7 @@ function names_of(children: [Expr]) -> [str]
 # From text to result, in one call.
 function calculate(text: str, env: {str: i64}) -> i64?
     ts = tokenize(text)?
-    p: Parse @ Parse(ts: ts, pos: 0)
+    p: Parse @= Parse(ts: ts, pos: 0)
     tree = expression(@p)?
 
     if !p.parse_at_end()
@@ -348,7 +348,7 @@ test "errors reach the top"
 
 test "values are always copies"
     a = [1, 2, 3]
-    b: [i64] @ a
+    b: [i64] @= a
     b @ b.push(4)
     assert a.len() == 3
     assert b.len() == 4
@@ -370,7 +370,7 @@ function simplify(e: Expr) -> Expr
 # The children of a sum that survive: each simplified, and the literal zeroes
 # dropped because adding one changes nothing.
 function keep_sum(children: [Expr]) -> [Expr]
-    out: [Expr] @ []
+    out: [Expr] @= []
 
     for child in children
         one = simplify(child)
@@ -382,7 +382,7 @@ function keep_sum(children: [Expr]) -> [Expr]
 
 # The same for a product, dropping the ones.
 function keep_product(children: [Expr]) -> [Expr]
-    out: [Expr] @ []
+    out: [Expr] @= []
 
     for child in children
         one = simplify(child)

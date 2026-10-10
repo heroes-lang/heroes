@@ -56,7 +56,7 @@ function removal(text: str, name: str) -> Removal?
         if tokens[i].kind == .comment
             return fail(code: "comment", msg: "a comment stands between the receiver and its call")
 
-    certainty: diag.Certainty @ .guess
+    certainty: diag.Certainty @= .guess
 
     if holds_nothing_that_runs(tokens, from: open + 1, to: close)
         certainty @ .certain
@@ -65,7 +65,7 @@ function removal(text: str, name: str) -> Removal?
 # The index of the last token before `at` a reader sees, past comments and the
 # lexer's own line ends and levels, or a negative number where there is none.
 function significant_before(tokens: [token.Token], at: i64) -> i64
-    i: i64 @ at - 1
+    i: i64 @= at - 1
 
     while i >= 0 && is_layout(tokens[i].kind)
         i @ i - 1
@@ -77,8 +77,8 @@ function is_layout(kind: token.TokenKind) -> bool
 
 # The opener the closer at `close` pairs with, any kind closing any, or -1.
 function opener_of(tokens: [token.Token], close: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ close
+    depth: i64 @= 0
+    i: i64 @= close
 
     while i >= 0
         k = tokens[i].kind
@@ -97,7 +97,7 @@ function opener_of(tokens: [token.Token], close: i64) -> i64
 # Whether the tokens from `from` to `to` are nothing, or one literal, a number
 # signed by a `-` included: what removing them loses nothing of.
 function holds_nothing_that_runs(tokens: [token.Token], from: i64, to: i64) -> bool
-    seen: [token.TokenKind] @ []
+    seen: [token.TokenKind] @= []
 
     for i in range(from: from, to: to)
         if !is_layout(tokens[i].kind)

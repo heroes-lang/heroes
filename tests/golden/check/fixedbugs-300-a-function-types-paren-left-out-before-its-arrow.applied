@@ -37,7 +37,7 @@ function a_unit_result(g: (function(i64 -> ())) -> i64  #~ expected_function_typ
     return 1
 
 function a_binding(d: (function(i64) -> i64))
-    g: (function(i64 -> i64) @ d  #~ expected_function_type_params_close
+    g: (function(i64 -> i64) @= d  #~ expected_function_type_params_close
     print(g(1))
 
 record Holder
@@ -59,7 +59,7 @@ function the_type_split(g: (function(
     return 1
 
 function a_stray_closer_below(d: (function(i64) -> i64))
-    g: (function(i64 -> i64) @ d  #~ expected_function_type_params_close
+    g: (function(i64 -> i64) @= d  #~ expected_function_type_params_close
     print(1))  #~ expected_end_of_line
 
 #~v expected_function_type_params_close

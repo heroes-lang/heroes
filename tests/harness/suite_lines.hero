@@ -99,11 +99,11 @@ constant LEAST: i64
     498
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     found = cases.collect(scratch: scratch, dir: RUN_DIR)?
 
     floors.check(@r, label: "lines", found: found.len(), floor: LEAST, what: "cases in " + RUN_DIR)
-    skipped: i64 @ 0
+    skipped: i64 @= 0
 
     for item in found
         one_case(@r, @skipped, scratch: scratch, compiler: compiler, item: item)
@@ -158,14 +158,14 @@ function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str,
             skipped @ skipped + 1
             report.keep_skip(@r, label: "lines/" + item.name, detail: "  " + lacks.must())
             return
-        detail: str @ "  " + item.source + " did not emit (exit " + said.must().code.to_str() + "):\n    " + said.must().err
+        detail: str @= "  " + item.source + " did not emit (exit " + said.must().code.to_str() + "):\n    " + said.must().err
         why = absence.refused(lacks)
 
         if why.len() > 0
             detail @ detail + "\n  not skipped for a missing library: " + why
         report.keep_failure(@r, label: "lines/" + item.name, detail: detail)
         return
-    wrong: [str] @ offences(c: said.must().out, source: item.source)
+    wrong: [str] @= offences(c: said.must().out, source: item.source)
 
     for one in entry_offences(c: said.must().out, source: item.source)
         wrong @ wrong.push(one)
@@ -196,8 +196,8 @@ function units_walked(@r: report.Report, scratch: str, compiler: str, item: case
             detail: "  `--emit-c` refuses " + item.source + "'s one file, and its units could not be asked: " + unread_units(units)
         )
         return
-    wrong: [str] @ []
-    entries: i64 @ 0
+    wrong: [str] @= []
+    entries: i64 @= 0
 
     for unit in units.must()
         named = item.source + ", its unit " + unit.name
@@ -205,7 +205,7 @@ function units_walked(@r: report.Report, scratch: str, compiler: str, item: case
         for one in offences(c: unit.text, source: named)
             wrong @ wrong.push(one)
 
-        blind: bool @ false
+        blind: bool @= false
 
         for one in entry_offences(c: unit.text, source: named)
             if strings.contains(text: one, needle: "no function's entry")
@@ -254,8 +254,8 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert !compiler.is_err()
     has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
     assert !has.is_err()
-    judged: report.Report @ report.empty()
-    none_skipped: i64 @ 0
+    judged: report.Report @= report.empty()
+    none_skipped: i64 @= 0
     one_case(
         @judged,
         @none_skipped,
@@ -269,8 +269,8 @@ test "fixedbugs: a case that cannot emit is skipped only where the machine lacks
     assert strings.contains(text: judged.failures[0], needle: "clang finds `stdio.h`")
     lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
     assert !lacks.is_err()
-    excused: report.Report @ report.empty()
-    one_skipped: i64 @ 0
+    excused: report.Report @= report.empty()
+    one_skipped: i64 @= 0
     one_case(
         @excused,
         @one_skipped,
@@ -295,8 +295,8 @@ test "fixedbugs: a case whose one file --emit-c refuses is walked over its units
     scratch = shell.own_scratch()
     planted = one_file_units.planted_two_ways(scratch)
     assert !planted.is_err()
-    judged: report.Report @ report.empty()
-    none_skipped: i64 @ 0
+    judged: report.Report @= report.empty()
+    none_skipped: i64 @= 0
     one_case(
         @judged,
         @none_skipped,
@@ -320,17 +320,17 @@ test "a few skips for a missing library pass, a third of the tree does not"
 # Walks emitted C the way C does — `#line N "f"` anchors the NEXT line,
 # then the count advances — and reports every claim that lands nowhere.
 function offences(c: str, source: str) -> [str]
-    found: [str] @ []
-    claim_file: str @ ""
-    claim_line: i64 @ 0
+    found: [str] @= []
+    claim_file: str @= ""
+    claim_line: i64 @= 0
 
     # A one-entry cache: a case's C alternates between `<heroes library>`
     # (skipped) and the case's own file, so one slot is enough and the
     # cost of a miss is one small file.
-    held: str @ ""
-    body: [str] @ []
-    readable: bool @ false
-    row_number: i64 @ 0
+    held: str @= ""
+    body: [str] @= []
+    readable: bool @= false
+    row_number: i64 @= 0
 
     for row in strings.lines(c)
         row_number @ row_number + 1
@@ -385,7 +385,7 @@ function offences(c: str, source: str) -> [str]
                     )
 
             if readable
-                why: str @ ""
+                why: str @= ""
 
                 if claim_line < 1 || claim_line > body.len()
                     why @ "past the end (" + body.len().to_str() + " lines)"
@@ -410,20 +410,20 @@ function offences(c: str, source: str) -> [str]
 # case whose C holds no entry is an offence too: a walk that found nothing
 # to ask is blind, never green.
 function entry_offences(c: str, source: str) -> [str]
-    found: [str] @ []
-    file: str @ ""
-    line: i64 @ 0
-    signature_file: str @ ""
-    signature_line: i64 @ 0
-    first_file: str @ ""
-    first_line: i64 @ 0
+    found: [str] @= []
+    file: str @= ""
+    line: i64 @= 0
+    signature_file: str @= ""
+    signature_line: i64 @= 0
+    first_file: str @= ""
+    first_line: i64 @= 0
 
     # A signature was read and its entry is not found yet; `spread` counts
     # the indented lines of C read since it that are not the entry's end.
-    pending: bool @ false
-    spread: i64 @ 0
-    entries: i64 @ 0
-    row_number: i64 @ 0
+    pending: bool @= false
+    spread: i64 @= 0
+    entries: i64 @= 0
+    row_number: i64 @= 0
 
     for row in strings.lines(c)
         row_number @ row_number + 1
@@ -511,13 +511,13 @@ function shown(wrong: [str]) -> str
 # have stopped the suite with `string slice splits a character`. A backslash
 # and every byte it escapes are ASCII, never inside another character.
 function unquoted(text: str) -> str?
-    body: str @ strings.trimmed(text)
+    body: str @= strings.trimmed(text)
 
     if body.len() >= 2 && body[0] == 34 && body[body.len() - 1] == 34
         body @ body.slice(from: 1, to: body.len() - 1)
-    parts: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    parts: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < body.len()
         if body[i] == 92

@@ -34,7 +34,7 @@ function on_one_line()
     print(pair(a: first(xs: [1, 2), b: 3))  #~ unclosed_bracket
 
 function in_a_map_type()
-    n: {str: [i64} @ {}  #~ unclosed_bracket
+    n: {str: [i64} @= {}  #~ unclosed_bracket
     print(n.len())
 
 function an_index_left_open_over_a_line_going_on()

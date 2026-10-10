@@ -32,7 +32,7 @@ record Arm
 
 # `check --brief` and any `extra` words on `rel`, a path inside `mirror`.
 function checked(compiler: str, mirror: str, rel: str, extra: [str], capture: str) -> Arm?
-    words: [str] @ [compiler, "check"]
+    words: [str] @= [compiler, "check"]
 
     for word in extra
         words @ words.push(word)
@@ -47,8 +47,8 @@ function checked(compiler: str, mirror: str, rel: str, extra: [str], capture: st
     return ok(arm_of(answer, mirror: mirror))
 
 function read_brief(err: str) -> Arm
-    messages: [Message] @ []
-    other: [str] @ []
+    messages: [Message] @= []
+    other: [str] @= []
 
     for line in split(err)
         got = message_of(line)
@@ -70,9 +70,9 @@ function arm_of(answer: child.Answer, mirror: str) -> Arm
 # feed, a carriage return or the two together, a vertical tab, a form
 # feed, the three separators U+001C to U+001E, NEL, and U+2028 and U+2029.
 function split(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         width = break_at(text, at: at)
@@ -126,9 +126,9 @@ function message_of(line: str) -> [Message]
 # gives, the line and the code's bytes; none where the rest is not that.
 function after_file(line: str, from: i64) -> [i64]
     none: [i64] = []
-    at: i64 @ from + 1
-    number: i64 @ 0
-    digits: i64 @ 0
+    at: i64 @= from + 1
+    number: i64 @= 0
+    digits: i64 @= 0
 
     while at < line.len() && line[at] >= '0' && line[at] <= '9'
         if digits < 18
@@ -139,7 +139,7 @@ function after_file(line: str, from: i64) -> [i64]
     if digits == 0 || at >= line.len() || line[at] != ':'
         return none
     at @ at + 1
-    col_digits: i64 @ 0
+    col_digits: i64 @= 0
 
     while at < line.len() && line[at] >= '0' && line[at] <= '9'
         col_digits @ col_digits + 1
@@ -197,7 +197,7 @@ function class_of(a: Arm, site: [i64], path: str, reading: str) -> str
 
     if a.messages.len() == 0
         return "EXIT1-NO-DIAGNOSTIC"
-    on: bool @ false
+    on: bool @= false
 
     for m in a.messages
         if on_site(m, site: site, path: path)

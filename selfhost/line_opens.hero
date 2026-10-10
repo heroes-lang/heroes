@@ -26,7 +26,7 @@ function opens_a_block(tokens: [token.Token]) -> bool
 # The same of the tokens before `end`, the stream's own past it left out
 # (`map_alone.hero`, which asks it of the line above a `{`).
 function opens_a_block_before(tokens: [token.Token], end: i64) -> bool
-    last: i64 @ end - 1
+    last: i64 @= end - 1
 
     while last >= 0 && (tokens[last].kind == .comment || tokens[last].kind == .terminator)
         last @ last - 1
@@ -40,7 +40,7 @@ function opens_a_block_before(tokens: [token.Token], end: i64) -> bool
 
     if k == .lbrace
         return last == 0 || !brace_layout.value_follows(tokens[last - 1].kind)
-    first: i64 @ last
+    first: i64 @= last
 
     while first > 0 && !is_boundary(tokens[first - 1].kind)
         first @ first - 1
@@ -54,8 +54,8 @@ function opens_a_block_before(tokens: [token.Token], end: i64) -> bool
 
     if heads_a_block(head) || head == .error || first == last && head == .ident
         return true
-    depth: i64 @ 0
-    i: i64 @ first
+    depth: i64 @= 0
+    i: i64 @= first
 
     while i <= last
         t = tokens[i].kind
@@ -75,15 +75,15 @@ function is_boundary(kind: token.TokenKind) -> bool
 
 function heads_a_block(kind: token.TokenKind) -> bool
     return match kind
-        .kw_if | .kw_else | .kw_while | .kw_for | .kw_match | .kw_function | .kw_record | .kw_variant => true
-        .kw_extern | .kw_test | .kw_constant                                                          => true
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit | .kw_true | .kw_false     => false
-        .kw_nullptr | .hole | .kw_fail | .kw_in | .kw_break | .kw_continue | .kw_return               => false
-        .kw_assert | .kw_use | .eq | .at | .colon | .colon_colon | .comma | .question | .arrow        => false
-        .fat_arrow | .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .dot     => false
-        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge        => false
-        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr | .comment                   => false
-        .terminator | .indent | .dedent | .eof | .error                                               => false
+        .kw_if | .kw_else | .kw_while | .kw_for | .kw_match | .kw_function | .kw_record | .kw_variant   => true
+        .kw_extern | .kw_test | .kw_constant                                                            => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit | .kw_true | .kw_false       => false
+        .kw_nullptr | .hole | .kw_fail | .kw_in | .kw_break | .kw_continue | .kw_return                 => false
+        .kw_assert | .kw_use | .eq | .at | .at_eq | .colon | .colon_colon | .comma | .question | .arrow => false
+        .fat_arrow | .pipe | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .dot       => false
+        .plus | .minus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge          => false
+        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr | .comment                     => false
+        .terminator | .indent | .dedent | .eof | .error                                                 => false
 
 ## Tests
 

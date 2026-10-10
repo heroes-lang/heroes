@@ -28,7 +28,7 @@ record World
     start: str
 
 function make() -> World
-    rooms: {str: Room} @ {}
+    rooms: {str: Room} @= {}
     rooms["gate"] @ Room(
         name: "gate",
         description: "A gate of black iron, standing open. A path leads north.",
@@ -110,10 +110,10 @@ test "the only item worth having is behind two doors"
 # a test helper that lives here because it is about the map rather than about
 # the game — and a world with an unreachable room is a world with a bug in it.
 function reachable(w: World) -> [str]
-    seen: {str: bool} @ {}
+    seen: {str: bool} @= {}
     seen[w.start] @ true
-    queue: [str] @ [w.start]
-    head: i64 @ 0
+    queue: [str] @= [w.start]
+    head: i64 @= 0
 
     while head < queue.len()
         here = queue[head]

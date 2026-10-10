@@ -77,7 +77,7 @@ function bare_marker(@c: cursor.Cursor, text: str, in_group: bool, word: str) ->
 # for two names and the repair says it; `when` takes one value; the rest are
 # dropped.
 function repeated(@c: cursor.Cursor, word: str, holder: str, at: token.Span)
-    repair: str @ "drop the second"
+    repair: str @= "drop the second"
 
     if word == keywords.WORD_ACQUIRES || word == keywords.WORD_TRANSFERS || word == keywords.WORD_RETAINS
         repair @ "one `" + word + "` names the whole set, `" + word + " sqlite3_close | sqlite3_close_v2`, so join the releasers with `|` or drop the second"
@@ -121,7 +121,7 @@ function named_marker(@c: cursor.Cursor, text: str, in_group: bool, word: str, e
         )
         return fail(code: "absent", msg: "the releaser's name is missing")
     first = cursor.bump(@c).span
-    last: token.Span @ first
+    last: token.Span @= first
 
     # A SET of releasers, `acquires sqlite3_close | sqlite3_close_v2` (defect
     # 075; panel 175's route A, panel 176's item 1): nine real pairs of C
@@ -271,7 +271,7 @@ test "a refused success value is consumed with its refusal"
     # Finding 3: five refused shapes, each one diagnostic and the line's end
     # under the cursor afterwards, where the refused token used to stand.
     for text in ["when -1", "when 'a'", "when 1.0", "when SQLITE_OK", "when \"x\""]
-        c: cursor.Cursor @ tokens_of(text)
+        c: cursor.Cursor @= tokens_of(text)
         got = when_marker(@c, text, in_group: true)
         assert got.is_err()
         assert c.diagnostics.len() == 1
@@ -280,21 +280,21 @@ test "a refused success value is consumed with its refusal"
 
     # The three shapes the grammar has come back as their span.
     for text in ["when 0", "when true", "when 0xFF"]
-        c: cursor.Cursor @ tokens_of(text)
+        c: cursor.Cursor @= tokens_of(text)
         got = when_marker(@c, text, in_group: true)
         assert !got.is_err()
         assert c.diagnostics.len() == 0
         assert cursor.at(c, .terminator)
 
     # Nothing after the word at all: the refusal, and nothing consumed past it.
-    d: cursor.Cursor @ tokens_of(keywords.WORD_WHEN)
+    d: cursor.Cursor @= tokens_of(keywords.WORD_WHEN)
     assert when_marker(@d, keywords.WORD_WHEN, in_group: true).is_err()
     assert d.diagnostics[0].code == "expected_success_value"
     assert cursor.at(d, .terminator)
 
 test "the clause with no result to compare is refused at the word"
     # Finding 2, and the literal goes with the word so the line ends clean.
-    c: cursor.Cursor @ tokens_of("when 0")
+    c: cursor.Cursor @= tokens_of("when 0")
     success_needs_result(@c, "when 0", in_group: true)
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "success_needs_result"
@@ -302,7 +302,7 @@ test "the clause with no result to compare is refused at the word"
     assert cursor.at(c, .terminator)
 
     # Outside a group `when` is a name, untouched.
-    d: cursor.Cursor @ tokens_of("when 0")
+    d: cursor.Cursor @= tokens_of("when 0")
     success_needs_result(@d, "when 0", in_group: false)
     assert d.diagnostics.len() == 0
     assert cursor.at(d, .ident)
@@ -310,7 +310,7 @@ test "the clause with no result to compare is refused at the word"
 test "the clause after a parameter is refused at the word and the `)` survives"
     # Finding 5, read with the cursor on the word as `members.read_marks`
     # calls it.
-    c: cursor.Cursor @ tokens_of("when 0)")
+    c: cursor.Cursor @= tokens_of("when 0)")
     success_on_parameter(@c)
     assert c.diagnostics.len() == 1
     assert c.diagnostics[0].code == "success_on_parameter"
@@ -320,7 +320,7 @@ test "a dangling bar is reported at the bar and not at what follows"
     # Finding 4: `-> Ob acquires put |` at a line's end continues the line, so
     # the cursor stands on the next declaration and the caret went there.
     text = "acquires put |\n\nfunction main()\n"
-    c: cursor.Cursor @ tokens_of(text)
+    c: cursor.Cursor @= tokens_of(text)
     got = named_marker(@c, text: text, in_group: true, word: keywords.WORD_ACQUIRES, example: "x")
     assert got.is_err()
     assert c.diagnostics.len() == 1
@@ -333,10 +333,10 @@ test "a dangling bar is reported at the bar and not at what follows"
 test "counted_by reads a name or a number, and nothing else"
     for extent in ["n", "SHA256_DIGEST_LENGTH", "32", "0x20", "1_000"]
         text = keywords.WORD_COUNTED_BY + " " + extent
-        c: cursor.Cursor @ tokens_of(text)
+        c: cursor.Cursor @= tokens_of(text)
         assert !counted_by_marker(@c, text, in_group: true).is_err()
 
     for extent in [" \"n\"", " 1.5", ""]
         text = keywords.WORD_COUNTED_BY + extent
-        c: cursor.Cursor @ tokens_of(text)
+        c: cursor.Cursor @= tokens_of(text)
         assert counted_by_marker(@c, text, in_group: true).is_err()

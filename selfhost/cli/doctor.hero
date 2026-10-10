@@ -58,7 +58,7 @@ function capture(program: str, words: [str], build_dir: str) -> str?
     return ok(first_line(said.must()))
 
 function first_line(text: str) -> str
-    run: [str] @ []
+    run: [str] @= []
 
     for ch in text.chars()
         if ch == "\n"
@@ -69,12 +69,12 @@ function first_line(text: str) -> str
 
 function trim_ends(text: str) -> str
     cs = text.chars()
-    head: i64 @ 0
+    head: i64 @= 0
 
     while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
         head @ head + 1
 
-    tail: i64 @ cs.len()
+    tail: i64 @= cs.len()
 
     while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
         tail @ tail - 1
@@ -88,7 +88,7 @@ function trim_ends(text: str) -> str
 # day CI first ran on two platforms, which is the whole reason that CI
 # exists.
 function checks(build_dir: str, runtime_hint: str?) -> [Check]
-    out: [Check] @ []
+    out: [Check] @= []
     clang = capture(program: "clang", words: ["clang", "--version"], build_dir: build_dir)
     out @ out.push(
         Check(name: "clang", ok: !clang.is_err(), detail: clang.default("not found — install a C toolchain"))
@@ -98,7 +98,7 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
     if !clang.is_err()
         major = clang_floor.major_of(clang.must())
         floor_ok = !major.is_err() && major.must() >= clang_floor.FLOOR
-        found: str @ "a version this compiler cannot read"
+        found: str @= "a version this compiler cannot read"
 
         if !major.is_err()
             found @ "clang " + major.must().to_str()
@@ -121,7 +121,7 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
 
     # build/ must be creatable and writable, probed by writing.
     made = process.mkdir_all(build_dir)
-    cache_ok: bool @ false
+    cache_ok: bool @= false
 
     if !made.is_err()
         probe = publish.private_name(build_dir + "/.doctor-probe")
@@ -129,7 +129,7 @@ function checks(build_dir: str, runtime_hint: str?) -> [Check]
         if !write_file(path: probe, text: "ok").is_err() && !read_file(probe).is_err()
             cache_ok @ true
         publish.discard(probe)
-    detail: str @ "cannot write to " + build_dir + "/"
+    detail: str @= "cannot write to " + build_dir + "/"
 
     if cache_ok
         detail @ build_dir + "/ writable"
@@ -231,10 +231,10 @@ function first_said(path: str, code: i64) -> str
     return "`" + line + "`"
 
 function run_doctor(build_dir: str, runtime_hint: str?) -> cli_table.Exit
-    all_ok: bool @ true
+    all_ok: bool @= true
 
     for c in checks(build_dir: build_dir, runtime_hint: runtime_hint)
-        mark: str @ "FAIL"
+        mark: str @= "FAIL"
 
         if c.ok
             mark @ "ok "
@@ -383,11 +383,11 @@ function has_text(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

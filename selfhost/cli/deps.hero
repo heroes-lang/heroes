@@ -107,7 +107,7 @@ function digest_of(path: str, @memo: {str: str}) -> str
     # its key is one no header of text can have (panel 189's R6,
     # `module/reading.key_of`).
     read = file_reading.key_of(path)
-    answer: str @ "absent"
+    answer: str @= "absent"
 
     if !read.is_err()
         answer @ read.must()
@@ -127,13 +127,13 @@ function digest_of(path: str, @memo: {str: str}) -> str
 # inside a path — macOS puts them in SDK paths. Everything up to the
 # first `:` is the target and is dropped.
 function paths_of(text: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     # The path being read, in the runs between its escapes.
-    piece: [str] @ []
-    start: i64 @ 0
-    index: i64 @ 0
-    seen_target: bool @ false
+    piece: [str] @= []
+    start: i64 @= 0
+    index: i64 @= 0
+    seen_target: bool @= false
 
     while index < text.len() && !seen_target
         if text[index] == 58
@@ -213,7 +213,7 @@ function rows_of(depfile: str, skip: str, @memo: {str: str}) -> str?
 
     if listing.is_err()
         return fail(code: "failed", msg: "clang wrote no dependency listing at " + depfile)
-    rows: [str] @ []
+    rows: [str] @= []
     unheld = listing.must().faults.len() > 0
 
     # On Windows a listing's separators are `\` whatever the words said, and
@@ -269,7 +269,7 @@ function vouched(record_path: str, @memo: {str: str}) -> str?
 function under(path: str, prefix: str, either: bool) -> bool
     if path.len() < prefix.len()
         return false
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < prefix.len()
         if path[index] != prefix[index] && !(either && separator(path[index]) && separator(prefix[index]))
@@ -307,9 +307,9 @@ function fresh_rows(rows: str, @memo: {str: str}) -> bool
     return true
 
 function lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    index: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    index: i64 @= 0
 
     while index < text.len()
         if text[index] == 10
@@ -355,19 +355,19 @@ test "an empty listing has no paths"
     assert paths_of("dep:\n").len() == 0
 
 test "a file that is not there answers absent, not a digest"
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
     assert digest_of("selfhost/no-such-file-exists.h", @memo) == "absent"
     assert memo.len() == 1
 
 test "a digest is asked of the file once"
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
     first = digest_of("runtime/heroes_runtime.h", @memo)
     assert first.len() == 16
     assert digest_of("runtime/heroes_runtime.h", @memo) == first
     assert memo.len() == 1
 
 test "no record vouches for nothing"
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
     assert vouched("selfhost/no-such-directory/deps.txt", @memo).is_err()
 
 # The invariant itself, made to fire (CLAUDE.md §9): a record written
@@ -385,19 +385,19 @@ test "a record goes stale when what it recorded changes, and names its artifacts
     watched = "build/selftest-deps-watched.h"
     assert !write_file(path: watched, text: "#define LIMIT 1\n").is_err()
     assert !write_file(path: dir + "/listing.d", text: "dep: " + watched + "\n").is_err()
-    writing: {str: str} @ {}
+    writing: {str: str} @= {}
     rows = rows_of(depfile: dir + "/listing.d", skip: dir + "/", @writing).must()
     assert !write_file(path: dir + "/deps.txt", text: pointer_text(rows)).is_err()
-    reading: {str: str} @ {}
+    reading: {str: str} @= {}
     first = vouched(dir + "/deps.txt", @reading).must()
     assert first == digest.digest(rows)
 
     # Another header, another digest: the second compile's artifacts are
     # other names, so the first compile's object is never the second's.
     assert !write_file(path: watched, text: "#define LIMIT 2\n").is_err()
-    after: {str: str} @ {}
+    after: {str: str} @= {}
     assert vouched(dir + "/deps.txt", @after).is_err()
-    again: {str: str} @ {}
+    again: {str: str} @= {}
     second = digest.digest(rows_of(depfile: dir + "/listing.d", skip: dir + "/", @again).must())
     assert second != first
 
@@ -418,18 +418,18 @@ test "a record over a header that is not UTF-8 goes stale when a header of text 
     # through it: the name is replaced below, and the committed file stays.
     assert !files.second_name(existing: "tests/golden/surface-fixtures/notext227/latin1.h", name: watched).is_err()
     assert !write_file(path: dir + "/key/listing.d", text: "dep: " + watched + "\n").is_err()
-    writing: {str: str} @ {}
+    writing: {str: str} @= {}
     rows = rows_of(depfile: dir + "/key/listing.d", skip: dir + "/key/", @writing).must()
     assert rows[0] == 'n'
     assert !write_file(path: dir + "/key/deps.txt", text: pointer_text(rows)).is_err()
-    before: {str: str} @ {}
+    before: {str: str} @= {}
     assert !vouched(dir + "/key/deps.txt", @before).is_err()
     shown = file_reading.keyed(watched).must().text
 
     for spelled in ["not UTF-8, 2 bytes of marks:\nE9" + shown, "E9" + shown, shown]
         assert !write_file(path: dir + "/next.h", text: spelled).is_err()
         assert !process.rename_over(from: dir + "/next.h", to: watched).is_err()
-        after: {str: str} @ {}
+        after: {str: str} @= {}
         assert vouched(dir + "/key/deps.txt", @after).is_err()
 
 test "a prefix test on a path with an accent in it does not abort"
@@ -466,7 +466,7 @@ test "a listing written the Windows way leaves the key's own files out exactly w
     assert !process.mkdir_all(dir).is_err()
     native = "build\\selftest-deps-windows\\"
     assert !write_file(path: dir + "/listing.d", text: "dep: " + native + "unit.c \\\r\n  " + native + "watched.h\r\n").is_err()
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
     rows = rows_of(depfile: dir + "/listing.d", skip: dir + "/", @memo).must()
     assert rows.len() == 0 == (process.exe_suffix() == ".exe")
 
@@ -475,7 +475,7 @@ test "what the key already names is not recorded"
     assert !process.mkdir_all(dir).is_err()
     assert !write_file(path: dir + "/watched.h", text: "#define X 1\n").is_err()
     assert !write_file(path: dir + "/listing.d", text: "dep: " + dir + "/unit.c " + dir + "/watched.h\n").is_err()
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
 
     # Both paths are inside the keyed directory, so the rows are empty
     # and the memo was never asked about either; the record still vouches.
@@ -488,7 +488,7 @@ test "what the key already names is not recorded"
 test "a record this format did not write vouches for nothing, and does not abort"
     dir = "build/selftest-deps-shape"
     assert !process.mkdir_all(dir).is_err()
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
 
     # A path with a newline in it, which is what `lines` would hand
     # back in two pieces — the second piece has no digest and no space
@@ -508,7 +508,7 @@ test "a record this format did not write vouches for nothing, and does not abort
 # bytes. It reads whole, the files beside the byte are recorded as ever, and
 # the path holding it is `absent`, which vouches for nothing.
 test "a listing naming a path that is not UTF-8 reads whole, and that path vouches for nothing (defect 337)"
-    memo: {str: str} @ {}
+    memo: {str: str} @= {}
     rows = rows_of(depfile: "tests/golden/surface-fixtures/notext337/listing-latin1.d", skip: "build/", @memo).must()
     got = lines(rows)
     assert got.len() == 3

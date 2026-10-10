@@ -36,7 +36,7 @@ function main()
     if opened.is_err()
         print("sqlite would not open a database: ", why_open(opened))
         exit(1)
-    db: sqlite.Db @ opened.must()
+    db: sqlite.Db @= opened.must()
     built = build(db)
 
     if built.is_err()
@@ -61,7 +61,7 @@ function build(db: sqlite.Db) -> ()?
     # A transaction, so ten inserts are one unit — and so the program has a
     # reason to name `begin` and `commit` rather than describing them.
     sqlite.run(db, "begin")?
-    accounts: sqlite.Statement @ sqlite.prepared(db, "insert into account(name, kind) values (?, ?)")?
+    accounts: sqlite.Statement @= sqlite.prepared(db, "insert into account(name, kind) values (?, ?)")?
 
     for a in entry.accounts()
         sqlite.bind_text(statement: accounts, at: 1, text: a.name)?
@@ -70,7 +70,7 @@ function build(db: sqlite.Db) -> ()?
         sqlite.reset(accounts)?
 
     _ = sqlite.finalized(@accounts)
-    rows: sqlite.Statement @ sqlite.prepared(db, "insert into entry(id, account, memo, cents) values (?, ?, ?, ?)")?
+    rows: sqlite.Statement @= sqlite.prepared(db, "insert into entry(id, account, memo, cents) values (?, ?, ?, ?)")?
 
     for e in entry.book()
         sqlite.bind_int(statement: rows, at: 1, value: e.id)?
@@ -130,7 +130,7 @@ function show(db: sqlite.Db) -> ()?
     print("")
     print("living expenses, from the join")
     living = queried_int(db, "select sum(cents) from entry join account on account.name = entry.account where account.kind = 'living'")?
-    mine_living: i64 @ 0
+    mine_living: i64 @= 0
 
     for e in entry.book()
         if entry.kind_of(e.account, entry.accounts())? == "living"
@@ -143,9 +143,9 @@ function show(db: sqlite.Db) -> ()?
 # `balances` produces — `order by` in the query, because a database's row
 # order is no more promised than a map's key order.
 function queried_balances(db: sqlite.Db) -> [entry.Balance]?
-    statement: sqlite.Statement @ sqlite.prepared(db, "select account, count(*), sum(cents) from entry group by account order by account")?
-    out: [entry.Balance] @ []
-    going: bool @ true
+    statement: sqlite.Statement @= sqlite.prepared(db, "select account, count(*), sum(cents) from entry group by account order by account")?
+    out: [entry.Balance] @= []
+    going: bool @= true
 
     while going
         match sqlite.stepped(@statement)?
@@ -162,9 +162,9 @@ function queried_balances(db: sqlite.Db) -> [entry.Balance]?
 # One integer from one row — through the typed cell reader, so a query
 # edited to return text does not answer zero.
 function queried_int(db: sqlite.Db, sql: str) -> i64?
-    statement: sqlite.Statement @ sqlite.prepared(db, sql)?
-    value: i64 @ 0
-    found: bool @ false
+    statement: sqlite.Statement @= sqlite.prepared(db, sql)?
+    value: i64 @= 0
+    found: bool @= false
 
     match sqlite.stepped(@statement)?
         .stepped_row =>
@@ -179,9 +179,9 @@ function queried_int(db: sqlite.Db, sql: str) -> i64?
     return ok(value)
 
 function queried_float(db: sqlite.Db, sql: str) -> f64?
-    statement: sqlite.Statement @ sqlite.prepared(db, sql)?
-    value: f64 @ 0.0
-    found: bool @ false
+    statement: sqlite.Statement @= sqlite.prepared(db, sql)?
+    value: f64 @= 0.0
+    found: bool @= false
 
     match sqlite.stepped(@statement)?
         .stepped_row =>
@@ -207,7 +207,7 @@ function queried_float(db: sqlite.Db, sql: str) -> f64?
 function same_balances(from_db: [entry.Balance], mine: [entry.Balance]) -> bool
     if from_db.len() != mine.len()
         return false
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < mine.len()
         if from_db[at].account != mine[at].account
@@ -239,7 +239,7 @@ function verdict(holds: bool) -> str
     return "no"
 
 test "the book goes into the database and comes back unchanged"
-    db: sqlite.Db @ sqlite.opened().must()
+    db: sqlite.Db @= sqlite.opened().must()
     build(db).must()
     from_db = queried_balances(db).must()
     mine = entry.balances(entry.book())
@@ -247,20 +247,20 @@ test "the book goes into the database and comes back unchanged"
     _ = sqlite.closed(@db)
 
 test "sqlite's total and heroes' total are the same number"
-    db: sqlite.Db @ sqlite.opened().must()
+    db: sqlite.Db @= sqlite.opened().must()
     build(db).must()
     assert queried_int(db, "select sum(cents) from entry").must() == entry.total(entry.book()).cents
     assert queried_int(db, "select count(*) from entry").must() == entry.book().len()
     _ = sqlite.closed(@db)
 
 test "the join agrees with the same join done in Heroes"
-    db: sqlite.Db @ sqlite.opened().must()
+    db: sqlite.Db @= sqlite.opened().must()
     build(db).must()
     living = queried_int(
         db,
         "select sum(cents) from entry join account on account.name = entry.account where account.kind = 'living'"
     ).must()
-    mine: i64 @ 0
+    mine: i64 @= 0
 
     for e in entry.book()
         if entry.kind_of(e.account, entry.accounts()).must() == "living"
@@ -270,16 +270,16 @@ test "the join agrees with the same join done in Heroes"
     _ = sqlite.closed(@db)
 
 test "a statement the database refuses is a refusal here, with sqlite's own words"
-    db: sqlite.Db @ sqlite.opened().must()
+    db: sqlite.Db @= sqlite.opened().must()
     bad = sqlite.run(db, "select * from nothing_at_all")
     assert bad.is_err()
     assert lines.holds(text: err_text_of(bad), needle: "no such table")
     _ = sqlite.closed(@db)
 
 test "a column read at the wrong type is a refusal and not a zero"
-    db: sqlite.Db @ sqlite.opened().must()
+    db: sqlite.Db @= sqlite.opened().must()
     build(db).must()
-    statement: sqlite.Statement @ sqlite.prepared(db, "select memo from entry where id = 1").must()
+    statement: sqlite.Statement @= sqlite.prepared(db, "select memo from entry where id = 1").must()
     _ = sqlite.stepped(@statement).must()
     cell = sqlite.cell(statement: statement, column: 0).must()
     assert sqlite.text_of(cell).must() == "september"
@@ -288,7 +288,7 @@ test "a column read at the wrong type is a refusal and not a zero"
     _ = sqlite.closed(@db)
 
 test "the prepared statement really is reused: ten entries, one statement"
-    db: sqlite.Db @ sqlite.opened().must()
+    db: sqlite.Db @= sqlite.opened().must()
     build(db).must()
 
     # `changes` is SQLite's own counter for the last statement, so ten

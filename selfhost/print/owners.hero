@@ -90,10 +90,10 @@ function shape(s: source.Source, lexed: [token.Token], ignored: [i64], end: i64)
     # Every array is a local until the end: a push onto a record's field
     # copies the field, and read that way a file of fifty thousand tokens
     # took `fmt` from a third of a second to eight (measured 2026-09-26).
-    tokens: [token.Token] @ []
-    pair: [i64] @ []
-    ended: [bool] @ []
-    stop: bool @ false
+    tokens: [token.Token] @= []
+    pair: [i64] @= []
+    ended: [bool] @= []
+    stop: bool @= false
 
     for t in lexed
         if t.span.start >= end
@@ -113,26 +113,26 @@ function shape(s: source.Source, lexed: [token.Token], ignored: [i64], end: i64)
             if t.kind != .comment
                 stop @ false
 
-    code: [bool] @ []
-    columns: [i64] @ []
-    last: [i64] @ []
+    code: [bool] @= []
+    columns: [i64] @= []
+    last: [i64] @= []
 
     for _ in range(from: 0, to: s.line_starts.len() + 2)
         code @ code.push(false)
         columns @ columns.push(0)
         last @ last.push(0)
 
-    owner: [i64] @ []
-    prior: [i64] @ []
-    marks: [i64] @ []
-    depth: i64 @ 0
-    current: i64 @ 0
-    previous: i64 @ 0
-    pending: [i64] @ []
-    open: [i64] @ []
-    top: i64 @ 0
-    index: i64 @ 0
-    at_line: i64 @ 0
+    owner: [i64] @= []
+    prior: [i64] @= []
+    marks: [i64] @= []
+    depth: i64 @= 0
+    current: i64 @= 0
+    previous: i64 @= 0
+    pending: [i64] @= []
+    open: [i64] @= []
+    top: i64 @= 0
+    index: i64 @= 0
+    at_line: i64 @= 0
 
     for t in tokens
         at_line @ line_index(s.line_starts, from: at_line, offset: t.span.start)
@@ -207,8 +207,8 @@ function columns_of(columns: [i64], line: i64) -> i64
 # logical line at column `above` and the next, at column `below` (-1 for
 # none either side), read from the run's last comment up.
 function settle(@owner: [i64], marks: [i64], pending: [i64], above: i64, below: i64)
-    low: i64 @ 0
-    high: i64 @ 0
+    low: i64 @= 0
+    high: i64 @= 0
 
     if below >= 0
         low @ below / 4
@@ -218,12 +218,12 @@ function settle(@owner: [i64], marks: [i64], pending: [i64], above: i64, below: 
 
     if high < low
         high @ low
-    later: i64 @ 0
-    at: i64 @ pending.len() - 1
+    later: i64 @= 0
+    at: i64 @= pending.len() - 1
 
     while at >= 0
         k = pending[at]
-        own: i64 @ marks[k] / 4
+        own: i64 @= marks[k] / 4
 
         if own > high
             own @ high
@@ -242,7 +242,7 @@ function settle(@owner: [i64], marks: [i64], pending: [i64], above: i64, below: 
 # The logical line holding source line `line`: the nearest code line at or
 # above it.
 function start_of(lines: Lines, line: i64) -> i64
-    at: i64 @ line
+    at: i64 @= line
 
     while at > 0 && (at >= lines.code.len() || !lines.code[at])
         at @ at - 1
@@ -257,7 +257,7 @@ function start_of(lines: Lines, line: i64) -> i64
 function line_index(starts: [i64], from: i64, offset: i64) -> i64
     if from < 0 || from >= starts.len() || starts[from] > offset
         return source.floor_start(starts, offset)
-    at: i64 @ from
+    at: i64 @= from
 
     while at + 1 < starts.len() && starts[at + 1] <= offset
         at @ at + 1
@@ -275,8 +275,8 @@ function end_of(lines: Lines, line: i64) -> i64
 # The index of the token holding byte `offset`, or of the last one before
 # it, -1 when none is.
 function index_at(lines: Lines, offset: i64) -> i64
-    low: i64 @ 0
-    high: i64 @ lines.tokens.len()
+    low: i64 @= 0
+    high: i64 @= lines.tokens.len()
 
     while low < high
         middle = (low + high) / 2
@@ -290,7 +290,7 @@ function index_at(lines: Lines, offset: i64) -> i64
 
 # The token before or after token `index` that is not a comment, or -1.
 function code_before(lines: Lines, index: i64) -> i64
-    at: i64 @ index - 1
+    at: i64 @= index - 1
 
     while at >= 0 && lines.tokens[at].kind == .comment
         at @ at - 1
@@ -298,7 +298,7 @@ function code_before(lines: Lines, index: i64) -> i64
     return at
 
 function code_after(lines: Lines, index: i64) -> i64
-    at: i64 @ index + 1
+    at: i64 @= index + 1
 
     while at < lines.tokens.len() && lines.tokens[at].kind == .comment
         at @ at + 1
@@ -377,8 +377,8 @@ test "a comma after a comment is alone"
 test "a line walked forward is the line searched for, and an offset behind is searched for whole"
     text = "a\n\nbc\ndef\n"
     s = source.new_source(name: "t.hero", text: text)
-    at: i64 @ 0
-    offset: i64 @ 0
+    at: i64 @= 0
+    offset: i64 @= 0
 
     while offset <= text.len()
         at @ line_index(s.line_starts, from: at, offset: offset)

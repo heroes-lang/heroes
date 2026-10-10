@@ -32,7 +32,7 @@ function ends_a_life(decls: [ast.Decl]) -> bool
 function all_arguments(receiver: i64?, given: [ast.Arg]) -> [ast.Arg]
     if receiver.is_err()
         return given
-    out: [ast.Arg] @ [ast.Arg(name: fail(code: "none", msg: "the receiver"), mutable: false, value: receiver.must())]
+    out: [ast.Arg] @= [ast.Arg(name: fail(code: "none", msg: "the receiver"), mutable: false, value: receiver.must())]
 
     for arg in given
         out @ out.push(arg)
@@ -96,7 +96,7 @@ function element(a: ast.Ast, s: source.Source, id: i64) -> str
 function ends(@f: flow.Flow, a: ast.Ast, r: resolved.Resolved, s: source.Source, fd: ast.FunctionDecl, handed: [ast.Arg], callee: token.Span, span: token.Span)
     conditional = !fd.when_result.is_err()
     into_result = !fd.acquires_result.is_err()
-    position: i64 @ 0
+    position: i64 @= 0
 
     for p in fd.params
         if position < handed.len() && !handed[position].mutable

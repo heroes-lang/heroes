@@ -33,7 +33,7 @@ use checker
 # the same order.
 function instance_name(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
     module = source.component_at(s, f.span.start)
-    is_test: bool @ false
+    is_test: bool @= false
 
     match f.kind
         .test_kind                                     => is_test @ true
@@ -51,7 +51,7 @@ function instance_name(f: containers.Function, c: state.Checked, s: source.Sourc
 # what the comment above an instance shows. Independent of the interner
 # ids, of the module, and of the file's name.
 function render_instance(c: state.Checked, s: source.Source, decls: [ast.Decl], bound: [i64]) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
     none: [str] = []
 
     for t in bound
@@ -66,12 +66,12 @@ function render_instance(c: state.Checked, s: source.Source, decls: [ast.Decl], 
 function signature(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl]) -> str
     name = instance_name(f, c, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
-    params: [str] @ []
+    params: [str] @= []
 
     for slot_id in f.params
         params @ params.push(one_param(f, c, names, slot_id: slot_id))
 
-    list: str @ "void"
+    list: str @= "void"
 
     if params.len() > 0
         list @ params.join(", ")
@@ -79,7 +79,7 @@ function signature(f: containers.Function, c: state.Checked, names: ctype.Names,
     # An INSTANCE is TU-local (panel 093 R2): under one .c per module a
     # copy is emitted static in every unit that uses it, and the fused
     # unit defines the macro empty — one printer for both paths.
-    local: str @ ""
+    local: str @= ""
 
     if f.instance.len() > 0
         local @ "HERO_TU_LOCAL "
@@ -87,12 +87,12 @@ function signature(f: containers.Function, c: state.Checked, names: ctype.Names,
 
 function one_param(f: containers.Function, c: state.Checked, names: ctype.Names, slot_id: i64) -> str
     declared = f.slots[slot_id]
-    ty: str @ "void"
+    ty: str @= "void"
     found = ctype.c_type(names, c: c, ty: declared.ty)
 
     if !found.is_err()
         ty @ found.must()
-    is_mutable: bool @ false
+    is_mutable: bool @= false
 
     match declared.kind
         .param_slot ps =>
@@ -113,7 +113,7 @@ function prototype(@w: writer.Writer, f: containers.Function, c: state.Checked, 
 ## Tests
 
 test "the signature spells the pair rule, and an instance carries its hash"
-    text = "function dist(a: i64, @b: i64) -> i64\n    b @ b + a\n    return a\n\nfunction main()\n    v: i64 @ 0\n    print(dist(a: 1, b: @v))\n"
+    text = "function dist(a: i64, @b: i64) -> i64\n    b @ b + a\n    return a\n\nfunction main()\n    v: i64 @= 0\n    print(dist(a: 1, b: @v))\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -146,13 +146,13 @@ test "the signature spells the pair rule, and an instance carries its hash"
 
     # An instance: the same function at [i64] carries the hash of the
     # canonical rendering — the same polynomial the witness golden pins.
-    monod: containers.Function @ f
+    monod: containers.Function @= f
     monod.instance @ [int_id]
     named = instance_name(monod, c, s, parsed.decls)
     assert named == "h_t_dist_" + mangle.instance(render_instance(c, s, parsed.decls, bound: [int_id]))
 
     # A test block is named by index, never by title.
-    tester: containers.Function @ f
+    tester: containers.Function @= f
     tester.kind @ .test_kind
     tester.decl @ 3
     empty_params: [i64] = []

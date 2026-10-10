@@ -201,7 +201,7 @@ function name_of(at: i64) -> str
 # the compiler shows stays in the table's one deterministic order.
 function index_of(name: str) -> i64?
     names = NAMES
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < names.len()
         if names[i] == name
@@ -286,7 +286,7 @@ test "the inventory is forty-one names and the order is identity"
 test "the names and the table are one list, position for position"
     entries = table()
     assert NAMES.len() == entries.len()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < entries.len()
         assert NAMES[i] == entries[i].name

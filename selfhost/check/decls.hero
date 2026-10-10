@@ -39,7 +39,7 @@ use contextless_errors
 
 function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     one_tag_one_type(@c, s, decls)
-    index: i64 @ 0
+    index: i64 @= 0
 
     for decl in decls
         match decl.kind
@@ -74,7 +74,7 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                         # longer exists.
                         c.out.results[index] @ declared
             .function_decl fd =>
-                names: [str] @ []
+                names: [str] @= []
 
                 for g in fd.value.generics
                     names @ names.push(source.span_text(s, g))
@@ -109,7 +109,7 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 c.result @ result
                 c.fallible @ discard.is_fallible(c, result)
 
-                param_tys: [i64] @ []
+                param_tys: [i64] @= []
 
                 for param in fd.value.params
                     ty = lower.lower_ty(@c, a, r, param.ty)
@@ -122,10 +122,10 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
                 # until 2026-09-03): no argument can bind it and no context
                 # reaches it, so every call would be refused at the call,
                 # and this declaration is the one line that can be fixed.
-                letter_at: i64 @ 0
+                letter_at: i64 @= 0
 
                 for g in fd.value.generics
-                    seen: bool @ generics.mentions(c, ty: result, at: letter_at)
+                    seen: bool @= generics.mentions(c, ty: result, at: letter_at)
 
                     for pt in param_tys
                         if generics.mentions(c, ty: pt, at: letter_at)
@@ -226,7 +226,7 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 
 # A constant's body (§4.2: its last line is its value), walked as
 # `walk.block` walks a value block, and told at the one statement it left
-# by when it left (defect 149: `x: i64 @ 1` over `return x` was told at the
+# by when it left (defect 149: `x: i64 @= 1` over `return x` was told at the
 # binding). A copy of `block`'s loop rather than a field `block` writes,
 # because a constant's body is walked once, from its declaration, and
 # `block` is on the path every nested block recurses through: carrying the
@@ -249,15 +249,15 @@ function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Sou
 # line after one is that refusal's shadow (design.md §4.17). A block inside
 # the body is `walk.block`'s, and refuses as everywhere.
 function constant_body(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], name: str, body: ast.Block, ty: i64)
-    leaves: join.Leaves @ .falls
-    left: token.Span @ body.span
-    value: i64? @ fail(code: "none", msg: "no last value yet")
+    leaves: join.Leaves @= .falls
+    left: token.Span @= body.span
+    value: i64? @= fail(code: "none", msg: "no last value yet")
     last = body.stmts.len() - 1
-    index: i64 @ 0
+    index: i64 @= 0
     c.tail @ false
 
     for sid in body.stmts
-        here: walk.Want @ .nothing
+        here: walk.Want @= .nothing
 
         if index == last
             here @ .value(ty: ty)
@@ -290,7 +290,7 @@ function checked_file(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     file(@c, p.tree, out, s, p.decls)
     return c
 
@@ -334,7 +334,9 @@ test "a jump at a constant's top level is told once"
     assert broke.out.diagnostics[0].code == "jump_outside_loop"
 
     # Inside the body's own blocks the rule is `walk.block`'s, as anywhere.
-    looped = checked_file("constant M: i64\n    n: i64 @ 0\n    while n < 3\n        break\n        n @ n + 1\n    n\n")
+    looped = checked_file(
+        "constant M: i64\n    n: i64 @= 0\n    while n < 3\n        break\n        n @ n + 1\n    n\n"
+    )
     assert looped.out.diagnostics.len() == 1
     assert looped.out.diagnostics[0].code == "unreachable_statement"
 
@@ -345,13 +347,13 @@ test "a path that ends on assert false or a loop nothing breaks needs no return"
     ended = checked_file("function f(n: i64) -> i64\n    if n > 0\n        return n\n    assert false\n")
     assert ended.missing_returns.len() == 0
     looped = checked_file(
-        "function f(n: i64) -> i64\n    m: i64 @ n\n    while true\n        if m > 9\n            return m\n        m @ m + 1\n"
+        "function f(n: i64) -> i64\n    m: i64 @= n\n    while true\n        if m > 9\n            return m\n        m @ m + 1\n"
     )
     assert looped.missing_returns.len() == 0
     valued = checked_file("function f(n: i64, off: bool) -> i64\n    if n > 0\n        return n\n    assert off\n")
     assert valued.missing_returns.len() == 1
     broken = checked_file(
-        "function f(n: i64) -> i64\n    m: i64 @ n\n    while true\n        if false\n            break\n        if m > 9\n            return m\n        m @ m + 1\n"
+        "function f(n: i64) -> i64\n    m: i64 @= n\n    while true\n        if false\n            break\n        if m > 9\n            return m\n        m @ m + 1\n"
     )
     assert broken.missing_returns.len() == 1
 
@@ -368,9 +370,9 @@ test "a used module's main is held to the rules as the root's is, one file one v
     s = source.from_files(files)
     p = parse.parse(s.text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     file(@c, p.tree, out, s, p.decls)
-    codes: [str] @ []
+    codes: [str] @= []
 
     for d in c.out.diagnostics
         codes @ codes.push(d.code)
@@ -383,7 +385,7 @@ test "a path off the end is held back, not yet reported"
     # The if has no else, so the function CAN fall off its end — and the
     # diagnostic waits in missing_returns for the driver's hole exemption.
     assert c.missing_returns.len() == 1
-    held: bool @ false
+    held: bool @= false
 
     for d in c.out.diagnostics
         if d.code == "missing_return"
@@ -393,7 +395,7 @@ test "a path off the end is held back, not yet reported"
 
 test "the extern hooks fire from the declaration walk"
     bad_sig = checked_file("extern \"m.h\"\n    function take(xs: [i64]) -> i64\n")
-    found: bool @ false
+    found: bool @= false
 
     for d in bad_sig.out.diagnostics
         if d.code == "ffi_type"
@@ -476,7 +478,7 @@ test "a type parameter that appears nowhere in the signature is refused at its l
 # where the header declares both, and the census that opened this found the pair
 # only where the header declares neither.
 function one_tag_one_type(@c: state.Checker, s: source.Source, decls: [ast.Decl])
-    seen: {str: str} @ {}
+    seen: {str: str} @= {}
 
     for decl in decls
         match decl.kind

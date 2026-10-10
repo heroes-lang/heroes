@@ -1,5 +1,5 @@
 # Fixed 2026-10-02, defect 149, lane checker. Symptom: a value block that
-# ends on a statement, `constant M: i64` over `x: i64 @ 1`, `x @ x + 1`,
+# ends on a statement, `constant M: i64` over `x: i64 @= 1`, `x @ x + 1`,
 # `assert x == 2`, was told *this branch ends on a statement* at its first
 # line, which is right, where the line that gives no value is the last.
 # Cause: the message took the block's span, which begins at its first
@@ -11,18 +11,18 @@
 # line stood there already.
 
 constant ENDS_ON_ASSERT: i64
-    x: i64 @ 1
+    x: i64 @= 1
     x @ x + 1
     assert x == 2  #~ no_value
 
 constant ENDS_ON_A_LOOP: i64
-    x: i64 @ 1
+    x: i64 @= 1
 
     while x < 3  #~ no_value
         x @ x + 1
 
 constant ENDS_ON_A_MUTATION: i64
-    x: i64 @ 1
+    x: i64 @= 1
     x @ x + 1  #~ no_value
 
 constant ENDS_ON_A_BRANCH_OF_ITS_OWN: i64
@@ -47,7 +47,7 @@ function value_else(c: bool) -> i64
     x = if c
         1
     else
-        y: i64 @ 2
+        y: i64 @= 2
         y @ y + 1  #~ no_value
     return x
 

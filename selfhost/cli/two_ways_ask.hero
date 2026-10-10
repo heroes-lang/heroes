@@ -48,7 +48,7 @@ record Answer
 # named declaration, kept under what the list depends on as a probe's dump
 # is. A name a qualifier or a space holds is no file-scope C name.
 function listed(t: toolchain.Toolchain, probe: compiling.Probe) -> {str: bool}
-    out: {str: bool} @ {}
+    out: {str: bool} @= {}
     text = compiling.include_lines(probe.headers)
     key = digest.digest(
         t.fingerprint + "|ast_list|" + t.compiler_key + "|" + text + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
@@ -56,7 +56,7 @@ function listed(t: toolchain.Toolchain, probe: compiling.Probe) -> {str: bool}
     dir = t.build + "/twoways-" + key
     kept_path = dir + "/listed.txt"
     known = kept.read(kept_path)
-    said: str @ ""
+    said: str @= ""
 
     if !known.is_err()
         said @ known.must()
@@ -115,9 +115,9 @@ function answers(t: toolchain.Toolchain, probe: compiling.Probe, names: [str]) -
 
 # The question unit: the headers, then two questions per name.
 function unit(headers: [str], names: [str]) -> str
-    lines: [str] @ c_text.includes(headers)
+    lines: [str] @= c_text.includes(headers)
     lines @ lines.push("struct hero_c1 { char hero_c; };")
-    index: i64 @ 0
+    index: i64 @= 0
 
     for name in names
         lines @ lines.push(c_text.line_directive(at: 1, file: TYPE + name))
@@ -148,12 +148,12 @@ function asked_of(dir: str, text: str, words: [str]) -> str?
 # of the compiler's own asks about a thousand names, and its answer is a
 # quarter of a megabyte.
 function read(said: str) -> {str: Answer}
-    types: {str: str} @ {}
-    external: {str: bool} @ {}
-    paths: {str: str} @ {}
-    rows: {str: i64} @ {}
+    types: {str: str} @= {}
+    external: {str: bool} @= {}
+    paths: {str: str} @= {}
+    rows: {str: i64} @= {}
     lines = rows_of(said)
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < lines.len()
         row = lines[index]
@@ -169,7 +169,7 @@ function read(said: str) -> {str: Answer}
 
             # clang's note under the refusal is the header's declaration, its
             # own includes above it (panel 202's (g)).
-            under: i64 @ index + 1
+            under: i64 @= index + 1
 
             while under < lines.len() && !clang_place.included(lines[under]).is_err()
                 under @ under + 1
@@ -182,7 +182,7 @@ function read(said: str) -> {str: Answer}
                     rows[name] @ place.must().row
         index @ index + 1
 
-    out: {str: Answer} @ {}
+    out: {str: Answer} @= {}
 
     # ORDER: none — a table keyed by name.
     for name in keys(types)
@@ -197,13 +197,13 @@ function read(said: str) -> {str: Answer}
 
 # The lines of a text, each without the `\r` a Windows clang ends it with.
 function rows_of(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at <= text.len()
         if at == text.len() || text[at] == 10
-            end: i64 @ at
+            end: i64 @= at
 
             if end > start && text[end - 1] == 13
                 end @ end - 1
@@ -217,7 +217,7 @@ function rows_of(text: str) -> [str]
 
 # The byte offset of `needle` in `text`, asked of its bytes.
 function found(text: str, needle: str) -> i64?
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
         if bytes.bytes_at(text: text, at: at, needle: needle)
@@ -241,7 +241,7 @@ function aka_of(row: str) -> str?
 
 # What stands from `from` up to the next `'`.
 function quoted_from(row: str, from: i64) -> str
-    at: i64 @ from
+    at: i64 @= from
 
     while at < row.len() && row[at] != 39
         at @ at + 1
@@ -251,7 +251,7 @@ function quoted_from(row: str, from: i64) -> str
 # The name a question's line asks about: what its file name holds after the
 # question's own words, up to the colon that opens the position.
 function asked_name(row: str, prefix: str) -> str
-    at: i64 @ prefix.len()
+    at: i64 @= prefix.len()
 
     while at < row.len() && row[at] != 58
         at @ at + 1
@@ -268,7 +268,7 @@ test "the answers are read from the questions' file names, the linkage from clan
     assert got["none"].is_err()
 
     # Clang on Windows ends its lines `\r\n`, read as ended `\n`.
-    crlf: [str] @ []
+    crlf: [str] @= []
 
     for row in rows_of(said)
         crlf @ crlf.push(row + "\r\n")

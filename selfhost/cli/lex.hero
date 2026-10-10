@@ -39,20 +39,20 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
 # 105): `out @ out + …` copied the whole dump at every token, and the JSON
 # dump of walk.hero four times over took 53 s.
 function json(tokens: [token.Token], s: source.Source) -> str
-    shown_tokens: [token.Token] @ []
+    shown_tokens: [token.Token] @= []
 
     for t in tokens
         if source.is_root(s, t.span.start)
             shown_tokens @ shown_tokens.push(t)
 
-    rows: [str] @ ["[\n"]
-    index: i64 @ 0
-    w: Walk @ started()
+    rows: [str] @= ["[\n"]
+    index: i64 @= 0
+    w: Walk @= started()
 
     for t in shown_tokens
         w @ moved(s, w: w, offset: t.span.start)
         found = placed(s, w: w)
-        comma: str @ ","
+        comma: str @= ","
 
         if index == shown_tokens.len() - 1
             comma @ ""
@@ -72,8 +72,8 @@ function json(tokens: [token.Token], s: source.Source) -> str
 # part of a row the file wrote, so the bytes asked are the file's and not the
 # dump's, four times as many (defect 256's measure).
 function text_dump(tokens: [token.Token], s: source.Source) -> str
-    rows: [str] @ []
-    w: Walk @ started()
+    rows: [str] @= []
+    w: Walk @= started()
 
     for t in tokens
         if !source.is_root(s, t.span.start)
@@ -82,7 +82,7 @@ function text_dump(tokens: [token.Token], s: source.Source) -> str
         found = placed(s, w: w)
         word = shown_char.visible(shown(t, s))
         at = found.line.to_str() + ":" + found.col.to_str() + " " + token.kind_name(t.kind)
-        row: str @ at + "\n"
+        row: str @= at + "\n"
 
         if word.len() > 0
             row @ at + " " + word + "\n"
@@ -113,7 +113,7 @@ function moved(s: source.Source, w: Walk, offset: i64) -> Walk
     if offset < w.at
         p = source.line_col(s, offset)
         return Walk(line: p.line - 1, at: offset, col: p.col)
-    line: i64 @ w.line
+    line: i64 @= w.line
 
     while line + 1 < s.line_starts.len() && s.line_starts[line + 1] <= offset
         line @ line + 1
@@ -126,7 +126,7 @@ function moved(s: source.Source, w: Walk, offset: i64) -> Walk
 # shows, whose lines are its own from the first; a `\r\n`'s line feed at the
 # carriage return's column, as `source.line_col` gives it (defect 373).
 function placed(s: source.Source, w: Walk) -> source.Location
-    col: i64 @ w.col
+    col: i64 @= w.col
 
     if char_column.ends_crlf(text: s.text, start: s.line_starts[w.line], offset: w.at)
         col @ col - 1
@@ -135,8 +135,8 @@ function placed(s: source.Source, w: Walk) -> source.Location
 # How many characters begin in the bytes `from` to `to`: every byte but a
 # continuation byte, which is what `chars().len()` counts of a `str`.
 function characters(text: str, from: i64, to: i64) -> i64
-    count: i64 @ 0
-    at: i64 @ from
+    count: i64 @= 0
+    at: i64 @= from
 
     while at < to
         if text[at] < 128 || text[at] >= 192
@@ -198,8 +198,8 @@ test "one walk places every token where locate does (defect 256)"
     text = "function main()\n\ts = \"é€😀\" + \"x\"\n    print(s)  # ünïcode ✓\n\nconstant A: i64\n    1\n"
     s = source.with_library(name: "t.hero", user: text, library: "constant HIDDEN: i64\n    9\n")
     out = lexer.lex(s)
-    w: Walk @ started()
-    count: i64 @ 0
+    w: Walk @= started()
+    count: i64 @= 0
 
     for t in out.tokens
         if !source.is_root(s, t.span.start)
@@ -220,8 +220,8 @@ test "one walk places every token where locate does (defect 256)"
     # And the same text with CRLF line ends, whose line feeds take the
     # carriage return's column (defect 373).
     crlf = source.with_library(name: "t.hero", user: crlf_of(text), library: "constant HIDDEN: i64\n    9\n")
-    walked: Walk @ started()
-    placed_count: i64 @ 0
+    walked: Walk @= started()
+    placed_count: i64 @= 0
 
     for t in lexer.lex(crlf).tokens
         if !source.is_root(crlf, t.span.start)
@@ -235,7 +235,7 @@ test "one walk places every token where locate does (defect 256)"
 
 # `text` with every line feed after a carriage return.
 function crlf_of(text: str) -> str
-    pieces: [str] @ []
+    pieces: [str] @= []
 
     for ch in text.chars()
         if ch == "\n"
@@ -259,11 +259,11 @@ function has_text(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

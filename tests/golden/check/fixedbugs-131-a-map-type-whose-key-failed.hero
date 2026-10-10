@@ -1,5 +1,5 @@
 # Fixed defect 131's class, 2026-09-29, a map type whose key is no type.
-# Symptom: `a: {2: i64} @ {}` cost `expected_type` twice at the `2`, once
+# Symptom: `a: {2: i64} @= {}` cost `expected_type` twice at the `2`, once
 # for the key and once for the value, and the value after the `:` was never
 # read, so `{2: [3]}` hid its second mistake. Cause: the key's reader leaves
 # the token it refused under the cursor, the `:` owed after it was not asked
@@ -13,10 +13,10 @@ function f(m: {2: i64}) -> i64  #~ expected_type
     return 1
 
 function main()
-    a: {2: i64} @ {}  #~ expected_type
-    b: {str: {2: i64}} @ {}  #~ expected_type
-    c: {[2]: i64} @ {}  #~ expected_type
-    d: {2 3: i64} @ {}  #~ expected_type
-    e: {2} @ {}  #~ expected_type
-    g: {2: [3]} @ {}  #~ expected_type expected_type
+    a: {2: i64} @= {}  #~ expected_type
+    b: {str: {2: i64}} @= {}  #~ expected_type
+    c: {[2]: i64} @= {}  #~ expected_type
+    d: {2 3: i64} @= {}  #~ expected_type
+    e: {2} @= {}  #~ expected_type
+    g: {2: [3]} @= {}  #~ expected_type expected_type
     print(1)

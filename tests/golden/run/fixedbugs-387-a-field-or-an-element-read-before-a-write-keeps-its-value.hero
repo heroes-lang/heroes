@@ -32,19 +32,19 @@ function said(s: str, n: i64) -> str
     return s + to_str(n)
 
 function main()
-    b: Bag @ Bag(xs: [], name: "")
-    held: [i64] @ []
+    b: Bag @= Bag(xs: [], name: "")
+    held: [i64] @= []
     held @ held.push(5)
     b.xs @ held
     held @ []
     print(total(b.xs, bump(@b.xs)))
     print(total(b.xs, half(4).must() + bump(@b.xs)))
-    c: Bag @ Bag(xs: [], name: "")
+    c: Bag @= Bag(xs: [], name: "")
     c.name @ "ab" + "cd"
     print(said(c.name, rename(@c.name)))
     print(said(c.name, half(4).must() + rename(@c.name)))
-    g: [[i64]] @ []
-    row: [i64] @ []
+    g: [[i64]] @= []
+    row: [i64] @= []
     row @ row.push(7)
     g @ g.push(row)
     row @ []

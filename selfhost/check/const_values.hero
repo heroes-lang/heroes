@@ -267,11 +267,11 @@ function range_of(kind: widths.IntKind) -> str
 # value, or `past` where its magnitude passes every width. The repair named is
 # a type that holds the value only where one exists.
 function overflow(text: str, got: Slot, kind: widths.IntKind, owner: str, span: token.Span) -> diag.Diagnostic
-    computed: str @ beyond(negative: got.value.negative)
+    computed: str @= beyond(negative: got.value.negative)
 
     if got.known
         computed @ shown(got.value)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "int_out_of_range",
         message: "`" + text + "` computes " + computed + ", which does not fit " + widths.int_article_name(kind),
         span: span
@@ -295,12 +295,12 @@ function held_anywhere(v: contextual.LitValue) -> bool
 # reaches it through the quotient, which the width cannot hold (defect 567).
 # A wider signed type holds both, except past `i64`, where none is.
 function remainder_overflow(text: str, whole: contextual.LitValue, kind: widths.IntKind, owner: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "int_out_of_range",
         message: "`" + text + "` computes a remainder whose quotient, " + shown(whole) + ", does not fit " + widths.int_article_name(kind),
         span: span
     )
-    repair: str @ "so use a wider type, or change the step"
+    repair: str @= "so use a wider type, or change the step"
 
     if kind == .i64
         repair @ "and no integer type is wider: change the step"
@@ -313,11 +313,11 @@ function remainder_overflow(text: str, whole: contextual.LitValue, kind: widths.
 # A division or a remainder whose right side is zero. The right side is
 # quoted where it is not the literal itself, since its value is the news.
 function by_zero(text: str, right: str, owner: str, span: token.Span) -> diag.Diagnostic
-    said: str @ "`" + text + "` divides by zero"
+    said: str @= "`" + text + "` divides by zero"
 
     if right != "0"
         said @ said + ": `" + right + "` is 0"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "division_by_zero", message: said, span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "division_by_zero", message: said, span: span)
     d.notes @ d.notes.push(
         "an integer `/` or `%` by zero aborts, and " + reached(known_part: "its right side is", owner: owner)
     )
@@ -325,7 +325,7 @@ function by_zero(text: str, right: str, owner: str, span: token.Span) -> diag.Di
 
 # A shift whose count is outside 0..63.
 function shift_count(text: str, count: contextual.LitValue, owner: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "int_out_of_range",
         message: "`" + text + "` shifts by " + shown(count) + ", outside 0 through 63",
         span: span

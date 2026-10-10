@@ -73,27 +73,27 @@ function first_moved(was: source.Source, input: parse.ParseOutput, now: source.S
 # guard reads each file once for both walks rather than twice (defect 105).
 function first_moved_read(was: source.Source, input: parse.ParseOutput, now: source.Source, output: parse.ParseOutput, read_input: owners.Lines, read_output: owners.Lines) -> i64
     dropped = merged_heads(was, input: input, output: output)
-    a: owners.Lines @ read_input
+    a: owners.Lines @= read_input
 
     if read_input.end != was.text.len() || read_input.ignored != dropped
         a @ owners.shape(was, lexed: input.tokens, ignored: dropped, end: was.text.len())
     none: [i64] = []
-    b: owners.Lines @ read_output
+    b: owners.Lines @= read_output
 
     if read_output.end != now.text.len() || read_output.ignored != none
         b @ owners.shape(now, lexed: output.tokens, ignored: none, end: now.text.len())
-    kept_a: [bool] @ keepable(was, lines: a, tree: input.tree, decls: input.decls, dropped: dropped)
-    kept_b: [bool] @ keepable(now, lines: b, tree: output.tree, decls: output.decls, dropped: [])
+    kept_a: [bool] @= keepable(was, lines: a, tree: input.tree, decls: input.decls, dropped: dropped)
+    kept_b: [bool] @= keepable(now, lines: b, tree: output.tree, decls: output.decls, dropped: [])
 
     # The author's parentheses count where both files have them around the
     # same value, the inner ones first.
-    index: i64 @ 0
+    index: i64 @= 0
 
     for node in input.tree.exprs
         if index < output.tree.exprs.len()
             ours = groups.levels(a, span: node.span)
             theirs = groups.levels(b, span: output.tree.exprs[index].span)
-            both: i64 @ ours.len()
+            both: i64 @= ours.len()
 
             if theirs.len() < both
                 both @ theirs.len()
@@ -110,12 +110,12 @@ function first_moved_read(was: source.Source, input: parse.ParseOutput, now: sou
     # as kept tokens moved across `) -> (` at exit 0 (the skeptic seat's
     # `k01`, over e0e08d18).
     parted = parting(one: stream(was, lines: a, kept: kept_a), other: stream(now, lines: b, kept: kept_b))
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < one.len() && k < other.len()
         x = one[k]
         y = other[k]
-        moved: bool @ x.text != y.text || x.owner != y.owner || x.prior != y.prior || x.next != y.next
+        moved: bool @= x.text != y.text || x.owner != y.owner || x.prior != y.prior || x.next != y.next
         moved @ moved || x.before != y.before || x.after != y.after || x.inset != y.inset
 
         if parted >= 0 && (x.before >= parted || y.before >= parted)
@@ -136,8 +136,8 @@ function first_moved_read(was: source.Source, input: parse.ParseOutput, now: sou
 # that began a group in the input and continues the one above in the
 # output.
 function merged_heads(was: source.Source, input: parse.ParseOutput, output: parse.ParseOutput) -> [i64]
-    out: [i64] @ []
-    index: i64 @ 1
+    out: [i64] @= []
+    index: i64 @= 1
 
     while index < input.decls.len() && index < output.decls.len()
         written = header_of(input.decls[index])
@@ -154,7 +154,7 @@ function merged_heads(was: source.Source, input: parse.ParseOutput, output: pars
 
 # The offset of a group member's head, -1 outside any group.
 function header_of(decl: ast.Decl) -> i64
-    header: token.Span? @ fail(code: "none", msg: "no head")
+    header: token.Span? @= fail(code: "none", msg: "no head")
 
     match decl.kind
         .function_decl fd          => header @ fd.value.header
@@ -169,11 +169,11 @@ function header_of(decl: ast.Decl) -> i64
 # Which tokens count: not a comment or a comma, not on a dropped head's
 # line, not `-> ()`, not a mark. The parentheses are settled after.
 function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [ast.Decl], dropped: [i64]) -> [bool]
-    out: [bool] @ []
+    out: [bool] @= []
 
     # Each value is a local before its push: an argument that calls out
     # held the array, and the push copied it, quadratic in the tokens.
-    at_line: i64 @ 0
+    at_line: i64 @= 0
 
     for t in lines.tokens
         at_line @ owners.line_index(s.line_starts, from: at_line, offset: t.span.start)
@@ -182,7 +182,7 @@ function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [
 
     # `-> ()`, read over the code tokens: a comment inside the `()` is no
     # token of it (the skeptic seat's `k01`).
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < lines.tokens.len()
         open = owners.code_after(lines, index: i)
@@ -220,7 +220,7 @@ function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [
         match decl.kind
             .function_decl fd =>
                 for param in fd.value.params
-                    at: i64 @ owners.index_at(lines, offset: tree.types[param.ty].span.end - 1) + 1
+                    at: i64 @= owners.index_at(lines, offset: tree.types[param.ty].span.end - 1) + 1
 
                     while at < lines.tokens.len() && lines.tokens[at].kind != .comma && lines.tokens[at].kind != .rparen
                         out[at] @ false
@@ -228,7 +228,7 @@ function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [
 
                 result = tree.types[fd.value.result].span.end
                 stop = fd.value.signature_end.end
-                at: i64 @ owners.index_at(lines, offset: result - 1) + 1
+                at: i64 @= owners.index_at(lines, offset: result - 1) + 1
 
                 while at < lines.tokens.len() && lines.tokens[at].span.start < stop && lines.tokens[at].span.start >= result
                     out[at] @ false
@@ -238,7 +238,7 @@ function keepable(s: source.Source, lines: owners.Lines, tree: ast.Ast, decls: [
     return out
 
 function drop(@kept: [bool], lines: owners.Lines, opens: [i64], from: i64)
-    at: i64 @ from
+    at: i64 @= from
 
     while at < opens.len()
         kept[opens[at]] @ false
@@ -250,11 +250,11 @@ function drop(@kept: [bool], lines: owners.Lines, opens: [i64], from: i64)
 # Each comment's place, in stream order, `in_sets` giving each its place
 # inside a releaser set.
 function places(s: source.Source, lines: owners.Lines, kept: [bool], in_sets: [str]) -> [Place]
-    out: [Place] @ []
-    count: i64 @ 0
-    prior: str @ ""
-    index: i64 @ 0
-    waiting: [i64] @ []
+    out: [Place] @= []
+    count: i64 @= 0
+    prior: str @= ""
+    index: i64 @= 0
+    waiting: [i64] @= []
 
     for t in lines.tokens
         if t.kind == .comment
@@ -288,8 +288,8 @@ function places(s: source.Source, lines: owners.Lines, kept: [bool], in_sets: [s
 # The kept tokens' texts, which the two files share when every token `fmt`
 # changes is one this module leaves out.
 function stream(s: source.Source, lines: owners.Lines, kept: [bool]) -> [str]
-    parts: [str] @ []
-    index: i64 @ 0
+    parts: [str] @= []
+    index: i64 @= 0
 
     for t in lines.tokens
         if kept[index]
@@ -302,7 +302,7 @@ function stream(s: source.Source, lines: owners.Lines, kept: [bool]) -> [str]
 # The place of the first kept token the two streams do not share, -1 where
 # they are the same.
 function parting(one: [str], other: [str]) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < one.len() && at < other.len()
         if one[at] != other[at]
@@ -320,7 +320,7 @@ function spelled(s: source.Source, t: token.Token) -> str
     return source.span_text(s, t.span)
 
 function trimmed(text: str) -> str
-    end: i64 @ text.len()
+    end: i64 @= text.len()
 
     while end > 0 && (text[end - 1] == ' ' || text[end - 1] == '\t' || text[end - 1] == '\r')
         end @ end - 1

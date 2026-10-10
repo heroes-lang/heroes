@@ -45,7 +45,7 @@ constant RESERVED: [str]
 
 # One pass over the project's paths, one failure naming every path refused.
 function check(@r: report.Report, present: [str])
-    refused: [str] @ []
+    refused: [str] @= []
 
     for path in present
         why = refusal(path)
@@ -71,7 +71,7 @@ function refusal(path: str) -> str
 
         if last == 32 || last == 46
             return "`" + part + "` ends in a space or a dot"
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < part.len()
             b = part[at]
@@ -88,8 +88,8 @@ function refusal(path: str) -> str
 # Whether the part of a name before its first dot is a reserved device name,
 # in any case.
 function reserved(part: str) -> bool
-    stem: [u8] @ []
-    at: i64 @ 0
+    stem: [u8] @= []
+    at: i64 @= 0
 
     while at < part.len() && part[at] != 46
         b = part[at]

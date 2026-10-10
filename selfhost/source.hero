@@ -136,7 +136,7 @@ function with_library(name: str, user: str, library: str) -> Source
 function from_files(inputs: [InputFile]) -> Source
     assert inputs.len() > 0
     name = inputs[0].name
-    table: [FileEntry] @ []
+    table: [FileEntry] @= []
 
     # `lines_before` is the newline count of the accumulated text, kept
     # incrementally: the first shape of this line re-ran starts_of over
@@ -145,12 +145,12 @@ function from_files(inputs: [InputFile]) -> Source
     # inside each pass — measured as most of the compiler's load time
     # (docs/measurements/012). Counting only what each step appends is
     # the same number read once.
-    newlines: i64 @ 0
+    newlines: i64 @= 0
 
     # The pieces are joined once (defect 105: `text @ text + input.text`
     # copied the compilation so far at every file).
-    pieces: [str] @ []
-    size: i64 @ 0
+    pieces: [str] @= []
+    size: i64 @= 0
 
     for input in inputs
         if table.len() > 0
@@ -179,8 +179,8 @@ function from_files(inputs: [InputFile]) -> Source
 # The '\n' count of one segment — what `starts_of(text).len() - 1` answers
 # for a whole text, without building the array.
 function newlines_in(text: str) -> i64
-    count: i64 @ 0
-    i: i64 @ 0
+    count: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -192,8 +192,8 @@ function newlines_in(text: str) -> i64
 # Byte offset of the first byte of each line. starts[0] == 0, and the length
 # is the number of lines, which is what makes it double as a line count.
 function starts_of(text: str) -> [i64]
-    starts: [i64] @ [0]
-    i: i64 @ 0
+    starts: [i64] @= [0]
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -207,8 +207,8 @@ function starts_of(text: str) -> [i64]
 # The greatest index whose start is <= offset. Both tables this file owns
 # are sorted by construction, which is what makes the binary search honest.
 function floor_start(starts: [i64], offset: i64) -> i64
-    lo: i64 @ 0
-    hi: i64 @ starts.len() - 1
+    lo: i64 @= 0
+    hi: i64 @= starts.len() - 1
 
     while lo < hi
         mid = (lo + hi + 1) / 2
@@ -223,8 +223,8 @@ function floor_start(starts: [i64], offset: i64) -> i64
 # `floor_start` over the files' starts, read in place rather than copied
 # into an array at every call.
 function file_of(s: Source, offset: i64) -> i64
-    lo: i64 @ 0
-    hi: i64 @ s.files.len() - 1
+    lo: i64 @= 0
+    hi: i64 @= s.files.len() - 1
 
     while lo < hi
         mid = (lo + hi + 1) / 2
@@ -285,7 +285,7 @@ function line_of(s: Source, offset: i64) -> i64
 # The 1-based line WITHIN ITS OWN FILE, for a diagnostic or a `#line` that
 # names that file rather than the root.
 function file_line_of(s: Source, offset: i64) -> i64
-    line: i64 @ line_of(s, offset) - file_at(s, offset).lines_before
+    line: i64 @= line_of(s, offset) - file_at(s, offset).lines_before
 
     if line < 1
         line @ 1
@@ -305,7 +305,7 @@ function locate(s: Source, offset: i64) -> Location
     entry = file_at(s, offset)
 
     # `file_line_of`'s number, from the position and the entry in hand.
-    line: i64 @ p.line - entry.lines_before
+    line: i64 @= p.line - entry.lines_before
 
     if line < 1
         line @ 1
@@ -325,7 +325,7 @@ record SourceLine
 
 function source_line(s: Source, offset: i64) -> SourceLine
     entry = file_at(s, offset)
-    line: i64 @ line_of(s, offset) - entry.lines_before
+    line: i64 @= line_of(s, offset) - entry.lines_before
 
     if line < 1
         line @ 1
@@ -482,7 +482,7 @@ test "a `#line`'s place is locate's file and line, whatever the column, in every
         user_file(name: "c.hero", text: "z = 2\n    w = 3")
     ]
     s = from_files(inputs)
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < s.text.len()
         # `locate` slices to the offset, so it is asked only where a

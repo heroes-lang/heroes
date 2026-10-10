@@ -30,21 +30,21 @@ function bump(@xs: [i64]) -> i64
     return xs.len()
 
 function written_after_a_branch() -> [i64]
-    out: [i64] @ [1, 2]
+    out: [i64] @= [1, 2]
     kept = out
     out @ out.push(half(4).must() + bump(@out))
     print("kept ", kept.len())
     return out
 
 function written_in_the_load_block() -> [i64]
-    out: [i64] @ [1, 2]
+    out: [i64] @= [1, 2]
     kept = out
     out @ out.push(bump(@out) + half(4).must())
     print("kept ", kept.len())
     return out
 
 function through_a_field() -> Bag
-    b: Bag @ Bag(xs: [])
+    b: Bag @= Bag(xs: [])
 
     for at in range(from: 0, to: 3)
         b.xs @ b.xs.push(half(at * 2).must())
@@ -52,7 +52,7 @@ function through_a_field() -> Bag
     return b
 
 function shown(xs: [i64]) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     for x in xs
         parts @ parts.push(x.to_str())

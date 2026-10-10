@@ -93,18 +93,18 @@ record Defs
     inst_of: [i64]
 
 function defs(f: containers.Function, live: [bool]) -> Defs
-    block_of: [i64] @ []
-    inst_of: [i64] @ []
+    block_of: [i64] @= []
+    inst_of: [i64] @= []
 
     for _ in f.values
         block_of @ block_of.push(-1)
         inst_of @ inst_of.push(-1)
 
-    index: i64 @ 0
+    index: i64 @= 0
 
     for blk in f.blocks
         if live[index]
-            at: i64 @ 0
+            at: i64 @= 0
 
             for one in blk.insts
                 if !one.dest.is_err()
@@ -145,11 +145,11 @@ function discarded(f: containers.Function, d: Defs, value: i64, read: {i64: bool
 # program on 2026-08-13. So the note is now the code. gone only grows
 # and is bounded by the number of values, so the loop ends.
 function emitted_reads(f: containers.Function, c: state.Checked) -> {i64: bool}
-    gone: {i64: bool} @ {}
+    gone: {i64: bool} @= {}
 
     while true
         read = reads_given(f, c, gone: gone)
-        grew: bool @ false
+        grew: bool @= false
 
         for blk in f.blocks
             for one in blk.insts
@@ -173,16 +173,16 @@ function emitted_reads(f: containers.Function, c: state.Checked) -> {i64: bool}
 # One round: what the C reads, given the instructions already known to
 # print nothing.
 function reads_given(f: containers.Function, c: state.Checked, gone: {i64: bool}) -> {i64: bool}
-    read: {i64: bool} @ {}
+    read: {i64: bool} @= {}
 
     for blk in f.blocks
         for one in blk.insts
             # A pure op with a unit result prints nothing, so it reads
             # nothing — the case that produced this rule is ()?.
-            silent: bool @ false
+            silent: bool @= false
 
             if !one.dest.is_err() && ctype.is_unit(c, ty: one.ty)
-                is_effect: bool @ false
+                is_effect: bool @= false
 
                 match one.op
                     .call | .abort_op                                                           => is_effect @ true
@@ -232,12 +232,12 @@ function reads_given(f: containers.Function, c: state.Checked, gone: {i64: bool}
 # Every slot's answer, in one pass over the live instructions (defect 112):
 # `slot_is_read` walked them all for each slot. Indexed by slot.
 function slots_read(f: containers.Function, live: [bool], d: Defs, read: {i64: bool}) -> [bool]
-    out: [bool] @ []
+    out: [bool] @= []
 
     for _ in f.slots
         out @ out.push(false)
 
-    index: i64 @ 0
+    index: i64 @= 0
 
     for blk in f.blocks
         if live[index]

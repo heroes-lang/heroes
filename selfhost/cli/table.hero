@@ -235,8 +235,8 @@ test "the table is the pipeline's order and the flags carry their shapes"
     assert table[3].name == "build"
 
     # -o takes a value; --include repeats and names a directory.
-    o_found: bool @ false
-    inc_found: bool @ false
+    o_found: bool @= false
+    inc_found: bool @= false
 
     for f in table[3].flags
         if f.spelling == "-o"

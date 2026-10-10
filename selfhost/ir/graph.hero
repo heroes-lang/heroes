@@ -28,8 +28,8 @@ record Edges
     visits: i64
 
 function grouped(lists: [i64], items: [i64], count: i64) -> Edges
-    degree: [i64] @ filled(size: count, value: 0)
-    visits: i64 @ 0
+    degree: [i64] @= filled(size: count, value: 0)
+    visits: i64 @= 0
 
     for k in lists
         visits @ visits + 1
@@ -37,8 +37,8 @@ function grouped(lists: [i64], items: [i64], count: i64) -> Edges
         if k >= 0 && k < count
             degree[k] @ degree[k] + 1
 
-    first: [i64] @ []
-    total: i64 @ 0
+    first: [i64] @= []
+    total: i64 @= 0
 
     for d in degree
         visits @ visits + 1
@@ -46,9 +46,9 @@ function grouped(lists: [i64], items: [i64], count: i64) -> Edges
         total @ total + d
 
     first @ first.push(total)
-    targets: [i64] @ filled(size: total, value: 0)
-    next: [i64] @ first
-    at: i64 @ 0
+    targets: [i64] @= filled(size: total, value: 0)
+    next: [i64] @= first
+    at: i64 @= 0
 
     for k in lists
         visits @ visits + 1
@@ -66,13 +66,13 @@ function grouped(lists: [i64], items: [i64], count: i64) -> Edges
 # successors (`ir/flow.hero`). A target outside the blocks is no block's.
 function jumps_into(blocks: [containers.Block]) -> Edges
     count = blocks.len()
-    targets: [i64] @ []
-    sources: [i64] @ []
+    targets: [i64] @= []
+    sources: [i64] @= []
 
     # The last block counted for each target, so a branch whose two arms
     # agree, or a switch naming one block twice, counts its block once.
-    marked: [i64] @ filled(size: count, value: 0 - 1)
-    index: i64 @ 0
+    marked: [i64] @= filled(size: count, value: 0 - 1)
+    index: i64 @= 0
 
     for blk in blocks
         for target in flow.successors(blk.term)
@@ -86,7 +86,7 @@ function jumps_into(blocks: [containers.Block]) -> Edges
     return grouped(lists: targets, items: sources, count: count)
 
 function filled(size: i64, value: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     while out.len() < size
         out @ out.push(value)
@@ -108,23 +108,23 @@ record Walk
 
 function depth_first(edges: Edges) -> Walk
     count = edges.first.len() - 1
-    number: [i64] @ filled(size: count, value: 0 - 1)
-    parent: [i64] @ filled(size: count, value: 0 - 1)
-    last: [i64] @ filled(size: count, value: 0 - 1)
-    order: [i64] @ []
+    number: [i64] @= filled(size: count, value: 0 - 1)
+    parent: [i64] @= filled(size: count, value: 0 - 1)
+    last: [i64] @= filled(size: count, value: 0 - 1)
+    order: [i64] @= []
 
     if count == 0
         return Walk(order: order, number: number, parent: parent, last: last, visits: 0)
 
     # A block and the next of its edges still to try; a block is stacked
     # once, when it is first reached, so `count` places always suffice.
-    stack: [i64] @ filled(size: count, value: 0)
-    tried: [i64] @ filled(size: count, value: 0)
+    stack: [i64] @= filled(size: count, value: 0)
+    tried: [i64] @= filled(size: count, value: 0)
     tried[0] @ edges.first[0]
     number[0] @ 0
     order @ order.push(0)
-    depth: i64 @ 1
-    visits: i64 @ 0
+    depth: i64 @= 1
+    visits: i64 @= 0
 
     while depth > 0
         visits @ visits + 1

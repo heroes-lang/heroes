@@ -99,9 +99,9 @@ function written_bare(b: u8) -> bool
 # string inside it would need quotes, which end the literal, so `\( and \()`
 # is two escapes and no expression.
 function hole_close(text: str, from: i64, in_piece: bool) -> i64
-    depth: i64 @ 1
-    i: i64 @ from
-    seen: bool @ false
+    depth: i64 @= 1
+    i: i64 @= from
+    seen: bool @= false
 
     while i < text.len()
         b = text[i]
@@ -130,7 +130,7 @@ function hole_close(text: str, from: i64, in_piece: bool) -> i64
 # A text between backquotes, as a diagnostic quotes code; between two and a
 # space where the text holds a backquote itself, so `` \` `` reads as written.
 function quoted(text: str) -> str
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '`'
@@ -142,7 +142,7 @@ function quoted(text: str) -> str
 # Past the `"` that closes the plain string opening at `literal`, or -1 where
 # the line ends first.
 function plain_end(text: str, literal: i64) -> i64
-    i: i64 @ literal + 1
+    i: i64 @= literal + 1
 
     while i < text.len() && text[i] != '\n'
         if text[i] == '\\'
@@ -160,9 +160,9 @@ function plain_end(text: str, literal: i64) -> i64
 # 184 R1 (a `}` alone is refused there), every other byte as written. A run
 # is cut only beside an ASCII byte, so a character above ASCII is copied whole.
 function interpolated(text: str, from: i64, to: i64) -> str
-    out: [str] @ ["f\""]
-    run: i64 @ from + 1
-    i: i64 @ from + 1
+    out: [str] @= ["f\""]
+    run: i64 @= from + 1
+    i: i64 @= from + 1
 
     while i < to - 1
         b = text[i]

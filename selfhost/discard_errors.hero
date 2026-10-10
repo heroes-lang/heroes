@@ -101,13 +101,13 @@ function discarded_value(got: str, fallible: bool, readings: Readings, span: tok
     at = front.before(text, at: span.start)
     first = text.slice(from: at.opening, to: at.opening + 1)
     continues = at.begins_line && (first == "-" || first == "." || first == "(" || first == "[")
-    reading: str @ main_reading(readings)
+    reading: str @= main_reading(readings)
 
     # `-fee` under `total = base` is the rest of that line, and the `fee` it
     # holds is the continuation's operand rather than a place to keep it in.
     if continues && reading == "place"
         reading @ ""
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "discarded_value",
         message: "this line's value has type `" + got + "` and nothing receives it",
         span: span
@@ -149,7 +149,7 @@ function discarded_value(got: str, fallible: bool, readings: Readings, span: tok
     for thought in second_thoughts(readings, reading: reading)
         d.notes @ d.notes.push(thought)
 
-    certainty: diag.Certainty @ .certain
+    certainty: diag.Certainty @= .certain
 
     if reading != "" || readings.decides || readings.in_test || readings.tail || continues
         certainty @ .guess
@@ -177,7 +177,7 @@ function main_reading(readings: Readings) -> str
 
 # Why `_ = ` is a guess where the message names no other repair.
 function second_thoughts(readings: Readings, reading: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     if reading != ""
         return out
@@ -206,7 +206,7 @@ function the_rest_of_the_line_above(first: str) -> str
 # `()?` has none to write — `.default(())` is `expected_expression`,
 # which panel 118's blind reader found by trying it.
 function answers(propagates: bool, has_payload: bool) -> str
-    out: str @ ""
+    out: str @= ""
 
     if propagates
         out @ out + "`?` sends the failure to your caller, "
@@ -233,7 +233,7 @@ function answers(propagates: bool, has_payload: bool) -> str
 # decision visible must not ship a repair that takes the decision.
 function discarded_failure(got: str, propagates: bool, has_payload: bool, span: token.Span, value: token.Span) -> diag.Diagnostic
     after = token.Span(start: value.end, end: value.end)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "discarded_failure",
         message: "`_ =` would drop the error in this `" + got + "`, and that is the one discard the type system cannot see through — " + answers(propagates: propagates, has_payload: has_payload),
         span: span
@@ -264,7 +264,7 @@ function discarded_failure(got: str, propagates: bool, has_payload: bool, span: 
 # is behaviour-identical, which is what that seat measured, and still
 # not expressible as one edit.
 function discarded_failure_parameter(got: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "discarded_failure",
         message: "a `_` parameter written `" + got + "` drops its error where nothing can answer it — `_` binds nothing, so the body cannot reach the value at all",
         span: span
@@ -277,7 +277,7 @@ function discarded_failure_parameter(got: str, span: token.Span) -> diag.Diagnos
 # Panel 017 C: the mirror of the rule above. A `()` value binds to
 # nothing, and the repair is to keep the call and drop the binding.
 function bound_unit(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "bound_unit",
         message: "`" + name + "` would hold `()`, which is no value — keep the call and drop the binding",
         span: span
@@ -294,7 +294,7 @@ test "a discarded value splits on the place it was computed from, and certainty 
     assert bare.fixes.len() == 1
     assert bare.fixes[0].certainty == .certain
     assert bare.fixes[0].span.start == 20 && bare.fixes[0].span.end == 20
-    kept: Readings @ no_readings()
+    kept: Readings @= no_readings()
     kept.place @ ok("xs")
     named = discarded_value(got: "[i64]", fallible: false, readings: kept, span: span, text: text)
     assert named.fixes.len() == 2
@@ -327,7 +327,7 @@ test "a line that begins like the rest of the line above takes only a guessed di
     assert minus.fixes[0].certainty == .guess
 
     # And the `y` it negates is the continuation's operand, not a place.
-    operand: Readings @ no_readings()
+    operand: Readings @= no_readings()
     operand.place @ ok("y")
     continued = discarded_value(
         got: "i64",
@@ -355,20 +355,20 @@ test "a line that begins like the rest of the line above takes only a guessed di
 test "a bool, a line in a test and a function's last line each take `_ = ` as a guess"
     span = token.Span(start: 20, end: 26)
     text = "function main()\n    x == 5\n"
-    decides: Readings @ no_readings()
+    decides: Readings @= no_readings()
     decides.decides @ true
     comparison = discarded_value(got: "bool", fallible: false, readings: decides, span: span, text: text)
     assert comparison.fixes.len() == 1
     assert comparison.fixes[0].certainty == .guess
     assert comparison.notes.len() == 1
-    asserted: Readings @ decides
+    asserted: Readings @= decides
     asserted.in_test @ true
     lost = discarded_value(got: "bool", fallible: false, readings: asserted, span: span, text: text)
     assert lost.fixes.len() == 2
     assert lost.fixes[0].replacement == "assert "
     assert lost.fixes[0].certainty == .guess
     assert lost.fixes[1].certainty == .guess
-    ending: Readings @ no_readings()
+    ending: Readings @= no_readings()
     ending.tail @ true
     ending.returns @ true
     ended = discarded_value(got: "i64", fallible: false, readings: ending, span: span, text: text)
@@ -386,7 +386,7 @@ test "an arm's value is discarded in a block under the arm, and returned where i
     assert in_arm.fixes[0].certainty == .certain
     assert in_arm.fixes[0].span.start == 40 && in_arm.fixes[0].span.end == 41
     assert in_arm.fixes[0].replacement == "\n            _ = "
-    ending: Readings @ no_readings()
+    ending: Readings @= no_readings()
     ending.tail @ true
     ending.returns @ true
     returned = discarded_value(got: "i64", fallible: false, readings: ending, span: span, text: text)
@@ -402,7 +402,7 @@ test "a discarded FALLIBLE offers no `_ = ` at all, and says what answers an err
     assert bare.fixes.len() == 0
     assert bare.notes.len() == 1
     assert bare.message == "this line's value has type `()?` and nothing receives it, and `_ = …` will not do either: a `T?` may not be discarded"
-    kept: Readings @ no_readings()
+    kept: Readings @= no_readings()
     kept.place @ ok("xs")
     named = discarded_value(got: "[i64]?", fallible: true, readings: kept, span: span, text: text)
     assert named.fixes.len() == 1
@@ -459,11 +459,11 @@ function has(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
     stop = text.len() - needle.len()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at <= stop
-        same: bool @ true
-        k: i64 @ 0
+        same: bool @= true
+        k: i64 @= 0
 
         while k < needle.len()
             if text[at + k] != needle[k]

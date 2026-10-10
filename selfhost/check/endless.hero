@@ -18,17 +18,17 @@ use flow_errors
 # Every function the program writes, with a body, after the types are
 # written (`checker.hero`); the library's are not asked.
 function every_path_calls_itself(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
-    at: i64 @ 0
-    ends: [bool] @ []
-    asked: [bool] @ []
+    at: i64 @= 0
+    ends: [bool] @= []
+    asked: [bool] @= []
     none: [bool] = []
 
     # The functions each one names on a path before its own call, one after
     # another, `edges[starts[i] .. starts[i + 1]]` for the declaration at `i`:
     # the call graph the cycles are sought in (panel 201, defect 520), read
     # off the one walk each function already takes.
-    starts: [i64] @ []
-    edges: [i64] @ []
+    starts: [i64] @= []
+    edges: [i64] @= []
 
     for decl in decls
         starts @ starts.push(edges.len())

@@ -12,6 +12,6 @@ function said(k: i64) -> i64
     return k
 
 function main()
-    xs: [i64] @ [0]
+    xs: [i64] @= [0]
     set(n: @xs[3], k: said(k: 5))
     print(xs[0])

@@ -20,7 +20,7 @@ variant Token
     plus
 
 function blit(from: [i64], to: [i64]) -> [i64]
-    out: [i64] @ to
+    out: [i64] @= to
     out[0] @ from[0]
     return out
 
@@ -54,11 +54,11 @@ function main()
         .num n => print(n.v)
         .plus  => print(0)
 
-    total: i64 @ 1
+    total: i64 @= 1
     add_to(total: @total, amount: 5)  #~ needs_label needs_label
     print(total)
-    x: i64 @ 1
-    y: i64 @ 2
+    x: i64 @= 1
+    y: i64 @= 2
     swap(a: @x, b: @y)  #~ needs_label
     print(x)
     move: (function(from: str, to: str) -> str) = copy_text

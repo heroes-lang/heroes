@@ -14,11 +14,11 @@
 # reach are unchanged.
 
 function crc(text: str) -> i64
-    i: i64 @ 0
-    total: i64 @ 0
+    i: i64 @= 0
+    total: i64 @= 0
 
     while i < text.len(  #~ unclosed_bracket
-        byte: u8 @ text[i]
+        byte: u8 @= text[i]
             total @ total + byte.to_i64()  #~ unexpected_block
         i @ i + 1
 

@@ -24,7 +24,7 @@ extern "w.h"
     function out_wide(@p: int) -> i64  #~ reserved_word
 
 function main()
-    n: i32 @ 0
+    n: i32 @= 0
     _ = out_wide(p: @n)
     print(make_w().b)
     print(wide_param(x: 41))

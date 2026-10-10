@@ -30,7 +30,7 @@ constant WARNING: str
 # so GNU ld's words keep their shape, and what it said printed without a C
 # library's section warnings (defect 589).
 function run_link(line: [str], what: str, err_path: str) -> ()?
-    said: str @ ""
+    said: str @= ""
 
     if process.exe_suffix() == ".exe"
         said @ toolchain.asked_of_clang(line: line, what: what, err_path: err_path)?
@@ -46,8 +46,8 @@ function run_link(line: [str], what: str, err_path: str) -> ()?
 # each line kept ended by its line end.
 function without_section_warnings(said: str) -> str
     lines = clang_told.lines_of(said)
-    kept: [str] @ []
-    at: i64 @ 0
+    kept: [str] @= []
+    at: i64 @= 0
 
     while at < lines.len()
         line = lines[at]
@@ -76,8 +76,8 @@ function is_section_warning(line: str) -> bool
 
     if plus < open + 3
         return false
-    i: i64 @ plus + 3
-    digits: i64 @ 0
+    i: i64 @= plus + 3
+    digits: i64 @= 0
 
     while i < cs.len() && is_hex(cs[i])
         i @ i + 1
@@ -98,7 +98,7 @@ function is_hex(c: str) -> bool
 
 # The first index at or after `from` where `needle` starts, -1 where none.
 function index_of(cs: [str], needle: str, from: i64) -> i64
-    at: i64 @ from
+    at: i64 @= from
 
     while at + needle.chars().len() <= cs.len()
         if starts_at(cs, needle: needle, at: at)
@@ -112,7 +112,7 @@ function starts_at(cs: [str], needle: str, at: i64) -> bool
 
     if at < 0 || at + ns.len() > cs.len()
         return false
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < ns.len()
         if cs[at + k] != ns[k]

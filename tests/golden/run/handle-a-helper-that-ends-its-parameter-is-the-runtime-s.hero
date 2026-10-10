@@ -17,7 +17,7 @@ function finish(@n: Node)
 
 function main()
     a = node_new(v: 1)
-    b: Node @ node_new(v: 2)
+    b: Node @= node_new(v: 2)
     print("before: ", node_peek(n: b))
     finish(@b)
     node_free(n: b)

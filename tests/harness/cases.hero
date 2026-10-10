@@ -30,8 +30,8 @@ record Shown
     is_text: bool
 
 function shown(path: str) -> Shown?
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
 
     if status != HERO_OS_OK && status != HERO_OS_NOT_TEXT
@@ -51,12 +51,12 @@ function collect(scratch: str, dir: str) -> [Case]?
     # Membership is asked of the listing rather than of the filesystem:
     # one walk answers every question, and a `test -e` per case would be
     # 200 more processes for an answer already in hand.
-    present: {str: bool} @ {}
+    present: {str: bool} @= {}
 
     for entry in entries
         present[entry] @ true
 
-    cases: [Case] @ []
+    cases: [Case] @= []
 
     for entry in entries
         if strings.ends_with(text: entry, suffix: ".hero")
@@ -84,7 +84,7 @@ function collect(scratch: str, dir: str) -> [Case]?
 function matching(found: [Case], only: str) -> [Case]
     if only == ""
         return found
-    kept: [Case] @ []
+    kept: [Case] @= []
 
     for item in found
         if strings.contains(text: item.name, needle: only)
@@ -154,8 +154,8 @@ function shard_of(word: str) -> Shard?
 
 # The cases of shard `index` of `count`, dealt round by their sorted index.
 function sharded(found: [Case], shard: Shard) -> [Case]
-    kept: [Case] @ []
-    k: i64 @ 0
+    kept: [Case] @= []
+    k: i64 @= 0
 
     for item in found
         if k % shard.count == shard.index - 1
@@ -224,24 +224,24 @@ test "the shards of any n are disjoint, their union is the suite, and none holds
     # empty are asked too, and the gate's own size with the shard counts a
     # gate would take.
     for size in [0, 1, 2, 7, 13, 423]
-        found: [Case] @ []
-        k: i64 @ 0
+        found: [Case] @= []
+        k: i64 @= 0
 
         while k < size
             name = "c" + k.to_str()
             found @ found.push(Case(source: "x/" + name + ".hero", expected: "x/" + name + ".expected", name: name))
             k @ k + 1
 
-        last: i64 @ size + 3
+        last: i64 @= size + 3
 
         if size > 13
             last @ 8
-        n: i64 @ 1
+        n: i64 @= 1
 
         while n <= last
-            seen: {str: i64} @ {}
-            total: i64 @ 0
-            i: i64 @ 1
+            seen: {str: i64} @= {}
+            total: i64 @= 0
+            i: i64 @= 1
 
             while i <= n
                 part = selected(found: found, only: i.to_str() + "/" + n.to_str())

@@ -23,15 +23,15 @@ function shout(@s: str)
     s @ s + "!"
 
 function main()
-    bs: [u8] @ [97, 98]
+    bs: [u8] @= [97, 98]
     f(@bs[0])
     bump(@bs[1])
     k = 3
     k.add(@bs[0])
-    p: Packet @ Packet(bytes: [99])
+    p: Packet @= Packet(bytes: [99])
     f(@p.bytes[0])
-    s: str @ "a"
+    s: str @= "a"
     shout(@s)
-    xs: [str] @ ["b"]
+    xs: [str] @= ["b"]
     shout(@xs[0])
     print(bs[0], " ", bs[1], " ", p.bytes[0], " ", s, " ", xs[0])

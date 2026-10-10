@@ -33,7 +33,7 @@ variant FnKind
 variant SlotKind
     param_slot
         mutable: bool
-    # `x = 5` or `v: i64 @ 0` — the surface distinction is the
+    # `x = 5` or `v: i64 @= 0` — the surface distinction is the
     # resolver's, and by here both are cells that hold a value. **The flag
     # rides along since panel 166** (2026-09-19): a `ptr` lend of a field
     # chooses its C cast from the root slot — `(void *)` where the author
@@ -139,8 +139,8 @@ record Function
     span: token.Span
 
 function args_of(f: Function, run: ir.Run) -> [ir.Arg]
-    out: [ir.Arg] @ []
-    i: i64 @ run.start
+    out: [ir.Arg] @= []
+    i: i64 @= run.start
 
     while i < run.start + run.length
         out @ out.push(f.arguments[i])
@@ -149,8 +149,8 @@ function args_of(f: Function, run: ir.Run) -> [ir.Arg]
     return out
 
 function steps_of(f: Function, run: ir.Run) -> [ir.PathStep]
-    out: [ir.PathStep] @ []
-    i: i64 @ run.start
+    out: [ir.PathStep] @= []
+    i: i64 @= run.start
 
     while i < run.start + run.length
         out @ out.push(f.steps[i])
@@ -256,7 +256,7 @@ test "a run slices its pool, and the phase only moves forward"
         .inout_arg   => assert false
 
     assert value_type(f, 2) == 9
-    p: Program @ Program(phase: .lowered, functions: [], strings: [])
+    p: Program @= Program(phase: .lowered, functions: [], strings: [])
     advance_to(@p, .mono)
     advance_to(@p, .owned)
     assert phase_rank(p.phase) == 2

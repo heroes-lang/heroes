@@ -50,7 +50,7 @@ function named(@held: {str: Offered}, out: resolved.Resolved, module: str) -> Of
     if !have.is_err() && have.must().written == out.top.written
         return have.must()
     names = resolved.names_in(out, module)
-    values: [str] @ names
+    values: [str] @= names
 
     for name in inventory.NAMES
         values @ values.push(name)
@@ -69,12 +69,12 @@ function named(@held: {str: Offered}, out: resolved.Resolved, module: str) -> Of
 
 # The same, with the functions and the types among the names.
 function kinded(@held: {str: Offered}, out: resolved.Resolved, module: str, decls: [ast.Decl]) -> Offered
-    one: Offered @ named(@held, out, module)
+    one: Offered @= named(@held, out, module)
 
     if one.kinded
         return one
-    functions: [str] @ []
-    types: [str] @ []
+    functions: [str] @= []
+    types: [str] @= []
 
     for name in one.names
         at = resolved.top_in(out, module: module, name: name).must()
@@ -108,9 +108,9 @@ function kinded(@held: {str: Offered}, out: resolved.Resolved, module: str, decl
 # written after they were gathered is in them the next time, in its sorted
 # place, and the built-ins stay after the module's own.
 test "a name declared after the lists were gathered is offered with them"
-    out: resolved.Resolved @ resolved.new_resolved()
+    out: resolved.Resolved @= resolved.new_resolved()
     resolved.declare_top(@out, module: "m", name: "beta", decl: 0)
-    held: {str: Offered} @ {}
+    held: {str: Offered} @= {}
     first = named(@held, out, module: "m")
     assert first.names == ["beta"]
     assert first.values[0] == "beta"
@@ -129,14 +129,14 @@ test "the functions and the types are the declarations of those kinds"
     text = "record Zone\n    x: i64\n\nvariant Mode\n    on\n    off\n\nconstant LIMIT: i64\n    3\n\nfunction walk() -> i64\n    return 1\n\nfunction apply() -> i64\n    return 2\n"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    out: resolved.Resolved @ resolved.new_resolved()
-    at: i64 @ 0
+    out: resolved.Resolved @= resolved.new_resolved()
+    at: i64 @= 0
 
     for d in p.decls
         resolved.declare_top(@out, module: "t", name: source.span_text(s, d.name), decl: at)
         at @ at + 1
 
-    held: {str: Offered} @ {}
+    held: {str: Offered} @= {}
     one = kinded(@held, out, module: "t", decls: p.decls)
     assert one.names == ["LIMIT", "Mode", "Zone", "apply", "walk"]
     assert one.types == ["Mode", "Zone"]

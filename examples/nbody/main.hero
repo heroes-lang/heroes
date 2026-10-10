@@ -156,9 +156,9 @@ function system() -> [Body]
 # with a new first body, because every value behaves as an independent copy
 # (spec § Types). The arithmetic is identical.
 function offset_momentum(bodies: [Body]) -> [Body]
-    px: f64 @ 0.0
-    py: f64 @ 0.0
-    pz: f64 @ 0.0
+    px: f64 @= 0.0
+    py: f64 @= 0.0
+    pz: f64 @= 0.0
 
     for b in bodies
         px @ px + b.vx * b.mass
@@ -166,10 +166,10 @@ function offset_momentum(bodies: [Body]) -> [Body]
         pz @ pz + b.vz * b.mass
 
     first = bodies[0]
-    out: [Body] @ [
+    out: [Body] @= [
         Body(x: first.x, y: first.y, z: first.z, vx: -px / solar_mass(), vy: -py / solar_mass(), vz: -pz / solar_mass(), mass: first.mass)
     ]
-    at: i64 @ 1
+    at: i64 @= 1
 
     while at < bodies.len()
         out @ out.push(bodies[at])
@@ -182,11 +182,11 @@ function offset_momentum(bodies: [Body]) -> [Body]
 # separate here, and that is not style — moving a body before the last pair
 # has been counted would use a position from the wrong instant.
 function advanced(bodies: [Body], dt: f64) -> [Body]
-    moved: [Body] @ bodies
-    i: i64 @ 0
+    moved: [Body] @= bodies
+    i: i64 @= 0
 
     while i < moved.len()
-        j: i64 @ i + 1
+        j: i64 @= i + 1
 
         while j < moved.len()
             b = moved[i]
@@ -202,7 +202,7 @@ function advanced(bodies: [Body], dt: f64) -> [Body]
 
         i @ i + 1
 
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < moved.len()
         b = moved[at]
@@ -237,13 +237,13 @@ function pulled(b: Body, dx: f64, dy: f64, dz: f64, mass: f64, mag: f64) -> Body
 # between every pair. This is the number the published file holds, and the
 # only number this program prints.
 function energy(bodies: [Body]) -> f64
-    e: f64 @ 0.0
-    i: i64 @ 0
+    e: f64 @= 0.0
+    i: i64 @= 0
 
     while i < bodies.len()
         b = bodies[i]
         e @ e + 0.5 * b.mass * (b.vx * b.vx + b.vy * b.vy + b.vz * b.vz)
-        j: i64 @ i + 1
+        j: i64 @= i + 1
 
         while j < bodies.len()
             other = bodies[j]
@@ -267,8 +267,8 @@ constant STEP: f64
 function main()
     start = offset_momentum(system())
     print(nine_places(energy(start)))
-    moved: [Body] @ start
-    step: i64 @ 0
+    moved: [Body] @= start
+    step: i64 @= 0
 
     while step < STEPS
         moved @ advanced(moved, STEP)
@@ -291,7 +291,7 @@ constant BILLION: f64
 
 function nine_places(v: f64) -> str
     negative = v < 0.0
-    size: f64 @ v
+    size: f64 @= v
 
     if negative
         size @ -v
@@ -307,7 +307,7 @@ function nine_places(v: f64) -> str
 # Nine digits, leading zeroes kept: `.25` of a unit is `250000000`, and
 # `.000000001` is `000000001`, which without padding would print as `1`.
 function padded(rest: i64) -> str
-    digits: str @ rest.to_str()
+    digits: str @= rest.to_str()
 
     while digits.len() < 9
         digits @ "0" + digits
@@ -320,8 +320,8 @@ test "the two published energies, which this program did not invent"
     #     -0.169087605
     start = offset_momentum(system())
     assert nine_places(energy(start)) == "-0.169075164"
-    moved: [Body] @ start
-    step: i64 @ 0
+    moved: [Body] @= start
+    step: i64 @= 0
 
     while step < STEPS
         moved @ advanced(moved, STEP)
@@ -333,9 +333,9 @@ test "offsetting the momentum makes the system's total momentum zero"
     # The whole reason the step exists: without it the five bodies drift
     # together and every later energy is measured from a moving frame.
     bodies = offset_momentum(system())
-    px: f64 @ 0.0
-    py: f64 @ 0.0
-    pz: f64 @ 0.0
+    px: f64 @= 0.0
+    py: f64 @= 0.0
+    pz: f64 @= 0.0
 
     for b in bodies
         px @ px + b.vx * b.mass
@@ -361,8 +361,8 @@ test "the energy drifts by exactly what the published pair says it drifts by"
     # this is the test that would catch it.
     start = offset_momentum(system())
     before = energy(start)
-    moved: [Body] @ start
-    step: i64 @ 0
+    moved: [Body] @= start
+    step: i64 @= 0
 
     while step < STEPS
         moved @ advanced(moved, STEP)

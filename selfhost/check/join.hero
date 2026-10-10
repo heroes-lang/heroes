@@ -103,7 +103,7 @@ record Branch
 function every_branch(branches: [Branch]) -> Leaves
     if branches.len() == 0
         return .falls
-    leaves: Leaves @ .jumps
+    leaves: Leaves @= .jumps
 
     for branch in branches
         leaves @ both(first: leaves, second: branch.leaves)
@@ -118,7 +118,7 @@ function every_branch(branches: [Branch]) -> Leaves
 # Port note: Rust calls this `join`, and Heroes reserves that name for
 # the string builtin -- the fifteenth reservation to review its own port.
 function join_branches(@c: state.Checker, s: source.Source, decls: [ast.Decl], branches: [Branch]) -> i64?
-    result: i64? @ fail(code: "diverges", msg: "no branch has produced a value yet")
+    result: i64? @= fail(code: "diverges", msg: "no branch has produced a value yet")
 
     for branch in branches
         if branch.leaves != .falls || branch.value.is_err()
@@ -172,7 +172,7 @@ function refuse_leaving(@c: state.Checker, leaves: Leaves, what: str, span: toke
 
 test "the first branch sets the type and the disagreement is blamed"
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)
@@ -196,7 +196,7 @@ test "the first branch sets the type and the disagreement is blamed"
 
 test "a diverging branch contributes nothing, and all-diverging is legal"
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)
@@ -224,7 +224,7 @@ test "a diverging branch contributes nothing, and all-diverging is legal"
 # that gave it nothing, and a `match` statement count as leaving its block.
 test "a branch that fell through is not one that jumped"
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
     fell: [Branch] = [
@@ -249,7 +249,7 @@ test "a jump refused where it stands leaves, and no claim rests on it"
     assert both(first: .jumps, second: .refused) == .refused
     assert both(first: .refused, second: .falls) == .falls
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
     refused: [Branch] = [
@@ -269,7 +269,7 @@ test "a branch that ends its path leaves, and the claim about it is not a jump's
     assert both(first: .ends, second: .falls) == .falls
     assert both(first: .jumps, second: .jumps) == .jumps
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: 0)
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: 0)
     s = source.new_source(name: "t.hero", text: "x\n")
     d: [ast.Decl] = []
     int_id = table.int_ty_id(c.out.types)

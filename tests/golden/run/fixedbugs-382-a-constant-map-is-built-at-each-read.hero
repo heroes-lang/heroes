@@ -18,14 +18,14 @@ constant LISTS: {str: [i64]}
     {"a": [1, 2], "b": []}
 
 function main()
-    total: i64 @ 0
-    at: i64 @ 0
+    total: i64 @= 0
+    at: i64 @= 0
 
     while at < 100
         total @ total + AGES["ziggy"].default(0) + COMPUTED["mars"].default(0) + LISTS["a"].must()[at % 2]
         at @ at + 1
 
     print(total, " ", COMPUTED["ziggy"].default(0), " ", AGES == COMPUTED, " ", sort(keys(LISTS)).join(","))
-    copy: {str: i64} @ COMPUTED
+    copy: {str: i64} @= COMPUTED
     copy["ziggy"] @ 1
     print(copy["ziggy"].default(0), " ", COMPUTED["ziggy"].default(0), " ", LISTS["b"].must().len())

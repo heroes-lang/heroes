@@ -71,7 +71,7 @@ function after_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls
             # 177's item 6): a `realloc` that failed leaves the block with the
             # caller, who still owes it.
             nullable = when.is_err() && !target.is_err() && handle_result.transfers_any(fd.value) && handle_result.nullable_result(c, s, decls, fd: fd.value)
-            at: i64 @ 0
+            at: i64 @= 0
 
             # Whether a reference this call takes may be joining a life the
             # same call is ending (defect 098): only then can an end in flight
@@ -224,7 +224,7 @@ function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
 
         if !written.is_err()
             emit_each(@w, c, s, decls, ty: written.must(), value: target.must(), entry: "hero_handle_lent", tail: "")
-    at: i64 @ 0
+    at: i64 @= 0
 
     for p in fd.params
         if at < arguments.len() && p.borrows && p.mutable

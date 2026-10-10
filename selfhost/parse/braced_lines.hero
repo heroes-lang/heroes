@@ -65,17 +65,17 @@ function view_to(c: cursor.Cursor, text: str, close: i64) -> cursor.Cursor
 # block: an `indent` at the cursor's token, the margins below, and a
 # `dedent` at `close`.
 function lines_from(c: cursor.Cursor, text: str, from: i64, close: i64) -> cursor.Cursor
-    tokens: [token.Token] @ [token.Token(kind: .indent, span: c.tokens[c.pos].span)]
-    base: i64 @ -1
-    level: i64 @ -1
-    ended: bool @ true
-    last: i64 @ c.tokens[c.pos].span.end
-    depth: i64 @ 0
-    i: i64 @ from
+    tokens: [token.Token] @= [token.Token(kind: .indent, span: c.tokens[c.pos].span)]
+    base: i64 @= -1
+    level: i64 @= -1
+    ended: bool @= true
+    last: i64 @= c.tokens[c.pos].span.end
+    depth: i64 @= 0
+    i: i64 @= from
 
     while i < close
         t = c.tokens[i]
-        width: i64 @ -1
+        width: i64 @= -1
 
         if depth == 0 && !cursor.is_invisible(t.kind)
             width @ text_lines.margin_width(text, at: t.span.start)
@@ -135,8 +135,8 @@ function lines_from(c: cursor.Cursor, text: str, from: i64, close: i64) -> curso
 # indent for the `{`, the block's own lines, a dedent where it ends.
 function lexer_laid(c: cursor.Cursor, text: str) -> cursor.Cursor
     b = laid_braces.laid_block(c, open: c.pos)
-    tokens: [token.Token] @ [token.Token(kind: .indent, span: c.tokens[c.pos].span)]
-    i: i64 @ b.indent + 1
+    tokens: [token.Token] @= [token.Token(kind: .indent, span: c.tokens[c.pos].span)]
+    i: i64 @= b.indent + 1
 
     while i < b.past - 1
         tokens @ tokens.push(c.tokens[i])
@@ -181,7 +181,7 @@ function lexed(text: str) -> cursor.Cursor
     return cursor.new_cursor(lexer.lex_one(text).tokens)
 
 function kinds(c: cursor.Cursor) -> [token.TokenKind]
-    out: [token.TokenKind] @ []
+    out: [token.TokenKind] @= []
 
     for t in c.tokens
         if t.kind != .comment
@@ -191,7 +191,7 @@ function kinds(c: cursor.Cursor) -> [token.TokenKind]
 
 # The cursor on the first `{` of `text`.
 function at_brace(text: str) -> cursor.Cursor
-    c: cursor.Cursor @ lexed(text)
+    c: cursor.Cursor @= lexed(text)
 
     while !cursor.at(c, .lbrace)
         _ = cursor.bump(@c)
@@ -276,7 +276,7 @@ test "a body's braces the lexer laid out are viewed as the block it made, every 
     assert shown[0] == .indent
     assert shown[shown.len() - 2] == .dedent
     assert shown[shown.len() - 1] == .eof
-    commas: i64 @ 0
+    commas: i64 @= 0
 
     for k in shown
         if k == .comma
@@ -286,8 +286,8 @@ test "a body's braces the lexer laid out are viewed as the block it made, every 
 
 test "what the view's reading said is the cursor's, and the cursor is past the braces"
     text = "{\n    x\n}\ny\n"
-    c: cursor.Cursor @ lexed(text)
-    view: cursor.Cursor @ laid_out(c, text)
+    c: cursor.Cursor @= lexed(text)
+    view: cursor.Cursor @= laid_out(c, text)
     cursor.error(@view, code: "one", message: "one", span: token.Span(start: 6, end: 7))
     took(c: @c, view: view)
     assert c.diagnostics.len() == 1

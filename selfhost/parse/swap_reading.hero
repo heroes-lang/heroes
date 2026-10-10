@@ -77,7 +77,7 @@ function swap_at(c: cursor.Cursor, text: str, span: token.Span) -> str?
     # A stream no lexer made (`cursor.Cursor.lexed`), a test's: the word is
     # placed in the text as the lexer places it, its outline read for the one
     # question.
-    outline: text_outline.Outline @ text_outline.unread()
+    outline: text_outline.Outline @= text_outline.unread()
     return foreign_at.certain_swap(text, span, @outline)
 
 # The kind the current token reads as: its own, or, for a foreign word whose
@@ -202,7 +202,7 @@ function is_identifier(word: str) -> bool
 
     if !bytes.is_alpha(word[0]) && word[0] != '_'
         return false
-    i: i64 @ 1
+    i: i64 @= 1
 
     while i < word.len()
         if !bytes.is_alnum(word[i]) && word[i] != '_'
@@ -241,7 +241,7 @@ test "a certain swap to a keyword reads as that keyword, and nothing else does"
         token.made(.terminator, start: 41, end: 41)
         token.made(.eof, start: 42, end: 42)
     ]
-    c: cursor.Cursor @ told(tokens, text)
+    c: cursor.Cursor @= told(tokens, text)
 
     # `fn` opens its line at the margin, where `function` is right.
     assert reads_as(c, text) == .kw_function
@@ -289,7 +289,7 @@ test "a bare function type reads as the type it means, certain or not"
         token.made(.error, start: 3, end: 5)
         token.made(.eof, start: 17, end: 17)
     ]
-    c: cursor.Cursor @ told(tokens, text)
+    c: cursor.Cursor @= told(tokens, text)
     c.pos @ 2
     assert reads_as(c, text) == .error
     assert reads_as_function(c, text)
@@ -301,7 +301,7 @@ test "eat_as consumes only what reads as the kind asked for"
         token.made(.lparen, start: 6, end: 7)
         token.made(.eof, start: 11, end: 11)
     ]
-    c: cursor.Cursor @ told(tokens, text)
+    c: cursor.Cursor @= told(tokens, text)
     assert !eat_as(@c, text, .kw_record)
     assert eat_as(@c, text, .kw_function)
     assert cursor.at(c, .lparen)

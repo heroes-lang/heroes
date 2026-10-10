@@ -48,9 +48,9 @@ function major_of(first_line: str) -> i64?
     if after.is_err()
         return fail(code: "none", msg: "no `version` on the line")
     rest = after.must()
-    value: i64 @ 0
-    seen: i64 @ 0
-    index: i64 @ 0
+    value: i64 @= 0
+    seen: i64 @= 0
+    index: i64 @= 0
 
     while index < rest.len()
         b = rest[index]
@@ -72,7 +72,7 @@ function major_of(first_line: str) -> i64?
 # 2026-09-27). A match starts and ends on a character boundary, so the rest is
 # sliced whole.
 function text_after(text: str, marker: str) -> str?
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index + marker.len() <= text.len()
         if bytes.bytes_at(text: text, at: index, needle: marker)
@@ -104,7 +104,7 @@ function text_after(text: str, marker: str) -> str?
 function identity(build_dir: str, runtime: str, words: [str]) -> str?
     process.mkdir_all(build_dir)?
     said_path = publish.private_name(build_dir + "/clang-identity.txt")
-    line: [str] @ strings.with_all(list: ["clang", "-###"], more: words)
+    line: [str] @= strings.with_all(list: ["clang", "-###"], more: words)
     line @ strings.with_all(list: line, more: ["-c", runtime + "/runtime.c", "-o", "identity.o"])
     ran = process.run(program: "clang", words: line, out: process.discard(), err: said_path)
 
@@ -134,7 +134,7 @@ function identity(build_dir: str, runtime: str, words: [str]) -> str?
 
 # The first line of what clang said, its version banner.
 function banner(said: str) -> str
-    first: [str] @ []
+    first: [str] @= []
 
     for ch in said.chars()
         if ch == "\n"

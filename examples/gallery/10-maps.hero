@@ -31,7 +31,7 @@ function table() -> {str: i64}
     return {"ada": 10, "grace": 9, "alan": 8}
 
 function total_of(scores: {str: i64}, names: [str]) -> i64
-    sum: i64 @ 0
+    sum: i64 @= 0
 
     for name in names
         sum @ sum + score_of(scores, name)

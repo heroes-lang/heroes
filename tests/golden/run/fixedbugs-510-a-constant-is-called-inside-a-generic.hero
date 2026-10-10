@@ -10,7 +10,7 @@ constant DOUBLE: (function(i64) -> i64)
     twice
 
 function repeated<T>(x: T, n: i64) -> [T]
-    out: [T] @ []
+    out: [T] @= []
 
     for _ in range(from: 0, to: DOUBLE(n))
         out @ out.push(x)

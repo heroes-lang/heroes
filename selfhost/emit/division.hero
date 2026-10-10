@@ -26,7 +26,7 @@ use checker
 # nothing, and what has no representation is the quotient on the way. So
 # `%` aborts where `/` does at every width, and says why.
 function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp) -> str
-    kind: widths.IntKind @ .i64
+    kind: widths.IntKind @= .i64
 
     match table.get(c.types, ty)
         .int_ty it                                                 => kind @ it.kind
@@ -34,8 +34,8 @@ function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp) -> st
         .array | .fixed | .map | .fallible | .function_ty | .named => return ""
         .case_ty | .failure | .generic | .error                    => return ""
 
-    smallest: str @ "INT64_MIN"
-    minus_one: str @ "INT64_C(-1)"
+    smallest: str @= "INT64_MIN"
+    minus_one: str @= "INT64_C(-1)"
 
     match kind
         .i8 =>
@@ -50,7 +50,7 @@ function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp) -> st
         .i64                     => smallest @ smallest
         .u8 | .u16 | .u32 | .u64 => return ""
 
-    abort_call: str @ "hero_panic_overflow()"
+    abort_call: str @= "hero_panic_overflow()"
 
     if op == .rem
         width = widths.int_name(kind)
@@ -68,7 +68,7 @@ test "each signed width is guarded at its own smallest value, and no unsigned on
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checked @ checker.check(p.tree, out, s, p.decls)
+    c: state.Checked @= checker.check(p.tree, out, s, p.decls)
     i8 = table.intern(@c.types, .int_ty(kind: .i8))
     u8 = table.intern(@c.types, .int_ty(kind: .u8))
     i64 = table.intern(@c.types, .int_ty(kind: .i64))

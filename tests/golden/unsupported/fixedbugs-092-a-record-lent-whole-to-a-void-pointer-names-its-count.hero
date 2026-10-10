@@ -31,9 +31,9 @@ extern "fixedbugs-092-records.h"
     function fill_signed(@buf: One, n: i64) -> i64  #~ ffi_parameter_type
 
 function main()
-    o: One @ One(a: 0)
-    w: Outer @ Outer(inner: One(a: 0), z: 7)
-    n: u32 @ 4
+    o: One @= One(a: 0)
+    w: Outer @= Outer(inner: One(a: 0), z: 7)
+    n: u32 @= 4
     print(fill(@o, n: 4))
     print(peek(@o, n: 4))
     print(fill_lpvoid(@o, n: 4))

@@ -106,14 +106,14 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
     in_group = tails.is_from_c(linkage)
     tag = tag_marker(@c, text, in_group: in_group)
     partial = partial_marker(@c, text, in_group: in_group)
-    head_end: token.Span @ name
+    head_end: token.Span @= name
 
     if !tag.is_err()
         head_end @ tag.must()
     is_handle = handles.is_handle_parts(in_group: in_group, tagged: !tag.is_err(), partial: partial, field_count: 0)
     grammar_expr.eat_python_colon(@c)
     cursor.skip_terminators(@c)
-    below: members_below.Below @ .indented
+    below: members_below.Below @= .indented
 
     if !cursor.at(c, .indent) && !is_handle
         # What goes on past the head is dropped and fields below it are read
@@ -129,11 +129,11 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
             members: "fields",
             empty: members_below.empty_record(head, in_group: in_group, partial: partial)
         )
-    finish: token.Span @ head_end
+    finish: token.Span @= head_end
 
     if cursor.at(c, .indent)
         finish @ cursor.current_span(c)
-    fields: [ast.Field] @ []
+    fields: [ast.Field] @= []
 
     if members_below.close_of(below) < 0 && cursor.at(c, .indent) && headless.declares_inside(c, text)
         among_members(@c, @a, text: text, holder: "record")
@@ -154,9 +154,9 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
 # `expected_field` and `unexpected_block`, two messages, its body unread.
 function among_members(@c: cursor.Cursor, @a: ast.Ast, text: str, holder: str)
     _ = cursor.bump(@c)
-    told: bool @ false
-    habit: i64 @ -1
-    owed: heads.Owed @ heads.next_member(@c, @a, text: text, holder: holder, told: @told, @habit)
+    told: bool @= false
+    habit: i64 @= -1
+    owed: heads.Owed @= heads.next_member(@c, @a, text: text, holder: holder, told: @told, @habit)
 
     while owed.owes != .done
         if owed.owes == .body
@@ -174,9 +174,9 @@ function among_members(@c: cursor.Cursor, @a: ast.Ast, text: str, holder: str)
 # arm reads the join as the program, and it is that reading's message whose
 # quote is at issue (defect 131's class, 2026-09-29).
 function junk_said(text: str) -> str
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
-    a: ast.Ast @ ast.new_ast()
-    decls: [ast.Decl] @ []
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
+    a: ast.Ast @= ast.new_ast()
+    decls: [ast.Decl] @= []
     no_doc: [token.Span] = []
     record_with_doc(@c, @a, @decls, text, doc: no_doc, linkage: .heroes)
 

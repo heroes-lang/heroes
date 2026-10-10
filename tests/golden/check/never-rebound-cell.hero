@@ -6,5 +6,5 @@
 # landed: 156 such cells in the compiler, 18 in the examples, 5 in the
 # harness, 212 in the goldens, every one read a `=` in disguise.
 function main()
-    v: i64 @ 5           #~ never_rebound
+    v: i64 @= 5           #~ never_rebound
     print(v)

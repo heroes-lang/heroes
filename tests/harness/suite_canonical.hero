@@ -97,10 +97,10 @@ constant LEAST: i64
     1361
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
-    seen: i64 @ 0
-    crooked: [str] @ []
-    refused: [str] @ []
+    r: report.Report @= report.empty()
+    seen: i64 @= 0
+    crooked: [str] @= []
+    refused: [str] @= []
 
     # `list_tree` and not `list_entries`, because `examples/` keeps its
     # programs one directory down — `gallery/`, `calculator/` and thirteen

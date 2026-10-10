@@ -21,12 +21,12 @@ function bump(@x: i64, by: i64)
 
 function main()
     text = "heroes"
-    rows: [Row] @ [Row(cells: [1, 2, 3], label: "a"), Row(cells: [4, 5, 6], label: "b")]
-    grid: [[[i64]]] @ [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
-    xs: [i64] @ [10, 20, 30]
+    rows: [Row] @= [Row(cells: [1, 2, 3], label: "a"), Row(cells: [4, 5, 6], label: "b")]
+    grid: [[[i64]]] @= [[[1, 2], [3, 4]], [[5, 6], [7, 8]]]
+    xs: [i64] @= [10, 20, 30]
     before = grid
-    i: i64 @ 0
-    sum: i64 @ 0
+    i: i64 @= 0
+    sum: i64 @= 0
 
     while i < text.len()
         sum @ sum + to_i64(text[i]).must()

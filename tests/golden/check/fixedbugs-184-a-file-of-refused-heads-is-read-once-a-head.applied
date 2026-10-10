@@ -15,7 +15,7 @@
 # Nothing said moves: this case pins each shape's messages, as before.
 
 function loops(n: i64)
-    m: i64 @ n
+    m: i64 @= n
     for m > 0  #~ for_missing_in
         m @ m - 1
     while (m > 0)  #~ for_missing_in

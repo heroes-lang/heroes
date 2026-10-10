@@ -35,7 +35,7 @@ function word_at(@r: Reader) -> str
     return r.text.slice(from: start, to: r.pos)
 
 test "the reader walks, and the copy does not"
-    r: Reader @ Reader(text: "hi there", pos: 0)
+    r: Reader @= Reader(text: "hi there", pos: 0)
     first = word_at(@r)
     skip_spaces(@r)
     second = word_at(@r)
@@ -45,11 +45,11 @@ test "the reader walks, and the copy does not"
 
 test "values are copies"
     a = [1, 2, 3]
-    b: [i64] @ a
+    b: [i64] @= a
     b @ b.push(4)
     assert a.len() == 3
     assert b.len() == 4
 
 function main()
-    r: Reader @ Reader(text: "one two", pos: 0)
+    r: Reader @= Reader(text: "one two", pos: 0)
     print(word_at(@r))

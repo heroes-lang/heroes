@@ -77,7 +77,7 @@ function broke_of(@c: state.Checker) -> bool
 # `walk.block`, which every nested block recurses through, keeps no state of
 # its own for the rule and makes one call for it rather than two a statement.
 function after_a_jump(@c: state.Checker, a: ast.Ast, s: source.Source, body: ast.Block)
-    jumped: i64 @ -1
+    jumped: i64 @= -1
 
     for sid in body.stmts
         if jumped >= 0 && a.stmts[sid].kind != .error
@@ -157,7 +157,7 @@ function withdrawn(@c: state.Checker, a: ast.Ast, before: i64, at: i64, span: to
         return .falls
     said = c.out.diagnostics[count - 1]
     what = construct(a, at: at)
-    left: join.Leaves @ .falls
+    left: join.Leaves @= .falls
 
     if said.span.start != span.start || said.span.end != span.end
         return .falls
@@ -195,7 +195,7 @@ function construct(a: ast.Ast, at: i64) -> str
 # a function of its own so that `block`, which every nested block recurses
 # through, holds no diagnostic in its frame.
 function ended_on_a_statement(@c: state.Checker, a: ast.Ast, body: ast.Block)
-    span: token.Span @ body.span
+    span: token.Span @= body.span
 
     if body.stmts.len() > 0
         span @ a.stmts[body.stmts[body.stmts.len() - 1]].span
@@ -217,7 +217,7 @@ function refused_in(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     r: resolved.Resolved = resolved.new_resolved()
-    c: state.Checker @ state.new_checker(out_of: r, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: r, expr_count: p.tree.exprs.len())
     after_a_jump(@c, p.tree, s, body: first_body(p))
     return c
 
@@ -253,7 +253,7 @@ test "the three ends are read by their syntax, never by a value"
     text = "function f(off: bool)\n    assert false\n    assert !true\n    assert off\n    while true\n        print(1)\n    while (true)\n        print(1)\n"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    held: [bool] @ []
+    held: [bool] @= []
 
     for sid in first_body(p).stmts
         match p.tree.stmts[sid].kind

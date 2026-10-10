@@ -41,7 +41,7 @@ function named(ch: str) -> str
 function visible(text: str) -> str
     if !holds_control(text)
         return text
-    kept: [str] @ []
+    kept: [str] @= []
 
     for ch in text.chars()
         if is_control(ch)
@@ -76,7 +76,7 @@ function is_control(ch: str) -> bool
 # `unseen` names is led by one of the bytes `unseen_lead` names, and is decoded
 # only there.
 function holds_control(text: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len()
         b = text[at]
@@ -105,7 +105,7 @@ function unseen_lead(b: u8) -> bool
 # there are: a `str` is well-formed UTF-8 (spec § 3), so the slice is that one
 # character.
 function lead_width(b: u8, left: i64) -> i64
-    bytes: i64 @ 2
+    bytes: i64 @= 2
 
     if b >= 240
         bytes @ 4
@@ -172,7 +172,7 @@ constant UNSEEN: [i64]
 # spaces cost 5 billion instructions for its 7,900 messages.
 function unseen(code: i64) -> bool
     ranges = UNSEEN
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 1 < ranges.len()
         if code >= ranges[at] && code <= ranges[at + 1]
@@ -213,8 +213,8 @@ function continued(ch: str, at: i64) -> i64
 # how Unicode itself writes one.
 function u_plus(code: i64) -> str
     digits = "0123456789ABCDEF"
-    out: str @ ""
-    left: i64 @ code
+    out: str @= ""
+    left: i64 @= code
 
     while left > 0
         out @ digits.slice(from: left % 16, to: left % 16 + 1) + out
@@ -274,7 +274,7 @@ constant DEFAULT_IGNORABLE: [i64]
 # Named once a call, as `unseen`'s table is (defect 282).
 function default_ignorable(code: i64) -> bool
     ranges = DEFAULT_IGNORABLE
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 1 < ranges.len()
         if code >= ranges[at] && code <= ranges[at + 1]
@@ -301,7 +301,7 @@ constant BIDI_CONTROL: [i64]
 # Named once a call, as `unseen`'s table is (defect 282).
 function bidi_control(code: i64) -> bool
     ranges = BIDI_CONTROL
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 1 < ranges.len()
         if code >= ranges[at] && code <= ranges[at + 1]
@@ -385,7 +385,7 @@ test "an invisible or bidirectional character is written by its code, and a visi
 
     # Every range of the table is led by a byte `unseen_lead` names.
     ranges = UNSEEN
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + 1 < ranges.len()
         assert holds_control(utf8_of(ranges[at]))

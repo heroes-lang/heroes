@@ -36,7 +36,7 @@ use checker
 function len_read(@w: writer.Writer, c: state.Checked, f: containers.Function, value: i64, target: str?)
     if target.is_err()
         return
-    counter: str @ ""
+    counter: str @= ""
 
     match table.get(c.types, containers.value_type(f, value))
         .str                                               => counter @ "hero_str_len"
@@ -83,7 +83,7 @@ function element(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [
 function tag_read(@w: writer.Writer, c: state.Checked, f: containers.Function, base: i64, target: str?)
     if target.is_err()
         return
-    is_fallible: bool @ false
+    is_fallible: bool @= false
 
     match table.get(c.types, containers.value_type(f, base))
         .fallible                                                 => is_fallible @ true
@@ -91,7 +91,7 @@ function tag_read(@w: writer.Writer, c: state.Checked, f: containers.Function, b
         .array | .fixed | .map | .function_ty | .named            => is_fallible @ is_fallible
         .case_ty | .failure | .generic | .error                   => is_fallible @ is_fallible
 
-    text: str @ aggregate.tag(base: base)
+    text: str @= aggregate.tag(base: base)
 
     if is_fallible
         text @ fallible.option_tag(base: base)
@@ -103,8 +103,8 @@ function tag_read(@w: writer.Writer, c: state.Checked, f: containers.Function, b
 function payload_read(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, base: i64, at: i64, ty: i64, target: str?)
     if target.is_err()
         return
-    is_fallible: bool @ false
-    owned: bool @ true
+    is_fallible: bool @= false
+    owned: bool @= true
 
     match table.get(c.types, containers.value_type(f, base))
         .fallible o =>
@@ -147,7 +147,7 @@ function field_read(@w: writer.Writer, c: state.Checked, s: source.Source, decls
     if text.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* the gate refuses this base */")
         return
-    cast: str @ ""
+    cast: str @= ""
     found = aggregate.field(c, s, decls, owner: containers.value_type(f, base), index: at)
     owned = !found.is_err() && byte_copy.own_struct(c, decls, ty: found.must().ty)
 
@@ -192,7 +192,7 @@ test "len splits three ways, tag and payload split on the operand"
         instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     len_read(@w, c, f, value: 0, target: ok("t9"))
     tag_read(@w, c, f, base: 1, target: ok("t9"))
     tag_read(@w, c, f, base: 2, target: ok("t9"))

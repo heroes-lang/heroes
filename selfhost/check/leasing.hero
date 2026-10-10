@@ -2,7 +2,7 @@
 # (design.md §4.19 as amended 2026-09-09; spec § FFI; panel 124, ratified the
 # same day; panel 125's soundness lane).
 #
-# `x: cstr @ s.lease()` is a COPY of the bytes that the program owns and C may
+# `x: cstr @= s.lease()` is a COPY of the bytes that the program owns and C may
 # read until `end_lease(@x)` frees it — Heroes' bytes on C's reach, the mirror
 # of `owned`, which is C's pointer on Heroes' schedule. It closed defect 024,
 # the lend a C function RETAINS past the call, which no rule about a Heroes
@@ -13,7 +13,7 @@
 # WHAT MAKES A SECOND RELEASE IMPOSSIBLE, AND WHY THAT IS THREE CLAUSES. The
 # runtime nulls the CELL on release, so a second `end_lease(@x)` finds a null
 # before any read. That is sound only if the pointer lives in that one cell and
-# nowhere else — a copy of it, `g = x` or `g: cstr @ x`, would go on pointing at
+# nowhere else — a copy of it, `g = x` or `g: cstr @= x`, would go on pointing at
 # the bytes after the cell was nulled, and a read of the copy through C is a
 # use-after-free `check` could never see. So: the name of a lease cell stands
 # only as an argument of a call, exactly where a lend may (clause 1); the only
@@ -24,7 +24,7 @@
 #
 # IT ASKS THE VALUE AND NOT THE WORLD. A lease cell is recognised by its
 # declaration's INITIALISER being the lease call, through the resolver — a fact
-# about the cell in hand. `h: cstr @ grab()` and `h: cstr @ s.lease()` are the
+# about the cell in hand. `h: cstr @= grab()` and `h: cstr @= s.lease()` are the
 # same type and different origins, and origin is what `end_lease` may act on.
 # No flow analysis here: `is_builtin_named` is fourteen lines and `argument_of`
 # is the lend's own parent map, both borrowed from `check/lending.hero`. The
@@ -60,10 +60,10 @@ function is_lease(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
 function is_end_lease(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
     return lending.is_builtin_named(a, r, at, name: "end_lease")
 
-# A cell declared as `x: cstr @ s.lease()`: mutable, and its initialiser IS the
+# A cell declared as `x: cstr @= s.lease()`: mutable, and its initialiser IS the
 # lease. The initialiser is asked syntactically, through the resolver, which is
-# a fact about the value in hand and not a flow analysis — `h: cstr @ grab()`
-# and `h: cstr @ s.lease()` are the same type and different origins, and the
+# a fact about the value in hand and not a flow analysis — `h: cstr @= grab()`
+# and `h: cstr @= s.lease()` are the same type and different origins, and the
 # origin is what `end_lease` may act on.
 function is_lease_cell(a: ast.Ast, r: resolved.Resolved, local: i64) -> bool
     held = r.locals[local]
@@ -84,7 +84,7 @@ function leases_stay_in_their_cell(@c: state.Checker, a: ast.Ast, r: resolved.Re
     # The left side of a mutation is a place and not an argument, so it is
     # judged first, as a write, and then skipped by the walk over names.
     written = written_roots(a)
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < a.exprs.len()
         lease_name_at(@c, a, r, s, decls, at: at, into: into, written: written)
@@ -97,7 +97,7 @@ function leases_stay_in_their_cell(@c: state.Checker, a: ast.Ast, r: resolved.Re
 function lease_name_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, into: {i64: i64}, written: {i64: bool})
     if !is_name(a, at)
         return
-    local: i64 @ 0 - 1
+    local: i64 @= 0 - 1
 
     match r.uses[at]
         .local l                                => local @ l.at
@@ -220,7 +220,7 @@ function arguments_of(a: ast.Ast, at: i64) -> [ast.Arg]
 
 # The root name of every mutation's left side, `v @ …`, `v.f @ …`, `v[i] @ …`.
 function written_roots(a: ast.Ast) -> {i64: bool}
-    roots: {i64: bool} @ {}
+    roots: {i64: bool} @= {}
 
     for stmt in a.stmts
         match stmt.kind
@@ -252,7 +252,7 @@ function place_root(a: ast.Ast, at: i64) -> i64?
     return fail(code: "none", msg: "not a place")
 
 function holds_a_lease(a: ast.Ast, r: resolved.Resolved) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < a.exprs.len()
         if is_lease(a, r, at) || is_end_lease(a, r, at)
@@ -271,8 +271,8 @@ function swept(text: str) -> i64
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
@@ -285,27 +285,27 @@ constant GROUP: str
     "extern \"s.h\"\n    function n(s: cstr) -> u64\n    function g() -> cstr\n\n"
 
 test "a lease as an argument, then its own end_lease, is the legal shape"
-    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @ x.lease()\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 0
+    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @= x.lease()\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 0
 
 test "a lease copied by = or into a second cell escapes"
-    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @ x.lease()\n    y = c\n    h: cstr @ c\n    k = n(s: y) + n(s: h)\n    end_lease(@c)\n    return k\n") == 2
+    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @= x.lease()\n    y = c\n    h: cstr @= c\n    k = n(s: y) + n(s: h)\n    end_lease(@c)\n    return k\n") == 2
 
 test "a write to a lease cell that is not its end_lease is refused"
-    assert swept(GROUP + "function w(@y: cstr)\n    y @ nullptr\n\nfunction f(x: str) -> u64\n    c: cstr @ x.lease()\n    c @ nullptr\n    w(@c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2
+    assert swept(GROUP + "function w(@y: cstr)\n    y @ nullptr\n\nfunction f(x: str) -> u64\n    c: cstr @= x.lease()\n    c @ nullptr\n    w(@c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2
 
 # Defect 458: an `end_lease` with a count other than one is the built-in
 # dispatch's to tell, so this sweep says nothing of it, and the dotted form is
 # told the `@` it hides, once.
 test "end_lease's count is not this rule's to tell, and its dotted form is"
-    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @ x.lease()\n    k = n(s: c)\n    end_lease(@c, 1)\n    end_lease()\n    end_lease(@c)\n    return k\n") == 0
-    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @ x.lease()\n    k = n(s: c)\n    c.end_lease()\n    return k\n") == 1
+    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @= x.lease()\n    k = n(s: c)\n    end_lease(@c, 1)\n    end_lease()\n    end_lease(@c)\n    return k\n") == 0
+    assert swept(GROUP + "function f(x: str) -> u64\n    c: cstr @= x.lease()\n    k = n(s: c)\n    c.end_lease()\n    return k\n") == 1
 
 test "end_lease takes only a lease cell: not a lend cell, not a lease by value"
-    assert swept(GROUP + "function f(x: str) -> u64\n    d: cstr @ g()\n    end_lease(@d)\n    c: cstr @ x.lease()\n    end_lease(c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2
+    assert swept(GROUP + "function f(x: str) -> u64\n    d: cstr @= g()\n    end_lease(@d)\n    c: cstr @= x.lease()\n    end_lease(c)\n    k = n(s: c)\n    end_lease(@c)\n    return k\n") == 2
 
 # Defect 067, 2026-09-20: `end_lease` empties the cell and a copy inside a
 # group's record does not move, so C reads freed bytes at exit 0. The reading
 # call beside it stays quiet, which is what says the clause names a
 # construction rather than every argument.
 test "a lease parked in a group's record is refused, and the call that reads it stays quiet"
-    assert swept("extern \"s.h\"\n    record Box\n        p: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    c: cstr @ x.lease()\n    b = Box(p: c)\n    end_lease(@c)\n    return n(s: b.p)\n") == 1
+    assert swept("extern \"s.h\"\n    record Box\n        p: cstr\n    function n(s: cstr) -> u64\n\nfunction f(x: str) -> u64\n    c: cstr @= x.lease()\n    b = Box(p: c)\n    end_lease(@c)\n    return n(s: b.p)\n") == 1

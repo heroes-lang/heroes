@@ -13,8 +13,8 @@
 # `# UNVERIFIED — pending debrief`
 
 function main()
-    xs: [i64] @ []
-    i: i64 @ 0
+    xs: [i64] @= []
+    i: i64 @= 0
 
     while i < 10000
         xs @ xs.push(i)
@@ -27,7 +27,7 @@ function main()
     # the grow, so it sees the pre-push array in both shapes.
     xs @ xs.push(xs.len())
     print(xs[10000])
-    total: i64 @ 0
+    total: i64 @= 0
 
     for v in xs
         total @ total + v

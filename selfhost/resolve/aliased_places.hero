@@ -55,8 +55,8 @@ function blank() -> Node
 # The first place kept that `path` may reach, by the order they were kept,
 # or -1 where it reaches none.
 function first_reached(places: Places, path: [str]) -> i64
-    best: i64 @ -1
-    at: i64 @ 0
+    best: i64 @= -1
+    at: i64 @= 0
 
     for step in path
         node = places.nodes[at]
@@ -80,7 +80,7 @@ function first_reached(places: Places, path: [str]) -> i64
 # `path` kept as the place numbered `index`, which is above every number
 # kept before it.
 function keep(@places: Places, path: [str], index: i64)
-    at: i64 @ 0
+    at: i64 @= 0
 
     for step in path
         mark(@places.nodes, at: at, index: index, decided: step != UNDECIDED_STEP)
@@ -125,7 +125,7 @@ function least(a: i64, b: i64) -> i64
 # only where a step proves them apart; a prefix (`@p` against `@p.x`) is an
 # overlap, and so is any pair whose difference is undecided.
 function overlaps(x: [str], y: [str]) -> bool
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < x.len() && i < y.len()
         if x[i] != y[i]
@@ -138,12 +138,12 @@ function overlaps(x: [str], y: [str]) -> bool
 # first kept place it overlaps, or -1, and a place that overlaps none is
 # kept.
 function walked(paths: [[str]]) -> [i64]
-    kept: [[str]] @ []
-    out: [i64] @ []
+    kept: [[str]] @= []
+    out: [i64] @= []
 
     for path in paths
-        clash: i64 @ -1
-        i: i64 @ 0
+        clash: i64 @= -1
+        i: i64 @= 0
 
         while i < kept.len()
             if clash < 0 && overlaps(x: kept[i], y: path)
@@ -159,9 +159,9 @@ function walked(paths: [[str]]) -> [i64]
 
 # The same, asked of the tree.
 function indexed(paths: [[str]]) -> [i64]
-    places: Places @ new_places()
-    count: i64 @ 0
-    out: [i64] @ []
+    places: Places @= new_places()
+    count: i64 @= 0
+    out: [i64] @= []
 
     for path in paths
         clash = first_reached(places, path)
@@ -179,7 +179,7 @@ function indexed(paths: [[str]]) -> [i64]
 # one, on either side.
 function sample_places() -> [[str]]
     steps: [str] = [".x", ".y", "[0]", UNDECIDED_STEP]
-    out: [[str]] @ []
+    out: [[str]] @= []
 
     for root in ["#0", "#1"]
         out @ out.push([root])
@@ -195,7 +195,7 @@ function sample_places() -> [[str]]
 test "the tree answers what the walk of every pair answered"
     places = sample_places()
     assert places.len() == 2 * (1 + 4 + 8)
-    lists: i64 @ 0
+    lists: i64 @= 0
 
     # Every list of up to three places drawn from them, repeats included,
     # each answered place by place.

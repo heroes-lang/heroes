@@ -43,7 +43,7 @@ function remember_id(@ids: {str: i64}, text: str, id: i64)
 ## Tests
 
 test "interning is stable"
-    b: build.Lowering @ build.fresh()
+    b: build.Lowering @= build.fresh()
     build.begin(
         @b,
         name: "h",

@@ -24,7 +24,7 @@ use cursor
 # strays told at once, since past the first, which closes nothing the line
 # opened, none does (defect 306); any other token alone.
 function stray_run(c: cursor.Cursor, text: str, at: i64) -> token.Span
-    last: i64 @ at
+    last: i64 @= at
 
     while token.is_closer(c.tokens[at].kind) && last + 1 < c.tokens.len() && token.is_closer(c.tokens[last + 1].kind) && text_lines.newlines_between(text, from: c.tokens[last].span.end, to: c.tokens[last + 1].span.start) == 0
         last @ last + 1
@@ -43,7 +43,7 @@ function found_run(c: cursor.Cursor, text: str, found: str) -> str
 # Where the last report said that begins at the token `at` ends, or -1: a
 # walk back from the last, which finds one said on the line in hand at once.
 function told_to(c: cursor.Cursor, at: i64) -> i64
-    i: i64 @ c.diagnostics.len() - 1
+    i: i64 @= c.diagnostics.len() - 1
 
     while i >= 0 && c.diagnostics[i].span.start != c.tokens[at].span.start
         i @ i - 1

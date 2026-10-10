@@ -53,11 +53,11 @@ function field_type(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: st
     declared = found.must().declared
     typed = fields[type_name + " " + member]
     code = widths[type_name + " " + member].default(0)
-    message: str @ "`" + type_name + "." + member + "` is not `" + declared + "` in `" + found.must().header + "`"
+    message: str @= "`" + type_name + "." + member + "` is not `" + declared + "` in `" + found.must().header + "`"
 
     if !typed.is_err()
         message @ "`" + type_name + "." + member + "` is " + ffi_field_told.described(typed.must(), word_bits: word_bits) + " in `" + found.must().header + "`" + ffi_field_told.measured(code) + ", not `" + declared + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_field_type",
         message: message + " — clang read the header's struct and the field disagrees",
         span: found.must().field_span
@@ -144,14 +144,14 @@ function unknown_field(s: source.Source, decls: [ast.Decl], line: str) -> diag.D
     if spelled.is_err()
         return fail(code: "none", msg: "no type named on the line")
     c_type = ffi_lookup.up_to_quote(spelled.must())
-    found: DeclaredField? @ field_at_line(s, decls, line: line, member: member)
+    found: DeclaredField? @= field_at_line(s, decls, line: line, member: member)
 
     if found.is_err()
         found @ field_by_tag(s, decls, c_type: c_type, member: member)
 
     if found.is_err()
         return fail(code: "none", msg: "no group record names this field")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_unknown_field",
         message: "`" + found.must().header + "` declares no `" + member + "` in `" + c_type + "`: clang read the header, and that type has no such field",
         span: found.must().span
@@ -268,7 +268,7 @@ function flexible_array_member(s: source.Source, tree: ast.Ast, decls: [ast.Decl
 
     if found.is_err()
         return fail(code: "none", msg: "no group record has this field")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_flexible_array_member",
         message: "`" + found.must().header + "` gives `" + type_name + "." + member + "` no size — it is written there with empty brackets, so it is not a field this record can name at any length",
         span: found.must().field_span
@@ -325,7 +325,7 @@ function const_member(s: source.Source, decls: [ast.Decl], line: str) -> diag.Di
                     if source.span_text(s, field.name) == member
                         header = emit_externs.unquoted(s, span: rec.header.must())
                         owner = source.span_text(s, decl.name)
-                        d: diag.Diagnostic @ diag.new_diagnostic(
+                        d: diag.Diagnostic @= diag.new_diagnostic(
                             code: "ffi_const_field",
                             message: "`" + header + "` declares `" + owner + "." + member + "` as `const`, so C refuses to assign any `" + owner + "` once it exists — and building one here is that assignment",
                             span: field.name
@@ -469,8 +469,8 @@ test "a field the header was asked about is told the header's type, width and si
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-    fields: {str: ffi_asked.Typed} @ {}
-    widths: {str: i64} @ {}
+    fields: {str: ffi_asked.Typed} @= {}
+    widths: {str: i64} @= {}
     fields["Ev name"] @ ffi_asked.Typed(spelled: "char[8]", canonical: "char[8]")
     widths["Ev name"] @ 64
     fields["Ev kind"] @ ffi_asked.Typed(spelled: "ev_kind", canonical: "ev_kind")

@@ -288,8 +288,8 @@ function names_in(r: Resolved, module: str) -> [str]
 # ORDER: ascending module name — ties within each group are broken by it, and
 # the answer reaches a diagnostic and its fix.
 function module_declaring(r: Resolved, from: str, name: str) -> str?
-    visible: [str] @ []
-    other: [str] @ []
+    visible: [str] @= []
+    other: [str] @= []
 
     for module in sort(modules_declaring(r))
         if top_in(r, module: module, name: name).is_err()
@@ -338,7 +338,7 @@ function note_hole(@r: Resolved, module: str)
         r.holes_in @ r.holes_in.push(module)
 
 test "a name is found in its own module and nowhere else"
-    r: Resolved @ new_resolved()
+    r: Resolved @= new_resolved()
     declare_top(@r, module: "geom", name: "dist2", decl: 4)
     declare_top(@r, module: "main", name: "dist2", decl: 9)
     assert top_in(r, module: "geom", name: "dist2").must() == 4
@@ -347,7 +347,7 @@ test "a name is found in its own module and nowhere else"
     assert top_in(r, module: "nope", name: "dist2").is_err()
 
 test "names_in is sorted, which is what the ORDER mark owes"
-    r: Resolved @ new_resolved()
+    r: Resolved @= new_resolved()
     declare_top(@r, module: "geom", name: "zeta", decl: 1)
     declare_top(@r, module: "geom", name: "alpha", decl: 2)
     declare_top(@r, module: "geom", name: "mid", decl: 3)
@@ -355,7 +355,7 @@ test "names_in is sorted, which is what the ORDER mark owes"
     assert names_in(r, "absent") == []
 
 test "the preferred module is one the file can see"
-    r: Resolved @ new_resolved()
+    r: Resolved @= new_resolved()
     declare_top(@r, module: "alpha", name: "scale", decl: 1)
     declare_top(@r, module: "geom", name: "scale", decl: 2)
     declare_use(@r, from: "main", binding: "geom", module: "geom")
@@ -369,7 +369,7 @@ test "the preferred module is one the file can see"
     assert module_declaring(r, from: "main", name: "absent").is_err()
 
 test "a hole is recorded per module, never program-wide"
-    r: Resolved @ new_resolved()
+    r: Resolved @= new_resolved()
     note_hole(@r, "geom")
     note_hole(@r, "geom")
     assert r.holes_in.len() == 1
@@ -377,7 +377,7 @@ test "a hole is recorded per module, never program-wide"
     assert !hole_covers(r, "main")
 
 test "a use line is remembered for the module that wrote it"
-    r: Resolved @ new_resolved()
+    r: Resolved @= new_resolved()
     declare_use(@r, from: "main", binding: "geom", module: "geom")
     assert is_used_module(r, from: "main", module: "geom")
     assert !is_used_module(r, from: "geom", module: "main")
@@ -386,7 +386,7 @@ test "a use line is remembered for the module that wrote it"
 test "a record is a usable map key, which is finding 1"
     # Not the table's shape — the finding's own test. Lookup works; it is
     # `sort(keys(m))` that does not, which is why the table nests instead.
-    m: {Key: i64} @ {}
+    m: {Key: i64} @= {}
     m[Key(module: "geom", name: "dist2")] @ 7
     assert m[Key(module: "geom", name: "dist2")].must() == 7
     assert m[Key(module: "geom", name: "other")].is_err()
@@ -409,7 +409,7 @@ test "a local carries its optional syntax by value"
     assert l.symbol.start == 7
     assert l.value.is_err()
     assert l.kind == .cell
-    copy: Local @ l
+    copy: Local @= l
     copy.reads @ 5
     assert l.reads == 0
     assert copy.reads == 5

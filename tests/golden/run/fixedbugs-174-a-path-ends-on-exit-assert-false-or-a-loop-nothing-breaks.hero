@@ -38,7 +38,7 @@ function asserted(n: i64) -> i64
 # it are its `return`s. A `break` of a loop inside it is that loop's, and a
 # `continue` does not finish it.
 function until_found(n: i64) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while true
         if i * i >= n
@@ -46,7 +46,7 @@ function until_found(n: i64) -> i64
         i @ i + 1
 
 function an_inner_for_breaks(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         for k in [1, 2]
@@ -58,7 +58,7 @@ function an_inner_for_breaks(n: i64) -> i64
         m @ m + 1
 
 function an_inner_while_breaks(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         while true
@@ -69,7 +69,7 @@ function an_inner_while_breaks(n: i64) -> i64
         m @ m + 1
 
 function continues(n: i64) -> i64
-    m: i64 @ n
+    m: i64 @= n
 
     while true
         m @ m + 1
@@ -106,7 +106,7 @@ function after_assert(n: i64) -> i64
     return 0
 
 function after_a_loop(n: i64) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while true
         if i >= n

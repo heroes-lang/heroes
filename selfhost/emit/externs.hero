@@ -126,8 +126,8 @@ function headers(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> 
 # spells follows them, in written order, so it never stands between two of
 # the module's own and changes what one of them means.
 function headers_for(p: containers.Program, s: source.Source, decls: [ast.Decl], records: {i64: bool}?, own: str?) -> [str]
-    mine: [i64] @ []
-    others: [i64] @ []
+    mine: [i64] @= []
+    others: [i64] @= []
 
     for f in p.functions
         if !extern_spans(decls, f).header.is_err()
@@ -149,7 +149,7 @@ function headers_for(p: containers.Program, s: source.Source, decls: [ast.Decl],
                         others @ others.push(index)
             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
 
-    seen: [str] @ SEEDS
+    seen: [str] @= SEEDS
 
     for at in sort(mine)
         seen @ once(seen, header: unquoted(s, span: header_at(decls, at: at).must()))
@@ -210,7 +210,7 @@ function packages(p: containers.Program, s: source.Source, decls: [ast.Decl]) ->
     return named(p, s, decls, want_package: true)
 
 function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_package: bool) -> [str]
-    seen: [str] @ []
+    seen: [str] @= []
 
     for f in p.functions
         spans = extern_spans(decls, f)
@@ -222,7 +222,7 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
         if wanted.is_err()
             continue
         name = unquoted(s, span: wanted.must())
-        already: bool @ false
+        already: bool @= false
 
         for one in seen
             if one == name
@@ -243,7 +243,7 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
                     if wanted.is_err()
                         continue
                     name = unquoted(s, span: wanted.must())
-                    already: bool @ false
+                    already: bool @= false
 
                     for one in seen
                         if one == name
@@ -262,12 +262,12 @@ function named(p: containers.Program, s: source.Source, decls: [ast.Decl], want_
 # so this answers "" unless a name came another way; then `cli/produce.hero`
 # stops at exit 2, the compiler's own error, before any tool reads one.
 function unjudged(p: containers.Program, s: source.Source, decls: [ast.Decl]) -> str
-    said: [str] @ refused(said: [], names: headers(p, s, decls), what: "header")
+    said: [str] @= refused(said: [], names: headers(p, s, decls), what: "header")
     said @ refused(said: said, names: libraries(p, s, decls), what: "link")
     return refused(said: said, names: packages(p, s, decls), what: "package").join("\n  ")
 
 function refused(said: [str], names: [str], what: str) -> [str]
-    out: [str] @ said
+    out: [str] @= said
 
     for name in names
         verdict = head_names.cannot_carry(

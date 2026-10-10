@@ -3,6 +3,6 @@
 # asks only of a cell that IS read; so one cell gets one message whichever
 # half of its life is missing.
 function main()
-    v: i64 @ 5           #~ unused_binding
+    v: i64 @= 5           #~ unused_binding
     v @ 6
     print(1)

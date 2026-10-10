@@ -286,7 +286,7 @@ function declared_word(text: str) -> ForeignWord?
             ForeignWord(message: "`let` is not a word in this language — bind with `=`: `x = 5`", repair: .guidance)
         )
         "var" => ok(
-            ForeignWord(message: "`var` is not a word in this language — declare a mutable with `@`: `v: i64 @ 0`", repair: .guidance)
+            ForeignWord(message: "`var` is not a word in this language — declare a mutable cell with `@=`: `v: i64 @= 0`", repair: .guidance)
         )
         "const" => ok(
             ForeignWord(message: "`const` is not a word in this language — use `constant`: `constant MAX: i64`", repair: .swap(word: "constant"))
@@ -337,10 +337,10 @@ test "a contextual word is never a keyword, and each is listed once"
     for word in words
         assert keyword(word).is_err()
 
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < words.len()
-        j: i64 @ i + 1
+        j: i64 @= i + 1
 
         while j < words.len()
             assert words[i] != words[j]
@@ -406,11 +406,11 @@ test "a foreign word that is CALLED loses its certain swap"
 function strings_has(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
-        i: i64 @ 0
-        same: bool @ true
+        i: i64 @= 0
+        same: bool @= true
 
         while i < needle.len()
             if text[at + i] != needle[i]

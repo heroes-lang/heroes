@@ -33,8 +33,8 @@ use checker
 function union_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
-    kind: str @ ""
-    rest: str @ ""
+    kind: str @= ""
+    rest: str @= ""
 
     for marker in [extern_union.UNION_KIND, extern_union.UNION_NARROW, extern_union.UNION_ASSERTION]
         tail = ffi_lookup.after(text: line, marker: marker + " ")
@@ -50,9 +50,9 @@ function union_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: 
     if parts.len() == 0
         return fail(code: "none", msg: "the marker's tail is empty")
     type_name = parts[0]
-    members: [str] @ []
-    index: i64 @ 1
-    fall: bool @ false
+    members: [str] @= []
+    index: i64 @= 1
+    fall: bool @= false
 
     while index < parts.len() && !fall
         if ffi_lookup.has(text: parts[index], needle: "\"")
@@ -66,7 +66,7 @@ function union_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: 
     if found.is_err()
         return fail(code: "none", msg: "no group declares this record")
     h = found.must().header
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_union_field", message: "", span: found.must().span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_union_field", message: "", span: found.must().span)
     wrong = ", so comparing `" + type_name + "` values or using one as a map key can call two different values equal"
     compare_note = "only an integer, a pointer or an array of them as wide as the union compares a union's bytes; reading through any member, and building one that names one member, stay legal"
 

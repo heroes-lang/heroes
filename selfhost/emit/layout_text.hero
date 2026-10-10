@@ -93,8 +93,8 @@ record Visible
 # has nothing to lay out.
 function asked(s: source.Source, decls: [ast.Decl]) -> [Asked]
     names = ctype.new_names(s, decls)
-    out: [Asked] @ []
-    index: i64 @ 0
+    out: [Asked] @= []
+    index: i64 @= 0
 
     for decl in decls
         match decl.kind
@@ -108,7 +108,7 @@ function asked(s: source.Source, decls: [ast.Decl]) -> [Asked]
     return out
 
 function dump_unit(headers: [str], wanted: [Asked]) -> str
-    lines: [str] @ c_text.includes(headers)
+    lines: [str] @= c_text.includes(headers)
 
     for one in wanted
         wrap = "struct " + layout_rows.PREFIX + one.decl.to_str()
@@ -133,7 +133,7 @@ constant CONTROL: str
 # `h`; a named struct `n` whose `p` is `n.p` to C; the bit-field `d`; an
 # unnamed bit-field; `e`, at the levels and with the flags written.
 function control_holds(rows: [str]) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
     needle = "| struct " + layout_rows.PREFIX + "control"
 
     while at < rows.len()
@@ -145,7 +145,7 @@ function control_holds(rows: [str]) -> bool
 
             if read.is_err()
                 return false
-            got: [str] @ []
+            got: [str] @= []
 
             for m in read.must()
                 got @ got.push(
@@ -168,9 +168,9 @@ function control_holds(rows: [str]) -> bool
 # Where each wrapper's block opens, read in one pass: the row after the
 # line `0 | struct hero_ly_<decl>`, by declaration.
 function heads(rows: [str]) -> {i64: i64}
-    out: {i64: i64} @ {}
+    out: {i64: i64} @= {}
     needle = "| struct " + layout_rows.PREFIX
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < rows.len()
         row = rows[at]
@@ -189,15 +189,15 @@ function heads(rows: [str]) -> {i64: i64}
 # dump's order. Absent when a line inside the block has no `| `, or the block
 # never closes: a shape this reader does not know is said, never skipped.
 function members(rows: [str], from: i64) -> [Member]?
-    at: i64 @ from
-    depths: [i64] @ []
-    named: [str] @ []
-    bits: [bool] @ []
-    starts_at: [i64] @ []
-    flex: [bool] @ []
-    unions: [bool] @ []
-    places: [str] @ []
-    closed: bool @ false
+    at: i64 @= from
+    depths: [i64] @= []
+    named: [str] @= []
+    bits: [bool] @= []
+    starts_at: [i64] @= []
+    flex: [bool] @= []
+    unions: [bool] @= []
+    places: [str] @= []
+    closed: bool @= false
 
     while at < rows.len() && !closed
         row = rows[at]
@@ -211,7 +211,7 @@ function members(rows: [str], from: i64) -> [Member]?
         if layout_rows.starts(text: rest, prefix: "[sizeof=")
             closed @ true
             continue
-        spaces: i64 @ 0
+        spaces: i64 @= 0
 
         while spaces < rest.len() && rest[spaces] == ' '
             spaces @ spaces + 1
@@ -232,7 +232,7 @@ function members(rows: [str], from: i64) -> [Member]?
             places @ places.push("")
         else
             named @ named.push(text.slice(from: space + 1, to: text.len()))
-            flexible: bool @ false
+            flexible: bool @= false
 
             if space >= 2
                 flexible @ text[space - 2] == '[' && text[space - 1] == ']'
@@ -246,9 +246,9 @@ function members(rows: [str], from: i64) -> [Member]?
 
     if !closed
         return fail(code: "none", msg: "the block never closes")
-    out: [Member] @ []
+    out: [Member] @= []
     paths = paths_of(depths, named)
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < depths.len()
         deeper = k + 1 < depths.len() && depths[k + 1] > depths[k]
@@ -262,17 +262,17 @@ function members(rows: [str], from: i64) -> [Member]?
 # Each member's C name on T, from the names of the members above it: a stack
 # of the levels still open, an anonymous one contributing nothing.
 function paths_of(depths: [i64], named: [str]) -> [str]
-    out: [str] @ []
-    open_at: [i64] @ []
-    open_names: [str] @ []
-    k: i64 @ 0
+    out: [str] @= []
+    open_at: [i64] @= []
+    open_names: [str] @= []
+    k: i64 @= 0
 
     while k < depths.len()
         while open_at.len() > 0 && open_at[open_at.len() - 1] >= depths[k]
             open_at @ open_at.slice(from: 0, to: open_at.len() - 1)
             open_names @ open_names.slice(from: 0, to: open_names.len() - 1)
 
-        parts: [str] @ []
+        parts: [str] @= []
 
         for one in open_names
             if one.len() > 0
@@ -297,8 +297,8 @@ function paths_of(depths: [i64], named: [str]) -> [str]
 # lets one through that holds every member; it never makes an unsound
 # comparison legal.
 function union_sizes(rows: [str]) -> {str: i64}
-    out: {str: i64} @ {}
-    k: i64 @ 0
+    out: {str: i64} @= {}
+    k: i64 @= 0
 
     while k + 1 < rows.len()
         row = rows[k]
@@ -329,10 +329,10 @@ function place_of(type_text: str) -> str
 # The members a program can name on T, in the dump's order: below a NAMED
 # record member the fields are that member's own, and are skipped.
 function visible(read: [Member]) -> [Visible]
-    out: [Visible] @ []
-    hidden: i64 @ 0
-    group: i64 @ -1
-    k: i64 @ 0
+    out: [Visible] @= []
+    hidden: i64 @= 0
+    group: i64 @= -1
+    k: i64 @= 0
 
     while k < read.len()
         m = read[k]

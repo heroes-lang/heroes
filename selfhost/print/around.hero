@@ -50,7 +50,7 @@ function just_inside(f: page.Fmt, c: elements.Code, pair: token.Span, span: toke
 
 # The author's parentheses around a value not printed yet, innermost first.
 function untaken(c: elements.Code, span: token.Span, taken: i64) -> [token.Span]
-    out: [token.Span] @ []
+    out: [token.Span] @= []
 
     for open in groups.levels(c.lines, span: span)
         pair = groups.around(c.lines, open: open)
@@ -63,8 +63,8 @@ function untaken(c: elements.Code, span: token.Span, taken: i64) -> [token.Span]
 # A value's one-line text, parenthesised below `needed`, broken after each
 # token a comment inside it follows (`print/breaks.hero`).
 function one_line(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent: i64, needed: i64) -> str
-    before: str @ head
-    after: str @ ""
+    before: str @= head
+    after: str @= ""
 
     if parens.needs_parens(c.tree, id: value, needed: needed)
         before @ head + "("
@@ -80,7 +80,7 @@ function one_line(@f: page.Fmt, c: elements.Code, head: str, value: i64, indent:
 # before the entry, and the comment after it was printed above it, out of
 # the parentheses it was written in.
 function starts(c: elements.Code, item: elements.Element, taken: i64) -> i64
-    head: i64 @ item.value
+    head: i64 @= item.value
 
     if item.key >= 0
         head @ item.key
@@ -104,7 +104,7 @@ record Written
 function written(c: elements.Code, item: elements.Element, taken: i64) -> Written
     span = elements.extent(c, id: item.value)
     pairs = untaken(c, span: c.tree.exprs[item.value].span, taken: taken)
-    w: Written @ Written(from: span.start, to: span.end, last: elements.end_line(c, id: item.value))
+    w: Written @= Written(from: span.start, to: span.end, last: elements.end_line(c, id: item.value))
 
     if pairs.len() > 0
         outer = pairs[pairs.len() - 1]

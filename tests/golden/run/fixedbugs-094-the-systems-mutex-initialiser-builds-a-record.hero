@@ -14,7 +14,7 @@ extern "fixedbugs-094-mutex.h"
     function hero_unlock(@h: hero_mutex) -> i32
 
 function main()
-    m: hero_mutex @ HERO_MUTEX_INIT
+    m: hero_mutex @= HERO_MUTEX_INIT
     print(m.id)
     print(hero_lock(@m))
     print(hero_unlock(@m))

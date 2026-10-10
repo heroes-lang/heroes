@@ -29,19 +29,19 @@ constant PREFIX: str
 # newline is dropped (clang on Windows writes text mode). Every other row is
 # stepped over without a slice.
 function wrapper_rows(text: str) -> [str]
-    out: [str] @ []
-    at: i64 @ 0
+    out: [str] @= []
+    at: i64 @= 0
 
     # 0 between blocks, 1 inside a wrapper's, 2 inside an anonymous union's.
-    inside: i64 @ 0
+    inside: i64 @= 0
 
     while at < text.len()
-        stop: i64 @ at
+        stop: i64 @= at
 
         while stop < text.len() && text[stop] != '\n'
             stop @ stop + 1
 
-        cut: i64 @ stop
+        cut: i64 @= stop
 
         if cut > at && text[cut - 1] == '\r'
             cut @ cut - 1
@@ -77,7 +77,7 @@ function opens_union(text: str, from: i64, to: i64) -> bool
 
 # Whether `needle` sits between `from` and `to`, read in place.
 function has_from(text: str, from: i64, to: i64, needle: str) -> bool
-    at: i64 @ from
+    at: i64 @= from
 
     while at + needle.len() <= to
         if bytes.bytes_at(text: text, at: at, needle: needle)
@@ -88,7 +88,7 @@ function has_from(text: str, from: i64, to: i64, needle: str) -> bool
 
 # The first byte past a row's offset column: spaces, digits, `:` and `-`.
 function past_offsets(text: str, from: i64, to: i64) -> i64
-    at: i64 @ from
+    at: i64 @= from
 
     while at < to && (text[at] == ' ' || text[at] == ':' || text[at] == '-' || text[at] >= '0' && text[at] <= '9')
         at @ at + 1
@@ -112,7 +112,7 @@ function opens(text: str, from: i64, to: i64) -> bool
 
     if rest.len() == 0
         return false
-    k: i64 @ 0
+    k: i64 @= 0
 
     while k < rest.len()
         if rest[k] < '0' || rest[k] > '9'
@@ -124,13 +124,13 @@ function opens(text: str, from: i64, to: i64) -> bool
 # The rows of a short text, a `\r` before a newline dropped: a cached block
 # list and the compiler's own tests read their rows through this.
 function rows_of(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at <= text.len()
         if at == text.len() || text[at] == '\n'
-            stop: i64 @ at
+            stop: i64 @= at
 
             if stop > start && text[stop - 1] == '\r'
                 stop @ stop - 1
@@ -144,10 +144,10 @@ function rows_of(text: str) -> [str]
 
 # The first byte offset of an ASCII `needle`, or -1.
 function byte_index(text: str, needle: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= text.len()
-        k: i64 @ 0
+        k: i64 @= 0
 
         while k < needle.len() && text[at + k] == needle[k]
             k @ k + 1
@@ -161,13 +161,13 @@ function byte_index(text: str, needle: str) -> i64
 # The decimal at the start of an offset column, spaces skipped: `8` of
 # `    8:0-3`; -1 when there is none.
 function leading_number(text: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < text.len() && text[at] == ' '
         at @ at + 1
 
-    value: i64 @ 0
-    seen: bool @ false
+    value: i64 @= 0
+    seen: bool @= false
 
     while at < text.len() && text[at] >= '0' && text[at] <= '9'
         value @ value * 10 + (text[at] - '0').to_i64().must()
@@ -179,7 +179,7 @@ function leading_number(text: str) -> i64
     return value
 
 function last_space(text: str) -> i64
-    at: i64 @ text.len() - 1
+    at: i64 @= text.len() - 1
 
     while at >= 0
         if text[at] == ' '

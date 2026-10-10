@@ -54,19 +54,19 @@ constant CR: u8
 # postfix `?`, `)`, `]`, or `}`. `?` is the analogue of Go's `++`/`--`.
 function is_line_ender(kind: token.TokenKind) -> bool
     return match kind
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit              => true
-        .kw_true | .kw_false | .kw_nullptr                                              => true
-        .kw_return | .kw_break | .kw_continue                                           => true
-        .hole | .question | .rparen | .rbracket | .rbrace                               => true
-        .kw_constant | .kw_function | .kw_record | .kw_variant                          => false
-        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in                    => false
-        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail                         => false
-        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
-        .lparen | .lbracket | .lbrace                                                   => false
-        .plus | .minus | .star | .slash | .percent                                      => false
-        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                       => false
-        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr                => false
-        .comment | .terminator | .indent | .dedent | .eof | .error                      => false
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                       => true
+        .kw_true | .kw_false | .kw_nullptr                                                       => true
+        .kw_return | .kw_break | .kw_continue                                                    => true
+        .hole | .question | .rparen | .rbracket | .rbrace                                        => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant                                   => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in                             => false
+        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail                                  => false
+        .eq | .at | .at_eq | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
+        .lparen | .lbracket | .lbrace                                                            => false
+        .plus | .minus | .star | .slash | .percent                                               => false
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                                => false
+        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr                         => false
+        .comment | .terminator | .indent | .dedent | .eof | .error                               => false
 
 ## The margin
 
@@ -83,7 +83,7 @@ function line_start(@l: state.LexState, text: str)
     # A margin with no tab, and no run open, is read as it is written: every
     # line of a program that compiles takes this path, and asks no more.
     habit = m.tabs > 0 || l.run[0].kind != .none
-    spaces: i64 @ m.spaces
+    spaces: i64 @= m.spaces
 
     if habit
         spaces @ indent_runs.through(l.run[0], m)
@@ -169,7 +169,7 @@ function line_start(@l: state.LexState, text: str)
     # sense §4.15 forbids. What is recovered is only the structure handed
     # downstream: round to the nearest level, and never open more than one
     # level at a time — nothing in the language opens two.
-    new_level: i64 @ (spaces + 2) / 4
+    new_level: i64 @= (spaces + 2) / 4
 
     if spaces % 4 != 0
         state.push_diagnostic(
@@ -299,7 +299,7 @@ function maybe_terminator(@l: state.LexState, text: str)
     state.push_token(@l.tokens, token.Token(kind: .terminator, span: span))
 
 test "the margin becomes indent and dedent one level at a time"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_start(@l, "    x")
     assert l.level == 1
     assert l.tokens.len() == 1
@@ -313,12 +313,12 @@ test "the margin becomes indent and dedent one level at a time"
     assert l.tokens[2].kind == .dedent
 
 test "a wrong margin is an error that still recovers a structure"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_start(@l, "     x")
     assert l.diagnostics.len() == 1
     assert l.diagnostics[0].code == "indentation_not_multiple_of_4"
     assert l.level == 1
-    j: state.LexState @ state.new_state()
+    j: state.LexState @= state.new_state()
     line_start(@j, "        x")
     assert j.diagnostics.len() == 1
     assert j.diagnostics[0].code == "indentation_jump"
@@ -326,27 +326,27 @@ test "a wrong margin is an error that still recovers a structure"
 
     # A tab is read as the level its fix writes, four columns, and told
     # (`indent_runs.hero`): the line is laid out one level in.
-    t: state.LexState @ state.new_state()
+    t: state.LexState @= state.new_state()
     line_start(@t, "\tx")
     assert t.diagnostics[0].code == "tab_in_indentation"
     assert t.level == 1
 
 test "inside brackets and on neutral lines the margin means nothing"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     l.pos @ 1
     state.emit(@l, .lparen, 0)
     l.pos @ 0
     line_start(@l, "        x")
     assert l.level == 0
     assert l.diagnostics.len() == 0
-    n: state.LexState @ state.new_state()
+    n: state.LexState @= state.new_state()
     line_start(@n, "    # a comment-only line")
     line_start(@n, "")
     assert n.level == 0
     assert n.diagnostics.len() == 0
 
 test "the terminator lands only where a line can be over"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     l.pos @ 1
     state.emit(@l, .ident, 0)
     maybe_terminator(@l, "x")
@@ -355,13 +355,13 @@ test "the terminator lands only where a line can be over"
     open_line.settle(@l)
     assert l.tokens.len() == 2
     assert l.tokens[1].kind == .terminator
-    p: state.LexState @ state.new_state()
+    p: state.LexState @= state.new_state()
     p.pos @ 1
     state.emit(@p, .plus, 0)
     maybe_terminator(@p, "+")
     assert p.tokens.len() == 1
     assert p.open_line == 0
-    e: state.LexState @ state.new_state()
+    e: state.LexState @= state.new_state()
     maybe_terminator(@e, "")
     assert e.tokens.len() == 0
 

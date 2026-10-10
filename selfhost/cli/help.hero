@@ -19,10 +19,10 @@
 use cli/table as cli_table
 
 function help() -> str
-    rows: [str] @ ["heroes — the Heroes compiler\n\nusage: heroes <command> [file] [flags]\n\n"]
+    rows: [str] @= ["heroes — the Heroes compiler\n\nusage: heroes <command> [file] [flags]\n\n"]
 
     for command in cli_table.commands()
-        operand: str @ ""
+        operand: str @= ""
 
         match command.operand
             .file_operand     => operand @ " <file.hero>"
@@ -32,7 +32,7 @@ function help() -> str
         rows @ rows.push("  " + command.name + operand + "\n      " + command.summary + "\n")
 
         for flag in command.flags
-            spelling: str @ flag.spelling
+            spelling: str @= flag.spelling
 
             if flag.value
                 spelling @ flag.spelling + " <" + flag.placeholder + ">"
@@ -58,11 +58,11 @@ function has(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

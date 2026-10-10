@@ -60,7 +60,7 @@ function deepened(@f: page.Fmt, from: i64)
 ## Tests
 
 test "a block's head across lines is deepened after its first line, and a head of one line is not"
-    f: page.Fmt @ page.blank_page()
+    f: page.Fmt @= page.blank_page()
     page.put_line(@f, indent: 0, text: "x")
     start = f.printed.size
     page.put_line(@f, indent: 4, text: "while t[a +  # c")
@@ -68,7 +68,7 @@ test "a block's head across lines is deepened after its first line, and a head o
     page.blank_line(@f)
     deepened(@f, from: start)
     assert page.whole(f) == "x\n    while t[a +  # c\n                1] > 0\n\n"
-    g: page.Fmt @ page.blank_page()
+    g: page.Fmt @= page.blank_page()
     page.put_line(@g, indent: 4, text: "if c")
     deepened(@g, from: 0)
     assert page.whole(g) == "    if c\n"

@@ -38,7 +38,7 @@ constant RETURN_SLOT: str
     "$ret0"
 
 function run(@p: containers.Program, unit: i64)
-    merged: [containers.Function] @ []
+    merged: [containers.Function] @= []
 
     for f in p.functions
         merged @ merged.push(merge(f, unit: unit))
@@ -46,8 +46,8 @@ function run(@p: containers.Program, unit: i64)
     p.functions @ merged
 
 function merge(f: containers.Function, unit: i64) -> containers.Function
-    returning: [i64] @ []
-    at: i64 @ 0
+    returning: [i64] @= []
+    at: i64 @= 0
 
     for blk in f.blocks
         if returns(blk.term)
@@ -66,7 +66,7 @@ function merge(f: containers.Function, unit: i64) -> containers.Function
         if valued && returned(f.blocks[r].term).is_err()
             return f
 
-    worked: containers.Function @ f
+    worked: containers.Function @= f
     exit_at = worked.blocks.len()
 
     # The exit carries the line of the way out written first (defect 335): its
@@ -76,16 +76,16 @@ function merge(f: containers.Function, unit: i64) -> containers.Function
     # the `function` line. One exit serves every way out, so one line is
     # chosen: the first in the source, never the first in block order, which
     # lowering does not promise to follow.
-    first: i64 @ returning[0]
+    first: i64 @= returning[0]
 
     for r in returning
         if site(f, at: r, outs: outs, valued: valued).start < site(f, at: first, outs: outs, valued: valued).start
             first @ r
 
     leaving = f.blocks[first].insts
-    exit_insts: [ir.Inst] @ leaving.slice(from: leaving.len() - outs.len(), to: leaving.len())
-    term: ir.Term @ .return_term(value: fail(code: "none", msg: "bare return"))
-    slot: i64 @ 0 - 1
+    exit_insts: [ir.Inst] @= leaving.slice(from: leaving.len() - outs.len(), to: leaving.len())
+    term: ir.Term @= .return_term(value: fail(code: "none", msg: "bare return"))
+    slot: i64 @= 0 - 1
 
     if valued
         slot @ worked.slots.len()
@@ -99,12 +99,12 @@ function merge(f: containers.Function, unit: i64) -> containers.Function
 
     for r in returning
         insts = f.blocks[r].insts
-        kept: [ir.Inst] @ insts.slice(from: 0, to: insts.len() - outs.len())
+        kept: [ir.Inst] @= insts.slice(from: 0, to: insts.len() - outs.len())
 
         # The store carries the span of what it returns, so `#line` sends a
         # reader to the `return`, not to the function's header.
         if valued
-            span: token.Span @ f.span
+            span: token.Span @= f.span
 
             if kept.len() > 0
                 span @ kept[kept.len() - 1].span
@@ -145,7 +145,7 @@ function returned(term: ir.Term) -> i64?
 
 # The `@` parameters, in declaration order: what every exit owes a copy-out.
 function mutable_params(f: containers.Function) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for slot_id in f.params
         match f.slots[slot_id].kind
@@ -161,7 +161,7 @@ function mutable_params(f: containers.Function) -> [i64]
 function ends_in_copy_outs(insts: [ir.Inst], outs: [i64]) -> bool
     if insts.len() < outs.len()
         return false
-    at: i64 @ insts.len() - outs.len()
+    at: i64 @= insts.len() - outs.len()
 
     for param in outs
         match insts[at].op

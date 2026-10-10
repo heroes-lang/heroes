@@ -10,7 +10,7 @@ extern "c-frees-a-lease-on-a-later-call.h"
 
 function main()
     x = "payload"
-    c: cstr @ x.lease()
+    c: cstr @= x.lease()
     stash(s: c)
     print(3)
     later_free()

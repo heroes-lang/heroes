@@ -131,7 +131,7 @@ function outgrown(found: i64, floor: i64) -> bool
     return found * 100 > floor * (100 + SLACK)
 
 test "a count under its floor fails, and the message names both numbers"
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     check(@r, label: "x", found: 37, floor: 140, what: "modules")
     assert r.failed == 1
     assert r.passed == 0
@@ -140,7 +140,7 @@ test "a count that has outgrown its floor passes, and is told with the number to
     # `suite_canonical`'s real pair on the day this was written, which is the
     # row that proves the check is not decoration. Until defect 536 it was a
     # failure; it is a pass now, and the floor is told and counted beside it.
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     check(@r, label: "x", found: 521, floor: 340, what: "files")
     assert r.failed == 0
     assert r.passed == 1
@@ -152,15 +152,15 @@ test "a count that has outgrown its floor passes, and is told with the number to
 
     # The caller that stops on a bad count is not stopped by a tree that grew,
     # and is stopped by one that shrank below its floor.
-    grown: report.Report @ report.empty()
+    grown: report.Report @= report.empty()
     assert sound(@grown, label: "x", found: 521, floor: 340, what: "files")
     assert grown.outgrown.len() == 1
-    shrunk: report.Report @ report.empty()
+    shrunk: report.Report @= report.empty()
     assert !sound(@shrunk, label: "x", found: 300, floor: 340, what: "files")
     assert shrunk.outgrown.len() == 0
 
 test "an ordinary count passes, and so does one exactly at the edge"
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     check(@r, label: "x", found: 150, floor: 140, what: "modules")
     assert r.passed == 1
     assert r.failed == 0
@@ -168,7 +168,7 @@ test "an ordinary count passes, and so does one exactly at the edge"
 
     # The edge through `check` itself, so the told side and the arithmetic
     # below cannot part: 125 against 100 is told nothing, 126 is told.
-    edge: report.Report @ report.empty()
+    edge: report.Report @= report.empty()
     check(@edge, label: "x", found: 125, floor: 100, what: "modules")
     assert edge.outgrown.len() == 0
     check(@edge, label: "x", found: 126, floor: 100, what: "modules")
@@ -189,6 +189,6 @@ test "a zero floor is never outgrown, and a zero count fails the low side"
     # A floor of zero is a floor nobody set. It must not turn every suite red
     # through the high side, and the low side still catches an empty walk.
     assert !outgrown(found: 900, floor: 0)
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     check(@r, label: "x", found: 0, floor: 1, what: "cases")
     assert r.failed == 1

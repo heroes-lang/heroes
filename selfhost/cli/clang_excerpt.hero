@@ -12,7 +12,7 @@ function of(rows: [str], after: i64) -> str?
     if after + 1 >= rows.len()
         return fail(code: "none", msg: "no row under the error")
     line = clang_place.without_return(rows[after + 1])
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < line.len() && line[index] == ' '
         index @ index + 1

@@ -23,7 +23,7 @@ function shift(@a: i64, @b: i64)
 
 function main()
     # Two fields of one record: one root, two places.
-    p: P @ P(x: 0, y: 0)
+    p: P @= P(x: 0, y: 0)
     shift(a: @p.x, b: @p.y)
     print(p.x)
     print(p.y)
@@ -36,7 +36,7 @@ function main()
     print(q.x)
 
     # Two literal indices of one array.
-    xs: [i64] @ [0, 0, 0]
+    xs: [i64] @= [0, 0, 0]
     shift(a: @xs[0], b: @xs[1])
     print(xs[0])
     print(xs[1])
@@ -47,7 +47,7 @@ function main()
     print(ys[0])
 
     # Two steps deep, differing at the LAST step.
-    n: Nest @ Nest(inner: P(x: 0, y: 0), tag: 7)
+    n: Nest @= Nest(inner: P(x: 0, y: 0), tag: 7)
     shift(a: @n.inner.x, b: @n.inner.y)
     print(n.inner.x)
     print(n.inner.y)
@@ -59,14 +59,14 @@ function main()
 
     # An index and then a field: distinct fields settle it whatever the
     # indices are, because a field name is decidable and reached first here.
-    ps: [P] @ [P(x: 0, y: 0), P(x: 0, y: 0)]
+    ps: [P] @= [P(x: 0, y: 0), P(x: 0, y: 0)]
     shift(a: @ps[0].x, b: @ps[0].y)
     print(ps[0].x)
     print(ps[0].y)
 
     # And two distinct roots, which was always legal.
-    u: i64 @ 0
-    v: i64 @ 0
+    u: i64 @= 0
+    v: i64 @= 0
     shift(a: @u, b: @v)
     print(u)
     print(v)

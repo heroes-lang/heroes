@@ -92,8 +92,8 @@ function empty(local: str) -> Held
 # rather than read as some other local's.
 function number_of(local: str) -> i64
     assert local.len() > 0
-    n: i64 @ 0
-    at: i64 @ 0
+    n: i64 @= 0
+    at: i64 @= 0
 
     while at < local.len()
         value = digit_value(local[at])
@@ -132,8 +132,8 @@ function get(g: Groups, local: str) -> Held
 
     if !reaches(levels: g.levels, number: number)
         return empty(local)
-    n: Node @ g.root
-    level: i64 @ g.levels
+    n: Node @= g.root
+    level: i64 @= g.levels
 
     while level > 0
         at = digit(number: number, level: level)
@@ -178,7 +178,7 @@ function put(@g: Groups, one: Held)
     number = number_of(one.local)
 
     while !reaches(levels: g.levels, number: number)
-        grown: Node @ node()
+        grown: Node @= node()
         grown.latest @ g.root.latest
         add_kid(@grown.kids, kid: g.root)
         g.root @ grown
@@ -212,7 +212,7 @@ function add_held(@held: [Held], one: Held)
 
 # Every group that holds a place, in the order of the locals' numbers.
 function each(g: Groups) -> [Held]
-    out: [Held] @ []
+    out: [Held] @= []
     gathered(@out, n: g.root, level: g.levels)
     return out
 
@@ -230,13 +230,13 @@ function gathered(@out: [Held], n: Node, level: i64)
 ## Tests
 
 function at_once(local: str, stamp: i64) -> Held
-    one: Held @ empty(local)
+    one: Held @= empty(local)
     one.kept @ one.kept.push([local])
     one.stamp @ stamp
     return one
 
 test "a group is found where it was put, at every level, and missing ones are empty"
-    g: Groups @ none()
+    g: Groups @= none()
     put(@g, one: at_once("3", stamp: 1))
     assert g.levels == 0
     put(@g, one: at_once("40", stamp: 2))
@@ -254,10 +254,10 @@ test "a group is found where it was put, at every level, and missing ones are em
     assert each(g)[2].local == "70000"
 
 test "a group taken out leaves its slot empty, and a copy of the tree keeps its own"
-    g: Groups @ none()
+    g: Groups @= none()
     put(@g, one: at_once("5", stamp: 1))
     base = g
-    one: Held @ taken(@g, local: "5")
+    one: Held @= taken(@g, local: "5")
     assert get(g, local: "5").kept.len() == 0
     one.kept @ one.kept.push(["5", ".x"])
     one.stamp @ 2

@@ -16,24 +16,24 @@
 # order of the indices.
 function order(by: [i64]) -> [i64]
     count = by.len()
-    sequence: [i64] @ range(from: 0, to: count)
-    width: i64 @ 1
+    sequence: [i64] @= range(from: 0, to: count)
+    width: i64 @= 1
 
     while width < count
-        merged: [i64] @ []
-        start: i64 @ 0
+        merged: [i64] @= []
+        start: i64 @= 0
 
         while start < count
-            middle: i64 @ start + width
+            middle: i64 @= start + width
 
             if middle > count
                 middle @ count
-            stop: i64 @ middle + width
+            stop: i64 @= middle + width
 
             if stop > count
                 stop @ count
-            left: i64 @ start
-            right: i64 @ middle
+            left: i64 @= start
+            right: i64 @= middle
 
             while left < middle && right < stop
                 if by[sequence[right]] < by[sequence[left]]
@@ -74,26 +74,26 @@ test "the order is ascending and keeps equal keys in the order they came"
 
     # The insertion it replaces, on every list of five keys from 0 to 3: the
     # item goes after every one before it whose key is not greater.
-    code: i64 @ 0
+    code: i64 @= 0
 
     while code < 1024
-        picked: [i64] @ []
-        rest: i64 @ code
+        picked: [i64] @= []
+        rest: i64 @= code
 
         for _ in range(from: 0, to: 5)
             digit = rest % 4
             picked @ picked.push(digit)
             rest @ rest / 4
 
-        inserted: [i64] @ []
+        inserted: [i64] @= []
 
         for index in range(from: 0, to: 5)
-            at: i64 @ inserted.len()
+            at: i64 @= inserted.len()
 
             while at > 0 && picked[inserted[at - 1]] > picked[index]
                 at @ at - 1
 
-            grown: [i64] @ inserted.slice(from: 0, to: at)
+            grown: [i64] @= inserted.slice(from: 0, to: at)
             grown @ grown.push(index)
 
             for one in inserted.slice(from: at, to: inserted.len())

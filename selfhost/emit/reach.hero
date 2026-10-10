@@ -28,12 +28,12 @@ record Reach
     constructed: {i64: bool}
 
 function reach_of(p: containers.Program, c: state.Checked, target: emit_decls.BuildTarget, shown: [i64]) -> Reach
-    reached: {i64: bool} @ {}
-    constructed: {i64: bool} @ {}
+    reached: {i64: bool} @= {}
+    constructed: {i64: bool} @= {}
 
     for at in shown
         f = p.functions[at]
-        skipped: bool @ false
+        skipped: bool @= false
 
         match f.kind
             .test_kind =>
@@ -71,15 +71,15 @@ function reach_of(p: containers.Program, c: state.Checked, target: emit_decls.Bu
 # signature types of the functions a TU prototypes, which the body walk
 # above never sees.
 function closed_over(c: state.Checked, reached: {i64: bool}) -> {i64: bool}
-    out: {i64: bool} @ reached
+    out: {i64: bool} @= reached
 
     # ORDER: none — this is a worklist, and what leaves it is a SET. Every
     # id drained is added to `out`, which two sorted walks read later
     # (emit_ctype, emit_descriptor_set), so the drain order changes how
     # long the loop runs and nothing a reader or clang can see. Drained from
     # its top without copying it (`emit/worklist.hero`, defect 498).
-    frontier: [i64] @ keys(out)
-    size: i64 @ frontier.len()
+    frontier: [i64] @= keys(out)
+    size: i64 @= frontier.len()
 
     while size > 0
         id = worklist.take(frontier, size: @size)

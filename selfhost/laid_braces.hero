@@ -30,7 +30,7 @@ use lexer
 # inside it. Its lines are laid out below it as an indented block, and the
 # `}` that closes it is a token only where its line goes on past it.
 function laid_out_by_lexer(c: cursor.Cursor, open: i64) -> bool
-    i: i64 @ open + 1
+    i: i64 @= open + 1
 
     while i < c.tokens.len() && c.tokens[i].kind == .comment
         i @ i + 1
@@ -45,15 +45,15 @@ record LaidBlock
     past: i64
 
 function laid_block(c: cursor.Cursor, open: i64) -> LaidBlock
-    i: i64 @ open + 1
+    i: i64 @= open + 1
 
     while i < c.tokens.len() && (c.tokens[i].kind == .comment || c.tokens[i].kind == .terminator)
         i @ i + 1
 
     if i >= c.tokens.len() || c.tokens[i].kind != .indent
         return LaidBlock(indent: i, past: i)
-    depth: i64 @ 0
-    j: i64 @ i
+    depth: i64 @= 0
+    j: i64 @= i
 
     while j < c.tokens.len() && c.tokens[j].kind != .eof
         if c.tokens[j].kind == .indent
@@ -71,7 +71,7 @@ function laid_block(c: cursor.Cursor, open: i64) -> LaidBlock
 
 # A cursor on the first `{` of `text`, as the lexer cuts it.
 function first_brace(text: str) -> cursor.Cursor
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
 
     while !cursor.at(c, .lbrace)
         _ = cursor.bump(@c)

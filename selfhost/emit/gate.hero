@@ -48,7 +48,7 @@ record GateNote
 # One capability, at its earliest span. The dedup is on the MESSAGE: a
 # program with forty strings in it has one string problem.
 function note(@found: [GateNote], code: str, what: str, span: token.Span)
-    at: i64 @ 0
+    at: i64 @= 0
 
     for existing in found
         if existing.what == what
@@ -65,7 +65,7 @@ function note(@found: [GateNote], code: str, what: str, span: token.Span)
 # becomes a lie one milestone later. The second clause is load-bearing:
 # without it, the rewrite the message invites is itself a coin flip.
 function subset() -> str
-    quoted: [str] @ []
+    quoted: [str] @= []
 
     for name in builtins.EMITTED
         quoted @ quoted.push("`" + name + "`")
@@ -75,16 +75,16 @@ function subset() -> str
 # Every capability this program needs and this backend lacks, sorted by
 # where it first appears.
 function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
-    found: [GateNote] @ []
+    found: [GateNote] @= []
 
     # Each type's notes, found once here and said at every use (`said_of`).
-    memo: {i64: [Said]} @ {}
+    memo: {i64: [Said]} @= {}
     unit_fields(@found, c, s, decls)
 
     for f in p.functions
         # heroes test enters these and ordinary builds ignore them;
         # under heroes test they ARE the program.
-        skip: bool @ false
+        skip: bool @= false
 
         match f.kind
             .test_kind =>
@@ -131,15 +131,15 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
 
     # Sorted by first appearance: an insertion sort over spans, the
     # resolver's own idiom.
-    ordered: [GateNote] @ []
+    ordered: [GateNote] @= []
 
     for one in found
-        at: i64 @ 0
+        at: i64 @= 0
 
         while at < ordered.len() && ordered[at].span.start <= one.span.start
             at @ at + 1
 
-        before: [GateNote] @ ordered.slice(from: 0, to: at)
+        before: [GateNote] @= ordered.slice(from: 0, to: at)
         before @ before.push(one)
         rest = ordered.slice(from: at, to: ordered.len())
 
@@ -148,10 +148,10 @@ function refuse(target: emit_decls.BuildTarget, p: containers.Program, c: state.
 
         ordered @ before
 
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
 
     for one in ordered
-        d: diag.Diagnostic @ diag.new_unsupported(
+        d: diag.Diagnostic @= diag.new_unsupported(
             code: one.code,
             message: one.what + " is not emitted yet",
             span: one.span
@@ -219,7 +219,7 @@ function said_of(c: state.Checked, decls: [ast.Decl], ty: i64, @memo: {i64: [Sai
 
     if !known.is_err()
         return known.must()
-    out: [Said] @ []
+    out: [Said] @= []
 
     match table.get(c.types, ty)
         .array arr => out @ element_said(c, decls, element: arr.element, container: "an array", memo: @memo)
@@ -248,7 +248,7 @@ function said_of(c: state.Checked, decls: [ast.Decl], ty: i64, @memo: {i64: [Sai
 function unit_fields(@found: [GateNote], c: state.Checked, s: source.Source, decls: [ast.Decl])
     for decl in types.aggregates(c, decls)
         owner = source.span_text(s, decls[decl].name)
-        all_fields: [ast.Field] @ types.fields_of(decls, decl: decl)
+        all_fields: [ast.Field] @= types.fields_of(decls, decl: decl)
 
         for one_case in types.cases_of(decls, decl: decl)
             for field in one_case.fields
@@ -280,7 +280,7 @@ function unit_fields(@found: [GateNote], c: state.Checked, s: source.Source, dec
 # generated hash — key position ONLY, measured, because hash is called
 # only for a key.
 function element_said(c: state.Checked, decls: [ast.Decl], element: i64, container: str, @memo: {i64: [Said]}) -> [Said]
-    fall: bool @ false
+    fall: bool @= false
 
     match table.get(c.types, element)
         .unit => return [Said(code: "unit_element", what: "`()` as the element of " + container)]
@@ -336,7 +336,7 @@ function check_fixed_flow(@found: [GateNote], c: state.Checked, f: containers.Fu
             if is_fixed_value(c, f, value: st.value)
                 note(@found, code: "fixed_flow", what: "a fixed array given a name or stored into a place", span: span)
         .construct con =>
-            skip: bool @ false
+            skip: bool @= false
 
             match con.shape
                 .array_shape | .map_shape                                          => skip @ true
@@ -397,7 +397,7 @@ function callee_note(@found: [GateNote], callee: ir.Callee, span: token.Span)
         .heroes_fn | .extern_fn | .indirect => return
         .builtin_fn bt =>
             builtin_name = inventory.name_of(bt.at)
-            in_emitted: bool @ false
+            in_emitted: bool @= false
 
             for one in builtins.EMITTED
                 if one == builtin_name
@@ -423,7 +423,7 @@ test "a hole is refused with its two notes, and forty holes are one problem"
     assert got[0].notes[0] == "this is refused for what is on this line, so something else compiles"
 
 test "a pointer element is refused with the record route, at its first appearance"
-    text = "extern \"m.h\"\n    function make() -> ptr\n\nfunction main()\n    xs: [ptr] @ []\n    _ = xs\n    print(1)\n"
+    text = "extern \"m.h\"\n    function make() -> ptr\n\nfunction main()\n    xs: [ptr] @= []\n    _ = xs\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -444,29 +444,29 @@ test "a type's notes found once and said at each use are the walk's at each use,
     # map's key goes before its value. Every type the program interns is
     # said twice, at a later span first, so the earliest-span rule is where
     # the two readings could part.
-    text = "extern \"m.h\"\n    function make() -> ptr\n    record Slot\n        p: ptr\n\nfunction main()\n    a: [[[ptr]]] @ []\n    b: {Slot: i64} @ {}\n    u: [[()]] @ []\n    d: {str: [[ptr]]} @ {}\n    m: {str: ptr} @ {}\n    g: [ptr?] @ []\n    e: [[i64]?] @ []\n    _ = a\n    _ = b\n    _ = u\n    _ = d\n    _ = m\n    print(g.len() + e.len())\n"
+    text = "extern \"m.h\"\n    function make() -> ptr\n    record Slot\n        p: ptr\n\nfunction main()\n    a: [[[ptr]]] @= []\n    b: {Slot: i64} @= {}\n    u: [[()]] @= []\n    d: {str: [[ptr]]} @= {}\n    m: {str: ptr} @= {}\n    g: [ptr?] @= []\n    e: [[i64]?] @= []\n    _ = a\n    _ = b\n    _ = u\n    _ = d\n    _ = m\n    print(g.len() + e.len())\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-    old: [GateNote] @ []
-    new: [GateNote] @ []
-    memo: {i64: [Said]} @ {}
+    old: [GateNote] @= []
+    new: [GateNote] @= []
+    memo: {i64: [Said]} @= {}
     count = table.len_of(c.types)
-    ty: i64 @ count - 1
+    ty: i64 @= count - 1
 
     while ty >= 0
-        walk: [Said] @ []
-        tys: [i64] @ [ty]
-        wheres: [str] @ [""]
+        walk: [Said] @= []
+        tys: [i64] @= [ty]
+        wheres: [str] @= [""]
 
         while tys.len() > 0
             one = tys[tys.len() - 1]
             where = wheres[wheres.len() - 1]
             tys @ tys.slice(from: 0, to: tys.len() - 1)
             wheres @ wheres.slice(from: 0, to: wheres.len() - 1)
-            descend: bool @ true
+            descend: bool @= true
 
             if where != ""
                 match table.get(c.types, one)

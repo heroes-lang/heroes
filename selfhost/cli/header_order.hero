@@ -93,7 +93,7 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     )
 
     if !found.is_err()
-        out: diag.Diagnostic @ d
+        out: diag.Diagnostic @= d
         out.message @ retold(d.message)
         out.notes @ replaced(d.notes, said: move_note(s, decls, target: header, move: found.must(), at: d.span.start))
         meant = meaning_note(
@@ -121,7 +121,7 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     )
 
     if !context.is_err()
-        out: diag.Diagnostic @ d
+        out: diag.Diagnostic @= d
         out.notes @ replaced(
             d.notes,
             said: "`" + header + "` compiles after `" + context.must() + "`, which this module's groups name above this one; a module that spells a record of this group reads `" + header + "` in its own unit, after its own groups' headers and without those (design.md §4.1), so that module needs a group of its own naming `" + context.must() + "` above its others"
@@ -130,7 +130,7 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     prerequisite = standard(t, under: under, written: written, target: header, question: "")
 
     if !prerequisite.is_err()
-        out: diag.Diagnostic @ d
+        out: diag.Diagnostic @= d
         out.notes @ replaced(
             d.notes,
             said: "`" + header + "` compiles after `" + prerequisite.must() + "`, a header of C's own it uses and does not include: write a group naming `" + prerequisite.must() + "` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)"
@@ -141,14 +141,14 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
         return d
 
     if order_groups.index_text(text: d.message, part: header_refused.AS_ERROR) >= 0
-        out: diag.Diagnostic @ d
+        out: diag.Diagnostic @= d
         out.notes @ replaced(
             d.notes,
             said: "`" + header + "` is not this program's to repair: its own code draws the warning this compiler makes an error in every unit"
         )
         return out
     own = order_groups.stem(header) + "_own.h"
-    out: diag.Diagnostic @ d
+    out: diag.Diagnostic @= d
     out.notes @ replaced(
         d.notes,
         said: "`" + header + "` is not this program's to repair: what it needs before it, a definition its documentation names or a header it does not include, goes in a header of the program's own beside this file, `" + own + "`, written as that line and then `#include <" + header + ">`, which this group then names"
@@ -166,11 +166,11 @@ function search(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, und
     if here < 0
         return fail(code: "none", msg: "the unit does not read the header")
     words = compiling.unit_words(under)
-    other: i64 @ 0
+    other: i64 @= 0
 
     while other < written.len()
         if other != here && !order_groups.group_in(s, decls, header: written[other], module: module).is_err()
-            order: [str] @ []
+            order: [str] @= []
 
             if other > here
                 order @ order_groups.moved(written, from: other, to: here)
@@ -191,7 +191,7 @@ function above(t: toolchain.Toolchain, under: compiling.Compiling, written: [str
 
     if here < 0 || missing.len() == 0
         return fail(code: "none", msg: "nothing written above is missing")
-    order: [str] @ []
+    order: [str] @= []
 
     for one in written.slice(from: 0, to: here)
         order @ order.push(one)
@@ -217,7 +217,7 @@ function standard(t: toolchain.Toolchain, under: compiling.Compiling, written: [
 
     for candidate in STANDARD
         if order_groups.index_of(written, one: candidate) < 0
-            order: [str] @ []
+            order: [str] @= []
 
             for one in written.slice(from: 0, to: here)
                 order @ order.push(one)
@@ -271,8 +271,8 @@ function retold(message: str) -> str
 # `notes` with the note a finding makes false replaced by `said`, or with
 # `said` after them where none is.
 function replaced(notes: [str], said: str) -> [str]
-    out: [str] @ []
-    done: bool @ false
+    out: [str] @= []
+    done: bool @= false
 
     for note in notes
         if !done && (note == header_refused.REPAIR || note == headers_together.ONE_MODULE || note == headers_together.TWO_MODULES)

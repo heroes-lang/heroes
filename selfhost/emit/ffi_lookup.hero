@@ -128,7 +128,7 @@ function name_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span
 # clang wrote it, so it is asked in clang's spelling (defect 232).
 function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.Span?
     for decl in decls
-        named: token.Span? @ fail(code: "none", msg: "no header")
+        named: token.Span? @= fail(code: "none", msg: "no header")
 
         match decl.kind
             .function_decl fd          => named @ fd.value.header
@@ -154,11 +154,11 @@ function group_head(s: source.Source, decls: [ast.Decl], header: str) -> token.S
 # what the diagnostic is about; it pointed at the group's first member until
 # defect 226 (panel 188's spec-warden).
 function package_span(s: source.Source, decls: [ast.Decl], line: str) -> token.Span?
-    found: token.Span? @ fail(code: "none", msg: "no group asked for this package")
-    longest: i64 @ -1
+    found: token.Span? @= fail(code: "none", msg: "no group asked for this package")
+    longest: i64 @= -1
 
     for decl in decls
-        library: ast.Library? @ fail(code: "none", msg: "no library")
+        library: ast.Library? @= fail(code: "none", msg: "no library")
 
         match decl.kind
             .function_decl fd          => library @ fd.value.library
@@ -207,11 +207,11 @@ function char_index_of(text: str, needle: str) -> i64?
 
     if needle_cs.len() > cs.len()
         return fail(code: "none", msg: "not found")
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]
@@ -236,8 +236,8 @@ function after(text: str, marker: str) -> str?
     if at.is_err()
         return fail(code: "none", msg: "marker not present")
     cs = text.chars()
-    tail: [str] @ []
-    index: i64 @ at.must() + marker.chars().len()
+    tail: [str] @= []
+    index: i64 @= at.must() + marker.chars().len()
 
     while index < cs.len()
         tail @ tail.push(cs[index])
@@ -248,8 +248,8 @@ function after(text: str, marker: str) -> str?
 # The lines of a tool's stderr. A trailing newline yields no empty
 # last line, matching what Rust's lines() gives the bootstrap.
 function lines(text: str) -> [str]
-    out: [str] @ []
-    run: [str] @ []
+    out: [str] @= []
+    run: [str] @= []
 
     for ch in text.chars()
         if ch == "\n"
@@ -265,8 +265,8 @@ function lines(text: str) -> [str]
 # The whitespace-separated words of a line, empty runs skipped — what
 # Rust's split_whitespace gives.
 function words(text: str) -> [str]
-    out: [str] @ []
-    run: [str] @ []
+    out: [str] @= []
+    run: [str] @= []
 
     for ch in text.chars()
         if ch == " " || ch == "\t"
@@ -284,7 +284,7 @@ function words(text: str) -> [str]
 # quote follows, which is what Rust's split('\'').next() gives. Every
 # reader that recovers a name from clang's quoting reads it this way.
 function up_to_quote(text: str) -> str
-    kept: [str] @ []
+    kept: [str] @= []
 
     for ch in text.chars()
         if ch == "'"
@@ -297,14 +297,14 @@ function up_to_quote(text: str) -> str
 # at either end are skipped, as Rust's trim().parse() skips them.
 function number(text: str) -> i64?
     ds = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-    value: i64 @ 0
-    read: bool @ false
+    value: i64 @= 0
+    read: bool @= false
 
     for ch in text.chars()
         if ch == " "
             continue
-        matched: bool @ false
-        index: i64 @ 0
+        matched: bool @= false
+        index: i64 @= 0
 
         for one in ds
             if one == ch
@@ -323,18 +323,18 @@ function number(text: str) -> i64?
 # Rust's .trim(): spaces and tabs off both ends.
 function trimmed(text: str) -> str
     cs = text.chars()
-    head: i64 @ 0
+    head: i64 @= 0
 
     while head < cs.len() && (cs[head] == " " || cs[head] == "\t")
         head @ head + 1
 
-    tail: i64 @ cs.len()
+    tail: i64 @= cs.len()
 
     while tail > head && (cs[tail - 1] == " " || cs[tail - 1] == "\t")
         tail @ tail - 1
 
-    kept: [str] @ []
-    index: i64 @ head
+    kept: [str] @= []
+    index: i64 @= head
 
     while index < tail
         kept @ kept.push(cs[index])
@@ -374,7 +374,7 @@ test "add_once keeps one diagnostic per span, and the splitter reads clang's sha
     a = diag.new_diagnostic(code: "x", message: "first", span: token.Span(start: 3, end: 7))
     b = diag.new_diagnostic(code: "y", message: "second, same span", span: token.Span(start: 3, end: 7))
     z = diag.new_diagnostic(code: "z", message: "elsewhere", span: token.Span(start: 9, end: 12))
-    found: [diag.Diagnostic] @ []
+    found: [diag.Diagnostic] @= []
     found @ add_once(found, d: a)
     found @ add_once(found, d: b)
     found @ add_once(found, d: z)

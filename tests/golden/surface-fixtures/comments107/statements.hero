@@ -30,7 +30,7 @@ function main()
         x)
     b: str = (Point::  # a field's name
         y)
-    c: i64 @ (xs.
+    c: i64 @= (xs.
         # on a line of its own
         len())
     c @ (p.  # a mutation's value

@@ -60,7 +60,7 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str) -> ast.Pattern?
 
         # A name here binds the payload; `_` binds it and says it is unused,
         # which is what keeps §4.4's unused-binding rule honest.
-        binding: token.Span? @ fail(code: "no_binding", msg: "the payload is not bound")
+        binding: token.Span? @= fail(code: "no_binding", msg: "the payload is not bound")
 
         if cursor.at(c, .ident)
             binding @ ok(cursor.bump(@c).span)
@@ -104,7 +104,7 @@ function literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64?
     unsignable = unsignable_pattern(c, text, k)
 
     if signed && unsignable.len() > 0
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "expected_pattern",
             message: "this `-` stands before " + unsignable + ", which no `-` signs: in a pattern a `-` signs only a literal, so delete it",
             span: sign
@@ -119,7 +119,7 @@ function literal(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64?
         refuse(@c, message: "expected a pattern, found " + cursor.found(c, text) + " — " + ALLOWED)
         return fail(code: "no_literal", msg: "no literal after the sign")
     _ = cursor.bump(@c)
-    kind: ast.ExprKind @ .int_lit
+    kind: ast.ExprKind @= .int_lit
 
     if k == .str_lit
         kind @ .str_lit

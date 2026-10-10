@@ -65,9 +65,9 @@ function facts(p: containers.Program, f: containers.Function, c: state.Checked, 
         .owned => return slot_facts(f, c, owed: released.owed_slots(f, c), kinds: kinds)
 
 function slot_facts(f: containers.Function, c: state.Checked, owed: [i64], kinds: [i64]) -> Facts
-    generic: [i64] @ []
-    unresolved: [i64] @ []
-    index: i64 @ 0
+    generic: [i64] @= []
+    unresolved: [i64] @= []
+    index: i64 @= 0
 
     for slot in f.slots
         if names_generic(kinds, ty: slot.ty)
@@ -99,12 +99,12 @@ function slot_facts(f: containers.Function, c: state.Checked, owed: [i64], kinds
 # walks stay, word for word, as the oracle of the test below; the emitter's
 # loops over the arena read these flags too since defect 229.
 function type_kinds(c: state.Checked) -> [i64]
-    memo: [i64] @ []
+    memo: [i64] @= []
 
     while memo.len() < table.len_of(c.types)
         memo @ memo.push(0)
 
-    ty: i64 @ 0
+    ty: i64 @= 0
 
     while ty < memo.len()
         _ = walked(c, ty: ty, memo: @memo)
@@ -117,7 +117,7 @@ function type_kinds(c: state.Checked) -> [i64]
 function walked(c: state.Checked, ty: i64, @memo: [i64]) -> i64
     if memo[ty] != 0
         return memo[ty]
-    flags: i64 @ 1
+    flags: i64 @= 1
 
     match table.get(c.types, ty)
         .generic    => flags @ 3
@@ -146,7 +146,7 @@ function names_error(kinds: [i64], ty: i64) -> bool
 function check(p: containers.Program, f: containers.Function, blk: containers.Block, c: state.Checked, known: Facts, label: str, @problems: [str])
     match p.phase
         .lowered =>
-            has_rc: bool @ false
+            has_rc: bool @= false
 
             for inst in blk.insts
                 match inst.op
@@ -322,7 +322,7 @@ test "a type the checker never resolved is refused after mono, unless the progra
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.holes.len() == 0
-    problems: [str] @ []
+    problems: [str] @= []
     check(p, f, blk, c, known: facts(p, f, c, kinds: type_kinds(c)), label: "", problems: @problems)
     assert problems.len() == 2
     assert problems[0] == "an instruction carries a type the checker never resolved, and no diagnostic says why"
@@ -336,7 +336,7 @@ test "a type the checker never resolved is refused after mono, unless the progra
     out_h = resolve.resolve(parsed_h.tree, s_h, parsed_h.decls, parsed_h.uses)
     c_h = checker.check(parsed_h.tree, out_h, s_h, parsed_h.decls)
     assert c_h.holes.len() == 1
-    quiet: [str] @ []
+    quiet: [str] @= []
     check(p, f, blk, c_h, known: facts(p, f, c_h, kinds: type_kinds(c_h)), label: "", problems: @quiet)
     assert quiet.len() == 0
 
@@ -356,7 +356,7 @@ test "a refcount op before the ownership pass is named, after it is legal"
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
-    problems: [str] @ []
+    problems: [str] @= []
     check(
         p,
         p.functions[0],
@@ -374,8 +374,8 @@ test "a type parameter left in an instruction, a slot or the result is named in 
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
-    tbl: table.Types @ c.types
+    c: state.Checked @= checker.check(parsed.tree, out, s, parsed.decls)
+    tbl: table.Types @= c.types
     loose = table.intern(@tbl, .generic(at: 0))
     held = table.intern(@tbl, .array(element: loose))
     c.types @ tbl
@@ -387,7 +387,7 @@ test "a type parameter left in an instruction, a slot or the result is named in 
         term: .return_term(value: fail(code: "none", msg: "no value")),
         note: "t"
     )
-    p: containers.Program @ phase_scaffold(.mono, blk)
+    p: containers.Program @= phase_scaffold(.mono, blk)
     p.functions[0].slots @ [
         containers.Slot(name: "a", ty: held, kind: .local_slot(mutable: false))
         containers.Slot(name: "b", ty: table.int_ty_id(c.types), kind: .local_slot(mutable: false))
@@ -398,7 +398,7 @@ test "a type parameter left in an instruction, a slot or the result is named in 
     f = p.functions[0]
     known = facts(p, f, c, kinds: type_kinds(c))
     assert known.generic_slots == [0, 2]
-    problems: [str] @ []
+    problems: [str] @= []
     check(p, f, f.blocks[0], c, known: known, label: "bb0: ", problems: @problems)
     check(p, f, f.blocks[1], c, known: known, label: "bb1: ", problems: @problems)
 
@@ -407,9 +407,9 @@ test "a type parameter left in an instruction, a slot or the result is named in 
     assert problems == ["bb0: an instruction still has a type parameter in it", "bb0: a slot still has a type parameter in it", "bb0: a slot still has a type parameter in it", "bb0: the result still has a type parameter in it", "bb1: an instruction still has a type parameter in it", "bb1: a slot still has a type parameter in it", "bb1: a slot still has a type parameter in it", "bb1: the result still has a type parameter in it"]
 
     # Before mono nothing is asked: a generic body lowers polymorphically.
-    lowered: containers.Program @ p
+    lowered: containers.Program @= p
     lowered.phase @ .lowered
-    quiet: [str] @ []
+    quiet: [str] @= []
     check(lowered, f, f.blocks[0], c, known: facts(lowered, f, c, kinds: type_kinds(c)), label: "", problems: @quiet)
     assert quiet.len() == 0
 
@@ -418,13 +418,13 @@ test "every type's flags say what the two walks say, on a table with parameters 
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
-    c: state.Checked @ checker.check(parsed.tree, out, s, parsed.decls)
-    tbl: table.Types @ c.types
+    c: state.Checked @= checker.check(parsed.tree, out, s, parsed.decls)
+    tbl: table.Types @= c.types
     loose = table.intern(@tbl, .generic(at: 0))
     poison = table.error_ty(tbl)
     number = table.int_ty_id(tbl)
-    deep: i64 @ loose
-    layers: i64 @ 0
+    deep: i64 @= loose
+    layers: i64 @= 0
 
     # A parameter fifty arrays deep, then each kind of type with a
     # parameter or the error id somewhere inside it, and beside it clean.
@@ -442,10 +442,10 @@ test "every type's flags say what the two walks say, on a table with parameters 
     _ = table.intern_function(@tbl, params: [number], labels: ["a"], result: number)
     c.types @ tbl
     flags = type_kinds(c)
-    ty: i64 @ 0
-    asked: i64 @ 0
-    generic_seen: i64 @ 0
-    error_seen: i64 @ 0
+    ty: i64 @= 0
+    asked: i64 @= 0
+    generic_seen: i64 @= 0
+    error_seen: i64 @= 0
 
     while ty < table.len_of(c.types)
         assert names_generic(flags, ty: ty) == mentions_generic(c, ty: ty)

@@ -139,7 +139,7 @@ function top(t: str) -> R31
     return v31
 
 function main()
-    kept: R31 @ top("x")
+    kept: R31 @= top("x")
     print(
         kept.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.inner.s
     )

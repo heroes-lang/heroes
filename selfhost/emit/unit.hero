@@ -97,14 +97,14 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
     # wanted `T?` whose payload descriptor nobody defined
     # (`h_clitoolchain_Toolchain_desc`). Four symptoms, one cause, and
     # the cause is two sets where there should be one.
-    want: synth.Wanted @ synth.wanted_of(c, reached: declared)
+    want: synth.Wanted @= synth.wanted_of(c, reached: declared)
 
     # By declaration too, since a record nothing mentions has no type id.
     for decl in plan.groups.decls
         want.named[decl] @ true
 
     names = whole.names
-    w: writer.Writer @ writer.new_writer(module)
+    w: writer.Writer @= writer.new_writer(module)
     emit_decls.prelude(
         @w,
         tu_p,

@@ -16,7 +16,7 @@
 # the same ids was written, or else at the end, where it is written now. The
 # key joins the ids on a comma, which an id rendered in decimal cannot contain.
 function id_run(@ids: [i64], @starts: {str: i64}, run: [i64]) -> i64
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for one in run
         rendered @ rendered.push(one.to_str())
@@ -51,8 +51,8 @@ function name_run(@names: [str], @starts: {str: i64}, run: [str]) -> i64
     return start
 
 test "a run is written once and found again by its content"
-    ids: [i64] @ [9]
-    starts: {str: i64} @ {}
+    ids: [i64] @= [9]
+    starts: {str: i64} @= {}
     a = id_run(ids: @ids, @starts, run: [2, 5])
     b = id_run(ids: @ids, @starts, run: [2, 5])
     c = id_run(ids: @ids, @starts, run: [5, 2])
@@ -65,8 +65,8 @@ test "a run is written once and found again by its content"
     assert ids.len() == 5
 
 test "a run of names keeps its order in its key"
-    names: [str] @ []
-    starts: {str: i64} @ {}
+    names: [str] @= []
+    starts: {str: i64} @= {}
     assert name_run(names: @names, @starts, run: ["a", "b"]) == 0
     assert name_run(names: @names, @starts, run: ["b", "a"]) == 2
     assert name_run(names: @names, @starts, run: ["a", "b"]) == 0

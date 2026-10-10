@@ -92,7 +92,7 @@ function function_declaration(@r: state.Resolver, a: ast.Ast, s: source.Source, 
 # already taken, and a type parameter that shadows a record makes every
 # type in the signature ambiguous to a reader.
 function collect_generics(@r: state.Resolver, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl)
-    position: i64 @ 0
+    position: i64 @= 0
 
     for span in f.generics
         name = source.span_text(s, span)
@@ -143,18 +143,18 @@ function generic_position(r: state.Resolver, name: str) -> i64?
 function resolved_program(text: str) -> state.Resolver
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    r: state.Resolver @ state.new_resolver(
+    r: state.Resolver @= state.new_resolver(
         expr_count: p.tree.exprs.len(),
         type_count: p.tree.types.len()
     )
     r.module @ "t"
-    i: i64 @ 0
+    i: i64 @= 0
 
     for d in p.decls
         resolved.declare_top(@r.out, module: "t", name: source.span_text(s, d.name), decl: i)
         i @ i + 1
 
-    j: i64 @ 0
+    j: i64 @= 0
 
     for d in p.decls
         _ = d
@@ -169,7 +169,7 @@ test "a generic is its own namespace, resolved by position"
     assert r.out.diagnostics.len() == 0
 
     # Both `A` mentions in the signature resolve to position 0.
-    generic_uses: i64 @ 0
+    generic_uses: i64 @= 0
 
     for u in r.out.type_uses
         if u == .generic(at: 0)
@@ -194,7 +194,7 @@ test "an extern's parameters are types to check, never bindings"
     # No unused-parameter diagnostic: `x` was never bound. Its type WAS
     # resolved, and it is the prim table's f64.
     assert r.out.diagnostics.len() == 0
-    prim_uses: i64 @ 0
+    prim_uses: i64 @= 0
 
     for u in r.out.type_uses
         if u == .prim(value: .float_prim(kind: .f64))

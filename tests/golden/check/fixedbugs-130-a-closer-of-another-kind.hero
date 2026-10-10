@@ -53,7 +53,7 @@ function under_an_if(v: i64?) -> i64
     return v.must()
 
 function under_a_while()
-    i: i64 @ 0
+    i: i64 @= 0
     while i < len(]  #~ expected_expression
         i @ i + 1 )  #~ expected_end_of_line
 

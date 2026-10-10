@@ -74,7 +74,7 @@ function stray(l: state.LexState, text: str, at: i64) -> bool
 # comments of the lines above, to the line end before them (one operator
 # until defect 369, `- -` a run of two).
 function alone_from(l: state.LexState, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i >= 0 && token.can_only_go_on(l.tokens[i].kind)
         i @ i - 1
@@ -101,7 +101,7 @@ function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64) -> bo
     run = token.Span(start: l.tokens[first].span.start, end: operator.span.end)
     commented = l.tokens.len() > at + 1 || l.held.len() > 0
     readings = first == at && two_readings(text, operator: operator, below: l.pos)
-    told: diag.Diagnostic @ d
+    told: diag.Diagnostic @= d
     told.fixes @ fixes(
         text,
         run: run,
@@ -131,8 +131,8 @@ function two_readings(text: str, operator: token.Token, below: i64) -> bool
 # and a guess over a line that is no arm, whose operand may be what was left
 # out (defect 370).
 function fixes(text: str, run: token.Span, readings: bool, arm: bool, below: i64, commented: bool) -> [diag.Fix]
-    out: [diag.Fix] @ []
-    certainty: diag.Certainty @ .certain
+    out: [diag.Fix] @= []
+    certainty: diag.Certainty @= .certain
 
     if !arm
         certainty @ .guess
@@ -168,7 +168,7 @@ function signs_a_literal(text: str, at: i64) -> bool
 
     if !bytes.is_digit(text[at])
         return false
-    i: i64 @ at
+    i: i64 @= at
 
     while i < text.len() && (bytes.is_alnum(text[i]) || text[i] == '_')
         i @ i + 1
@@ -179,14 +179,14 @@ function signs_a_literal(text: str, at: i64) -> bool
 # byte through its line end; or, where a comment follows the operator, the
 # operator and the spaces after it, the comment staying in its place.
 function deleted(text: str, operator: token.Span) -> token.Span
-    end: i64 @ operator.end
+    end: i64 @= operator.end
 
     while end < text.len() && (text[end] == ' ' || text[end] == '\t')
         end @ end + 1
 
     if end < text.len() && text[end] == '#'
         return token.Span(start: operator.start, end: end)
-    start: i64 @ operator.start
+    start: i64 @= operator.start
 
     while start > 0 && (text[start - 1] == ' ' || text[start - 1] == '\t')
         start @ start - 1
@@ -211,7 +211,7 @@ function deleted(text: str, operator: token.Span) -> token.Span
 # break's `after`, and `open_line`, cleared before the refusal.
 function leave_out(@l: state.LexState, text: str, first: i64, at: i64) -> bool
     plain = plain_margin(l, text, at: first)
-    from: i64 @ first
+    from: i64 @= first
 
     if plain
         from @ taken_back(@l, text, at: first)
@@ -271,8 +271,8 @@ function plain_margin(l: state.LexState, text: str, at: i64) -> bool
 function level_above(l: state.LexState, text: str, at: i64) -> i64
     begins = l.tokens[at].span.start
     line = word_place.line_start(text, at: begins)
-    from: i64 @ at
-    level: i64 @ l.level
+    from: i64 @= at
+    level: i64 @= l.level
 
     while from > 0 && laid_out(l.tokens[from - 1], line: line, ends: begins)
         if l.tokens[from - 1].kind == .indent
@@ -289,7 +289,7 @@ function level_above(l: state.LexState, text: str, at: i64) -> i64
 function taken_back(@l: state.LexState, text: str, at: i64) -> i64
     begins = l.tokens[at].span.start
     line = word_place.line_start(text, at: begins)
-    from: i64 @ at
+    from: i64 @= at
 
     while from > 0 && laid_out(l.tokens[from - 1], line: line, ends: begins)
         from @ from - 1
@@ -311,7 +311,7 @@ function said_of_margin(d: diag.Diagnostic, line: i64, ends: i64) -> bool
     return (d.code == "indentation_jump" || d.code == "indentation_not_multiple_of_4") && d.span.start == line && d.span.end == ends
 
 function spaces_alone(text: str, from: i64, to: i64) -> bool
-    i: i64 @ from
+    i: i64 @= from
 
     while i < to
         if text[i] != ' '
@@ -364,7 +364,7 @@ test "over an integer the join and the deletion are both guesses; over anything 
     alone = arm_fixes(quoted, operator: minus, below: 10, commented: false)
     assert alone.len() == 1
     assert alone[0].certainty == .certain
-    refusal: diag.Diagnostic @ diag.new_diagnostic(
+    refusal: diag.Diagnostic @= diag.new_diagnostic(
         code: "continuation_outside_brackets",
         message: "m",
         span: token.Span(start: 4, end: 5)

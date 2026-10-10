@@ -63,10 +63,10 @@ function weigh(@l: state.LexState, text: str)
         if joined(l, b) && !writes(l.tokens, text, o: operator_of(b))
             guessed(@l, b)
 
-    first: i64 @ 0
+    first: i64 @= 0
 
     while first < breaks.len()
-        last: i64 @ first
+        last: i64 @= first
 
         while last + 1 < breaks.len() && one_statement(l.tokens, from: breaks[last].after, to: breaks[last + 1].after)
             last @ last + 1
@@ -74,7 +74,7 @@ function weigh(@l: state.LexState, text: str)
         if any_weak(l, breaks: breaks.slice(from: first, to: last + 1))
             for b in breaks.slice(from: first, to: last + 1)
                 guessed(@l, b)
-        k: i64 @ first
+        k: i64 @= first
 
         while k <= last
             l.breaks[k].statement @ breaks[first].after
@@ -117,9 +117,9 @@ function any_weak(l: state.LexState, breaks: [state.Break]) -> bool
 # one before a block's indent; nor where a block the statement opened closes
 # and anything but `else` follows; nor where the level falls below the first's.
 function one_statement(tokens: [token.Token], from: i64, to: i64) -> bool
-    depth: i64 @ 0
-    level: i64 @ 0
-    i: i64 @ from
+    depth: i64 @= 0
+    level: i64 @= 0
+    i: i64 @= from
 
     while i < to
         k = tokens[i].kind
@@ -162,12 +162,12 @@ function writes_a_type(tokens: [token.Token], text: str, o: i64) -> bool
     if families.takes(kind) == .unjudged
         return true
     prefix = kind == .bang || kind == .tilde || kind == .minus && operands.no_left_operand(tokens, at: o)
-    level: i64 @ families.power(kind)
+    level: i64 @= families.power(kind)
 
     if prefix
         level @ families.PREFIX
     read = operands.right_of(tokens, text, o: o, prefix: prefix, level: level)
-    right: families.Family @ .none
+    right: families.Family @= .none
 
     if read.next >= 0
         next = operands.past_comments(tokens, from: read.next)
@@ -183,7 +183,7 @@ function writes_a_type(tokens: [token.Token], text: str, o: i64) -> bool
             # `1.5 | 2`.
             if prefix && !families.admits(families.takes(tokens[next].kind), right)
                 return false
-    left: families.Family @ .none
+    left: families.Family @= .none
 
     if !prefix && families.power(kind) > 0
         left @ operands.left_of(tokens, text, o: o, level: families.power(kind))
@@ -227,7 +227,7 @@ function one_type(left: families.Family, right: families.Family) -> bool
 # Is there an arm's `=>` between the start of the operator's statement and
 # the operator?
 function arrow_before(tokens: [token.Token], o: i64) -> bool
-    i: i64 @ o - 1
+    i: i64 @= o - 1
 
     while i >= 0 && tokens[i].kind != .terminator && tokens[i].kind != .indent && tokens[i].kind != .dedent
         if tokens[i].kind == .fat_arrow
@@ -253,7 +253,7 @@ function refuses_the_whole(tokens: [token.Token], text: str, o: i64) -> bool
 
     if whole.next < 0 || operands.past_comments(tokens, from: whole.next) != end
         return false
-    context: token.TokenKind @ .terminator
+    context: token.TokenKind @= .terminator
 
     if start > 0
         context @ tokens[start - 1].kind
@@ -271,8 +271,8 @@ function refused_alone(tokens: [token.Token], text: str, from: i64, to: i64) -> 
 # The first token of the expression the operator at `o` stands in: after the
 # token its statement's operand begins after, at depth zero.
 function expression_start(tokens: [token.Token], o: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ o - 1
+    depth: i64 @= 0
+    i: i64 @= o - 1
 
     while i >= 0
         k = tokens[i].kind
@@ -290,8 +290,8 @@ function expression_start(tokens: [token.Token], o: i64) -> i64
 # The index where that expression ends: its line's or block's edge, or an
 # arm's `=>`, at depth zero.
 function expression_end(tokens: [token.Token], o: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ o + 1
+    depth: i64 @= 0
+    i: i64 @= o + 1
 
     while i < tokens.len()
         k = tokens[i].kind

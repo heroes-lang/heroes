@@ -19,8 +19,8 @@ extern "hero_os.h"
 function main()
     if args().len() > 0
         return
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     program = hero_exe_path_shown(status: @status, marks: @marks)
     hero_run_reset()
     hero_run_arg(word: program)

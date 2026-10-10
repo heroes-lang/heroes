@@ -12,7 +12,7 @@
 use node
 
 function main()
-    t: node.Tree @ node.new_tree()
+    t: node.Tree @= node.new_tree()
 
     # The leaves, first — a parser has nothing else to attach to.
     two = node.add_node(@t, .number(value: 2))
@@ -34,9 +34,9 @@ function main()
     # Two trees built the same way are the same value. This is what makes the
     # compiler emit `==` over every case of `Node`, including the ones this
     # program never builds — the assertion that traces the defect.
-    u: node.Tree @ node.new_tree()
+    u: node.Tree @= node.new_tree()
     _ = node.add_node(@u, .number(value: 2))
-    v: node.Tree @ node.new_tree()
+    v: node.Tree @= node.new_tree()
     _ = node.add_node(@v, .number(value: 2))
     print(u.nodes == v.nodes)
 

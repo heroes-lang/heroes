@@ -48,9 +48,9 @@ record Lead
 # where none stands there.
 function lead(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Lead?
     first = arm_pattern.read(@c, @a, text)
-    patterns: [ast.Pattern] @ []
-    told: bool @ first.is_err()
-    reading: bool @ !told
+    patterns: [ast.Pattern] @= []
+    told: bool @= first.is_err()
+    reading: bool @= !told
 
     if !told
         patterns @ [first.must()]
@@ -77,8 +77,8 @@ function lead(@c: cursor.Cursor, @a: ast.Ast, text: str) -> Lead?
 # a `=>` its line holds outside its brackets, what it passes the refusal's,
 # told already; false, nothing moved, where none stands before the line ends.
 function to_the_arrow(@c: cursor.Cursor) -> bool
-    depth: i64 @ 0
-    i: i64 @ c.pos
+    depth: i64 @= 0
+    i: i64 @= c.pos
 
     while !token.ends_a_line(c.tokens[i].kind) && !(depth <= 0 && c.tokens[i].kind == .fat_arrow)
         if c.tokens[i].kind == .lparen || c.tokens[i].kind == .lbracket || c.tokens[i].kind == .lbrace

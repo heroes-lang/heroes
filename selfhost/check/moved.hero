@@ -52,8 +52,8 @@ use check/moved_walk as walk
 function not_read_after_its_end(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     if !calls.ends_a_life(decls)
         return
-    by_start: {i64: i64} @ {}
-    index: i64 @ 0
+    by_start: {i64: i64} @= {}
+    index: i64 @= 0
 
     for l in r.locals
         by_start[l.name.start] @ index
@@ -78,9 +78,9 @@ function refused(text: str) -> [str]
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     not_read_after_its_end(@c, p.tree, out, s, p.decls)
-    lines: [str] @ []
+    lines: [str] @= []
 
     for d in c.out.diagnostics
         lines @ lines.push(source.locate(s, d.span.start).line.to_str() + ":" + d.code)
@@ -98,7 +98,7 @@ test "defects 088 and 077: a handle read after the call that ended it is refused
 test "an end under when, a reference, a rebinding and a transfer into a nullable result leave the value alive"
     assert refused(GROUP + "function main()\n    b = make()\n    _ = busy(item: b)\n    print(peek(item: b))\n    _ = busy(item: b)\n") == []
     assert refused(GROUP + "function main()\n    b = make()\n    assert keep(item: b) == 1\n    drop(item: b)\n    drop(item: b)\n") == []
-    assert refused(GROUP + "function main()\n    b: Json @ make()\n    drop(item: b)\n    b @ make()\n    drop(item: b)\n") == []
+    assert refused(GROUP + "function main()\n    b: Json @= make()\n    drop(item: b)\n    b @ make()\n    drop(item: b)\n") == []
     grown = "extern \"cj.h\"\n    function grow(item: Json transfers drop) -> Json acquires drop\n\nfunction main()\n    b = make()\n    q = grow(item: b)\n    if q == nullptr\n        drop(item: b)\n    else\n        drop(item: q)\n"
     assert refused(GROUP + grown) == []
 
@@ -117,17 +117,17 @@ test "one branch is not every path, and both branches are"
 # turn reads a live value. That shape, the ergonomist's buggy loop, is the
 # runtime's (E10's `while_twice`). An end BEFORE the loop is on every path.
 test "a loop carries an end round only where every path to the head has it"
-    turn = "function main()\n    b = make()\n    n: i64 @ 0\n    while n < 2\n        print(peek(item: b))\n        drop(item: b)\n        n @ n + 1\n"
+    turn = "function main()\n    b = make()\n    n: i64 @= 0\n    while n < 2\n        print(peek(item: b))\n        drop(item: b)\n        n @ n + 1\n"
     assert refused(GROUP + turn) == []
-    before = "function main()\n    b = make()\n    drop(item: b)\n    n: i64 @ 0\n    while n < 2\n        print(peek(item: b))\n        n @ n + 1\n"
+    before = "function main()\n    b = make()\n    drop(item: b)\n    n: i64 @= 0\n    while n < 2\n        print(peek(item: b))\n        n @ n + 1\n"
     assert refused(GROUP + before) == ["16:handle_used_after_end"]
-    renewed = "function main()\n    b: Json @ make()\n    drop(item: b)\n    n: i64 @ 0\n    while n < 2\n        b @ make()\n        print(peek(item: b))\n        drop(item: b)\n        n @ n + 1\n"
+    renewed = "function main()\n    b: Json @= make()\n    drop(item: b)\n    n: i64 @= 0\n    while n < 2\n        b @ make()\n        print(peek(item: b))\n        drop(item: b)\n        n @ n + 1\n"
     assert refused(GROUP + renewed) == []
-    late = "function main()\n    b: Json @ make()\n    drop(item: b)\n    n: i64 @ 0\n    while n < 2\n        print(peek(item: b))\n        b @ make()\n        n @ n + 1\n    drop(item: b)\n"
+    late = "function main()\n    b: Json @= make()\n    drop(item: b)\n    n: i64 @= 0\n    while n < 2\n        print(peek(item: b))\n        b @ make()\n        n @ n + 1\n    drop(item: b)\n"
     assert refused(GROUP + late) == []
-    out = "function main()\n    b = make()\n    n: i64 @ 0\n    while n < 2\n        if n == 1\n            drop(item: b)\n            break\n        n @ n + 1\n    print(peek(item: b))\n"
+    out = "function main()\n    b = make()\n    n: i64 @= 0\n    while n < 2\n        if n == 1\n            drop(item: b)\n            break\n        n @ n + 1\n    print(peek(item: b))\n"
     assert refused(GROUP + out) == []
-    round = "function main()\n    b = make()\n    n: i64 @ 0\n    while n < 3\n        n @ n + 1\n        if n == 1\n            drop(item: b)\n            continue\n        drop(item: b)\n"
+    round = "function main()\n    b = make()\n    n: i64 @= 0\n    while n < 3\n        n @ n + 1\n        if n == 1\n            drop(item: b)\n            continue\n        drop(item: b)\n"
     assert refused(GROUP + round) == []
 
 test "a consumed field is dead for its reads and for the whole record crossing into C, and alive beside it"
@@ -141,5 +141,5 @@ test "an element at a literal index is one place, and an index only the run know
     assert refused(GROUP + fixed) == ["21:handle_used_after_end", "23:handle_used_after_end", "26:handle_used_after_end"]
 
 test "an @ argument is a write, so a helper that ends or renews its parameter is the runtime's"
-    helper = "function finish(@j: Json)\n    drop(item: j)\n\nfunction main()\n    b: Json @ make()\n    finish(@b)\n    print(peek(item: b))\n    drop(item: b)\n    finish(@b)\n"
+    helper = "function finish(@j: Json)\n    drop(item: j)\n\nfunction main()\n    b: Json @= make()\n    finish(@b)\n    print(peek(item: b))\n    drop(item: b)\n    finish(@b)\n"
     assert refused(GROUP + helper) == []

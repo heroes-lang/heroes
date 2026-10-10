@@ -94,7 +94,7 @@ function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
         return
 
     for field in fields
-        ty: i64 @ table.error_ty(c.types)
+        ty: i64 @= table.error_ty(c.types)
         written = state.written_type(c, field.ty)
 
         if !written.is_err()
@@ -154,8 +154,8 @@ function field_eq_expr(c: state.Checked, names: ctype.Names, ty: i64, member: st
 # (raylib's largest is 16), so the unrolled form is what a C compiler
 # would produce from the loop anyway.
 function fixed_eq_expr(c: state.Checked, names: ctype.Names, member: str, element: i64, count: i64) -> str
-    parts: [str] @ []
-    i: i64 @ 0
+    parts: [str] @= []
+    i: i64 @= 0
 
     while i < count
         a_place = "a->" + member + "[" + i.to_str() + "]"
@@ -190,7 +190,7 @@ function variant_equality_body(@w: writer.Writer, names: ctype.Names, s: source.
     )
     writer.line(@w, text: "    if (a->tag != b->tag) return false;")
     writer.line(@w, text: "    switch (a->tag) {")
-    case_at: i64 @ 0
+    case_at: i64 @= 0
 
     for one_case in types.cases_of(decls, decl: decl)
         case_name = source.span_text(s, one_case.name)
@@ -253,18 +253,18 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
     # array answers no there while the loop below still writes `&v->…` for
     # it. Defect 009 has the reproducer, the golden
     # that caught it and why the predicate could not have been right.
-    lines: [str] @ []
+    lines: [str] @= []
 
     for field in fields
-        ty: i64 @ table.error_ty(c.types)
+        ty: i64 @= table.error_ty(c.types)
         written = state.written_type(c, field.ty)
 
         if !written.is_err()
             ty @ written.must()
         member = mangle.field_of(foreign: at.foreign, name: source.span_text(s, field.name))
-        is_fixed: bool @ false
-        fixed_element: i64 @ 0
-        fixed_count: i64 @ 0
+        is_fixed: bool @= false
+        fixed_element: i64 @= 0
+        fixed_count: i64 @= 0
 
         match table.get(c.types, ty)
             .fixed x =>
@@ -276,7 +276,7 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
             .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
 
         if is_fixed
-            i: i64 @ 0
+            i: i64 @= 0
 
             while i < fixed_count
                 place = "&v->" + member + "[" + i.to_str() + "]"
@@ -289,7 +289,7 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
                 "    h = (h ^ " + one_hash(c, names, ty: ty, place: "&v->" + member) + ") * UINT64_C(0x100000001b3);"
             )
 
-    reads_the_value: bool @ false
+    reads_the_value: bool @= false
 
     for line in lines
         if mentions_v(line)
@@ -334,7 +334,7 @@ function variant_hash_body(@w: writer.Writer, names: ctype.Names, s: source.Sour
     writer.line(@w, text: "    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)")
     writer.line(@w, text: "        * UINT64_C(0x100000001b3);")
     writer.line(@w, text: "    switch (v->tag) {")
-    case_at: i64 @ 0
+    case_at: i64 @= 0
 
     for one_case in types.cases_of(decls, decl: decl)
         case_name = source.span_text(s, one_case.name)
@@ -376,11 +376,11 @@ test "eq short-circuits per field and hash mixes the same fields"
         "record Person\n    name: str\n    age: i64\n\nfunction main()\n    p = Person(name: \"b\", age: 1)\n    _ = p\n"
     )
     at = ctype.aggregate(got.names, decl: 0)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0))
     eq_text = writer.finish(w)
     assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Person_eq(const h_t_Person *a, const h_t_Person *b) {\n    if (!(hero_str_eq(a->f_name, b->f_name))) return false;\n    if (!(a->f_age == b->f_age)) return false;\n    return true;\n}\n\n"
-    hw: writer.Writer @ writer.new_writer("t")
+    hw: writer.Writer @= writer.new_writer("t")
     hash_body(@hw, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0))
     hash_text = writer.finish(hw)
     assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_Person_hash(const void *elem) {\n    const h_t_Person *v = elem;\n    uint64_t h = UINT64_C(0xcbf29ce484222325);\n    h = (h ^ (&hero_desc_str)->hash(&v->f_name)) * UINT64_C(0x100000001b3);\n    h = (h ^ (&hero_desc_int)->hash(&v->f_age)) * UINT64_C(0x100000001b3);\n    return h;\n}\n\n"
@@ -388,11 +388,11 @@ test "eq short-circuits per field and hash mixes the same fields"
 test "a variant compares tags first and mixes the tag into the hash"
     got = ready("variant Coin\n    heads\n    tails\n\nfunction main()\n    c: Coin = .heads\n    _ = c\n")
     at = ctype.aggregate(got.names, decl: 0)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     variant_equality_body(@w, got.names, got.s, got.decls, decl: 0, at: at)
     eq_text = writer.finish(w)
     assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Coin_eq(const h_t_Coin *a, const h_t_Coin *b) {\n    if (a->tag != b->tag) return false;\n    switch (a->tag) {\n        case h_t_Coin_tag_heads: return true;\n        case h_t_Coin_tag_tails: return true;\n    }\n    hero_unreachable();\n}\n\n"
-    hw: writer.Writer @ writer.new_writer("t")
+    hw: writer.Writer @= writer.new_writer("t")
     variant_hash_body(@hw, got.names, got.s, got.decls, decl: 0, at: at)
     hash_text = writer.finish(hw)
     assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_Coin_hash(const void *elem) {\n    const h_t_Coin *v = elem;\n    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)\n        * UINT64_C(0x100000001b3);\n    switch (v->tag) {\n        case h_t_Coin_tag_heads: return h;\n        case h_t_Coin_tag_tails: return h;\n    }\n    hero_unreachable();\n}\n\n"
@@ -402,12 +402,12 @@ test "a fixed member unrolls elementwise, and a partial record aborts loudly"
         "extern \"m.h\"\n    record Vec2\n        cells: f32[2]\n    record Font partial\n        size: f64\n\nfunction main()\n    print(1)\n"
     )
     vec = ctype.aggregate(got.names, decl: 0)
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: vec, fields: types.fields_of(got.decls, decl: 0))
     text = writer.finish(w)
     assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Vec2_eq(const Vec2 *a, const Vec2 *b) {\n    if (!((a->cells[0] == b->cells[0] && a->cells[1] == b->cells[1]))) return false;\n    return true;\n}\n\n"
     font = ctype.aggregate(got.names, decl: 1)
-    fw: writer.Writer @ writer.new_writer("t")
+    fw: writer.Writer @= writer.new_writer("t")
     equality_body(@fw, got.c, got.names, got.s, at: font, fields: types.fields_of(got.decls, decl: 1))
     font_text = writer.finish(fw)
     assert font_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_Font_eq(const Font *a, const Font *b) {\n    hero_panic(\"h_t_Font_eq: a partial record has no structural equality\");\n}\n\n"

@@ -25,18 +25,18 @@ use head_names
 # nothing said of it, every clean file, is answered at once, and a token is
 # asked its kind before it is read as a head's word (panel 192's R11).
 function told_by_heads(diagnostics: [diag.Diagnostic], tokens: [token.Token], text: str) -> [bool]
-    out: [bool] @ []
+    out: [bool] @= []
 
     if diagnostics.len() == 0
         return out
-    headers: [token.Span] @ []
-    names: [token.Span] @ []
-    k: i64 @ 0
+    headers: [token.Span] @= []
+    names: [token.Span] @= []
+    k: i64 @= 0
 
     while k + 1 < tokens.len()
         kind = tokens[k].kind
         name = tokens[k + 1].span
-        what: str @ ""
+        what: str @= ""
 
         if kind == .kw_extern || kind == .ident && k >= 2
             what @ head_word(tokens, at: k, text: text)

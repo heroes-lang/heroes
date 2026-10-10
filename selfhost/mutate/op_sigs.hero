@@ -29,7 +29,7 @@ function result(op: str, spelled: str, p: model.Program, @out: [mutant.Mutant])
             continue
         a = s.toks[at]
         text = model.line(p, no: a.line).text
-        new: str @ op_base.splice(text: text, c0: a.c0, c1: a.c1, put: spelled)
+        new: str @= op_base.splice(text: text, c0: a.c0, c1: a.c1, put: spelled)
 
         if spelled == ":" && a.c0 >= 1 && text[a.c0 - 1] == ' '
             new @ op_base.splice(text: text, c0: a.c0 - 1, c1: a.c1, put: ":")
@@ -55,7 +55,7 @@ function result_void(p: model.Program, @out: [mutant.Mutant])
 # The indices of simple parameters `a: T` in a declaration head: depth 1,
 # `T` one name, on one line.
 function params(s: model.Statement) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
     toks = s.toks
 
     for i in range(from: 1, to: toks.len() - 2)

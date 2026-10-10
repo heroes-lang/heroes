@@ -32,7 +32,7 @@ function main()
 
     # A `@` cell lent to a writer and then to a reader: `void *` both ways, and
     # the write is read back. 1+2+...+8.
-    u: Slot @ slot_make()
+    u: Slot @= slot_make()
     slot_fill(p: u.nsap.ptr(), n: 8)
     print(slot_sum(p: u.nsap.ptr(), n: 8))
 

@@ -23,7 +23,7 @@ use resolved
 # because the message already was: a message that says "remove the `?`"
 # while --apply cannot is asking for the same edit twice.
 function not_fallible(got: str, span: token.Span, inner: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "not_fallible",
         message: "`?` propagates an error, and `" + got + "` cannot fail — remove the `?`",
         span: span
@@ -61,7 +61,7 @@ function try_in_infallible(result: str, span: token.Span) -> diag.Diagnostic
 # goldens rule's own bar, that a fix leaving the defect standing is a guess
 # however well it compiles.
 function nested_read(inner: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "nested_read",
         message: "`.is_err()` reads one level, and this value is fallible twice — its payload is itself fallible, `" + inner + "`, so the failure stored inside would go unread",
         span: span
@@ -89,7 +89,7 @@ function not_indexable(got: str, span: token.Span) -> diag.Diagnostic
 # panel 159's compiler-engineer). The read `s[i]` is untouched and still yields
 # a `u8`.
 function str_element_write(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "str_element_write",
         message: "a `str` is immutable, so `s[i]` is a value and not a place — this writes into one",
         span: span
@@ -118,7 +118,7 @@ function no_value(what: str, span: token.Span) -> diag.Diagnostic
 # *every branch jumps* said of such a construct would be false, and the note
 # names what else leaves.
 function no_value_ended(what: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "no_value",
         message: "this `" + what + "` produces no value — every branch leaves before it gives one, so there is nothing to bind",
         span: span
@@ -134,7 +134,7 @@ function no_value_ended(what: str, span: token.Span) -> diag.Diagnostic
 # line an indentation slip moved under the jump belongs one level out, the
 # `print` meant before a `break` belongs above it, and leftover code goes.
 function unreachable_statement(word: str, left_at: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unreachable_statement",
         message: "this statement never runs: the `" + word + "` at " + left_at + " leaves its block first",
         span: span
@@ -157,7 +157,7 @@ function unreachable_statement(word: str, left_at: str, span: token.Span) -> dia
 # 2026-10-02 this was its shadow at the same place (defect 148,
 # `check/join.Leaves`).
 function constant_without_value(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "no_value",
         message: "constant `" + name + "` produces no value — its body jumps before it gives one, and a constant's value is its body's last line",
         span: span
@@ -170,7 +170,7 @@ function constant_without_value(name: str, span: token.Span) -> diag.Diagnostic
 # R4): told at the statement it ends at, which is not always the last, since
 # a line after one stays legal and still never gives the value.
 function constant_ended(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "no_value",
         message: "constant `" + name + "` produces no value — its body never goes past this line, and a constant's value is its body's last line",
         span: span
@@ -247,7 +247,7 @@ function if_without_else(span: token.Span) -> diag.Diagnostic
 # The return rule is spec § 8's since the same landing; until then the spec
 # stated none (panel 184's critic, B8).
 function missing_return(name: str, want: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "missing_return",
         message: "`" + name + "` must return `" + want + "`, and one path through it returns nothing",
         span: span
@@ -268,7 +268,7 @@ function missing_return(name: str, want: str, span: token.Span) -> diag.Diagnost
 # says what it means. No fix: which path should return, and what, are the
 # author's to say, and any edit changes what the function does.
 function endless_recursion(name: str, spelled: str, receiver: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "endless_recursion",
         message: "every path through `" + name + "` calls `" + name + "` again before it returns, so no call to it can return",
         span: span
@@ -289,8 +289,8 @@ function endless_recursion(name: str, spelled: str, receiver: str, span: token.S
 # module names where `f` lives, `m.f(y)`, and is no first argument.
 function endless_recursion_at(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, site: i64) -> diag.Diagnostic
     name = source.span_text(s, decls[at].name)
-    spelled: str @ ""
-    receiver: str @ ""
+    spelled: str @= ""
+    receiver: str @= ""
 
     match a.exprs[site].kind
         .method m =>

@@ -14,7 +14,7 @@ function bump(@n: i64)
     n @ n + 1
 
 function total(xs: [i64]) -> i64
-    sum: i64 @ 0
+    sum: i64 @= 0
 
     for x in xs
         sum @ sum + x
@@ -22,7 +22,7 @@ function total(xs: [i64]) -> i64
     return sum
 
 function main()
-    xs: [i64] @ [3, 1, 4, 1, 5]
+    xs: [i64] @= [3, 1, 4, 1, 5]
 
     # A read, and two in a condition.
     print(xs[0])

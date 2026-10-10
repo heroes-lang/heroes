@@ -43,9 +43,9 @@ record Halves
 
 # The two sums of `text`, in the order the RFC names them.
 function halves(text: str) -> Halves
-    s1: i64 @ 1
-    s2: i64 @ 0
-    i: i64 @ 0
+    s1: i64 @= 1
+    s2: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         byte: u8 = text[i]
@@ -65,7 +65,7 @@ function adler32(text: str) -> u32
 function is_prime(n: i64) -> bool
     if n < 2
         return false
-    d: i64 @ 2
+    d: i64 @= 2
 
     while d * d <= n
         if n % d == 0
@@ -112,7 +112,7 @@ test "the modulus is the largest prime below sixty-five thousand five hundred an
     # `BASE` is a fact in this program rather than a number somebody copied.
     assert is_prime(BASE)
     assert BASE < 65536
-    n: i64 @ BASE + 1
+    n: i64 @= BASE + 1
 
     while n < 65536
         assert !is_prime(n)

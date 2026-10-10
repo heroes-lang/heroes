@@ -103,8 +103,8 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
 
     # The positions refused here, so the marks on them are not judged again:
     # one mistake, one message (panel 196's R8).
-    told: {i64: bool} @ {}
-    position: i64 @ 0 - 1
+    told: {i64: bool} @= {}
+    position: i64 @= 0 - 1
 
     for param in f.params
         position @ position + 1
@@ -186,7 +186,7 @@ function ffi_constant(@c: state.Checker, s: source.Source, decls: [ast.Decl], de
         shown = state.show(c, s, decls, declared)
         state.push_diagnostic(@c, ffi_errors.ffi_type(name: shown, what: "an `extern constant`", span: span))
         return
-    why: str @ ""
+    why: str @= ""
 
     match table.get(c.out.types, declared)
         .str  => why @ "a `str` is built by this runtime, so no C header holds one: declare it `cstr` and read it with `validated`, which copies and may fail (§4.20)"
@@ -314,7 +314,7 @@ function arguments_may_stand(@c: state.Checker, a: ast.Ast, s: source.Source, de
 
         if written.is_err()
             continue
-        why: str @ ""
+        why: str @= ""
 
         if table.get(c.out.types, written.must()) == .unit
             why @ "`()` names no value, so there is no argument to pass: as a *result* it is C's `void`, which a parameter list has no spelling for. Drop the parameter, or declare the type the header uses"
@@ -336,8 +336,8 @@ function prepared(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
@@ -350,8 +350,8 @@ test "the vocabulary admits the seven and the group's own records"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: 0)
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)
@@ -366,7 +366,7 @@ test "the vocabulary admits the seven and the group's own records"
     assert !crosses_the_boundary(c, p.decls, xs)
 
 test "an extern constant refuses the two Heroes-only values with reasons"
-    c: state.Checker @ prepared("record P\n    x: i64\n")
+    c: state.Checker @= prepared("record P\n    x: i64\n")
     s = source.new_source(name: "t.hero", text: "record P\n    x: i64\n")
     d: [ast.Decl] = []
     span = token.Span(start: 0, end: 3)
@@ -377,7 +377,7 @@ test "an extern constant refuses the two Heroes-only values with reasons"
     assert c.out.diagnostics.len() == 1
 
 test "a group field takes a fixed array of scalars, and a str is routed"
-    c: state.Checker @ prepared("record P\n    x: i64\n")
+    c: state.Checker @= prepared("record P\n    x: i64\n")
     s = source.new_source(name: "t.hero", text: "record P\n    x: i64\n")
     d: [ast.Decl] = []
     span = token.Span(start: 0, end: 3)
@@ -395,8 +395,8 @@ test "a unit parameter cannot stand, though a unit result may"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: 0)
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)

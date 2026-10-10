@@ -38,15 +38,15 @@ function take(items: [i64], @size: i64) -> i64
 # one sequence of pushes and pops: a push of each value's two successors
 # below a bound, so the list grows and shrinks and reuses its slots.
 test "a drain visits what the slicing drain visited, in its order (defect 498)"
-    sliced: [i64] @ [1, 2]
-    held: [i64] @ []
-    size: i64 @ 0
+    sliced: [i64] @= [1, 2]
+    held: [i64] @= []
+    size: i64 @= 0
 
     for one in [1, 2]
         put(@held, size: @size, value: one)
 
-    old_order: [i64] @ []
-    new_order: [i64] @ []
+    old_order: [i64] @= []
+    new_order: [i64] @= []
 
     while sliced.len() > 0
         top = sliced[sliced.len() - 1]

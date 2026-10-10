@@ -103,7 +103,7 @@ function refused_after(stderr: str, s: source.Source, decls: [ast.Decl], runtime
         return none
     one = read.must()
     directory = clang_place.found_in(path: one.steps[one.at].path, spelled: one.group.header)
-    refused_file: str @ one.group.header
+    refused_file: str @= one.group.header
 
     if one.at < one.steps.len() - 1
         refused_file @ clang_place.shown(path: one.first.place.path, directory: directory)
@@ -114,7 +114,7 @@ function refused_after(stderr: str, s: source.Source, decls: [ast.Decl], runtime
         row: one.first.place.row,
         quoted: clang_excerpt.of(one.rows, after: one.first.row)
     )
-    added: [str] @ []
+    added: [str] @= []
 
     for note in one.notes
         added @ added.push(
@@ -130,13 +130,13 @@ function refused_after(stderr: str, s: source.Source, decls: [ast.Decl], runtime
 # attached, the includes it followed, and what a `-Werror` means here.
 function told(rows: [str], first: clang_first.First, steps: [clang_place.Place], at: i64, group: group_file.Group, notes: [clang_first.Attached]) -> diag.Diagnostic
     directory = clang_place.found_in(path: steps[at].path, spelled: group.header)
-    refused_file: str @ group.header
-    head: str @ "`" + group.header + "`, the header this group names, does not compile: clang refuses it"
+    refused_file: str @= group.header
+    head: str @= "`" + group.header + "`, the header this group names, does not compile: clang refuses it"
 
     if at < steps.len() - 1
         refused_file @ clang_place.shown(path: first.place.path, directory: directory)
         head @ "`" + group.header + "`, the header this group names, does not compile: clang refuses `" + refused_file + "`, which it includes,"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_header_refused",
         message: head + " at line " + first.place.row.to_str() + ": " + first.message,
         span: group.span
@@ -149,8 +149,8 @@ function told(rows: [str], first: clang_first.First, steps: [clang_place.Place],
         )
 
     if at < steps.len() - 1
-        hops: [str] @ []
-        hop: i64 @ at
+        hops: [str] @= []
+        hop: i64 @= at
 
         while hop < steps.len() - 1
             hops @ hops.push(
@@ -188,7 +188,7 @@ function sides(read: clang_first.Reading) -> Sides?
         return fail(code: "none", msg: "no note names another group's header")
     beside = read.beside.must()
     directory = clang_place.found_in(path: read.steps[read.at].path, spelled: read.group.header)
-    refused_file: str @ read.group.header
+    refused_file: str @= read.group.header
 
     if read.at < read.steps.len() - 1
         refused_file @ clang_place.shown(path: read.first.place.path, directory: directory)
@@ -206,7 +206,7 @@ function sides(read: clang_first.Reading) -> Sides?
         row: read.note.row,
         quoted: clang_excerpt.of(read.rows, after: read.note.index)
     )
-    added: [str] @ []
+    added: [str] @= []
 
     for each in read.notes
         if each.index != read.note.index

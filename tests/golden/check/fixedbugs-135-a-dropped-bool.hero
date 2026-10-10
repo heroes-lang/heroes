@@ -30,6 +30,6 @@ function an_order(a: i64, b: i64)
     a < b  #~ discarded_value
 
 function main()
-    x: i64 @ 0
+    x: i64 @= 0
     x @ x + 1
     x == 1  #~ discarded_value

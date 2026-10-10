@@ -32,11 +32,11 @@ extern "fixedbugs-092-records.h"
     function copy_n(@dst: Pad counted_by n, @src: One counted_by n, n: u64) -> i64
 
 function main()
-    o: One @ One(a: 0)
-    p: Pad @ Pad(c: 0, d: 0)
-    w: Outer @ Outer(inner: One(a: 0), z: 7)
-    q: Pfd @ Pfd(fd: 0, events: 1, revents: 0)
-    xs: [One] @ [One(a: 1), One(a: 2)]
+    o: One @= One(a: 0)
+    p: Pad @= Pad(c: 0, d: 0)
+    w: Outer @= Outer(inner: One(a: 0), z: 7)
+    q: Pfd @= Pfd(fd: 0, events: 1, revents: 0)
+    xs: [One] @= [One(a: 1), One(a: 2)]
     print(fill(@o, n: 4096))  #~ record_lend_extent
     print(fill_pad(@p, n: 17))  #~ record_lend_extent
     print(fill(@w.inner, n: 8))  #~ record_lend_extent

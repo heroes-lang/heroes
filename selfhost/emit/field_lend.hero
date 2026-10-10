@@ -199,7 +199,7 @@ function lend_of(f: containers.Function, value: i64) -> Lend?
 # Every lend of this function whose result is `const void *`, by value id:
 # what `emit/body.hero`'s prologue declares with that spelling.
 function const_lends(f: containers.Function) -> {i64: bool}
-    out: {i64: bool} @ {}
+    out: {i64: bool} @= {}
 
     for blk in f.blocks
         for inst in blk.insts
@@ -238,7 +238,7 @@ function lent(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
     if place.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* a lent field with no place */")
         return
-    cast: str @ "(const void *)"
+    cast: str @= "(const void *)"
     root = lent_root(f, value: source_value.must())
 
     if !root.is_err() && slot_is_mutable(f.slots[root.must()])

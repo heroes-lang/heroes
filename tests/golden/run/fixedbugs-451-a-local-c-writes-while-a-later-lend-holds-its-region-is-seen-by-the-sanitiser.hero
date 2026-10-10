@@ -22,12 +22,12 @@ extern "fixedbugs-451-keepers.h"
     function put_one(@x: i64, v: i64)
 
 function lend() -> i64
-    n: i64 @ 0
+    n: i64 @= 0
     cell_keep(@n)
     return n
 
 function later() -> i64
-    m: i64 @ 0
+    m: i64 @= 0
     put_one(x: @m, v: 5)
     cell_write_later(v: 77)
     return m

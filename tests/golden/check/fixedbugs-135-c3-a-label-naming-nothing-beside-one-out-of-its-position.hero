@@ -39,8 +39,8 @@ function main()
     print(copy_text(to: "b", fro: "a"))  #~ wrong_label wrong_label
     g = copy_text
     print(g(to: "b", fro: "a"))  #~ wrong_label wrong_label
-    a: i64 @ 1
-    c: i64 @ 2
+    a: i64 @= 1
+    c: i64 @= 2
     swap(otw: @a, one: @c)  #~ wrong_label wrong_label
     xs = [1, 2, 3, 4]
     print(xs.slice(to: 3, form: 1).len())  #~ wrong_label wrong_label

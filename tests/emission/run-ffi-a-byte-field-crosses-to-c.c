@@ -208,9 +208,9 @@ bb0:
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t20 = INT64_C(8);
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2521 2533 2538 2539 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2522 2534 2539 2540 8");
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2521 2533 2538 2539 8 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2522 2534 2539 2540 8 const void *");
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t21 = slot_sum(t19, t20);
 #line 47 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
@@ -222,9 +222,9 @@ bb0:
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t25 = INT64_C(4);
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)sizeof(h0_s.tag)), "heroes-ffi-extent slot_sum p n 2710 2721 2726 2727 4");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)sizeof(h0_s.tag)), "heroes-ffi-extent slot_sum p n 2711 2722 2727 2728 4");
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)(sizeof(h0_s.tag) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2710 2721 2726 2727 4 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(4)) && (int64_t)(INT64_C(4)) <= (int64_t)(sizeof(h0_s.tag) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2711 2722 2727 2728 4 const void *");
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t26 = slot_sum(t24, t25);
 #line 51 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
@@ -236,18 +236,18 @@ bb0:
 #line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t30 = INT64_C(8);
 #line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_fill p n 2821 2833 2838 2839 8");
+    _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_fill p n 2822 2834 2839 2840 8");
 #line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 2821 2833 2838 2839 8 void *");
+    _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(void *)0))), "heroes-ffi-extent-unit slot_fill p n 2822 2834 2839 2840 8 void *");
 #line 54 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     (void)slot_fill(t29, t30);
     t33 = (void *)(h0_s.nsap);
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t34 = INT64_C(8);
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2863 2875 2880 2881 8");
+    _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.nsap)), "heroes-ffi-extent slot_sum p n 2864 2876 2881 2882 8");
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2863 2875 2880 2881 8 const void *");
+    _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.nsap) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit slot_sum p n 2864 2876 2881 2882 8 const void *");
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t35 = slot_sum(t33, t34);
 #line 55 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"

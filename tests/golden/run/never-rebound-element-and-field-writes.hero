@@ -6,8 +6,8 @@ record Pair
     b: i64
 
 function main()
-    xs: [i64] @ [1, 2]
+    xs: [i64] @= [1, 2]
     xs[0] @ 7
-    p: Pair @ Pair(a: 1, b: 2)
+    p: Pair @= Pair(a: 1, b: 2)
     p.b @ 9
     print(xs[0] + p.b)

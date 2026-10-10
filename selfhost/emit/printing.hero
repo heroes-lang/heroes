@@ -19,12 +19,12 @@ use ir/containers
 use emit/writer
 
 function print_call(@w: writer.Writer, f: containers.Function, c: state.Checked, run: ir.Run, arguments: [str])
-    at: i64 @ 0
+    at: i64 @= 0
 
     for arg in containers.args_of(f, run)
         match arg
             .value_arg v =>
-                printer: str @ ""
+                printer: str @= ""
 
                 match table.get(c.types, containers.value_type(f, v.value))
                     .bool => printer @ "hero_print_bool"
@@ -92,7 +92,7 @@ test "print composes monomorphic printers, and u64 gets its own"
         instantiated_at: token.Span(start: 0, end: 0),
         span: token.Span(start: 0, end: 1)
     )
-    w: writer.Writer @ writer.new_writer("t")
+    w: writer.Writer @= writer.new_writer("t")
     print_call(@w, f, c, run: ir.Run(start: 0, length: 2), arguments: ["t0", "t1"])
     got = writer.finish(w)
     assert got == "    hero_print_uint(t0);\n    hero_print_str(t1);\n    hero_print_end();\n"

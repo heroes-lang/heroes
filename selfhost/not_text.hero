@@ -37,13 +37,13 @@ constant TOLD: i64
 # What file `index` of `s` is told for its bytes that are not text, in the
 # compilation's offsets; none for a file of text.
 function told(s: source.Source, index: i64) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
 
     if s.faults.len() == 0
         return out
     start = s.files[index].start
     text = source_extent.text_of(s, index)
-    mine: [source.Fault] @ []
+    mine: [source.Fault] @= []
 
     for one in s.faults
         if one.at >= start && one.at < start + text.len()
@@ -52,7 +52,7 @@ function told(s: source.Source, index: i64) -> [diag.Diagnostic]
     if mine.len() == 0
         return out
     lines = by_line(s, faults: mine)
-    limit: i64 @ TOLD
+    limit: i64 @= TOLD
 
     if byte_evidence.holds_nul(text)
         limit @ 1
@@ -60,7 +60,7 @@ function told(s: source.Source, index: i64) -> [diag.Diagnostic]
     for line in lines
         if out.len() == limit
             break
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "not_text",
             message: named(s, line: line) + " not UTF-8, and a `.hero` file is UTF-8 text",
             span: token.Span(start: line[0].at, end: line[0].at + 3)
@@ -109,12 +109,12 @@ function first_said(name: str, text: str, faults: [source.Fault]) -> str
 # are more) and counts (how many more). The compiler's own 8 MB binary named
 # as a source holds 3.8 million such bytes, and recording each cost 356 MB.
 function faults_of(marks: str, text: str) -> [source.Fault]
-    out: [source.Fault] @ []
-    at: i64 @ 0
-    mark: i64 @ 0
-    line: i64 @ 0
-    last: i64 @ -1
-    lines: i64 @ 0
+    out: [source.Fault] @= []
+    at: i64 @= 0
+    mark: i64 @= 0
+    line: i64 @= 0
+    last: i64 @= -1
+    lines: i64 @= 0
 
     while at + 2 < text.len() && mark + 1 < marks.len()
         if text[at] == 239 && text[at + 1] == 191 && text[at + 2] == 189
@@ -145,8 +145,8 @@ function hex(b: u8) -> i64
 function bytes_written(text: str, faults: [source.Fault]) -> str
     if faults.len() == 0
         return text
-    pieces: [str] @ []
-    from: i64 @ 0
+    pieces: [str] @= []
+    from: i64 @= 0
 
     for one in faults
         pieces @ pieces.push(text.slice(from: from, to: one.at))
@@ -167,9 +167,9 @@ function in_root(s: source.Source) -> bool
 
 # The faults, one list per line that holds any, in order.
 function by_line(s: source.Source, faults: [source.Fault]) -> [[source.Fault]]
-    out: [[source.Fault]] @ []
-    line: [source.Fault] @ []
-    at_line: i64 @ -1
+    out: [[source.Fault]] @= []
+    line: [source.Fault] @= []
+    at_line: i64 @= -1
 
     for one in faults
         here = source.line_of(s, one.at)
@@ -195,7 +195,7 @@ function named(s: source.Source, line: [source.Fault]) -> str
 
     if line.len() > 4
         return line.len().to_str() + " bytes, the first " + placed(s, one: line[0]) + ", are"
-    words: [str] @ []
+    words: [str] @= []
 
     for one in line
         words @ words.push(placed(s, one: one))
@@ -213,9 +213,9 @@ function placed(s: source.Source, one: source.Fault) -> str
 # A Source holding `text` alone, each U+FFFD in it standing for the next of
 # `bytes`, as `module/reading` would hold a file that is not text.
 function shown_source(text: str, bytes: [i64]) -> source.Source
-    s: source.Source @ source.new_source(name: "p.hero", text: text)
-    at: i64 @ 0
-    k: i64 @ 0
+    s: source.Source @= source.new_source(name: "p.hero", text: text)
+    at: i64 @= 0
+    k: i64 @= 0
 
     while at + 2 < text.len() && k < bytes.len()
         if text[at] == 239 && text[at + 1] == 191 && text[at + 2] == 189
@@ -249,8 +249,8 @@ test "one diagnostic per line, its caret on the line's first such byte, each byt
     assert named(many, line: many.faults) == "5 bytes, the first 0x01 at 1:1, are"
 
 test "past eight lines the last one told says how many more"
-    lines: [str] @ []
-    bytes: [i64] @ []
+    lines: [str] @= []
+    bytes: [i64] @= []
 
     for k in range(from: 0, to: 10)
         lines @ lines.push("# � " + k.to_str())
@@ -314,8 +314,8 @@ test "the marks name each byte that is not text, and a U+FFFD the file held is t
     assert hex('F') == 15
 
 test "every fault of the first nine lines is kept, then the first of each line"
-    lines: [str] @ []
-    marks: [str] @ []
+    lines: [str] @= []
+    marks: [str] @= []
 
     for _ in range(from: 0, to: 12)
         lines @ lines.push("�x�")

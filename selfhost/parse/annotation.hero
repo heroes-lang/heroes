@@ -1,9 +1,9 @@
-# An annotated binding, `v: i64 @ 0` or `xs: [i64] = []`, whose type failed
+# An annotated binding, `v: i64 @= 0` or `xs: [i64] = []`, whose type failed
 # (design.md §4.4, §4.5, §4.17; defect 131's class, 2026-09-29).
 #
 # `parse_type` leaves the token it could not read under the cursor, and the
 # `@` or `=` owed after the type was then looked for at that same token and
-# named missing too: `n: 2 @ 3` cost `expected_type` and
+# named missing too: `n: 2 @= 3` cost `expected_type` and
 # `expected_binding_symbol` at the `2`, one mistake and two messages, and the
 # value after the `@` was never read. Two rules now, each asked of what the
 # type's parse left behind:
@@ -21,6 +21,7 @@
 # | `past_a_refused_type`, `no_binding_symbol` | `grammar_expr.annotated` |
 
 use token
+use diag
 use cursor
 use parse/opening
 use lexer
@@ -41,8 +42,8 @@ function past_a_refused_type(@c: cursor.Cursor, typed: opening.Mark)
 # type holds neither outside its brackets, so the first one is the
 # annotation's.
 function symbol_after(c: cursor.Cursor, from: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ from
+    depth: i64 @= 0
+    i: i64 @= from
 
     while !ends_the_line(c.tokens[i].kind, depth: depth)
         k = c.tokens[i].kind
@@ -51,7 +52,7 @@ function symbol_after(c: cursor.Cursor, from: i64) -> i64
             depth @ depth + 1
         else if (k == .rparen || k == .rbracket || k == .rbrace) && depth > 0
             depth @ depth - 1
-        else if depth == 0 && i >= c.pos && (k == .at || k == .eq)
+        else if depth == 0 && i >= c.pos && (k == .at || k == .at_eq || k == .eq)
             return i
         i @ i + 1
 
@@ -62,7 +63,7 @@ function symbol_after(c: cursor.Cursor, from: i64) -> i64
 function ends_the_line(kind: token.TokenKind, depth: i64) -> bool
     return kind == .eof || kind == .indent || kind == .dedent || kind == .terminator && depth == 0
 
-# The `@` or `=` an annotation owes, named missing at the cursor, unless the
+# The `@=` or `=` an annotation owes, named missing at the cursor, unless the
 # lexer spoke there or the type begun at `typed` refused this very token.
 function no_binding_symbol(@c: cursor.Cursor, text: str, typed: opening.Mark)
     if cursor.at_reported_error(c) || opening.refused_here(c, typed)
@@ -70,16 +71,38 @@ function no_binding_symbol(@c: cursor.Cursor, text: str, typed: opening.Mark)
     cursor.error(
         @c,
         code: "expected_binding_symbol",
-        message: "expected `@` to declare a mutable, or `=` to bind, found " + cursor.found(c, text) + " — `v: i64 @ 0` declares a cell, `xs: [i64] = []` binds once",
+        message: "expected `@=` to declare a mutable cell, or `=` to bind, found " + cursor.found(c, text) + " — `v: i64 @= 0` declares a cell, `xs: [i64] = []` binds once",
         span: cursor.current_span(c)
     )
+
+# The symbol that declares a cell after an annotation, eaten: `@=` (spec
+# § 5, panel 209), or `@`, the symbol until 2026-10-10, told at once with a
+# certain fix that writes `@=` there, which is how the tree's 1671 files were
+# rewritten, through `check --apply`'s own words; the line is still read as
+# the declaration it is, so the rest of the file is judged. False where
+# neither stands, the cursor unmoved.
+function cell_symbol(@c: cursor.Cursor, text: str) -> bool
+    if cursor.eat(@c, .at_eq)
+        return true
+
+    if !cursor.at(c, .at)
+        return false
+    at = cursor.bump(@c).span
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "old_cell_symbol",
+        message: "`@` after a type declared a cell until panel 209; a cell is declared `" + cursor.slice_of(text, at) + "=`, and `@` alone re-binds one — write `@=`",
+        span: at
+    )
+    d.fixes @ d.fixes.push(diag.Fix(title: "write `@=`", replacement: "@=", span: at, certainty: .certain))
+    cursor.say(@c, d)
+    return true
 
 ## Tests
 
 # The `@` or `=` a refused type's annotation resumes at, in `text`'s own
 # stream: the type begins at token 2, and the type's parse stopped at `stop`.
 function resumes_at(text: str, stop: i64) -> i64
-    c: cursor.Cursor @ cursor.new_cursor(lexer.lex_one(text).tokens)
+    c: cursor.Cursor @= cursor.new_cursor(lexer.lex_one(text).tokens)
 
     while c.pos < stop
         _ = cursor.bump(@c)
@@ -88,7 +111,7 @@ function resumes_at(text: str, stop: i64) -> i64
 
 test "a refused type's annotation resumes at the symbol outside the type's brackets"
     # `n`, `:`, `[`, `2`: the type stopped at its refused `2`.
-    assert resumes_at("n: [2] @ [3]\n", stop: 3) == 5
+    assert resumes_at("n: [2] @= [3]\n", stop: 3) == 5
     assert resumes_at("n: {2: i64} = {}\n", stop: 3) == 7
     assert resumes_at("n: 2 = 3\n", stop: 2) == 3
 

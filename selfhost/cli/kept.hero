@@ -63,8 +63,8 @@ function unsealed(kept: str) -> str?
 
     if !strings.starts_with(text: kept, prefix: SEAL) || kept.len() < head + 18 || !is_digest(text: kept, from: head) || kept[head + 16] != ' '
         return fail(code: "unsealed", msg: "not a text this compiler keeps")
-    at: i64 @ head + 17
-    length: i64 @ 0
+    at: i64 @= head + 17
+    length: i64 @= 0
 
     while at < kept.len() && kept[at] >= '0' && kept[at] <= '9' && at < head + 17 + 18
         length @ length * 10 + (kept[at] - '0').to_i64().must()
@@ -96,7 +96,7 @@ function record_rows(text: str) -> str?
 # Whether the sixteen bytes from `from` are lowercase hex, the only bytes a
 # digest is spelt in.
 function is_digest(text: str, from: i64) -> bool
-    at: i64 @ from
+    at: i64 @= from
 
     while at < from + 16
         b = text[at]

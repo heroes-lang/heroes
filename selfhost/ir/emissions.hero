@@ -127,7 +127,7 @@ function emit_call(@b: build.Lowering, target: ir.Callee, given: inout.Args, var
 # the value rather than a guess about the shape (CLAUDE.md §11).
 function assert_text(@b: build.Lowering, c: state.Checked, s: source.Source, span: token.Span) -> i64
     written = source.span_text(s, span)
-    expression: str @ written
+    expression: str @= written
 
     if written.len() > 6 && written.slice(from: 0, to: 6) == "assert"
         expression @ written.slice(from: 6, to: written.len())
@@ -137,7 +137,7 @@ function assert_text(@b: build.Lowering, c: state.Checked, s: source.Source, spa
 
 # The value-argument run a construct needs.
 function value_args(@b: build.Lowering, values: [i64]) -> ir.Run
-    list: [ir.Arg] @ []
+    list: [ir.Arg] @= []
 
     for v in values
         list @ list.push(.value_arg(value: v))
@@ -186,7 +186,7 @@ function name_expr(@b: build.Lowering, r: resolved.Resolved, decls: [ast.Decl], 
 # constant declares, which the checker recorded where it lowered that
 # type (defect 510).
 function constant_value(@b: build.Lowering, r: resolved.Resolved, c: state.Checked, decls: [ast.Decl], at: i64, span: token.Span) -> i64
-    declared: i64? @ fail(code: "none", msg: "not a constant")
+    declared: i64? @= fail(code: "none", msg: "not a constant")
 
     match r.uses[at]
         .top t =>
@@ -220,7 +220,7 @@ function emit_int(@b: build.Lowering, a: ast.Ast, s: source.Source, id: i64, ty:
 # The negative-literal fold: `-` directly on an int literal becomes one
 # constant with the sign inside.
 function fold_negative(@b: build.Lowering, a: ast.Ast, s: source.Source, op: ast.UnaryOp, operand: i64, ty: i64, span: token.Span) -> i64?
-    is_neg: bool @ false
+    is_neg: bool @= false
 
     match op
         .neg            => is_neg @ true

@@ -102,7 +102,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
 # `cli/probing.hero`). `p` is the whole program, whose every use of a record
 # is what the union questions ask about.
 function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?) -> ()?
-    wanted: [layout_text.Asked] @ []
+    wanted: [layout_text.Asked] @= []
 
     for one in layout_text.asked(s, decls)
         if emit_externs.held(records, decl: one.decl)
@@ -123,7 +123,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
     )
     dir = t.build + "/layout-" + key
     listed = dir + "/screen.deps.txt"
-    memo: {str: str} @ probe.digests
+    memo: {str: str} @= probe.digests
     known = deps.vouched(listed, @memo)
     a = Asking(t: t, dir: dir, headers: headers, s: s, decls: decls, c: c, u: u, words: probe.words)
 
@@ -137,7 +137,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
     depfile = publish.private_name(dir + "/screen.d")
     err_path = publish.private_name(dir + "/screen-stderr.txt")
-    line: [str] @ ["clang", "-fsyntax-only", "-ferror-limit=0", "-MD", "-MT", "dep", "-MF", depfile]
+    line: [str] @= ["clang", "-fsyntax-only", "-ferror-limit=0", "-MD", "-MT", "dep", "-MF", depfile]
     line @ searched(a, line: line)
     line @ line.push(screen_c)
     ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
@@ -177,7 +177,7 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
     if opaque.len() > 0 && !layout_screen.strays(said)
         return refused_opaque(a, opaque: opaque)
     flagged = layout_screen.flagged(said)
-    dumped: [layout_text.Asked] @ []
+    dumped: [layout_text.Asked] @= []
 
     for one in wanted
         if !flagged[one.decl].is_err()
@@ -188,7 +188,7 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
     dump_text = layout_text.dump_unit(a.headers, wanted: dumped)
     kept_path = a.dir + "/clang-dump-" + sum + "-" + digest.digest(dump_text) + ".txt"
     layouts = kept.read(kept_path)
-    rows: str @ ""
+    rows: str @= ""
 
     if !layouts.is_err()
         rows @ layout_rows.wrapper_rows(layouts.must()).join("\n") + "\n"
@@ -223,7 +223,7 @@ function refused_opaque(a: Asking, opaque: [layout_text.Asked]) -> ()?
     unit = pointee.unit_path(dir: a.dir, stem: "type", text: text)
     publish.write_whole(path: unit, text: text, keyed: true)?
     out_path = publish.private_name(a.dir + "/type.json")
-    line: [str] @ [
+    line: [str] @= [
         "clang"
         "-fsyntax-only"
         "-Xclang"
@@ -238,10 +238,10 @@ function refused_opaque(a: Asking, opaque: [layout_text.Asked]) -> ()?
     # Read back as the screen and the dump are (defect 337).
     json = read_back.words(out_path)
     publish.discard(out_path)
-    said: [str] @ []
+    said: [str] @= []
 
     for one in opaque
-        behind: str @ ""
+        behind: str @= ""
 
         if ran.started && ran.code == 0 && !json.is_err()
             behind @ layout_screen.behind_of(json.must(), decl: one.decl).default("")
@@ -255,7 +255,7 @@ function dump(a: Asking, dump_text: str) -> str?
     publish.write_whole(path: dump_c, text: dump_text, keyed: true)?
     out_path = publish.private_name(a.dir + "/dump.txt")
     err_path = publish.private_name(a.dir + "/dump-stderr.txt")
-    line: [str] @ ["clang", "-fsyntax-only", "-Xclang", "-fdump-record-layouts"]
+    line: [str] @= ["clang", "-fsyntax-only", "-Xclang", "-fdump-record-layouts"]
     line @ searched(a, line: line)
     line @ line.push(dump_c)
     ran = process.run(program: "clang", words: line, out: out_path, err: err_path)
@@ -286,7 +286,7 @@ function judged(a: Asking, sum: str, text: str) -> ()?
     check_c = pointee.unit_path(dir: a.dir, stem: "check", text: text)
     publish.write_whole(path: check_c, text: text, keyed: true)?
     err_path = publish.private_name(a.dir + "/check-stderr.txt")
-    line: [str] @ ["clang", "-fsyntax-only", "-ferror-limit=0"]
+    line: [str] @= ["clang", "-fsyntax-only", "-ferror-limit=0"]
     line @ searched(a, line: line)
     line @ line.push(check_c)
 
@@ -298,7 +298,7 @@ function judged(a: Asking, sum: str, text: str) -> ()?
         err_path: err_path
     )
     publish.discard(err_path)
-    said: str @ "ok\n"
+    said: str @= "ok\n"
 
     match checked
         .ok _ => said @ "ok\n"
@@ -341,7 +341,7 @@ test "a package's words reach the layout check each one whole, and its verdict i
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-layout-package"
     headers_at = "build/selftest-layout-package-include"
     assert !process.remove_tree(t.build).is_err()
@@ -406,7 +406,7 @@ test "the layout check asks each directory's own header, and one that appears ea
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     root = "build/selftest-layout-dirs"
     assert !process.remove_tree(root).is_err()
     whole = root + "/whole"
@@ -423,7 +423,7 @@ test "the layout check asks each directory's own header, and one that appears ea
     for first in [whole, wider]
         t.build @ first + "-first"
         assert !process.remove_tree(t.build).is_err()
-        second: str @ wider
+        second: str @= wider
 
         if first == wider
             second @ whole
@@ -469,7 +469,7 @@ test "the layout check asks each directory's own header, and one that appears ea
 # the check said nothing of the first two, and the unit's field assertions
 # met them, worded apart by clang 18 and 21.
 test "the layout check refuses a record named after a typedef with no layout, naming the type behind it (defect 191)"
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-layout-opaque"
     headers_at = "build/selftest-layout-opaque-include"
     assert !process.remove_tree(t.build).is_err()
@@ -519,7 +519,7 @@ test "the layout check judges a record under the build's level and sanitizers (d
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
     low = lower.lower(parsed.tree, out, c, s, parsed.decls)
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.build @ "build/selftest-layout-level"
     headers_at = "build/selftest-layout-level-include"
     assert !process.remove_tree(t.build).is_err()

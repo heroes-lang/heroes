@@ -53,7 +53,7 @@ function shown_ast(tree: ast.Ast, s: source.Source, uses: [ast.Use], decls: [ast
 # NAMED" (CLAUDE.md §10), and the library is the same in every
 # program, so it carries no information about this one.
 function dump_ast(tree: ast.Ast, s: source.Source, uses: [ast.Use], decls: [ast.Decl]) -> str
-    rows: [str] @ ["file " + s.name + "\n"]
+    rows: [str] @= ["file " + s.name + "\n"]
 
     for used in uses
         if !source.is_root(s, used.span.start)
@@ -81,7 +81,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
             # The group's head line, exactly as a signature carries it:
             # a reader must tell a constant whose value is in a header
             # from one whose value is in this file.
-            rows: [str] @ [
+            rows: [str] @= [
                 "  " + extern_prefix(s, header: k.header, library: k.library) + "constant " + name + ": " + types.render_type(tree, k.ty, s) + "\n"
             ]
             rows @ rows.push(docs(s, doc: decl.doc))
@@ -92,7 +92,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
                 rows @ rows.push(bodies.write_block(tree, s, block: k.body.must(), indent: 4))
             return rows.join("")
         .function_decl fd =>
-            rows: [str] @ ["  " + signature(tree, s, name: name, f: fd.value) + "\n"]
+            rows: [str] @= ["  " + signature(tree, s, name: name, f: fd.value) + "\n"]
             rows @ rows.push(docs(s, doc: decl.doc))
 
             if !fd.value.body.is_err()
@@ -105,15 +105,15 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
         # was blind exactly where it was needed.
 
         .record_decl rec =>
-            tag_text: str @ ""
+            tag_text: str @= ""
 
             if !rec.tag.is_err()
                 tag_text @ " tag " + source.span_text(s, rec.tag.must())
-            marker: str @ ""
+            marker: str @= ""
 
             if rec.partial
                 marker @ " partial"
-            rows: [str] @ [
+            rows: [str] @= [
                 "  " + extern_prefix(s, header: rec.header, library: rec.library) + "record " + name + tag_text + marker + "\n"
             ]
             rows @ rows.push(docs(s, doc: decl.doc))
@@ -123,7 +123,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
 
             return rows.join("")
         .variant_decl v =>
-            rows: [str] @ ["  variant " + name + "\n"]
+            rows: [str] @= ["  variant " + name + "\n"]
             rows @ rows.push(docs(s, doc: decl.doc))
 
             for one_case in v.cases
@@ -132,7 +132,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
             return rows.join("")
         .test_decl t =>
             # name is the string literal, quotes included: a title.
-            rows: [str] @ ["  test " + name + "\n"]
+            rows: [str] @= ["  test " + name + "\n"]
             rows @ rows.push(docs(s, doc: decl.doc))
             rows @ rows.push(bodies.write_block(tree, s, block: t.body, indent: 4))
             return rows.join("")
@@ -157,7 +157,7 @@ function render_signature(tree: ast.Ast, s: source.Source, name: str, f: ast.Fun
 function extern_prefix(s: source.Source, header: token.Span?, library: ast.Library?) -> str
     if header.is_err()
         return ""
-    out: str @ "extern " + source.span_text(s, header.must())
+    out: str @= "extern " + source.span_text(s, header.must())
 
     if !library.is_err()
         match library.must()
@@ -167,7 +167,7 @@ function extern_prefix(s: source.Source, header: token.Span?, library: ast.Libra
 
 function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDecl) -> str
     out: str = extern_prefix(s, header: f.header, library: f.library) + "function " + name + sig.generics_text(s, f.generics)
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for param in f.params
         rendered @ rendered.push(sig.parameter(tree, s, param: param))
@@ -186,7 +186,7 @@ function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDe
 # says what the tree holds and the tree holds a `unit` node.
 
 function case_lines(tree: ast.Ast, s: source.Source, one_case: ast.Case) -> str
-    rows: [str] @ ["    case " + source.span_text(s, one_case.name) + "\n"]
+    rows: [str] @= ["    case " + source.span_text(s, one_case.name) + "\n"]
     rows @ rows.push(docs_at(s, doc: one_case.doc, indent: "      "))
 
     for field in one_case.fields
@@ -195,7 +195,7 @@ function case_lines(tree: ast.Ast, s: source.Source, one_case: ast.Case) -> str
     return rows.join("")
 
 function field_line(tree: ast.Ast, s: source.Source, field: ast.Field, indent: str) -> str
-    out: str @ indent + "field " + source.span_text(s, field.name) + ": " + types.render_type(tree, field.ty, s) + "\n"
+    out: str @= indent + "field " + source.span_text(s, field.name) + ": " + types.render_type(tree, field.ty, s) + "\n"
     out @ out + docs_at(s, doc: field.doc, indent: indent + "  ")
     return out
 
@@ -205,7 +205,7 @@ function docs(s: source.Source, doc: [token.Span]) -> str
 # Doc comments are printed verbatim, # included: they are markdown,
 # and the compiler reuses them in ??? output and outline (§4.1).
 function docs_at(s: source.Source, doc: [token.Span], indent: str) -> str
-    rows: [str] @ []
+    rows: [str] @= []
 
     for span in doc
         rows @ rows.push(indent + "doc " + source.span_text(s, span) + "\n")

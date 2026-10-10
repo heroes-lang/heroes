@@ -53,13 +53,13 @@ function constant_text(value: ir.IntConst, kind: widths.IntKind?, strings: [str]
 
                 if ic.value.magnitude == min_magnitude
                     return "INT64_MIN"
-            unsigned: bool @ false
+            unsigned: bool @= false
 
             if !kind.is_err()
                 match kind.must()
                     .u8 | .u16 | .u32 | .u64 => unsigned @ true
                     .i8 | .i16 | .i32 | .i64 => unsigned @ unsigned
-            sign: str @ ""
+            sign: str @= ""
 
             if ic.value.negative
                 sign @ "-"
@@ -99,10 +99,10 @@ constant TWO_52: f64
 # accepts one between any two digits), and C's `atof` stops at the first
 # one — so it comes off before the value is asked for. The bootstrap paid
 # for this in the other direction on the same day: Rust's parser does not
-# take a separator either, and `unwrap_or(0.0)` made `x: f64 @ 1_0.5`
+# take a separator either, and `unwrap_or(0.0)` made `x: f64 @= 1_0.5`
 # print **0.0** at exit 0 (`ir/exprs.rs`, repaired 2026-08-18).
 function separatorless(text: str) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     for c in text.chars()
         if c != "_"
@@ -112,9 +112,9 @@ function separatorless(text: str) -> str
 
 # Thirteen hex digits, which hold all 52 mantissa bits exactly.
 function hex13(mantissa: i64) -> str
-    out: str @ ""
-    v: i64 @ mantissa
-    k: i64 @ 0
+    out: str @= ""
+    v: i64 @= mantissa
+    k: i64 @= 0
 
     while k < 13
         d = v % 16
@@ -125,7 +125,7 @@ function hex13(mantissa: i64) -> str
     return out
 
 function without_trailing_zeros(digits: str) -> str
-    last: i64 @ digits.len()
+    last: i64 @= digits.len()
 
     while last > 0 && digits.slice(from: last - 1, to: last) == "0"
         last @ last - 1
@@ -150,13 +150,13 @@ function hex_float(text: str) -> str
         if 1.0 / x < 0.0
             return "-0x0p+0"
         return "0x0p+0"
-    negative: bool @ false
-    mag: f64 @ x
+    negative: bool @= false
+    mag: f64 @= x
 
     if x < 0.0
         negative @ true
         mag @ 0.0 - x
-    sign: str @ ""
+    sign: str @= ""
 
     if negative
         sign @ "-"
@@ -171,8 +171,8 @@ function hex_float(text: str) -> str
 
     # |x| = m * 2^e with m in [1, 2). Halving a normal is exact and
     # doubling a subnormal is exact, so neither loop loses a bit.
-    e: i64 @ 0
-    m: f64 @ mag
+    e: i64 @= 0
+    m: f64 @= mag
 
     while m >= 2.0
         m @ m * 0.5
@@ -182,17 +182,17 @@ function hex_float(text: str) -> str
         m @ m * 2.0
         e @ e - 1
 
-    lead: str @ "1"
-    exponent: i64 @ e
-    mantissa: i64 @ 0
+    lead: str @= "1"
+    exponent: i64 @= e
+    mantissa: i64 @= 0
 
     if e < 0 - 1022
         # Subnormal: the field is the value scaled to 2^-1074, and `%a`
         # writes it with a zero lead at the fixed exponent -1022.
         lead @ "0"
         exponent @ 0 - 1022
-        scale: f64 @ 1.0
-        k: i64 @ 0
+        scale: f64 @= 1.0
+        k: i64 @= 0
 
         while k < e + 1074
             scale @ scale * 2.0
@@ -201,13 +201,13 @@ function hex_float(text: str) -> str
         mantissa @ to_i64(m * scale).must()
     else
         mantissa @ to_i64((m - 1.0) * TWO_52).must()
-    fraction: str @ ""
+    fraction: str @= ""
     trimmed = without_trailing_zeros(hex13(mantissa))
 
     if trimmed.len() > 0
         fraction @ "." + trimmed
-    exponent_sign: str @ "+"
-    exponent_size: i64 @ exponent
+    exponent_sign: str @= "+"
+    exponent_size: i64 @= exponent
 
     if exponent < 0
         exponent_sign @ "-"

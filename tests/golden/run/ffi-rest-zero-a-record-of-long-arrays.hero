@@ -28,8 +28,8 @@ function none_named() -> Big
 
 function main()
     dirty()
-    a: Big @ one_named()
+    a: Big @= one_named()
     print(a.n, " ", big_arrays(@a))
     dirty()
-    b: Big @ none_named()
+    b: Big @= none_named()
     print(b.n, " ", big_arrays(@b))

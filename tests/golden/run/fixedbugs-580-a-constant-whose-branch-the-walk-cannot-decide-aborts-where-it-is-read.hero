@@ -5,7 +5,7 @@
 # flushed first.
 
 constant V: u8
-    v: u8 @ 0
+    v: u8 @= 0
 
     if 1 < 2
         v @ 200

@@ -36,7 +36,7 @@ function used_after_end(s: source.Source, read: token.Span, shown: str, ended: f
         "`" + shown + "` is handed to C whole here, and its `" + ended.shown + "` was given to `" + ended.callee + "` " + where + ", which ended its life"
     else
         "`" + ended.shown + "` was given to `" + ended.callee + "` " + where + ", which ended its life, and this reads it again"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "handle_used_after_end", message: message, span: read)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "handle_used_after_end", message: message, span: read)
     d.notes @ d.notes.push(
         "on every path that reaches this line the value's life has ended, so what C would be handed is an address it has taken back. Give the name a new value with `@` before this line, or take a reference before the call that ends it, one a `borrows` call hands back or one a `retains` call adds, and read that instead"
     )

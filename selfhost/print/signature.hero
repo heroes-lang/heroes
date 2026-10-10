@@ -21,7 +21,7 @@ use print/marks
 function generics_text(s: source.Source, generics: [token.Span]) -> str
     if generics.len() == 0
         return ""
-    parts: [str] @ []
+    parts: [str] @= []
 
     for generic in generics
         parts @ parts.push(source.span_text(s, generic))
@@ -35,11 +35,11 @@ function generics_text(s: source.Source, generics: [token.Span]) -> str
 # never freed, at exit 0 and with no diagnostic. CLAUDE.md §9's list, and
 # the reason it is a list.
 function parameter(tree: ast.Ast, s: source.Source, param: ast.Param) -> str
-    marker: str @ ""
+    marker: str @= ""
 
     if param.mutable
         marker @ "@"
-    words: [str] @ []
+    words: [str] @= []
 
     for w in parameter_words(s, param: param)
         words @ words.push(marks.spelled(s, w: w))
@@ -90,7 +90,7 @@ function closing(tree: ast.Ast, s: source.Source, fd: ast.FunctionDecl) -> str
 # `fmt`'s one-line shape, every list without a comment inside it: the
 # parameters one after another with `, ` between.
 function one_line(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionDecl) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for param in fd.params
         rendered @ rendered.push(parameter(tree, s, param: param))
@@ -100,7 +100,7 @@ function one_line(tree: ast.Ast, s: source.Source, name: str, fd: ast.FunctionDe
 test "the two ends and the words between print as the one-line form does"
     text = "function f<T>(@a: T, b: i64 lent) -> i64 when 0"
     s = source.new_source(name: "t.hero", text: text)
-    a: ast.Ast @ ast.new_ast()
+    a: ast.Ast @= ast.new_ast()
     t = ast.push_type(@a.types, ast.TypeNode(kind: .named, span: token.Span(start: 18, end: 19)))
     i = ast.push_type(@a.types, ast.TypeNode(kind: .named, span: token.Span(start: 24, end: 27)))
     none: token.Span? = fail(code: "none", msg: "absent")

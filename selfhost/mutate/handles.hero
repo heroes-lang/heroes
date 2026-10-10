@@ -39,7 +39,7 @@ use handles as handle_form
 # Every mutant one source makes: one handle name swapped for another handle
 # name in scope, at one call argument.
 function swap_ptr(a: ast.Ast, s: source.Source, decls: [ast.Decl]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for d in decls
         match d.kind
@@ -84,7 +84,7 @@ function swaps_in(@out: [str], a: ast.Ast, s: source.Source, decls: [ast.Decl], 
 # inside the body when its span is; the arena is flat and a nested block's
 # statements are in it too, so containment reaches every depth.
 function handle_names(a: ast.Ast, s: source.Source, decls: [ast.Decl], params: [ast.Param], body: ast.Block) -> [str]
-    names: [str] @ []
+    names: [str] @= []
 
     for p in params
         if is_ptr(a: a, s: s, decls: decls, ty: p.ty)
@@ -152,7 +152,7 @@ function among(name: str, names: [str]) -> bool
     return false
 
 test "two handles in one function give one mutant per handle argument, and one handle gives none"
-    text = "extern \"sqlite3.h\"\n    function sqlite3_step(statement: ptr) -> i64\n\nfunction first(db: ptr) -> i64\n    statement: ptr @ nullptr\n    return sqlite3_step(statement)\n\nfunction lone(db: ptr) -> i64\n    return sqlite3_step(db)\n"
+    text = "extern \"sqlite3.h\"\n    function sqlite3_step(statement: ptr) -> i64\n\nfunction first(db: ptr) -> i64\n    statement: ptr @= nullptr\n    return sqlite3_step(statement)\n\nfunction lone(db: ptr) -> i64\n    return sqlite3_step(db)\n"
     s = source.new_source(name: "x.hero", text: text)
     parsed = parse.parse_source(s)
     assert parsed.diagnostics.len() == 0

@@ -49,22 +49,22 @@ function through(@xs: [i64]) -> i64
     return set_element(@xs[0], q: xs)
 
 function main()
-    x: P @ P(a: 1)
+    x: P @= P(a: 1)
     print(rewrite(p: @x, q: x), " ", x.a)
-    xs: [i64] @ []
+    xs: [i64] @= []
     xs @ xs.push(1)
     xs @ xs.push(2)
     print(set_element(@xs[0], q: xs), " ", xs[0])
-    f: B @ B(items: [1, 2])
+    f: B @= B(items: [1, 2])
     f.items[1] @ 3
     print(set_in_field(@f.items, q: f), " ", f.items[0])
-    r: B @ B(items: [1, 2])
+    r: B @= B(items: [1, 2])
     r.items[1] @ 3
     print(set_in_record(@r, r.items), " ", r.items[0])
-    z: B @ B(items: [1, 2])
+    z: B @= B(items: [1, 2])
     z.items[1] @ 3
     print(replace(@z, z.items), " ", z.items[0])
-    ws: [i64] @ []
+    ws: [i64] @= []
     ws @ ws.push(1)
     ws @ ws.push(2)
     print(through(@ws), " ", ws[0])

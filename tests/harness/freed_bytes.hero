@@ -60,7 +60,7 @@ constant DARWIN: str
 
 # `words` run with the fill handed to the program they start.
 function filled(words: [str]) -> [str]
-    out: [str] @ ["env", FILL]
+    out: [str] @= ["env", FILL]
 
     for word in words
         out @ out.push(word)

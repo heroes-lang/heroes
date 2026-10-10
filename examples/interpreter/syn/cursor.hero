@@ -110,7 +110,7 @@ function done(c: Cursor) -> bool
     return here(c) == .finish
 
 test "a cursor walks the list and then stands on the end for ever"
-    c: Cursor @ over([.kw_print, .number(value: 1), .newline, .finish])
+    c: Cursor @= over([.kw_print, .number(value: 1), .newline, .finish])
     assert here(c) == .kw_print
     assert after(c) == .number(value: 1)
     assert bump(@c) == .kw_print
@@ -123,28 +123,28 @@ test "a cursor walks the list and then stands on the end for ever"
 
 test "the cursor on an empty list is done, and reading it is safe"
     empty: [token.Token] = []
-    c: Cursor @ over(empty)
+    c: Cursor @= over(empty)
     assert done(c)
     assert here(c) == .finish
     assert after(c) == .finish
     assert bump(@c) == .finish
 
 test "accepted steps only when it matches"
-    c: Cursor @ over([.kw_if, .newline, .finish])
+    c: Cursor @= over([.kw_if, .newline, .finish])
     assert !accepted(@c, want: .kw_while)
     assert here(c) == .kw_if
     assert accepted(@c, want: .kw_if)
     assert here(c) == .newline
 
 test "expected names both sides when it refuses"
-    c: Cursor @ over([.kw_if, .finish])
+    c: Cursor @= over([.kw_if, .finish])
     assert !expected(@c, want: .kw_if).is_err()
     said = expected(@c, want: .kw_end)
     assert said.is_err()
     assert refusal_message(said) == "expected `end`, found `end of file`"
 
 test "a name is taken, and everything that is not one is refused by class"
-    c: Cursor @ over([.name(value: "total"), .number(value: 3), .kw_let, .plus, .newline, .finish])
+    c: Cursor @= over([.name(value: "total"), .number(value: 3), .kw_let, .plus, .newline, .finish])
     assert name_here(@c).must() == "total"
     assert refusal_message_of_name(name_here(@c)) == "expected a name, found the number `3`"
     assert refusal_message_of_name(name_here(@c)) == "expected a name, found a keyword"
@@ -153,7 +153,7 @@ test "a name is taken, and everything that is not one is refused by class"
     assert refusal_message_of_name(name_here(@c)) == "expected a name, found the end of the file"
 
 test "blank lines are stepped over together"
-    c: Cursor @ over([.newline, .newline, .newline, .kw_print, .finish])
+    c: Cursor @= over([.newline, .newline, .newline, .kw_print, .finish])
     skipped_lines(@c)
     assert here(c) == .kw_print
 

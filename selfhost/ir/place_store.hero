@@ -49,7 +49,7 @@ use check/state
 use check/table
 
 function run(@p: containers.Program)
-    rewritten: [containers.Function] @ []
+    rewritten: [containers.Function] @= []
 
     for f in p.functions
         rewritten @ rewritten.push(rewrite(f))
@@ -57,7 +57,7 @@ function run(@p: containers.Program)
     p.functions @ rewritten
 
 function rewrite(f: containers.Function) -> containers.Function
-    worked: containers.Function @ f
+    worked: containers.Function @= f
     reads = counts(worked)
     where = definitions(worked)
     into = graph.jumps_into(worked.blocks)
@@ -65,12 +65,12 @@ function rewrite(f: containers.Function) -> containers.Function
     # Keyed by VALUE, which names one instruction in the whole function: the
     # load and the call a rewrite deletes by their results, and the store it
     # turns into `push_owned` by the result it stores, read by it alone.
-    drop: {i64: bool} @ {}
-    grow: {i64: i64} @ {}
-    bi: i64 @ 0
+    drop: {i64: bool} @= {}
+    grow: {i64: i64} @= {}
+    bi: i64 @= 0
 
     for blk in worked.blocks
-        si: i64 @ 0
+        si: i64 @= 0
 
         for one in blk.insts
             match one.op
@@ -111,7 +111,7 @@ function rewrite(f: containers.Function) -> containers.Function
 # and the store being rewritten — or some third reader would observe a
 # value the rewrite deletes.
 function counts(f: containers.Function) -> {i64: i64}
-    reads: {i64: i64} @ {}
+    reads: {i64: i64} @= {}
 
     for blk in f.blocks
         for one in blk.insts
@@ -129,11 +129,11 @@ record Def
     at: i64
 
 function definitions(f: containers.Function) -> {i64: Def}
-    where: {i64: Def} @ {}
-    bi: i64 @ 0
+    where: {i64: Def} @= {}
+    bi: i64 @= 0
 
     for blk in f.blocks
-        at: i64 @ 0
+        at: i64 @= 0
 
         for one in blk.insts
             match one.dest
@@ -149,12 +149,12 @@ function definitions(f: containers.Function) -> {i64: Def}
 # One block's instructions with the rewrites applied: the dropped loads and
 # calls left out, each rewritten store a `push_owned` of the pushed value.
 function kept(insts: [ir.Inst], drop: {i64: bool}, grow: {i64: i64}) -> [ir.Inst]
-    out: [ir.Inst] @ []
+    out: [ir.Inst] @= []
 
     for one in insts
         if !one.dest.is_err() && drop[one.dest.must()].default(false)
             continue
-        rewritten: ir.Inst @ one
+        rewritten: ir.Inst @= one
 
         match one.op
             .store st =>
@@ -193,7 +193,7 @@ function pattern(f: containers.Function, where: {i64: Def}, reads: {i64: i64}, i
 
     if reads[value].default(0) != 1
         return fail(code: "shared", msg: "the pushed result has another reader")
-    given: [ir.Arg] @ []
+    given: [ir.Arg] @= []
 
     match f.blocks[block].insts[call.at].op
         .call cl =>
@@ -216,8 +216,8 @@ function pattern(f: containers.Function, where: {i64: Def}, reads: {i64: i64}, i
 
     if given.len() != 2
         return fail(code: "not_push", msg: "wrong arity")
-    receiver: i64 @ 0
-    pushed: i64 @ 0
+    receiver: i64 @= 0
+    pushed: i64 @= 0
 
     match given[0]
         .value_arg v => receiver @ v.value
@@ -265,7 +265,7 @@ function verify(blk: containers.Block, f: containers.Function, c: state.Checked,
         match one.op
             .push_owned pg =>
                 path_problem(pg.place, label: label, problems: @problems)
-                is_array: bool @ false
+                is_array: bool @= false
 
                 match table.get(c.types, f.slots[pg.place.root].ty)
                     .array                                                    => is_array @ true
@@ -296,7 +296,7 @@ test "the canonical accumulator is rewritten to one growing instruction"
     assert ops == ["lit", "push_owned"]
 
 test "a receiver with a second reader keeps the classic shape"
-    f: containers.Function @ accumulator()
+    f: containers.Function @= accumulator()
 
     # A second use of the loaded receiver: len_of reads it too.
     f.blocks[0].insts @ f.blocks[0].insts.push(inst(dest: ok(4), op: .len_of(value: 1), ty: 0))
@@ -304,7 +304,7 @@ test "a receiver with a second reader keeps the classic shape"
     assert op_names(done) == ["lit", "load", "call", "store", "len_of"]
 
 test "the verifier fires on a push_owned with a path"
-    problems: [str] @ []
+    problems: [str] @= []
     path_problem(ir.Place(root: 0, path: ir.Run(start: 0, length: 1)), label: "t: ", problems: @problems)
     assert problems.len() == 1
 
@@ -313,11 +313,11 @@ test "the verifier fires on a push_owned with a path"
     assert problems.len() == 1
 
 test "a write to the root between load and store keeps the classic shape"
-    f: containers.Function @ accumulator()
+    f: containers.Function @= accumulator()
 
     # Insert a store to the same root between the call and the store.
-    grown: [ir.Inst] @ []
-    at: i64 @ 0
+    grown: [ir.Inst] @= []
+    at: i64 @= 0
 
     for one in f.blocks[0].insts
         if at == 2
@@ -332,7 +332,7 @@ test "a write to the root between load and store keeps the classic shape"
 test "defect 381: a branch between the load and the push still grows in place, a write on the way does not"
     # The accumulator split where `.must()` splits it: the load and a branch
     # in bb0, the push and its store in bb1, an abort's block in bb2.
-    f: containers.Function @ accumulator()
+    f: containers.Function @= accumulator()
     whole = f.blocks[0].insts
     head: [ir.Inst] = [whole[0], whole[1]]
     tail: [ir.Inst] = [whole[2], whole[3]]
@@ -346,7 +346,7 @@ test "defect 381: a branch between the load and the push still grows in place, a
     # A store into the root in the block between keeps the classic shape: the
     # receiver was read before it, and growing the place would push onto what
     # the store wrote.
-    g: containers.Function @ f
+    g: containers.Function @= f
     g.blocks[0].term @ .jump(to: 3)
     g.blocks[2].preds @ [3]
     g.blocks @ g.blocks.push(
@@ -357,7 +357,7 @@ test "defect 381: a branch between the load and the push still grows in place, a
 
     # The push and its store must share a block: a store whose value was
     # pushed in another block is left as it is.
-    h: containers.Function @ f
+    h: containers.Function @= f
     h.blocks[0].insts @ [whole[0], whole[1], whole[2]]
     h.blocks[1].insts @ [whole[3]]
     assert op_names(rewrite(h)) == ["lit", "load", "call", "store"]
@@ -370,7 +370,7 @@ function inst(dest: i64?, op: ir.OpKind, ty: i64) -> ir.Inst
 
 # One block: t0 = lit; t1 = load xs; t2 = call push(t1, t0); store xs <- t2.
 function accumulator() -> containers.Function
-    f: containers.Function @ uses.scaffold()
+    f: containers.Function @= uses.scaffold()
     f.slots @ [containers.Slot(name: "xs", ty: 0, kind: .local_slot(mutable: true))]
     f.values @ [0, 0, 0, 0, 0]
     f.arguments @ [.value_arg(value: 1), .value_arg(value: 0)]
@@ -389,7 +389,7 @@ function push_index() -> i64
     return inventory.index_of("push").must()
 
 function op_names(f: containers.Function) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for blk in f.blocks
         for one in blk.insts

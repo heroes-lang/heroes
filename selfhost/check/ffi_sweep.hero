@@ -47,7 +47,7 @@ use ffi_errors
 # node, told here or already told at that place by another rule: the
 # checker types the program again with them repaired (defects 423 and 432).
 function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> {i64: bool}
-    owned: {i64: bool} @ {}
+    owned: {i64: bool} @= {}
 
     for decl in decls
         match decl.kind
@@ -61,7 +61,7 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
     # outermost (defect 405, 2026-10-06): `i64[2][3]` is one mistake and one
     # edit, and its `[T]` is the whole type's. The inner `i64[2]` was told
     # too until then, at the same column, a message per level.
-    inside: {i64: bool} @ {}
+    inside: {i64: bool} @= {}
 
     for node in range(from: 0, to: a.types.len())
         written = c.out.written_types[node]
@@ -73,9 +73,9 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
             .fixed x                                                                   => claim(a, x.element, @inside)
             .named | .unit | .array_of | .map_of | .fallible | .function_type | .error => continue
 
-    built: {i64: ffi_errors.BuiltInto} @ {}
-    scanned: bool @ false
-    refused: {i64: bool} @ {}
+    built: {i64: ffi_errors.BuiltInto} @= {}
+    scanned: bool @= false
+    refused: {i64: bool} @= {}
 
     # ORDER: ascending type-node id. It decided which of a nested pair
     # printed first, the two sharing span.start, until defect 405 told the
@@ -95,7 +95,7 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
         # and reporting one mistake twice is the thing this compiler
         # never does.
         span = a.types[node].span
-        already: bool @ false
+        already: bool @= false
 
         for d in c.out.diagnostics
             if d.span == span
@@ -130,13 +130,13 @@ function is_fixed(c: state.Checker, ty: i64) -> bool
 # only where it is a fixed array a group's field may be, the one place
 # writing the elements there instead is the repair.
 function built_into(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> {i64: ffi_errors.BuiltInto}
-    found: {i64: ffi_errors.BuiltInto} @ {}
-    at: i64 @ -1
+    found: {i64: ffi_errors.BuiltInto} @= {}
+    at: i64 @= -1
 
     for node in a.exprs
         at @ at + 1
-        callee: resolved.Ref @ .unresolved
-        given: [ast.Arg] @ []
+        callee: resolved.Ref @= .unresolved
+        given: [ast.Arg] @= []
 
         match node.kind
             .call cl =>
@@ -158,13 +158,13 @@ function built_into(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
     return found
 
 function into_fields(@found: {i64: ffi_errors.BuiltInto}, c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], callee: resolved.Ref, given: [ast.Arg], start: i64)
-    holder: i64 @ -1
+    holder: i64 @= -1
 
     match callee
         .top t                                    => holder @ t.at
         .unresolved | .local | .builtin | .module => return
 
-    fields: [ast.Field] @ []
+    fields: [ast.Field] @= []
 
     match decls[holder].kind
         .record_decl rec =>
@@ -173,7 +173,7 @@ function into_fields(@found: {i64: ffi_errors.BuiltInto}, c: state.Checker, a: a
             fields @ rec.fields
         .constant_decl | .function_decl | .variant_decl | .test_decl => return
 
-    rests: bool @ true
+    rests: bool @= true
 
     for f in fields
         if source.span_text(s, f.name) == "rest"
@@ -181,7 +181,7 @@ function into_fields(@found: {i64: ffi_errors.BuiltInto}, c: state.Checker, a: a
 
     # The values this construction is the first to build, so a second field
     # it fills from one of them joins that entry rather than being skipped.
-    mine: {i64: bool} @ {}
+    mine: {i64: bool} @= {}
 
     for arg in given
         from = declared_at(a, r, decls, arg.value)
@@ -210,7 +210,7 @@ function into_fields(@found: {i64: ffi_errors.BuiltInto}, c: state.Checker, a: a
                 )
                 mine[from] @ true
             else
-                one: ffi_errors.BuiltInto @ prior.must()
+                one: ffi_errors.BuiltInto @= prior.must()
                 one.fields @ one.fields.push(label)
                 found[from] @ one
 
@@ -225,7 +225,7 @@ function held_in_a_group(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
 # local's annotation, a constant's type, the result of the function a call
 # names; or -1.
 function declared_at(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], e: i64) -> i64
-    callee: i64 @ e
+    callee: i64 @= e
 
     match a.exprs[e].kind
         .name =>
@@ -308,8 +308,8 @@ function swept(text: str) -> [diag.Diagnostic]
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)

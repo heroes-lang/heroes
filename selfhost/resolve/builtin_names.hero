@@ -36,7 +36,7 @@ function taken(library: {str: bool}, name: str) -> bool
 
 # Every name the library declares, but an extern's.
 function of_library(s: source.Source, decls: [ast.Decl]) -> {str: bool}
-    names: {str: bool} @ {}
+    names: {str: bool} @= {}
 
     for d in decls
         if source.is_library(s, d.name.start) && names_one(d)

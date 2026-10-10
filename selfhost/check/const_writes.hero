@@ -20,7 +20,7 @@ use resolved
 # The cells written by `cond`, when there is one, and by `body`, in the order
 # written, a cell once for each write.
 function of_loop(a: ast.Ast, r: resolved.Resolved, cond: i64?, body: ast.Block) -> [i64]
-    found: [i64] @ []
+    found: [i64] @= []
 
     if !cond.is_err()
         expression(@found, a, r, id: cond.must())

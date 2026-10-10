@@ -55,7 +55,7 @@ constant DEFAULT_ERRORS: [str]
 # Every warning a check rests on: each `-Werror=` word of the build's flags,
 # in their order, then the default errors.
 function checked() -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for word in flags.flags()
         if strings.starts_with(text: word, prefix: "-Werror=")
@@ -65,7 +65,7 @@ function checked() -> [str]
 
 # One `error` pragma per warning a check rests on, as the unit writes them.
 function lines() -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for word in checked()
         out @ out.push("#pragma clang diagnostic error \"" + word + "\"")
@@ -92,7 +92,7 @@ function after_constant(@w: writer.Writer, s: source.Source, decls: [ast.Decl], 
 # errors after them: a word the flags gain is raised with no edit here.
 test "the checks raised are the build's -Werror words and clang's three default errors"
     got = checked()
-    werror: [str] @ []
+    werror: [str] @= []
 
     for word in flags.flags()
         if strings.starts_with(text: word, prefix: "-Werror=")
@@ -104,7 +104,7 @@ test "the checks raised are the build's -Werror words and clang's three default 
     assert got[got.len() - 1] == "-Wincompatible-function-pointer-types"
 
     for word in ["-Wsign-conversion", "-Wshorten-64-to-32", "-Wincompatible-pointer-types", "-Wincompatible-pointer-types-discards-qualifiers", "-Wimplicit-function-declaration"]
-        found: bool @ false
+        found: bool @= false
 
         for one in got
             if one == word

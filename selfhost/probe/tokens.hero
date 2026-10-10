@@ -29,7 +29,7 @@ function closes(kind: token.TokenKind) -> bool
 
 # The tokens that are not comments, in order.
 function code(s: seed.Seed) -> [seed.Word]
-    out: [seed.Word] @ []
+    out: [seed.Word] @= []
 
     for w in s.words
         if w.kind != .comment
@@ -39,8 +39,8 @@ function code(s: seed.Seed) -> [seed.Word]
 
 function bracket(s: seed.Seed) -> [seed.Edit]
     words = code(s)
-    out: [seed.Edit] @ []
-    depth: i64 @ 0
+    out: [seed.Edit] @= []
+    depth: i64 @= 0
 
     for index in range(from: 0, to: words.len())
         t = words[index]
@@ -88,7 +88,7 @@ function applies(kind: token.TokenKind) -> bool
 
 function paren(s: seed.Seed) -> [seed.Edit]
     words = code(s)
-    out: [seed.Edit] @ []
+    out: [seed.Edit] @= []
 
     for index in range(from: 1, to: words.len())
         t = words[index]

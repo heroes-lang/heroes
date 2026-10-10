@@ -28,14 +28,14 @@ extern "fixedbugs-396-openssl.h" package "libcrypto"
     function EVP_DigestFinal_ex(ctx: MdCtx, @md: [u8] counted_by EVP_MAX_MD_SIZE lent, @s: u32) -> i32
 
 function main()
-    c: Sha256Ctx @ Sha256Ctx(num: 0)
-    md: [u8] @ [9, 9, 9]
+    c: Sha256Ctx @= Sha256Ctx(num: 0)
+    md: [u8] @= [9, 9, 9]
     kept = md
     print(SHA256_Init(@c), " ", SHA256_Update(@c, data: "abc".cstr(), len: 3), " ", SHA256_Final(@md, @c))
     print(md.len(), " ", md[0], " ", md[31], " ", kept.len(), " ", kept[0])
     ctx = EVP_MD_CTX_new()
-    out: [u8] @ []
-    s: u32 @ 0
+    out: [u8] @= []
+    s: u32 @= 0
     print(
         EVP_DigestInit_ex(ctx: ctx, md: EVP_sha512(), engine: nullptr),
         " ",

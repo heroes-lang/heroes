@@ -31,18 +31,18 @@ use check/state
 # wrong.
 function build(t: table.Types, decls: [ast.Decl], written: {i64: i64}) -> [bool]
     count = table.len_of(t)
-    answer: [bool] @ []
-    i: i64 @ 0
+    answer: [bool] @= []
+    i: i64 @= 0
 
     while i < count
         answer @ answer.push(false)
         i @ i + 1
 
-    changed: bool @ true
+    changed: bool @= true
 
     while changed
         changed @ false
-        index: i64 @ 0
+        index: i64 @= 0
 
         while index < count
             if !answer[index]
@@ -96,7 +96,7 @@ function counts(t: table.Types, decls: [ast.Decl], written: {i64: i64}, answer: 
 # variant's cases are alternatives, so ANY case carrying a reference
 # makes the variant counted: the generated drop switches on the tag.
 function fields_of(decls: [ast.Decl], written: {i64: i64}, decl: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match decls[decl].kind
         .record_decl rec =>
@@ -118,7 +118,7 @@ function fields_of(decls: [ast.Decl], written: {i64: i64}, decl: i64) -> [i64]
 
 # One case's payload fields — the narrower question a case type asks.
 function case_fields_of(decls: [ast.Decl], written: {i64: i64}, decl: i64, at: i64) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     match decls[decl].kind
         .variant_decl v =>
@@ -139,8 +139,8 @@ test "the count is transitive, and a variant's payload makes it so"
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: 0)
-    i: i64 @ 0
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: 0)
+    i: i64 @= 0
 
     while i < p.tree.types.len()
         _ = lower.lower_ty(@c, p.tree, out, i)

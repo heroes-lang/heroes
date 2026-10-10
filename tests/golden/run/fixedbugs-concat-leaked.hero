@@ -21,8 +21,8 @@ function main()
     print(greet("Ziggy"))
     s = "ab"
     print(s + s)
-    out: str @ ""
-    i: i64 @ 0
+    out: str @= ""
+    i: i64 @= 0
 
     while i < 200
         out @ out + "x"

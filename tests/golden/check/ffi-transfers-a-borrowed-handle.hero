@@ -24,7 +24,7 @@ function attached_well(parent: H, @h: Holder)
 
 function main()
     root = h_open()
-    a: Holder @ Holder(cell: h_open())
+    a: Holder @= Holder(cell: h_open())
     attached(parent: root, h: a)
     attached_well(parent: root, @a)
     h_close(x: root)

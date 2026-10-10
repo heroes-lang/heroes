@@ -31,10 +31,10 @@ constant TEXT: str
 
 # What the link at `path` reads, as bytes, where it is one.
 function target_of(path: str) -> [i8]
-    buf: [i8] @ []
+    buf: [i8] @= []
     got = readlink(path: path.cstr(), @buf, size: 256)
-    out: [i8] @ []
-    i: i64 @ 0
+    out: [i8] @= []
+    i: i64 @= 0
 
     while i < got
         out @ out.push(buf[i])
@@ -43,8 +43,8 @@ function target_of(path: str) -> [i8]
     return out
 
 function byte_list(text: str) -> [i8]
-    out: [i8] @ []
-    i: i64 @ 0
+    out: [i8] @= []
+    i: i64 @= 0
 
     while i < text.len()
         out @ out.push(text[i].to_i8().must())

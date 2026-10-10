@@ -6,7 +6,7 @@ use helper
 
 function main()
     f = helper.bump  #~ mutable_parameter_as_value
-    x: i64 @ 1
+    x: i64 @= 1
     helper.bump(@x)
     print(x)
     _ = f

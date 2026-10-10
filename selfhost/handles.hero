@@ -144,7 +144,7 @@ function spelled(s: source.Source, tag: token.Span, struct_tags: {str: bool}) ->
 # landed. `record_by_tag` is now asked WHICH KIND the message is about. One tag,
 # one of each kind.
 function duplicate_tag(tag: str, first: str, second: str, kind: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "duplicate_tag",
         message: "`" + second + "` and `" + first + "` are both " + kind + " over `" + tag + "` — one tag, one of each kind",
         span: span
@@ -166,11 +166,11 @@ function duplicate_tag(tag: str, first: str, second: str, kind: str, span: token
 # (`hash` appears zero times in it), so the language refuses the shape rather
 # than choosing an answer nobody argued.
 function handle_map_key(key: str, reached: str, span: token.Span) -> diag.Diagnostic
-    because: str @ "it is a handle, an address C owns"
+    because: str @= "it is a handle, an address C owns"
 
     if reached.len() > 0
         because @ "`" + reached + "` is a handle, an address C owns"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "handle_map_key",
         message: "`" + key + "` cannot be a map key, because " + because,
         span: span
@@ -190,7 +190,7 @@ function handle_map_key(key: str, reached: str, span: token.Span) -> diag.Diagno
 # names are read off `releaser_spans`, the one scanner, so a name and its
 # span cannot disagree either: the checker indexes one list by the other.
 function releasers(text: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for span in releaser_spans(text, at: token.Span(start: 0, end: text.len()))
         name = text.slice(from: span.start, to: span.end)
@@ -215,9 +215,9 @@ function blank(b: u8) -> bool
 # refused it). A name is an identifier, so a byte is a character here, and
 # `#` begins none.
 function releaser_spans(text: str, at: token.Span) -> [token.Span]
-    out: [token.Span] @ []
-    from: i64 @ -1
-    i: i64 @ 0
+    out: [token.Span] @= []
+    from: i64 @= -1
+    i: i64 @= 0
 
     while i < text.len()
         b = text[i]
@@ -321,7 +321,7 @@ test "a handle is spelled with the author's word, and `struct` only where clang 
     # the set is qualified.
     s = source.new_source(name: "t.hero", text: "record AI tag addrinfo\n")
     tag = token.Span(start: 14, end: 22)
-    asked: {str: bool} @ {}
+    asked: {str: bool} @= {}
     assert spelled(s, tag, asked) == "addrinfo *"
     asked["addrinfo"] @ true
     assert spelled(s, tag, asked) == "struct addrinfo *"

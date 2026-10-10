@@ -12,7 +12,7 @@ function wanted<A>(what: str) -> A?
 function main()
     s: str? = wanted(what: "text")
     print(s.is_err())
-    cell: str? @ ok("start")
+    cell: str? @= ok("start")
     print(cell.must())
     cell @ wanted(what: "more text")
     print(cell.is_err())

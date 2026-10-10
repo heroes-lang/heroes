@@ -220,7 +220,7 @@ function index_step(a: ast.Ast, s: source.Source, id: i64) -> str
 function plain_decimal(text: str) -> bool
     if text.len() == 0
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] < '0' || text[i] > '9'
@@ -248,8 +248,8 @@ function label_of(s: source.Source, arg: ast.Arg) -> str?
 function refuse_aliased_places(@r: state.Resolver, a: ast.Ast, s: source.Source, given: [ast.Arg])
     if marked(given) < 2
         return
-    kept: aliased_places.Places @ aliased_places.new_places()
-    labels: [str?] @ []
+    kept: aliased_places.Places @= aliased_places.new_places()
+    labels: [str?] @= []
 
     for arg in given
         if !arg.mutable
@@ -271,7 +271,7 @@ function refuse_aliased_places(@r: state.Resolver, a: ast.Ast, s: source.Source,
 
 # How many arguments carry an `@`: two at least before any pair can alias.
 function marked(given: [ast.Arg]) -> i64
-    count: i64 @ 0
+    count: i64 @= 0
 
     for arg in given
         if arg.mutable
@@ -285,7 +285,7 @@ function marked(given: [ast.Arg]) -> i64
 # **The repair is a `guess`, and the reason is the rule's own** (panel
 # 110). A fix that passed a copy would have to CHOOSE which of the two
 # answers the author meant, and that divergence is the whole reason the
-# form is refused. It is not a theory: `n: i64 @ 0` / `t: i64 @ n` /
+# form is refused. It is not a theory: `n: i64 @= 0` / `t: i64 @= n` /
 # `shift(a: @n, b: @t)` was built and run, and it prints **1** where the
 # program prints 10 and the reference reading gives 11 — a THIRD answer.
 # CLAUDE.md §9's harness asks an applied `certain` fix to compile, not to
@@ -294,11 +294,11 @@ function marked(given: [ast.Arg]) -> i64
 # ALTERNATIVES in this tree (`number.hero:105-108` ships two `guess`
 # spellings of one literal), and two readings make two guesses.
 function aliased_mutable_arguments(name: str, first: str?, span: token.Span) -> diag.Diagnostic
-    other: str @ "an earlier `@` argument of this call"
+    other: str @= "an earlier `@` argument of this call"
 
     if !first.is_err()
         other @ "this call's `" + first.must() + "` argument"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "aliased_mutable_arguments",
         message: "`" + name + "` overlaps " + other + " — two `@` arguments may not reach one value: each of them copies out, and nothing says which copy-out lands last",
         span: span

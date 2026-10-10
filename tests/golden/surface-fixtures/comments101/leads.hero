@@ -11,7 +11,7 @@ function h(@  # after the parameter's @
     xs @ xs.push(1)
 
 function f() -> i64
-    ys: [i64] @ []
+    ys: [i64] @= []
     h(xs:  # between the name and the @
         @ys)
     return ys.len()

@@ -21,7 +21,7 @@ function step(@xs: [i64]) -> [i64]
 
 function main()
     _ = compute(5)  #~ discarded_value
-    xs: [i64] @ []
+    xs: [i64] @= []
     _ = step(@xs)  #~ discarded_value
     c = true
 
@@ -29,7 +29,7 @@ function main()
         _ = compute(1)  #~ discarded_value
     else
         _ = compute(2)  #~ discarded_value
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < 2
         i @ i + 1

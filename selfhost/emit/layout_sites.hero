@@ -46,7 +46,7 @@ constant SHARED: str
 # and flexible members, which C gives no size to ask about: a declared one
 # is refused on its own line before any construction is judged.
 function site_lines(site: extern_union.Site, t: str, hero_name: str, order: [str], group_of: {str: i64}, unsized: {str: bool}, s: source.Source) -> [str]
-    named: {i64: bool} @ {}
+    named: {i64: bool} @= {}
 
     for k in site.given
         named[k] @ true
@@ -54,13 +54,13 @@ function site_lines(site: extern_union.Site, t: str, hero_name: str, order: [str
     at = source.source_line(s, site.span.start)
     place = c_text.line_directive(at: at.line, file: at.file) + "\n"
     is_union = "__builtin_classify_type(*(" + t + " *)0) == 13"
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for m in order
         # Not asked where the program said the rest is zero (panel 194).
         if named[index].is_err() && unsized[m].is_err() && !site.rest
-            terms: [str] @ [layout_compare.size_of(t: t, m: m) + " == 0"]
+            terms: [str] @= [layout_compare.size_of(t: t, m: m) + " == 0"]
 
             for k in site.given
                 if unsized[order[k]].is_err()
@@ -71,10 +71,10 @@ function site_lines(site: extern_union.Site, t: str, hero_name: str, order: [str
             )
         index @ index + 1
 
-    k1: i64 @ 0
+    k1: i64 @= 0
 
     while k1 < site.given.len()
-        k2: i64 @ k1 + 1
+        k2: i64 @= k1 + 1
 
         while k2 < site.given.len()
             a = order[site.given[k1]]
@@ -114,7 +114,7 @@ test "a construction asks for each field it leaves out, and for two it names in 
     u = extern_union.used(low.program, c, parsed.decls)
     assert u.sites.len() == 2
     order: [str] = ["kind", "i", "f", "x"]
-    groups: {str: i64} @ {}
+    groups: {str: i64} @= {}
     groups["kind"] @ -1
     groups["i"] @ 1
     groups["f"] @ 1

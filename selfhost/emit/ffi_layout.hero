@@ -30,8 +30,8 @@ use checker
 function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str) -> diag.Diagnostic?
     if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED)
         return fail(code: "none", msg: "not an assertion failure")
-    kind: str @ ""
-    rest: str @ ""
+    kind: str @= ""
+    rest: str @= ""
 
     for marker in [layout_check.MISSING, layout_check.MISSING_BITS, layout_check.BITFIELD, layout_compare.OVERLAP, layout_compare.NARROW, layout_compare.BESIDE_BITS, layout_compare.OVERLAP_IN, layout_compare.NARROW_IN]
         tail = ffi_lookup.after(text: line, marker: marker + " ")
@@ -42,10 +42,10 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
 
     if kind.len() == 0
         return fail(code: "none", msg: "not a layout assertion")
-    parts: [str] @ []
+    parts: [str] @= []
 
     for word in ffi_lookup.words(text: rest)
-        bare: [str] @ []
+        bare: [str] @= []
 
         for ch in word.chars()
             if ch != "\""
@@ -68,7 +68,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     span = found.must().span
 
     if kind == layout_check.MISSING
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_incomplete_record",
             message: "`" + t + "` does not name `" + m + "`, and `" + h + "` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero",
             span: span
@@ -79,7 +79,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
         return ok(d)
 
     if kind == layout_check.MISSING_BITS
-        left: diag.Diagnostic @ diag.new_diagnostic(
+        left: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_incomplete_record",
             message: "`" + t + "` does not name `" + m + "`, and `" + h + "` says the struct has it — `" + m + "` is a bit-field, which no field can bind, so a `record` over this struct leaves it out by being `partial`",
             span: span
@@ -90,7 +90,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
         return ok(left)
 
     if kind == layout_check.BITFIELD
-        bits: diag.Diagnostic @ diag.new_diagnostic(
+        bits: diag.Diagnostic @= diag.new_diagnostic(
             code: "ffi_field_type",
             message: "`" + m + "` is a bit-field of `" + t + "` in `" + h + "`: C gives a bit-field no address and no size of its own, so no field can bind it",
             span: ffi_record.field_span(s, decls, type_name: t, field: m, otherwise: span)
@@ -100,7 +100,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
         )
         return ok(bits)
     other = parts[2]
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "ffi_union_field", message: "", span: span)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_union_field", message: "", span: span)
     held = "`" + t + "` holds `" + m + "` in a union of `" + h + "`"
     wrong = ", so comparing `" + t + "` values or using one as a map key can call two different values equal"
     partly = ", so comparing `" + t + "` values or using one as a map key would compare only part of its bytes"
@@ -114,7 +114,7 @@ function layout_record(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line:
     else if kind == layout_compare.NARROW_IN
         d.message @ "`" + t + "` holds `" + m + "` in `" + other + "`, a union of `" + h + "`, and `" + m + "` is narrower than `" + other + "`" + partly
     else if kind == layout_compare.NARROW
-        beside: str @ " (`" + other + "` is in it too)"
+        beside: str @= " (`" + other + "` is in it too)"
 
         # A union of one member wider than the member is `aligned` or padded,
         # and has no other member to name.
@@ -164,7 +164,7 @@ function macro_field(s: source.Source, decls: [ast.Decl], line: str, macros: {st
                     if here && !macros[name].is_err() && !own
                         h = emit_externs.unquoted(s, span: rec.header.must())
                         t = source.span_text(s, decl.name)
-                        d: diag.Diagnostic @ diag.new_diagnostic(
+                        d: diag.Diagnostic @= diag.new_diagnostic(
                             code: "ffi_unknown_field",
                             message: "`" + h + "` defines `" + name + "` as a macro, and the type `" + t + "` binds has no member it names: C reads the macro's text where the field's name stands",
                             span: field.name
@@ -222,7 +222,7 @@ test "a field named after a header macro that names no member is told on the fie
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
     c = checker.check(parsed.tree, out, s, parsed.decls)
     assert c.diagnostics.len() == 0
-    macros: {str: bool} @ {}
+    macros: {str: bool} @= {}
     macros["size"] @ true
     d = macro_field(s, parsed.decls, line: "t.hero:4:52: error: expected identifier", macros: macros)
     assert d.must().code == "ffi_unknown_field"

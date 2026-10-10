@@ -50,7 +50,7 @@ use source
 # reserved that name (`resolve/builtin_names.hero`).
 function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], names: ctype.Names, f: containers.Function, run: ir.Run, arguments: [str], into: str)
     given = containers.args_of(f, run)
-    source_value: i64 @ 0 - 1
+    source_value: i64 @= 0 - 1
 
     if given.len() > 0
         match given[0]
@@ -71,8 +71,8 @@ function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
         writer.line(@w, text: "    hero_unreachable(); /* the checker never interned str? */")
         return
     union_name = ctype.option_of(names, ty: option_id.must())
-    fixed_length: i64 @ 0 - 1
-    is_array: bool @ false
+    fixed_length: i64 @= 0 - 1
+    is_array: bool @= false
 
     match table.get(c.types, operand_ty)
         .fixed x                                                  => fixed_length @ x.length
@@ -84,7 +84,7 @@ function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
     if fixed_length < 0 && !is_array
         writer.line(@w, text: "    hero_unreachable(); /* validated_bytes over neither a fixed run nor an array */")
         return
-    call: str @ "hero_str_try_from_array(" + arguments[0] + ", &hero_vb_status)"
+    call: str @= "hero_str_try_from_array(" + arguments[0] + ", &hero_vb_status)"
 
     if fixed_length >= 0
         # **The operand is rendered AT THE USE SITE and never read from a

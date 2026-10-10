@@ -24,6 +24,6 @@ extern "fixedbugs-a-fixed-array-element-is-written-in-place.h"
     function nums_sum(n: Nums) -> i64
 
 function main()
-    n: Nums @ Nums(a: [1, 2, 3, 4])
+    n: Nums @= Nums(a: [1, 2, 3, 4])
     n.a[0] @ 9
     print("sum: ", nums_sum(n: n))

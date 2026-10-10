@@ -85,7 +85,7 @@ function blank_line(@f: Fmt)
 
 function trim_end(text: str) -> str
     cs = text.chars()
-    end: i64 @ cs.len()
+    end: i64 @= cs.len()
 
     while end > 0 && (cs[end - 1] == " " || cs[end - 1] == "\t")
         end @ end - 1
@@ -101,7 +101,7 @@ function trim_end(text: str) -> str
 # remark (the regression of defect 096's first repair). It stops at the
 # first blank line.
 function blank_between(s: source.Source, above: i64, below: i64) -> bool
-    line: i64 @ above + 1
+    line: i64 @= above + 1
 
     while line < below
         if line_is_blank(s, line: line)
@@ -117,7 +117,7 @@ function blank_between(s: source.Source, above: i64, below: i64) -> bool
 # `g7_doc_blank_under_head`). The blank lines above that head are the
 # author's, and stay.
 function gap(f: Fmt, s: source.Source, above: i64, below: i64) -> bool
-    stop: i64 @ below
+    stop: i64 @= below
 
     if f.dropped > above && f.dropped < below
         stop @ f.dropped
@@ -131,8 +131,8 @@ function line_is_blank(s: source.Source, line: i64) -> bool
 function first_mark(s: source.Source, line: i64) -> u8
     if line < 1 || line > s.line_starts.len()
         return 'x'
-    i: i64 @ s.line_starts[line - 1]
-    stop: i64 @ s.text.len()
+    i: i64 @= s.line_starts[line - 1]
+    stop: i64 @= s.text.len()
 
     if line < s.line_starts.len()
         stop @ s.line_starts[line]
@@ -156,7 +156,7 @@ function opener_line(f: Fmt, first: i64) -> i64
 # Does the comment at `offset` open its line? One with code before it on
 # its line is that code's trailing note, and never a block's last line.
 function opens_its_line(s: source.Source, offset: i64) -> bool
-    i: i64 @ s.line_starts[source.line_of(s, offset) - 1]
+    i: i64 @= s.line_starts[source.line_of(s, offset) - 1]
 
     while i < offset
         if s.text[i] != ' ' && s.text[i] != '\t'
@@ -218,7 +218,7 @@ function comments_before(@f: Fmt, s: source.Source, comments: [token.Span], line
 # gives the doc above the `extern` and never a comment under it.
 function comments_above(@f: Fmt, s: source.Source, comments: [token.Span], line: i64, indent: i64, doc: [token.Span], takes_docs: bool)
     unread = f.next_comment
-    bound: i64 @ line
+    bound: i64 @= line
 
     if doc.len() > 0
         bound @ source.line_of(s, doc[0].start)
@@ -270,11 +270,11 @@ function block_end(@f: Fmt, s: source.Source, comments: [token.Span], indent: i6
 # member above: the comments inside that member are before any doc of this
 # one and on no head line of it, so they answer nothing here.
 function keeps_head(s: source.Source, comments: [token.Span], from: i64, doc: [token.Span], head: i64, start: i64) -> bool
-    after: i64 @ start
+    after: i64 @= start
 
     if doc.len() > 0
         after @ doc[doc.len() - 1].end
-    i: i64 @ from
+    i: i64 @= from
 
     while i < comments.len() && comments[i].start < start
         if comments[i].start >= after || source.line_of(s, comments[i].start) == head
@@ -340,7 +340,7 @@ test "a blank line is one the source has, never a line fmt dropped"
 test "the line that opens a block is the logical line above its first statement"
     text = "function f(c: bool)\n    if c\n        print(1)\n    # above\n    else  # trailing\n        # under\n\n        print(2)\n"
     s = source.new_source(name: "t.hero", text: text)
-    f: Fmt @ blank_page()
+    f: Fmt @= blank_page()
     f.lines @ owners.shape(s, lexed: parse.parse(text).tokens, ignored: [], end: text.len())
     assert opener_line(f, first: 8) == 5
     assert first_mark(s, line: 4) == '#'
@@ -353,8 +353,8 @@ test "a remark keeps its blank line where the re-parse would read a doc, and a d
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    f: Fmt @ Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
-    doc: [token.Span] @ []
+    f: Fmt @= Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
+    doc: [token.Span] @= []
 
     match parsed.decls[0].kind
         .record_decl rec                                             => doc @ rec.fields[1].doc
@@ -365,7 +365,7 @@ test "a remark keeps its blank line where the re-parse would read a doc, and a d
     assert whole(f) == "    # a remark at column 0\n\n    # the doc of y\n"
 
     # Under a head the first member takes no doc, so a remark needs no blank.
-    g: Fmt @ Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
+    g: Fmt @= Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: owners.none())
     none: [token.Span] = []
     comments_above(@g, s, comments: parsed.comments, line: 4, indent: 4, doc: none, takes_docs: false)
     assert whole(g) == "    # a remark at column 0\n"
@@ -383,7 +383,7 @@ test "a comment after a block's last item is that block's where owners gives it 
     assert lines.owner[1] == 1
     assert lines.owner[2] == 0
     assert lines.owner[3] == owners.TRAILS
-    f: Fmt @ Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: lines)
+    f: Fmt @= Fmt(printed: sheet.empty(), next_comment: 0, last_line: 2, dropped: 0, moved: 0, lines: lines)
     block_end(@f, s, parsed.comments, indent: 8)
     assert whole(f) == ""
     block_end(@f, s, parsed.comments, indent: 4)
@@ -393,10 +393,10 @@ test "a comment after a block's last item is that block's where owners gives it 
 
     # Nothing is a block's once code stands between, and a trailing note
     # is never a block's.
-    g: Fmt @ Fmt(printed: sheet.empty(), next_comment: 2, last_line: 1, dropped: 0, moved: 0, lines: lines)
+    g: Fmt @= Fmt(printed: sheet.empty(), next_comment: 2, last_line: 1, dropped: 0, moved: 0, lines: lines)
     block_end(@g, s, parsed.comments, indent: 0)
     assert whole(g) == ""
-    h: Fmt @ Fmt(printed: sheet.empty(), next_comment: 3, last_line: 7, dropped: 0, moved: 0, lines: lines)
+    h: Fmt @= Fmt(printed: sheet.empty(), next_comment: 3, last_line: 7, dropped: 0, moved: 0, lines: lines)
     block_end(@h, s, parsed.comments, indent: 0)
     assert whole(h) == ""
     trailed: Fmt = Fmt(printed: sheet.empty(), next_comment: 4, last_line: 8, dropped: 0, moved: 0, lines: lines)
@@ -409,7 +409,7 @@ test "a comment after a block's last item is that block's where owners gives it 
 test "a blank line under a head the merge dropped is that head's, and one above it stays"
     text = "extern \"x.h\"\n    record Ob tag ob\n\n# doc\nextern \"x.h\"\n\n    record Pool tag pool\n"
     s = source.new_source(name: "t.hero", text: text)
-    f: Fmt @ blank_page()
+    f: Fmt @= blank_page()
     f.dropped @ 5
     assert !gap(f, s, above: 4, below: 7)
     assert gap(f, s, above: 2, below: 4)
@@ -425,11 +425,11 @@ test "a comment printed after code written after it is recorded as moved, and on
     parsed = parse.parse(text)
     assert parsed.diagnostics.len() == 0
     s = source.new_source(name: "t.hero", text: text)
-    f: Fmt @ Fmt(printed: sheet.empty(), next_comment: 0, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
+    f: Fmt @= Fmt(printed: sheet.empty(), next_comment: 0, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
     comments_before(@f, s, parsed.comments, line: 6, indent: 4)
     assert f.moved == 3
     assert whole(f) == "    # inside\n    # after\n"
-    g: Fmt @ Fmt(printed: sheet.empty(), next_comment: 1, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
+    g: Fmt @= Fmt(printed: sheet.empty(), next_comment: 1, last_line: 4, dropped: 0, moved: 0, lines: owners.none())
     comments_before(@g, s, parsed.comments, line: 6, indent: 4)
     assert g.moved == 0
 
@@ -437,7 +437,7 @@ test "a comment printed after code written after it is recorded as moved, and on
     trailed = "function f(c: bool)\n    if c  # note\n        print(1)\n"
     pt = parse.parse(trailed)
     st = source.new_source(name: "t.hero", text: trailed)
-    h: Fmt @ blank_page()
+    h: Fmt @= blank_page()
     put_line(@h, indent: 4, text: "if c")
     opened(@h, st, pt.comments, line: 2)
     assert whole(h) == "    if c  # note\n"

@@ -89,7 +89,7 @@ function handed_back_param(@t: table.Types, param: ast.Param, declared: i64) -> 
 # One parameter, because the release hands the freer exactly one thing — the
 # string — and panel 109's condition 1 names the arity as what is verified.
 function mark_refusals(a: ast.Ast, s: source.Source, decls: [ast.Decl], at: i64) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
 
     match decls[at].kind
         .function_decl fd =>
@@ -172,7 +172,7 @@ function wrong_owned_type(a: ast.Ast, s: source.Source, ty: i64, subject: str, m
 
     if written == "cstr"
         return fail(code: "none", msg: "the mark is on the type it is for")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "owned_needs_cstr",
         message: "`owned` marks a `cstr`, and " + subject + " is declared `" + written + "`",
         span: mark
@@ -207,7 +207,7 @@ function wrong_owned_type(a: ast.Ast, s: source.Source, ty: i64, subject: str, m
 function owned_needs_a_cell(s: source.Source, param: ast.Param, mark: token.Span) -> diag.Diagnostic?
     if param.mutable
         return fail(code: "none", msg: "the mark is on a cell")
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "owned_needs_cstr",
         message: "`owned` marks a cell C writes THROUGH, and `" + source.span_text(s, param.name) + "` is passed by value",
         span: mark
@@ -228,8 +228,8 @@ function owned_needs_a_cell(s: source.Source, param: ast.Param, mark: token.Span
 function refusal_for_mark(s: source.Source, decls: [ast.Decl], at: i64, mark: token.Span) -> diag.Diagnostic?
     name = source.span_text(s, mark)
     module = source.component_at(s, decls[at].span.start)
-    heroes_function: bool @ false
-    arity: i64? @ fail(code: "absent", msg: "no extern declares it")
+    heroes_function: bool @= false
+    arity: i64? @= fail(code: "absent", msg: "no extern declares it")
 
     for one in decls
         match one.kind
@@ -242,7 +242,7 @@ function refusal_for_mark(s: source.Source, decls: [ast.Decl], at: i64, mark: to
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
     if arity.is_err()
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "unknown_freer",
             message: "`" + name + "` frees nothing here: no `extern` in this module declares it, so `owned " + name + "` names a function the compiler cannot call",
             span: mark
@@ -261,7 +261,7 @@ function refusal_for_mark(s: source.Source, decls: [ast.Decl], at: i64, mark: to
         return ok(d)
 
     if arity.must() != 1
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "freer_arity",
             message: "`" + name + "` takes " + arity.must().to_str() + " parameters, and a freer for an `owned` string is handed exactly one: the string",
             span: mark
@@ -276,7 +276,7 @@ function refusal_for_mark(s: source.Source, decls: [ast.Decl], at: i64, mark: to
 # The diagnostic, when a call names one.
 function refusal(s: source.Source, name: str, mark: token.Span, span: token.Span) -> diag.Diagnostic
     at_line = source.elsewhere(s, here: span.start, there: mark.start)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "owned_freer_called",
         message: "`" + name + "` is what frees an `owned` string in this program, so the compiler already calls it — calling it here frees the string twice",
         span: span

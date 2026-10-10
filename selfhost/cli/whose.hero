@@ -70,7 +70,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
 
     # Asked only now, of a round clang refused (defect 152), unless the rounds
     # asked it already.
-    answer: ffi_asked.Asked @ ffi_asked.nothing()
+    answer: ffi_asked.Asked @= ffi_asked.nothing()
 
     if asked.is_err()
         answer @ header_ask.ask(t, art, s, struct_tags: struct_tags, asking: asking)
@@ -80,7 +80,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
     # A name told absent from a header that declares it read alone is retold
     # with the move of a group that reads it so (panel 204's R3,
     # `cli/name_order.hero`).
-    theirs: [diag.Diagnostic] @ []
+    theirs: [diag.Diagnostic] @= []
 
     for d in explained(message, art, s, answered, struct_tags: struct_tags, asked: answer)
         theirs @ theirs.push(name_order.unknown(d, s, art.decls, t, under: words, unit_headers: unit_headers))
@@ -160,7 +160,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
     if macro.len() > 0
         _ = compile.stage(macro, s).is_err()
         return true
-    refusal: [diag.Diagnostic] @ header_refused.refused(
+    refusal: [diag.Diagnostic] @= header_refused.refused(
         stderr: message,
         s: s,
         decls: art.decls,
@@ -193,7 +193,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
 
     # What the program needs instead of a repair, where clang says an order
     # of its groups or a header before it compiles (panel 204's R3).
-    told: [diag.Diagnostic] @ []
+    told: [diag.Diagnostic] @= []
 
     for d in refusal
         told @ told.push(header_order.refused(d, s, art.decls, t, under: under, unit_headers: unit_headers))

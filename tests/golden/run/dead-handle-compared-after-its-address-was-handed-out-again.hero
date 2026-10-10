@@ -19,7 +19,7 @@ function closed(@x: H)
     f_close(x: x)
 
 function main()
-    a: H @ f_open()
+    a: H @= f_open()
     closed(@a)
     b = f_open()
     print(a == b)

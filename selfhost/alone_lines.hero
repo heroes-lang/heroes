@@ -44,7 +44,7 @@ function offer(@l: state.LexState, d: diag.Diagnostic, text: str, at: i64, space
 # -1: their line laid out deeper than a statement that opens no block, at a
 # plain margin.
 function broken_from(l: state.LexState, text: str, at: i64, spaces: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
 
     while i >= 0 && token.can_only_go_on(l.tokens[i].kind)
         i @ i - 1
@@ -80,20 +80,20 @@ function operand_below(text: str, at: i64, spaces: i64, margin: i64) -> bool
 function join_around(@l: state.LexState, d: diag.Diagnostic, text: str, first: i64, at: i64) -> bool
     run = token.Span(start: l.tokens[first].span.start, end: l.tokens[at].span.end)
     written = text.slice(from: run.start, to: run.end)
-    told: diag.Diagnostic @ d
+    told: diag.Diagnostic @= d
     told.message @ "a line outside brackets ends its statement, and `" + written + "` alone on its line can neither end one nor begin one: it goes on with the line above and with the line below; write the statement on one line, or break it inside parentheses"
     told.span @ run
     empty: [diag.Fix] = []
     told.fixes @ empty
     head = rejoined(@l, text, first: first)
-    above: i64 @ head - 1
+    above: i64 @= head - 1
 
     while above >= 0 && l.tokens[above].kind == .comment
         above @ above - 1
 
     # One operator, and no comment it would carry into the statement.
     if first == at && above == head - 1 && l.tokens.len() == head + 1 && l.held.len() == 0
-        certainty: diag.Certainty @ .certain
+        certainty: diag.Certainty @= .certain
 
         if next_line.stands_alone(text, from: l.pos)
             certainty @ .guess
@@ -112,14 +112,14 @@ function join_around(@l: state.LexState, d: diag.Diagnostic, text: str, first: i
 # operator stands at now.
 function rejoined(@l: state.LexState, text: str, first: i64) -> i64
     from = sign_above.taken_back(@l, text, at: first)
-    term: i64 @ from - 1
+    term: i64 @= from - 1
 
     while term >= 0 && l.tokens[term].kind == .comment
         term @ term - 1
 
     if term < 0 || l.tokens[term].kind != .terminator
         term @ from
-    kept: [token.Token] @ l.tokens.slice(from: 0, to: term)
+    kept: [token.Token] @= l.tokens.slice(from: 0, to: term)
 
     for t in l.tokens.slice(from: term + 1, to: from)
         kept @ kept.push(t)

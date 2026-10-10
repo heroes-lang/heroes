@@ -177,7 +177,7 @@ function new_types() -> Types
     runs: {str: i64} = {}
     labels: [str] = []
     label_runs: {str: i64} = {}
-    t: Types @ Types(
+    t: Types @= Types(
         nodes: nodes,
         poison: poison,
         params: params,
@@ -281,8 +281,8 @@ function len_of(t: Types) -> i64
 
 # The parameter NAMES of a function type, empty where it carries none.
 function labels_of(t: Types, labels: Params) -> [str]
-    out: [str] @ []
-    i: i64 @ labels.start
+    out: [str] @= []
+    i: i64 @= labels.start
 
     while i < labels.start + labels.len
         out @ out.push(t.labels[i])
@@ -291,8 +291,8 @@ function labels_of(t: Types, labels: Params) -> [str]
     return out
 
 function params_of(t: Types, params: Params) -> [i64]
-    out: [i64] @ []
-    i: i64 @ params.start
+    out: [i64] @= []
+    i: i64 @= params.start
 
     while i < params.start + params.len
         out @ out.push(t.params[i])
@@ -309,7 +309,7 @@ function contained(t: Types, id: i64) -> [i64]
         .fallible o => [o.payload]
         .map m      => [m.key, m.value]
         .function_ty f =>
-            out: [i64] @ params_of(t, f.params)
+            out: [i64] @= params_of(t, f.params)
             out @ out.push(f.result)
             out
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr                 => []
@@ -363,7 +363,7 @@ function holds_error(t: Types, ty: Ty) -> bool
         .fallible o => t.poison[o.payload]
         .map m      => t.poison[m.key] || t.poison[m.value]
         .function_ty f =>
-            bad: bool @ t.poison[f.result]
+            bad: bool @= t.poison[f.result]
 
             for p in params_of(t, f.params)
                 if t.poison[p]
@@ -397,7 +397,7 @@ test "the prelude ids match their accessors, in the fixed order"
     assert cstr_ty(t) == 7
 
 test "interning is idempotent and equality of ids is equality of types"
-    t: Types @ new_types()
+    t: Types @= new_types()
     a = intern(@t, .array(element: int_ty_id(t)))
     b = intern(@t, .array(element: int_ty_id(t)))
     assert a == b
@@ -411,7 +411,7 @@ test "interning is idempotent and equality of ids is equality of types"
     assert t.nodes.len() == before
 
 test "a function type canonicalises its parameter run"
-    t: Types @ new_types()
+    t: Types @= new_types()
     one: [i64] = [int_ty_id(t), str_ty(t)]
     two: [i64] = [int_ty_id(t), str_ty(t)]
     none: [str] = []
@@ -436,7 +436,7 @@ test "a function type canonicalises its parameter run"
 # name set are two types, which is what stops a relay assignment from
 # laundering a swap the call-site rule exists to catch.
 test "the parameter names are part of a function type's identity"
-    t: Types @ new_types()
+    t: Types @= new_types()
     both: [i64] = [int_ty_id(t), int_ty_id(t)]
     forward: [str] = ["from", "to"]
     backward: [str] = ["to", "from"]
@@ -456,7 +456,7 @@ test "the parameter names are part of a function type's identity"
         .failure | .generic | .error                              => assert false
 
 test "contained walks one level down, and poison climbs back up"
-    t: Types @ new_types()
+    t: Types @= new_types()
     inner = intern(@t, .fallible(payload: int_ty_id(t)))
     outer = intern(@t, .array(element: inner))
     assert contained(t, outer).len() == 1
@@ -478,7 +478,7 @@ function walked_poison(t: Types, id: i64) -> bool
         .fallible o => walked_poison(t, o.payload)
         .map m      => walked_poison(t, m.key) || walked_poison(t, m.value)
         .function_ty f =>
-            bad: bool @ walked_poison(t, f.result)
+            bad: bool @= walked_poison(t, f.result)
 
             for p in params_of(t, f.params)
                 if walked_poison(t, p)
@@ -493,10 +493,10 @@ function walked_poison(t: Types, id: i64) -> bool
 # not, at the bottom of a type forty deep and in a function type's parameter
 # and result.
 test "each node's poison is written once, beside it, and agrees with the walk"
-    t: Types @ new_types()
-    clean: i64 @ int_ty_id(t)
-    bad: i64 @ error_ty(t)
-    depth: i64 @ 0
+    t: Types @= new_types()
+    clean: i64 @= int_ty_id(t)
+    bad: i64 @= error_ty(t)
+    depth: i64 @= 0
 
     while depth < 40
         clean @ intern(@t, .array(element: clean))
@@ -537,7 +537,7 @@ test "each node's poison is written once, beside it, and agrees with the walk"
     assert again == held
     assert t.poison.len() == before
     assert t.poison.len() == t.nodes.len()
-    id: i64 @ 0
+    id: i64 @= 0
 
     while id < t.nodes.len()
         assert poisoned(t, id) == walked_poison(t, id)

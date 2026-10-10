@@ -131,10 +131,10 @@ function unit_words(site: Site, headers: [str]) -> [str]
 # every build.
 function per_module(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: Site, planned: probing.Planned, struct_tags: {str: bool}, lent: Lent, @told: {str: bool}) -> Round
     root = module_names.module_of(s.name)
-    objects: [str] @ [site.object]
-    stopped: ()? @ ok()
-    stopped_in: [str] @ []
-    refusals: [str] @ []
+    objects: [str] @= [site.object]
+    stopped: ()? @= ok()
+    stopped_in: [str] @= []
+    refusals: [str] @= []
 
     # The whole-program tables, built once for the whole BUILD rather than
     # once per TU (`cli/probing.hero`); a round renames only what it learned,
@@ -157,7 +157,7 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
     # almost all of those headers — so the map is threaded through the loop
     # rather than rebuilt per unit. It starts from the probes' own digests
     # (defect 416), the same build's answers about the same headers.
-    memo: {str: str} @ lent.digests
+    memo: {str: str} @= lent.digests
 
     for plan in planned.plans
         component = plan.module

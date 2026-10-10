@@ -209,7 +209,7 @@ function spellings() -> [Spelling]
         Spelling(file: answer, heard: "\"\\n  " + SAID + "\"")
         Spelling(file: answer, heard: "\"\\n  " + NO_REASON + "\"")
         Spelling(file: answer, heard: "\"\\n  " + NOT_INSTALLED_WAY + "\"")
-        Spelling(file: answer, heard: "way: str @ \"" + INSTALLED_WAY + "\"")
+        Spelling(file: answer, heard: "way: str @= \"" + INSTALLED_WAY + "\"")
         Spelling(file: answer, heard: "way @ \"" + SILENT_WAY + "\"")
         Spelling(file: "selfhost/diag_render.hero", heard: "\"" + NOTE + "\"")
         Spelling(file: "selfhost/diag_render.hero", heard: "\"[\" + d.code + \"]: \"")
@@ -218,9 +218,9 @@ function spellings() -> [Spelling]
 # `text` as a Heroes string literal spells it between its quotes: a backslash,
 # a quote and a line end each escaped, as the compiler's source writes them.
 function as_written(text: str) -> str
-    pieces: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    pieces: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         byte = text[at]
@@ -285,7 +285,7 @@ function machine_lacks_among(scratch: str, path: str, modules: [str], expected: 
 
     if search.is_err()
         return fail(code: "unasked", msg: message_of_words(search))
-    lacking: [str] @ []
+    lacking: [str] @= []
 
     for one in named
         if !needs(bound: bound, one: one)
@@ -308,16 +308,16 @@ function machine_lacks_among(scratch: str, path: str, modules: [str], expected: 
 # it is told: the head of the brief form's line, or the `at` line under §4.17's
 # headline.
 function absences(text: str) -> [Absence]
-    found: [Absence] @ []
+    found: [Absence] @= []
     rows = strings.lines(text)
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < rows.len()
         one = absence_in(rows[at])
 
         if !one.is_err()
-            placed: Absence @ one.must()
-            here: Place @ place_of(head_of(rows[at]))
+            placed: Absence @= one.must()
+            here: Place @= place_of(head_of(rows[at]))
 
             if here.line == 0 && at + 1 < rows.len() && strings.starts_with(text: rows[at + 1], prefix: "  at ")
                 here @ place_of(strings.without_prefix(text: rows[at + 1], prefix: "  at "))
@@ -402,11 +402,11 @@ function between_last(text: str, open: str, close: str) -> str?
 function last_index_of(text: str, needle: str) -> i64?
     if needle.len() == 0 || needle.len() > text.len()
         return fail(code: "absent", msg: "`" + needle + "` is not in the text")
-    start: i64 @ text.len() - needle.len()
+    start: i64 @= text.len() - needle.len()
 
     while start >= 0
-        i: i64 @ 0
-        hit: bool @ true
+        i: i64 @= 0
+        hit: bool @= true
 
         while i < needle.len()
             if text[start + i] != needle[i]
@@ -461,7 +461,7 @@ record Source
 # the compiler blames inside `path`'s directory, each once. One it cannot read
 # fails the whole question, so the case is judged rather than excused.
 function read_sources(path: str, modules: [str], named: [Absence]) -> [Source]?
-    wanted: [str] @ [path]
+    wanted: [str] @= [path]
 
     for one in modules
         if !listed(names: wanted, name: one)
@@ -471,7 +471,7 @@ function read_sources(path: str, modules: [str], named: [Absence]) -> [Source]?
         if one.file != "" && inside(dir: directory_of(path), file: one.file) && !listed(names: wanted, name: one.file)
             wanted @ wanted.push(one.file)
 
-    out: [Source] @ []
+    out: [Source] @= []
 
     for one in wanted
         text = read_file(one)
@@ -505,7 +505,7 @@ function message_of_sources(got: [Source]?) -> str
 
 # Every source's marks, as `<file>:<line>:<code>`.
 function marks_of(sources: [Source]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in sources
         for mark in mark_readers.claimed_by(one.text)
@@ -515,8 +515,8 @@ function marks_of(sources: [Source]) -> [str]
 
 # What the sources bind together.
 function binds_of(sources: [Source]) -> Binds
-    headers: [str] @ []
-    packages: [str] @ []
+    headers: [str] @= []
+    packages: [str] @= []
 
     for one in sources
         bound = binds(one.text)
@@ -551,8 +551,8 @@ constant PACKAGE_WORD: str
     " package "
 
 function binds(source: str) -> Binds
-    headers: [str] @ []
-    packages: [str] @ []
+    headers: [str] @= []
+    packages: [str] @= []
 
     for row in strings.lines(source)
         if !strings.starts_with(text: row, prefix: "extern ")
@@ -585,9 +585,9 @@ record Quoted
 function quoted(text: str) -> Quoted?
     if text.len() == 0 || text[0] != 34
         return fail(code: "none", msg: "no string here")
-    parts: [str] @ []
-    start: i64 @ 1
-    at: i64 @ 1
+    parts: [str] @= []
+    start: i64 @= 1
+    at: i64 @= 1
 
     while at < text.len()
         if text[at] == 92 && at + 1 < text.len() && (text[at + 1] == 34 || text[at + 1] == 92)
@@ -628,8 +628,8 @@ function listed(names: [str], name: str) -> bool
 # (`selfhost/cli/flags.hero`, read 2026-10-04: no `-isystem`, no `--target`).
 # `hint` is `HEROES_RUNTIME` as `runtime_hint` reads it.
 function searched(scratch: str, dir: str, bound: Binds, hint: str?) -> [str]?
-    runtime: str @ hint?
-    out: [str] @ []
+    runtime: str @= hint?
+    out: [str] @= []
 
     for package in bound.packages
         ran = shell.attempted(scratch: scratch, program: "pkg-config", words: ["pkg-config", "--cflags", "--", package])
@@ -715,7 +715,7 @@ function asked(scratch: str, search: [str], one: Absence) -> str?
         return ok("the package `" + one.name + "`, which `pkg-config` does not know here")
     probe = scratch + "/absence-probe.c"
     write_file(path: probe, text: "#include <" + one.name + ">\n")?
-    words: [str] @ ["clang", "-E", "-x", "c"]
+    words: [str] @= ["clang", "-E", "-x", "c"]
 
     for word in search
         words @ words.push(word)
@@ -777,8 +777,8 @@ function message_of(got: str?) -> str
 # The directory a case sits in, which clang searches as the compiler does: an
 # `extern "mylib.h"` finds a header beside its `.hero` file.
 function directory_of(path: str) -> str
-    cut: i64 @ -1
-    i: i64 @ 0
+    cut: i64 @= -1
+    i: i64 @= 0
 
     while i < path.len()
         if path[i] == 47
@@ -829,11 +829,11 @@ function closes_quotation(row: str) -> bool
 # expectation as written: the case is then judged on the file's own bytes.
 function quoted_here(scratch: str, expected: str) -> str
     rows = strings.split_on(text: expected, byte: 10)
-    out: [str] @ []
-    package: str @ ""
-    kind: str @ ""
-    changed: bool @ false
-    at: i64 @ 0
+    out: [str] @= []
+    package: str @= ""
+    kind: str @= ""
+    changed: bool @= false
+    at: i64 @= 0
 
     while at < rows.len()
         row = rows[at]
@@ -869,7 +869,7 @@ function quoted_here(scratch: str, expected: str) -> str
 
 # The index of the way out that closes the quotation opening at `from`.
 function closing(rows: [str], from: i64) -> i64?
-    at: i64 @ from
+    at: i64 @= from
 
     while at < rows.len()
         if closes_quotation(rows[at])
@@ -892,8 +892,8 @@ function quotation(scratch: str, package: str, kind: str) -> [str]?
 # complaint `answer`: its words (`notes_of`), then the way out, the installed
 # headline's naming what pkg-config said it lacks only where it said anything.
 function quoted_notes(answer: str, kind: str) -> [str]
-    out: [str] @ notes_of(answer)
-    way: str @ NOT_INSTALLED_WAY
+    out: [str] @= notes_of(answer)
+    way: str @= NOT_INSTALLED_WAY
 
     if kind == "installed"
         way @ INSTALLED_WAY
@@ -923,7 +923,7 @@ function notes_of(answer: str) -> [str]
 
     if said.len() == 0
         return [NOTE + NO_REASON]
-    notes: [str] @ []
+    notes: [str] @= []
 
     for line in strings.split_on(text: SAID + written_controls(said), byte: 10)
         note = blanks_trimmed(line)
@@ -935,12 +935,12 @@ function notes_of(answer: str) -> [str]
 
 # Spaces, tabs and line ends off both ends, and a return kept.
 function driver_trimmed(text: str) -> str
-    head: i64 @ 0
+    head: i64 @= 0
 
     while head < text.len() && (text[head] == 32 || text[head] == 9 || text[head] == 10)
         head @ head + 1
 
-    tail: i64 @ text.len()
+    tail: i64 @= text.len()
 
     while tail > head && (text[tail - 1] == 32 || text[tail - 1] == 9 || text[tail - 1] == 10)
         tail @ tail - 1
@@ -949,12 +949,12 @@ function driver_trimmed(text: str) -> str
 
 # Spaces and tabs off both ends.
 function blanks_trimmed(text: str) -> str
-    head: i64 @ 0
+    head: i64 @= 0
 
     while head < text.len() && (text[head] == 32 || text[head] == 9)
         head @ head + 1
 
-    tail: i64 @ text.len()
+    tail: i64 @= text.len()
 
     while tail > head && (text[tail - 1] == 32 || text[tail - 1] == 9)
         tail @ tail - 1
@@ -963,9 +963,9 @@ function blanks_trimmed(text: str) -> str
 
 # `\r\n` as `\n`; a lone return is left where it is.
 function pairs_joined(text: str) -> str
-    parts: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    parts: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at + 1 < text.len()
         if text[at] == 13 && text[at + 1] == 10
@@ -982,14 +982,14 @@ function pairs_joined(text: str) -> str
 # UTF-8 is 0xC2 and 0x80 to 0x9F). Until defect 328 such an answer was refused
 # here, and its case judged on the file's own bytes.
 function written_controls(text: str) -> str
-    pieces: [str] @ []
-    start: i64 @ 0
-    at: i64 @ 0
+    pieces: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         byte = text[at]
-        code: i64 @ -1
-        width: i64 @ 1
+        code: i64 @= -1
+        width: i64 @= 1
 
         if byte < 32 && byte != 10 || byte == 127
             code @ to_i64(byte).must()
@@ -1038,8 +1038,8 @@ function missing_header_said(header: str, tail: str, at: str) -> str
 # writes for a library a machine lacks* holds this to the compiler over five
 # shapes.
 function group_place(source: str, header: str) -> str?
-    at: i64 @ 0
-    in_group: bool @ false
+    at: i64 @= 0
+    in_group: bool @= false
 
     for row in strings.lines(source)
         at @ at + 1
@@ -1056,7 +1056,7 @@ function group_place(source: str, header: str) -> str?
         if row[0] != 32
             in_group @ false
             continue
-        spaces: i64 @ 0
+        spaces: i64 @= 0
 
         while row[spaces] == 32
             spaces @ spaces + 1
@@ -1330,7 +1330,7 @@ test "fixedbugs: a package said to be installed with its flags out of reach is a
 # file that writes it, so a sentence reworded there is a red here naming the
 # piece and the file, where until that day a lagging copy read on in silence.
 test "fixedbugs: the spellings are the compiler's own, read out of the files that write them (defect 328)"
-    parted: [str] @ []
+    parted: [str] @= []
 
     for one in spellings()
         source = read_file(one.file)
@@ -1369,8 +1369,8 @@ test "fixedbugs: the compiler's words for a missing library are spelled in this 
         SILENT_WAY
         TOOL_WAY
     ]
-    copies: [str] @ []
-    read: i64 @ 0
+    copies: [str] @= []
+    read: i64 @= 0
 
     for path in shell.list_entries(scratch: "build/harness-selftest", dir: "tests/harness").must()
         if !strings.ends_with(text: path, suffix: ".hero") || strings.ends_with(text: path, suffix: "/absence.hero")
@@ -1378,7 +1378,7 @@ test "fixedbugs: the compiler's words for a missing library are spelled in this 
         text = read_file(path)
         assert !text.is_err()
         read @ read + 1
-        at: i64 @ 0
+        at: i64 @= 0
 
         for row in strings.lines(text.must())
             at @ at + 1
@@ -1448,8 +1448,8 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
         "extern \"" + NOWHERE + "\"\n    constant SEVEN: i32\n\nfunction main()\n    print(SEVEN)\n"
         "extern \"" + NOWHERE + "\"\n    record Seven\n        n: i32\n    function seven() -> Seven\n\nfunction main()\n    print(seven().n)\n"
     ]
-    places: [str] @ []
-    count: i64 @ 0
+    places: [str] @= []
+    count: i64 @= 0
 
     for text in shapes
         path = dir + "/placed-" + count.to_str() + ".hero"
@@ -1489,7 +1489,7 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
         "  \r\n"
         "a\tb\rc\r\n"
     ]
-    shape: i64 @ 0
+    shape: i64 @= 0
 
     for answer in answers
         for installed in [false, true]
@@ -1504,7 +1504,7 @@ test "fixedbugs: what the compiler writes for a library a machine lacks is read 
                 alone: false
             ).must()
             named = absences(err)
-            kind: str @ "package"
+            kind: str @= "package"
 
             if installed
                 kind @ "installed"
@@ -1658,10 +1658,10 @@ test "a package whose admitted word carries @<file> or -l:<file> is refused, nam
         "-L@" + dir + "/rsp.txt"
         "-l:libheroes198.a"
     ]
-    shape: i64 @ 0
+    shape: i64 @= 0
 
     for word in shapes
-        why: str @ "a value beginning with `@` names a file"
+        why: str @= "a value beginning with `@` names a file"
 
         if strings.starts_with(text: word, prefix: "-l:")
             why @ "`-l:<file>` names a file"
@@ -1706,7 +1706,7 @@ test "a package whose -l this machine has no library for is told at its string (
         "-L" + empty + " -lheroes528absent"
         "-l heroes528absent"
     ]
-    shape: i64 @ 0
+    shape: i64 @= 0
 
     for answer in shapes
         stood = dir + "/bin-" + shape.to_str()
@@ -1880,7 +1880,7 @@ test "a refused skip says why only where the compiler named a library"
 test "every package group sits in a program's root, where the pkg-config witness reads"
     roots: [str] = ["examples", "tests/golden"]
     nothing: [str] = []
-    seen: i64 @ 0
+    seen: i64 @= 0
 
     for root in roots
         listed_files = shell.list_tree(scratch: "build/harness-selftest", dir: root, skip: nothing)
@@ -1913,7 +1913,7 @@ function built_said(scratch: str, compiler: str, path: str, source: str, bin: st
     if bin.len() == 0
         direct = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", path, "-o", out])?
         return ok(direct.err)
-    path_set: str @ "\"$PWD/$3:$PATH\""
+    path_set: str @= "\"$PWD/$3:$PATH\""
 
     if alone
         path_set @ "\"$PWD/$3\""
@@ -1928,7 +1928,7 @@ function built_said(scratch: str, compiler: str, path: str, source: str, bin: st
 function stand_in(dir: str, answer: str, installed: bool) -> ()?
     shell.mkdir_all(dir)?
     write_file(path: dir + "/answer.txt", text: answer)?
-    reads: str @ "exit 1"
+    reads: str @= "exit 1"
 
     if installed
         reads @ "echo 1.0; exit 0"
@@ -1957,7 +1957,7 @@ function answering(dir: str, answer: str) -> ()?
 
 # The notes of a compiler's message, as the renderer writes them.
 function notes_in(said: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for row in strings.lines(said)
         if strings.starts_with(text: row, prefix: NOTE)

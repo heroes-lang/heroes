@@ -62,7 +62,7 @@ record Element
 # still a comma-separated list (the parser requires it).
 function bracket(c: Code, value: i64) -> Bracket?
     span = c.tree.exprs[value].span
-    b: Bracket @ Bracket(
+    b: Bracket @= Bracket(
         before: -1,
         open: "",
         at: first_line(c, id: value),
@@ -85,7 +85,7 @@ function bracket(c: Code, value: i64) -> Bracket?
         .array arr =>
             b.open @ "["
             b.close @ "]"
-            listed: [Element] @ []
+            listed: [Element] @= []
 
             for item in arr.elements
                 listed @ listed.push(plain(c, value: item, needed: 0, after: ""))
@@ -94,10 +94,10 @@ function bracket(c: Code, value: i64) -> Bracket?
         .map mp =>
             b.open @ "{"
             b.close @ "}"
-            entries: [Element] @ []
+            entries: [Element] @= []
 
             for entry in mp.entries
-                item: Element @ plain(c, value: entry.value, needed: 0, after: "")
+                item: Element @= plain(c, value: entry.value, needed: 0, after: "")
                 item.key @ entry.key
                 item.lead @ ": "
                 item.from @ extent(c, id: entry.key).end
@@ -137,7 +137,7 @@ function bracket(c: Code, value: i64) -> Bracket?
 # operands of one operator's chain are one element each, so a comment after
 # any operator stays after it; otherwise the value is the one element.
 function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
-    b: Bracket @ Bracket(
+    b: Bracket @= Bracket(
         before: -1,
         open: "(",
         at: first_line(c, id: value),
@@ -156,9 +156,9 @@ function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
         b.at @ source.line_of(c.s, b.from)
         b.shut @ source.line_of(c.s, b.to)
     mine = parens.power(c.tree, value)
-    rest: [Element] @ []
-    left: i64 @ value
-    chained: bool @ split
+    rest: [Element] @= []
+    left: i64 @= value
+    chained: bool @= split
 
     while chained
         chained @ false
@@ -175,12 +175,12 @@ function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
             .name | .hole | .unary | .field | .field_name | .index | .call | .method       => chained @ false
             .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => chained @ false
 
-    needed: i64 @ 0
+    needed: i64 @= 0
 
     if rest.len() > 0
         needed @ mine
-    operands: [Element] @ [plain(c, value: left, needed: needed, after: "")]
-    at: i64 @ rest.len() - 1
+    operands: [Element] @= [plain(c, value: left, needed: needed, after: "")]
+    at: i64 @= rest.len() - 1
 
     # The chain was walked from its right end, and each operator goes after
     # the operand to its left. The operands grow in a name of their own, as
@@ -199,14 +199,14 @@ function group(c: Code, value: i64, paren: token.Span?, split: bool) -> Bracket
 # is kept too (`keeps`); `innermost` where no pair of theirs is inside it,
 # so a binary's operands may be the elements instead.
 function kept(f: page.Fmt, c: Code, value: i64, pair: token.Span, innermost: bool) -> Bracket
-    b: Bracket @ group(c, value: value, paren: ok(pair), split: splits(f, c, value: value) && innermost)
+    b: Bracket @= group(c, value: value, paren: ok(pair), split: splits(f, c, value: value) && innermost)
     b.keeps @ true
     return b
 
 # An element whose `lead`, written from `from`, is printed before its
 # value, with a comment between them: a unary operator and its operand.
 function led(c: Code, value: i64, lead: str, from: i64) -> Element
-    item: Element @ plain(c, value: value, needed: parens.UNARY_POWER, after: "")
+    item: Element @= plain(c, value: value, needed: parens.UNARY_POWER, after: "")
     item.lead @ lead
     item.from @ from
     item.first @ source.line_of(c.s, from)
@@ -225,14 +225,14 @@ function plain(c: Code, value: i64, needed: i64, after: str) -> Element
     )
 
 function arguments(c: Code, given: [ast.Arg]) -> [Element]
-    items: [Element] @ []
+    items: [Element] @= []
 
     for arg in given
-        comma: str @ ","
+        comma: str @= ","
 
         if items.len() == given.len() - 1
             comma @ ""
-        item: Element @ plain(c, value: arg.value, needed: 0, after: comma)
+        item: Element @= plain(c, value: arg.value, needed: 0, after: comma)
         item.lead @ parens.arg_lead(c.s, arg: arg)
         mark = owners.code_before(c.lines, index: owners.index_at(c.lines, offset: c.tree.exprs[arg.value].span.start))
 
@@ -263,7 +263,7 @@ function holds(f: page.Fmt, c: Code, from: i64, to: i64) -> bool
 function alone(f: page.Fmt, c: Code, value: i64, within: i64) -> bool
     outer = extent(c, id: value)
     operand = inner(c, value: value, within: within)
-    i: i64 @ f.next_comment
+    i: i64 @= f.next_comment
 
     while i < c.comments.len() && c.comments[i].start < outer.end
         if c.comments[i].start >= outer.start && (c.comments[i].start < operand.start || c.comments[i].start >= operand.end)
@@ -276,7 +276,7 @@ function alone(f: page.Fmt, c: Code, value: i64, within: i64) -> bool
 # parentheses around it that are inside `value`'s.
 function inner(c: Code, value: i64, within: i64) -> token.Span
     outer = extent(c, id: value)
-    operand: token.Span @ extent(c, id: within)
+    operand: token.Span @= extent(c, id: within)
 
     for open in groups.levels(c.lines, span: c.tree.exprs[within].span)
         pair = groups.around(c.lines, open: open)
@@ -290,7 +290,7 @@ function inner(c: Code, value: i64, within: i64) -> token.Span
 # one: a comment just inside the author's `(` before a value is printed
 # with the group, after the value's own are asked about.
 function waits(f: page.Fmt, c: Code, span: token.Span) -> bool
-    i: i64 @ f.next_comment
+    i: i64 @= f.next_comment
 
     while i < c.comments.len() && c.comments[i].start < span.end
         if c.comments[i].start >= span.start
@@ -332,7 +332,7 @@ function first_line(c: Code, id: i64) -> i64
 # The last source line an expression occupies: its span ends one past its
 # last byte.
 function end_line(c: Code, id: i64) -> i64
-    last: i64 @ c.tree.exprs[id].span.end - 1
+    last: i64 @= c.tree.exprs[id].span.end - 1
 
     if last < 0
         last @ 0

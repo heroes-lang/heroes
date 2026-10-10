@@ -32,7 +32,7 @@ function failed(r: i64?) -> bool
     return r.is_err()
 
 function main()
-    m: {str: i64?} @ {}
+    m: {str: i64?} @= {}
     m["a"] @ fail(code: "parse", msg: "not a number")
 
     # The map door, and the program this case exists for. The annotation is

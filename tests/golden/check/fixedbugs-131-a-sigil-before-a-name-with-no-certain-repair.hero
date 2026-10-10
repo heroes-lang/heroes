@@ -2,7 +2,7 @@
 # `fixedbugs-131-a-sigil-before-a-name-is-one-message`. A sigil before a name
 # that writes no value into it is one message too, where it cost two or
 # three, and no fix of it is certain. Before a declaration whose type `=`
-# follows, `v: i64 @ 0` and `v: i64 = 0` are as likely, so deleting the `@`
+# follows, `v: i64 @= 0` and `v: i64 = 0` are as likely, so deleting the `@`
 # is a guess; alone, before a call, which is no place, or before a
 # comparison, nothing is offered: what the line computes is the checker's to
 # judge once the sigil is gone. The rest of the line is read, so Ruby's `+=`
@@ -13,12 +13,12 @@ function a_declaration()
     print(v)
 
 function alone()
-    v: i64 @ 0
+    v: i64 @= 0
     @v  #~ expected_expression
     print(v)
 
 function before_an_operator_and_equals()
-    v: i64 @ 0
+    v: i64 @= 0
     @v += 1  #~ expected_expression expected_expression
     print(v)
 
@@ -26,7 +26,7 @@ function before_a_call()
     @f(x: 1) = 2  #~ expected_expression
 
 function before_a_comparison()
-    v: i64 @ 0
+    v: i64 @= 0
     @v == 1  #~ expected_expression
     print(v)
 

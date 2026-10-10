@@ -12,8 +12,8 @@ constant K: [i64]
     [3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8, 9, 7, 9, 3, 2, 3, 8, 4, 6, 2, 6, 4, 3, 3, 8, 3, 2, 7, 9, 5]
 
 function worker(n: i64) -> i64
-    sum: i64 @ 0
-    at: i64 @ 0
+    sum: i64 @= 0
+    at: i64 @= 0
 
     while at < n
         sum @ sum + K[at % 32]

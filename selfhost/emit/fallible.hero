@@ -54,7 +54,7 @@ function option_tag(base: i64) -> str
 
 # .as.ok for case 0 and .as.err for case 1 — the IR's own numbering.
 function option_payload(base: i64, at: i64) -> str
-    member: str @ "err"
+    member: str @= "err"
 
     if at == 0
         member @ "ok"
@@ -70,7 +70,7 @@ test "the tag is written even where C would zero it, and err is one assignment"
     c: state.Checked = checker.check(p.tree, out, s, p.decls)
     names0 = ctype.new_names(s, p.decls)
     names = ctype.with_options(names0, c: c, s: s, decls: p.decls)
-    opt: i64 @ 0 - 1
+    opt: i64 @= 0 - 1
 
     for id in keys(names.options)
         opt @ id

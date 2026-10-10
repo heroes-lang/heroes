@@ -171,7 +171,7 @@ constant OBJECTS: str
     "build"
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     a_header_edit_is_not_invisible(@r, scratch: scratch, compiler: compiler)
     an_untouched_build_still_hits(@r, scratch: scratch, compiler: compiler, objects: OBJECTS)
     only_the_module_that_read_it_is_rebuilt(@r, scratch: scratch, compiler: compiler, objects: OBJECTS)
@@ -192,7 +192,7 @@ constant TOGETHER_HOME: str
     "cache-together"
 
 constant TOGETHER_PROGRAM: str
-    "extern \"math.h\" link \"m\"\n    function frexp(x: f64, @e: i32) -> f64\n\nfunction main()\n    e: i32 @ 0\n    print(frexp(8.0, @e))\n    print(e)\n"
+    "extern \"math.h\" link \"m\"\n    function frexp(x: f64, @e: i32) -> f64\n\nfunction main()\n    e: i32 @= 0\n    print(frexp(8.0, @e))\n    print(e)\n"
 
 constant TOGETHER_COUNT: i64
     6
@@ -243,13 +243,13 @@ function builds_started_together_all_succeed(@r: report.Report, scratch: str, co
     if write_file(path: together_plan(), text: compiler + "\n" + dir + "\n" + dir + "/together.hero\n").is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the plan at " + together_plan())
         return
-    handles: [i64] @ []
+    handles: [i64] @= []
 
     for i in range(from: 0, to: TOGETHER_COUNT)
         handles @ handles.push(hero_thread_spawn(body: build_together, arg: i))
 
-    wrong: [str] @ []
-    index: i64 @ 0
+    wrong: [str] @= []
+    index: i64 @= 0
 
     for h in handles
         got = hero_thread_join(handle: h)
@@ -292,7 +292,7 @@ function a_warm_cache_never_replays_a_warning_that_was_repaired(@r: report.Repor
     if write_file(path: dir + "/noise.h", text: NOISE_HEADER_WARNS).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the noisy header")
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
     noisy = shell.run_guarded(scratch: scratch, words: [compiler, "build", dir + "/caller.hero"])
 
     if noisy.is_err() || noisy.must().code != 0
@@ -362,7 +362,7 @@ function a_header_edit_is_not_invisible(@r: report.Report, scratch: str, compile
     if dir.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot lay the program out under " + scratch)
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     for value in ["1", "2", "7", "2"]
         if write_header(dir: dir.must(), value: value).is_err()
@@ -468,7 +468,7 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
     if moved.is_err()
         report.keep_failure(@r, label: label, detail: "  cannot ask the filesystem which objects moved")
         return
-    names: [str] @ []
+    names: [str] @= []
 
     for path in moved.must()
         names @ names.push(module_of_object(strings.base_name(path)))
@@ -499,7 +499,7 @@ function module_of_object(name: str) -> str
     return stem
 
 function is_digest_tail(stem: str) -> bool
-    at: i64 @ stem.len() - 16
+    at: i64 @= stem.len() - 16
 
     while at < stem.len()
         b = stem[at]
@@ -535,7 +535,7 @@ function a_reordered_variant_is_not_served_warm(@r: report.Report, scratch: str,
     if write_file(path: dir + "/caller.hero", text: TAGS_CALLER).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the caller")
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
     orders: [[str]] = [
         ["red", "green", "blue"]
         ["blue", "green", "red"]
@@ -598,7 +598,7 @@ function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scrat
     if write_file(path: dir + "/failbind.hero", text: FAIL_BIND).is_err() || write_file(path: dir + "/caller.hero", text: FAIL_CALLER).is_err()
         report.keep_failure(@r, label: label, detail: "  cannot write the program")
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     for attempt in ["first", "second", "third"]
         said = shell.run_guarded(
@@ -657,7 +657,7 @@ function a_warm_cache_never_turns_a_failure_into_a_pass(@r: report.Report, scrat
 # written in the same order, which is arbitrary — `match` is exhaustive
 # by name and the order of the arms is not the order of the tags.
 function hue_module(order: [str]) -> str
-    text: str @ "variant Colour\n"
+    text: str @= "variant Colour\n"
 
     for name in order
         text @ text + "    " + name + "\n"
@@ -698,7 +698,7 @@ function objects_newer_than(scratch: str, marker: str, words: [str], objects: st
 
     if listed.is_err()
         return fail(code: "cannot_run", msg: "cannot list what moved under " + objects + "/")
-    out: [str] @ []
+    out: [str] @= []
 
     for row in listed.must()
         if row.len() > 0
@@ -734,11 +734,11 @@ test "fixedbugs: a warm build that rewrites the runtime's object is told (defect
         assert !made.is_err()
         assert made.must().code == 0
 
-    rebuilt: report.Report @ report.empty()
+    rebuilt: report.Report @= report.empty()
     an_untouched_build_still_hits(@rebuilt, scratch: scratch, compiler: every, objects: every_objects)
     assert rebuilt.failed == 1
     assert strings.contains(text: rebuilt.failures[0], needle: every_objects + name)
-    kept: report.Report @ report.empty()
+    kept: report.Report @= report.empty()
     an_untouched_build_still_hits(@kept, scratch: scratch, compiler: once, objects: once_objects)
     assert kept.passed == 1
     assert kept.failed == 0

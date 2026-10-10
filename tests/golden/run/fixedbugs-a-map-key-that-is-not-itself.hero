@@ -29,8 +29,8 @@
 # removes the routes a type can see, and this exercises the ones it cannot.
 
 function keyed<K>(ks: [K], vs: [i64]) -> i64
-    m: {K: i64} @ {}
-    i: i64 @ 0
+    m: {K: i64} @= {}
+    i: i64 @= 0
 
     while i < len(ks)
         m[ks[i]] @ vs[i]
@@ -39,8 +39,8 @@ function keyed<K>(ks: [K], vs: [i64]) -> i64
     return len(m)
 
 function found<K>(ks: [K], vs: [i64], want: K) -> i64
-    m: {K: i64} @ {}
-    i: i64 @ 0
+    m: {K: i64} @= {}
+    i: i64 @= 0
 
     while i < len(ks)
         m[ks[i]] @ vs[i]
@@ -49,8 +49,8 @@ function found<K>(ks: [K], vs: [i64], want: K) -> i64
     return m[want].default(0)
 
 function missing<K>(ks: [K], vs: [i64], want: K) -> bool
-    m: {K: i64} @ {}
-    i: i64 @ 0
+    m: {K: i64} @= {}
+    i: i64 @= 0
 
     while i < len(ks)
         m[ks[i]] @ vs[i]
@@ -59,9 +59,9 @@ function missing<K>(ks: [K], vs: [i64], want: K) -> bool
     return m[want].is_err()
 
 function same<K>(ks: [K], vs: [i64]) -> bool
-    a: {K: i64} @ {}
-    b: {K: i64} @ {}
-    i: i64 @ 0
+    a: {K: i64} @= {}
+    b: {K: i64} @= {}
+    i: i64 @= 0
 
     while i < len(ks)
         a[ks[i]] @ vs[i]

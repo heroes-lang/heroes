@@ -42,12 +42,12 @@ record Rounds
     asked: ffi_asked.Asked?
 
 function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: assemble.Site, under: compiling.Compiling, planned: probing.Planned, @answered: [pointee_ask.Answered]) -> Rounds
-    struct_tags: {str: bool} @ {}
-    told: {str: bool} @ {}
-    linked: ()? @ ok()
-    binary: str @ ""
-    asked: ffi_asked.Asked? @ fail(code: "none", msg: "the header was not asked")
-    refused_in: [str] @ []
+    struct_tags: {str: bool} @= {}
+    told: {str: bool} @= {}
+    linked: ()? @= ok()
+    binary: str @= ""
+    asked: ffi_asked.Asked? @= fail(code: "none", msg: "the header was not asked")
+    refused_in: [str] @= []
 
     while true
         went = round(t, options, art, s, site, @answered, planned: planned, struct_tags: struct_tags, told: @told)
@@ -174,7 +174,7 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
 
 # Two lists of diagnostics as one.
 function joined(first: [diag.Diagnostic], more: [diag.Diagnostic]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ first
+    out: [diag.Diagnostic] @= first
 
     for d in more
         out @ out.push(d)
@@ -184,7 +184,7 @@ function joined(first: [diag.Diagnostic], more: [diag.Diagnostic]) -> [diag.Diag
 # The headers of the unit a refusal is, in its order: a module's unit's, its
 # plan's (`emit/unit_plan.hero`), `heroes test`'s included since defect 560.
 function unit_headers(planned: probing.Planned, modules: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in probing.holding(planned.probings, modules: modules)
         for header in one.headers

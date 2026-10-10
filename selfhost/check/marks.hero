@@ -49,7 +49,7 @@ function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: 
                     continue
                 name = source.span_text(s, decl.name)
 
-                result_marks: i64 @ 0
+                result_marks: i64 @= 0
 
                 if !fd.value.acquires_result.is_err()
                     result_marks @ result_marks + 1
@@ -68,8 +68,8 @@ function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: 
                 success_says(@c, s, decls, fd: fd.value, name: name)
 
                 if result_marks > 0
-                    word: str @ "borrows"
-                    at: token.Span @ a.types[fd.value.result].span
+                    word: str @= "borrows"
+                    at: token.Span @= a.types[fd.value.result].span
 
                     if !fd.value.acquires_result.is_err()
                         word @ "acquires"
@@ -89,7 +89,7 @@ function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: 
                     )
 
                 for p in fd.value.params
-                    marks: i64 @ 0
+                    marks: i64 @= 0
 
                     if p.consumes
                         marks @ marks + 1
@@ -114,8 +114,8 @@ function marks_are_read(@c: state.Checker, a: ast.Ast, s: source.Source, decls: 
                             @c,
                             one_mark(holder: "`" + source.span_text(s, p.name) + "`", span: p.name)
                         )
-                    on: str @ "consumes"
-                    where: token.Span @ a.types[p.ty].span
+                    on: str @= "consumes"
+                    where: token.Span @= a.types[p.ty].span
 
                     if p.borrows
                         on @ "borrows"
@@ -173,7 +173,7 @@ function success_says(@c: state.Checker, s: source.Source, decls: [ast.Decl], fd
     if fd.when_result.is_err()
         return
     mark = fd.when_result.must()
-    ends: bool @ false
+    ends: bool @= false
 
     for p in fd.params
         if p.consumes || !p.transfers.is_err() || !p.retains.is_err()
@@ -191,8 +191,8 @@ function success_says(@c: state.Checker, s: source.Source, decls: [ast.Decl], fd
 
     if written.is_err()
         return
-    kind: str @ "other"
-    width: widths.IntKind? @ fail(code: "none", msg: "the result is not an integer")
+    kind: str @= "other"
+    width: widths.IntKind? @= fail(code: "none", msg: "the result is not an integer")
 
     match table.get(c.out.types, written.must())
         .int_ty ik =>
@@ -224,7 +224,7 @@ function success_says(@c: state.Checker, s: source.Source, decls: [ast.Decl], fd
 # why that is not what governs it, because the reader who wrote `-> Ob retains
 # ob_put when 0` did name something that happens on success.
 function success_without_end(name: str, handle_result: bool, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "success_without_end",
         message: "`when` says which result means `" + name + "` did what it was handed, and no parameter of it is marked `consumes`, `transfers` or `retains`: nothing here happens only on success",
         span: span
@@ -251,7 +251,7 @@ function literal_fits(literal: str, kind: widths.IntKind) -> bool
 # write the value the header returns or declare the result at the width the
 # header gives it, without opening anything else (design.md §4.17).
 function success_value_range(literal: str, name: str, kind: widths.IntKind, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "success_value_range",
         message: "`when " + literal + "` compares the result of `" + name + "` with a value it can never hold: the result is " + widths.int_article_name(kind) + ", which holds " + widths.int_low_text(kind) + " through " + widths.int_high_text(kind),
         span: span
@@ -268,7 +268,7 @@ function refuse_unread(@c: state.Checker, s: source.Source, decls: [ast.Decl], w
     if !acquiring.handle_behind(c, s, decls, node: node).is_err()
         return
     written = c.out.written_types[node]
-    shown: str @ "this type"
+    shown: str @= "this type"
 
     if !written.is_err()
         shown @ "`" + state.show(c, s, decls, written.must()) + "`"
@@ -278,7 +278,7 @@ function refuse_unread(@c: state.Checker, s: source.Source, decls: [ast.Decl], w
 # it, and then the spelling that can — because §4.17 asks that an error carry
 # everything needed to fix the program without opening another file.
 function unread_mark(word: str, holder: str, shown: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unread_mark",
         message: "`" + word + "` on " + holder + " is a word nothing reads: " + shown + " reaches no handle, so no rule can say which call hands the value over or takes it back, and the word could be false without anything noticing",
         span: span
@@ -298,12 +298,12 @@ function unread_mark(word: str, holder: str, shown: str, span: token.Span) -> di
 function driven(text: str) -> state.Checker
     p = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
-    c: state.Checker @ declared.checked_file(text)
+    c: state.Checker @= declared.checked_file(text)
     marks_are_read(@c, p.tree, s, p.decls)
     return c
 
 function codes_of(c: state.Checker) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for d in c.out.diagnostics
         out @ out.push(d.code)

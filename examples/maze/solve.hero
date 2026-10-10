@@ -24,10 +24,10 @@ constant ERR_NO_PATH: str
 function solve(g: grid.Grid) -> [i64]?
     start = grid.locate(g, grid.START)?
     goal = grid.locate(g, grid.GOAL)?
-    came: {i64: i64} @ {}
+    came: {i64: i64} @= {}
     came[start] @ start
-    queue: [i64] @ [start]
-    head: i64 @ 0
+    queue: [i64] @= [start]
+    head: i64 @= 0
 
     while head < queue.len()
         here = queue[head]
@@ -46,8 +46,8 @@ function solve(g: grid.Grid) -> [i64]?
 # The path, start first. It is built backwards from the goal and turned round
 # once, because following `came` is the only direction that map can be read in.
 function walk_back(came: {i64: i64}, start: i64, goal: i64) -> [i64]
-    backwards: [i64] @ [goal]
-    at: i64 @ goal
+    backwards: [i64] @= [goal]
+    at: i64 @= goal
 
     while at != start
         at @ came[at].must()
@@ -56,7 +56,7 @@ function walk_back(came: {i64: i64}, start: i64, goal: i64) -> [i64]
     return reversed(backwards)
 
 function reversed(xs: [i64]) -> [i64]
-    out: [i64] @ []
+    out: [i64] @= []
 
     for i in range(from: 0, to: xs.len())
         out @ out.push(xs[xs.len() - 1 - i])

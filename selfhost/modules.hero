@@ -48,8 +48,8 @@ use parse
 # alone, and scope is what makes it survivable).
 function directory_text(path: str) -> str
     cs = path.chars()
-    cut: i64 @ -1
-    index: i64 @ 0
+    cut: i64 @= -1
+    index: i64 @= 0
 
     for ch in cs
         if ch == "/" || ch == "\\"
@@ -58,7 +58,7 @@ function directory_text(path: str) -> str
 
     if cut == -1
         return ""
-    kept: [str] @ []
+    kept: [str] @= []
     index @ 0
 
     while index <= cut
@@ -71,8 +71,8 @@ function directory_text(path: str) -> str
 # is PathBuf::parent's answer on every machine the fixpoint runs on.
 function open_directory(path: str) -> str
     cs = path.chars()
-    cut: i64 @ -1
-    index: i64 @ 0
+    cut: i64 @= -1
+    index: i64 @= 0
 
     for ch in cs
         if ch == "/"
@@ -81,7 +81,7 @@ function open_directory(path: str) -> str
 
     if cut == -1
         return ""
-    kept: [str] @ []
+    kept: [str] @= []
     index @ 0
 
     while index <= cut
@@ -104,19 +104,19 @@ function load_text(path: str, root_text: str, library: str) -> source.Source?
     # in a_b.hero look already-seen, so ab.hero was never loaded and
     # the compiler reported a cycle of one file with itself (sweep 001
     # audit L2).
-    files: [source.InputFile] @ [source.user_file(name: path, text: root_text)]
-    seen: [str] @ [module_names.stem_of(path)]
-    pending: [i64] @ [0]
-    each: [[source.Fault]] @ []
+    files: [source.InputFile] @= [source.user_file(name: path, text: root_text)]
+    seen: [str] @= [module_names.stem_of(path)]
+    pending: [i64] @= [0]
+    each: [[source.Fault]] @= []
 
     while pending.len() > 0
         index = pending[pending.len() - 1]
         pending @ pending.slice(from: 0, to: pending.len() - 1)
         named = paths.uses_of(files[index].text)
-        added: [i64] @ []
+        added: [i64] @= []
 
         for module in named
-            already: bool @ false
+            already: bool @= false
 
             for one in seen
                 if one == module
@@ -141,7 +141,7 @@ function load_text(path: str, root_text: str, library: str) -> source.Source?
         # files is in source order; pending is reversed so that
         # popping it scans in source order too. Both orders are
         # output, not bookkeeping.
-        at: i64 @ added.len() - 1
+        at: i64 @= added.len() - 1
 
         while at >= 0
             pending @ pending.push(added[at])
@@ -159,7 +159,7 @@ function load_text(path: str, root_text: str, library: str) -> source.Source?
 # name resolves: a cycle report naming a module that does not exist
 # would be a second diagnostic for one mistake.
 function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ []
+    out: [diag.Diagnostic] @= []
     out @ unknown_modules(s, uses, found: out)
     out @ collisions(s, found: out)
 
@@ -167,12 +167,12 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
         out @ cycles(s, uses, found: out)
 
     # Insertion sort by span start — the stable-sort idiom.
-    sorted: [diag.Diagnostic] @ []
+    sorted: [diag.Diagnostic] @= []
 
     for d in out
-        at: i64 @ sorted.len()
-        probe: i64 @ 0
-        placed: bool @ false
+        at: i64 @= sorted.len()
+        probe: i64 @= 0
+        placed: bool @= false
 
         for old in sorted
             if !placed && old.span.start > d.span.start
@@ -180,7 +180,7 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
                 placed @ true
             probe @ probe + 1
 
-        head: [diag.Diagnostic] @ sorted.slice(from: 0, to: at)
+        head: [diag.Diagnostic] @= sorted.slice(from: 0, to: at)
         head @ head.push(d)
         tail = sorted.slice(from: at, to: sorted.len())
 
@@ -204,14 +204,14 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
 # A rule the compiler enforces silently is a rule the author learns by
 # guessing.
 function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ found
+    out: [diag.Diagnostic] @= found
     base = directory_text(s.name)
 
     for used in uses
         if source.is_library(s, used.span.start)
             continue
         name = source.span_text(s, used.name)
-        present: bool @ false
+        present: bool @= false
 
         for f in s.files
             if f.module == name
@@ -238,11 +238,11 @@ function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnos
 # once, rather than filtered at the four sites that ask "is this the
 # library" by name.
 function collisions(s: source.Source, found: [diag.Diagnostic]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ found
+    out: [diag.Diagnostic] @= found
 
     for f in s.files
         if !f.is_library && f.module == source.LIBRARY_MODULE
-            d: diag.Diagnostic @ diag.new_diagnostic(
+            d: diag.Diagnostic @= diag.new_diagnostic(
                 code: "module_name_reserved",
                 message: "`" + f.name + "` would be the module `library`, and that name is the language's own — §1.11's Tier 2 is compiled into every program under it",
                 span: token.Span(start: f.start, end: f.start)
@@ -252,17 +252,17 @@ function collisions(s: source.Source, found: [diag.Diagnostic]) -> [diag.Diagnos
             )
             out @ out.push(d)
 
-    index: i64 @ 0
+    index: i64 @= 0
 
     while index < s.files.len()
-        earlier_at: i64 @ 0
+        earlier_at: i64 @= 0
 
         while earlier_at < index
             f = s.files[index]
             earlier = s.files[earlier_at]
 
             if earlier.module != f.module && module_names.component_of(earlier.module) == module_names.component_of(f.module)
-                d: diag.Diagnostic @ diag.new_diagnostic(
+                d: diag.Diagnostic @= diag.new_diagnostic(
                     code: "module_names_collide",
                     message: "modules `" + earlier.module + "` and `" + f.module + "` are one name to the compiler — every name reaching C is `h_<module>_<name>` with the module reduced to letters and digits, so both become `h_" + module_names.component_of(f.module) + "_…`",
                     span: token.Span(start: f.start, end: f.start)
@@ -289,19 +289,19 @@ record Edge
     span: token.Span
 
 function cycles(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
-    out: [diag.Diagnostic] @ found
-    modules: [str] @ []
+    out: [diag.Diagnostic] @= found
+    modules: [str] @= []
 
     for f in s.files
         modules @ modules.push(f.module)
 
-    edges: [Edge] @ []
+    edges: [Edge] @= []
 
     for used in uses
         from_at = source.file_of(s, used.span.start)
         name = source.span_text(s, used.name)
-        to_at: i64 @ -1
-        probe: i64 @ 0
+        to_at: i64 @= -1
+        probe: i64 @= 0
 
         for m in modules
             if m == name && to_at == -1
@@ -312,12 +312,12 @@ function cycles(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> 
             edges @ edges.push(Edge(from_at: from_at, to_at: to_at, span: used.name))
 
     # 0 new, 1 open, 2 done.
-    state: [i64] @ []
+    state: [i64] @= []
 
     for _ in modules
         state @ state.push(0)
 
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start < modules.len()
         if state[start] == 0
@@ -325,7 +325,7 @@ function cycles(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> 
             state @ walked.state
 
             if !walked.ring_span.is_err()
-                d: diag.Diagnostic @ diag.new_diagnostic(
+                d: diag.Diagnostic @= diag.new_diagnostic(
                     code: "module_cycle",
                     message: "modules may not form a cycle, and this `use` closes one: " + walked.ring,
                     span: walked.ring_span.must()
@@ -344,9 +344,9 @@ record Walked
 
 # Depth-first from one node, reporting the first back edge.
 function walk(node: i64, edges: [Edge], state: [i64], stack: [i64], s: source.Source, modules: [str]) -> Walked
-    st: [i64] @ state
+    st: [i64] @= state
     st[node] @ 1
-    grown: [i64] @ stack
+    grown: [i64] @= stack
     grown @ grown.push(node)
 
     for edge in edges
@@ -354,16 +354,16 @@ function walk(node: i64, edges: [Edge], state: [i64], stack: [i64], s: source.So
             continue
 
         if st[edge.to_at] == 1
-            at: i64 @ 0
-            probe: i64 @ 0
+            at: i64 @= 0
+            probe: i64 @= 0
 
             for n in grown
                 if n == edge.to_at && at == 0
                     at @ probe
                 probe @ probe + 1
 
-            ring: [str] @ []
-            index: i64 @ at
+            ring: [str] @= []
+            index: i64 @= at
 
             while index < grown.len()
                 ring @ ring.push(modules[grown[index]])

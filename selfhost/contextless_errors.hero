@@ -28,7 +28,7 @@ function empty_map_literal(span: token.Span) -> diag.Diagnostic
     return cannot_infer_empty(what: "map literal", name: "m", written: "{str: i64}", literal: "{}", span: span)
 
 function cannot_infer_empty(what: str, name: str, written: str, literal: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cannot_infer",
         message: "the " + what + " is empty, so there is nothing to infer its type from — write the annotation",
         span: span
@@ -42,7 +42,7 @@ function cannot_infer_empty(what: str, name: str, written: str, literal: str, sp
 # annotation, `counts = {}`: the guess annotates that binding, under the name
 # the program gave it (defect 574).
 function annotated(d: diag.Diagnostic, name: str, written: str, literal: str) -> diag.Diagnostic
-    out: diag.Diagnostic @ d
+    out: diag.Diagnostic @= d
     out.fixes @ [
         diag.Fix(title: "annotate the binding: `" + name + ": " + written + " = " + literal + "`", replacement: "", span: d.span, certainty: .guess)
     ]
@@ -95,7 +95,7 @@ function constructor_needs_context(name: str, span: token.Span) -> diag.Diagnost
 # has no such syntax, and a fix that suggests one sends the reader to a
 # form the parser refuses (the historian's Rust `::<_>` fixed point).
 function type_parameter_needs_context(callee: str, letter: str, result: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cannot_infer",
         message: "nothing here says what `" + letter + "` of `" + callee + "` is: it appears only in the result `" + result + "`, so it takes the type the context asks for, and this position asks for none",
         span: span
@@ -135,7 +135,7 @@ function record_name_alone(name: str, span: token.Span) -> diag.Diagnostic
 # only the message was missing. The fix is a wrapper, named because the
 # reader would otherwise have to invent the shape.
 function builtin_as_value(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "builtin_as_value",
         message: "`" + name + "` is a built-in of the language, not a function value — several take any number of arguments, or arguments of several types, which no single signature can describe",
         span: span

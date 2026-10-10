@@ -33,10 +33,10 @@ function start(loop: ptr, @t: UvTimer) -> i32
 
 function main()
     loop = uv_default_loop()
-    a: UvTimer @ UvTimer(rest: zero)
+    a: UvTimer @= UvTimer(rest: zero)
     print(start(loop, @a))
     a.data @ loop
-    ts: [UvTimer] @ [UvTimer(rest: zero), UvTimer(rest: zero)]
+    ts: [UvTimer] @= [UvTimer(rest: zero), UvTimer(rest: zero)]
     print(uv_timer_init(loop, @ts[0]))
     print(start(loop, @ts[1]))
     ts[0].data @ loop

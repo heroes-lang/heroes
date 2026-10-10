@@ -64,15 +64,15 @@ record Seen
 # The pass: every constant's written body, read or not, once.
 function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     p = Program(a: a, r: r, s: s, decls: decls)
-    marks: [i64] @ []
-    slots: [values.Slot] @ []
+    marks: [i64] @= []
+    slots: [values.Slot] @= []
 
     for _ in decls
         marks @ marks.push(0)
         slots @ slots.push(values.none())
 
-    seen: Seen @ Seen(marks: marks, values: slots, bound: {}, cells: {}, wrote: [], owner: "")
-    at: i64 @ 0
+    seen: Seen @= Seen(marks: marks, values: slots, bound: {}, cells: {}, wrote: [], owner: "")
+    at: i64 @= 0
 
     while at < decls.len()
         walk_constant(@seen, @c, p, at: at)
@@ -92,7 +92,7 @@ function walk_constant(@seen: Seen, @c: state.Checker, p: Program, at: i64)
             cells = seen.cells
             seen.owner @ source.span_text(p.s, p.decls[at].name)
             seen.cells @ {}
-            got: values.Slot @ values.none()
+            got: values.Slot @= values.none()
 
             # The body's value is its last line's.
             for sid in k.body.must().stmts
@@ -162,7 +162,7 @@ function forgetting(@seen: Seen, writes: [i64]) -> {i64: values.Slot}
 # What held before a branch or a loop, less every cell written since `from`.
 function restored(@seen: Seen, before: {i64: values.Slot}, from: i64)
     seen.cells @ before
-    at: i64 @ from
+    at: i64 @= from
 
     while at < seen.wrote.len()
         seen.cells[seen.wrote[at]] @ values.none()

@@ -70,7 +70,7 @@ function code_at(text: str, at: i64) -> i64
     if lead < 192
         return lead
     width = width_at(text[at])
-    code: i64 @ lead & 31
+    code: i64 @= lead & 31
 
     if width == 3
         code @ lead & 15
@@ -104,7 +104,7 @@ function width_at(b: u8) -> i64
 # byte cost 11% more instructions to lex the compiler (panel 192's
 # compiler-engineer, measured).
 function clear(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
     n = text.len()
 
     # `might_begin`, written out over one read of the byte: a printable ASCII
@@ -152,7 +152,7 @@ function past(@l: state.LexState, text: str, at: i64) -> i64
 # the others have one; a carriage return after the first ends a run, being a
 # string's own refusal and a comment's line end.
 function run_end(text: str, at: i64) -> i64
-    i: i64 @ at
+    i: i64 @= at
     nul = text[at] == 0
 
     while i < text.len() && might_begin(text[i])
@@ -178,20 +178,20 @@ function told_as(text: str, from: i64, to: i64, holder: Holder) -> diag.Diagnost
     # Panel 192's R2: what is said of a NUL names no invariant R1 denies, since
     # a `str` may hold one; the literal cannot, and the bytes can.
     if holder == .string && code == 0
-        nul: diag.Diagnostic @ diag.new_diagnostic(
+        nul: diag.Diagnostic @= diag.new_diagnostic(
             code: "nul_in_string",
             message: "this string holds a NUL written as itself" + rest + ", which no screen shows, and no escape writes one: a `str` that must hold a NUL is built from bytes as the program runs, a `[u8]` read by `validated_bytes()`",
             span: span
         )
         nul.fixes @ nul.fixes.push(diag.Fix(title: "delete it", replacement: "", span: span, certainty: .guess))
         return nul
-    word: str @ "string"
-    how: str @ "a string writes it by its code, as `" + raw_chars.escaped(code) + "`"
+    word: str @= "string"
+    how: str @= "a string writes it by its code, as `" + raw_chars.escaped(code) + "`"
 
     if holder == .comment
         word @ "comment"
         how @ "write its name instead, `" + shown_char.written(ch) + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "invisible_character",
         message: "this " + word + " holds " + shown_char.named(ch) + " written as itself" + rest + ", " + why(code, holder: holder) + ": " + how,
         span: span
@@ -232,8 +232,8 @@ function after(more: i64) -> str
 
 # How many characters the run from `from` to `to` holds.
 function count(text: str, from: i64, to: i64) -> i64
-    n: i64 @ 0
-    i: i64 @ from
+    n: i64 @= 0
+    i: i64 @= from
 
     while i < to
         i @ i + bytes.char_at(text, i).len()
@@ -244,8 +244,8 @@ function count(text: str, from: i64, to: i64) -> i64
 # The run from `from` to `to` as its holder writes it: each character by its
 # code in a string, by its name in a comment.
 function rewritten(text: str, from: i64, to: i64, holder: Holder) -> str
-    out: [str] @ []
-    i: i64 @ from
+    out: [str] @= []
+    i: i64 @= from
 
     while i < to
         ch = bytes.char_at(text, i)
@@ -261,13 +261,13 @@ function rewritten(text: str, from: i64, to: i64, holder: Holder) -> str
 # A run of tabs from `at`, told once: a string writes a tab `\t`, its one
 # spelling (design.md §4.3), and one written as itself reads as spaces.
 function tabs(@l: state.LexState, text: str, at: i64, word: str) -> i64
-    end: i64 @ at
+    end: i64 @= at
 
     while end < text.len() && text[end] == 9
         end @ end + 1
 
     span = token.Span(start: at, end: end)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "raw_tab",
         message: "a tab written as itself inside " + word + after(end - at - 1) + ": it reads as spaces, so the next reader retypes it as spaces, and a tab is written `\\t`",
         span: span
@@ -297,7 +297,7 @@ function in_character(@l: state.LexState, text: str, start: i64, end: i64)
     if b == 13 || !refused(code)
         return
     span = token.Span(start: start, end: end)
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "invisible_character",
         message: "this character literal holds " + shown_char.named(bytes.char_at(text, start + 1)) + " written as itself, " + why(code, holder: .string) + ": a character literal is its character's code, so write the number, `" + code.to_str() + "`",
         span: span

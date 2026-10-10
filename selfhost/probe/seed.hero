@@ -59,7 +59,7 @@ function splice(family: str, name: str, at: i64, cut: i64, put: [str], newline: 
 
 # The seed's lines with the splice `e` made.
 function spliced(s: Seed, e: Edit) -> [str]
-    out: [str] @ s.lines.slice(from: 0, to: e.at)
+    out: [str] @= s.lines.slice(from: 0, to: e.at)
 
     for line in e.put
         out @ out.push(line)
@@ -77,8 +77,8 @@ function read(path: str, text: str, tokens: [token.Token]) -> Seed
 # Every token but the layout ones and the end, placed, in order.
 function placed(text: str, tokens: [token.Token]) -> [Word]
     starts = source.starts_of(text)
-    out: [Word] @ []
-    at: i64 @ 0
+    out: [Word] @= []
+    at: i64 @= 0
 
     for t in tokens
         if t.kind == .indent || t.kind == .dedent || t.kind == .terminator || t.kind == .eof
@@ -95,9 +95,9 @@ function placed(text: str, tokens: [token.Token]) -> [Word]
 
 # The text cut at every `\n`, the piece after a final one dropped.
 function cut_lines(text: str) -> [str]
-    out: [str] @ []
-    from: i64 @ 0
-    at: i64 @ 0
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == '\n'
@@ -117,7 +117,7 @@ function ends_newline(text: str) -> bool
 # `lines` joined by `\n`, or by `\r\n`, with a line end after the last when
 # `newline` says so.
 function joined(lines: [str], crlf: bool, newline: bool) -> str
-    end: str @ "\n"
+    end: str @= "\n"
 
     if crlf
         end @ "\r\n"
@@ -131,7 +131,7 @@ function joined(lines: [str], crlf: bool, newline: bool) -> str
 
 # The spaces a line starts with.
 function indent_of(line: str) -> i64
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < line.len() && line[at] == ' '
         at @ at + 1
@@ -140,7 +140,7 @@ function indent_of(line: str) -> i64
 
 # A line with nothing but blanks on it.
 function blank(line: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < line.len()
         if !white(line[at])
@@ -151,7 +151,7 @@ function blank(line: str) -> bool
 
 # A line whose first mark is a `#`.
 function commented(line: str) -> bool
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < line.len() && white(line[at])
         at @ at + 1
@@ -163,7 +163,7 @@ function white(b: u8) -> bool
 
 # The line with the blanks at its end taken off, and at its start.
 function right_trimmed(line: str) -> str
-    end: i64 @ line.len()
+    end: i64 @= line.len()
 
     while end > 0 && white(line[end - 1])
         end @ end - 1
@@ -171,7 +171,7 @@ function right_trimmed(line: str) -> str
     return line.slice(from: 0, to: end)
 
 function left_trimmed(line: str) -> str
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at < line.len() && white(line[at])
         at @ at + 1

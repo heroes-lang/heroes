@@ -29,7 +29,7 @@ function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
     # Nothing to mark, and no walk, where no call ends with the words.
     if a.rests.len() == 0
         return
-    at: i64 @ -1
+    at: i64 @= -1
 
     for node in a.exprs
         at @ at + 1

@@ -36,12 +36,12 @@ variant Edit
 # one column wider than the inputs, so the empty prefixes have a cell and no
 # branch is needed for them — which is the trick that makes this readable.
 function table(old: [str], new: [str]) -> [[i64]]
-    same: [[i64]] @ []
-    i: i64 @ 0
+    same: [[i64]] @= []
+    i: i64 @= 0
 
     while i <= old.len()
-        row: [i64] @ []
-        j: i64 @ 0
+        row: [i64] @= []
+        j: i64 @= 0
 
         while j <= new.len()
             row @ row.push(0)
@@ -53,7 +53,7 @@ function table(old: [str], new: [str]) -> [[i64]]
     i @ 1
 
     while i <= old.len()
-        j: i64 @ 1
+        j: i64 @= 1
 
         while j <= new.len()
             if old[i - 1] == new[j - 1]
@@ -77,9 +77,9 @@ function table(old: [str], new: [str]) -> [[i64]]
 # cells the answer came from, and backwards the table itself says.
 function edits(old: [str], new: [str]) -> [Edit]
     same = table(old: old, new: new)
-    backwards: [Edit] @ []
-    i: i64 @ old.len()
-    j: i64 @ new.len()
+    backwards: [Edit] @= []
+    i: i64 @= old.len()
+    j: i64 @= new.len()
 
     while i > 0 || j > 0
         if i > 0 && j > 0 && old[i - 1] == new[j - 1]
@@ -99,8 +99,8 @@ function edits(old: [str], new: [str]) -> [Edit]
         backwards @ backwards.push(.removed(line: old[i - 1]))
         i @ i - 1
 
-    out: [Edit] @ []
-    at: i64 @ backwards.len() - 1
+    out: [Edit] @= []
+    at: i64 @= backwards.len() - 1
 
     while at >= 0
         out @ out.push(backwards[at])
@@ -118,7 +118,7 @@ function shown(one: Edit) -> str
         .removed r => "- " + r.line
 
 function rendered(old: [str], new: [str]) -> str
-    rows: [str] @ []
+    rows: [str] @= []
 
     for one in edits(old: old, new: new)
         rows @ rows.push(shown(one))
@@ -126,7 +126,7 @@ function rendered(old: [str], new: [str]) -> str
     return join(rows, "\n")
 
 function counted(old: [str], new: [str], of: str) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for one in edits(old: old, new: new)
         if kind_of(one) == of
@@ -213,7 +213,7 @@ test "every kept line appears in both files, and the counts add up"
     # the edits to `old` must produce `new`.
     old: [str] = ["one", "two", "three", "four"]
     new: [str] = ["one", "three", "3.5", "four", "five"]
-    rebuilt: [str] @ []
+    rebuilt: [str] @= []
 
     for one in edits(old: old, new: new)
         match one
@@ -224,7 +224,7 @@ test "every kept line appears in both files, and the counts add up"
     assert rebuilt == new
 
     # And the other direction: dropping the additions gives back `old`.
-    original: [str] @ []
+    original: [str] @= []
 
     for one in edits(old: old, new: new)
         match one

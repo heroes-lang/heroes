@@ -51,7 +51,7 @@ record Lesson
 # `probings` are the build's, every module's headers, each asked its own
 # records' questions (`cli/header_ask.hero`).
 function learn(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, refusals: [str], probings: [probing.Probing], @struct_tags: {str: bool}) -> Lesson
-    learned: i64 @ 0
+    learned: i64 @= 0
 
     for tag in ffi_tag.needs_struct(s, art.decls, stderr: refusals.join("\n"))
         if struct_tags[tag].is_err()
@@ -76,8 +76,8 @@ function learn(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, 
 # library handle is never asked about (`emit/ffi_asked.hero`, which asks only
 # of the program's own files), and `void` is no tag at all.
 function bare_tags(s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}) -> [str]
-    seen: {str: bool} @ {}
-    found: [str] @ []
+    seen: {str: bool} @= {}
+    found: [str] @= []
 
     for decl in decls
         if !handles.is_handle(decl) || source.is_library(s, decl.name.start)
@@ -98,7 +98,7 @@ function bare_tags(s: source.Source, decls: [ast.Decl], struct_tags: {str: bool}
 # else (`emit/ffi_asked.hero`'s `tag`): clang said *must use 'struct' tag* of
 # the word standing as a type, the sentence `needs_struct` reads in a round.
 function answered_struct(asked: ffi_asked.Asked, tags: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for tag in tags
         if asked.types[tag].default("") == "tag"
@@ -124,7 +124,7 @@ function asked_with(types: {str: str}) -> ffi_asked.Asked
     )
 
 test "a bare tag the header answers as a struct's is learned, and no other answer is (defect 400)"
-    types: {str: str} @ {}
+    types: {str: str} @= {}
     types["opaque"] @ "tag"
     types["utag"] @ "union"
     types["colour"] @ "enum"
@@ -144,6 +144,6 @@ test "the bare tags are the program's own handles', once each, and `void` is non
     s = source.new_source(name: "t.hero", text: text)
     none: {str: bool} = {}
     assert bare_tags(s, parsed.decls, struct_tags: none) == ["opaque", "opaque_b"]
-    learned: {str: bool} @ {}
+    learned: {str: bool} @= {}
     learned["opaque"] @ true
     assert bare_tags(s, parsed.decls, struct_tags: learned) == ["opaque_b"]

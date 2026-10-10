@@ -21,7 +21,7 @@ function outer(@y: u8) -> i32
 
 function main()
     p: Pair = Pair(a: 0, b: 7)
-    m: u8 @ 0
+    m: u8 @= 0
     print("before ", p.b)
     print(outer(@m))
     print("not reached ", m, " ", p.b)

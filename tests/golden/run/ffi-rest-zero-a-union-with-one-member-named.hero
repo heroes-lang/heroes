@@ -30,9 +30,9 @@ function a_union_type() -> UD
 
 function main()
     dirty()
-    w: SA @ wide()
+    w: SA @= wide()
     print(w.kind, " ", w.d, " ", sa_x(@w))
     dirty()
-    n: SA @ narrow()
+    n: SA @= narrow()
     print(n.kind, " ", n.c, " ", sa_x(@n))
     print(a_union_type().d)

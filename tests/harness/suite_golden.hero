@@ -279,7 +279,7 @@ function shape_permissive() -> Shape
 # form, so neither its floor nor its skip ratio is asked of it.
 function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report.Report?
     found = cases.selected(found: cases.collect(scratch: scratch, dir: shape.dir)?, only: only)
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
 
     if only == "" && shape.watched
         floors.check(@r, label: shape.name, found: found.len(), floor: shape.least, what: "cases in " + shape.dir)
@@ -289,7 +289,7 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
             label: shape.name,
             detail: "  " + shape.dir + " has " + found.len().to_str() + " cases and had " + shape.least.to_str() + " — a golden that stopped running is not a golden"
         )
-    skipped: i64 @ 0
+    skipped: i64 @= 0
 
     for item in found
         expectation = read_file(item.expected)
@@ -297,7 +297,7 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
         if expectation.is_err()
             report.keep_failure(@r, label: shape.name + "/" + item.name, detail: "  cannot read " + item.expected)
         else
-            line: [str] @ [compiler, shape.verb, item.source]
+            line: [str] @= [compiler, shape.verb, item.source]
 
             for flag in shape.flags
                 line @ line.push(flag)
@@ -371,13 +371,13 @@ function judged_or_skipped(@r: report.Report, @skipped: i64, scratch: str, shape
 # ended. `refused` is why the case was not skipped, where a skip was asked.
 function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: str, said: shell.Run, refused: str)
     label = shape.name + "/" + item.name
-    actual: str @ said.out
+    actual: str @= said.out
 
     if shape.on_stderr
         actual @ said.err
 
     if actual != expected
-        detail: str @ report.mismatch(what: item.source, expected: expected, actual: actual)
+        detail: str @= report.mismatch(what: item.source, expected: expected, actual: actual)
 
         if refused.len() > 0
             detail @ detail + "\n  not skipped for a missing library: " + refused
@@ -410,7 +410,7 @@ function verdict(@r: report.Report, shape: Shape, item: cases.Case, expected: st
 # is the day this harness matters most.
 function stub(scratch: str, name: str, says: str, on_stderr: bool, ends: i64) -> str?
     path = scratch + "/" + name
-    stream: str @ ""
+    stream: str @= ""
 
     if on_stderr
         stream @ " 1>&2"
@@ -535,7 +535,7 @@ test "fixedbugs: the control arm's form runs check with --brief and --permissive
     assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s\\n' \"$@\" 1>&2\nexit 1\n").is_err()
     made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
     assert !made.is_err()
-    form: Shape @ shape_permissive()
+    form: Shape @= shape_permissive()
     form.dir @ tree.must()
     form.least @ 1
     form.watched @ false
@@ -545,7 +545,7 @@ test "fixedbugs: the control arm's form runs check with --brief and --permissive
     assert got.must().failed == 0
 
     # The normal arm's form, over the same case, is not asking the same thing.
-    plain: Shape @ shape_check()
+    plain: Shape @= shape_check()
     plain.dir @ tree.must()
     plain.least @ 1
     plain.watched @ false
@@ -569,7 +569,7 @@ test "fixedbugs: the whole form runs check with no other word (defect 289)"
     assert !write_file(path: path, text: "#!/bin/sh\nprintf '%s\\n' \"$@\" 1>&2\nexit 1\n").is_err()
     made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
     assert !made.is_err()
-    form: Shape @ shape_full()
+    form: Shape @= shape_full()
     form.dir @ tree.must()
     form.least @ 1
     form.watched @ false
@@ -577,7 +577,7 @@ test "fixedbugs: the whole form runs check with no other word (defect 289)"
     assert !got.is_err()
     assert got.must().passed == 1
     assert got.must().failed == 0
-    brief: Shape @ shape_check()
+    brief: Shape @= shape_check()
     brief.dir @ tree.must()
     brief.least @ 1
     brief.watched @ false
@@ -599,7 +599,7 @@ test "fixedbugs: a compiler that writes bytes that are not UTF-8 is told as one 
     assert !write_file(path: path, text: "#!/bin/sh\nprintf 'x.hero:1:1: error[boom]: caf\\351\\n' 1>&2\nexit 1\n").is_err()
     made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "+x", path])
     assert !made.is_err()
-    form: Shape @ shape_check()
+    form: Shape @= shape_check()
     form.dir @ tree.must()
     form.least @ 1
     form.watched @ false
@@ -955,7 +955,7 @@ constant REFUSED: str
 # command lines any more, so the function went with them — but a script
 # is still a script, and its text still has to be well formed.
 function inside_a_script(text: str) -> str
-    out: str @ "'"
+    out: str @= "'"
 
     for ch in text.chars()
         if ch == "'"

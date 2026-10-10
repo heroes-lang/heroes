@@ -124,7 +124,7 @@ function foreign_comment(@l: state.LexState, text: str)
     after_code = !word_place.only_margin(text, from: word_place.line_start(text, at: start), to: start)
 
     if !block && comment_habit.divides_at(text, at: start, inside: openers.depth(l.open_brackets) + l.holes.len() > 0)
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "unexpected_character",
             message: "`//` is not part of the language's syntax — an integer is divided by `/`, and a comment begins with `#`",
             span: token.Span(start: start, end: start + 2)
@@ -138,12 +138,12 @@ function foreign_comment(@l: state.LexState, text: str)
 
     if block
         end = comment_habit.comment_end(text, at: start)
-        lines: str @ ""
+        lines: str @= ""
 
         # Over several lines, one comment, each of its lines owing its own `#`.
         if comment_habit.block_end(text, from: start + 2) < 0
             lines @ ", so each line of this one begins with its own"
-        d: diag.Diagnostic @ diag.new_diagnostic(
+        d: diag.Diagnostic @= diag.new_diagnostic(
             code: "unexpected_character",
             message: "`/*` is not part of the language's syntax — a comment begins with `#` and runs to its line's end" + lines,
             span: token.Span(start: start, end: start + 2)
@@ -158,13 +158,13 @@ function foreign_comment(@l: state.LexState, text: str)
         l.pos @ end
         return
     width = comment_habit.slashes(text, at: start)
-    message: str @ "`" + text.slice(from: start, to: start + width) + "` is not part of the language's syntax — a comment begins with `#`"
-    certainty: diag.Certainty @ .certain
+    message: str @= "`" + text.slice(from: start, to: start + width) + "` is not part of the language's syntax — a comment begins with `#`"
+    certainty: diag.Certainty @= .certain
 
     if after_code
         message @ message + ", and an integer is divided by `/`"
         certainty @ .guess
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "unexpected_character",
         message: message,
         span: token.Span(start: start, end: start + width)
@@ -218,7 +218,7 @@ function ident(@l: state.LexState, text: str)
 
     if !entry.is_err()
         found = foreign_at.repair_of(text, span, entry.must(), @l.outline)
-        d: diag.Diagnostic @ diag.new_diagnostic(code: "reserved_word", message: found.message, span: span)
+        d: diag.Diagnostic @= diag.new_diagnostic(code: "reserved_word", message: found.message, span: span)
         swap = foreign_at.swap_of(found.repair)
 
         if !swap.is_err()
@@ -326,12 +326,12 @@ function finish(@l: state.LexState, text: str, kind: token.TokenKind, start: i64
 # words or the file's end (panel 181, `open_line.owe`), so a test that lexes
 # one line alone ends the file itself, as `lexer.lex_one` does.
 test "a line of words dispatches on first bytes"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_body(@l, "x = f(12, \"s\")\n")
     open_line.settle(@l)
     kinds: [token.TokenKind] = [.ident, .eq, .ident, .lparen, .int_lit, .comma, .str_lit, .rparen, .terminator]
     assert l.tokens.len() == kinds.len()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < kinds.len()
         assert l.tokens[i].kind == kinds[i]
@@ -340,7 +340,7 @@ test "a line of words dispatches on first bytes"
     assert l.diagnostics.len() == 0
 
 test "longest match wins and the hole beats the question mark"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_body(@l, "??? -> => == != <= >= && || << >> ?")
     kinds: [token.TokenKind] = [
         .hole
@@ -357,14 +357,14 @@ test "longest match wins and the hole beats the question mark"
         .question
     ]
     assert l.tokens.len() == kinds.len()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < kinds.len()
         assert l.tokens[i].kind == kinds[i]
         i @ i + 1
 
 test "a keyword is not an identifier and a foreign word repairs itself"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_body(@l, "fn main()")
     assert l.tokens[0].kind == .error
     assert l.diagnostics[0].code == "reserved_word"
@@ -374,7 +374,7 @@ test "a keyword is not an identifier and a foreign word repairs itself"
 
     # Where the word it writes is wrong, the swap is not offered as certain
     # (defect 133's second round): `while function x` is no program.
-    w: state.LexState @ state.new_state()
+    w: state.LexState @= state.new_state()
     line_body(@w, "while fn x")
     assert w.tokens[0].kind == .kw_while
     assert w.tokens[1].kind == .error
@@ -383,11 +383,11 @@ test "a keyword is not an identifier and a foreign word repairs itself"
     assert w.tokens[2].kind == .ident
 
 test "a comment is retained and plants no terminator"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_body(@l, "# a heading\n")
     assert l.tokens.len() == 1
     assert l.tokens[0].kind == .comment
-    v: state.LexState @ state.new_state()
+    v: state.LexState @= state.new_state()
     line_body(@v, "x # trailing\n")
     open_line.settle(@v)
     assert v.tokens[0].kind == .ident
@@ -395,7 +395,7 @@ test "a comment is retained and plants no terminator"
     assert v.tokens[2].kind == .terminator
 
 test "what is not in the language is skipped whole with its name"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_body(@l, "x € y\n")
     open_line.settle(@l)
     assert l.tokens[1].kind == .error
@@ -404,7 +404,7 @@ test "what is not in the language is skipped whole with its name"
     assert l.tokens[2].kind == .ident
 
 test "a tab between tokens is named"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_body(@l, "x\ty\n")
     assert l.diagnostics[0].code == "tab_in_line"
     assert l.tokens[0].kind == .ident
@@ -416,18 +416,18 @@ test "a tab between tokens is named"
 # the stray one, which is a diagnostic, and the tolerated `\r\n`, which was
 # untested on either side of the port (the compiler-engineer's finding).
 test "a stray carriage return is named and a crlf line ending is tolerated"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_body(@l, "print(1)\rprint(2)\n")
     assert l.diagnostics.len() == 1
     assert l.diagnostics[0].code == "stray_carriage_return"
-    crlf: state.LexState @ state.new_state()
+    crlf: state.LexState @= state.new_state()
     line_body(@crlf, "x = 1\r\n")
     open_line.settle(@crlf)
     assert crlf.diagnostics.len() == 0
     assert crlf.tokens[crlf.tokens.len() - 1].kind == .terminator
 
 test "a raw carriage return inside a literal is refused with the escape as its repair"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_body(@l, "s = \"a\rb\"\n")
     assert l.diagnostics.len() == 1
     assert l.diagnostics[0].code == "raw_carriage_return"
@@ -438,6 +438,6 @@ test "a raw carriage return inside a literal is refused with the escape as its r
     assert l.tokens[2].kind == .str_lit
 
     # And the escape spelling is clean, which is the whole point.
-    clean: state.LexState @ state.new_state()
+    clean: state.LexState @= state.new_state()
     line_body(@clean, "s = \"a\\rb\"\n")
     assert clean.diagnostics.len() == 0

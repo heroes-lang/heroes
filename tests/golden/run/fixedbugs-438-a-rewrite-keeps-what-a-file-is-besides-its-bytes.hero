@@ -101,7 +101,7 @@ function no_new_name(dir: str)
     print("a directory that takes no new name: written ", written, ", holds the text ", holds(path))
 
 function device()
-    sink: str @ "/dev/null"
+    sink: str @= "/dev/null"
 
     if hero_run_exe_suffix() == ".exe"
         sink @ "NUL"

@@ -416,7 +416,7 @@ variant Shape
         n: i64
 
 function main()
-    xs: [Big] @ []
+    xs: [Big] @= []
     xs @ xs.push(.c0)
     xs @ xs.push(.c1)
     xs @ xs.push(.c2)
@@ -818,6 +818,6 @@ function main()
     xs @ xs.push(.c398)
     xs @ xs.push(.c399)
     print(xs.len())
-    s: Shape @ .line(n: 3)
+    s: Shape @= .line(n: 3)
     s @ .square(n: 4)  #~ no_such_case
     print(s == .dot)

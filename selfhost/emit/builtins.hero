@@ -219,9 +219,9 @@ function called(callee: str, arguments: [str], wanted: bool) -> str
 # function at every callee (defect 492).
 function reachable(p: containers.Program, s: source.Source) -> {i64: bool}
     callees = instances.indexed(p)
-    seen: {i64: bool} @ {}
-    work: [i64] @ []
-    size: i64 @ 0
+    seen: {i64: bool} @= {}
+    work: [i64] @= []
+    size: i64 @= 0
 
     for f in p.functions
         if !source.is_library(s, f.span.start)
@@ -250,7 +250,7 @@ function reachable(p: containers.Program, s: source.Source) -> {i64: bool}
 # as a value was referenced and never defined: undeclared identifier at
 # exit 2 on a legal program, root-dependent as well as wrong.
 function calls_of(f: containers.Function) -> [i64]
-    found: [i64] @ []
+    found: [i64] @= []
 
     for blk in f.blocks
         for inst in blk.insts

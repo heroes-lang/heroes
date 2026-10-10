@@ -54,8 +54,8 @@ constant LIFE: i64
     10
 
 function itself() -> str
-    status: i64 @ 0
-    marks: i64 @ 0
+    status: i64 @= 0
+    marks: i64 @= 0
     return hero_exe_path_shown(status: @status, marks: @marks)
 
 # This program run again with `words`, under a watchdog of `seconds`, 0 for
@@ -69,7 +69,7 @@ function again(words: [str], seconds: i64) -> i64
         hero_run_arg(word: word)
 
     hero_run_limit(seconds: seconds)
-    status: i64 @ 0
+    status: i64 @= 0
     code = hero_run_go(program: program.cstr(), in_path: "".cstr(), out_path: "".cstr(), err_path: "".cstr(), @status)
     hero_run_reset()
     return code
@@ -83,7 +83,7 @@ function beats(dir: str) -> i64
 # The second generation: the signal it was asked to be sent, written down,
 # then the third, which kills it.
 function second(dir: str)
-    asked: i32 @ 0
+    asked: i32 @= 0
     _ = prctl(option: PR_GET_PDEATHSIG, signal: @asked)
 
     if write_file(path: dir + "/asked", text: asked.to_str()).is_err()
@@ -97,8 +97,8 @@ function third(dir: str)
         return
     _ = kill(pid: getppid(), sig: SIGKILL)
     born = time(at: nullptr)
-    n: i64 @ 0
-    k: i64 @ 0
+    n: i64 @= 0
+    k: i64 @= 0
 
     while time(at: nullptr) - born < LIFE
         n @ n + 1
@@ -112,7 +112,7 @@ function third(dir: str)
 
 # A loop the watchdog ends, which is how the first generation waits.
 function spin() -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     while true
         n @ n + 1

@@ -45,17 +45,17 @@ extern "SDL3/SDL.h" package "sdl3"
 
 function main()
     print(SDL_Init(flags: 0x4000))
-    sent: SDL_Event @ SDL_Event(
+    sent: SDL_Event @= SDL_Event(
         user: SDL_UserEvent(type: 0x8000, reserved: 0, timestamp: 0, windowID: 0, code: 42, data1: nullptr, data2: nullptr)
     )
     print(SDL_PushEvent(@sent))
-    found: bool @ false
-    code: i32 @ 0
-    keyed: u32 @ 0
-    tries: i64 @ 0
+    found: bool @= false
+    code: i32 @= 0
+    keyed: u32 @= 0
+    tries: i64 @= 0
 
     while !found && tries < 64
-        got: SDL_Event @ SDL_Event(type: 0)
+        got: SDL_Event @= SDL_Event(type: 0)
 
         if SDL_PollEvent(@got) && got.type == 0x8000
             found @ true

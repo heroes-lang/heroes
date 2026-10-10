@@ -80,7 +80,7 @@ constant NO_LAYOUT: str
     "heroes-ffi-no-layout"
 
 function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Source, decls: [ast.Decl], c: state.Checked, u: extern_union.Used) -> str
-    lines: [str] @ c_text.includes(headers)
+    lines: [str] @= c_text.includes(headers)
 
     lines @ lines.push("#pragma clang diagnostic error \"-Wmissing-field-initializers\"")
     lines @ lines.push("#pragma clang diagnostic error \"-Wexcess-initializers\"")
@@ -92,14 +92,14 @@ function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Sour
                 built = extern_union.built_from_two(u, decl: one.decl)
                 omitted = extern_union.omits(u, decl: one.decl, count: rec.fields.len())
                 compared = !u.operated[one.decl].is_err()
-                slots: [str] @ []
-                sizes: [str] @ []
+                slots: [str] @= []
+                sizes: [str] @= []
 
                 for field in rec.fields
                     sizes @ sizes.push("(void)sizeof(v." + source.span_text(s, field.name) + ");")
                     slots @ slots.push(slot(c, decls, s, field))
 
-                list: str @ slots.join(", ")
+                list: str @= slots.join(", ")
 
                 if slots.len() == 1 && slots[0] == "0"
                     list @ "(0)"
@@ -114,7 +114,7 @@ function screen_unit(headers: [str], wanted: [layout_text.Asked], s: source.Sour
                     "/* " + one.decl.to_str() + " built " + built.to_str() + " omits " + omitted.to_str() + " compared " + compared.to_str() + " */"
                 )
                 lines @ lines.push("#line " + (one.decl + 1).to_str() + " \"" + SCREEN + "\"")
-                text: str @ "__attribute__((unused)) static void " + SCREEN + "_" + one.decl.to_str() + "(void) { " + one.c_type + " v = {" + list + "}; " + sizes.join(" ") + " (void)v; }"
+                text: str @= "__attribute__((unused)) static void " + SCREEN + "_" + one.decl.to_str() + "(void) { " + one.c_type + " v = {" + list + "}; " + sizes.join(" ") + " (void)v; }"
 
                 # A construction that leaves a field out is judged per
                 # construction from the layout (panel 186 R7).
@@ -155,7 +155,7 @@ function slot(c: state.Checked, decls: [ast.Decl], s: source.Source, field: ast.
                     return "{." + source.span_text(s, first.name) + " = " + inner_zero(c, decls, field: first) + "}"
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return "0"
         .fixed x =>
-            element: str @ "0"
+            element: str @= "0"
 
             match table.get(c.types, x.element)
                 .named | .fixed                                           => element @ "{}"
@@ -197,7 +197,7 @@ function flagged(said: str) -> {i64: bool}
 function no_layout(said: str, wanted: [layout_text.Asked]) -> [layout_text.Asked]
     whole = placed(said: said, file: WHOLE)
     named = placed(said: said, file: NAMED)
-    out: [layout_text.Asked] @ []
+    out: [layout_text.Asked] @= []
 
     for one in wanted
         if !whole[one.decl].is_err() && named[one.decl].is_err()
@@ -212,10 +212,10 @@ function no_layout(said: str, wanted: [layout_text.Asked]) -> [layout_text.Asked
 # read, never what it says: a broken struct's own error was measured to
 # silence `hero_ly_whole` on clang 21, and this does not rest on that.
 function strays(said: str) -> bool
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start < said.len()
-        end: i64 @ said.len()
+        end: i64 @= said.len()
         found = index_from(text: said, needle: "\n", from: start)
 
         if !found.is_err()
@@ -236,7 +236,7 @@ function strays(said: str) -> bool
 # The question clang's JSON answers: one typedef of each record's type, whose
 # `type` says what the record's name stands for.
 function type_unit(headers: [str], wanted: [layout_text.Asked]) -> str
-    lines: [str] @ c_text.includes(headers)
+    lines: [str] @= c_text.includes(headers)
 
     for one in wanted
         lines @ lines.push("typedef " + one.c_type + " " + TYPED + one.decl.to_str() + ";")
@@ -290,7 +290,7 @@ function quoted_after(text: str, key: str) -> str?
 # The first byte at or after `from` where `needle` begins, by bytes: a cut
 # there is at an ASCII byte, which no UTF-8 character holds inside it.
 function index_from(text: str, needle: str, from: i64) -> i64?
-    at: i64 @ from
+    at: i64 @= from
 
     while at + needle.len() <= text.len()
         if bytes.bytes_at(text: text, at: at, needle: needle)
@@ -302,15 +302,15 @@ function index_from(text: str, needle: str, from: i64) -> i64?
 # The positions clang said anything at under `#line <n> "<file>"`: every
 # `<file>:<n>:` in its output names declaration n - 1.
 function placed(said: str, file: str) -> {i64: bool}
-    out: {i64: bool} @ {}
+    out: {i64: bool} @= {}
     needle = file + ":"
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at + needle.len() <= said.len()
         if bytes.bytes_at(text: said, at: at, needle: needle)
-            row: i64 @ 0
-            k: i64 @ at + needle.len()
-            seen: bool @ false
+            row: i64 @= 0
+            k: i64 @= at + needle.len()
+            seen: bool @= false
 
             while k < said.len() && said[k] >= '0' && said[k] <= '9'
                 row @ row * 10 + (said[k] - '0').to_i64().must()

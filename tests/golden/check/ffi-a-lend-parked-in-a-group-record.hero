@@ -4,7 +4,7 @@
 # SYMPTOM: a pointer handed to a group's `record` constructor outlives the bytes
 # it points into, at exit 0. Two shapes, one class:
 #
-#   x: cstr @ s.lease()          b = Box(p: x)        end_lease(@x)
+#   x: cstr @= s.lease()          b = Box(p: x)        end_lease(@x)
 #     -> check 0, prints 0 where 72 is honest, heap-use-after-free under ASan
 #
 #   return Box(p: s.cstr())      from a function whose `str` dies with the frame
@@ -33,7 +33,7 @@ extern "ffi-a-lend-parked-in-a-group-record.h"
     function read_it(p: cstr lent) -> i64
 
 function parked_lease(s: str) -> i64
-    x: cstr @ s.lease()
+    x: cstr @= s.lease()
     b = Box(p: x)  #~ lease_escapes
     end_lease(@x)
     return read_it(p: b.p)
@@ -45,7 +45,7 @@ function parked_lend() -> Box
 # The legal shapes beside them, which must stay quiet: a lend and a lease name
 # each handed to the call that READS and returns.
 function reads_it(s: str) -> i64
-    x: cstr @ s.lease()
+    x: cstr @= s.lease()
     k = read_it(p: x)
     end_lease(@x)
     return k + read_it(p: s.cstr())

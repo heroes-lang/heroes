@@ -4,6 +4,6 @@ extern "keep.h"
     function keep(s: cstr)
 
 function keeping()
-    x: cstr @ "alt".lease()
+    x: cstr @= "alt".lease()
     keep(s: x)
     end_lease(@x)

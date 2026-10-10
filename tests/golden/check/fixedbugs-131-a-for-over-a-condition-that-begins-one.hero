@@ -4,7 +4,7 @@
 # variable, and `while !done` is the loop its author meant.
 
 function main()
-    done: bool @ false
+    done: bool @= false
 
     for !done  #~ for_missing_in
         done @ true

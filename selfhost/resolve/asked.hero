@@ -77,8 +77,8 @@ function new_asking() -> Asking
 # the answer kept where the same question was asked before, and worked and
 # kept where it was not.
 function nearest(@asking: Asking, name: str, lists: [[str]]) -> [str]
-    numbered: [i64] @ []
-    k: i64 @ 0
+    numbered: [i64] @= []
+    k: i64 @= 0
 
     for list in lists
         if k < asking.last.len() && asking.last[k] == list
@@ -102,9 +102,9 @@ function nearest(@asking: Asking, name: str, lists: [[str]]) -> [str]
 # where it has one or its walks have now cost what one holds, and walked
 # where not, the bands of each walk counted against its list.
 function worked(@asking: Asking, name: str, lists: [[str]], numbered: [i64]) -> [str]
-    chosen: [near_index.Index?] @ []
-    bands: [i64] @ []
-    k: i64 @ 0
+    chosen: [near_index.Index?] @= []
+    bands: [i64] @= []
+    k: i64 @= 0
 
     for list in lists
         number = numbered[k]
@@ -149,12 +149,12 @@ function unindexed(@xs: [near_index.Index?])
 # the same name over other lists, other lists over the same name, a list one
 # name longer, and the same names in another order.
 test "an answer kept is the one worked, and only for its own question"
-    asking: Asking @ new_asking()
+    asking: Asking @= new_asking()
     locals: [str] = ["total", "count"]
     values: [str] = ["print", "sort", "len"]
     first = nearest(@asking, "totl", [locals, values])
     assert first == ["total"]
-    again: [str] @ ["total"]
+    again: [str] @= ["total"]
     again @ again.push("count")
     assert nearest(@asking, "totl", [again, values]) == ["total"]
     assert asking.count == 2
@@ -175,17 +175,17 @@ test "an answer kept is the one worked, and only for its own question"
 # by walking or through the index, is `nearest_in`'s; a list asked once is
 # not.
 test "a list is indexed once its walks have cost its index, and answers alike"
-    names: [str] @ []
-    i: i64 @ 0
+    names: [str] @= []
+    i: i64 @= 0
 
     while i < 40
         names @ names.push("loc" + i.to_str())
         i @ i + 1
 
-    asking: Asking @ new_asking()
+    asking: Asking @= new_asking()
     once: [str] = ["alpha", "beta"]
     _ = nearest(@asking, "alpah", [once])
-    j: i64 @ 0
+    j: i64 @= 0
 
     while j < 60
         name = "lco" + j.to_str()
@@ -200,12 +200,12 @@ test "a list is indexed once its walks have cost its index, and answers alike"
 # of up to two of them, each question asked twice and the memo shared
 # through all: each answer is the one `nearest_in` gives.
 test "a memo shared by every question answers each as nearest_in does"
-    words: [str] @ [""]
-    last: [str] @ [""]
-    size: i64 @ 0
+    words: [str] @= [""]
+    last: [str] @= [""]
+    size: i64 @= 0
 
     while size < 3
-        longer: [str] @ []
+        longer: [str] @= []
 
         for word in last
             for letter in ["a", "b", "A"]
@@ -218,7 +218,7 @@ test "a memo shared by every question answers each as nearest_in does"
         size @ size + 1
 
     empty: [str] = []
-    lists: [[str]] @ [empty]
+    lists: [[str]] @= [empty]
 
     for one in words
         lists @ lists.push([one])
@@ -226,8 +226,8 @@ test "a memo shared by every question answers each as nearest_in does"
         for two in ["a", "bA", "ab"]
             lists @ lists.push([one, two])
 
-    asking: Asking @ new_asking()
-    asked_twice: i64 @ 0
+    asking: Asking @= new_asking()
+    asked_twice: i64 @= 0
 
     while asked_twice < 2
         for name in words

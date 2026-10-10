@@ -58,7 +58,7 @@ function meant_write(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
 # handed `@` where the parameter takes none or none stands, are each the
 # cell the author meant to write.
 function meant_by_signature(@r: state.Resolver, a: ast.Ast, s: source.Source, writes: [bool], first: i64, given: [ast.Arg])
-    k: i64 @ first
+    k: i64 @= first
 
     for arg in given
         takes = k < writes.len() && writes[k]

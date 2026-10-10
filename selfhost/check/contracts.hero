@@ -39,8 +39,8 @@ use check/state
 use check/decls as declared
 
 function agree(@c: state.Checker, s: source.Source, decls: [ast.Decl])
-    reference: {str: i64} @ {}
-    index: i64 @ 0
+    reference: {str: i64} @= {}
+    index: i64 @= 0
 
     for decl in decls
         match decl.kind
@@ -90,7 +90,7 @@ function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], earlier
 
 function compare_functions(@c: state.Checker, s: source.Source, decls: [ast.Decl], a: ast.FunctionDecl, b: ast.FunctionDecl, earlier: i64, later: i64)
     name = source.span_text(s, decls[later].name)
-    shared: i64 @ a.params.len()
+    shared: i64 @= a.params.len()
 
     if b.params.len() < shared
         shared @ b.params.len()
@@ -152,7 +152,7 @@ function same_type(c: state.Checker, x: i64, y: i64) -> bool
 # `counted_by` names its sibling by POSITION, since the two declarations may
 # name their parameters differently and still bind one C function.
 function param_key(s: source.Source, fd: ast.FunctionDecl, p: ast.Param) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     if p.mutable
         parts @ parts.push("@")
@@ -186,7 +186,7 @@ function param_key(s: source.Source, fd: ast.FunctionDecl, p: ast.Param) -> str
     return parts.join(" ")
 
 function result_key(s: source.Source, fd: ast.FunctionDecl) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     if !fd.owned_result.is_err()
         parts @ parts.push("owned " + source.span_text(s, fd.owned_result.must()))
@@ -212,11 +212,11 @@ function with_set(parts: [str], key: str) -> [str]
     return parts.push(key)
 
 function sorted(names: [str]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for name in names
-        placed: bool @ false
-        next: [str] @ []
+        placed: bool @= false
+        next: [str] @= []
 
         for have in out
             if !placed && before(a: name, b: have)
@@ -233,7 +233,7 @@ function sorted(names: [str]) -> [str]
 # Byte order, which is all a C identifier needs: the language orders
 # integers and floats with `<` and leaves strings to the program.
 function before(a: str, b: str) -> bool
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < a.len() && i < b.len()
         if a[i] != b[i]
@@ -243,7 +243,7 @@ function before(a: str, b: str) -> bool
     return a.len() < b.len()
 
 function sibling_index(s: source.Source, fd: ast.FunctionDecl, named: str) -> i64
-    index: i64 @ 0
+    index: i64 @= 0
 
     for p in fd.params
         if source.span_text(s, p.name) == named
@@ -255,7 +255,7 @@ function sibling_index(s: source.Source, fd: ast.FunctionDecl, named: str) -> i6
 # The spelling a reader sees: the marks as the author wrote them, `counted_by`
 # with its sibling's name, or `no mark`.
 function param_spelling(s: source.Source, p: ast.Param) -> str
-    parts: [str] @ []
+    parts: [str] @= []
 
     if p.mutable
         parts @ parts.push("@")
@@ -295,13 +295,13 @@ function result_spelling(s: source.Source, fd: ast.FunctionDecl) -> str
 # `resolve/state.hero` names no library line either), and it is the one of the
 # two that cannot change, so the note says what is left to the author.
 function differs(@c: state.Checker, s: source.Source, name: str, what: str, here: str, there: str, at: token.Span, other: token.Span)
-    message: str @ "`" + name + "` is declared here and at " + source.elsewhere(s, here: at.start, there: other.start) + ", and the two disagree about " + what + ": here " + here + ", there " + there + " — one C function has one contract"
-    advice: str @ "both declarations bind one C symbol, so a position they declare at one type says the same about it: the same `@`, `lent`, `owned`, `consumes`, `transfers`, `acquires`, `retains`, `borrows` and `counted_by`, and a result of one type the same marks and `when`. Change the one that is wrong about C; if C really is called two ways, give the second way a shim with its own name in the header"
+    message: str @= "`" + name + "` is declared here and at " + source.elsewhere(s, here: at.start, there: other.start) + ", and the two disagree about " + what + ": here " + here + ", there " + there + " — one C function has one contract"
+    advice: str @= "both declarations bind one C symbol, so a position they declare at one type says the same about it: the same `@`, `lent`, `owned`, `consumes`, `transfers`, `acquires`, `retains`, `borrows` and `counted_by`, and a result of one type the same marks and `when`. Change the one that is wrong about C; if C really is called two ways, give the second way a shim with its own name in the header"
 
     if source.is_library(s, other.start)
         message @ "`" + name + "` is declared here and in the Heroes library, and the two disagree about " + what + ": here " + here + ", in the library " + there + " — one C function has one contract"
         advice @ "the library's declaration is in every program and is not this program's to change, so this one says what it says: at a position the two declare at one type the same `@`, `lent`, `owned`, `consumes`, `transfers`, `acquires`, `retains`, `borrows` and `counted_by`, and for a result of one type the same marks and `when`. Or drop this `extern` and call the library function that wraps it"
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "contract_differs", message: message, span: at)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "contract_differs", message: message, span: at)
     d.notes @ d.notes.push(advice)
     state.push_diagnostic(@c, d)
 
@@ -311,10 +311,10 @@ function agreed(files: [source.InputFile]) -> [diag.Diagnostic]
     s = source.from_files(files)
     p = parse.parse(s.text)
     out = resolve.resolve(p.tree, s, p.decls, p.uses)
-    c: state.Checker @ state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
     declared.file(@c, p.tree, out, s, p.decls)
     agree(@c, s, p.decls)
-    found: [diag.Diagnostic] @ []
+    found: [diag.Diagnostic] @= []
 
     for d in c.out.diagnostics
         if d.code == "contract_differs"

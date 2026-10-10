@@ -36,12 +36,12 @@ use openers
 function close(@l: state.LexState, text: str, kind: token.TokenKind, start: i64)
     if kind != .arrow || l.holes.len() > 0 || !in_the_parameters(l, text) || !short(l, text, from: start + 2)
         return
-    found: str @ "`)`, or `,` and another parameter type, found `->` — a function type closes its parameters before its `->`, `function(i64) -> i64`"
+    found: str @= "`)`, or `,` and another parameter type, found `->` — a function type closes its parameters before its `->`, `function(i64) -> i64`"
 
     # Right after the `(`, no parameter stands (defect 309's wording).
     if l.tokens[last_word(l)].span.start == openers.top(l.open_brackets).start
         found @ "a parameter type or `)`, found `->` — a function type closes its parameters before its `->`, `function() -> i64`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "expected_function_type_params_close",
         message: "expected " + found + ": its `)` is left out there",
         span: token.Span(start: start, end: start + 2)
@@ -64,7 +64,7 @@ function in_the_parameters(l: state.LexState, text: str) -> bool
 
     if n == 0 || text[openers.top(l.open_brackets).start] != '('
         return false
-    open: i64 @ l.tokens.len() - 1
+    open: i64 @= l.tokens.len() - 1
 
     while open > 0 && l.tokens[open].span.start > openers.top(l.open_brackets).start
         open @ open - 1
@@ -81,7 +81,7 @@ function in_the_parameters(l: state.LexState, text: str) -> bool
 # The index of the last token laid out that is no comment and no line end;
 # inside a bracket open, its opener at least.
 function last_word(l: state.LexState) -> i64
-    i: i64 @ l.tokens.len() - 1
+    i: i64 @= l.tokens.len() - 1
 
     while i > 0 && (l.tokens[i].kind == .comment || token.is_line_end(l.tokens[i].kind))
         i @ i - 1
@@ -91,8 +91,8 @@ function last_word(l: state.LexState) -> i64
 # The index of the opener the closer at the index `closer` closes, above the
 # index `floor`, or `floor` where none is.
 function opener_of(l: state.LexState, closer: i64, floor: i64) -> i64
-    depth: i64 @ 0
-    i: i64 @ closer
+    depth: i64 @= 0
+    i: i64 @= closer
 
     while i > floor
         k = l.tokens[i].kind
@@ -116,14 +116,14 @@ function opener_of(l: state.LexState, closer: i64, floor: i64) -> i64
 # closed by a closer of another kind that closes one below it. The text is
 # read as the lexer will read it, strings whole and comments left out.
 function short(l: state.LexState, text: str, from: i64) -> bool
-    stack: [u8] @ []
+    stack: [u8] @= []
 
     for span in openers.live(l.open_brackets)
         stack @ stack.push(text[span.start])
 
-    open: i64 @ stack.len()
-    kept: bool @ false
-    i: i64 @ from
+    open: i64 @= stack.len()
+    kept: bool @= false
+    i: i64 @= from
 
     while i < text.len()
         b = text[i]
@@ -142,7 +142,7 @@ function short(l: state.LexState, text: str, from: i64) -> bool
             kept @ true
             i @ closers.past_literal(text, from: i)
         else if bytes.is_alnum(b) || b == '_'
-            end: i64 @ i
+            end: i64 @= i
 
             while end < text.len() && (bytes.is_alnum(text[end]) || text[end] == '_')
                 end @ end + 1
@@ -174,13 +174,13 @@ function short(l: state.LexState, text: str, from: i64) -> bool
 # kind, the ones above it then never closed (`closers.close_to_its_kind`), or
 # the innermost where none of its kind is open, a closer of the wrong kind.
 function closed_by(stack: [u8], closer: u8) -> i64
-    want: u8 @ '{'
+    want: u8 @= '{'
 
     if closer == ')'
         want @ '('
     else if closer == ']'
         want @ '['
-    at: i64 @ stack.len() - 1
+    at: i64 @= stack.len() - 1
 
     while at >= 0 && stack[at] != want
         at @ at - 1
@@ -192,7 +192,7 @@ function closed_by(stack: [u8], closer: u8) -> i64
 # The offset of the first line from the line start `from` that holds words,
 # past the blank ones and those a comment holds alone, or the text's end.
 function line_with_words(text: str, from: i64) -> i64
-    line: i64 @ from
+    line: i64 @= from
 
     while line < text.len()
         m = indent_runs.margin_at(text, at: line)
@@ -214,7 +214,7 @@ function line_with_words(text: str, from: i64) -> i64
 # `bracket_reach.ends_at` asks of it.
 function reach_ends(l: state.LexState, text: str, line: i64, inner: u8, kept: bool) -> bool
     m = indent_runs.margin_at(text, at: line)
-    spaces: i64 @ m.spaces
+    spaces: i64 @= m.spaces
 
     if m.tabs > 0 || l.run[0].kind != .none
         spaces @ indent_runs.through(l.run[0], m)
@@ -228,7 +228,7 @@ function reach_ends(l: state.LexState, text: str, line: i64, inner: u8, kept: bo
 
 test "the brackets open at a `->` are short where its `)` was left out, and close where it was written past the result"
     text = "function f(g: (function(i64 -> i64)) -> i64\n    return 1\n"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     l.open_brackets @ openers.of(
         [token.Span(start: 10, end: 11), token.Span(start: 14, end: 15), token.Span(start: 23, end: 24)]
     )
@@ -240,10 +240,10 @@ test "the brackets open at a `->` are short where its `)` was left out, and clos
     assert !short(l, "function f(g: (function(i64 -> i64\n))) -> i64\n    return 1\n", from: 30)
 
     # A binding's, at a name after a line that kept its end (R2).
-    b: state.LexState @ state.new_state()
+    b: state.LexState @= state.new_state()
     b.level @ 1
     b.open_brackets @ openers.of([token.Span(start: 7, end: 8), token.Span(start: 16, end: 17)])
-    assert short(b, "    g: (function(i64 -> i64) @ d\n    print(1))\n", from: 23)
+    assert short(b, "    g: (function(i64 -> i64) @= d\n    print(1))\n", from: 23)
 
 test "a closer closes the nearest opener of its kind, or the innermost where none is open"
     assert closed_by(['(', '[', '('], closer: ')') == 2

@@ -83,7 +83,7 @@ function run_run(path: str, s: source.Source, inv: argv.Invocation, t: toolchain
 
     # No line of our own before the program's output: stdout is the
     # program's from here.
-    words: [str] @ [made.must().binary]
+    words: [str] @= [made.must().binary]
 
     for arg in inv.program_args
         words @ words.push(arg)
@@ -137,8 +137,8 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
     if titles.len() == 0
         print("no tests in " + path)
         return .ok_exit
-    failed: i64 @ 0
-    index: i64 @ 0
+    failed: i64 @= 0
+    index: i64 @= 0
     symbolized.prepare(sanitize: options.sanitize)
 
     for title in titles
@@ -156,7 +156,7 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
             failed @ failed + 1
         index @ index + 1
 
-    unit: str @ "tests"
+    unit: str @= "tests"
 
     if titles.len() == 1
         unit @ "test"
@@ -232,7 +232,7 @@ test "an object zeroed, cut or replaced is compiled again, never linked, and a r
     path = dir + "/p.hero"
     assert !write_file(path: path, text: "function main()\n    print(443)\n").is_err()
     s = input.read_compilation(path: path, library: library).must()
-    t: toolchain.Toolchain @ toolchain.locate_toolchain(hint: "", fingerprint: "port-objects").must()
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-objects").must()
     t.build @ dir + "/build"
     none: [str] = []
     options = compile.Options(
@@ -265,7 +265,7 @@ test "an object zeroed, cut or replaced is compiled again, never linked, and a r
     nul = read_file("tests/golden/surface-fixtures/notext357/one-nul.txt").must()
 
     for shape in ["zeroed", "emptied", "another"]
-        at: i64 @ 0
+        at: i64 @= 0
 
         for object in objects
             if shape == "zeroed"
@@ -278,7 +278,7 @@ test "an object zeroed, cut or replaced is compiled again, never linked, and a r
             # at every other one, and the second's at the first, so the link
             # holds one unit twice and lacks another, as a rotation would not.
             if shape == "another"
-                from: i64 @ 0
+                from: i64 @= 0
 
                 if at == 0
                     from @ 1
@@ -312,7 +312,7 @@ test "an object zeroed, cut or replaced is compiled again, never linked, and a r
 
 # Every object under `dir`.
 function objects_under(dir: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for file in process.files_under(dir).must()
         if strings.ends_with(text: file, suffix: ".o")
