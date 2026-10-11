@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-629-a-handle-handed-away-through-the-dot-is-judged-as-the-named-call.hero:17:5: error[consumed_borrowed_handle]: `h_into` hands the life of what it is given into another value that will end it, and `h` was borrowed — this function promised not to change it
+tests/golden/check/fixedbugs-629-a-handle-handed-away-through-the-dot-is-judged-as-the-named-call.hero:21:27: error[consumed_borrowed_handle]: `h_adopt` hands the life of what it is given into another value that will end it, and `h` was borrowed — this function promised not to change it
