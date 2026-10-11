@@ -61,6 +61,11 @@ output and twenty principles printed by `heroes this`.
   snake_case error codes, source locations, notes and suggested fixes, each
   fix with the place it applies, and every answer names the files it read and
   their SHA-256. `heroes check --apply` writes the certain fixes into the
-  program; with `--json` it prints that program inside a document of the
-  same schema on stdout, with how many rounds wrote and the certain fixes it
-  left in other modules.
+  program, on stdout or with `--in-place` into the file; with `--json` it
+  prints that program inside a document of the same schema on stdout, with
+  how many rounds wrote and the certain fixes it left in other modules, which
+  a file named alone never writes. `heroes check <directory> --apply
+  --in-place` writes each file whose certain fixes every program under the
+  directory agrees on, and names a file they disagree on, leaving it: the
+  directory is the set of programs that count, so name the trees a migration
+  means, never one holding records or cases wrong on purpose.
