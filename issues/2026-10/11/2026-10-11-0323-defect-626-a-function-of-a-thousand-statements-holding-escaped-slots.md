@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: 5343d6868adb1ee760a7a89cd610a2f41c5388a9
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** measured by lane b21-misc at 03:23 on 2026-10-11 while repairing defect 622, whose per-type share (UBSan's member-access checks compounding through the chain's inlined functions) that repair removed; this is the share that stayed, the program's own function and not its types' (`.claude/worktrees/scratch-b15/b21-misc/d622/`, ignored by git: the units, the `-ftime-report`s, the instruction counts by `/usr/bin/time -l` with `-fintegrated-cc1`).
 
     **Class: improvement**, 2026-10-11: nothing is wrong at exit 0; the case builds in every configuration and prints `x` and `yz`, under defect 605's watchdog by the measurement that set it; on the CI's clang 18 in a container of four CPUs on a loaded Mac the unit took 105.4 and 106.3 s of user time at `--sanitize -O2` after defect 622 against 128.6 and 121.4 s before, interleaved. A cost, not a refusal (CLAUDE.md § 13).
+
+    Measured at `5343d6868adb1ee760a7a89cd610a2f41c5388a9`, 2026-10-11 (lane b21-misc, batch 21 by the author's choice at 08:51), on the Windows box between 08:58 and 09:01 by the Mac's `date`, its own directory removed after: the route does not hold, so this item closes on the measurement at the batch's close and nothing lands. The thousand-deep unit emitted at that commit, compiled with the build's words at `-O2` under both sanitizers, `-ftime-report`, clang 23.1.1 (`x86_64-pc-windows-msvc`): as emitted, 41.6 s of clang (44 s of wall), the Greedy Register Allocator 19.3 s and `MemCpyOptPass` 0.11 s; with `HERO_COPY_HELD` written as the plain copy under `__has_feature(address_sanitizer)`, the route, 105.1 s (106 s of wall), `MemCpyOptPass` 82.8 s of it, defect 566's stack-move come back under ASan as feared. On this Mac the same two units read 358.4e9 and 119.1e9 instructions (Apple clang 21, in clang's own process), so the route is a gain on two clangs and a build 2.5 times slower on the third, the Windows box's, where the case already stood nearest the run form's watchdog (defect 566), and is not taken. What stays is the cost the item measured, ASan's stack instrumentation of a function of a thousand statements, a cost and not a refusal (CLAUDE.md § 13), under defect 605's bound.
