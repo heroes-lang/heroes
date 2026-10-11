@@ -272,8 +272,16 @@ verb renders it (a sitting's question, CLAUDE.md § 4):
   the field is created once, `POST /orgs/heroes-lang/issue-fields` by an
   organisation administrator, the author's act; and the two issues of the
   number issued twice, `014`, each hold it and each body names the other;
-- the body opens `Filed YYYY-MM-DD · closed YYYY-MM-DD`, because a transcription
-  cannot back-date GitHub's own dates; then the item under the headings of its
+- the body opens `Filed YYYY-MM-DD · closed YYYY-MM-DD` on every route, and
+  **GitHub's own dates are the card's days too**: the issue import endpoint, an
+  unofficial preview, sets an issue's `created_at` and `closed_at` and its
+  comment's from the request (measured 2026-10-11, `docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`;
+  until then this line said a transcription cannot back-date them, and the
+  author's instruction of 2026-10-06 asked it amended if the endpoint answered
+  yes). So an issue is imported whole, each import read `imported` before the
+  next starts; the run's first request asks the endpoint again, and where it
+  refuses the run stops: the REST route, which dates every issue the day it
+  runs, is taken only on the author's word. Then the item under the headings of its
   kind's form in `.github/ISSUE_TEMPLATE/`: a defect's second field under *What
   happens* and its third under *Where to look*, then its `**Origin:**`, its
   `**Class:**` and *The repair* under headings of those names; a decision's

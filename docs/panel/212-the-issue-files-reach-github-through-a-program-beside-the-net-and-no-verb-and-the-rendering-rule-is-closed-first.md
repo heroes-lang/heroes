@@ -291,3 +291,40 @@ token carries the scopes `admin:public_key gist read:org repo`, neither `delete_
 experiment of R6 item 2, which the author allowed. **What it does not settle**: the other acts of R6, which the author
 gives one by one (the milestones, the label's removal, the interaction limit), and the answer to the private
 repositories, which is the coordinator's recommendation in the decision issue's verdict. The author may overturn it.
+
+## Appended 2026-10-11: the experiment of R6 answered yes, and what it moves
+
+Run after the ratification above, between 19:11 and 19:14 UTC;
+`docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`
+holds every request and its answer. **The import endpoint set an issue's `created_at`, `updated_at` and
+`closed_at`, and its comment's `created_at`, from the request**, in a private repository of the organisation, and
+closed it `completed`; awaited one at a time, the numbers kept the requests' order; an imported body made no
+backlink in either form of a reference, and a body made by the REST create made one with a plain URL and with
+`owner/repo#N`, none with `redirect.github.com` or inside a code span; `POST /markdown` told the same forms apart.
+
+**How it was run, where it differs from R6 item 2's words**: two private repositories as R6 asked, one in the
+organisation (`heroes-lang/import-probe`), where the transcription will import, and the target in the author's
+account (`giuseppearici/import-probe-target`), as the ratification's decision issue recommended; but six issues in
+the first, two imported and four made by REST to answer (b), where that recommendation said one; archived when
+read and not deleted, the new token lacking `delete_repo`; the author deleted both, found gone at 19:36 and said
+so in conversation.
+
+What it moves, each as R6 item 2 said it would:
+
+- **`.claude/rules/records.md` § The issues is amended as the author asked on 2026-10-06**: the body's first
+  line stays on every route, and GitHub's own dates are the card's days where the import sets them.
+- **R5**: an issue is one import carrying its days, its labels, its milestone, its closed state and its closing
+  comment, read `imported` before the next starts: 2,017 requests (the issue files counted that evening) where the
+  REST route took three per closed issue, about 4.0 hours at 500 an hour if an import counts as a
+  content-generating request, which is unrun. The run's first request asks the endpoint again; **where it refuses,
+  the run stops with exit 2** (R11), and the REST route, which dates every issue the day it runs, is taken only on
+  the author's word, since their instruction of 2026-10-06 asked for the issues' own dates. A killed run is
+  reconciled as R5 says, by a list of recent issues matched on the `Record:` permalink; the gist's list of the
+  imports made since a day is a second witness, unrun.
+- **R3's bodies** stand: the import route needs them for nothing, and they keep the REST route safe.
+- **R6 item 5** stands: the gist's schema carries no field, so the import cannot set `Defect`.
+- **Prior art**: the gist moves from the historian's candidate to the decision issue's fifth line, re-read
+  2026-10-11, in the gist's own words.
+
+What it does not settle, measurement 041 § 4: a public repository, the scale, whether an import counts against
+the 500 an hour, the endpoint's life after that evening, and a real commit's hash in an imported comment.
