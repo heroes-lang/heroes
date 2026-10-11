@@ -137,7 +137,7 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # A cell nothing re-binds that the resolver left to this pass, told unless
     # a dropped value's repair writes it back (defect 630): after every body,
     # since the line that keeps it may follow any other.
-    kept_cells.told(@c, r, s)
+    kept_cells.told(@c, a, r, s, decls)
 
     # Within the pass, source order — the same stable sort the resolver
     # uses, called across the module boundary rather than copied: two

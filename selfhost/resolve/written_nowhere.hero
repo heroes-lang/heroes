@@ -1,0 +1,195 @@
+# An `@` parameter nothing writes or ends is refused (panel 210's R1, ratified
+# 2026-10-11; spec § 5, *a cell nothing re-binds or an `@` parameter nothing
+# writes or ends (section 13)*; design.md §4.8 copy in, copy out). Its
+# copy-out hands every caller back the value it passed, so the `@` at the
+# signature and at each call promises a change nothing makes.
+#
+# What counts as a write is the resolver's: `@` to it, a field or an element;
+# an `@` argument; a `.ptr()` lend C writes through; a `consumes` or
+# `transfers` argument, named or the dotted receiver (`meant.ended_write`); an
+# `@` the checker will add or refuse (`meant.meant_write`); the receiver of a
+# dotted call whose first parameter is `@`. A dropped value of its own type
+# computed from it is left to the checker, as a cell's is
+# (`resolve/value_lines.hero`, defect 630): the drop is then the one mistake.
+#
+# **Both repairs are offered, and both are `guess`** (panel 210, the
+# spec-warden's Q3): the compiler cannot tell a needless `@` from a write the
+# body forgot. Removing the `@` compiles and keeps the forgotten write's bug
+# (`m @= l` changed and never handed back prints 0 where 1 was meant), and
+# the calls' `@`s are the checker's to remove (`marker_mismatch`), in files
+# `check --apply` may not write. Where the body copied the parameter into a
+# cell, `m @= l`, the write it forgot is offered first: `l @ m` as its last
+# statement, or before its `return`.
+
+use token
+use ast
+use diag
+use source
+use resolved
+use resolve/state
+use resolve/errors
+use resolve/unused_sweep
+
+# The rule, after the walk: every `@` parameter read and never written, not
+# left to the checker, told at its name.
+function report(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    at: i64 @= 0
+
+    while at < r.out.locals.len()
+        if r.out.locals[at].reads > 0 && !r.out.locals[at].deferred && unused_sweep.written_nowhere(r, s, r.out.locals[at])
+            state.push_diagnostic(@r, told(a, s, decls, out: r.out, at: at))
+        at @ at + 1
+
+# The locals left to the checker (`Local.deferred`), told here after all
+# where this pass has refused anything: the driver hands the checker no
+# program the resolver refused, so one left would be told only once the
+# other mistake is fixed. Told as before, and none left over.
+function tell_deferred(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    if r.out.diagnostics.len() == 0
+        return
+    at: i64 @= 0
+
+    while at < r.out.locals.len()
+        if r.out.locals[at].deferred
+            state.push_diagnostic(@r, verdict(a, s, decls, out: r.out, at: at))
+            r.out.locals[at].deferred @ false
+        at @ at + 1
+
+# What a local nothing writes is told, a cell or an `@` parameter, whichever
+# pass tells it.
+function verdict(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Resolved, at: i64) -> diag.Diagnostic
+    local = out.locals[at]
+
+    if local.kind == .cell
+        return errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
+    return told(a, s, decls, out: out, at: at)
+
+# `function f(@_: i64)`: `_` binds nothing (spec § 5), so the `@` marks a
+# parameter nothing can ever write, the rule's own shape at the one name no
+# write reaches, defect 608's twin one level down (panel 210's R2, defect
+# 631). Told at the `_`, a hole in its module or not; the removal a `guess`
+# as R1's is, the calls' `@`s being the checker's. A caller's `@k` still
+# counts as a write until then: the parameter's refusal holds the program, and
+# once the `@` goes the call's is refused and then the cell, one at a time.
+function wildcard(@r: state.Resolver, s: source.Source, param: ast.Param)
+    if !param.mutable || param.name.end - param.name.start != 1 || source.span_text(s, param.name) != "_"
+        return
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "never_rebound",
+        message: "`_` binds nothing, so an `@` on it marks a parameter nothing can write — its copy-out hands every caller back the value it passed: remove the `@` here and at every call",
+        span: param.name
+    )
+    marker = marker_before(s, param.name)
+
+    if marker.end > marker.start
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "remove the `@`: `_` is never written", replacement: "", span: marker, certainty: .guess)
+        )
+    state.push_diagnostic(@r, d)
+
+# The refusal of the `@` parameter at local `at`.
+function told(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Resolved, at: i64) -> diag.Diagnostic
+    local = out.locals[at]
+    name = source.span_text(s, local.name)
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "never_rebound",
+        message: "`" + name + "` is an `@` parameter and nothing writes it — its copy-out hands every caller back the value it passed: write `" + name + "` where the body meant to change it, or remove the `@` here and at every call",
+        span: local.name
+    )
+    back = written_back(a, s, decls, out: out, at: at)
+
+    if !back.is_err()
+        d.fixes @ d.fixes.push(back.must())
+    marker = marker_before(s, local.name)
+
+    if marker.end > marker.start
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: "remove the `@`: `" + name + "` is read, never written", replacement: "", span: marker, certainty: .guess)
+        )
+    return d
+
+# `l @ m` where the body bound a cell `m @= l` from the parameter itself: the
+# write a body that changes a copy forgot, written as the body's last
+# statement, or before it where that is a `return`.
+function written_back(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Resolved, at: i64) -> diag.Fix?
+    copy = copied_into(a, out, at: at)
+
+    if copy.is_err()
+        return fail(code: "none", msg: "no cell copies the parameter")
+    last = last_statement(decls[out.locals[at].owner])
+
+    if last.is_err()
+        return fail(code: "none", msg: "no body")
+    st = a.stmts[last.must()]
+    from = line_start(s, at: st.span.start)
+    indent = s.text.slice(from: from, to: st.span.start)
+    line = source.span_text(s, out.locals[at].name) + " @ " + source.span_text(s, out.locals[copy.must()].name)
+    title = "write it back: `" + line + "`"
+
+    match st.kind
+        .return_stmt =>
+            span = token.Span(start: st.span.start, end: st.span.start)
+            return ok(diag.Fix(title: title, replacement: line + "\n" + indent, span: span, certainty: .guess))
+        .bind | .declare | .mutate | .break_stmt | .continue_stmt | .assert_stmt | .while_stmt => _ = 0
+        .for_in | .expr_stmt | .error                                                          => _ = 0
+
+    end = line_end(s, at: st.span.end)
+    return ok(
+        diag.Fix(title: title, replacement: "\n" + indent + line, span: token.Span(start: end, end: end), certainty: .guess)
+    )
+
+# The cell of the parameter's declaration bound `m @= l` from it by name.
+function copied_into(a: ast.Ast, out: resolved.Resolved, at: i64) -> i64?
+    k: i64 @= 0
+
+    while k < out.locals.len()
+        one = out.locals[k]
+
+        if one.kind == .cell && one.owner == out.locals[at].owner && !one.value.is_err() && a.exprs[one.value.must()].kind == .name
+            match out.uses[one.value.must()]
+                .local l =>
+                    if l.at == at
+                        return ok(k)
+                .unresolved | .top | .builtin | .module => _ = 0
+        k @ k + 1
+
+    return fail(code: "none", msg: "no copy")
+
+function last_statement(decl: ast.Decl) -> i64?
+    match decl.kind
+        .function_decl fd =>
+            if !fd.value.body.is_err() && fd.value.body.must().stmts.len() > 0
+                body = fd.value.body.must()
+                return ok(body.stmts[body.stmts.len() - 1])
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "no body")
+
+    return fail(code: "none", msg: "no body")
+
+function line_start(s: source.Source, at: i64) -> i64
+    k: i64 @= at
+
+    while k > 0 && s.text[k - 1] != '\n'
+        k @ k - 1
+
+    return k
+
+function line_end(s: source.Source, at: i64) -> i64
+    k: i64 @= at
+
+    while k < s.text.len() && s.text[k] != '\n'
+        k @ k + 1
+
+    return k
+
+# The `@` before a parameter's name, read from the text: `@n` or `@ n`. The
+# empty span at the name where no `@` stands there, so the fix is offered only
+# where its bytes are the marker's.
+function marker_before(s: source.Source, name: token.Span) -> token.Span
+    k: i64 @= name.start - 1
+
+    while k >= 0 && (s.text[k] == ' ' || s.text[k] == '\t')
+        k @ k - 1
+
+    if k >= 0 && s.text[k] == '@'
+        return token.Span(start: k, end: k + 1)
+    return token.Span(start: name.start, end: name.start)

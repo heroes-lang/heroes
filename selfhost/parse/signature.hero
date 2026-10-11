@@ -59,7 +59,7 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> Sign
     # `when` with no arrow before it is named as such (finding 2).
     marks: parse_members.Marks @= parse_members.no_marks()
 
-    if cursor.eat(@c, .arrow) || arrow_habit(@c, @a, text, in_group: in_group)
+    if cursor.eat(@c, .arrow) || arrow_habit(@c, a, text, in_group: in_group)
         result @ type.parse_type(@c, @a, text)
         marks @ parse_members.read_marks(@c, text: text, in_group: in_group, on_result: true, holder: "the result")
     else
@@ -82,7 +82,7 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> Sign
 # certain fix that writes `->`, and passed, and the caller reads the result as
 # after `->`. A Python one-line suite, `function f(): print(1)`, reads as no
 # result and is left to its head, and so is a `:` that ends the line.
-function arrow_habit(@c: cursor.Cursor, @a: ast.Ast, text: str, in_group: bool) -> bool
+function arrow_habit(@c: cursor.Cursor, a: ast.Ast, text: str, in_group: bool) -> bool
     if !cursor.at(c, .colon) && !cursor.at(c, .fat_arrow) || line_end.said_here(c)
         return false
     probe: cursor.Cursor @= c

@@ -747,7 +747,7 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             c.broke @ broke
         else if path_end.is_jump(a, at: sid)
             jumped @ true
-            broke @ path_end.broke_of(@c)
+            broke @ path_end.broke_of(c)
 
         # The first statement that leaves is how the block leaves, since
         # nothing after it runs: a refused `break` before a `return` makes

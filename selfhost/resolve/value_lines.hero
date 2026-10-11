@@ -52,7 +52,7 @@ function leave_to_the_checker(@r: state.Resolver, a: ast.Ast, s: source.Source, 
 
 function any_unwritten_cell(r: state.Resolver) -> bool
     for local in r.out.locals
-        if local.kind == .cell && local.writes == 0
+        if local.mutable && local.writes == 0
             return true
 
     return false
@@ -65,19 +65,23 @@ function roots(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
         cell = cell_at(r, a, part)
 
         if !cell.is_err()
-            if unused_sweep.rebound_nowhere(r, s, r.out.locals[cell.must()])
+            one = r.out.locals[cell.must()]
+
+            if unused_sweep.rebound_nowhere(r, s, one) || unused_sweep.written_nowhere(r, s, one)
                 r.out.locals[cell.must()].deferred @ true
         else if !is_place(a, part)
             roots(@r, a, s, part)
 
-# The cell a place stands on: a name the walk resolved to a cell, or a field
-# or an element over one.
+# The cell or `@` parameter a place stands on: a name the walk resolved to a
+# mutable local, or a field or an element over one (panel 210: an `@`
+# parameter whose only write is a dropped value of its own type is left to
+# the checker as a cell is).
 function cell_at(r: state.Resolver, a: ast.Ast, id: i64) -> i64?
     match a.exprs[id].kind
         .name =>
             match r.out.uses[id]
                 .local l =>
-                    if r.out.locals[l.at].kind == .cell
+                    if r.out.locals[l.at].mutable
                         return ok(l.at)
                 .top | .module | .builtin | .unresolved => return fail(code: "none", msg: "not a local")
         .field f => return cell_at(r, a, f.base)

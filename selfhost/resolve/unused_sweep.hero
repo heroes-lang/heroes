@@ -64,25 +64,6 @@ function report(@r: state.Resolver, s: source.Source)
     for d in gathered
         state.push_diagnostic(@r, d)
 
-# The cells left to the checker, told here after all where this pass has
-# refused anything: the driver hands the checker no program the resolver
-# refused, so a cell left would be told only once the other mistake is
-# fixed. Told as before, the certain `=` with it, and none left over.
-function tell_deferred(@r: state.Resolver, s: source.Source)
-    if r.out.diagnostics.len() == 0
-        return
-    at: i64 @= 0
-
-    while at < r.out.locals.len()
-        if r.out.locals[at].deferred
-            local = r.out.locals[at]
-            state.push_diagnostic(
-                @r,
-                errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
-            )
-            r.out.locals[at].deferred @ false
-        at @ at + 1
-
 # R1b (panel 209): a cell with no write after its birth, a write through an
 # `@` argument counted (`writes.inout_root`), outside a hole's module, and
 # not offered as the repair for a name that resolved to nothing, where the
@@ -90,11 +71,23 @@ function tell_deferred(@r: state.Resolver, s: source.Source)
 function rebound_nowhere(r: state.Resolver, s: source.Source, local: resolved.Local) -> bool
     if local.kind != .cell || local.writes > 0
         return false
+    return !spared(r, s, local)
+
+# Panel 210's R1, the same rule one level up: an `@` parameter nothing writes
+# or ends (`resolve/written_nowhere.hero`), spared where a cell is.
+function written_nowhere(r: state.Resolver, s: source.Source, local: resolved.Local) -> bool
+    if local.kind != .param || !local.mutable || local.writes > 0
+        return false
+    return !spared(r, s, local)
+
+# Where both rules wait: a hole in the local's module (§4.16), or a name
+# offered as the repair for one that resolved to nothing.
+function spared(r: state.Resolver, s: source.Source, local: resolved.Local) -> bool
     module = source.module_at(s, local.name.start)
 
     if resolved.hole_covers(r.out, module)
-        return false
-    return !state.keyed_has(r.suggested, module: module, name: source.span_text(s, local.name))
+        return true
+    return state.keyed_has(r.suggested, module: module, name: source.span_text(s, local.name))
 
 ## Tests
 

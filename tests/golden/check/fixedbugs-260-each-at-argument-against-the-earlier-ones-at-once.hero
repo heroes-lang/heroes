@@ -8,6 +8,11 @@
 # an undecided step on either side, and none where a decided step proves
 # two apart. The last call holds 64 `@` arguments and nothing to tell; the
 # growth is the lane's counts, not this case's.
+#
+# Amended 2026-10-11, lane b21-resolve, panel 210's R1: an `@` parameter
+# nothing writes is refused (spec § 5), and `five` and `three` read six of
+# theirs only, there to feed the alias check, so each now writes every one,
+# the verdicts below unmoved.
 
 record P
     x: i64
@@ -15,9 +20,15 @@ record P
 
 function five(@a: P, @b: i64, @c: i64, @d: P, @e: i64)
     a.x @ a.x + b + c + d.y + e
+    b @ b + 1
+    c @ c + 1
+    d.y @ d.y + 1
+    e @ e + 1
 
 function three(@a: i64, @b: i64, @c: i64)
     a @ a + b + c
+    b @ b + 1
+    c @ c + 1
 
 function many(@v00: i64, @v01: i64, @v02: i64, @v03: i64, @v04: i64, @v05: i64, @v06: i64, @v07: i64, @v08: i64, @v09: i64, @v10: i64, @v11: i64, @v12: i64, @v13: i64, @v14: i64, @v15: i64, @v16: i64, @v17: i64, @v18: i64, @v19: i64, @v20: i64, @v21: i64, @v22: i64, @v23: i64, @v24: i64, @v25: i64, @v26: i64, @v27: i64, @v28: i64, @v29: i64, @v30: i64, @v31: i64, @v32: i64, @v33: i64, @v34: i64, @v35: i64, @v36: i64, @v37: i64, @v38: i64, @v39: i64, @v40: i64, @v41: i64, @v42: i64, @v43: i64, @v44: i64, @v45: i64, @v46: i64, @v47: i64, @v48: i64, @v49: i64, @v50: i64, @v51: i64, @v52: i64, @v53: i64, @v54: i64, @v55: i64, @v56: i64, @v57: i64, @v58: i64, @v59: i64, @v60: i64, @v61: i64, @v62: i64, @v63: i64)
     v00 @ v00 + 1
