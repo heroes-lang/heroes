@@ -1,0 +1,18 @@
+# Fixed 2026-10-11, defect 646, lane b22-662. Symptom: `p.x = p.x + 1` on
+# an `@` parameter was told only `expected_end_of_line`, *found `=`*, with
+# no hint that `p.x @ p.x + 1` was meant, where `p.x @= 1` is told as
+# `declared_place` with the fix writing `@`. Cause: after an expression at a
+# statement's start the parser read `@` and `@=`, and left `=` to the line's
+# end. Now `=` after a field or an element is `declared_place` too, told once
+# at the `=` and read as the write, its fix a `guess` writing `@`.
+
+record P
+    x: i64
+
+function move(@p: P)
+    p.x = p.x + 1  #~ declared_place
+
+function main()
+    q: P @= P(x: 0)
+    move(@q)
+    print(q.x)

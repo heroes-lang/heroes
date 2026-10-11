@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-646-a-field-written-with-equals-is-told-as-a-write.hero:13:9: error[declared_place]: `p.x = …` would bind a name, and a field or an element is no name — it is written with `@`: `p.x @ …`
