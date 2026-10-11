@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-662-a-field-written-with-equals-is-told-once.hero:9:9: error[expected_end_of_line]: expected the end of the line, found `=` — one statement per line, no semicolons

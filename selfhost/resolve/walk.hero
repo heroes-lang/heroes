@@ -77,7 +77,7 @@ function statement(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 
             if !b.ty.is_err()
                 types.resolve_type(@r, a, s, decls, b.ty.must())
-            _ = state.declare(@r, s, decls, b.name, resolve_binding.bind_binding(ty: b.ty, value: b.value)).is_err()
+            meant.bind(@r, s, decls, name: b.name, ty: b.ty, value: b.value)
         .declare d =>
             expr(@r, a, s, decls, d.value)
 

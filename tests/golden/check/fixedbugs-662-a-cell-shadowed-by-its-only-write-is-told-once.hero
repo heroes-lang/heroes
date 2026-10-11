@@ -1,0 +1,13 @@
+# Fixed 2026-10-11, defect 662, lane b22-662: the shape beside, a cell
+# `v @= 0` whose only would-be write is `v = v + 1`. Before the repair panel
+# 209's `never_rebound` was told beside the shadow, with a `certain` fix
+# writing `=` at the `@=` that left the shadow standing. Now the shadow is
+# the one message, its `guess` writing `@`; where a type is written, `v: i64
+# = ...`, no fix is offered, the line being a declaration in form.
+
+function main()
+    v: i64 @= 0
+    v = v + 1  #~ shadowed_binding
+    w @= 1
+    w: i64 = w * 2  #~ shadowed_binding
+    print(v + w)
