@@ -281,3 +281,13 @@ order that closes M-issue-files. **What it does not settle**: the acts of R6, wh
 one (the token's rotation, the experiment in two throwaway repositories, the milestones, the interaction
 limit, the oracle that posts to `/markdown`), and the reading of CLAUDE.md § 10 that R1 rests on, which is
 the author's to say in words.
+
+**RATIFIED, 2026-10-11**, R1 to R11 as written above, the author answering in conversation after the
+panel's report, meant as: *I revoked the token and logged in again; I approve the panel; I ratify panel 212;
+push everything; and the experiment is fine; what do you say about the private repositories?* Recorded as a
+reading (CLAUDE.md § 4). **What it settles beyond R1 to R11**: the reading of CLAUDE.md § 10 that R1 rests on, a
+Heroes program run with `heroes run` being no script; the token's revocation (R6 item 1, done by the author: the new
+token carries the scopes `admin:public_key gist read:org repo`, neither `delete_repo` nor `admin:org`); and the
+experiment of R6 item 2, which the author allowed. **What it does not settle**: the other acts of R6, which the author
+gives one by one (the milestones, the label's removal, the interaction limit), and the answer to the private
+repositories, which is the coordinator's recommendation in the decision issue's verdict. The author may overturn it.

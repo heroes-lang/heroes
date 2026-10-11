@@ -3,11 +3,11 @@ kind: decision
 area: cli
 milestone: M-issue-files
 filed: 2026-10-11
-commit: none
+commit: self
 github: none
 ---
 
-- [ ] **panel 212** | ratify, amend or overturn R1 to R11 (no fourteenth verb: `render` is modules of `tests/harness/` held by a `records/rendered` check, and `plan` and `push` are a second root of the harness run with `heroes run`, spawning `gh api -i --input -` serially at 500 content requests an hour; the rendering rule's seven gaps closed first; the author's acts of R6 before the first issue; a guard against GitHub writes from the assistant's shell in the same commit) | `docs/panel/212-the-issue-files-reach-github-through-a-program-beside-the-net-and-no-verb-and-the-rendering-rule-is-closed-first.md`
+- [x] **panel 212** | ratify, amend or overturn R1 to R11 (no fourteenth verb: `render` is modules of `tests/harness/` held by a `records/rendered` check, and `plan` and `push` are a second root of the harness run with `heroes run`, spawning `gh api -i --input -` serially at 500 content requests an hour; the rendering rule's seven gaps closed first; the author's acts of R6 before the first issue; a guard against GitHub writes from the assistant's shell in the same commit) | `docs/panel/212-the-issue-files-reach-github-through-a-program-beside-the-net-and-no-verb-and-the-rendering-rule-is-closed-first.md`
 
     **Origin:** panel 212's synthesis, 2026-10-11, on the tree frozen at `09060ea3`, convened when the author decided to transcribe (their *7a* of 2026-10-05) and asked to close M-issue-files in the same conversation; the four instructions of 2026-10-06 bind it (`issues/2026-10/06/2026-10-06-1249-the-author-answers-1-2-3-m-issue-files-to-this-session-github.md`). The completeness critic found 14 disagreements between the briefs and the tree before any seat ran, and the sitting found that the rendering rule it was asked to implement has seven gaps.
 
@@ -16,6 +16,10 @@ github: none
     **What the author alone can say**, whichever way they go: (1) whether a Heroes program run by `heroes run` is a *script* in CLAUDE.md § 10 (R1); (2) **rotate the GitHub token**, which a seat printed in a tool output (revoke at github.com/settings/applications, then `gh auth login` with `delete_repo` and `admin:org` if R6 is to go ahead); (3) whether to allow the experiment of R6, two throwaway private repositories under their account, one issue each, which is the only thing that can answer their standing question about the import endpoint and `redirect.github.com`; (4) the `POST /markdown` oracle of R3, which writes nothing.
 
     **The conservative alternative, the author's to choose instead**: R1 as a verb with the surface that parses (`heroes issues [<path>] [--plan|--push]`), a seam in `selfhost/main.hero` in the same commit, the two start pages changed to *fourteen* and *quattordici* and published before the transcription and before this ratification, the seed regenerated, and R7's guard in the same commit; R2 to R6 and R8 to R11 unchanged. The spec-warden vetoes it unless the author decides the capability in words, as for `probe`.
+
+    **Ratified, 2026-10-11**, R1 to R11 as written, the author answering in conversation, meant as: *I revoked the token and logged in again; I approve the panel; I ratify panel 212; push everything; the experiment is fine; what do you say about the private repositories?* Recorded as a reading. **What it settles**: the sitting's resolution, the reading of CLAUDE.md § 10 under which a Heroes program run by `heroes run` is no script, and the experiment of R6, allowed. **What it leaves to later asks**: the milestones, the removal of `kind:learn` and the interaction limit, each given by the author when it comes.
+
+    **Verdict on the private repositories, the coordinator's recommendation put to the author's question**: two private repositories, one in the organisation (`heroes-lang/import-probe`, where the import endpoint's own reports of *Not Found* for organisations are tested in the conditions the run will have) and one in the author's account (`giuseppearici/import-probe-target`, so that the issue referencing it crosses owners as the real ones cross to rust-lang and golang), one issue in each; both archived after reading and deleted when the author refreshes their token with `delete_repo`.
 
     ## Prior art
 
