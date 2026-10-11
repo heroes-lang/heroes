@@ -3,7 +3,7 @@ kind: defect
 area: check
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: 519ac63b1a3ee6688b04feeac61e7db56afff27f
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by lane b20-check at 01:23 on 2026-10-11, measuring defect 608's shapes (`_ @= nullptr`, `_ @= []`) under `--permissive` with the lane's compiler after that repair; the normal arm never reaches the checker on such a line, the resolver's `never_rebound` telling it first.
 
     **Class: adjacent**, 2026-10-11 (`.claude/rules/verification.md` § Bounded discovery): found beside the work in the control arm alone, as defects 193 and 251 were; the program the arm judges is refused there for a reason that is not a thesis rule's, a `cannot_infer` whose words treat `_` as a cell, so the arm's count reads one refusal the language would not make of `_ = nullptr`.
+
+    Repaired at `519ac63b1a3ee6688b04feeac61e7db56afff27f`, 2026-10-11 (lane b21-misc), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Chosen: accept the line as `_ = e`, not keep `never_rebound` in the control arm: the arm is the same compiler with the thesis rules off (design.md Part 11; `diag.is_thesis_rule` lists `never_rebound`), and without the rule the line means the discard it runs as, `_` binding nothing (spec § 5), so the arm reads what a language without the rule reads. `check/walk.birth` now holds both arms' birth: `_` is born no cell and goes through `discard.refuse` as `_ = e` does, a named cell unchanged. Measured beside it with the lane's compiler, the control arm: `_ @= nullptr` at the top of a body, in a loop, an `if`, an arm and a `test`, typed `_: ptr @= nullptr` and the old `_: ptr @ nullptr` told nothing (five `cannot_infer` on the base); `_ @= []`, `_ @= {}` and `_ @= [[]]` told the one `cannot_infer` each, the first two guessing the binding `_: [i64] = []` (a `check/walk` test pins it, `--brief` printing no guess); a `T?`, a `()` and a plain value told nothing, as on the base; the strict arm unchanged, `never_rebound` once each. Filed apart: defect 625, the named cell's `v @= e` where `@` was meant, whose value the control arm types against nothing. Three `tests/golden/permissive/fixedbugs-614-*` cases; permissive and annotations narrowed 3/0, permissive whole 19/0 (its floor told outgrown, 14 to 18), layout on the module 4/0, own tests 1608 passed; `heroes mutate examples --operator bind-as-cell` 832 of 833 and 0 in the control arm on base and lane alike; instructions retired within run-to-run spread (the commit body's numbers).
