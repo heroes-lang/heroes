@@ -36,6 +36,7 @@
 
 use absence
 use cases
+use platform_skips
 use report
 use floors
 use shell
@@ -295,8 +296,13 @@ function run_all(scratch: str, compiler: str, shape: Shape, only: str) -> report
 
     for item in found
         expectation = read_file(item.expected)
+        elsewhere = platform_skips.reason(item.name)
 
-        if expectation.is_err()
+        # A case whose shape this platform's C cannot hold is skipped by name
+        # (`platform_skips.hero`), apart from the missing libraries' ratio.
+        if !elsewhere.is_err()
+            report.keep_skip(@r, label: shape.name + "/" + item.name, detail: "  " + elsewhere.must())
+        else if expectation.is_err()
             report.keep_failure(@r, label: shape.name + "/" + item.name, detail: "  cannot read " + item.expected)
         else
             line: [str] @= [compiler, shape.verb, item.source]

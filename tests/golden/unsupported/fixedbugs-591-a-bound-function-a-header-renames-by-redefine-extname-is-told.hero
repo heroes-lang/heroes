@@ -5,10 +5,13 @@
 # Mach-O's underscore, and in the Linux arm64 image it links; this twin names
 # a symbol no platform has. Until then the link said *internal error* at exit
 # 2, the missing name being no group's; it is now read back to the binding
-# through clang's dump of the header list (`cli/renamed.hero`).
+# through clang's dump of the header list (`cli/renamed.hero`). Defect 640,
+# lane b21-win, 2026-10-11: it bound `labs` from `<stdlib.h>`, whose `long`
+# is 32 bits on Windows, so `labs(x: i64)` was refused there before the link;
+# the header declares the function it renames, at `long long`.
 
 extern "fixedbugs-591-a-bound-function-a-header-renames-by-redefine-extname-is-told.h"
-    function labs(x: i64) -> i64  #~ ffi_missing_link
+    function fixedbugs_591_renamed(x: i64) -> i64  #~ ffi_missing_link
 
 function main()
-    print(labs(-42))
+    print(fixedbugs_591_renamed(x: -42))

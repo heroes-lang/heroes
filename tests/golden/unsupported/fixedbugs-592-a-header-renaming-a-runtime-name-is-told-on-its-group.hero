@@ -5,9 +5,12 @@
 # *internal error* at exit 2. A label cannot be taken back after the header
 # (measured: a second pragma does not replace it, a label written after it
 # is *conflicting asm label*), so the program is told, on the group.
+# Defect 640, lane b21-win, 2026-10-11: the binding was `labs`, whose `long`
+# is 32 bits on Windows, so `labs(x: i64)` was refused there before the
+# link; `llabs` is `long long` on every platform.
 
 extern "fixedbugs-592-a-header-renaming-a-runtime-name-is-told-on-its-group.h"  #~ ffi_header_refused
-    function labs(x: i64) -> i64
+    function llabs(x: i64) -> i64
 
 function main()
-    print(labs(-42))
+    print(llabs(-42))

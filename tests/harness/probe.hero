@@ -25,6 +25,7 @@
 # that builds one does not.
 
 use absence
+use platform_skips
 use report
 use shell
 use strings
@@ -254,6 +255,13 @@ function run_table(scratch: str, compiler: str, probes: [Probe], @r: report.Repo
     skipped: i64 @= 0
 
     for p in probes
+        elsewhere = platform_skips.reason(p.name)
+
+        # A row whose shape this platform's C cannot hold is skipped by name
+        # (`platform_skips.hero`), apart from the missing libraries' floor.
+        if !elsewhere.is_err()
+            report.keep_skip(@r, label: "surface/" + p.name, detail: "  " + elsewhere.must())
+            continue
         got = outcome(scratch: scratch, compiler: compiler, p: p)
 
         if got.kind == "skipped"
