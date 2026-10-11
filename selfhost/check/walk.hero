@@ -70,6 +70,7 @@ use check/settling
 use check/empty_binding
 use check/width_class
 use check/discard
+use check/kept_cells
 use value_errors
 use discard_errors
 use data_errors
@@ -1059,6 +1060,7 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
                     @c,
                     discard_errors.discarded_value(got: shown, fallible: discard.is_fallible(c, got), readings: readings, span: span, text: s.text)
                 )
+                kept_cells.claim(@c, a, r, s, value: value, got: got, readings: readings, span: span)
             return falls_with_nothing()
 
     return falls_with_nothing()

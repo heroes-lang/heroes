@@ -28,7 +28,10 @@ function report(@r: state.Resolver, s: source.Source)
 
     for local in r.out.locals
         if local.reads > 0
-            if rebound_nowhere(r, s, local)
+            # A cell a value line computes from is the checker's to tell,
+            # which knows whether that line drops a value it was meant to
+            # keep (`resolve/value_lines.hero`, defect 630).
+            if rebound_nowhere(r, s, local) && !local.deferred
                 gathered @ gathered.push(
                     errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
                 )
@@ -60,6 +63,25 @@ function report(@r: state.Resolver, s: source.Source)
 
     for d in gathered
         state.push_diagnostic(@r, d)
+
+# The cells left to the checker, told here after all where this pass has
+# refused anything: the driver hands the checker no program the resolver
+# refused, so a cell left would be told only once the other mistake is
+# fixed. Told as before, the certain `=` with it, and none left over.
+function tell_deferred(@r: state.Resolver, s: source.Source)
+    if r.out.diagnostics.len() == 0
+        return
+    at: i64 @= 0
+
+    while at < r.out.locals.len()
+        if r.out.locals[at].deferred
+            local = r.out.locals[at]
+            state.push_diagnostic(
+                @r,
+                errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
+            )
+            r.out.locals[at].deferred @ false
+        at @ at + 1
 
 # R1b (panel 209): a cell with no write after its birth, a write through an
 # `@` argument counted (`writes.inout_root`), outside a hole's module, and

@@ -104,6 +104,7 @@ record Local
     # The `@` that declared a cell, the empty span for every other kind: the
     # fix for a cell nothing re-binds writes `=` there (spec § 5, panel 209).
     symbol: token.Span
+    deferred: bool  # a cell nothing re-binds the checker tells (`resolve/value_lines.hero`)
 
 ## The table
 
@@ -403,7 +404,8 @@ test "a local carries its optional syntax by value"
         value: fail(code: "none", msg: "no value"),
         reads: 0,
         writes: 0,
-        symbol: token.Span(start: 7, end: 8)
+        symbol: token.Span(start: 7, end: 8),
+        deferred: false
     )
     assert l.ty.must() == 3
     assert l.symbol.start == 7
