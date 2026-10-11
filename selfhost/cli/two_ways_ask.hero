@@ -36,6 +36,18 @@ constant LINKAGE: str
 constant EXTERNAL: str
     "static declaration of '"
 
+# The same refusal where clang reads C with Microsoft's extensions, the
+# Windows target's default: there a `static` redeclaration of an external
+# name is allowed, and said only under `-Wmicrosoft-redeclare-static`, which
+# the question asks for (defect 642, measured on the Windows box 2026-10-11:
+# without the flag clang wrote nothing, so no name read external there and
+# `ffi_declared_two_ways` was never told). The note under it is the same.
+constant EXTERNAL_MICROSOFT: str
+    "redeclaring non-static '"
+
+constant MICROSOFT_WORD: str
+    "-Wmicrosoft-redeclare-static"
+
 # One name as one header list declares it: the canonical type of the name's
 # pointer, whether it has external linkage, and where the header declares it
 # (`row` 0 where clang named no place).
@@ -139,7 +151,7 @@ function asked_of(dir: str, text: str, words: [str]) -> str?
     publish.write_whole(path: path, text: text, keyed: true)?
     err = publish.private_name(dir + "/two-ways-stderr.txt")
     line = response_file.carried(
-        line: strings.with_all(list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics"], more: words),
+        line: strings.with_all(list: ["clang", "-fsyntax-only", "-ferror-limit=0", "-fno-caret-diagnostics", MICROSOFT_WORD], more: words),
         dir: dir
     )
     ran = process.run(program: "clang", words: line.push(path), out: process.discard(), err: err)
@@ -170,7 +182,7 @@ function read(said: str) -> {str: Answer}
 
             if !canonical.is_err()
                 types[asked_name(row: row, prefix: TYPE)] @ canonical.must()
-        else if bytes.bytes_at(text: row, at: 0, needle: LINKAGE) && !found(text: row, needle: EXTERNAL).is_err()
+        else if bytes.bytes_at(text: row, at: 0, needle: LINKAGE) && refused_static(row)
             name = asked_name(row: row, prefix: LINKAGE)
             external[name] @ true
 
@@ -221,6 +233,11 @@ function rows_of(text: str) -> [str]
         at @ at + 1
 
     return out
+
+# Whether a linkage question's line is clang's refusal of the `static`
+# redeclaration, in either target's words.
+function refused_static(row: str) -> bool
+    return !found(text: row, needle: EXTERNAL).is_err() || !found(text: row, needle: EXTERNAL_MICROSOFT).is_err()
 
 # The byte offset of `needle` in `text`, asked of its bytes.
 function found(text: str, needle: str) -> i64?
@@ -282,3 +299,11 @@ test "the answers are read from the questions' file names, the linkage from clan
 
     assert read(crlf.join("")) == got
     assert rows_of("a\r\nb") == ["a", "b"]
+
+# The Windows target's words, as clang 23.1.1 wrote them on the Windows box
+# (defect 642): a warning where the other targets refuse, its note the same.
+test "a static redeclaration allowed by Microsoft's extensions reads external, its note the place"
+    said = "hero-c1-type twice:1:16: error: initializing 'struct hero_c1' with an expression of incompatible type 'typeof (twice) *' (aka 'long long (*)(long long)')\r\nhero-c1-static twice:1:26: warning: redeclaring non-static 'twice' as static is a Microsoft extension [-Wmicrosoft-redeclare-static]\r\n.\\a.h:1:11: note: previous declaration is here\r\nhero-c1-type counter:1:16: error: initializing 'struct hero_c1' with an expression of incompatible type 'typeof (counter) *' (aka 'int *')\r\nhero-c1-static counter:1:28: warning: redeclaring non-static 'counter' as static is a Microsoft extension [-Wmicrosoft-redeclare-static]\r\nC:\\w\\qv.c:2:5: note: previous definition is here\r\n"
+    got = read(said)
+    assert got["twice"].must() == Answer(type: "long long (*)(long long)", external: true, path: ".\\a.h", row: 1)
+    assert got["counter"].must() == Answer(type: "int *", external: true, path: "C:\\w\\qv.c", row: 2)

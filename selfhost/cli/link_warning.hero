@@ -19,6 +19,8 @@ use cli/process
 use cli/strings
 use cli/clang_told
 use cli/toolchain
+use cli/publish
+use cli/clang_asked
 
 constant SAID_IN: str
     ": in function `"
@@ -29,11 +31,23 @@ constant WARNING: str
 # A link, run as `run_clang` runs a line: under `LC_ALL=C` where `env` is,
 # so GNU ld's words keep their shape, and what it said printed without a C
 # library's section warnings (defect 589).
+#
+# On Windows the linker's stdout is read too where the link fails, since
+# MSVC's link.exe writes its refusals there (defect 644).
 function run_link(line: [str], what: str, err_path: str) -> ()?
     said: str @= ""
 
     if process.exe_suffix() == ".exe"
-        said @ toolchain.asked_of_clang(line: line, what: what, err_path: err_path)?
+        out_path = publish.private_name(err_path + ".stdout.txt")
+        asked = clang_asked.asked(
+            program: "clang",
+            words: line,
+            what: what,
+            err_path: err_path,
+            out_path: out_path
+        )
+        publish.discard(out_path)
+        said @ asked?
     else
         said @ toolchain.asked_through(program: "env", words: strings.with_all(list: ["env", "LC_ALL=C"], more: line), what: what, err_path: err_path)?
     kept = without_section_warnings(said)

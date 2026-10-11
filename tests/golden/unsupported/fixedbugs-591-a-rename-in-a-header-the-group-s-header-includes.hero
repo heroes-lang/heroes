@@ -2,9 +2,13 @@
 # `fixedbugs-591-a-bound-function-a-header-renames-by-redefine-extname-is-told`:
 # the pragma is in `fixedbugs-591-a-header-that-renames-labs.h`, which the
 # group's header includes, and the message names that file and its line.
+# Defect 640, lane b21-win, 2026-10-11: the name renamed was `labs`, whose
+# `long` is 32 bits on Windows, so `labs(x: i64)` was refused there first;
+# the group's header declares the renamed function at `long long`. The
+# inner header keeps its file name, which the message quotes.
 
 extern "fixedbugs-591-a-rename-in-a-header-the-group-s-header-includes.h"
-    function labs(x: i64) -> i64  #~ ffi_missing_link
+    function fixedbugs_591_inner(x: i64) -> i64  #~ ffi_missing_link
 
 function main()
-    print(labs(-42))
+    print(fixedbugs_591_inner(x: -42))

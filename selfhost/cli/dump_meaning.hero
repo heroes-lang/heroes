@@ -20,7 +20,7 @@ use emit/clang_place
 use cli/toolchain
 use cli/compiling
 use cli/order_trial
-use cli/defined_twice
+use cli/dump_tops
 use cli/strings
 
 # Each of `names` as clang's dump of the unit's opening with `headers`
@@ -58,7 +58,7 @@ function readings(dumped: str, names: [str]) -> {str: str}
                 has_body @ false
 
                 if top
-                    name = defined_twice.top_of(row).name
+                    name = dump_tops.top_of(row).name
 
                     if !wanted[name].is_err()
                         taking @ name
@@ -66,7 +66,7 @@ function readings(dumped: str, names: [str]) -> {str: str}
             else if taking != ""
                 taken @ taken.push(normalised(row))
 
-                if defined_twice.child(row) && clang_place.offset_of(text: row, needle: "-CompoundStmt ").default(-1) == 3
+                if dump_tops.child(row) && clang_place.offset_of(text: row, needle: "-CompoundStmt ").default(-1) == 3
                     has_body @ true
             start @ at + 1
         at @ at + 1

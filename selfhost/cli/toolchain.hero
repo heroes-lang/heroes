@@ -37,10 +37,9 @@ use cli/process
 use cli/publish
 use cli/runtime_key
 use cli/strings
-use cli/clang_died
 use cli/runtime_places
-use cli/read_back
 use cli/served
+use cli/clang_asked
 
 # WHAT A BUILD LEAVES UNDER `build/` HAS A SHAPE, AND EVERY KEY NAMES IT.
 # `fingerprint` is the Heroes `VERSION`, which moves at a release, so a
@@ -178,79 +177,7 @@ function asked_of_clang(line: [str], what: str, err_path: str) -> str?
 # One program's line, its first word the program's own name as a line's is
 # (`hero_run_go`), asked as `asked_of_clang` asks clang.
 function asked_through(program: str, words: [str], what: str, err_path: str) -> str?
-    # **`discard()` and not `""`, because the empty path INHERITS.** Under the
-    # net this compiler is a child whose stdout is a capture file, and a clang
-    # that outlives it goes on holding that file: `docs/panel/174` route F, and
-    # defect 074 is what it cost.
-    ran = process.run(program: program, words: words, out: process.discard(), err: err_path)
-    noise: str @= ""
-
-    # **clang's words are read back where the bytes enter**, by
-    # `read_back.words`, so every reader after it has the two repairs it
-    # makes. A byte that is not UTF-8 is written by its value (defect 337):
-    # clang prints a location's file name as it was given, and `read_file`
-    # refused the whole stream for one such byte, so an author's extern
-    # disagreement was `internal error` over an empty line at exit 2. And a
-    # line ended `\r\n` is read as ended `\n`, because **clang on Windows ends
-    # its lines `\r\n`, and the `\r` is poison downstream**: the MSVC-built
-    # clang.exe writes text-mode line endings, so every line of its stderr
-    # carried a trailing `\r` into `emit_ffi`'s parsing: the last word of
-    # `heroes-ffi-return sqrt i64` became `i64\r`, the diagnostic quoted
-    # `` `i64\r` `` (measured 2026-08-31, `od` on the captured file: `i 6 4 \r`
-    # inside the message), and `heroes-ffi-const`'s marker stopped matching at
-    # all, which demoted the author's own error to exit 2.
-    captured = read_back.words(err_path)
-
-    if !captured.is_err()
-        noise @ captured.must()
-
-    # **Never started is not the same as ran and failed**, and until
-    # M-argv-execution this line could not tell them apart: `system()`
-    # answers 127 for a missing program and for one that exits 127
-    # alike, so a machine with no clang was reported as the compiler's
-    # own bug — *"internal error: the runtime did not compile"*.
-    # **AND "NOT STARTED" IS NOT THE SAME AS "NOT THERE."** This line named the
-    # PATH for every refusal the operating system makes, including one about a
-    # file a descendant held, on a machine whose clang had never moved. The
-    # number separates them (`docs/panel/174` route G).
-    # **Its own code, too** (defect 134): it said `clang`, the code of a
-    # refusal, so the caller worded a clang that never ran as clang refusing
-    # the generated C. `clang` below means clang ran and exited non-zero.
-    if !ran.started
-        return fail(
-            code: "not_started",
-            msg: "clang could not be started, so " + what + " did not run; the operating system's own reason is " + ran.why.to_str() + ".\n  If it is 2 the program is not on this machine's PATH and `heroes doctor` says what is; any other number is the machine refusing for its own reason"
-        )
-
-    if ran.code == 0
-        return ok(noise)
-    died: str @= clang_died.died_by(noise)
-
-    # **A C COMPILER THAT DIED REFUSED NOTHING** (defect 170, 2026-10-03), and
-    # it says so in one of two ways: Apple clang 21 catches its own compiler's
-    # death and its driver says *failed due to signal*; Debian clang 22.1.8 on
-    # Linux arm64 died whole, by the signal itself, and wrote nothing. Either
-    # way the C was never judged, which is neither this compiler's mistake nor
-    # the author's, so it is neither `internal error` nor clang's crash report,
-    # whose files and backtrace speak to clang's own developers. Said here,
-    # once, in this compiler's words.
-    if died.len() == 0 && ran.signal != 0
-        died @ clang_died.ending(ran.signal)
-
-    if died.len() > 0
-        return fail(
-            code: "crashed",
-            msg: what + " stopped: clang died on the C instead of judging it (" + died + "), so nothing in it was refused"
-        )
-    return fail(code: "clang", msg: refusal(what: what, code: ran.code, noise: noise))
-
-# What clang's refusal says: its own words under what failed, or where it
-# wrote none, that it said nothing and how it exited (defect 326's shape),
-# where `linking failed:` stood over an empty line.
-function refusal(what: str, code: i64, noise: str) -> str
-    if strings.trimmed(noise).len() == 0
-        return what + " failed: clang exited " + code.to_str() + " and said nothing"
-    return what + " failed:\n" + noise
+    return clang_asked.asked(program: program, words: words, what: what, err_path: err_path, out_path: "")
 
 # Compile the runtime once and cache it, keyed on its own contents,
 # the level and the compiler. A stale relink is silent, so the key is
@@ -389,14 +316,6 @@ test "clang's words holding a byte that is not UTF-8 are kept whole, a refusal's
             assert e.code == "clang"
             assert strings.holds(text: e.msg, needle: "caf<0xE9>.h:1:2: warning:")
             assert strings.holds(text: e.msg, needle: "heroes-ffi-return wide_count i32")
-
-# Defect 326's shape at clang: a refusal with no word in it, or only line ends,
-# says so and how clang exited, where `linking failed:` stood over an empty
-# line; one with words carries them under what failed, as it did.
-test "a clang that refused and said nothing is told so, never as an empty line (defect 326)"
-    assert refusal(what: "linking", code: 1, noise: "") == "linking failed: clang exited 1 and said nothing"
-    assert refusal(what: "linking", code: 1, noise: "\n\n") == "linking failed: clang exited 1 and said nothing"
-    assert refusal(what: "linking", code: 1, noise: "ld: symbol(s) not found\n") == "linking failed:\nld: symbol(s) not found\n"
 
 test "the toolchain finds the real runtime and compiles it through system()"
     found = locate_toolchain(hint: "", fingerprint: "port-test")

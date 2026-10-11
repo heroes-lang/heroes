@@ -1,0 +1,16 @@
+---
+kind: defect
+area: cli
+milestone: none
+filed: 2026-10-11
+commit: 01370cf14ca33b2cfbf70d2f51708e07e57174ac
+github: none
+---
+
+- [ ] **644 — Windows' two linkers' words are not read, so a missing symbol is *internal error: linking failed* at exit 2 there** | `emit/ffi_build.undefined_symbol` reads GNU's `undefined reference to `x'` and ld64's `"_x", referenced from:`; lld-link writes `lld-link: error: undefined symbol: x`, MSVC's link.exe (the CI's) `error LNK2019: unresolved external symbol x referenced in function main`, **on stdout**, which `toolchain.asked_through` discards, and a program left with no `main` is `LNK1561: entry point must be defined` or lld-link's `subsystem must be defined`, naming no symbol; so `ffi_missing_link` (a missing `link`, a header's label) and `ffi_header_refused` (a runtime name or `main` renamed) were exit 2 on Windows: defect 591's `__asm__` case in the CI | `selfhost/emit/ffi_build.hero` (`undefined_symbol`), `selfhost/cli/renamed.hero` (`missing_symbols`), `selfhost/cli/toolchain.hero` (`asked_through`), `selfhost/cli/link_warning.hero` (`run_link`); the Windows box · **class: blocking**
+
+    **Origin:** found by lane b21-win at 09:00 on 2026-10-11 on the Windows box, telling apart defect 640's rows: the box's clang 23.1.1 links with lld-link, whose words the reader does not know; clang 20.1.8, the CI's, taken from the LLVM release tarball onto the box, links with link.exe 14.44, and with the lld-link words read the failure still said only *linker command failed with exit code 1120* (1561 for `main`), link.exe's own lines having gone to stdout.
+
+    **Class: blocking**, 2026-10-11: an exit 2 where the author can be told and a red CI, by `.claude/rules/verification.md` § Bounded discovery's list; filed apart from 640 as its own cause.
+
+    Repaired at `01370cf14ca33b2cfbf70d2f51708e07e57174ac`, 2026-10-11 (lane b21-win), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `ffi_build.undefined_symbol` reads lld-link's `error: undefined symbol: x` and link.exe's `unresolved external symbol x`, an `__imp_` prefix taken off, and LNK1561 or *subsystem must be defined* as `main`; `renamed.missing_symbols` keeps the symbol as written there; a Windows link that fails is read with its stdout before its stderr (`cli/clang_asked.hero`, asking a program split from `cli/toolchain.hero` past 300 lines). Measured on the Windows box: defect 591's three cases and 592's three told under clang 20.1.8 + link.exe byte for byte as under clang 23.1.1 + lld-link, `main` renamed included, where clang 20 had said only *linker command failed with exit code 1120* (1561); the compiler's own refused-link test now shows link.exe's LNK1561 line, and passes; `unsupported` whole 238/0 and `surface` 398/0 under clang 20.
