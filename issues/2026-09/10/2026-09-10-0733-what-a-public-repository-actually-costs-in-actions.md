@@ -42,3 +42,7 @@ github: none
 
     **Why it matters:** every platform fact here is measured on a platform, and
     a cost is a platform fact.
+
+## What was done
+
+Measured on the account's billing endpoint, a public repository's Actions minutes cost zero on all three legs, macOS included, and the matrix widened by author instruction: every push to main runs the three legs, `m-*` tags start no run, `v*` release tags keep their trigger, their per-leg asserts and the release job, the five steps that were tag-only run on every push, and the mutation score stays gated on a release tag or a request. Landed at `f9ea5c5b`, "The CI runs the complete matrix once per push, and the new golden's emission trace is blessed".

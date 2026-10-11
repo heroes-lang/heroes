@@ -74,3 +74,15 @@ What stays open is an expressiveness gap at design.md §1.11's boundary and
 not a defect: a sitting that wants one declaration for both modes prices a
 form for "a null or a function", which no header states and this milestone
 does not buy.
+
+## What was done
+
+Closed by record and not by a form: a C parameter whose argument may be a
+null or a function has no single Heroes spelling, both directions are loud,
+and the silence was the mark on the text, closed by the milestone's words,
+`lent` under `SQLITE_TRANSIENT` and not under `SQLITE_STATIC`; the route panel
+094 named stands, one module per retention mode kept honest by step 12's
+`contract_differs`, and the shipped ledger keeps `text` unmarked and pays a
+lease. Landed at `0a8fd346`, "M-agreed-retention's items 2 and 3 close: one C
+function, one contract, and the destructor nobody can spell twice is written
+down".

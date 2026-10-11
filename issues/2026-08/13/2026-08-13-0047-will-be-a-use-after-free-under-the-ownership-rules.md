@@ -8,3 +8,7 @@ github: none
 ---
 
 - [x] Covered | **CLOSED — verified 2026-08-12: it is not.** `test "s"` with `s = "x"` and `assert s == "x"` passes under `--sanitize` with the leak gate armed. The prediction was made before the ownership pass had its `assert` arm. Was: panel 021 | `assert s == "x"` will be a **use-after-free** under the ownership rules: `ir/asserts.rs` computes both operands in the test block and reads them in the abort block. Gated to M-generics-library with `Abort::Assert`; the fix is to store refcounted operands into synthetic slots | crates/heroes/src/ir/asserts.rs · docs/panel/021 R2 | queued so it arrives as a scheduled repair rather than as a crash
+
+## What was done
+
+Verified 2026-08-12 that the predicted use-after-free does not happen: `test "s"` with `s = "x"` and `assert s == "x"` passes under `--sanitize` with the leak gate armed, the prediction having been made before the ownership pass had its `assert` arm. Landed at `2b383945`, "Four more queue entries were claims that had outlived their causes".

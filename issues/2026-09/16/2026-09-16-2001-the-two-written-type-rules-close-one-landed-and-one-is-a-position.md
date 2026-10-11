@@ -52,3 +52,14 @@ github: none
     when the milestone's opening measurement found `sort` on a type parameter
     already refused by panel 084 R1 — on the very day panel 082 R3 wrote the
     sentence claiming it was not.
+
+## What was done
+
+`ffi_partial_operation` landed as a body rule, `==` on two values of a bare
+type parameter being `error[generic_equality]`, deleting nothing among the 50
+generic functions in the tree and costing +0 spec tokens; `float_map_key` is
+a position taken rather than work left, waiting under Principle 0 by panel 155
+R3, and the single checker pass panel 082 R3 had ruled was refused on
+soundness at 284 code lines. Landed at `ec44b642`, "M-check-completeness step
+7: the text of a fix gets an instrument, and the obvious rule would have
+missed the defect".

@@ -2056,5 +2056,70 @@ class EveryAnswer(unittest.TestCase):
             fmt_check.STARTED = kept
 
 
+class Credit(unittest.TestCase):
+    """CL-082 and CL-083, 2026-10-11: an issue file, and a file the code cites
+    a defect in, are asked of the `records` suite narrowed to them."""
+
+    def setUp(self):
+        self.top = fresh("hooks-credit-")
+        self.tree = make_tree(os.path.join(self.top, "tree"))
+        self.issue = os.path.join("issues", "2026-10", "11", "2026-10-11-1501-x.md")
+
+    def test_an_issue_file_its_suite_fails_is_refused_with_the_suite_words(self):
+        answer(
+            self.tree, "records", 1,
+            "  records: 0 passed, 1 failed\nFAIL records/prior-art\n"
+            "  issues/2026-10/11/2026-10-11-1501-x.md: a closed `task` holds no `## What was done` section\n"
+            "harness: 0 passed, 1 failed\n",
+        )
+        issue = write(os.path.join(self.tree, self.issue), "---\nkind: task\n---\n")
+        code, said = written(self.tree, issue)
+        self.assertEqual(code, 2, said)
+        self.assertIn("is refused by the `records` suite narrowed to it", said)
+        self.assertIn("holds no `## What was done`", said)
+        self.assertEqual(runs(self.tree), ["records " + self.issue])
+
+    def test_an_issue_file_its_suite_passes_says_nothing(self):
+        answer(self.tree, "records", 0, "  records: 1 passed, 0 failed\nharness: 1 passed, 0 failed\n")
+        issue = write(os.path.join(self.tree, self.issue), "---\nkind: decision\n---\n")
+        code, said = written(self.tree, issue)
+        self.assertEqual(code, 0, said)
+        self.assertEqual(runs(self.tree), ["records " + self.issue])
+
+    def test_a_document_outside_issues_is_not_asked(self):
+        doc = write(os.path.join(self.tree, "docs", "x.md"), "defect 9\n")
+        code, said = written(self.tree, doc)
+        self.assertEqual(code, 0, said)
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_c_file_citing_a_defect_is_asked_and_one_citing_none_is_not(self):
+        answer(self.tree, "records", 1, "FAIL records/defects-cited\n  runtime/x.c:1: defect 9 names no defect of `issues/`\n")
+        cites = write(os.path.join(self.tree, "runtime", "x.c"), "/* Defect 9 */\n")
+        code, said = written(self.tree, cites)
+        self.assertEqual(code, 2, said)
+        self.assertIn("defect 9 names no defect", said)
+        self.assertEqual(runs(self.tree), ["records runtime/x.c"])
+        quiet = write(os.path.join(self.tree, "runtime", "y.c"), "/* no number, and defect_register is a name */\n")
+        code, said = written(self.tree, quiet)
+        self.assertEqual(code, 0, said)
+        self.assertEqual(runs(self.tree), ["records runtime/x.c"])
+
+    def test_a_harness_module_citing_a_defect_is_asked_beside_its_check(self):
+        answer(self.tree, "records", 0, "  records: 1 passed, 0 failed\n")
+        module = write(os.path.join(self.tree, "tests", "harness", "m.hero"), "# defects 9 and 10\n")
+        code, said = written(self.tree, module)
+        self.assertEqual(code, 0, said)
+        self.assertEqual(runs(self.tree), ["records tests/harness/m.hero"])
+        self.assertIn(self.tree + "|check tests/harness/m.hero", calls(self.tree))
+
+    def test_an_issue_file_in_a_tree_with_no_compiler_is_told_so(self):
+        bare = make_tree(os.path.join(self.top, "bare"), compiler=False)
+        issue = write(os.path.join(bare, self.issue), "---\nkind: task\n---\n")
+        code, said = written(bare, issue)
+        self.assertEqual(code, 2, said)
+        self.assertIn("not judged", said)
+        self.assertIn("`records` suite", said)
+
+
 if __name__ == "__main__":
     unittest.main()

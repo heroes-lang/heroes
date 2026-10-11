@@ -12,3 +12,14 @@ github: none
     **Origin:** panel 209's synthesis, 2026-10-10, ratified 17:57; filed at the milestone's opening, 19:20.
 
     **Closed** at step 2, `65cd1145`, 2026-10-10: the token, the printers, the editors' grammar, the library source and 1,181 files rewritten through `check --apply`; the spec's lines with the type kept at 10,029 real; the census clean.
+
+## What was done
+
+The `@=` token declares a cell with its type kept, `v: T @= e`: the token,
+the printers, the formatter's probe reader, `heroes mutate`, the editors'
+grammar and the site's highlighter were taught it, `v: T @ e` is refused with
+a certain fix writing `@=`, and 1,181 files were rewritten through `check
+--apply` in the same commit, the spec's lines at 10,029 real and the census
+clean. Landed at `65cd1145`, "M-inferred-cell step 2: a cell is declared
+`@=`, the type still required, and the tree is rewritten through the
+compiler's own fix".

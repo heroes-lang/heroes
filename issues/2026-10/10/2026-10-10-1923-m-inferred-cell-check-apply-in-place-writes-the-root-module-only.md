@@ -12,3 +12,11 @@ github: none
     **Origin:** found by the landing lane at 19:13 on 2026-10-10, running `./heroes check selfhost/main.hero --apply` and reading its note; the engineer's report had priced the route and marked the pass over the tree unrun, and the critic's second pass listed it among the claims asserted and not measured.
 
     **Closed** 2026-10-10 at M-inferred-cell's close: the migration this task was filed for was done, `check --apply --in-place` over every root one at a time (step 2, `65cd1145`), and a census by the compiler afterwards found no old form; the verb's walk over a tree's modules, which would make the next such migration one command, is the backlog's, filed as defect 607 (`improvement`).
+
+## What was done
+
+The migration this task was filed for was done with `check --apply
+--in-place` over every root one at a time, at step 2, and a census by the
+compiler afterwards found no old form; the verb's walk over a tree's modules,
+which would make the next such migration one command, went to the backlog as
+defect 607 (`improvement`). Landed in this file's own commit (`self`).

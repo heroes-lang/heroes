@@ -29,3 +29,12 @@ github: none
     folder*; the skills `/learn`, `/step`, `/decide`, `/where` and `/stats`
     file and read the questions there; the `learn` issue form is removed.
 
+
+## What was done
+
+The 461 `kind: learn` files left `issues/` for `docs/learn/` by day, each
+keeping its name and its text, in a commit of renames alone and one that took
+their cards off: `learn` left `cards.KINDS`, `records/lists` holds the
+questions to their shape and their floor, CLAUDE.md § 3 reads *Four lists,
+one folder*, the skills file and read the questions there, and the `learn`
+issue form was removed. Landed in this file's own commit (`self`).

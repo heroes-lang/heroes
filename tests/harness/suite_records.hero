@@ -11,6 +11,7 @@
 # one-time cleanup that rots on the next commit.
 
 use cards
+use credit
 use report
 use floors
 use portable
@@ -793,7 +794,7 @@ constant QUOTES_THE_ITALIAN: [str]
         "tests/harness/suite_records.hero"
     ]
 
-function run_all(scratch: str) -> report.Report?
+function run_all(scratch: str, only: str) -> report.Report?
     r: report.Report @= report.empty()
 
     # The quoting files leave the walk ONCE, for every check — which is
@@ -814,6 +815,35 @@ function run_all(scratch: str) -> report.Report?
     # the cost of not saying so. A closed issue is a record and leaves the
     # living walk; an open one stays in it, because it is a list's item.
     issues = read_issues(walked)?
+
+    # **Narrowed to one path, the write hook's question** (layer 0,
+    # `.claude/rules/verification.md` § A suite is the last judge): only the
+    # two checks that can judge one file run, `credit.prior_art` over the
+    # issues whose path holds `only` and `credit.defects_cited` over `only`
+    # where it stands under the cited roots. A word that selects neither is a
+    # run that would test nothing, and it is refused rather than green
+    # (CL-072).
+    if only != ""
+        selected: bool @= false
+
+        for issue in issues
+            if strings.contains(text: issue.path, needle: only)
+                selected @ true
+
+        if selected
+            credit.prior_art(@r, present: walked, issues: issues, only: only)
+
+        if credit.under_roots(only)
+            credit.defects_cited(@r, scratch: scratch, issues: issues, only: only)
+            selected @ true
+
+        if !selected
+            return fail(
+                code: "no_case",
+                msg: "no issue file holds `" + only + "` and it stands under none of selfhost/, runtime/, seed/ or tests/, so a run narrowed to it would test nothing"
+            )
+
+        return ok(r)
     closed: {str: bool} @= {}
 
     for issue in issues
@@ -855,6 +885,8 @@ function run_all(scratch: str) -> report.Report?
     carded(@r, scratch: scratch, present: walked, issues: issues)
     lists(@r, present: walked, issues: issues)
     defect_register(@r, issues: issues)
+    credit.prior_art(@r, present: walked, issues: issues, only: "")
+    credit.defects_cited(@r, scratch: scratch, issues: issues, only: "")
     tagged(@r, scratch: scratch, present: walked, issues: issues)
     appended(@r, scratch: scratch)
     numbering(@r, present: walked)

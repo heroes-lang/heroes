@@ -62,3 +62,14 @@ github: none
     parsing inside it is the crying-wolf half the item warned about. When that
     becomes the shape that ships a wrong name, the arm is added and the file's
     own paragraph is what it is added against.
+
+## What was done
+
+The text of a `guess` fix got an instrument: `fix_names.run_default` runs
+`check --json` over the check goldens, reads every fix title and judges its
+backticked spans against the specification's own `Built-ins:` sentence, with
+a family arm on the stem that an identifier-only rule would have missed;
+verified by making it fire, 20 passed and 5 failed with the withdrawn name put
+back, and `fixes` moved from 10 to 25. Landed at `ec44b642`,
+"M-check-completeness step 7: the text of a fix gets an instrument, and the
+obvious rule would have missed the defect".

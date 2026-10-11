@@ -63,3 +63,7 @@ github: none
   instrument rather than this compiler's.
 
   | CLAUDE.md §13 · docs/journal/021-selfhost-port.md | a number nobody wrote down is a number the next sitting invents
+
+## What was done
+
+The measurement was taken and kept whole as CLAUDE.md §13's named case: the port compiled small programs instantly and its own 34,512 lines not at all within 20 minutes, superlinear, which made the fixpoint's cost the author's to route rather than an assistant's optimisation instinct. Measurement (a), the same inputs with the selfhost binary built at -O2, gave a constant factor of about 2.8x against a superlinear curve, and measurement (b), a profile naming the top call sites, was recorded as still owed. Landed at `1945659f`, "lists step 2: one header then items, every ticked item in the record".

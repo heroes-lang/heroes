@@ -8,3 +8,7 @@ github: none
 ---
 
 - [x] Covered | M-ffi-ladder / surface | **DONE 2026-08-12 (author): `heroes run f.hero -- a b`.** A separator rather than a trailing operand, because `heroes run f.hero -o x` would otherwise be unreadable and a program taking `-o` could never be run; `--` anywhere but `run` is a named refusal. Was: `heroes run f.hero` cannot pass arguments to the program, so `args()` is only exercisable through a built binary. Decide under CLAUDE.md §10's stopping rule: does the fixpoint invocation, the golden harness or the Part 11 harness need to type it? If none does, it waits — and M-program-corpus, whose programs "take `args()`", is where the question is answered rather than here | crates/heroes-cli/src/cli/table.rs · tests/golden/run/edges-file-args-exit.hero | a capability the milestone delivered and the tool cannot reach
+
+## What was done
+
+Done 2026-08-12, the author's choice: `heroes run f.hero -- a b`, a separator rather than a trailing operand, because `heroes run f.hero -o x` would otherwise be unreadable and a program taking `-o` could never be run; `--` anywhere but `run` is a named refusal. Landed at `c21bac1c`, "debrief doubts: five decisions applied, and one goes to the panel".

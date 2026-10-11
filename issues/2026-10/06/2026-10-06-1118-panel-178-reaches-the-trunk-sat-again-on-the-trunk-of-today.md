@@ -32,3 +32,14 @@ github: none
     - Judge readers by compiling their programs, not by stated beliefs. Price spec text with `--refresh` on the base you land on.
 
     **Done 2026-10-06**: panel 178 brought in by a merge (`3088caa7`, its two commits reachable), its records converted (its log entry and its ratification closed as decisions, the ratification superseded; its milestone page under `docs/roadmap/milestones/`; its six items as issues naming M-buildable-structs), its defects re-run on the code of the day (091 closed by 097, 093 into 245, 092 and 094 open, 094 since repaired by batch 12); and sat again as panel 194 on that code, frozen at `7a26a0a6`, its resolution ratified by delegation (`docs/panel/194-the-rest-is-zero-where-a-group-s-construction-says-so-and-a-lend-s-count-is-in-c-s-own-unit.md`). The author's notes for the step went into its briefs as questions; each was re-measured there.
+
+## What was done
+
+Panel 178 was brought in by a merge, its two commits reachable, its records
+converted (its log entry and its ratification closed as decisions, the
+ratification superseded, its milestone page, and its six items as issues
+naming M-buildable-structs), its four defects re-run on the code of the day,
+and the sitting sat again as panel 194 on that code frozen at `7a26a0a6`, its
+resolution ratified by delegation; the author's notes for the step went into
+its briefs as questions and each was re-measured there. Landed in this file's
+own commit (`self`).
