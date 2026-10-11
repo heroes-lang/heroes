@@ -3,11 +3,11 @@ kind: defect
 area: process
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: self
 github: none
 ---
 
-- [ ] **672 — a panel seat printed the author's GitHub token in a tool output, and nothing enforces a brief's *print no credential* in a subagent** | the ffi-pragmatist of panel 212 ran `gh auth token` without redirecting its output and the OAuth token (`gho_`, scopes `repo read:org user gist admin:public_key`) stood in the seat's transcript; the seat's prompt said *do not print any token* and the seat said so itself in the first lines of its report; `guard_bash.py` refuses two secrets in the assistant's own commands and does not see a subagent's; a search of the repository, every lane and every scratch folder for the shape of a token finds 0 files, so it is in session logs outside the repository and was sent to the API as conversation | `.claude/hooks/guard_bash.py` · `.claude/skills/panel/SKILL.md` · `docs/panel/212-reports/ffi-pragmatist.md` · **class: blocking**
+- [x] **672 — a panel seat printed the author's GitHub token in a tool output, and nothing enforces a brief's *print no credential* in a subagent** | the ffi-pragmatist of panel 212 ran `gh auth token` without redirecting its output and the OAuth token (`gho_`, scopes `repo read:org user gist admin:public_key`) stood in the seat's transcript; the seat's prompt said *do not print any token* and the seat said so itself in the first lines of its report; `guard_bash.py` refuses two secrets in the assistant's own commands and does not see a subagent's; a search of the repository, every lane and every scratch folder for the shape of a token finds 0 files, so it is in session logs outside the repository and was sent to the API as conversation | `.claude/hooks/guard_bash.py` · `.claude/skills/panel/SKILL.md` · `docs/panel/212-reports/ffi-pragmatist.md` · **class: blocking**
 
     **Origin:** panel 212, 2026-10-11, the ffi-pragmatist's own disclosure; the completeness critic's second pass noted that no other report mentions it. The author is the only one who can rotate it: revoke at github.com/settings/applications, then `gh auth login`. `gh auth refresh` does not rotate a token.
 
@@ -18,3 +18,7 @@ github: none
     **2026-10-11, lane panel-212**: the hook half is repaired at `ca3d3532` (`gh auth token` is refused in any shell the assistant types, nine cases with defect 671's). **The item stays open**: the token has not been revoked, which is the author's act, and the rule in `/panel` that a seat which must authenticate runs `gh auth status` is the author's to give; neither is a line of this repository.
 
     **2026-10-11, at panel 212's ratification**: the author revoked the token and logged in again, the new one carrying the scopes `admin:public_key, gist, read:org, repo` (the `X-Oauth-Scopes` header of that evening's requests); what keeps the item open is the rule in `/panel` alone, the author's to give.
+
+    **Corrected 2026-10-12**: the sentence above, *a seat's subagent shell is not covered by the hook*, was an inference and is false since `ca3d3532`: a subagent asked to run `gh auth token --help` had the call refused by `guard_bash.py` before it ran, the refusal quoted in full in its report (measured 2026-10-12).
+
+    **The repair**: the guard at `ca3d3532a4d7b96cc11683d7de7c3b22318eca1b`, `gh auth token` refused in every shell the hooks judge, the assistant's and a seat's; the token revoked and replaced by the author on 2026-10-11; and the rule in `.claude/skills/panel/SKILL.md` § Procedure, step 3, given by the author on 2026-10-12 (`issues/2026-10/12/2026-10-12-0003-the-author-answers-three-the-thanks-page-the-seats.md`): a seat that must know whether it is authenticated runs `gh auth status`, and its brief says so. Closed by the commit that writes this section.

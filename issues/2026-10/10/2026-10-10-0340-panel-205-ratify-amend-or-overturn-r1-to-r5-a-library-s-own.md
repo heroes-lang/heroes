@@ -19,3 +19,7 @@ Panel 205 (`docs/panel/205-a-library-s-own-header-code-is-judged-as-clang-judges
 
 - **Reached first by GCC and clang**: [GCC cpp, system headers](https://gcc.gnu.org/onlinedocs/cpp/System-Headers.html): warnings are suppressed while GCC processes a system header, one found in a compiler-determined directory or added with -isystem or -idirafter
 - **Reached first by GCC**: [diagnostic pragmas override the command line](https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html): diagnostic pragmas override any command-line options
+
+## Corrected 2026-10-12
+
+The first line of the Prior art above, *Reached first by GCC and clang*, names clang, which its page does not: the page is GCC's preprocessor documentation alone, and the historian's report quotes clang's source on another matter, how clang's header search mirrors GCC's (`docs/panel/205-reports/historian.md`). What that line's page states is GCC's, and the thanks page credits it to GCC alone. Found by the lane that drafted the thanks page, 2026-10-11, and read again in the historian's report by the coordinator.

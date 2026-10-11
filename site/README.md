@@ -1160,6 +1160,17 @@ Three rules follow, and they bind every later edit:
   and only what was actually taken, never a language the design only
   compared itself with. The entry lands with the commit that lands the
   borrowing, and it publishes with the next push, which is asked for.
+- **What Heroes reached on its own and then found already reached elsewhere
+  has a group of its own** (author instruction 2026-10-07, given in Italian,
+  meant as: *yes, in a separate group in both editions*). It stands on the page
+  in both editions, `about/thanks.html` and `it/about/thanks.html`, under this
+  section's rules: each designer's or developer's name from the project's
+  infobox or from the paper the line cites, and every link on a person checked.
+  Its lines come from the decision issues' `## Prior art`, the ones written
+  `**Reached first by**`; when such a line is written and what it may say is
+  `.claude/rules/records.md` § And the record says whose idea it was, which is
+  that rule's home and is not repeated here. A project the design only compared
+  itself with stays out of this group as it stays out of the borrowings.
 
 ## The claims that have a gate on them
 
