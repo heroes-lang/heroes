@@ -1,0 +1,3 @@
+tests/golden/permissive/fixedbugs-614-the-control-arm-tells-an-empty-literal-on-a-wildcard-cell-as-its-discard.hero:10:10: error[cannot_infer]: the array literal is empty, so there is nothing to infer its type from — write the annotation
+tests/golden/permissive/fixedbugs-614-the-control-arm-tells-an-empty-literal-on-a-wildcard-cell-as-its-discard.hero:11:10: error[cannot_infer]: the map literal is empty, so there is nothing to infer its type from — write the annotation
+tests/golden/permissive/fixedbugs-614-the-control-arm-tells-an-empty-literal-on-a-wildcard-cell-as-its-discard.hero:12:11: error[cannot_infer]: the array literal is empty, so there is nothing to infer its type from — write the annotation
