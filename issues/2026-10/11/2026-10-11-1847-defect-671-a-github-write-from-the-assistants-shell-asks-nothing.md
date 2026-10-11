@@ -1,0 +1,16 @@
+---
+kind: defect
+area: process
+milestone: M-issue-files
+filed: 2026-10-11
+commit: none
+github: none
+---
+
+- [ ] **671 — a GitHub write from the assistant's shell asks nothing: the local permissions allow `gh api` on the repository and `guard_bash.py` does not name `gh`** | `.claude/settings.local.json` (the author's, git-ignored) allows `Bash(gh api repos/heroes-lang/heroes/*)`, `Bash(gh api --allow-escape-sequences repos/heroes-lang/heroes/*)` and `Bash(gh run *)` and has no `ask` and no `deny`; `gh api` with any `-f` or `-F` field switches to POST (`gh api --help`), so `gh api repos/heroes-lang/heroes/issues -f title=x` is a write that passes; the tracked `.claude/settings.json` asks only for `git push*` and `guard_bash.py` has no rule about `gh` (`grep -c -E '\bgh\b' .claude/hooks/guard_bash.py` is 0); CLAUDE.md § Hard stops says an outward-facing act is asked for every time and that the settings and hooks enforce it | `.claude/hooks/guard_bash.py` · `.claude/settings.json` · `.claude/hooks/test_hooks.py` · panel 212 R7 · **class: blocking**
+
+    **Origin:** panel 212's spec-warden asked whether a tool that pushes would lose a confirmation a hand-run `gh` call gives; the completeness critic's second pass read both settings files and the hook and found the confirmation is not there today, 2026-10-11. Nothing was written to GitHub by any seat (only GET reads and one GraphQL query, read-only in effect); the defect is the missing refusal.
+
+    **Class: blocking**, 2026-10-11 (`.claude/rules/verification.md` § Bounded discovery): a hard stop of the contract that the machine does not enforce, on the eve of 2,014 GitHub writes; the transcription cannot begin over it.
+
+    **What a repair owes**: a refusal in `guard_bash.py`, tested in `test_hooks.py`, of every GitHub write from the assistant's shell (`gh api` with a method other than GET, `-X`, `-f`, `-F`, `--input`, except the one read-only POST to `/markdown`; the write subcommands of `gh issue`, `gh label`, `gh repo`, `gh release` and `gh milestone`; `gh api graphql` carrying `mutation`), through the wrappers the guard already reads (`env`, `time`, `caffeinate`, `timeout`, a shell's `-c`); and an `ask` entry in the tracked `settings.json` for the transcription program's `push`. The author's `settings.local.json` is not edited by the assistant.
