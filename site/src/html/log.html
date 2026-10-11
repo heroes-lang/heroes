@@ -8,6 +8,11 @@
   </p>
 
   <ol class="log">
+    <li id="59">
+      <span class="when">A variable that changes gets a symbol of its own</span>
+      <b>A variable whose value can change, a cell, is now declared <code>v @= 0</code> and takes its type from its value; <code>v @ v + 1</code> changes it, and a cell that nothing ever changes is refused, with a fix that writes <code>=</code>.</b> The question and the spelling were the author&rsquo;s: why must a cell carry its type when a fixed name does not? Because <code>@</code> did two jobs, and only the type told them apart. The old line <code>v: i64 @ 0</code> is refused with a fix the compiler applies by itself, and that fix rewrote 1,181 files in one commit. The rewrite went wrong in the one place the compiler cannot see, text inside a test&rsquo;s string, and twelve of the compiler&rsquo;s own tests failed at once.
+      <a class="more" href="/docs/bindings-and-mutation/">How a cell is declared</a>
+    </li>
     <li id="58">
       <span class="when">A hole that was not where the name said</span>
       <b>The milestone went hunting for programs <code>heroes check</code> accepts and <code>heroes build</code> refuses, and found that only one of its four faces was that gap, and it was already closed, by a sitting held the same day as the one that named it.</b> The real hole was a walk down the code that gave up after sixteen levels, defended by an argument that was true: the runtime guard exists and it fires. The argument was missing one sentence, that a guard which licenses a compile-time silence is a guard the compiler leans on to be quietly wrong. Ten defects opened by its own sittings and ten closed, one of them opened by the author asking why the CI was red; and the specification came out shorter than it went in, two rules richer.
