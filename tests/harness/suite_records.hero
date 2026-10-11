@@ -3849,7 +3849,7 @@ function verdicts(@r: report.Report, present: [str], issues: [cards.Issue])
             )
             continue
 
-        if opens_pending(text: pieces[1]) && !queued(path: path, issues: issues)
+        if opens_pending(text: pieces[1]) && !answered_beneath(text: pieces[1]) && !queued(path: path, issues: issues)
             offenders @ offenders.push(
                 "    " + path + ": the verdict reads `Pending` and no open decision in " + ISSUES + " names it"
             )
@@ -4448,6 +4448,49 @@ function opens_pending(text: str) -> bool
         return strings.starts_with(text: bare, prefix: "Pending")
 
     return true
+
+# **A verdict answered beneath its stub** (2026-10-11, panel 209's file): a
+# record is not rewritten, so a sitting whose `Pending.` stood until the author
+# answered keeps that line and gains the answer under it, as
+# `.claude/rules/records.md` § A record is never rewritten asks. Only a line
+# that OPENS with the answer and its date counts, the emphasis stepped over as
+# `opens_pending` steps over it: `Ratified,`, `Amended,` or `Overturned,`, in
+# either case, then a digit. A section that only quotes the word keeps its
+# `Pending`, so the question stays whether anybody answered.
+function answered_beneath(text: str) -> bool
+    first: bool @= true
+
+    for line in strings.lines(text: text)
+        bare: str @= ""
+
+        for ch in line.chars()
+            if ch != "*" && ch != " " && ch != "\t" && ch != "_"
+                bare @ bare + ch
+
+        if bare.len() == 0
+            continue
+
+        if first
+            first @ false
+            continue
+
+        for word in ["Ratified,", "RATIFIED,", "Amended,", "AMENDED,", "Overturned,", "OVERTURNED,"]
+            if strings.starts_with(text: bare, prefix: word) && bare.len() > word.len()
+                next = bare[word.len()]
+
+                if next >= '0' && next <= '9'
+                    return true
+
+    return false
+
+test "a verdict answered beneath its stub is answered, and a quoted word is not"
+    assert answered_beneath(
+        text: "\nPending. The decision issue is\n`x`.\n\n**Ratified, 2026-10-10 17:57** (the line above stood).\n"
+    )
+    assert answered_beneath(text: "Pending.\n\n**RATIFIED, 2026-10-11**, R1 to R5.\n")
+    assert !answered_beneath(text: "Pending. Nothing is ratified yet.\n\nThe author has not answered.\n")
+    assert !answered_beneath(text: "**Ratified, 2026-10-10**, R1.\n")
+    assert !answered_beneath(text: "Pending.\n\nRatified, without a date.\n")
 
 # **`docs/ROADMAP.md` § Where we are, held to its own ceiling.**
 #
