@@ -179,8 +179,8 @@ a top-level `issues` folder, it is more orderly; we change the rules, toward a
 final definition*. **Every item this project tracks is one file in `issues/`, and
 one file is one GitHub issue.** `tests/harness/cards.hero` reads them, and
 `records/cards`, `lists`, `defects`, `numbering`, `counts`, `verdicts`, `homes`,
-`tagged`, `appended`, `prior-art` and `defects-cited` are this section's
-executors.
+`tagged`, `appended`, `prior-art`, `defects-cited` and `rendered` are this
+section's executors.
 
 **What an issue is**, the card's `kind`: a `defect`, a measured failure, its
 class on its line (§ The lists); a `decision`, a question with the default it
@@ -252,62 +252,151 @@ one.
 order, not the number: the repository is public, and an issue opened from
 outside while ours are transcribed takes a number between two of them.
 
-**What an issue becomes on GitHub**, the rule in one place, until a `heroes`
-verb renders it (a sitting's question, CLAUDE.md § 4):
+**What an issue becomes on GitHub**, the rule in one place. It is rendered by a
+program of the harness and by no verb (panel 212's R1, ratified 2026-10-11):
+`tests/harness/issues.hero`, run as `heroes run tests/harness/issues.hero --
+<render|plan|push> ...`, whose rendering `records/rendered` holds over every
+card (R2). Every reading below is deterministic, so one tree renders one set of
+bytes:
 
-- the title is the file's `# ` heading where it opens with one, else a defect's
-  bold first field, else the item's second field; a file of several items takes
-  its first's; **and a defect's title opens with its number as a word**,
-  `Defect 235: <title>`, a file of several `Defects 018 to 021: <title>`,
-  because that number is the name the code, the tests and the commits use
-  (6,925 citations of `defect NNN` under `selfhost/`, `runtime/`, `seed/` and
-  `tests/`, 3,261 test files and 1,504 commit subjects, measured 2026-10-11)
-  and GitHub's number is an address no file knows until `github:` holds it
-  (CL-083);
-- the labels are `kind:<kind>`, `class:<class>` for a defect and
-  `area:<area>`, and the milestone is `M-<name>`; a defect's issue also
-  carries the organisation's issue field `Defect`, a text field visible to
-  everyone holding its three-digit number, several separated by one space, so
-  that `field.defect:235` finds it (GitHub's documentation, read 2026-10-11);
-  the field is created once, `POST /orgs/heroes-lang/issue-fields` by an
-  organisation administrator, the author's act; and the two issues of the
-  number issued twice, `014`, each hold it and each body names the other;
-- the body opens `Filed YYYY-MM-DD · closed YYYY-MM-DD` on every route, and
-  **GitHub's own dates are the card's days too**: the issue import endpoint, an
-  unofficial preview, sets an issue's `created_at` and `closed_at` and its
-  comment's from the request (measured 2026-10-11, `docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`;
+- **the title** (R3's D1) is the file's `# ` heading where it opens with one;
+  else a defect's bold first field with its `NNN — ` taken off; else the item's
+  second field; else, for an item of one field, its first; else, for a row of
+  the old log, its second field; **else the first paragraph of text below the
+  card, its lines joined, a leading day taken off with the ` · ` after it where
+  there is one**, since a card's lines are wrapped by hand and a first line is a
+  fragment of a sentence (17
+  cards reach this reading, measured 2026-10-11: 15 rows written `YYYY-MM-DD ·
+  **...**`, one day with no ` | ` after it, one bold opening); a file of several
+  items takes its first's. Its `**` markers are taken off; **a title that is a
+  code span holding a path and nothing else takes the file's slug words
+  instead**, and one that opens with such a span and goes on keeps its own
+  words, the span with them (R3 said *opens with*; read literally it turned 52
+  titles into slug words and many into broken phrases, the old slugs having
+  dropped their code spans, measured 2026-10-11, so the coordinator narrowed it
+  to the title a stranger cannot use, which is what the ergonomist found; the
+  literal reading is the author's to restore); it is cut at a word boundary to
+  at most 250 characters, never inside a code span, and a cut title stands whole
+  as the body's line after the days, unless the body already holds that text
+  under a heading (a title taken from the item's second field), so that no
+  paragraph is read twice. **A sitting's ratification opens with its
+  number too**, `Panel 212: <title>`, where its first field is `**panel NNN**`
+  and the title does not open so already, since nothing else in the issue would
+  say which sitting it ratifies. **A defect's title opens with its number as a word**, `Defect 235:
+  <title>`, a file of several `Defects 018 to 021: <title>`, added only where
+  the title does not open so already, because that number is the name the code,
+  the tests and the commits use (6,925 citations of `defect NNN` under
+  `selfhost/`, `runtime/`, `seed/` and `tests/`, 3,261 test files and 1,504
+  commit subjects, measured 2026-10-11) and GitHub's number is an address no
+  file knows until `github:` holds it (CL-083). **A defect's number** is the one
+  its file name carries, else the `NNN — ` its first field opens with, and the
+  title and the field `Defect` read the same one; a defect with neither takes no
+  prefix and no field value (measured 2026-10-11 over 666 defect cards: 585 by
+  the name, 34 by the first field, 47 with neither);
+- **an item line splits on ` | ` outside a code span** (D2), a code span read
+  as GitHub reads one, backtick runs paired by their length; four cards whose
+  items write about backticks (237, 347, 414, 644) read as fewer fields than
+  their writers meant, and are rendered as GitHub would show their lines, the
+  coordinator's reading of 2026-10-12 against the alternative of counting single
+  backticks, which mends one of the four and reads every other line as GitHub
+  does not;
+- **the labels** are `kind:<kind>`, `class:<class>` for a defect and
+  `area:<area>`, where `area: none` and a defect with no class take no label
+  (D5); the milestone is `M-<name>`, and `none` takes none. **The
+  organisation's issue field `Defect`**, a text field visible to everyone
+  holding the three-digit number, several separated by one space, so that
+  `field.defect:235` finds it (GitHub's documentation, read 2026-10-11), is
+  created once by an organisation administrator, `POST
+  /orgs/heroes-lang/issue-fields`, the author's act, and **is set only where it
+  exists when a run starts** (R6 item 5): the import cannot set it, so it is
+  CL-083's second bridge and never one a run relies on. The two issues of the
+  number issued twice, `014`, each hold it, and each body names the other;
+- **the days**: the body opens `Filed YYYY-MM-DD · closed YYYY-MM-DD` on every
+  route, and **GitHub's own dates are the card's days too**: the issue import
+  endpoint, an unofficial preview, sets an issue's `created_at` and `closed_at`
+  and its comment's from the request (measured 2026-10-11, `docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`;
   until then this line said a transcription cannot back-date them, and the
   author's instruction of 2026-10-06 asked it amended if the endpoint answered
-  yes). So an issue is imported whole, each import read `imported` before the
-  next starts; the run's first request asks the endpoint again, and where it
-  refuses the run stops: the REST route, which dates every issue the day it
-  runs, is taken only on the author's word. Then the item under the headings of its
-  kind's form in `.github/ISSUE_TEMPLATE/`: a defect's second field under *What
-  happens* and its third under *Where to look*, then its `**Origin:**`, its
-  `**Class:**` and *The repair* under headings of those names; a decision's
-  question, default, recommendation and verdict, and its `## Prior art` under
-  *Prior art*, after *Origin* (§ And the record says whose idea it was); a
-  feature's or a task's *What it delivers* and, once closed, its `## What was
-  done` under *What was done*; any other paragraph under *Notes*;
-  then `Record:` and the file's permalink; every section stating a repair or a
-  settling ends with the commit's hash, a card's `self` rendered as the hash of
-  the commit that created the file, `git log --diff-filter=A --format=%H --
-  <file>`, since GitHub links a hash and not a word;
-- a closed issue takes one comment, `Fixed by <commit>` for a defect and
-  `Settled by <commit>` for the rest: GitHub links a bare hash to its commit, so
-  no pull request is needed; and a defect, a feature or a task whose repair a
-  sitting ruled says *Ruled by panel NNN* under it, linking the sitting's
-  decision issue, where the prior art stands once;
-- **every `defect NNN` a body names becomes a link to that defect's issue in a
-  second pass**, after the last file is transcribed, because the issues are
-  born in the order of their names and a closing text may name a defect born
-  after it;
-- **a transcription stopped between an issue's creation and the commit that
-  fills its `github:` creates no second issue**: before creating a defect's
-  issue the verb asks `field.defect:NNN`, before any other's it searches the
-  title and the `Record:` permalink, and it takes the issue it finds;
-- `github:` in the file is the truth of the mapping, and an issue that disagrees
-  with its file is the one corrected;
+  yes). `filed` is the card's; **`closed`** is the day a body line opening
+  `Closed YYYY-MM-DD` gives (486 cards hold one, 2026-10-11), else the author date of the commit the card names,
+  else the card's `filed`, and never a day before `filed`; `plan` prints which
+  source each took (D3). A card holds days and no minutes, so **each day is
+  written as noon UTC**, which every zone from UTC-12 to UTC+11 reads as that
+  same day (the coordinator's reading of 2026-10-11, R3 being silent on the
+  hour), the closing comment taking the `closed` instant;
+- **the route**: an issue is imported whole, its days, labels, milestone, closed
+  state and closing comment in one request, each import read `imported` before
+  the next starts so that the numbers keep the files' order; the run's first
+  request asks the endpoint again, and where it refuses the run stops: the REST
+  route, which dates every issue the day it runs, is taken only on the author's
+  word. Serial, at least one second between writes, and on a 403 or a 429 the
+  `retry-after` seconds, else `x-ratelimit-reset`, else one minute, growing
+  (R5; GitHub's documented limits are 80 content requests a minute and 500 an
+  hour, so 2,017 imports are about four hours if an import counts as one,
+  which is unrun);
+- **the body**: the item under the headings of its kind's form in
+  `.github/ISSUE_TEMPLATE/`, a defect's second field under *What happens* and
+  its third under *Where to look*, **where its item has the three fields of the
+  list's shape of 2026-09-07** (CL-066); where it has another number of fields,
+  an older shape whose second field is often a day and whose third the whole
+  account, its fields after the first stand under the form's first heading,
+  one paragraph each, and no later heading names what its text is not. **This
+  holds for every kind** (measured 2026-10-12: defects 566 of three fields and
+  100 of another count, the other kinds 131 and 425); then a defect's `**Origin:**`, its `**Class:**` and
+  *The repair* under headings of those names (D6); a decision's question,
+  default, recommendation and verdict, and its `## Prior art` under *Prior
+  art*, after *Origin* (§ And the record says whose idea it was); a feature's
+  or a task's *What it delivers* and, once closed, its `## What was done` under
+  *What was done*; any other paragraph under *Notes*; a card's second and later
+  `- [ ]` lines become plain list lines, so GitHub shows no task progress (D7);
+  then `Record:` and the file's permalink, pinned at a commit already on
+  `origin/main`, given to the run as `--pin <hash>` and the same on every rerun
+  (R5). **Every section stating a repair or a settling ends with the commit's
+  hash, written bare**, since GitHub links a bare hash and not one in a code
+  span (D6). **A card's `self` is the commit that wrote `commit: self` into
+  it**, the earliest of `git log -S'commit: self' --format=%H -- <file>`; where
+  that prints nothing or names a commit dated before the card's `filed`, the
+  same asked with `--follow`, for a card moved after it was closed; and where
+  that too prints nothing, the commit that brought the file to its path on the
+  trunk, `git log --diff-filter=A --diff-merges=first-parent`, for a card that
+  entered by a merge (D4). Measured 2026-10-11 over the 75 `self` cards: 73 by
+  the first reading and 2 by the last (093 and panel 178's ratification, both
+  brought by the merge `3088caa7`), none left. R3 had read D4 as the file's
+  earliest commit, and that is the commit which OPENED a card closed later: it
+  named the wrong commit for 25 of the 75, panel 212's ratification among them
+  (its earliest commit `c1d49c62` filed it open, `b85be4ed` closed it); and
+  `--follow` alone followed panel 191's card into an older file's history, nine
+  days before it was filed. The guard is a fact of the card: a commit cannot
+  settle an issue filed after it;
+- **what a body must not do**: a bare `#NNN` and an `@word` are written inside a
+  code span, since outside one the first links to our own issue of that number
+  the moment it exists and the second notifies an account; a link to another
+  project's issue or pull request is written with `redirect.github.com`, which
+  leaves no backlink (GitHub's documentation, and measured on the REST route,
+  041). **The oracle** is `POST /markdown`, mode `gfm`, context
+  `heroes-lang/heroes`, which writes nothing: no rendered body may hold an
+  `issue-link` or a `user-mention` anchor;
+- a closed issue whose card names a commit takes one comment, `Fixed by
+  <commit>` for a defect and `Settled by <commit>` for the rest: GitHub links a
+  bare hash to its commit, so no pull request is needed; a closed card whose
+  `commit` is `none`, the record not saying, takes none;
+- **every `defect NNN` and every `panel NNN` a body names becomes a link in a
+  second pass**, to that defect's issue and to that sitting's ratification
+  issue, where the prior art stands once; a run of its own after the last file
+  is transcribed, because the issues are born in the order of their names, a
+  closing text may name an issue born after it, and no address exists before
+  its issue does (R9 item 6). So a repair a sitting ruled is linked to its
+  ruling where its text names the sitting, and no field of the card is invented
+  to say which sitting ruled it;
+- **a run stopped between an import and the commit that fills its card's
+  `github:` creates no second issue**: the address is written into the card
+  once its import reads `imported` and before the next request, and a run
+  killed between the two is reconciled by listing the repository's recent
+  issues, a list and not a search, matched on the `Record:` permalink, an import
+  that answered `pending` being read first (R5);
+- `github:` in the file is the truth of the mapping, and **an issue that
+  differs from its file is reported by `plan` and never edited** (R10); how one
+  is corrected is a question of its own;
 - **a question of comprehension is not transcribed**, and since the author's
   *1a 2a* of 2026-10-05 it is not an issue at all (the *5a* of the same day had
   kept it out of GitHub: none is ever ticked, so on a public tracker each would

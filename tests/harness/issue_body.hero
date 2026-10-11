@@ -1,0 +1,409 @@
+# THE BODY OF AN ISSUE: the file's own paragraphs under the headings of its
+# kind's form in `.github/ISSUE_TEMPLATE/`.
+#
+# `.claude/rules/records.md` § The issues, its body bullet (panel 212's D6 and D7,
+# ratified 2026-10-11). A defect's second field stands under *What happens* and
+# its third under *Where to look*, then its `**Origin:**`, its `**Class:**` and
+# *The repair*; a decision's question, its default, its `## Prior art` after
+# *Origin*, its recommendation and its verdict; a feature's or a task's *What it
+# delivers* and its `## What was done`; any other paragraph under *Notes*, and a
+# field after the third with them. The headings stand in the form's order, each
+# once, their paragraphs in the file's order, and *Notes* stands before the
+# section that settles the issue, which ends with the commit's hash, bare.
+#
+# The item's own paragraphs are indented four spaces under its line and are read
+# four spaces in; a second and later item line becomes a plain list line, so
+# GitHub shows no task progress (D7); a fenced block passes whole. A paragraph
+# opening a bold label goes under that label's heading and leaves the next to
+# whatever held the one before; a `## ` heading of the file holds what follows
+# it until the next, and one the form does not name stands under *Notes* two
+# levels down, its words kept.
+
+use issue_spans
+use issue_title
+use strings
+
+constant OTHER: str
+    "Notes"
+
+# One run of the file's lines and the heading it stands under.
+record Block
+    section: str
+    rows: [str]
+
+# The blocks read so far, the heading a plain paragraph goes under, and the
+# heading the last block went under.
+record Reading
+    blocks: [Block]
+    owner: str
+    last: str
+
+# The headings of `kind`'s form, in its order, *Notes* among them.
+function form_of(kind: str) -> [str]
+    if kind == "defect"
+        return ["What happens", "Where to look", "Origin", "Class", OTHER, "The repair"]
+
+    if kind == "decision"
+        return [
+            "The question"
+            "The default today"
+            "Where to look"
+            "Origin"
+            "Prior art"
+            "Recommendation"
+            OTHER
+            "Verdict"
+        ]
+    return ["What it delivers", "Where to look", "Origin", OTHER, "What was done"]
+
+# The section that states the repair or the settling, which ends with the hash.
+function settling(kind: str) -> str
+    if kind == "defect"
+        return "The repair"
+
+    if kind == "decision"
+        return "Verdict"
+    return "What was done"
+
+# The heading a paragraph's bold opening gives it in `kind`'s form, or "".
+function label_of(kind: str, line: str) -> str
+    if strings.starts_with(text: line, prefix: "**Origin:**")
+        return "Origin"
+
+    if kind == "defect"
+        if strings.starts_with(text: line, prefix: "**Class: ")
+            return "Class"
+
+        if strings.starts_with(text: line, prefix: "**The repair")
+            return "The repair"
+
+    if kind == "decision"
+        if strings.starts_with(text: line, prefix: "**Recommendation")
+            return "Recommendation"
+
+        if strings.starts_with(text: line, prefix: "**Default")
+            return "The default today"
+
+        for opening in ["**Verdict", "**Ratified", "**RATIFIED"]
+            if strings.starts_with(text: line, prefix: opening)
+                return "Verdict"
+
+    return ""
+
+# A paragraph's first line without the label its heading now says:
+# `**Origin:** a lane` is `a lane`, `**Class: blocking**, 2026-10-02` is
+# `**blocking**, 2026-10-02`; an opening that is a sentence, `**Ratified, ...**`,
+# stays whole.
+function unlabelled(line: str) -> str
+    for word in ["Origin", "Class", "Recommendation", "Default while open", "Verdict", "The repair"]
+        lead = "**" + word + ":"
+
+        if strings.starts_with(text: line, prefix: lead + "**")
+            return strings.trimmed(strings.without_prefix(text: line, prefix: lead + "**"))
+
+        if strings.starts_with(text: line, prefix: lead + " ")
+            return "**" + strings.without_prefix(text: line, prefix: lead + " ")
+
+    return line
+
+# A file's heading as a heading under *Notes*: two levels down, at least four.
+function lowered(line: str) -> str
+    level: i64 @= 0
+
+    while line[level] == '#'
+        level @ level + 1
+
+    deeper: i64 @= level + 2
+
+    if deeper < 4
+        deeper @ 4
+
+    if deeper > 6
+        deeper @ 6
+    return "#".repeat(to_u64(deeper).must()) + line.slice(from: level, to: line.len())
+
+function heading_name(line: str) -> str
+    level: i64 @= 0
+
+    while line[level] == '#'
+        level @ level + 1
+
+    return issue_title.unbolded(line.slice(from: level, to: line.len()))
+
+# A task-list line, `- [ ] x` or `- [x] x`, as a plain list line, `- x` (D7).
+function plain_item(row: str) -> str
+    t = issue_spans.unindented(row)
+
+    if t.len() < 6 || t[0] != '-' && t[0] != '*' && t[0] != '+'
+        return row
+
+    if t[1] != ' ' || t[2] != '[' || t[4] != ']' || t[5] != ' ' || t[3] != ' ' && t[3] != 'x' && t[3] != 'X'
+        return row
+    return row.slice(from: 0, to: row.len() - t.len() + 2) + t.slice(from: 6, to: t.len())
+
+# Puts `held`, one block of lines, under the heading it belongs to.
+function place(@reading: Reading, kind: str, held: [str])
+    if held.len() == 0
+        return
+    first = held[0]
+    form = form_of(kind)
+
+    if issue_spans.is_heading(first) && first[0] == '#'
+        name = heading_name(first)
+
+        for one in form
+            if one == name
+                reading.owner @ name
+                return
+
+        reading.owner @ OTHER
+        reading.blocks @ reading.blocks.push(Block(section: OTHER, rows: [lowered(first)]))
+        reading.last @ OTHER
+        return
+    section: str @= reading.owner
+    rows: [str] @= held
+
+    if section == ""
+        section @ OTHER
+
+    if first[0] == ' ' || issue_spans.fence_of(first) != ""
+        if reading.last != ""
+            section @ reading.last
+    else if label_of(kind: kind, line: first) != ""
+        section @ label_of(kind: kind, line: first)
+        rows[0] @ unlabelled(first)
+    reading.blocks @ reading.blocks.push(Block(section: section, rows: rows))
+    reading.last @ section
+
+# The fields of the first item, or of the log's row, as the blocks they make.
+# An item of the list's three fields puts its second under the form's first
+# heading and its third under *Where to look*; an item of any other count, an
+# older shape whose second field is a day or a word and whose third is the
+# whole account, puts every field after the first under the first heading, one
+# paragraph each, so no heading names what its text is not. A row of the old
+# log puts its second there and the rest under *Notes*.
+function field_blocks(@reading: Reading, kind: str, opening: issue_title.Opening)
+    found = opening.fields
+    first = form_of(kind)[0]
+
+    if opening.from == "log"
+        if found.len() > 1 && found[1] != ""
+            reading.blocks @ reading.blocks.push(Block(section: first, rows: [found[1]]))
+
+        if found.len() > 2
+            reading.blocks @ reading.blocks.push(
+                Block(section: OTHER, rows: [found.slice(from: 2, to: found.len()).join(" | ")])
+            )
+            reading.last @ OTHER
+        return
+
+    if found.len() == 3
+        if found[1] != ""
+            reading.blocks @ reading.blocks.push(Block(section: first, rows: [found[1]]))
+
+        if found[2] != ""
+            reading.blocks @ reading.blocks.push(Block(section: "Where to look", rows: [found[2]]))
+        return
+    at: i64 @= 1
+
+    while at < found.len()
+        if found[at] != ""
+            reading.blocks @ reading.blocks.push(Block(section: first, rows: [found[at]]))
+            reading.last @ first
+        at @ at + 1
+
+# The sections of `rows`, the text below a card, as markdown lines; `hash` ends
+# the settling section where it is not "".
+function sections(kind: str, rows: [str], opening: issue_title.Opening, hash: str) -> [str]
+    none: [Block] = []
+    reading: Reading @= Reading(blocks: none, owner: "", last: "")
+    held: [str] @= []
+    fence: str @= ""
+    in_item: bool @= false
+    at: i64 @= 0
+
+    while at < rows.len()
+        raw = rows[at]
+        at @ at + 1
+
+        if at - 1 == opening.skip
+            continue
+
+        if at - 1 == opening.at
+            place(@reading, kind: kind, held: held)
+            held @ []
+            field_blocks(@reading, kind: kind, opening: opening)
+            in_item @ opening.from != "log"
+            continue
+        row: str @= raw
+
+        if in_item && strings.starts_with(text: raw, prefix: "    ")
+            row @ raw.slice(from: 4, to: raw.len())
+        else if in_item && fence == "" && strings.trimmed(raw) != ""
+            in_item @ false
+
+        if fence != ""
+            held @ held.push(row)
+
+            if issue_spans.closes(row: row, fence: fence)
+                place(@reading, kind: kind, held: held)
+                held @ []
+                fence @ ""
+            continue
+        opened = issue_spans.fence_of(row)
+
+        if opened != "" || strings.trimmed(row) == "" || issue_spans.is_heading(row) && row[0] == '#'
+            place(@reading, kind: kind, held: held)
+            held @ []
+
+        if opened != ""
+            fence @ opened
+            held @ [row]
+        else if issue_spans.is_heading(row) && row[0] == '#'
+            place(@reading, kind: kind, held: [row])
+        else if strings.trimmed(row) != ""
+            held @ held.push(plain_item(row))
+
+    place(@reading, kind: kind, held: held)
+    return written(kind: kind, blocks: reading.blocks, hash: hash)
+
+# The blocks under their headings, in the form's order.
+function written(kind: str, blocks: [Block], hash: str) -> [str]
+    out: [str] @= []
+
+    for name in form_of(kind)
+        rows: [str] @= []
+
+        for block in blocks
+            if block.section == name
+                if rows.len() > 0
+                    rows @ rows.push("")
+
+                for row in block.rows
+                    rows @ rows.push(row)
+
+        if rows.len() > 0 && name == settling(kind) && hash != ""
+            rows @ rows.push("")
+            rows @ rows.push(hash)
+
+        if rows.len() > 0
+            out @ out.push("### " + name)
+            out @ out.push("")
+
+            for row in rows
+                out @ out.push(row)
+
+            out @ out.push("")
+
+    return out
+
+test "a defect's fields, its labelled paragraphs, its notes and its repair stand in the form's order"
+    rows = [
+        "- [x] **235 — t** | what | where · **class: adjacent**"
+        ""
+        "    **Origin:** lane x, 2026-10-03."
+        ""
+        "    **Class: adjacent**, 2026-10-03, a reason."
+        ""
+        "    A note."
+        ""
+        "        indented code"
+        ""
+        "## The repair"
+        ""
+        "Repaired at `24cb4fd4`."
+    ]
+    got = sections(
+        kind: "defect",
+        rows: rows,
+        opening: issue_title.opening_of(kind: "defect", rows: rows),
+        hash: "24cb4fd404db577b2a309a360c6e1a4b4ffd6238"
+    )
+    text = got.join("\n")
+    assert strings.starts_with(
+        text: text,
+        prefix: "### What happens\n\nwhat\n\n### Where to look\n\nwhere\n\n### Origin\n\nlane x, 2026-10-03.\n\n### Class\n\n**adjacent**, 2026-10-03, a reason.\n\n### Notes\n\nA note.\n\n    indented code\n\n### The repair\n\nRepaired at `24cb4fd4`.\n\n24cb4fd404db577b2a309a360c6e1a4b4ffd6238\n"
+    )
+
+test "a decision's prior art follows its origin, its verdict comes last, and a heading the form lacks stays under notes"
+    rows = [
+        "- [x] **panel 212** | ratify R1 | `docs/panel/`"
+        ""
+        "    **Origin:** a sitting, 2026-10-11."
+        ""
+        "    **Ratified, 2026-10-11**, R1 as written."
+        ""
+        "    **Recommendation:** ratify."
+        ""
+        "## The measurements"
+        ""
+        "Measured."
+        ""
+        "## Prior art"
+        ""
+        "- one line"
+    ]
+    got = sections(
+        kind: "decision",
+        rows: rows,
+        opening: issue_title.opening_of(kind: "decision", rows: rows),
+        hash: "self-hash"
+    )
+    text = got.join("\n")
+    assert strings.contains(
+        text: text,
+        needle: "### Origin\n\na sitting, 2026-10-11.\n\n### Prior art\n\n- one line\n\n### Recommendation\n\nratify.\n\n### Notes\n\n#### The measurements\n\nMeasured.\n\n### Verdict\n\n**Ratified, 2026-10-11**, R1 as written.\n\nself-hash\n"
+    )
+    assert strings.starts_with(
+        text: text,
+        prefix: "### The question\n\nratify R1\n\n### Where to look\n\n`docs/panel/`\n"
+    )
+
+test "a heading's file keeps its prose, a fenced block passes whole, and a second item is a plain line"
+    rows = [
+        "# Defect 065 closes"
+        ""
+        "Intro prose."
+        ""
+        "- [x] **065 — x** | y | z"
+        ""
+        "    ```"
+        "    #1 code"
+        ""
+        "    ```"
+        ""
+        "- [x] **063 — another** | a | b"
+        "- [ ] an open one"
+    ]
+    got = sections(kind: "defect", rows: rows, opening: issue_title.opening_of(kind: "defect", rows: rows), hash: "")
+    text = got.join("\n")
+    assert strings.contains(
+        text: text,
+        needle: "### Notes\n\nIntro prose.\n\n```\n#1 code\n\n```\n\n- **063 — another** | a | b\n- an open one\n"
+    )
+    assert !strings.contains(text: text, needle: "Defect 065 closes")
+    assert plain_item("    - [x] kept indented") == "    - kept indented"
+    assert plain_item("- [y] not a box") == "- [y] not a box"
+
+test "a log row's second field is the question and the rest are notes"
+    rows = ["2026-08-03 | Backend: C11 | the reason | §3.1 | 001"]
+    got = sections(
+        kind: "decision",
+        rows: rows,
+        opening: issue_title.opening_of(kind: "decision", rows: rows),
+        hash: ""
+    )
+    assert got.join("\n") == "### The question\n\nBackend: C11\n\n### Notes\n\nthe reason | §3.1 | 001\n"
+
+test "an item of another count than three puts every field after the first under the first heading, and names no place to look"
+    rows = ["- [x] **014 — t** | 2026-09-05, found by a rule | **repaired the same hour** | the cause | the rule"]
+    got = sections(kind: "defect", rows: rows, opening: issue_title.opening_of(kind: "defect", rows: rows), hash: "")
+    assert got.join("\n") == "### What happens\n\n2026-09-05, found by a rule\n\n**repaired the same hour**\n\nthe cause\n\nthe rule\n"
+    pair = ["- [x] Covered | panel 145"]
+    assert sections(kind: "decision", rows: pair, opening: issue_title.opening_of(kind: "decision", rows: pair), hash: "").join("\n") == "### The question\n\npanel 145\n"
+    old_task = ["- [x] The record | **CLOSED — it has.** | Run one corpus | `docs/ROADMAP.md` | why"]
+    text = sections(kind: "task", rows: old_task, opening: issue_title.opening_of(kind: "task", rows: old_task), hash: "").join(
+        "\n"
+    )
+    assert !strings.contains(text: text, needle: "Where to look")
+    assert strings.starts_with(text: text, prefix: "### What it delivers\n\n**CLOSED — it has.**\n\nRun one corpus\n")

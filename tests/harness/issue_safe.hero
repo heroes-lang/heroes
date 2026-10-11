@@ -1,0 +1,317 @@
+# WHAT A BODY MUST NOT DO ON GITHUB, AND THE ONE MOVE THAT STOPS EACH.
+#
+# `.claude/rules/records.md` § The issues, *what a body must not do*, and its
+# body bullet's bare hash (panel 212's R3 and D6, ratified 2026-10-11; measured
+# on both routes in
+# `docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`).
+# Outside code, GitHub links a bare `#NNN` to our own issue of that number the
+# moment it exists, and `owner/repo#N` to another project's, so each is written
+# inside a code span; an `@word` notifies an account, so it is written inside
+# one too; a link to another project's issue or pull request leaves a backlink
+# there, so it is written with `redirect.github.com`; and a commit hash written
+# in backticks is not linked, so one git says names a commit is written bare.
+# Code is left as it is: `issue_spans.hero` says where it stands.
+#
+# `live` is `records/rendered`'s half: it reads a rendered body for anything
+# still doing one of the three, and the card that holds one is refused.
+
+use issue_spans
+use strings
+
+constant REDIRECT: str
+    "https://redirect.github.com/"
+
+# This project's own repository, whose issues a link may name.
+constant OURS: str
+    "heroes-lang/heroes"
+
+# `text` as GitHub may read it: every reference and mention outside code in a
+# code span, every link to another project's issue through the redirect, and
+# every span holding only a word `commits` names written bare.
+function protect(text: str, commits: {str: bool}) -> str
+    out: [str] @= []
+
+    for piece in issue_spans.pieces(text)
+        if piece.code
+            out @ out.push(piece.text)
+            continue
+        found = issue_spans.spans(piece.text)
+        ticks = issue_spans.free_ticks(text: piece.text, found: found)
+        parts: [str] @= []
+        at: i64 @= 0
+
+        for span in found
+            parts @ parts.push(guarded(region: piece.text.slice(from: at, to: span.open), ticks: ticks))
+            held = issue_spans.inner(text: piece.text, span: span)
+
+            if span.ticks == 1 && !commits[held].is_err()
+                parts @ parts.push(held)
+            else
+                parts @ parts.push(piece.text.slice(from: span.open, to: span.close))
+            at @ span.close
+
+        parts @ parts.push(guarded(region: piece.text.slice(from: at, to: piece.text.len()), ticks: ticks))
+        out @ out.push(parts.join(""))
+
+    return out.join("\n")
+
+# One run of text with no code in it, made inert. Every cut stands beside an
+# ASCII byte, which no character of several bytes holds.
+function guarded(region: str, ticks: i64) -> str
+    fence = "`".repeat(to_u64(ticks).must())
+    parts: [str] @= []
+    plain: i64 @= 0
+    at: i64 @= 0
+
+    while at < region.len()
+        url = url_end(text: region, at: at)
+
+        if url > at
+            if foreign(region.slice(from: at, to: url))
+                parts @ parts.push(region.slice(from: plain, to: at))
+                parts @ parts.push(REDIRECT)
+                plain @ at + host_length(region.slice(from: at, to: url))
+            at @ url
+            continue
+        reference = reference_at(text: region, at: at, from: plain)
+
+        if reference >= 0
+            end = digits_end(text: region, at: at + 1)
+            parts @ parts.push(region.slice(from: plain, to: reference))
+            parts @ parts.push(fence + region.slice(from: reference, to: end) + fence)
+            plain @ end
+            at @ end
+            continue
+
+        if mention_at(text: region, at: at)
+            end = name_end(text: region, at: at + 1)
+            parts @ parts.push(region.slice(from: plain, to: at))
+            parts @ parts.push(fence + region.slice(from: at, to: end) + fence)
+            plain @ end
+            at @ end
+            continue
+        at @ at + 1
+
+    if plain == 0
+        return region
+    parts @ parts.push(region.slice(from: plain, to: region.len()))
+    return parts.join("")
+
+# Where a reference GitHub would link begins, for a `#` and a digit at `at`, or
+# -1: at the `#` where nothing of a name stands before it, or at the name where
+# it holds a `/`, `owner/repo#N`; a word before it, `C#1`, links nothing.
+function reference_at(text: str, at: i64, from: i64) -> i64
+    if text[at] != '#' || at + 1 >= text.len() || !is_digit(text[at + 1])
+        return -1
+    start: i64 @= at
+
+    while start > from && is_ref_byte(text[start - 1])
+        start @ start - 1
+
+    if start == at
+        return at
+
+    if strings.contains(text: text.slice(from: start, to: at), needle: "/")
+        return start
+    return -1
+
+# Whether an `@` at `at` opens a name GitHub would mention: a letter, a digit
+# or `_` after it, and no letter, digit or `_` before it, which an address has.
+function mention_at(text: str, at: i64) -> bool
+    if text[at] != '@' || at + 1 >= text.len() || !is_word_byte(text[at + 1])
+        return false
+    return at == 0 || !is_word_byte(text[at - 1])
+
+function digits_end(text: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < text.len() && is_digit(text[end])
+        end @ end + 1
+
+    return end
+
+function name_end(text: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < text.len() && (is_word_byte(text[end]) || text[end] == '-')
+        end @ end + 1
+
+    return end
+
+# Where a URL that starts at `at` ends, at the first space or bracket or
+# quote, or `at` where none starts there.
+function url_end(text: str, at: i64) -> i64
+    if text[at] != 'h' || !strings.starts_with(text: text.slice(from: at, to: text.len()), prefix: "http")
+        return at
+    rest = text.slice(from: at, to: text.len())
+
+    if !strings.starts_with(text: rest, prefix: "https://") && !strings.starts_with(text: rest, prefix: "http://")
+        return at
+    end: i64 @= at
+
+    while end < text.len() && !ends_url(text[end])
+        end @ end + 1
+
+    return end
+
+function ends_url(b: u8) -> bool
+    return b == ' ' || b == '\n' || b == '\t' || b == ')' || b == ']' || b == '>' || b == '<' || b == '"' || b == '\'' || b == '`'
+
+# The length of a URL's scheme and host, `https://github.com/`.
+function host_length(url: str) -> i64
+    if strings.starts_with(text: url, prefix: "http://")
+        return "http://github.com/".len()
+    return "https://github.com/".len()
+
+# Whether `url` names an issue or a pull request of a repository on GitHub
+# other than this project's.
+function foreign(url: str) -> bool
+    path: str @= ""
+
+    for host in ["https://github.com/", "http://github.com/"]
+        if strings.starts_with(text: url, prefix: host)
+            path @ strings.without_prefix(text: url, prefix: host)
+
+    parts = strings.split_on(text: path, byte: '/')
+
+    if parts.len() < 4 || parts[3].len() == 0 || !is_digit(parts[3][0])
+        return false
+
+    if parts[2] != "issues" && parts[2] != "pull"
+        return false
+    return lowered(parts[0] + "/" + parts[1]) != OURS
+
+function lowered(text: str) -> str
+    parts: [str] @= []
+
+    for b in text.chars()
+        if b[0] >= 'A' && b[0] <= 'Z'
+            parts @ parts.push(b.lowered_byte())
+        else
+            parts @ parts.push(b)
+
+    return parts.join("")
+
+function lowered_byte(b: str) -> str
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    at = to_i64(b[0] - 'A').must()
+    return letters.slice(from: at, to: at + 1)
+
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+function is_word_byte(b: u8) -> bool
+    return is_digit(b) || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+
+function is_ref_byte(b: u8) -> bool
+    return is_word_byte(b) || b == '/' || b == '.' || b == '-'
+
+# Everything outside code in `body` GitHub would still link, mention or
+# backlink, each told by its words; none where the body is inert.
+function live(body: str) -> [str]
+    out: [str] @= []
+
+    for piece in issue_spans.pieces(body)
+        if piece.code
+            continue
+        at: i64 @= 0
+
+        for span in issue_spans.spans(piece.text)
+            for one in still_live(piece.text.slice(from: at, to: span.open))
+                out @ out.push(one)
+
+            at @ span.close
+
+        for one in still_live(piece.text.slice(from: at, to: piece.text.len()))
+            out @ out.push(one)
+
+    return out
+
+# What one run of text with no code in it would still link, mention or backlink.
+function still_live(text: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        url = url_end(text: text, at: at)
+
+        if url > at
+            if foreign(text.slice(from: at, to: url))
+                out @ out.push("a link to another project's issue, " + text.slice(from: at, to: url))
+            at @ url
+            continue
+        reference = reference_at(text: text, at: at, from: 0)
+
+        if reference >= 0
+            out @ out.push(
+                "a reference GitHub links, " + text.slice(from: reference, to: digits_end(text: text, at: at + 1))
+            )
+        else if mention_at(text: text, at: at)
+            out @ out.push("a mention of an account, " + text.slice(from: at, to: name_end(text: text, at: at + 1)))
+        at @ at + 1
+
+    return out
+
+# The words written alone in one backtick that could name a commit: seven to
+# forty lowercase hexadecimal digits. Git says which do (`issue_git.hero`).
+function hash_words(text: str) -> [str]
+    out: [str] @= []
+
+    for piece in issue_spans.pieces(text)
+        if piece.code
+            continue
+
+        for span in issue_spans.spans(piece.text)
+            held = issue_spans.inner(text: piece.text, span: span)
+
+            if span.ticks == 1 && held.len() >= 7 && held.len() <= 40 && is_hex(held)
+                out @ out.push(held)
+
+    return out
+
+function is_hex(word: str) -> bool
+    for b in word.chars()
+        if !is_digit(b[0]) && (b[0] < 'a' || b[0] > 'f')
+            return false
+
+    return true
+
+test "a reference, a short reference and a mention go in code, and an address or a word before them stays"
+    nothing: {str: bool} = {}
+    assert protect(text: "see #84611 here", commits: nothing) == "see `#84611` here"
+    assert protect(text: "see `#84611` here", commits: nothing) == "see `#84611` here"
+    assert protect(text: "rust-lang/rust#84611 said", commits: nothing) == "`rust-lang/rust#84611` said"
+    assert protect(text: "C#1 and abc#2", commits: nothing) == "C#1 and abc#2"
+    assert protect(text: "ask @out and (@c)", commits: nothing) == "ask `@out` and (`@c`)"
+    assert protect(text: "a@b.com, x @= 1 and v @ v + 1", commits: nothing) == "a@b.com, x @= 1 and v @ v + 1"
+    assert protect(text: "naïve #3 é @x", commits: nothing) == "naïve `#3` é `@x`"
+    assert protect(text: "a stray ` then #3", commits: nothing) == "a stray ` then ``#3``"
+    assert protect(text: "```\n#3 @x\n```\nafter #4", commits: nothing) == "```\n#3 @x\n```\nafter `#4`"
+
+test "another project's issue goes through the redirect, and ours and an anchor do not"
+    nothing: {str: bool} = {}
+    assert protect(text: "https://github.com/ziglang/zig/issues/9194", commits: nothing) == "https://redirect.github.com/ziglang/zig/issues/9194"
+    assert protect(text: "[x](https://github.com/rust-lang/rust/pull/93953)", commits: nothing) == "[x](https://redirect.github.com/rust-lang/rust/pull/93953)"
+    assert protect(text: "https://github.com/heroes-lang/heroes/issues/3", commits: nothing) == "https://github.com/heroes-lang/heroes/issues/3"
+    assert protect(text: "https://example.org/page/#12 and https://github.com/a/b", commits: nothing) == "https://example.org/page/#12 and https://github.com/a/b"
+    assert protect(text: "https://medium.com/@someone", commits: nothing) == "https://medium.com/@someone"
+
+test "a backticked word git names a commit is written bare, and any other stays in its span"
+    commits: {str: bool} @= {}
+    commits["24cb4fd4"] @ true
+    assert protect(text: "Repaired at `24cb4fd4`.", commits: commits) == "Repaired at 24cb4fd4."
+    assert protect(text: "the `deadbeef` word", commits: commits) == "the `deadbeef` word"
+    assert protect(text: "``24cb4fd4``", commits: commits) == "``24cb4fd4``"
+    assert hash_words("at `24cb4fd4` and `2026` and `DEADBEEF1` and `0123456789abcdef`") == ["24cb4fd4", "0123456789abcdef"]
+
+test "a rendered body is read for what would still link, mention or backlink"
+    assert live("see `#1`, `@x` and https://redirect.github.com/a/b/issues/1").len() == 0
+    assert live("see #1").len() == 1
+    assert live("ask @x").len() == 1
+    assert live("rust-lang/rust#1").len() == 1
+    assert live("https://github.com/a/b/pull/7").len() == 1
+    assert live("```\n#1 @x\n```").len() == 0
+    assert live("an address a@b.com and C#1").len() == 0
+    nothing: {str: bool} = {}
+    text = "#1 @x a/b#2 https://github.com/a/b/issues/3 `#4` ` stray #5"
+    assert live(protect(text: text, commits: nothing)).len() == 0

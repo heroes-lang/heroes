@@ -1,0 +1,166 @@
+# THE NUMBERS AN ISSUE IS KNOWN BY: a defect's, and a sitting's ratification's.
+#
+# `.claude/rules/records.md` § The issues, its title bullet and its labels bullet
+# (panel 212's D1, ratified 2026-10-11, amended by the coordinator the same
+# day). A defect's number is the one its file's name carries, else the `NNN — `
+# its first field opens with, and its title and the organisation's `Defect`
+# field read the same one: the title opens `Defect 235: `, or `Defects 018 to
+# 021: ` for a file of several, and a defect with neither takes no prefix and no
+# field value. A sitting's ratification, whose first field is `**panel NNN**`,
+# opens `Panel 212: `. Each prefix stands only where the title does not open so
+# already, in any case.
+
+use strings
+
+# The numbers a defect's file name carries and how a title says them:
+# `defect-235-` is `Defect 235`, `defects-018-to-021-` is `Defects 018 to 021`,
+# and a list is `Defects 058 and 059` or `Defects 080, 081, 082 and 089`.
+record Numbered
+    numbers: [str]
+    said: str
+
+function numbers_in_name(name: str) -> Numbered
+    nothing: [str] = []
+    none = Numbered(numbers: nothing, said: "")
+
+    if name.len() < 20
+        return none
+
+    # Sixteen ASCII bytes, `YYYY-MM-DD-HHMM-`, open an entry's name.
+    words = strings.split_on(text: name.slice(from: 16, to: name.len()), byte: '-')
+
+    if words.len() < 2 || !all_digits(words[1])
+        return none
+
+    if words[0] == "defect"
+        return Numbered(numbers: [words[1]], said: "Defect " + words[1])
+
+    if words[0] != "defects"
+        return none
+    listed: [str] @= [words[1]]
+    at: i64 @= 2
+
+    if words.len() > 3 && words[2] == "to" && all_digits(words[3])
+        return Numbered(numbers: spanned(from: words[1], to: words[3]), said: "Defects " + words[1] + " to " + words[3])
+
+    while at < words.len() && (all_digits(words[at]) || words[at] == "and" && at + 1 < words.len() && all_digits(words[at + 1]))
+        if words[at] != "and"
+            listed @ listed.push(words[at])
+        at @ at + 1
+
+    if listed.len() == 1
+        return Numbered(numbers: listed, said: "Defect " + listed[0])
+    said = listed.slice(from: 0, to: listed.len() - 1).join(", ") + " and " + listed[listed.len() - 1]
+    return Numbered(numbers: listed, said: "Defects " + said)
+
+function all_digits(word: str) -> bool
+    if word.len() == 0
+        return false
+
+    for b in word.chars()
+        if b[0] < '0' || b[0] > '9'
+            return false
+
+    return true
+
+# Every number from one to the other, three digits each.
+function spanned(from: str, to: str) -> [str]
+    out: [str] @= []
+    n: i64 @= strings.to_number(from).must()
+
+    while n <= strings.to_number(to).must()
+        out @ out.push(padded(n))
+        n @ n + 1
+
+    return out
+
+function padded(n: i64) -> str
+    if n < 10
+        return "00" + n.to_str()
+
+    if n < 100
+        return "0" + n.to_str()
+    return n.to_str()
+
+# A defect's number: the name's, else the `NNN — ` that opens `first`, its
+# first field, `**` off; none where neither holds one.
+function defect_numbers(name: str, first: str) -> Numbered
+    named = numbers_in_name(name)
+
+    if named.numbers.len() > 0
+        return named
+    field = strings.trimmed(strings.split_text(text: first, separator: "**").join(""))
+    digits: i64 @= 0
+
+    while digits < field.len() && field[digits] >= '0' && field[digits] <= '9'
+        digits @ digits + 1
+
+    if digits == 0 || !strings.starts_with(text: field.slice(from: digits, to: field.len()), prefix: " — ")
+        return Numbered(numbers: [], said: "")
+    number = padded(strings.to_number(field.slice(from: 0, to: digits)).must())
+    return Numbered(numbers: [number], said: "Defect " + number)
+
+# The digits of a first field that is `**panel NNN**` and nothing else, as
+# written, or "".
+function panel_of(field: str) -> str
+    if !strings.starts_with(text: field, prefix: "**panel ") || !strings.ends_with(text: field, suffix: "**")
+        return ""
+
+    # Both ends are ASCII, so the cut stands between characters.
+    digits = field.slice(from: 8, to: field.len() - 2)
+
+    if !all_digits(digits)
+        return ""
+    return digits
+
+# Whether `title` opens with one of `words` and then `number` already, in any
+# case, so that no prefix doubles it: `defect 093`, `Defects 080`, `PANEL 212`.
+function opens_so(title: str, words: [str], number: str) -> bool
+    for word in words
+        if folded_starts(text: title, prefix: word + " " + number)
+            return true
+
+    return false
+
+function folded_starts(text: str, prefix: str) -> bool
+    if prefix.len() > text.len()
+        return false
+    at: i64 @= 0
+
+    while at < prefix.len()
+        b: u8 @= text[at]
+
+        if b >= 'A' && b <= 'Z'
+            b @ b + 32
+
+        if b != prefix[at]
+            return false
+        at @ at + 1
+
+    return true
+
+test "a defect's numbers come from its name, and a title opens with them once"
+    assert numbers_in_name("2026-10-04-0409-defect-235-a-header-name.md").said == "Defect 235"
+    assert numbers_in_name("2026-09-08-0713-defects-018-to-021-four.md").numbers == ["018", "019", "020", "021"]
+    assert numbers_in_name("2026-09-08-0713-defects-018-to-021-four.md").said == "Defects 018 to 021"
+    assert numbers_in_name("2026-09-18-0130-defects-058-and-059-close.md").said == "Defects 058 and 059"
+    assert numbers_in_name("2026-09-24-1633-defects-080-081-082-089-closed.md").said == "Defects 080, 081, 082 and 089"
+    assert numbers_in_name("2026-09-05-0628-2026-09-05-found-by-the-three.md").numbers.len() == 0
+    assert numbers_in_name("2026-08-25-0418-defect-fixed-2026-08-16-m.md").numbers.len() == 0
+    assert defect_numbers(name: "2026-09-05-0628-2026-09-05-found.md", first: "**014 — every FFI diagnostic**").said == "Defect 014"
+    assert defect_numbers(name: "2026-10-04-0409-defect-235-a.md", first: "**014 — another**").numbers == ["235"]
+    assert defect_numbers(name: "2026-08-13-0043-defect-half-fixed.md", first: "Covered").numbers.len() == 0
+    assert defect_numbers(name: "2026-08-13-0043-defect-half-fixed.md", first: "**Defect 011 — two**").numbers.len() == 0
+    assert opens_so(title: "Defect 065 closes", words: ["defect", "defects"], number: "065")
+    assert opens_so(title: "defect 093 the lane", words: ["defect", "defects"], number: "093")
+    assert opens_so(title: "Defects 080, 081 closed", words: ["defect", "defects"], number: "080")
+    assert !opens_so(title: "a header name", words: ["defect", "defects"], number: "235")
+
+test "a ratification's first field gives its sitting's number as written, and nothing else does"
+    assert panel_of("**panel 212**") == "212"
+    assert panel_of("**panel 062**") == "062"
+    assert panel_of("panel 062") == ""
+    assert panel_of("**panel 108 — ratify the resolution**") == ""
+    assert panel_of("**M-issue-files**") == ""
+    assert opens_so(title: "PANEL 212 sits", words: ["panel"], number: "212")
+    assert !opens_so(title: "ratify R1 to R11", words: ["panel"], number: "212")

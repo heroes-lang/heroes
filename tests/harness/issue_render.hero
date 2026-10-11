@@ -1,0 +1,571 @@
+# WHAT ONE ISSUE FILE BECOMES ON GITHUB: its title, body, days, labels,
+# milestone, closing comment and the `Defect` field's numbers.
+#
+# `.claude/rules/records.md` § The issues, *What an issue becomes on GitHub*, is
+# the rule; panel 212's R3 closed its seven gaps (D1 to D7), ratified
+# 2026-10-11. This module puts the readings together, and every one of them is
+# deterministic given the tree and what git answered (`issue_git.Facts`), so one
+# tree renders one set of bytes: `tests/harness/issues.hero` prints them and
+# `records/rendered` holds every card to them (`issue_check.hero`).
+#
+# The days (D3): `filed` is the card's; a closed issue's day is the one a body
+# line opening `Closed YYYY-MM-DD` gives, else the author day of the commit its
+# card names, else `filed`, and never a day before `filed`; each is written as
+# noon UTC, which every zone from UTC-12 to UTC+11 reads as that same day, and
+# the closing comment takes the closed instant. The labels (D5) are `kind:`,
+# `class:` for a defect with a class and `area:` where it is not `none`. A
+# closed issue's one comment is `Fixed by <commit>` for a defect and `Settled by
+# <commit>` for the rest, where the card names a commit.
+
+use cards
+use issue_body
+use issue_git
+use issue_numbers
+use issue_safe
+use issue_title
+use strings
+
+constant BLOB: str
+    "https://github.com/heroes-lang/heroes/blob/"
+
+constant NOON: str
+    "T12:00:00Z"
+
+# One card as rendered, or why it cannot be: `refusal` is "" where it renders,
+# and `unborn` says the refusal is a `self` card whose file git holds no commit
+# of yet. `fields` is how many fields its first item has, 0 for none. `prefix`
+# is the number a title was opened with, `defect` or `panel`;
+# `pathed` says a title that opened with a path in code took the slug's words,
+# `slug`, or kept its own, `kept`; `self_from` is the reading that named a
+# `self` card's commit, `pickaxe`, `follow` or `addition`. `closed_from` is `body`,
+# `commit` or `filed`, and `raised` says the day it gave stood before `filed`.
+record Rendered
+    path: str
+    refusal: str
+    unborn: bool
+    title: str
+    cut: bool
+    prefix: str
+    pathed: str
+    self_from: str
+    fields: i64
+    body: str
+    labels: [str]
+    milestone: str
+    defect: str
+    closed: bool
+    filed: str
+    closed_day: str
+    closed_from: str
+    raised: bool
+    comment: str
+
+function refused(path: str, why: str, unborn: bool) -> Rendered
+    none: [str] = []
+    return Rendered(
+        path: path,
+        refusal: why,
+        unborn: unborn,
+        title: "",
+        cut: false,
+        prefix: "",
+        pathed: "",
+        self_from: "",
+        fields: 0,
+        body: "",
+        labels: none,
+        milestone: "",
+        defect: "",
+        closed: false,
+        filed: "",
+        closed_day: "",
+        closed_from: "",
+        raised: false,
+        comment: ""
+    )
+
+# A day as GitHub's instant: noon UTC.
+function instant(day: str) -> str
+    return day + NOON
+
+# `issue` rendered with what git answered, `twins` the "<number> <path>" of each
+# other file holding one of its numbers.
+function render(issue: cards.Issue, facts: issue_git.Facts, twins: [str]) -> Rendered
+    card = issue.card
+
+    if card.complaints.len() > 0
+        return refused(path: issue.path, why: "its card cannot be read: " + card.complaints[0], unborn: false)
+    rows = strings.lines(issue.body)
+    opening = issue_title.opening_of(kind: card.kind, rows: rows)
+
+    if opening.title == ""
+        return refused(
+            path: issue.path,
+            why: "no title: no heading, item, row of the old log or line of text below the card gives one (`.claude/rules/records.md` § The issues)",
+            unborn: false
+        )
+    hash: str @= ""
+
+    if cards.is_full_hash(card.commit)
+        hash @ card.commit
+    else if card.commit == "self" && facts.history
+        hash @ facts.made[issue.path].default("")
+
+        if hash == "" && !facts.unfollowed[issue.path].is_err()
+            return refused(
+                path: issue.path,
+                why: "its card says `commit: self`, and neither of D4's readings names a commit of the file, which git holds",
+                unborn: false
+            )
+
+        if hash == ""
+            return refused(
+                path: issue.path,
+                why: "its card says `commit: self`, and git holds no commit of the file yet, so no hash can stand for it",
+                unborn: true
+            )
+    named = issue_numbers.defect_numbers(name: issue.name, first: first_field(opening))
+    title: str @= opening.title
+    pathed = issue_title.path_title(title)
+
+    if pathed == "slug"
+        title @ issue_title.slug_words(issue.name)
+    prefix: str @= ""
+    sitting: str @= ""
+
+    if opening.from != "log" && opening.fields.len() > 0
+        sitting @ issue_numbers.panel_of(opening.fields[0])
+
+    if card.kind == "defect" && named.numbers.len() > 0
+        if !issue_numbers.opens_so(title: title, words: ["defect", "defects"], number: named.numbers[0])
+            title @ named.said + ": " + title
+            prefix @ "defect"
+    else if sitting != "" && !issue_numbers.opens_so(title: title, words: ["panel"], number: sitting)
+        title @ "Panel " + sitting + ": " + title
+        prefix @ "panel"
+    nothing: {str: bool} = {}
+    whole = issue_safe.protect(text: title, commits: nothing)
+    shown = issue_title.cut(whole)
+    closed = !issue.open
+    day: str @= ""
+    from: str @= ""
+    raised: bool @= false
+
+    if closed
+        day @ closed_line_day(rows)
+        from @ "body"
+
+        if day == "" && hash != "" && !facts.days[hash].is_err()
+            day @ facts.days[hash].must()
+            from @ "commit"
+
+        if day == ""
+            day @ card.filed
+            from @ "filed"
+
+        if cards.day_of(day).must() < cards.day_of(card.filed).must()
+            day @ card.filed
+            raised @ true
+    lines: [str] @= []
+
+    if closed
+        lines @ lines.push("Filed " + card.filed + " · closed " + day)
+    else
+        lines @ lines.push("Filed " + card.filed)
+    lines @ lines.push("")
+
+    # A title the item's second field or the log's gave stands in the body
+    # already, under the form's first heading, so a cut one is not said twice.
+    if shown != whole && opening.from != "second" && opening.from != "log"
+        lines @ lines.push(whole)
+        lines @ lines.push("")
+
+    for twin in twins
+        parts = strings.words(twin)
+        lines @ lines.push(
+            "The number " + parts[0] + " was issued twice: the other defect holding it is " + BLOB + facts.pin + "/" + parts[1]
+        )
+        lines @ lines.push("")
+
+    for row in issue_body.sections(kind: card.kind, rows: rows, opening: opening, hash: hash)
+        lines @ lines.push(row)
+
+    lines @ lines.push("Record: " + BLOB + facts.pin + "/" + issue.path)
+    comment: str @= ""
+
+    if closed && hash != ""
+        if card.kind == "defect"
+            comment @ "Fixed by " + hash
+        else
+            comment @ "Settled by " + hash
+    milestone: str @= ""
+
+    if card.milestone != "none"
+        milestone @ card.milestone
+    defect: str @= ""
+
+    if card.kind == "defect"
+        defect @ named.numbers.join(" ")
+    return Rendered(
+        path: issue.path,
+        refusal: "",
+        unborn: false,
+        title: shown,
+        cut: shown != whole,
+        prefix: prefix,
+        pathed: pathed,
+        self_from: facts.made_by[issue.path].default(""),
+        fields: item_fields(opening),
+        body: issue_safe.protect(text: lines.join("\n"), commits: facts.commits),
+        labels: labels_of(kind: card.kind, area: card.area, rows: rows),
+        milestone: milestone,
+        defect: defect,
+        closed: closed,
+        filed: card.filed,
+        closed_day: day,
+        closed_from: from,
+        raised: raised,
+        comment: comment
+    )
+
+# The first field of the card's first item, or "" where it has none.
+function first_field(opening: issue_title.Opening) -> str
+    if opening.from == "log" || opening.at < 0 || opening.fields.len() == 0
+        return ""
+    return opening.fields[0]
+
+# How many fields the card's first item has, 0 where it has none.
+function item_fields(opening: issue_title.Opening) -> i64
+    if opening.from == "log" || opening.at < 0
+        return 0
+    return opening.fields.len()
+
+# `kind:<kind>`, `class:<class>` for a defect with one, `area:<area>` but for
+# `none` (D5).
+function labels_of(kind: str, area: str, rows: [str]) -> [str]
+    out: [str] @= ["kind:" + kind]
+
+    if kind == "defect"
+        named = issue_title.class_of(rows)
+
+        if named != ""
+            out @ out.push("class:" + named)
+
+    if area != "none"
+        out @ out.push("area:" + area)
+    return out
+
+# The day the first body line opening `Closed YYYY-MM-DD`, bold or not, gives,
+# or "" (D3).
+function closed_line_day(rows: [str]) -> str
+    for row in rows
+        t = strings.without_prefix(text: strings.trimmed(row), prefix: "**")
+
+        if strings.starts_with(text: t, prefix: "Closed ") && t.len() >= 17 && cards.looks_like_day(text: t, at: 7)
+            return t.slice(from: 7, to: 17)
+
+    return ""
+
+# Each defect file's other files holding one of its numbers, `<number> <path>`:
+# the number issued twice, whose two issues each name the other.
+function twins_of(issues: [cards.Issue]) -> {str: [str]}
+    holders: {str: [str]} @= {}
+    none: [str] = []
+
+    for issue in issues
+        if issue.card.kind != "defect"
+            continue
+        rows = strings.lines(issue.body)
+
+        for number in issue_numbers.defect_numbers(name: issue.name, first: first_field(issue_title.opening_of(kind: "defect", rows: rows))).numbers
+            holders[number] @ holders[number].default(none).push(issue.path)
+
+    out: {str: [str]} @= {}
+
+    for number in keys(holders).sort()
+        paths = holders[number].must()
+
+        if paths.len() < 2
+            continue
+
+        for path in paths
+            for other in paths
+                if other != path
+                    out[path] @ out[path].default(none).push(number + " " + other)
+
+    return out
+
+test "a closed defect renders its days, prefix, labels, sections, record and comment"
+    text = cards.card_text(kind: "defect", area: "compiler", milestone: "none", filed: "2026-10-03", commit: "24cb4fd404db577b2a309a360c6e1a4b4ffd6238", github: "none") + "- [x] **235 — a header name** | what #3 | where · **class: adjacent**\n\n    **Origin:** lane x, 2026-10-03.\n\n## The repair\n\n**Closed 2026-10-04** with the batch, at `24cb4fd4`.\n"
+    issue = cards.issue_of(path: "issues/2026-10/03/2026-10-03-1200-defect-235-a-header-name.md", text: text)
+    commits: {str: bool} @= {}
+    commits["24cb4fd4"] @ true
+    days: {str: str} = {}
+    made: {str: str} = {}
+    unfollowed: {str: bool} = {}
+    made_by: {str: str} = {}
+    facts = issue_git.Facts(
+        history: true,
+        pin: "p1n",
+        made: made,
+        made_by: made_by,
+        unfollowed: unfollowed,
+        days: days,
+        commits: commits
+    )
+    got = render(issue: issue, facts: facts, twins: [])
+    assert got.refusal == ""
+    assert got.title == "Defect 235: a header name"
+    assert got.prefix == "defect"
+    assert got.labels == ["kind:defect", "class:adjacent", "area:compiler"]
+    assert got.defect == "235"
+    assert got.closed_day == "2026-10-04"
+    assert got.closed_from == "body"
+    assert got.comment == "Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238"
+    assert strings.starts_with(
+        text: got.body,
+        prefix: "Filed 2026-10-03 · closed 2026-10-04\n\n### What happens\n\nwhat `#3`\n"
+    )
+    assert strings.contains(
+        text: got.body,
+        needle: "with the batch, at 24cb4fd4.\n\n24cb4fd404db577b2a309a360c6e1a4b4ffd6238\n"
+    )
+    assert strings.ends_with(
+        text: got.body,
+        suffix: "\nRecord: https://github.com/heroes-lang/heroes/blob/p1n/issues/2026-10/03/2026-10-03-1200-defect-235-a-header-name.md"
+    )
+    assert instant(got.closed_day) == "2026-10-04T12:00:00Z"
+
+test "the closed day falls from the body to the commit to filed, and never before filed"
+    made: {str: str} = {}
+    unfollowed: {str: bool} = {}
+    made_by: {str: str} = {}
+    days: {str: str} @= {}
+    days["c0ffee0000000000000000000000000000000001"] @ "2026-09-01"
+    commits: {str: bool} = {}
+    facts = issue_git.Facts(
+        history: true,
+        pin: "p",
+        made: made,
+        made_by: made_by,
+        unfollowed: unfollowed,
+        days: days,
+        commits: commits
+    )
+    early = cards.issue_of(
+        path: "issues/x/2026-09-03-0000-a.md",
+        text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-09-03", commit: "c0ffee0000000000000000000000000000000001", github: "none") + "2026-09-03 | a decision | why\n"
+    )
+    got = render(issue: early, facts: facts, twins: [])
+    assert got.closed_from == "commit"
+    assert got.raised
+    assert got.closed_day == "2026-09-03"
+    assert got.labels == ["kind:decision"]
+    assert got.comment == "Settled by c0ffee0000000000000000000000000000000001"
+    bare = cards.issue_of(
+        path: "issues/x/2026-08-25-0426-closed.md",
+        text: cards.card_text(kind: "decision", area: "design", milestone: "none", filed: "2026-08-14", commit: "none", github: "none") + "- [x] panel 051 | **CLOSED — the row**\n"
+    )
+    unsaid = render(issue: bare, facts: facts, twins: [])
+    assert unsaid.closed_from == "filed"
+    assert unsaid.comment == ""
+    open_one = cards.issue_of(
+        path: "issues/x/2026-10-11-0000-a.md",
+        text: cards.card_text(kind: "task", area: "none", milestone: "M-issue-files", filed: "2026-10-11", commit: "none", github: "none") + "- [ ] **M-issue-files** | render | x\n"
+    )
+    still = render(issue: open_one, facts: facts, twins: [])
+    assert !still.closed
+    assert still.milestone == "M-issue-files"
+    assert strings.starts_with(text: still.body, prefix: "Filed 2026-10-11\n\n### What it delivers\n\nrender\n")
+
+test "a self card git holds no commit of is unborn, one neither reading names is refused, and so is a card with no title"
+    made: {str: str} @= {}
+    unfollowed: {str: bool} = {}
+    made_by: {str: str} = {}
+    made["issues/x/2026-10-11-0000-a.md"] @ ""
+    days: {str: str} = {}
+    commits: {str: bool} = {}
+    facts = issue_git.Facts(
+        history: true,
+        pin: "p",
+        made: made,
+        made_by: made_by,
+        unfollowed: unfollowed,
+        days: days,
+        commits: commits
+    )
+    self_card = cards.issue_of(
+        path: "issues/x/2026-10-11-0000-a.md",
+        text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-10-11", commit: "self", github: "none") + "2026-10-11 | taken | why\n"
+    )
+    assert render(issue: self_card, facts: facts, twins: []).unborn
+    held: {str: bool} @= {}
+    held["issues/x/2026-10-11-0000-a.md"] @ true
+    merged = issue_git.Facts(
+        history: true,
+        pin: "p",
+        made: made,
+        made_by: made_by,
+        unfollowed: held,
+        days: days,
+        commits: commits
+    )
+    assert !render(issue: self_card, facts: merged, twins: []).unborn
+    assert strings.contains(
+        text: render(issue: self_card, facts: merged, twins: []).refusal,
+        needle: "neither of D4's readings"
+    )
+    untitled = cards.issue_of(
+        path: "issues/x/2026-09-11-0008-a.md",
+        text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-09-11", commit: "none", github: "none") + "2026-09-11\n"
+    )
+    assert strings.starts_with(text: render(issue: untitled, facts: facts, twins: []).refusal, prefix: "no title")
+
+test "the two files of a number issued twice each name the other, and the title and the field hold it"
+    one = cards.issue_of(
+        path: "issues/a/2026-09-05-0628-found-by-x.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-09-05", commit: "none", github: "none") + "- [x] **014 — one** | a | b\n"
+    )
+    two = cards.issue_of(
+        path: "issues/b/2026-09-06-0636-found-by-y.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-09-06", commit: "none", github: "none") + "- [x] **014 — two** | a | b\n"
+    )
+    alone = cards.issue_of(
+        path: "issues/c/2026-10-04-0409-defect-235-z.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-04", commit: "none", github: "none") + "- [x] **235 — z** | a | b\n"
+    )
+    twins = twins_of([one, two, alone])
+    assert twins[one.path].must() == ["014 issues/b/2026-09-06-0636-found-by-y.md"]
+    assert twins[alone.path].is_err()
+    made: {str: str} = {}
+    unfollowed: {str: bool} = {}
+    made_by: {str: str} = {}
+    days: {str: str} = {}
+    commits: {str: bool} = {}
+    got = render(
+        issue: one,
+        facts: issue_git.Facts(history: true, pin: "p", made: made, made_by: made_by, unfollowed: unfollowed, days: days, commits: commits),
+        twins: twins[one.path].must()
+    )
+    assert got.defect == "014"
+    assert got.prefix == "defect"
+    assert got.title == "Defect 014: one"
+    assert strings.contains(
+        text: got.body,
+        needle: "The number 014 was issued twice: the other defect holding it is https://github.com/heroes-lang/heroes/blob/p/issues/b/2026-09-06-0636-found-by-y.md"
+    )
+
+test "a ratification opens with its sitting's number once, a path alone takes the slug's words, and the first paragraph titles what else has none"
+    made: {str: str} @= {}
+    made_by: {str: str} @= {}
+    made["issues/x/2026-10-11-1846-panel-212-ratify.md"] @ "c1d49c6297d946c017a5d5e300791a23a9635cae"
+    made_by["issues/x/2026-10-11-1846-panel-212-ratify.md"] @ "addition"
+    unfollowed: {str: bool} = {}
+    days: {str: str} = {}
+    commits: {str: bool} = {}
+    facts = issue_git.Facts(
+        history: true,
+        pin: "p",
+        made: made,
+        made_by: made_by,
+        unfollowed: unfollowed,
+        days: days,
+        commits: commits
+    )
+    card = cards.card_text(
+        kind: "decision",
+        area: "cli",
+        milestone: "none",
+        filed: "2026-10-11",
+        commit: "self",
+        github: "none"
+    )
+    ratified = render(
+        issue: cards.issue_of(path: "issues/x/2026-10-11-1846-panel-212-ratify.md", text: card + "- [x] **panel 212** | ratify R1 to R11 | x\n"),
+        facts: facts,
+        twins: []
+    )
+    assert ratified.title == "Panel 212: ratify R1 to R11"
+    assert ratified.prefix == "panel"
+    assert ratified.self_from == "addition"
+    assert !strings.contains(text: ratified.body, needle: "**panel 212**")
+    plain = cards.card_text(
+        kind: "decision",
+        area: "cli",
+        milestone: "none",
+        filed: "2026-10-11",
+        commit: "none",
+        github: "none"
+    )
+    said = render(
+        issue: cards.issue_of(path: "issues/x/2026-10-11-0000-a.md", text: plain + "# Panel 212 sits\n\n- [x] **panel 212** | q | w\n"),
+        facts: facts,
+        twins: []
+    )
+    assert said.title == "Panel 212 sits"
+    assert said.prefix == ""
+    alone = render(
+        issue: cards.issue_of(path: "issues/x/2026-09-24-0000-floors-from-both-sides.md", text: plain + "- [x] **M-issue-files** | `tests/harness/floors.hero`. | x\n"),
+        facts: facts,
+        twins: []
+    )
+    assert alone.title == "floors from both sides"
+    assert alone.pathed == "slug"
+    goes_on = render(
+        issue: cards.issue_of(path: "issues/x/2026-08-04-0039-inherits-s-ban.md", text: plain + "2026-08-04 | `tests/golden/ir/` inherits a ban | why\n"),
+        facts: facts,
+        twins: []
+    )
+    assert goes_on.title == "`tests/golden/ir/` inherits a ban"
+    assert goes_on.pathed == "kept"
+    first = render(
+        issue: cards.issue_of(path: "issues/x/2026-09-11-0008-a.md", text: plain + "2026-09-11 · **A row, ratified.** More\nwords.\n"),
+        facts: facts,
+        twins: []
+    )
+    assert first.title == "A row, ratified. More words."
+    assert strings.contains(text: first.body, needle: "### Notes\n\n2026-09-11 · **A row, ratified.** More\nwords.\n")
+
+test "a cut title stands after the days unless the body holds it under a heading already"
+    made: {str: str} = {}
+    made_by: {str: str} = {}
+    unfollowed: {str: bool} = {}
+    days: {str: str} = {}
+    commits: {str: bool} = {}
+    facts = issue_git.Facts(
+        history: true,
+        pin: "p",
+        made: made,
+        made_by: made_by,
+        unfollowed: unfollowed,
+        days: days,
+        commits: commits
+    )
+    long = "word ".repeat(60) + "end"
+    card = cards.card_text(
+        kind: "task",
+        area: "none",
+        milestone: "none",
+        filed: "2026-10-11",
+        commit: "none",
+        github: "none"
+    )
+    second = render(
+        issue: cards.issue_of(path: "issues/x/2026-10-11-0000-a.md", text: card + "- [ ] **M-issue-files** | " + long + " | x\n"),
+        facts: facts,
+        twins: []
+    )
+    assert second.cut
+    assert strings.starts_with(text: second.body, prefix: "Filed 2026-10-11\n\n### What it delivers\n\n" + long + "\n")
+    heading = render(
+        issue: cards.issue_of(path: "issues/x/2026-10-11-0001-b.md", text: card + "# " + long + "\n\nprose\n"),
+        facts: facts,
+        twins: []
+    )
+    assert heading.cut
+    assert strings.starts_with(
+        text: heading.body,
+        prefix: "Filed 2026-10-11 · closed 2026-10-11\n\n" + long + "\n\n### Notes\n"
+    )
+    assert second.fields == 3
+    assert heading.fields == 0
