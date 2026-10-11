@@ -1,0 +1,24 @@
+# Fixed 2026-10-11, defect 614, lane b21-misc: a `T?`, a `()` and a plain
+# value on a wildcard cell, the shapes beside `_ @= nullptr` under
+# `check --permissive`. Each is told nothing, as its `_ = e` line is in the
+# control arm, whose refusals of it, `discarded_failure` and `bound_unit`,
+# are thesis rules the arm drops; since the repair the checker reaches them
+# through the discard's own walk. The type error below is the witness that
+# the checker walked them.
+
+function h(n: i64) -> i64?
+    if n > 0
+        return ok(n)
+    return fail(code: "neg", msg: "negative")
+
+function g(n: i64)
+    print(n)
+
+function wrong() -> i64
+    return "text"  #~ type_mismatch
+
+function main()
+    _ @= h(1)
+    _ @= g(1)
+    _ @= 5
+    print(wrong())

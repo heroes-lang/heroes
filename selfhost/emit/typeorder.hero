@@ -36,6 +36,7 @@ use checker
 use ir/lower
 use emit/ffi_lookup
 use emit/type_needs
+use emit/tu_local
 
 # Every typedef the program needs, each after everything it contains
 # by value. The seed order is the two old orders concatenated —
@@ -113,40 +114,14 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
 
     if deepest(c, names, decls, out: out, graph: graph) > IN_ORDER_FROM
         in_order(@w, c, names, decls, out: out)
-        eager(@w)
+
+        # Past the same depth every per-type function is emitted where it is
+        # defined, `emit/tu_local` says how and why (defects 468, 566, 622).
+        tu_local.eager(@w)
         writer.line(@w, text: byte_copy.DEFINITION)
         writer.line(@w, text: byte_copy.DEFINITION_HELD)
         writer.blank(@w)
         w.copies_bytes @ true
-
-# Past the same depth every per-type function is emitted WHERE IT IS DEFINED
-# (defect 468). clang emits a `static` function the first time an emitted
-# function names it, and recursively (`CodeGenModule::EmitDeferred`): the top
-# of a chain's `_eq` names the next level's, which names the next, so the
-# emission recurses as deep as the chain. Measured on this Mac with a 1 MiB
-# stack and defect 469's memmove, 10,000 levels with every other one an
-# option: `-fsyntax-only` passes and `-emit-llvm` dies. `used` has clang emit
-# each function at its definition, so none waits on another: the deepest of
-# six samples across a 1,000-level unit held about 2,800 nested emissions,
-# and with `used` three. It costs the binary every per-type function the unit
-# defines, called or not, which is why it is not every unit's: on the
-# compiler's own 500 units it was 55% more of clang's instructions and 131%
-# more object.
-#
-# **And `nodebug` since defect 566** (2026-10-10): at `-O2` clang inlines a
-# chain's per-type functions into each other, a thousand inlined frames per
-# release of the thousandth level, each in the line table, and the
-# assembly printer and two debug-value analyses were 54e9 of 143e9
-# instructions (the CI's Windows leg passed its 120 s watchdog). Inlined,
-# the code takes its caller's line, these functions being the generated
-# file's: 14.6e9, 40.6e9 and 143.3e9 at 250, 500 and 1,000 levels became
-# 9.2e9, 19.8e9 and 44.7e9. `noinline` instead left `MemCpyOpt`'s
-# stack-move asking post-dominance across one block, 86.5e9 at 1,000.
-function eager(@w: writer.Writer)
-    writer.at_generated(@w)
-    writer.line(@w, text: "#undef HERO_TU_LOCAL")
-    writer.line(@w, text: "#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static")
-    writer.blank(@w)
 
 # HOW DEEP A CHAIN OF STRUCTS CLANG IS LEFT TO CONVERT BY ITSELF (defect 170,
 # 2026-10-03). Clang turns a struct type into its own the first time a
@@ -378,8 +353,10 @@ test "past 32 structs held by value clang is handed the chain from its bottom, a
     assert last_typedef.must() < order_at.must()
     assert bottom.must() < top.must()
 
+# Since defect 622 the definition leaves three UBSan checks out of them where
+# clang optimises under UBSan, and is what it was in the `#else`.
 test "past 32 structs held by value the per-type functions are emitted where they are defined, and at 32 they are not (defect 468)"
-    eager_line = "#undef HERO_TU_LOCAL\n#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static\n"
+    eager_line = "#undef HERO_TU_LOCAL\n#if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)\n#define HERO_TU_LOCAL __attribute__((unused, used, nodebug, no_sanitize(\"null\", \"alignment\", \"object-size\"))) static\n#else\n#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static\n#endif\n"
     assert ffi_lookup.char_index_of(text: chain_text(n: 32), needle: eager_line).is_err()
     past = chain_text(n: 33)
     eager_at = ffi_lookup.char_index_of(text: past, needle: eager_line)
