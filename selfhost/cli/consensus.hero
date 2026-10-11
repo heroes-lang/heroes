@@ -1,0 +1,371 @@
+# `heroes check <directory> --apply --in-place`: every certain fix the roots
+# under a directory agree on, each file written once (design.md §4.17; panel
+# 211, route C; defect 607). A root is a `.hero` file under the directory
+# that declares `function main`.
+#
+# **A certain fix is certain for the root it was computed from**, because
+# every `use` starts at the directory of the file compiled (spec § 1, panel
+# 099 R5): one module can mean two things to two roots (panel 211's `p2`). So
+# a file is written only where EVERY root that reads it makes the same text
+# of it, a root with no fix for it voting for the text as it stands; a file
+# the roots disagree about is named, with the roots, and left as it is.
+#
+# Each round asks every root of the program as the rounds before left it,
+# from `edited` and never the disk (`modules.load_edited`), until a round
+# agrees on no change. Then every write is planned and refused together
+# before the first byte: a file outside the directory, a symbolic link on
+# the way to it, a landing that cannot be written, a second name. A file
+# reached under two spellings of one name is written once.
+#
+# A file named alone keeps `check --apply`'s answer as panel 193 ratified it:
+# the root written, a module's fix `elsewhere`. Only a directory with `--apply
+# --in-place` reaches here (`main.hero`); a directory with anything else is
+# told unreadable, as defect 295 left it.
+
+use token
+use lexer
+use diag
+use source
+use source_extent
+use modules
+use library_source
+use module/reading
+use cli/argv
+use cli/certain
+use cli/check
+use cli/io
+use cli/process
+use cli/publish
+use cli/agreed_writes
+use cli/strings
+use cli/table as cli_table
+
+# One file as one root read it: its text then, and what that root's certain
+# fixes make of it.
+record Vote
+    root: str
+    name: str
+    read: str
+    proposed: str
+
+function run(dir: str, inv: argv.Invocation) -> cli_table.Exit
+    asked = asks_one(inv)
+
+    if asked != ""
+        io.eprint(text: "error: " + asked)
+        return .failed_exit
+    base = without_slash(dir)
+    found = roots_under(base)
+
+    if found.is_err()
+        io.eprint(text: "error: " + failure_of(found))
+        return .failed_exit
+    roots = found.must()
+
+    if roots.len() == 0
+        io.eprint(
+            text: "note: " + base + " holds no root, a `.hero` file declaring `function main`, so nothing was checked and nothing written"
+        )
+        return .ok_exit
+    edited: [source.InputFile] @= []
+    first: [source.InputFile] @= []
+    last: [Vote] @= []
+    count: i64 @= 0
+
+    while count < ROUNDS
+        polled = votes_of(roots, edited: edited, inv: inv)
+
+        if polled.is_err()
+            io.eprint(text: "error: " + unpolled(polled))
+            return .failed_exit
+        last @ polled.must()
+        agreed = agreed_of(last)
+
+        if agreed.len() == 0
+            break
+
+        for one in agreed
+            if !named(first, name: one.name)
+                first @ first.push(
+                    source.InputFile(name: one.name, module: "", text: read_of(last, name: one.name), is_library: false)
+                )
+            edited @ kept(edited, file: one)
+
+        count @ count + 1
+
+    for told in disputes(last)
+        io.eprint(text: "note: " + told)
+
+    if count == ROUNDS
+        io.eprint(
+            text: "note: certain fixes were still being agreed after " + ROUNDS.to_str() + " rounds; `check " + base + " --apply --in-place` again writes the rest"
+        )
+    plan = agreed_writes.planned(changed(edited: edited, first: first))
+    why = agreed_writes.refused(plan, dir: base)
+
+    if why != ""
+        io.eprint(text: "error: " + why)
+        return .failed_exit
+    written = agreed_writes.writes(plan)
+
+    if written.is_err()
+        io.eprint(text: "error: " + publish.message_of(written))
+        return .failed_exit
+    return .ok_exit
+
+# How many rounds the roots are asked, as `cli/check.hero`'s ROUNDS.
+constant ROUNDS: i64
+    64
+
+# The one answer a directory has: its fixes written in place.
+function asks_one(inv: argv.Invocation) -> str
+    if !argv.has(inv, spelling: "--apply") || !argv.has(inv, spelling: "--in-place")
+        return "a directory's certain fixes are written where they stand, and nothing else is asked of one: `heroes check <directory> --apply --in-place`"
+
+    if argv.has(inv, spelling: "--json")
+        return "`--json` holds one root's answer, and a directory has many: name a file for `--json`"
+    return ""
+
+# `dir` without the separators it ends in, `/` itself kept.
+function without_slash(dir: str) -> str
+    out: str @= dir
+
+    while out.len() > 1 && out[out.len() - 1] == '/'
+        out @ out.slice(from: 0, to: out.len() - 1)
+
+    return out
+
+function unpolled(got: [Vote]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+function failure_of(got: [str]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# Every root under `dir`, in order of name: a `.hero` file declaring
+# `function main`, outside every hidden directory and every `build/`, which
+# are a tool's and not the author's (`.git`, the lanes of `.claude/worktrees`).
+# A root that is not text is one: it reads its modules all the same, and
+# `votes_of` has it leave them as they stand.
+function roots_under(dir: str) -> [str]?
+    out: [str] @= []
+
+    for path in process.files_under(dir)?.sort()
+        if !strings.ends_with(text: path, suffix: ".hero") || hidden(path.slice(from: dir.len() + 1, to: path.len()))
+            continue
+        text = reading.source_text(path)?
+
+        if declares_main(text.text)
+            out @ out.push(path)
+
+    return ok(out)
+
+function hidden(rest: str) -> bool
+    for part in agreed_writes.parts_of(rest)
+        if strings.starts_with(text: part, prefix: ".") || part == "build"
+            return true
+
+    return false
+
+# Whether `text` declares `function main` at its margin, read off the tokens
+# as discovery reads its `use` lines (`module/paths.hero`).
+function declares_main(text: str) -> bool
+    tokens = lexer.lex_one(text).tokens
+    at: i64 @= 0
+
+    while at + 1 < tokens.len()
+        start = tokens[at].span.start
+
+        if tokens[at].kind == .kw_function && (start == 0 || text[start - 1] == '\n') && word(tokens[at + 1], text: text) == "main"
+            return true
+        at @ at + 1
+
+    return false
+
+function word(t: token.Token, text: str) -> str
+    return text.slice(from: t.span.start, to: t.span.end)
+
+# One round: every root read as `edited` holds the program, and each file it
+# reads with the text its certain fixes make of it. A root that is not text
+# (`stuck`) is never lexed, so it computes no fix: it votes for every file it
+# reads as it stands, as a root stopped at a later stage does, and is never a
+# file voted on itself.
+function votes_of(roots: [str], edited: [source.InputFile], inv: argv.Invocation) -> [Vote]?
+    out: [Vote] @= []
+
+    for root in roots
+        text: str @= ""
+        stuck: bool @= false
+
+        if named(edited, name: root)
+            text @ read_in(edited, name: root)
+        else
+            got = reading.source_text(root)?
+            text @ got.text
+            stuck @ got.faults.len() > 0
+        s = modules.load_edited(path: root, root_text: text, edited: edited, library: library_source.text())?
+        none: [diag.Diagnostic] = []
+        said: [diag.Diagnostic] @= none
+
+        if !stuck
+            said @ check.spoken(s, inv)
+        index: i64 @= 0
+
+        for entry in s.files
+            if !entry.is_library && !source_extent.faulted(s, index: index) && !(stuck && index == 0)
+                was = source_extent.text_of(s, index: index)
+                out @ out.push(
+                    Vote(root: root, name: entry.name, read: was, proposed: certain.applied_to(said, s, file: index).text)
+                )
+            index @ index + 1
+
+    return ok(out)
+
+# The files every root that reads them makes the same new text of.
+function agreed_of(votes: [Vote]) -> [source.InputFile]
+    out: [source.InputFile] @= []
+
+    for v in votes
+        if v.proposed != v.read && !named(out, name: v.name) && unanimous(votes, name: v.name)
+            out @ out.push(source.InputFile(name: v.name, module: "", text: v.proposed, is_library: false))
+
+    return out
+
+function unanimous(votes: [Vote], name: str) -> bool
+    proposed: str @= ""
+    seen: bool @= false
+
+    for v in votes
+        if v.name == name
+            if seen && v.proposed != proposed
+                return false
+            proposed @ v.proposed
+            seen @ true
+
+    return true
+
+# Each file the roots disagree about, with the roots that would change it
+# and those that would not.
+function disputes(votes: [Vote]) -> [str]
+    out: [str] @= []
+    done: [str] @= []
+
+    for v in votes
+        if certain.listed(names: done, name: v.name) || unanimous(votes, name: v.name)
+            continue
+        done @ done.push(v.name)
+        changing: [str] @= []
+        keeping: [str] @= []
+
+        for w in votes
+            if w.name == v.name && w.proposed != w.read
+                changing @ changing.push(w.root)
+
+            if w.name == v.name && w.proposed == w.read
+                keeping @ keeping.push(w.root)
+
+        out @ out.push(
+            v.name + " was not written: the roots that read it compute different certain fixes for it (changing it: " + changing.join(", ") + "; leaving it: " + keeping.join(", ") + "), and a file means what its root's directory makes of it (spec § 1)"
+        )
+
+    return out
+
+function read_of(votes: [Vote], name: str) -> str
+    for v in votes
+        if v.name == name
+            return v.read
+
+    return ""
+
+function named(files: [source.InputFile], name: str) -> bool
+    for one in files
+        if one.name == name
+            return true
+
+    return false
+
+function read_in(files: [source.InputFile], name: str) -> str
+    for one in files
+        if one.name == name
+            return one.text
+
+    return ""
+
+# `files` with `file` in place of the entry of its name, or after them.
+function kept(files: [source.InputFile], file: source.InputFile) -> [source.InputFile]
+    out: [source.InputFile] @= []
+    found: bool @= false
+
+    for one in files
+        if one.name == file.name
+            out @ out.push(file)
+            found @ true
+        else
+            out @ out.push(one)
+
+    if !found
+        out @ out.push(file)
+    return out
+
+# The files whose settled text is not the one first read.
+function changed(edited: [source.InputFile], first: [source.InputFile]) -> [source.InputFile]
+    out: [source.InputFile] @= []
+
+    for one in edited
+        if read_in(first, name: one.name) != one.text
+            out @ out.push(one)
+
+    return out
+
+## Tests
+
+function vote(root: str, name: str, read: str, proposed: str) -> Vote
+    return Vote(root: root, name: name, read: read, proposed: proposed)
+
+test "a file is written only where every root that reads it makes one text of it"
+    agree = [
+        vote(root: "a.hero", name: "m.hero", read: "x", proposed: "y")
+        vote(root: "b.hero", name: "m.hero", read: "x", proposed: "y")
+    ]
+    assert agreed_of(agree).len() == 1
+    assert agreed_of(agree)[0].text == "y"
+    split = [
+        vote(root: "a.hero", name: "m.hero", read: "x", proposed: "x")
+        vote(root: "b.hero", name: "m.hero", read: "x", proposed: "y")
+    ]
+    assert agreed_of(split).len() == 0
+    assert disputes(split).len() == 1
+    assert disputes(agree).len() == 0
+
+test "a root is a file declaring function main at its margin"
+    assert declares_main("use geom\n\nfunction main()\n    print(1)\n")
+    assert !declares_main("function two() -> i64\n    return 2\n")
+    assert !declares_main("# function main\nfunction mains()\n    return\n")
+    assert hidden(".claude/worktrees/x/a.hero")
+    assert hidden("tests/build/a.hero")
+    assert !hidden("tests/golden/a.hero")
+
+# A root that is not text is a root, and it leaves the module it reads as it
+# stands, so the fix the root beside it computes is not agreed. Read from the
+# tracked fixture, never written: a copy through a file of text could not
+# carry the byte that makes `b.hero` no text.
+test "a root that is not text votes for every module it reads as it stands"
+    dir = "tests/golden/surface-fixtures/tree607/notext"
+    roots = roots_under(dir).must()
+    assert roots == [dir + "/a.hero", dir + "/b.hero"]
+    none: [source.InputFile] = []
+    votes = votes_of(roots, edited: none, inv: argv.bare(.check_cmd)).must()
+    assert agreed_of(votes).len() == 0
+    assert disputes(votes).len() == 1
+    assert strings.holds(
+        text: disputes(votes)[0],
+        needle: "(changing it: " + dir + "/a.hero; leaving it: " + dir + "/b.hero)"
+    )
+
+test "a directory's name loses the separators it ends in"
+    assert without_slash("d//") == "d"
+    assert without_slash("d") == "d"
+    assert without_slash("/") == "/"

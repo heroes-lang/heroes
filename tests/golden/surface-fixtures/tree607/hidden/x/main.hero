@@ -1,0 +1,7 @@
+# Defect 607's program; the surface case copies this directory beside it
+# as `.lane/` and `build/`, which a directory's roots never come from (panel
+# 211: a tool's directories, `.git` and `.claude/worktrees` among them).
+use lib/geom
+
+function main()
+    print(geom.two())

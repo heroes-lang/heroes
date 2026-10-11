@@ -1,0 +1,3 @@
+# The `util` of `lib/`'s programs.
+function count() -> i64
+    return 2

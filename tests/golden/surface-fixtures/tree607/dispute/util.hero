@@ -1,0 +1,3 @@
+# The `util` of this directory's programs.
+function count() -> i64?
+    return ok(1)

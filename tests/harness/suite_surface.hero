@@ -20,6 +20,7 @@
 # echoes the path it was given and an expectation must not also record
 # which directory ran the harness.
 
+use apply_tree
 use probe
 use report
 use strings
@@ -122,6 +123,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     measure_with_no_operand(scratch: scratch, compiler: compiler, r: @r)
     warning_told_once(scratch: scratch, compiler: compiler, r: @r)
     recursion_named(scratch: scratch, compiler: compiler, r: @r)
+    apply_tree.run_all(scratch: scratch, compiler: compiler, r: @r)
     return ok(r)
 
 # **A clang warning on a bound header is told once, by the program's own unit,
@@ -681,8 +683,6 @@ function verb_probes() -> [probe.Probe]
         row(name: "apply with json answers a document holding the program, where it printed the program as text (defect 371, panel 193's R4)", argv: "check tests/golden/surface-fixtures/apply141/remark.hero --apply --json", code: 0).out_is("{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"tests/golden/surface-fixtures/apply141/remark.hero\", \"sha256\": \"0c06c20685b97e8740711b3cc71f77122a89c4666f635f31ec6b2c370a9598c4\"}\n  ],\n  \"file\": \"tests/golden/surface-fixtures/apply141/remark.hero\",\n  \"rounds\": 0,\n  \"not_applied\": [],\n  \"output\": \"# Defect 141 (2026-10-01): a file of one remark, its line open.\"\n}\n").err_empty()
         row(name: "and where rounds wrote, it says how many, the program inside being what apply writes, one round a link of the chain", argv: "check tests/golden/surface-fixtures/certain137-inside/main.hero --apply --json", code: 0).out_has("  \"rounds\": 3,\n  \"not_applied\": [],\n").out_has("\\n    print(total(xs))  #~ bad_operand bad_operand\\n    k: Counter @= Counter(n: 0)\\n    print(bump(@k))  #~ bad_operand marker_mismatch\\n    print(copy_text(from: \\\"a\\\", to: \\\"b\\\"))  #~ bad_operand needs_label\\n    print(one())  #~ bad_operand\\n").err_empty()
         row(name: "and it names the fixes left in another module, and every file a round read with its SHA-256", argv: "check tests/golden/surface-fixtures/applylater/main.hero --apply --json", code: 0).out_has("    {\"file\": \"tests/golden/surface-fixtures/applylater/geom.hero\", \"sha256\": \"af570637f6e94adf8a9112328c04bee10739be27944ea9ea3d852108a923a537\"}\n  ],\n  \"file\": \"tests/golden/surface-fixtures/applylater/main.hero\",\n  \"rounds\": 1,\n  \"not_applied\": [\"tests/golden/surface-fixtures/applylater/geom.hero:5\"],\n").err_is("note: 1 certain fix(es) are in another module and were not applied: tests/golden/surface-fixtures/applylater/geom.hero:5\n")
-        row(name: "and with --in-place, a root holding none of the diagnostics says so, and that the certain fix is in another module (defect 621)", argv: "check tests/golden/surface-fixtures/applyx/main.hero --apply --in-place", code: 0).err_is("note: 1 certain fix(es) are in another module and were not applied: tests/golden/surface-fixtures/applyx/geom.hero:3\ntests/golden/surface-fixtures/applyx/main.hero unchanged: none of the diagnostics is in it, and the certain fix(es) named above are in another module\n").out_empty()
-        row(name: "and with --in-place on a file no fix applies to, the document all the same", argv: "check tests/golden/surface-fixtures/apply141/holes.hero --apply --in-place --json", code: 0).out_starts("{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n").out_has("  \"rounds\": 0,\n  \"not_applied\": [],\n").err_empty()
         row(name: "apply refuses --brief, which it dropped in silence (defect 371)", argv: "check tests/golden/check/certain-labels.hero --apply --brief", code: 2).err_is("error: `--brief` prints the diagnostics one to a line, and `--apply` prints the program instead of them: ask for one\n").out_empty()
         row(name: "and --dump-scopes, which it dropped the same way", argv: "check tests/golden/check/certain-labels.hero --apply --dump-scopes", code: 2).err_is("error: `--dump-scopes` prints the program's scopes, and `--apply` prints the program with its fixes written: ask for one artifact at a time\n").out_empty()
         row(name: "in-place without apply is refused, where it was dropped in silence", argv: "check tests/golden/check/certain-labels.hero --in-place", code: 2).err_is("error: `--in-place` rewrites the file with what `--apply` writes, and `--apply` was not given: `heroes check <file.hero> --apply --in-place`\n").out_empty()
@@ -690,7 +690,6 @@ function verb_probes() -> [probe.Probe]
         row(name: "apply hands a clean file back byte for byte, its open last line included, where it printed nothing (defect 141)", argv: "check tests/golden/surface-fixtures/apply141/clean.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a clean file whose last line is open. `check\n# --apply` owes it back byte for byte; on the compiler of `9d1c209d` it\n# printed nothing, so `check --apply > file` emptied the file.\n\nfunction main()\n    print(1)").err_empty()
         row(name: "and a file of one remark, its line open", argv: "check tests/golden/surface-fixtures/apply141/remark.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a file of one remark, its line open.").err_empty()
         row(name: "and a clean file with a hole, where it printed the hole's report", argv: "check tests/golden/surface-fixtures/apply141/holes.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a clean file with a hole. `check --apply` owes\n# the program back as it is; on the compiler of `9d1c209d` it printed the\n# hole's report, `check`'s own artifact and not this flag's, and with\n# `--in-place` it printed that report too.\n\nfunction main()\n    n: i64 @= ???\n    print(n)\n").err_empty()
-        row(name: "and with --in-place it prints nothing at all, the file being its own repair", argv: "check tests/golden/surface-fixtures/apply141/holes.hero --apply --in-place", code: 0).out_empty().err_empty()
         row(name: "a module whose last byte is a stray carriage return is refused there, where check passed it and fmt did not (defect 141)", argv: "check tests/golden/surface-fixtures/apply141/main.hero --brief", code: 1).err_has("apply141/strayed.hero:5:13: error[stray_carriage_return]").err_lacks("internal error")
         row(name: "a comment between two parameters of a group member stays there, with a member following (defect 095)", argv: "fmt tests/golden/surface-fixtures/paramcomment095/following.hero", code: 0).out_is("# Defect 095: a comment between two parameters of a group member, with a\n# member following. `fmt` joined the list onto one line and expelled the\n# comment after it, where `ob_put` took it as documentation, and the tree\n# guard refused at exit 2 a program `check` accepts. This file is canonical:\n# `fmt` prints it back byte for byte.\nextern \"x.h\"\n    record Ob tag ob\n    function ob_get(\n                o: Ob,\n                # a comment between\n                n: i64\n            ) -> Ob retains ob_put\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(0)\n").err_empty()
         row(name: "and with no member following, where it used to leave the group at exit 0", argv: "fmt tests/golden/surface-fixtures/paramcomment095/last.hero", code: 0).out_is("# Defect 095's silent shape: the same comment, and no member following. The\n# expelled comment landed after the group as a file-level remark, and `fmt`\n# exited 0 having MOVED it, which is worse than the refusal. This file is\n# canonical: `fmt` prints it back byte for byte.\nextern \"x.h\"\n    record Ob tag ob\n    function ob_put(o: Ob consumes)\n    function ob_get(\n                o: Ob,\n                # a comment between\n                n: i64\n            ) -> Ob retains ob_put\n\nfunction main()\n    print(0)\n").err_empty()
@@ -1232,7 +1231,11 @@ test "the tables are what this module is, so they are counted"
     # told, under `build` and `run`, the route of a module built alone.
     # 201 -> 202 on 2026-10-11, defect 621 (lane b20-tools): `applyx/` under
     # `--apply --in-place`, a root holding none of the diagnostics told so.
-    assert verb_probes().len() == 202
+    # 202 -> 199 the same day, defect 607 (lane b21-apply, panel 211): that row
+    # and the two `--in-place` rows over `apply141/holes.hero` moved into
+    # `apply_tree.hero`, which runs them on a copy of their fixture, so no row
+    # of this table writes the tree it reads.
+    assert verb_probes().len() == 199
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map

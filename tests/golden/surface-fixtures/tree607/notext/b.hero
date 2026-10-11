@@ -1,0 +1,7 @@
+# A root that is not text: the line below its mark ends in the byte 0xFF.
+#~v not_text
+# here: ÿ
+use lib/m
+
+function main()
+    print(m.two())

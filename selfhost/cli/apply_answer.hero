@@ -1,7 +1,7 @@
 # What `check --apply` hands back, and with `--json` the document that holds
-# it (design.md §4.17; panel 193's R4, provisional, author ratification
-# pending; defect 371). The program is the artifact either way, on stdout;
-# `--json` says how to print it, never what (`.claude/rules/cli-surface.md`):
+# it (design.md §4.17; panel 193's R4, ratified 2026-10-06; defect 371). The
+# program is the artifact either way, on stdout; `--json` says how to print
+# it, never what (`.claude/rules/cli-surface.md`):
 # `{"schema": 2, "kind": "applied"}`, the files read with their SHA-256 as
 # every answer names them, the root `"file"`, how many `"rounds"` wrote, the
 # certain fixes it left in another module as `"not_applied"`, and the program

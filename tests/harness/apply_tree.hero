@@ -1,0 +1,353 @@
+# `check --apply --in-place`, run on a COPY of a fixture tree, never on the
+# tracked one (panel 211, defect 607).
+#
+# A directory operand writes every certain fix the roots under it agree on,
+# so its cases are trees: `tests/golden/surface-fixtures/tree607/`, one
+# directory per shape, each copied afresh into this run's scratch before it is
+# asked, and the copy is what the compiler writes. Until panel 211 the module
+# rows of `suite_surface` ran `--apply --in-place` on the tracked fixtures, and
+# a route that wrote modules rewrote `applyx/geom.hero` in the tree the suite
+# was judging (the compiler-engineer's W, measured in its copy); those rows
+# live here now too, so no row of the net writes the tree it reads.
+#
+# Each case says what the run must print and end with (a `probe.Probe`, its
+# paths the copy's), which files of the copy it rewrites, each then holding
+# the fixture's `<stem>.agreed`, every other `.hero` of the copy left byte for
+# byte, and which roots must check clean afterwards, or must not: a property
+# of the program written, beside the bytes (`.claude/rules/module-shape.md`'s
+# instrument rule). The shapes that need a link or a mode are made in the
+# copy, on the platforms that have them.
+
+use probe
+use report
+use shell
+use strings
+
+constant FIXTURES: str
+    "tests/golden/surface-fixtures/"
+
+record Case
+    # The fixture directory under `FIXTURES`, copied whole.
+    fixture: str
+    # What the copy is given before the run: "", `hidden`, `dirlink`,
+    # `filelink`, `hardlink` or `readonly`.
+    setup: str
+    words: [str]
+    p: probe.Probe
+    # Paths under the copy: the files rewritten, the roots that check clean
+    # afterwards, and the roots that do not.
+    written: [str]
+    clean: [str]
+    broken: [str]
+
+function run_all(scratch: str, compiler: str, @r: report.Report)
+    for c in cases(scratch + "/tree607")
+        if posix_only(c.setup) && shell.exe_suffix() == ".exe"
+            continue
+        one_case(@r, scratch: scratch, compiler: compiler, c: c)
+
+function posix_only(setup: str) -> bool
+    return setup == "dirlink" || setup == "filelink" || setup == "hardlink" || setup == "readonly"
+
+function cases(root: str) -> [Case]
+    agree = root + "/agree"
+    shared = root + "/shared"
+    several = root + "/several"
+    rounds = root + "/rounds"
+    dispute = root + "/dispute"
+    below = root + "/dispute-below"
+    stuck = root + "/stuck"
+    hidden = root + "/hidden"
+    dirlink = root + "/dirlink"
+    filelink = root + "/filelink"
+    hardlink = root + "/hardlink"
+    readonly = root + "/readonly"
+    file = root + "/file"
+    json = root + "/json"
+    alone = root + "/alone"
+    bare = root + "/bare"
+    applyx = root + "/applyx"
+    holes = root + "/holes"
+    holes_json = root + "/holes-json"
+    none: [str] = []
+    return [
+        Case(fixture: "tree607/agree", setup: "", words: in_place(agree), p: said(name: "a directory writes the certain fix in a nested module every root agrees on (defect 607)", code: 0, err: "rewrote " + agree + "/lib/geom.hero\n"), written: ["lib/geom.hero"], clean: ["main.hero"], broken: none)
+        Case(fixture: "tree607/agree", setup: "", words: ["check", file + "/main.hero", "--apply", "--in-place"], p: said(name: "the same program named by its file keeps panel 193's answer: the fix elsewhere, nothing written", code: 0, err: "note: 1 certain fix(es) are in another module and were not applied: " + file + "/lib/geom.hero:7\n" + file + "/main.hero unchanged: none of the diagnostics is in it, and the certain fix(es) named above are in another module\n"), written: none, clean: none, broken: ["main.hero"])
+        Case(fixture: "tree607/agree", setup: "", words: ["check", json, "--apply", "--in-place", "--json"], p: said(name: "a directory with --json is refused, one root's document being no directory's", code: 2, err: "error: `--json` holds one root's answer, and a directory has many: name a file for `--json`\n"), written: none, clean: none, broken: ["main.hero"])
+        Case(fixture: "tree607/agree", setup: "", words: ["check", bare, "--apply"], p: said(name: "a directory with --apply alone keeps defect 295's refusal", code: 2, err: "error: cannot read `" + bare + "`\n"), written: none, clean: none, broken: ["main.hero"])
+        Case(fixture: "tree607/agree", setup: "", words: in_place(alone + "/lib"), p: said(name: "a directory holding no root says so and writes nothing", code: 0, err: "note: " + alone + "/lib holds no root, a `.hero` file declaring `function main`, so nothing was checked and nothing written\n"), written: none, clean: none, broken: ["main.hero"])
+        Case(fixture: "tree607/shared", setup: "", words: in_place(shared), p: said(name: "two roots agreeing on a module's fix write it once", code: 0, err: "rewrote " + shared + "/lib/m.hero\n"), written: ["lib/m.hero"], clean: ["a.hero", "b.hero"], broken: none)
+        Case(fixture: "tree607/several", setup: "", words: in_place(several), p: said(name: "a root and two of its modules are each written once, in the order the root reads them", code: 0, err: "rewrote " + several + "/main.hero\nrewrote " + several + "/lib/geom.hero\nrewrote " + several + "/lib/more.hero\n"), written: ["main.hero", "lib/geom.hero", "lib/more.hero"], clean: ["main.hero"], broken: none)
+        Case(fixture: "tree607/rounds", setup: "", words: in_place(rounds), p: said(name: "a module's fixes over three rounds, each read from the round before and never the disk", code: 0, err: "rewrote " + rounds + "/lib/m.hero\n"), written: ["lib/m.hero"], clean: ["main.hero"], broken: none)
+        Case(fixture: "tree607/dispute", setup: "", words: in_place(dispute), p: said(name: "a module two roots read as two programs is not written, and both roots are named (panel 099 R5's hazard)", code: 0, err: "note: " + dispute + "/lib/m.hero was not written: the roots that read it compute different certain fixes for it (changing it: " + dispute + "/lib/b.hero; leaving it: " + dispute + "/a.hero), and a file means what its root's directory makes of it (spec § 1)\n"), written: none, clean: ["a.hero"], broken: none)
+        Case(fixture: "tree607/dispute", setup: "", words: in_place(below + "/lib"), p: said(name: "the operand is the set of programs: a root above the directory named is not asked, and breaks", code: 0, err: "rewrote " + below + "/lib/m.hero\n"), written: ["lib/m.hero"], clean: ["lib/b.hero"], broken: ["a.hero"])
+        Case(fixture: "tree607/stuck", setup: "", words: in_place(stuck), p: said(name: "a root stopped before the stage that fixes a module leaves it as it stands", code: 0, err: "note: " + stuck + "/lib/m.hero was not written: the roots that read it compute different certain fixes for it (changing it: " + stuck + "/a.hero; leaving it: " + stuck + "/b.hero), and a file means what its root's directory makes of it (spec § 1)\n"), written: none, clean: none, broken: ["a.hero", "b.hero"])
+        Case(fixture: "tree607/hidden", setup: "hidden", words: in_place(hidden), p: said(name: "no root is taken from a hidden directory or a build directory", code: 0, err: "rewrote " + hidden + "/x/lib/geom.hero\n"), written: ["x/lib/geom.hero"], clean: ["x/main.hero"], broken: [".lane/main.hero", "build/main.hero"])
+        Case(fixture: "tree607/links", setup: "dirlink", words: in_place(dirlink + "/r"), p: said(name: "a directory on the way that is a symbolic link refuses every write", code: 2, err: "error: cannot write " + dirlink + "/r/lib/geom.hero: " + dirlink + "/r/lib is a symbolic link, and a write through it lands outside what " + dirlink + "/r holds; nothing was written\n"), written: none, clean: none, broken: ["r/main.hero"])
+        Case(fixture: "tree607/links", setup: "filelink", words: in_place(filelink + "/r"), p: said(name: "a module that is a symbolic link refuses every write", code: 2, err: "error: cannot write " + filelink + "/r/lib/geom.hero: " + filelink + "/r/lib/geom.hero is a symbolic link, and a write through it lands outside what " + filelink + "/r holds; nothing was written\n"), written: none, clean: none, broken: ["r/main.hero"])
+        Case(fixture: "tree607/agree", setup: "hardlink", words: in_place(hardlink), p: said(name: "a module with a second name refuses every write", code: 2, err: "error: cannot write " + hardlink + "/lib/geom.hero: it has 2 names, and a new file under this one would leave the others holding the old text; nothing was written\n"), written: none, clean: none, broken: ["main.hero"])
+        Case(fixture: "tree607/several", setup: "readonly", words: in_place(readonly), p: probe_has(said(name: "a module that cannot be written refuses every write, the root's own fix included", code: 2, err: ""), needles: ["error: cannot write " + readonly + "/lib/more.hero: it cannot be opened for writing", "; nothing was written\n"]), written: none, clean: none, broken: ["main.hero"])
+        Case(fixture: "applyx", setup: "", words: ["check", applyx + "/main.hero", "--apply", "--in-place"], p: said(name: "a root holding none of the diagnostics says so, and that the certain fix is in another module (defect 621)", code: 0, err: "note: 1 certain fix(es) are in another module and were not applied: " + applyx + "/geom.hero:3\n" + applyx + "/main.hero unchanged: none of the diagnostics is in it, and the certain fix(es) named above are in another module\n"), written: none, clean: none, broken: none)
+        Case(fixture: "apply141", setup: "", words: ["check", holes_json + "/holes.hero", "--apply", "--in-place", "--json"], p: probe_out(said(name: "a file no fix applies to, with --json, prints the document all the same", code: 0, err: ""), starts: "{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n", has: "  \"rounds\": 0,\n  \"not_applied\": [],\n"), written: none, clean: none, broken: none)
+        Case(fixture: "apply141", setup: "", words: ["check", holes + "/holes.hero", "--apply", "--in-place"], p: said(name: "a clean file with a hole prints nothing at all, the file being its own repair", code: 0, err: ""), written: none, clean: none, broken: none)
+    ]
+
+function in_place(dir: str) -> [str]
+    return ["check", dir, "--apply", "--in-place"]
+
+# A row whose stderr is `err` whole, or empty where `err` is "", and whose
+# stdout is empty.
+function said(name: str, code: i64, err: str) -> probe.Probe
+    p: probe.Probe @= probe.probe(name: name, argv: "", code: code)
+    p.out_state @ "empty"
+
+    if err == ""
+        p.err_state @ "empty"
+    else
+        p.err_is @ err
+    return p
+
+function probe_has(p: probe.Probe, needles: [str]) -> probe.Probe
+    out: probe.Probe @= p
+    out.err_state @ "nonempty"
+    out.err_has @ needles
+    return out
+
+function probe_out(p: probe.Probe, starts: str, has: str) -> probe.Probe
+    out: probe.Probe @= p
+    out.out_state @ "nonempty"
+    out.out_starts @ starts
+    out.out_has @ [has]
+    return out
+
+function one_case(@r: report.Report, scratch: str, compiler: str, c: Case)
+    label = "surface/" + c.p.name
+    copy = copy_named(c)
+    made = prepared(scratch: scratch, c: c, copy: copy)
+
+    if made != ""
+        report.keep_failure(@r, label: label, detail: "  " + made)
+        return
+
+    if c.setup == "readonly" && writable_anyway(scratch: scratch, copy: copy)
+        return
+    before = texts(scratch: scratch, copy: copy)
+
+    if before.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read the copy " + copy)
+        return
+    ran = shell.run(scratch: scratch, program: compiler, words: shell.both(first: [compiler], second: c.words))
+
+    if ran.is_err()
+        report.keep_failure(@r, label: label, detail: "  `" + c.words.join(" ") + "`: " + shell.refusal(ran))
+        return
+    asked: probe.Probe @= c.p
+    asked.argv @ c.words.join(" ")
+    wrong: [str] @= []
+    judged = probe.judged(p: asked, said: ran.must())
+
+    if judged != ""
+        wrong @ wrong.push(judged)
+
+    for one in after_wrong(c: c, copy: copy, before: before.must())
+        wrong @ wrong.push(one)
+
+    for one in roots_wrong(scratch: scratch, compiler: compiler, c: c, copy: copy)
+        wrong @ wrong.push(one)
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n"))
+        return
+    report.keep_pass(@r)
+
+# The copy's directory: the first word after `check` names it, or names a
+# file in it, or a directory below it.
+function copy_named(c: Case) -> str
+    named = c.words[1]
+    parts = strings.split_text(text: named, separator: "/tree607/")
+    rest = parts[parts.len() - 1]
+    head = strings.split_text(text: rest, separator: "/")[0]
+    return parts[0] + "/tree607/" + head
+
+# The fixture copied into `copy` and given its setup: "" where it was, the
+# reason where it was not.
+function prepared(scratch: str, c: Case, copy: str) -> str
+    from = FIXTURES + c.fixture
+    copied = copy_tree(scratch: scratch, from: from, to: copy)
+
+    if copied.is_err()
+        return "cannot copy " + from + " to " + copy + ": " + why_not(copied)
+
+    if c.setup == "hidden"
+        for twin in [".lane", "build"]
+            again = copy_tree(scratch: scratch, from: from + "/x", to: copy + "/" + twin)
+
+            if again.is_err()
+                return "cannot copy " + from + "/x to " + copy + "/" + twin + ": " + why_not(again)
+
+        return ""
+    words = setup_words(setup: c.setup, copy: copy)
+
+    if words.len() == 0
+        return ""
+
+    if c.setup == "filelink"
+        moved = copy_tree(scratch: scratch, from: from + "/real/lib", to: copy + "/r/lib")
+
+        if moved.is_err() || shell.remove_tree(copy + "/r/lib/geom.hero").is_err()
+            return "cannot make " + copy + "/r/lib"
+    made = shell.run(scratch: scratch, program: words[0], words: words)
+
+    if made.is_err() || made.must().code != 0
+        return "`" + words.join(" ") + "` failed: " + shell.ending(made)
+    return ""
+
+# The command that gives the copy its link or its mode.
+function setup_words(setup: str, copy: str) -> [str]
+    if setup == "dirlink"
+        return ["ln", "-s", "../real/lib", copy + "/r/lib"]
+
+    if setup == "filelink"
+        return ["ln", "-s", "../../real/lib/geom.hero", copy + "/r/lib/geom.hero"]
+
+    if setup == "hardlink"
+        return ["ln", copy + "/lib/geom.hero", copy + "/lib/geom2.hero"]
+
+    if setup == "readonly"
+        return ["chmod", "444", copy + "/lib/more.hero"]
+    none: [str] = []
+    return none
+
+# A superuser opens a read-only file all the same, as the batch gate's Linux
+# container does (`selfhost/cli/publish.hero`'s own test asks the same), so
+# there the case has nothing to refuse and is not counted.
+function writable_anyway(scratch: str, copy: str) -> bool
+    probe_file = copy + "/probe-mode"
+
+    if write_file(path: probe_file, text: "x").is_err()
+        return false
+    made = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "444", probe_file])
+    opens = !made.is_err() && !write_file(path: probe_file, text: "y").is_err()
+    _ = shell.run(scratch: scratch, program: "chmod", words: ["chmod", "644", probe_file]).is_err()
+    _ = shell.remove_tree(probe_file).is_err()
+    return opens
+
+function why_not(got: ()?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# Every `.hero` of the copy, by its path under it, with its text.
+record Held
+    path: str
+    text: str
+
+function texts(scratch: str, copy: str) -> [Held]?
+    out: [Held] @= []
+    nothing: [str] = []
+
+    for path in shell.list_tree(scratch: scratch, dir: copy, skip: nothing)?
+        if strings.ends_with(text: path, suffix: ".hero")
+            out @ out.push(Held(path: strings.without_prefix(text: path, prefix: copy + "/"), text: read_file(path)?))
+
+    return ok(out)
+
+# Each file named `written` holds the fixture's `<stem>.agreed`; every other
+# `.hero` of the copy holds what it held before the run.
+function after_wrong(c: Case, copy: str, before: [Held]) -> [str]
+    wrong: [str] @= []
+
+    for one in before
+        now = read_file(copy + "/" + one.path).default("(unreadable)")
+        wanted: str @= one.text
+
+        if listed(c.written, name: one.path)
+            agreed = FIXTURES + c.fixture + "/" + strings.without_suffix(text: one.path, suffix: ".hero") + ".agreed"
+            wanted @ read_file(agreed).default("(no " + agreed + ")")
+
+        if now != wanted
+            wrong @ wrong.push(
+                report.mismatch(what: copy + "/" + one.path + " afterwards", expected: wanted, actual: now)
+            )
+
+    for name in c.written
+        if !held(before, name: name)
+            wrong @ wrong.push("  " + name + " is not a file of the copy, and the case says it is written")
+
+    return wrong
+
+# Each root of `clean` checks clean afterwards, each of `broken` does not.
+function roots_wrong(scratch: str, compiler: str, c: Case, copy: str) -> [str]
+    wrong: [str] @= []
+
+    for root in c.clean
+        if checks(scratch: scratch, compiler: compiler, path: copy + "/" + root) != 0
+            wrong @ wrong.push("  " + copy + "/" + root + " does not check clean afterwards")
+
+    for root in c.broken
+        if checks(scratch: scratch, compiler: compiler, path: copy + "/" + root) == 0
+            wrong @ wrong.push(
+                "  " + copy + "/" + root + " checks clean afterwards, and the case leaves it a diagnostic"
+            )
+
+    return wrong
+
+function checks(scratch: str, compiler: str, path: str) -> i64
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", path, "--brief"])
+
+    if ran.is_err()
+        return -1
+    return ran.must().code
+
+function listed(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+function held(files: [Held], name: str) -> bool
+    for one in files
+        if one.path == name
+            return true
+
+    return false
+
+# The whole tree at `from`, subdirectories included, into `to`, made afresh.
+function copy_tree(scratch: str, from: str, to: str) -> ()?
+    shell.remove_tree(to)?
+    shell.mkdir_all(to)?
+    nothing: [str] = []
+
+    for path in shell.list_tree(scratch: scratch, dir: from, skip: nothing)?
+        target = to + "/" + strings.without_prefix(text: path, prefix: from + "/")
+        shell.mkdir_all(parent_of(target))?
+        write_file(path: target, text: read_file(path)?)?
+
+    return ok()
+
+# Everything before the last `/`, or `.` where there is none.
+function parent_of(path: str) -> str
+    at: i64 @= path.len() - 1
+
+    while at >= 0 && path[at] != '/'
+        at @ at - 1
+
+    if at <= 0
+        return "."
+    return path.slice(from: 0, to: at)
+
+test "a case's copy is named by the first word after check"
+    none: [str] = []
+    c = Case(
+        fixture: "tree607/agree",
+        setup: "",
+        words: ["check", "s/tree607/below/lib", "--apply", "--in-place"],
+        p: said(name: "n", code: 0, err: ""),
+        written: none,
+        clean: none,
+        broken: none
+    )
+    assert copy_named(c) == "s/tree607/below"
+    assert parent_of("a/b/c.hero") == "a/b"
+    assert posix_only("readonly") && !posix_only("hidden")

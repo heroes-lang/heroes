@@ -1,0 +1,6 @@
+# Two roots reading one module and agreeing on its certain fix: it is
+# written once (panel 211).
+use lib/m
+
+function main()
+    print(m.two())

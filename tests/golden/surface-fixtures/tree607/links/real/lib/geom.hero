@@ -1,0 +1,8 @@
+# Defect 607's module: a `use` line, so it cannot be checked alone, and a
+# cell nothing re-binds, whose certain fix writes `=`.
+use lib/util
+
+function two() -> i64
+    x = 1
+    y: i64 @= util.one(x)  #~ never_rebound
+    return y

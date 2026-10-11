@@ -41,32 +41,6 @@ use module/reading
 use ast
 use parse
 
-# The root's own directory TEXT — everything up to and including the
-# last separator the author wrote, or "" for a bare name. This names
-# sibling files the way the author spelled the root; it never opens
-# one (the premise panel 057 refused everywhere else is kept here,
-# alone, and scope is what makes it survivable).
-function directory_text(path: str) -> str
-    cs = path.chars()
-    cut: i64 @= -1
-    index: i64 @= 0
-
-    for ch in cs
-        if ch == "/" || ch == "\\"
-            cut @ index
-        index @ index + 1
-
-    if cut == -1
-        return ""
-    kept: [str] @= []
-    index @ 0
-
-    while index <= cut
-        kept @ kept.push(cs[index])
-        index @ index + 1
-
-    return kept.join("")
-
 # The directory files are OPENED through — the "/" rule alone, which
 # is PathBuf::parent's answer on every machine the fixpoint runs on.
 function open_directory(path: str) -> str
@@ -99,6 +73,12 @@ function open_directory(path: str) -> str
 # cycle; it is not the cycle CHECK, which needs spans and lives in
 # errors().
 function load_text(path: str, root_text: str, library: str) -> source.Source?
+    none: [source.InputFile] = []
+    return load_edited(path: path, root_text: root_text, edited: none, library: library)
+
+# The same, a module named in `edited` read as its text there and not from
+# disk: what `check --apply`'s later rounds read (defect 607).
+function load_edited(path: str, root_text: str, edited: [source.InputFile], library: str) -> source.Source?
     # The RAW stem, the same rule user_file follows and the same rule
     # a use line spells: seeding with the sanitised name made `use ab`
     # in a_b.hero look already-seen, so ab.hero was never loaded and
@@ -125,15 +105,15 @@ function load_text(path: str, root_text: str, library: str) -> source.Source?
             if already
                 continue
             opened = open_directory(path) + module + ".hero"
-            found = reading.source_text(opened)
+            found = reading.text_at(opened: opened, name: paths.directory_text(path) + module + ".hero", edited: edited)
             seen @ seen.push(module)
 
             if found.is_err()
                 # Nothing there is told on the use line; a file there that cannot be read stops the load (defect 236).
-                reading.nothing_at(opened: opened, named: directory_text(path) + module + ".hero")?
+                reading.nothing_at(opened: opened, named: paths.directory_text(path) + module + ".hero")?
                 continue
             files @ files.push(
-                source.InputFile(name: directory_text(path) + module + ".hero", module: module, text: found.must().text, is_library: false)
+                source.InputFile(name: paths.directory_text(path) + module + ".hero", module: module, text: found.must().text, is_library: false)
             )
             each @ each.push(found.must().faults)
             added @ reading.followed(added, file: found.must(), at: files.len() - 1)
@@ -205,7 +185,7 @@ function errors(s: source.Source, uses: [ast.Use]) -> [diag.Diagnostic]
 # guessing.
 function unknown_modules(s: source.Source, uses: [ast.Use], found: [diag.Diagnostic]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= found
-    base = directory_text(s.name)
+    base = paths.directory_text(s.name)
 
     for used in uses
         if source.is_library(s, used.span.start)
@@ -387,9 +367,9 @@ function walk(node: i64, edges: [Edge], state: [i64], stack: [i64], s: source.So
 ## Tests
 
 test "directory text keeps the author's spelling; opening keeps the slash rule"
-    assert directory_text("examples/calc/main.hero") == "examples/calc/"
-    assert directory_text("main.hero") == ""
-    assert directory_text("a\\b\\main.hero") == "a\\b\\"
+    assert paths.directory_text("examples/calc/main.hero") == "examples/calc/"
+    assert paths.directory_text("main.hero") == ""
+    assert paths.directory_text("a\\b\\main.hero") == "a\\b\\"
     assert open_directory("examples/calc/main.hero") == "examples/calc/"
 
     # The premise, kept visible: a POSIX file whose own name holds a

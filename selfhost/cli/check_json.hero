@@ -113,27 +113,13 @@ function head_of(kind: str, readings: [source.Source]) -> str
             if !entry.is_library && !certain.listed(names: named, name: entry.name)
                 digest: str @= "null"
 
-                if !faulted(s, index: index)
+                if !source_extent.faulted(s, index: index)
                     digest @ "\"" + sha256.of(source_extent.text_of(s, index)) + "\""
                 read @ read.push("    {\"file\": " + quote(entry.name) + ", \"sha256\": " + digest + "}")
                 named @ named.push(entry.name)
             index @ index + 1
 
     return "{\n  \"schema\": " + SCHEMA.to_str() + ",\n  \"kind\": \"" + kind + "\",\n  \"read\": [\n" + read.join(",\n") + "\n  ],\n"
-
-# Whether the file at `index` holds a byte that is not UTF-8.
-function faulted(s: source.Source, index: i64) -> bool
-    start = s.files[index].start
-    end: i64 @= s.text.len()
-
-    if index + 1 < s.files.len()
-        end @ s.files[index + 1].start
-
-    for one in s.faults
-        if one.at >= start && one.at < end
-            return true
-
-    return false
 
 # Where a fix applies, as R1 gives it, or nothing for a span that is not one,
 # ends past the text, or crosses from one file into another: `--apply` writes
