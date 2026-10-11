@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 9 defects · 0 decisions.** The defects are the open issues whose card
+**Open: 0 defects · 0 decisions.** The defects are the open issues whose card
 says `kind: defect` and the decisions the open ones that say `kind: decision`,
 files of `issues/` since 2026-10-04 (their rules `issues/README.md`); this line
 must equal both.
@@ -19,20 +19,21 @@ against a banner reading 3.
 | | |
 |---|---|
 | **Current milestone** | **M-issue-files**, row 83, opened 2026-10-04 by author instruction: every item is one file of `issues/`, a card on each, ready for GitHub; its acts on GitHub come last of all by the author's instruction of 2026-10-06. Row 63, **M-buildable-structs**, stays `scheduled` (panels 178 and 194). **M-inferred-cell**, row 84, opened and closed on 2026-10-10 in one lane |
-| **Next** | the push that carries `m-inferred-cell` again, asked for; then panel 194's landing as **M-buildable-structs**, row 63, and the two open defects, 662 (`adjacent`, an `@` parameter whose only write is mis-spelled `=` told twice) and 646 (`adjacent`, a field written with `=` told only that the line ends), both repaired in lane b22-662 and owed the batch's gate, with the formatter's probe of 2026-10-11 read when it ends |
+| **Next** | the release **v0.3.0**: its tag on batch 22's closing commit once that commit's CI is green on all four legs, VERSION moving in that commit because the spec changed since v0.2.0; then the formatter's probe the optimistic chain owes after a push touching `selfhost/print/` (three of its six runs ended unfinished on 2026-10-11, none refused), and panel 194's landing as **M-buildable-structs**, row 63 |
 | **Last closed** | **M-inferred-cell**, 2026-10-10 ([062](records/journal/062-inferred-cell.md)), its tag `m-inferred-cell` deleted on 2026-10-11 at 00:45 by the author's instruction and placed again the same day on `08a8f8c5`, the first commit over a list with no `blocking` and no `systemic` defect — a cell declared `@=` and typed by its value, a cell nothing re-binds refused, the tree rewritten by the compiler's own fix · before it **M-agreed-retention** ([061](records/journal/061-agreed-retention.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **63** of 84 · **63** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **158,586** lines of Heroes in **607** modules (`find selfhost -name '*.hero'`) · the seed **1,307,983** lines of C, regenerated at the milestone's close and the fixpoint verified byte-identical |
+| The compiler | **161,358** lines of Heroes in **618** modules (`find selfhost -name '*.hero'`) · the seed **1,333,626** lines of C, regenerated at each batch's close and the fixpoint verified byte-identical |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
-| The spec | **7636** on the vendored ranks and **10,024** on the reader's own, against a ceiling of **10240**. The milestone spent two rows of `docs/measurements/010-spec-budget-ledger.md`, 107 and 108: the cell's symbol with the type kept (10,029 real), then the type optional and the never-re-bound rule merged into § 5's use sentence (10,024, +3 on the trunk the sitting measured) |
+| The spec | **7650** on the vendored ranks and **10,044** on the reader's own, against a ceiling of **10240** (`heroes measure spec/heroes-spec.md`, 2026-10-11). Panel 210's landing in batch 21 spent the 20 above M-inferred-cell's 10,024: an `@` parameter nothing writes or ends refused, and `@_` refused |
 | The contract | **8167** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-29 |
-| Records | sittings **207** · journals **63**, numbered files only · milestone pages **54** in `docs/roadmap/milestones/` · measurements **39** · issues **1,977** in `issues/`, 75 open, since 2026-10-04 · questions **466** in `docs/learn/`, 441 open, not issues since 2026-10-05 · `docs/records/book/beats/` **130** |
-| Waiting on the author | **the push that carries `m-inferred-cell` again**, on `08a8f8c5`, with defect 661's repair (the recovery plan cut again) and 662's filing; the critic's decision on an `@` parameter the callee never writes (`issues/2026-10/10/2026-10-10-1737-an-at-parameter-the-callee-never-writes-is-accepted.md`, open with its default) |
+| Records | sittings **209** · journals **63**, numbered files only · milestone pages **54** in `docs/roadmap/milestones/` · measurements **39** · issues **2,010** in `issues/`, 61 open, since 2026-10-04 · questions **466** in `docs/learn/`, 441 open, not issues since 2026-10-05 · `docs/records/book/beats/` **130** |
+| Waiting on the author | nothing open: 0 defects and 0 decisions after batch 22's close; the transcription of `issues/` into GitHub issues waits by the author's instruction of 2026-10-06 |
 
-**Re-measured 2026-10-10 at the close of M-inferred-cell, the full net on a
+**Re-measured 2026-10-11 at batch 22's close, for release v0.3.0, the full net on a
 compiler built from the regenerated seed, which is CI's own configuration:
-every one of the 29 suites 0 failed**, 8,107 cases over them, plus the
-compiler's own 1596 and the net's own 332. The per-suite counts are
+8,306 passed over the 29 suites and 1 failed**, `records/counts` alone, on the
+open count the close then moved, plus the compiler's own 1,620 and the net's
+own 341. M-inferred-cell's close, 8,107 cases, is
 [062](records/journal/062-inferred-cell.md).
 
 **The by-hand probe `.claude/rules/verification.md` owes where `selfhost/print/`

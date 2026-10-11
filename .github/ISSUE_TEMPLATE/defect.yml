@@ -60,7 +60,7 @@ body:
     attributes:
       label: The compiler
       description: What `heroes --version` prints. If you built it from a commit rather than a tag, the commit.
-      placeholder: heroes 0.2.0
+      placeholder: heroes 0.3.0
     validations:
       required: true
   - type: input
