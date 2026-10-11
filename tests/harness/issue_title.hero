@@ -1,0 +1,340 @@
+# WHAT AN ISSUE IS CALLED ON GITHUB.
+#
+# `.claude/rules/records.md` § The issues, its title bullet (panel 212's D1), its
+# item bullet (D2) and its labels bullet (D5), ratified 2026-10-11 and amended
+# by the coordinator the same day. The title is the file's `# ` heading where
+# it opens with one; else a defect's bold first field, its `NNN — ` taken off;
+# else the item's second field; else, for an item of one field, its first; else,
+# for a row of the old log, its second field; else the first paragraph of text
+# below the card, its lines joined by single spaces, since a card's lines are
+# wrapped by hand, and a leading day taken off with the ` · ` after it.
+# The item is the line that stands first under the card, as that section says,
+# and so is the log's row; a file of several items takes its first's. Its `**`
+# markers are taken off; one that is a code span holding a path and nothing
+# else takes the file's slug words, and one that opens with such a span and
+# goes on keeps its own; it is cut at a word boundary to at most 250 characters,
+# never inside a code span. The prefixes a number gives are `issue_numbers.hero`.
+# Every reading is the value's own, so one tree gives one title.
+
+use issue_spans
+use strings
+
+constant TITLE_LIMIT: i64
+    250
+
+# The four classes a defect's line may end with, as
+# `.claude/rules/records.md` § The lists gives them; any other word is no
+# class, and takes no label (D5).
+constant CLASSES: [str]
+    [
+        "blocking"
+        "adjacent"
+        "systemic"
+        "improvement"
+    ]
+
+# What the body's first line gives: the title as the file states it, `**` off,
+# and where it came from (`heading`, `defect`, `second`, `single`, `log`,
+# `first`, or "" for none); the heading line the body then leaves out, or -1;
+# and the line whose fields the body places, the first item or the log's row,
+# or -1.
+record Opening
+    title: str
+    from: str
+    skip: i64
+    at: i64
+    fields: [str]
+
+function opening_of(kind: str, rows: [str]) -> Opening
+    none: [str] = []
+    first: i64 @= 0
+
+    while first < rows.len() && strings.trimmed(rows[first]) == ""
+        first @ first + 1
+
+    if first == rows.len()
+        return Opening(title: "", from: "", skip: -1, at: -1, fields: none)
+    line = rows[first]
+
+    if strings.starts_with(text: line, prefix: "# ")
+        item = first_item(rows)
+        found: [str] @= none
+
+        if item >= 0
+            found @ fields_of(rows[item])
+        return Opening(
+            title: unbolded(strings.without_prefix(text: line, prefix: "# ")),
+            from: "heading",
+            skip: first,
+            at: item,
+            fields: found
+        )
+
+    if is_item(line)
+        found = fields_of(line)
+
+        if kind == "defect" && strings.starts_with(text: found[0], prefix: "**")
+            return Opening(title: numberless(unbolded(found[0])), from: "defect", skip: -1, at: first, fields: found)
+
+        if found.len() > 1
+            return Opening(title: unbolded(found[1]), from: "second", skip: -1, at: first, fields: found)
+        return Opening(title: unbolded(found[0]), from: "single", skip: -1, at: first, fields: found)
+
+    if is_log_row(line)
+        found = fields_of(line)
+        return Opening(title: unbolded(found[1]), from: "log", skip: -1, at: first, fields: found)
+    item = first_item(rows)
+    found: [str] @= none
+
+    if item >= 0
+        found @ fields_of(rows[item])
+
+    # The paragraph stays in the body, which it opens.
+    return Opening(title: first_paragraph(rows: rows, from: first), from: "first", skip: -1, at: item, fields: found)
+
+# The paragraph of text that opens at `from` as a title: its lines trimmed and
+# joined by single spaces, a leading day taken off, with the ` · ` after it
+# where there is one, and its `**` markers.
+function first_paragraph(rows: [str], from: i64) -> str
+    held: [str] @= []
+    at: i64 @= from
+
+    while at < rows.len() && strings.trimmed(rows[at]) != ""
+        held @ held.push(strings.trimmed(rows[at]))
+        at @ at + 1
+
+    text = held.join(" ")
+
+    if text.len() < 10 || !cards_day(text)
+        return unbolded(text)
+
+    # Ten ASCII bytes are the day, so the cut stands between characters.
+    rest = text.slice(from: 10, to: text.len())
+    return unbolded(strings.without_prefix(text: rest, prefix: " · "))
+
+# The index of the first item line, `- [ ] ` or `- [x] `, or -1.
+function first_item(rows: [str]) -> i64
+    at: i64 @= 0
+
+    while at < rows.len()
+        if is_item(rows[at])
+            return at
+        at @ at + 1
+
+    return -1
+
+function is_item(line: str) -> bool
+    return strings.starts_with(text: line, prefix: "- [ ] ") || strings.starts_with(text: line, prefix: "- [x] ")
+
+# A row of the old log: a day, then ` | `.
+function is_log_row(line: str) -> bool
+    if line.len() < 13
+        return false
+    return cards_day(line) && line[10] == ' ' && line[11] == '|' && line[12] == ' '
+
+function cards_day(line: str) -> bool
+    at: i64 @= 0
+
+    while at < 10
+        b = line[at]
+
+        if at == 4 || at == 7
+            if b != '-'
+                return false
+        else if b < '0' || b > '9'
+            return false
+        at @ at + 1
+
+    return true
+
+# An item's fields or a row's, trimmed, split on ` | ` outside a code span (D2),
+# the last without the ` · **class: <name>**` its line ends with.
+function fields_of(line: str) -> [str]
+    text: str @= line
+
+    if is_item(line)
+        # Six ASCII bytes open an item line.
+        text @ line.slice(from: 6, to: line.len())
+    found = issue_spans.spans(text)
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at + 3 <= text.len()
+        if text[at] == ' ' && text[at + 1] == '|' && text[at + 2] == ' ' && !issue_spans.inside(found: found, at: at)
+            out @ out.push(strings.trimmed(text.slice(from: start, to: at)))
+            start @ at + 3
+            at @ at + 3
+        else
+            at @ at + 1
+
+    out @ out.push(strings.trimmed(text.slice(from: start, to: text.len())))
+    last = out[out.len() - 1]
+    marker = strings.index_of(text: last, needle: " · **class: ")
+
+    if !marker.is_err()
+        # The marker opens with a space, ASCII, so the cut stands between characters.
+        out[out.len() - 1] @ strings.trimmed(last.slice(from: 0, to: marker.must()))
+    return out
+
+# A text with every `**` taken off, trimmed.
+function unbolded(text: str) -> str
+    return strings.trimmed(strings.split_text(text: text, separator: "**").join(""))
+
+# A defect's first field without the `NNN — ` that opens it.
+function numberless(field: str) -> str
+    digits: i64 @= 0
+
+    while digits < field.len() && field[digits] >= '0' && field[digits] <= '9'
+        digits @ digits + 1
+
+    if digits == 0 || !strings.starts_with(text: field.slice(from: digits, to: field.len()), prefix: " — ")
+        return field
+    return strings.trimmed(field.slice(from: digits + 5, to: field.len()))
+
+# The class a defect's line or its `**Class:**` line names, or "".
+function class_of(rows: [str]) -> str
+    for row in rows
+        t = strings.trimmed(row)
+        named: str @= ""
+        at = strings.index_of(text: t, needle: " · **class: ")
+
+        if is_item(t) && !at.is_err()
+            named @ t.slice(from: at.must() + 13, to: t.len())
+        else if strings.starts_with(text: t, prefix: "**Class: ")
+            named @ strings.without_prefix(text: t, prefix: "**Class: ")
+        close = strings.index_of(text: named, needle: "**")
+
+        if !close.is_err()
+            # The `**` is ASCII, so the cut stands between characters.
+            word = named.slice(from: 0, to: close.must())
+
+            for one in CLASSES
+                if one == word
+                    return word
+
+    return ""
+
+# What a code span holding a path, one word with a `/` in it, does to a title
+# that opens with one: `slug` where it is the whole title, trailing punctuation
+# aside, so the file's slug words stand instead; `kept` where words follow it;
+# "" for a title that opens with no such span.
+function path_title(title: str) -> str
+    found = issue_spans.spans(title)
+
+    if found.len() == 0 || found[0].open != 0
+        return ""
+    held = issue_spans.inner(text: title, span: found[0])
+
+    if !strings.contains(text: held, needle: "/") || strings.contains(text: held, needle: " ")
+        return ""
+    at: i64 @= found[0].close
+
+    while at < title.len()
+        b = title[at]
+
+        if b != ' ' && b != '.' && b != ',' && b != ';' && b != ':' && b != '!' && b != '?' && b != ')'
+            return "kept"
+        at @ at + 1
+
+    return "slug"
+
+# The words of a file's slug, `YYYY-MM-DD-HHMM-<slug>.md`, one space apart.
+function slug_words(name: str) -> str
+    if name.len() < 20 || !strings.ends_with(text: name, suffix: ".md")
+        return ""
+    return strings.split_on(text: name.slice(from: 16, to: name.len() - 3), byte: '-').join(" ")
+
+# How many characters `text` holds: every byte but a UTF-8 continuation.
+function characters(text: str) -> i64
+    n: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] < 128 || text[at] > 191
+            n @ n + 1
+        at @ at + 1
+
+    return n
+
+# `title` cut at a space outside code to at most 250 characters, or whole where
+# it fits; with no such space, cut where a character begins, before a code span
+# it would split, or with the span closed where the title is one.
+function cut(title: str) -> str
+    if characters(title) <= TITLE_LIMIT
+        return title
+    found = issue_spans.spans(title)
+    best: i64 @= -1
+    hard: i64 @= 0
+    count: i64 @= 0
+    at: i64 @= 0
+
+    while at < title.len() && count <= TITLE_LIMIT
+        if title[at] < 128 || title[at] > 191
+            if count <= TITLE_LIMIT
+                hard @ at
+
+            if title[at] == ' ' && !issue_spans.inside(found: found, at: at)
+                best @ at
+            count @ count + 1
+        at @ at + 1
+
+    if best > 0
+        return strings.trimmed(title.slice(from: 0, to: best))
+
+    for span in found
+        if hard > span.open && hard < span.close
+            if span.open > 0
+                return strings.trimmed(title.slice(from: 0, to: span.open))
+            closer = "`".repeat(to_u64(span.ticks).must())
+            back = strings.boundary_at_or_below(text: title, at: hard - span.ticks)
+            return title.slice(from: 0, to: back) + closer
+
+    return title.slice(from: 0, to: hard)
+
+test "the title is the heading, a defect's bold first field, the second field, the only one, or a log row's second"
+    assert opening_of(kind: "defect", rows: ["# Defect 065 closes", "", "- [x] **065 — x** | y | z"]).title == "Defect 065 closes"
+    assert opening_of(kind: "defect", rows: ["# Defect 065 closes", "", "- [x] **065 — x** | y | z"]).at == 2
+    assert opening_of(kind: "defect", rows: ["- [x] **235 — a header name** | what | where · **class: adjacent**"]).title == "a header name"
+    assert opening_of(kind: "defect", rows: ["- [x] **235 — a header name** | what | where · **class: adjacent**"]).fields[2] == "where"
+    assert opening_of(kind: "defect", rows: ["- [x] Covered | panel 062 | **FIXED**"]).title == "panel 062"
+    assert opening_of(kind: "decision", rows: ["- [ ] **panel 212** | ratify **R1** | x"]).title == "ratify R1"
+    assert opening_of(kind: "task", rows: ["", "- [x] one field only"]).from == "single"
+    assert opening_of(kind: "decision", rows: ["2026-08-03 | **Backend**: C11 | reason | §3.1"]).title == "Backend: C11"
+    assert opening_of(kind: "decision", rows: ["", ""]).title == ""
+
+test "a file that opens with none of those takes its first paragraph, a leading day and its dot taken off"
+    assert opening_of(kind: "decision", rows: ["2026-09-11 · **M-issue-files, panel 129, ratified.** A", "  second line", "", "next"]).title == "M-issue-files, panel 129, ratified. A second line"
+    assert opening_of(kind: "decision", rows: ["2026-09-11 · **a row**"]).from == "first"
+    assert opening_of(kind: "decision", rows: ["2026-09-11 · **a row**"]).skip == -1
+    assert opening_of(kind: "decision", rows: ["2026-09-03 scheduling measured *three mentions*"]).title == "scheduling measured *three mentions*"
+    assert opening_of(kind: "decision", rows: ["**The landing's own calls** (the author's)"]).title == "The landing's own calls (the author's)"
+    assert opening_of(kind: "decision", rows: ["2026-09-11"]).title == ""
+
+test "an item line splits on a bar outside a code span, and its class is a label's"
+    assert fields_of("- [x] a | `x | y` | c").len() == 3
+    assert fields_of("- [x] a | `x | y` | c")[1] == "`x | y`"
+    assert fields_of("2026-08-03 | b | c") == ["2026-08-03", "b", "c"]
+    assert class_of(["- [x] **235 — t** | w | h · **class: adjacent**"]) == "adjacent"
+    assert class_of(["- [x] **235 — t** | w | h", "", "    **Class: blocking**, 2026-10-02, a reason."]) == "blocking"
+    assert class_of(["- [x] **235 — t** | w | h · **class: urgent**"]) == ""
+    assert class_of(["- [x] **235 — t** | w | h"]) == ""
+
+test "a title that is a path in code takes the slug's words, one that goes on keeps its own, and a long one is cut whole words"
+    assert path_title("`docs/panel/105-a-type.md`") == "slug"
+    assert path_title("`tests/harness/floors.hero`.") == "slug"
+    assert path_title("`docs/panel/105-a-type.md` § Resolution") == "kept"
+    assert path_title("`tests/golden/ir/` inherits a ban") == "kept"
+    assert path_title("`lent`, and the pointer C hands back") == ""
+    assert path_title("the `docs/x` later") == ""
+    assert slug_words("2026-09-03-0018-scheduling-measured-three.md") == "scheduling measured three"
+    long = "word ".repeat(60) + "end"
+    assert characters(cut(long)) <= TITLE_LIMIT
+    assert strings.ends_with(text: cut(long), suffix: "word")
+    assert cut("short") == "short"
+    accented = "é".repeat(300)
+    assert characters(cut(accented)) == TITLE_LIMIT
+    spanned_title = "`" + "x".repeat(300) + "`"
+    assert strings.ends_with(text: cut(spanned_title), suffix: "`")
+    assert characters(cut(spanned_title)) <= TITLE_LIMIT
+    assert cut("lead " + "`a b " + "c ".repeat(200) + "`") == "lead"

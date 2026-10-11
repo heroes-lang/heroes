@@ -1,0 +1,192 @@
+# THE ISSUE FILES AS GITHUB WILL HOLD THEM, a second root of the harness:
+#
+#     heroes run tests/harness/issues.hero -- render [--pin <hash>] [<issue file>...]
+#
+# from the repository's root, always. `render` prints what each issue file
+# becomes on GitHub, one JSON object a line: its path, its milestone and its
+# `Defect` field's numbers (null where it has none), and the payload the import
+# takes, its title, body, days, closed state, labels and closing comment. With
+# no file it renders every issue file under `issues/` in name order, which is
+# the order they were born in. It reads files and asks git; it writes nothing,
+# needs no network and no account. The `Record:` link is pinned at `--pin`, the
+# commit `HEAD` names unless one is given.
+#
+# Panel 212's R1, ratified 2026-10-11, made this a program of the harness and no
+# verb of `heroes`, the author reading a Heroes program run with `heroes run` as
+# no script (CLAUDE.md § 10); `.claude/rules/records.md` § The issues is the
+# rule it renders, and `records/rendered` holds every card to the same modules.
+# `plan` and `push` are its other two words, owed and not built: either is
+# refused, exit 2, saying so.
+#
+# Exit (R11): 0 every card rendered; 1 a card cannot render, each told on
+# stderr with its path and why, and no line printed for it; 2 the program could
+# not run, an argument it does not take, a file that is no issue file, git that
+# could not answer or a history too short to.
+
+use cards
+use issue_check
+use issue_git
+use issue_json
+use issue_render
+use shell
+use strings
+
+extern "hero_os.h"
+    function hero_write_err(text: str)
+
+constant SCRATCH: str
+    "build/issues"
+
+# What the words after `render` asked for, or why they cannot be taken.
+record Asked
+    pin: str
+    paths: [str]
+    wrong: str
+
+function main()
+    given = args()
+
+    if given.len() == 0 || given[0] != "render"
+        told(refusal(given))
+        exit(code: 2)
+    asked = parsed(given.slice(from: 1, to: given.len()))
+
+    if asked.wrong != ""
+        told(asked.wrong)
+        exit(code: 2)
+    scratch = SCRATCH + "-" + shell.pid().to_str()
+    code = rendered(scratch: scratch, asked: asked)
+    _ = shell.remove_tree(scratch).is_err()
+    exit(code: code)
+
+# Why the first word is not one this program takes.
+function refusal(given: [str]) -> str
+    usage = "heroes run tests/harness/issues.hero -- render [--pin <hash>] [<issue file>...]"
+
+    if given.len() == 0
+        return "no word given: " + usage
+
+    if given[0] == "plan" || given[0] == "push"
+        return "`" + given[0] + "` is owed by panel 212 and not built yet; `render` is: " + usage
+    return "`" + given[0] + "` is no word of this program: " + usage
+
+function parsed(words: [str]) -> Asked
+    pin: str @= ""
+    paths: [str] @= []
+    at: i64 @= 0
+
+    while at < words.len()
+        word = words[at]
+        at @ at + 1
+
+        if word == "--pin"
+            if pin != "" || at == words.len()
+                return Asked(pin: "", paths: paths, wrong: "`--pin` takes one commit, once")
+            pin @ words[at]
+            at @ at + 1
+        else if strings.starts_with(text: word, prefix: "-")
+            return Asked(
+                pin: "",
+                paths: paths,
+                wrong: "`" + word + "` is no flag of `render`, which takes `--pin <hash>` and issue files"
+            )
+        else
+            paths @ paths.push(strings.without_prefix(text: word, prefix: "./"))
+
+    if pin == ""
+        pin @ "HEAD"
+    return Asked(pin: pin, paths: paths, wrong: "")
+
+# Renders what `asked` names and answers the exit code.
+function rendered(scratch: str, asked: Asked) -> i64
+    walked = shell.project_files(scratch)
+
+    if walked.is_err()
+        told(issue_check.said(walked))
+        return 2
+    every: [cards.Issue] @= []
+    known: {str: bool} @= {}
+
+    for path in walked.must()
+        if strings.starts_with(text: path, prefix: "issues/") && strings.ends_with(text: path, suffix: ".md") && path != "issues/README.md"
+            text = read_file(path)
+
+            if text.is_err()
+                told("cannot read " + path + ": " + issue_check.said(text))
+                return 2
+            every @ every.push(cards.issue_of(path: path, text: text.must()))
+            known[path] @ true
+
+    chosen: [cards.Issue] @= every
+
+    if asked.paths.len() > 0
+        chosen @ []
+
+        for path in asked.paths
+            if known[path].is_err()
+                told(
+                    "`" + path + "` is no issue file of this tree; name one from the repository's root, `issues/<year-month>/<day>/<name>.md`"
+                )
+                return 2
+
+            for issue in every
+                if issue.path == path
+                    chosen @ chosen.push(issue)
+
+    pin = issue_git.pinned(scratch: scratch, pin: asked.pin)
+
+    if pin.is_err()
+        told(issue_check.said(pin))
+        return 2
+    facts = issue_git.gather(scratch: scratch, issues: chosen, pin: pin.must())
+
+    if facts.is_err()
+        told("git could not answer: " + issue_check.said(facts))
+        return 2
+
+    if !facts.must().history
+        told(
+            "this clone's history is shortened, so the commits the cards name cannot be asked for; render where the history is whole"
+        )
+        return 2
+    twins = issue_render.twins_of(every)
+    none: [str] = []
+    refused: i64 @= 0
+
+    for issue in chosen
+        got = issue_render.render(issue: issue, facts: facts.must(), twins: twins[issue.path].default(none))
+        wrong = issue_check.offences(got)
+
+        if wrong.len() > 0
+            refused @ refused + 1
+
+            for one in wrong
+                told(issue.path + ": " + one)
+
+            continue
+        print(issue_json.line(got))
+
+    if refused > 0
+        return 1
+    return 0
+
+function told(text: str)
+    hero_write_err(text: "issues: " + text + "\n")
+
+test "render takes a pin once and issue files, and refuses any other flag"
+    plain = parsed([])
+    assert plain.pin == "HEAD"
+    assert plain.paths.len() == 0
+    assert plain.wrong == ""
+    pinned = parsed(["--pin", "cd2798043", "./issues/a.md", "issues/b.md"])
+    assert pinned.pin == "cd2798043"
+    assert pinned.paths == ["issues/a.md", "issues/b.md"]
+    assert parsed(["--pin"]).wrong != ""
+    assert parsed(["--pin", "a", "--pin", "b"]).wrong != ""
+    assert strings.contains(text: parsed(["--plan"]).wrong, needle: "no flag")
+
+test "plan and push are owed and refused by name, and so is a word nobody gave"
+    assert strings.contains(text: refusal(["plan"]), needle: "not built yet")
+    assert strings.contains(text: refusal(["push", "--yes"]), needle: "not built yet")
+    assert strings.contains(text: refusal(["sync"]), needle: "no word")
+    assert strings.contains(text: refusal([]), needle: "no word given")

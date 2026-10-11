@@ -1,0 +1,278 @@
+# WHERE CODE STANDS IN MARKDOWN, AS GITHUB READS IT: the one model of code the
+# issue renderer and `records/rendered` share.
+#
+# `.claude/rules/records.md` § The issues, panel 212's R3: an item line splits on
+# ` | ` outside a code span (D2), a backticked commit hash is written bare (D6),
+# and a bare `#NNN` or an `@word` is written inside a code span. Each asks one
+# question first, whether a byte is code, because GitHub links nothing in code.
+#
+# The model is CommonMark's: a run of N backticks opens a span that the next run
+# of exactly N closes, inside one block; a run nothing closes is literal, and so
+# is a backtick after a backslash outside a span. A fenced block is code whole. A
+# block is a run of lines between blank ones, cut also before a line that opens a
+# list item, a heading, a quote, a table row or a break, and after a heading.
+# Cutting more often than GitHub does is the safe direction: a span GitHub joins
+# across two of these blocks is read here as two literal runs, so what stands
+# between is protected, and a protection written inside a real span is a
+# backtick more in the code, never a reference let loose. The oracle that holds
+# this model to GitHub's own reading is `POST /markdown`, which `plan` asks.
+
+use strings
+
+# One code span: its opening run's first byte, the byte just past its closing
+# run, and how many backticks each run has.
+record Span
+    open: i64
+    close: i64
+    ticks: i64
+
+# A run of whole lines, code or not; the pieces of a text, joined by newlines,
+# are the text.
+record Piece
+    text: str
+    code: bool
+
+# The code spans of one block, in order.
+function spans(text: str) -> [Span]
+    out: [Span] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == '\\' && at + 1 < text.len() && text[at + 1] == '`'
+            at @ at + 2
+            continue
+
+        if text[at] != '`'
+            at @ at + 1
+            continue
+        ticks = run_at(text: text, at: at)
+        close = closing(text: text, from: at + ticks, ticks: ticks)
+
+        if close < 0
+            at @ at + ticks
+            continue
+        out @ out.push(Span(open: at, close: close + ticks, ticks: ticks))
+        at @ close + ticks
+
+    return out
+
+# How many backticks stand from `at`.
+function run_at(text: str, at: i64) -> i64
+    n: i64 @= 0
+
+    while at + n < text.len() && text[at + n] == '`'
+        n @ n + 1
+
+    return n
+
+# Where the next run of exactly `ticks` backticks begins at or after `from`, or
+# -1: a longer or a shorter run is the span's content.
+function closing(text: str, from: i64, ticks: i64) -> i64
+    at: i64 @= from
+
+    while at < text.len()
+        if text[at] != '`'
+            at @ at + 1
+            continue
+        n = run_at(text: text, at: at)
+
+        if n == ticks
+            return at
+        at @ at + n
+
+    return -1
+
+# Whether byte `at` stands inside one of `found`.
+function inside(found: [Span], at: i64) -> bool
+    for span in found
+        if at >= span.open && at < span.close
+            return true
+
+    return false
+
+# What a span holds between its runs.
+function inner(text: str, span: Span) -> str
+    # Both cuts stand beside a backtick, which is ASCII.
+    return text.slice(from: span.open + span.ticks, to: span.close - span.ticks)
+
+# How many backticks a span written into `text` takes so that it pairs with no
+# literal run already there: the shortest length no run outside `found` has,
+# one wherever the text holds no stray backtick.
+function free_ticks(text: str, found: [Span]) -> i64
+    taken: {i64: bool} @= {}
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] != '`' || inside(found: found, at: at)
+            at @ at + 1
+            continue
+        n = run_at(text: text, at: at)
+        taken[n] @ true
+        at @ at + n
+
+    ticks: i64 @= 1
+
+    while !taken[ticks].is_err()
+        ticks @ ticks + 1
+
+    return ticks
+
+# The blocks of a markdown text, fenced code apart.
+function pieces(text: str) -> [Piece]
+    out: [Piece] @= []
+    held: [str] @= []
+    fence: str @= ""
+
+    for row in strings.split_on(text: text, byte: 10)
+        if fence != ""
+            held @ held.push(row)
+
+            if closes(row: row, fence: fence)
+                out @ out.push(Piece(text: held.join("\n"), code: true))
+                held @ []
+                fence @ ""
+            continue
+        opened = fence_of(row)
+
+        if held.len() > 0 && (opened != "" || strings.trimmed(row) == "" || starts_block(row))
+            out @ out.push(Piece(text: held.join("\n"), code: false))
+            held @ []
+        held @ held.push(row)
+
+        if opened != ""
+            fence @ opened
+        else if is_heading(row)
+            out @ out.push(Piece(text: held.join("\n"), code: false))
+            held @ []
+
+    if held.len() > 0 || out.len() == 0
+        out @ out.push(Piece(text: held.join("\n"), code: fence != ""))
+
+    return out
+
+# `row` without the spaces before it.
+function unindented(row: str) -> str
+    at: i64 @= 0
+
+    while at < row.len() && row[at] == ' '
+        at @ at + 1
+
+    return row.slice(from: at, to: row.len())
+
+# The run a fenced block opens with, three backticks or tildes or more, or "".
+# A backtick fence holds no backtick after its run, or it is a code span.
+function fence_of(row: str) -> str
+    t = unindented(row)
+
+    if t.len() < 3 || t[0] != '`' && t[0] != '~'
+        return ""
+    n: i64 @= 0
+
+    while n < t.len() && t[n] == t[0]
+        n @ n + 1
+
+    if n < 3
+        return ""
+
+    if t[0] == '`' && strings.contains(text: t.slice(from: n, to: t.len()), needle: "`")
+        return ""
+    return t.slice(from: 0, to: n)
+
+# Whether `row` closes the block `fence` opened: the same byte, as many or more,
+# and nothing else.
+function closes(row: str, fence: str) -> bool
+    t = strings.trimmed(row)
+
+    if t.len() < fence.len()
+        return false
+
+    for b in t.chars()
+        if b != fence.slice(from: 0, to: 1)
+            return false
+
+    return true
+
+# Whether `row` opens a block of its own: a list item, a heading, a quote, a
+# table row, a numbered item or a break.
+function starts_block(row: str) -> bool
+    t = unindented(row)
+
+    for opening in ["- ", "* ", "+ ", "#", ">", "|"]
+        if strings.starts_with(text: t, prefix: opening)
+            return true
+
+    digits: i64 @= 0
+
+    while digits < t.len() && t[digits] >= '0' && t[digits] <= '9'
+        digits @ digits + 1
+
+    if digits > 0 && digits + 1 < t.len() && (t[digits] == '.' || t[digits] == ')') && t[digits + 1] == ' '
+        return true
+    return is_break(t)
+
+# Three or more of one of `-`, `*`, `_` or `=`, and nothing else.
+function is_break(t: str) -> bool
+    if t.len() < 3 || t[0] != '-' && t[0] != '*' && t[0] != '_' && t[0] != '='
+        return false
+
+    for b in t.chars()
+        if b != t.slice(from: 0, to: 1) && b != " "
+            return false
+
+    return true
+
+# A heading: one to six `#` and a space, at most three spaces in.
+function is_heading(row: str) -> bool
+    t = unindented(row)
+
+    if row.len() - t.len() > 3
+        return false
+    n: i64 @= 0
+
+    while n < t.len() && t[n] == '#'
+        n @ n + 1
+
+    return n >= 1 && n <= 6 && n < t.len() && t[n] == ' '
+
+test "a run opens a span the next run of its own length closes, and a stray run is literal"
+    found = spans("a `x` and ``y ` z`` end")
+    assert found.len() == 2
+    assert inner(text: "a `x` and ``y ` z`` end", span: found[0]) == "x"
+    assert inner(text: "a `x` and ``y ` z`` end", span: found[1]) == "y ` z"
+    assert spans("a ` b").len() == 0
+    assert spans("an escaped \\` and `code`").len() == 1
+    assert spans("two\nlines `across\nthem` here").len() == 1
+    assert inside(found: spans("a `x` b"), at: 3)
+    assert !inside(found: spans("a `x` b"), at: 5)
+
+test "a span written into a text takes a length no stray run there has"
+    assert free_ticks(text: "plain", found: []) == 1
+    assert free_ticks(text: "a `x` b", found: spans("a `x` b")) == 1
+    assert free_ticks(text: "a stray ` here", found: spans("a stray ` here")) == 2
+    assert free_ticks(text: "` and ``", found: spans("` and ``")) == 3
+
+test "a fenced block is code whole, and a block is cut where GitHub may cut one"
+    text = "para one\nstill one\n\n```c\nint #1;\n\n```\n- an item\n## A heading\nafter"
+    got = pieces(text)
+    joined: [str] @= []
+
+    for one in got
+        joined @ joined.push(one.text)
+
+    assert joined.join("\n") == text
+    assert got.len() == 6
+    assert got[2].code
+    assert got[2].text == "```c\nint #1;\n\n```"
+    assert !got[3].code
+    assert got[4].text == "## A heading"
+    assert pieces("").len() == 1
+    assert fence_of("    ```hero") == "```"
+    assert fence_of("```a``` inline") == ""
+    assert fence_of("~~~~") == "~~~~"
+    assert closes(row: "````", fence: "```")
+    assert !closes(row: "``", fence: "```")
+    assert starts_block("12. numbered")
+    assert starts_block("---")
+    assert !starts_block("plain words")
+    assert is_heading("### Notes")
+    assert !is_heading("#12 is not one")

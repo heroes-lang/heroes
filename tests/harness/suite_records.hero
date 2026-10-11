@@ -12,6 +12,7 @@
 
 use cards
 use credit
+use issue_check
 use report
 use floors
 use portable
@@ -818,11 +819,11 @@ function run_all(scratch: str, only: str) -> report.Report?
 
     # **Narrowed to one path, the write hook's question** (layer 0,
     # `.claude/rules/verification.md` § A suite is the last judge): only the
-    # two checks that can judge one file run, `credit.prior_art` over the
-    # issues whose path holds `only` and `credit.defects_cited` over `only`
-    # where it stands under the cited roots. A word that selects neither is a
-    # run that would test nothing, and it is refused rather than green
-    # (CL-072).
+    # three checks that can judge one file run, `credit.prior_art` and
+    # `issue_check.rendered` over the issues whose path holds `only` and
+    # `credit.defects_cited` over `only` where it stands under the cited roots.
+    # A word that selects none is a run that would test nothing, and it is
+    # refused rather than green (CL-072).
     if only != ""
         selected: bool @= false
 
@@ -832,6 +833,7 @@ function run_all(scratch: str, only: str) -> report.Report?
 
         if selected
             credit.prior_art(@r, present: walked, issues: issues, only: only)
+            issue_check.rendered(@r, scratch: scratch, issues: issues, only: only)
 
         if credit.under_roots(only)
             credit.defects_cited(@r, scratch: scratch, issues: issues, only: only)
@@ -887,6 +889,7 @@ function run_all(scratch: str, only: str) -> report.Report?
     defect_register(@r, issues: issues)
     credit.prior_art(@r, present: walked, issues: issues, only: "")
     credit.defects_cited(@r, scratch: scratch, issues: issues, only: "")
+    issue_check.rendered(@r, scratch: scratch, issues: issues, only: "")
     tagged(@r, scratch: scratch, present: walked, issues: issues)
     appended(@r, scratch: scratch)
     numbering(@r, present: walked)

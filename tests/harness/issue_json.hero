@@ -1,0 +1,154 @@
+# AN ISSUE AS THE IMPORT TAKES IT, WRITTEN AS JSON: one line a card.
+#
+# `.claude/rules/records.md` § The issues, its route bullet (panel 212's R5, and
+# the payload imported in
+# `docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`):
+# an issue is imported whole, its title, body, days, labels, closed state and
+# closing comment in one request, which is `payload` here. The milestone and the
+# organisation's `Defect` field stand beside it on the line: the import names a
+# milestone by GitHub's number, which `plan` maps, and cannot set the field (R6
+# item 5).
+#
+# A string is escaped as JSON asks and no further: a quote and a backslash, a
+# newline as `\n`, every other control byte as `\u00XX`; a byte above ASCII
+# passes through, the transport being UTF-8.
+
+use issue_render
+
+# `text` as the inside of a JSON string.
+function escaped(text: str) -> str
+    parts: [str] @= []
+    plain: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+        one: str @= ""
+
+        if b == '"'
+            one @ "\\\""
+        else if b == '\\'
+            one @ "\\\\"
+        else if b == '\n'
+            one @ "\\n"
+        else if b < 32 || b == 127
+            one @ "\\u00" + nibble(to_i64(b / 16).must()) + nibble(to_i64(b % 16).must())
+
+        if one != ""
+            # The byte is ASCII, so both cuts stand between characters.
+            parts @ parts.push(text.slice(from: plain, to: at))
+            parts @ parts.push(one)
+            plain @ at + 1
+        at @ at + 1
+
+    if plain == 0
+        return text
+    parts @ parts.push(text.slice(from: plain, to: text.len()))
+    return parts.join("")
+
+function nibble(value: i64) -> str
+    return "0123456789abcdef".slice(from: value, to: value + 1)
+
+function quoted(text: str) -> str
+    return "\"" + escaped(text) + "\""
+
+# `"key":"value"`.
+function member(key: str, value: str) -> str
+    return quoted(key) + ":" + quoted(value)
+
+# `"key":"value"`, or `"key":null` where it is "".
+function nullable(key: str, value: str) -> str
+    if value == ""
+        return quoted(key) + ":null"
+    return member(key: key, value: value)
+
+# The request the import takes for `r`.
+function payload(r: issue_render.Rendered) -> str
+    opened = issue_render.instant(r.filed)
+    labels: [str] @= []
+
+    for label in r.labels
+        labels @ labels.push(quoted(label))
+
+    fields: [str] @= [
+        member(key: "title", value: r.title)
+        member(key: "body", value: r.body)
+        member(key: "created_at", value: opened)
+    ]
+
+    if r.closed
+        closed = issue_render.instant(r.closed_day)
+        fields @ fields.push(member(key: "updated_at", value: closed))
+        fields @ fields.push(member(key: "closed_at", value: closed))
+        fields @ fields.push(quoted("closed") + ":true")
+    else
+        fields @ fields.push(member(key: "updated_at", value: opened))
+        fields @ fields.push(quoted("closed") + ":false")
+    fields @ fields.push(quoted("labels") + ":[" + labels.join(",") + "]")
+    comments: [str] @= []
+
+    if r.comment != ""
+        comments @ comments.push(
+            "{" + member(key: "body", value: r.comment) + "," + member(key: "created_at", value: issue_render.instant(r.closed_day)) + "}"
+        )
+    return "{\"issue\":{" + fields.join(",") + "},\"comments\":[" + comments.join(",") + "]}"
+
+# The line `render` prints for `r`.
+function line(r: issue_render.Rendered) -> str
+    return "{" + member(key: "path", value: r.path) + "," + nullable(key: "milestone", value: r.milestone) + "," + nullable(key: "defect", value: r.defect) + ",\"payload\":" + payload(r) + "}"
+
+test "a string holds a quote, a backslash, a newline, a tab, a control byte and a character above ASCII"
+    assert escaped("q\" b\\ n\n t\t é — 😀") == "q\\\" b\\\\ n\\n t\\u0009 é — 😀"
+    assert escaped("\r") == "\\u000d"
+    assert escaped("plain") == "plain"
+    nul: [u8] = [1, 31, 127]
+    assert escaped(nul.validated_bytes().must()) == "\\u0001\\u001f\\u007f"
+
+test "a closed issue's payload carries its days at noon, its labels and its one comment"
+    none: [str] = []
+    r = issue_render.Rendered(
+        path: "issues/a.md",
+        refusal: "",
+        unborn: false,
+        title: "Defect 235: t",
+        cut: false,
+        prefix: "defect",
+        pathed: "",
+        self_from: "",
+        fields: 0,
+        body: "b\n",
+        labels: ["kind:defect", "area:cli"],
+        milestone: "",
+        defect: "235",
+        closed: true,
+        filed: "2026-10-03",
+        closed_day: "2026-10-04",
+        closed_from: "body",
+        raised: false,
+        comment: "Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238"
+    )
+    assert payload(r) == "{\"issue\":{\"title\":\"Defect 235: t\",\"body\":\"b\\n\",\"created_at\":\"2026-10-03T12:00:00Z\",\"updated_at\":\"2026-10-04T12:00:00Z\",\"closed_at\":\"2026-10-04T12:00:00Z\",\"closed\":true,\"labels\":[\"kind:defect\",\"area:cli\"]},\"comments\":[{\"body\":\"Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238\",\"created_at\":\"2026-10-04T12:00:00Z\"}]}"
+    assert line(r) == "{\"path\":\"issues/a.md\",\"milestone\":null,\"defect\":\"235\",\"payload\":" + payload(r) + "}"
+    open_one = issue_render.Rendered(
+        path: "issues/b.md",
+        refusal: "",
+        unborn: false,
+        title: "t",
+        cut: false,
+        prefix: "",
+        pathed: "",
+        self_from: "",
+        fields: 0,
+        body: "",
+        labels: none,
+        milestone: "M-issue-files",
+        defect: "",
+        closed: false,
+        filed: "2026-10-11",
+        closed_day: "",
+        closed_from: "",
+        raised: false,
+        comment: ""
+    )
+    assert payload(open_one) == "{\"issue\":{\"title\":\"t\",\"body\":\"\",\"created_at\":\"2026-10-11T12:00:00Z\",\"updated_at\":\"2026-10-11T12:00:00Z\",\"closed\":false,\"labels\":[]},\"comments\":[]}"
+    assert line(open_one) == "{\"path\":\"issues/b.md\",\"milestone\":\"M-issue-files\",\"defect\":null,\"payload\":" + payload(open_one) + "}"
