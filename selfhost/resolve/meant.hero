@@ -81,7 +81,8 @@ function declares_no_cell(@r: state.Resolver, s: source.Source, name: token.Span
 # parameter: the cell's symbol where its re-binding was meant, a second
 # declaration being refused as shadowing anyway (spec § 5). Told once at the
 # symbol with the certain fix that writes `@`, the write counted on the local
-# it re-binds, and nothing declared, so the lines below read the one `v`.
+# it re-binds and the local kept for the checker (defect 625), and nothing
+# declared, so the lines below read the one `v`.
 # False, and nothing said, where no such local stands.
 function meant_rebinding(@r: state.Resolver, s: source.Source, name: token.Span, symbol: token.Span) -> bool
     previous = state.lookup_local(r, source.span_text(s, name))
@@ -92,6 +93,7 @@ function meant_rebinding(@r: state.Resolver, s: source.Source, name: token.Span,
     bound_at = source.elsewhere(s, here: name.start, there: r.out.locals[at].name.start)
     state.push_diagnostic(@r, cell_redeclared(name: source.span_text(s, name), bound_at: bound_at, span: symbol))
     r.out.locals[at].writes @ r.out.locals[at].writes + 1
+    r.out.rebinds[name.start] @ at
     return true
 
 # `_ @= e` or `_: T @= e` (the old `_: T @ e` is the parser's to tell,

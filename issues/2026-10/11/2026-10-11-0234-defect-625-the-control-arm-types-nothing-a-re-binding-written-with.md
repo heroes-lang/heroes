@@ -3,7 +3,7 @@ kind: defect
 area: check
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: 3ac8f358ac391c0168318a9d57317aa24a8b04e0
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by lane b21-misc at 02:34 on 2026-10-11, attacking the shapes beside defect 614's reproducer (`_ @= nullptr` under `--permissive`) with the lane's compiler after that repair (`519ac63b`): the named cell's `@=` where `@` was meant is the one other `.declare` the resolver declares nothing for. Another cause than 614's: the wildcard's line has one reading, the discard, while this one needs the checker to type the value against the local the resolver re-binds, which it has no reference to.
 
     **Class: adjacent**, 2026-10-11 (`.claude/rules/verification.md` § Bounded discovery): found beside the work in the control arm alone, as defects 193, 251 and 614 were; the normal arm refuses the line at `cell_redeclared` before the checker runs, and the arm's count reads a program accepted that every reading of the language refuses.
+
+    Repaired at `3ac8f358ac391c0168318a9d57317aa24a8b04e0`, 2026-10-11 (lane b21-misc, batch 21 by the author's choice at 08:51), gated by its cases and the compiler's own tests; the net is owed at the batch's close. The resolver keeps the local a `v @= e` re-binds by the name's start (`Resolved.rebinds`, written by `resolve/meant.meant_rebinding` beside its `cell_redeclared`), and `check/walk.birth` holds the value to that local's type, as `v @ e`'s value is held, so the control arm reads the line as the re-binding the resolver read; the strict arm is unchanged, the resolver telling the line first. `new_resolved` hands its empty fields inline, which paid for the new field in `resolved.hero` (298 of 300); `walk.hero`'s own `is_fallible`, a copy of `check/discard`'s used by a test helper alone, went to pay for the check (1869 of 1870). Shapes measured in the control arm with the lane's compiler, each told as its mirror written with `@` is, one column on: a `str`, a `T?`, `300` into a `u8`, an `@` parameter, a loop, an `if` and an arm (exit 0 on the base, each now its `type_mismatch` or `int_out_of_range`); a value that fits told nothing; `xs @= []` and `p @= nullptr` told nothing (each `cannot_infer` on the base, the cell's type now their context); `v: str @= "x"` over an `i64` cell, a shadowing past `shadowed_binding`, unchanged at exit 0. Two `tests/golden/permissive/fixedbugs-625-*` cases, red on the base, and a `check/walk` test; permissive and annotations narrowed 2/0, permissive whole 21/0 (its floor told outgrown, to 20), check 681/0, layout on the three modules 4/0, own tests 1609 passed; instructions retired within run-to-run spread (the commit body's numbers).
