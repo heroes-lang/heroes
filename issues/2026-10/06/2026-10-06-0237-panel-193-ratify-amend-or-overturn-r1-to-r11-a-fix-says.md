@@ -18,3 +18,9 @@ github: none
     **And a paid run, yours to fund or not**: the blind seat, about 2.2 USD a case under the brief's cap (R9). **Recommendation: not now**: two seats measured the consumer the JSON is for, and no case the sitting found separates a model's arms by a measurement rather than an inference.
 
     **Ratified 2026-10-06**, on the author's answer between 03:50 and 07:24 by the clock read before and after it, meant as: *OK to both*, the paid refresh of the spec's count and this ratification. **What the yes settles**: R1 to R11 as the synthesis states them, the robust route at each disagreement over each conservative alternative named above; the blind seat not funded now. **What it does not settle**: what only the landing measures, lane b12-cli12's, and the Windows box's run of it. **Recorded as a reading**, CLAUDE.md § 4's default; not `by delegation`.
+
+## Prior art
+
+Panel 193 (`docs/panel/193-a-fix-says-where-it-applies-and-what-apply-does-with-it-and-every-answer-says-what-it-is.md`, `docs/panel/193-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Reached first by Rust**: [rustc --error-format=json spans](https://doc.rust-lang.org/nightly/rustc/json.html): a span's byte_start and byte_end are 0-based offsets with the end exclusive, and the column numbers stand beside them

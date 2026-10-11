@@ -35,3 +35,9 @@ suggestions*. **Recorded as a reading**, CLAUDE.md § 4's default; not `by deleg
     in `.claude/rules/verification.md` § Bounded discovery, CLAUDE.md § 8 and `.claude/rules/diagnostics-and-goldens.md` reading *to
     fix the mistake it names*, R9's line budget (landed at `f118c989`); design.md §4.17 gains the sitting's paragraph with R2's
     differential reading in place of a ratchet; items 130 and 131 close into the pins and the causes filed.
+
+## Prior art
+
+Panel 187 (`docs/panel/187-a-recovery-is-done-when-every-row-is-repaired-filed-or-pinned-and-the-instrument-compares-two-compilers.md`, `docs/panel/187-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from Rust**: [the known-bug test directive, PR #93953](https://github.com/rust-lang/rust/pull/93953): a test of a known bug is annotated known-bug, which indicates it should pass, and its error annotations are relaxed

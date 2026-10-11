@@ -12,3 +12,10 @@ github: none
     **Origin:** panel 205's synthesis, 2026-10-10 from 03:37, on the tree frozen at `46c975c4`.
 
     **Verdict, 2026-10-10:** **ratified**, R1 to R5, the author answering through the question widget between 03:36 and 03:38 by the clocks read before and after (*Ratifica R1-R5*), and *yes, one* `--refresh`. Recorded as a reading (CLAUDE.md § 4).
+
+## Prior art
+
+Panel 205 (`docs/panel/205-a-library-s-own-header-code-is-judged-as-clang-judges-a-system-header-the-checks-raised-again-after-it-and-a-switch-goes-in-the-first-group.md`, `docs/panel/205-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Reached first by GCC and clang**: [GCC cpp, system headers](https://gcc.gnu.org/onlinedocs/cpp/System-Headers.html): warnings are suppressed while GCC processes a system header, one found in a compiler-determined directory or added with -isystem or -idirafter
+- **Reached first by GCC**: [diagnostic pragmas override the command line](https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html): diagnostic pragmas override any command-line options

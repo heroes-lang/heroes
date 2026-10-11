@@ -24,3 +24,11 @@ github: none
     **Owed whatever the answer**: R6's run on the Windows box, which was unreachable from 21:06 on 2026-10-04 to 15:50 on 2026-10-05.
 
     **Ratified 2026-10-05**, on the author's answer between 16:12 and 16:14 by the clock read before and after it, meant as: *I ratify both panels, and yes to the cost of the optional paid run: do it*. **What the yes settles**: R1 to R13 as the synthesis states them, the robust route at each disagreement over each conservative alternative named above; and the fifth blind arm funded, five sessions within the 1.0965 USD left in the sitting's 5 USD cap, run before the landing. The author added, meant as: *right now I am not really paying for those sessions*; the costs this record and the sitting give are the CLI's own report, `total_cost_usd`, and say nothing of a bill, and the cap stands as the bound the sitting named. **What it does not settle**: R6's run on the Windows box, owed whatever the answer, and what only the landing measures. The landing is defects 245 and 283 and the items R12 filed, in the batch after batch 11. **Recorded as a reading**, CLAUDE.md § 4's default; not `by delegation`.
+
+## Prior art
+
+Panel 192 (`docs/panel/192-a-str-holds-any-utf-8-the-c-boundary-refuses-a-nul-and-a-string-refuses-what-its-reader-cannot-see.md`, `docs/panel/192-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from Go**: [Go 1.21, syscall converts UTF-16 to and from WTF-8](https://go.dev/doc/go1.21): Windows UTF-16 data converts to and from WTF-8 strings, where a lossy conversion to U+FFFD had made os.RemoveAll hang (go#59971)
+- **Taken from Zig**: [PR #19005, Windows paths use WTF-16 to WTF-8 conversion everywhere](https://github.com/ziglang/zig/pull/19005): Windows paths use WTF-16 to WTF-8 conversion everywhere, which is lossless
+- **Taken from Unicode**: [UTS #55, Unicode Source Code Handling](https://www.unicode.org/reports/tr55/): U+200C and U+200D are necessary in the orthographies of some major languages (section 5.1.3, on identifiers)

@@ -67,3 +67,9 @@ is written; it says nothing about the other half.
 Written into `.claude/skills/panel/SKILL.md` beside CL-077 rather than left as a
 sentence in a record, because a rule with no executor is the failure this
 project keeps finding in itself.
+
+## Prior art
+
+Panel 163 (`docs/panel/163-the-wall-was-not-there-and-the-brief-said-it-was.md`, `docs/panel/163-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from Rust**: [std::mem::uninitialized, deprecated since 1.39.0](https://doc.rust-lang.org/std/mem/fn.uninitialized.html): calling mem::uninitialized is immediate undefined behavior on nearly all types, integer arrays included, and it is deprecated since 1.39.0

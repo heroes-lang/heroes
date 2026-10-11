@@ -70,3 +70,9 @@ conservative would have been — for 165, leave route 6 queued and file only the
 defects; for 166, route A alone at +3 real — and the author may take either at
 any time. Neither was taken by this delegation, because CLAUDE.md § 4 makes the
 robust resolution the default and the author's instruction named no exception.
+
+## Prior art
+
+Panel 166 (`docs/panel/166-clang-already-knew-and-the-lend-was-throwing-it-away.md`, `docs/panel/166-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from C99 and clang**: [static N for array parameters, LWN 2025-12-01](https://lwn.net/Articles/1046840/): static N makes the compiler check the size of the array passed in, and warns only if it is too small

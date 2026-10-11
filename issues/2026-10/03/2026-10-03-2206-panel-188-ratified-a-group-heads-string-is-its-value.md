@@ -45,3 +45,10 @@ as a reading**, CLAUDE.md § 4's default; not `by delegation`.
     seat included: R4 taken over the spec-warden's objection, and R10 with no
     spec sentence. **Recorded as a reading**, CLAUDE.md § 4's default; not
     `by delegation`. The landing is batch 8's FFI lane, opened at `dcaca1a3`.
+
+## Prior art
+
+Panel 188 (`docs/panel/188-a-group-heads-string-is-its-value-and-what-its-tool-cannot-carry-is-refused-on-its-line.md`, `docs/panel/188-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Reached first by Go**: [go/types validatedImportPath](https://raw.githubusercontent.com/golang/go/master/src/go/types/resolver.go): validatedImportPath unquotes the literal first and then refuses the empty string and illegal characters in the value
+- **Taken from C11**: [ISO C11 (N1570) 6.4.7p3](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf): if a single quote, a backslash, a double quote, // or /* occurs between the < and > of a header name, the behavior is undefined (6.4.7p3)

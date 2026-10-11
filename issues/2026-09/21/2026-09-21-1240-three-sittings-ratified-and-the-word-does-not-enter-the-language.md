@@ -58,3 +58,9 @@ github: none
     exists to forbid, and wrote a hedge where the rule asks for a fact. The
     default is that the author reads; a sitting they did not read is the thing
     that would need saying, and only they can say it.
+
+## Prior art
+
+Panel 171 (`docs/panel/171-lent-and-the-pointer-c-hands-back.md`, `docs/panel/171-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Reached first by D**: [druntime's libc bindings, getenv(scope const char* name) with atexit left unmarked](https://raw.githubusercontent.com/dlang/dmd/master/druntime/src/core/stdc/stdlib.d): druntime declares getenv(scope const char* name) with a scope parameter and leaves atexit's parameter unmarked

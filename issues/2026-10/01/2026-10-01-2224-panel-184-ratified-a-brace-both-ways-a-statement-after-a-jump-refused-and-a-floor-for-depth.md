@@ -39,3 +39,9 @@ other answers are in the decision log entry of the same evening.
     and run once the author has updated the `claude` command (item 6 of the
     same answer). The landing is a lane after the round's gates, in the
     order the sitting's `## Author's verdict` now names.
+
+## Prior art
+
+Panel 184 (`docs/panel/184-a-brace-is-written-both-ways-a-statement-after-a-jump-is-refused-and-depth-is-the-compilers-to-hold.md`, `docs/panel/184-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Reached first by Rust**: [rustc's unused-variable note on a string literal that names the variable in braces, since 1.65](https://github.com/rust-lang/rust/pull/100941): rustc says 'you might have meant to use string interpolation in this string literal' for a literal naming a variable in braces, and suggests format!

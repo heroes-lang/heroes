@@ -107,7 +107,8 @@ sitting:
 - its first line names the sitting's file under `docs/panel/`, the historian's
   report under its `-reports/` folder or the synthesis's seat row where the
   sitting kept none, and the day every link below was re-read, `read
-  YYYY-MM-DD`;
+  YYYY-MM-DD`; where one card ratified several sittings the line names each of
+  them, and the historian's having sat is asked of each (`records/prior-art`);
 - then one line per precedent, in one of two forms and no other:
   `- **Taken from <language or project>**: [<reference>](<url>): <the rule or
   refusal adopted on their evidence>`, or `- **Reached first by <language or
@@ -115,7 +116,16 @@ sitting:
   already reached there>`;
 - only a precedent the historian marked `verified` and the session re-read; a
   language the sitting merely compared itself with is not prior art, as it is
-  not a borrowing on the site's thanks page.
+  not a borrowing on the site's thanks page;
+- **each line says what the cited page itself states, and nothing of what Heroes
+  did about it**, which the sitting's own file records. Measured when the
+  backlog was written, 2026-10-11: of the 90 lines the four researchers
+  proposed, three readers who had not seen their reports re-read every page and
+  found **33 saying more than the page does** (a comparison put as an
+  adoption, a mechanism the page never describes, a date it does not give), 57
+  exact and none contradicted; a line is written from the page's own words after
+  that second reading, a claim the page does not carry is cut, and a page that
+  cannot be read is not cited.
 
 **Where those conditions are not met the section does not exist**: no *not
 searched* and no *nothing found*, because a sentence about an absence rests on

@@ -35,3 +35,9 @@ decision log entry of the same afternoon.
     **Verdict, 2026-09-30: ratified.** R1 to R6 stand as the sitting states
     them; the landing is lane recovery-b4's fifth repair, R4's sentence in its
     commit, and the landing conditions R6 names are measured before it.
+
+## Prior art
+
+Panel 183 (`docs/panel/183-the-reach-of-an-unclosed-opener-ends-at-a-line-no-bracket-can-hold.md`, `docs/panel/183-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Reached first by Swift**: [the compiler's parser ends an open comma-separated list at a start-of-line declaration or statement word](https://raw.githubusercontent.com/swiftlang/swift/main/lib/Parse/Parser.cpp): the parser ends a comma-separated list at a token that begins a new line and can never start an element
