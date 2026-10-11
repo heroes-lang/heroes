@@ -5074,7 +5074,11 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
 }
 
 #undef HERO_TU_LOCAL
+#if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)
+#define HERO_TU_LOCAL __attribute__((unused, used, nodebug, no_sanitize("null", "alignment", "object-size"))) static
+#else
 #define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static
+#endif
 
 #define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)
 #define HERO_COPY_HELD(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(hero_slot_escape(&(dst)), hero_slot_escape(&(src)), sizeof(dst)); } while (0)
@@ -5093,7 +5097,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 5097 "fixedbugs539recordsathousanddeepholdingastrbuild.c"
+#line 5101 "fixedbugs539recordsathousanddeepholdingastrbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs539recordsathousanddeepholdingastrbuild_R0_retain(const h_fixedbugs539recordsathousanddeepholdingastrbuild_R0 *v);
@@ -28138,7 +28142,7 @@ bb0:
 #line 4017 "tests/golden/run/fixedbugs-539-records-a-thousand-deep-holding-a-str-build.hero"
     h_fixedbugs539recordsathousanddeepholdingastrbuild_R1000_release(&t4005);
     HERO_COPY_HELD(t2003, (h1001_v1000));
-#line 28142 "fixedbugs539recordsathousanddeepholdingastrbuild.c"
+#line 28146 "fixedbugs539recordsathousanddeepholdingastrbuild.c"
     h_fixedbugs539recordsathousanddeepholdingastrbuild_R1000_retain(&t2003);
     h_fixedbugs539recordsathousanddeepholdingastrbuild_R0_release(hero_slot_escape(&h1_v0));
     h_fixedbugs539recordsathousanddeepholdingastrbuild_R1_release(hero_slot_escape(&h2_v1));
@@ -34202,7 +34206,7 @@ bb0:
     hero_print_str(t2008);
 #line 4026 "tests/golden/run/fixedbugs-539-records-a-thousand-deep-holding-a-str-build.hero"
     hero_print_end();
-#line 34206 "fixedbugs539recordsathousanddeepholdingastrbuild.c"
+#line 34210 "fixedbugs539recordsathousanddeepholdingastrbuild.c"
     h_fixedbugs539recordsathousanddeepholdingastrbuild_R1000_release(hero_slot_escape(&h0_kept));
     h_fixedbugs539recordsathousanddeepholdingastrbuild_R1000_release(hero_slot_escape(&h1_own1));
     h_fixedbugs539recordsathousanddeepholdingastrbuild_R1000_release(hero_slot_escape(&h2_own2));
