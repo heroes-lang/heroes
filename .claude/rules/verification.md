@@ -435,7 +435,10 @@ filed and repaired in a later batch. So, from batch 16:
    the compiler's own tests, the net's own tests) and gate B (the full net,
    its suites four at a time, `run` first since it is the critical path,
    `cache` alone after), and the site's build when a file `claims.ts` names
-   moved, a push publishing the site. Nothing else. Measured the first day:
+   moved, a push publishing the site; and, where the batch moved the emitted
+   C, the Linux bless of the emissions of the cases this Mac skips (`/step`
+   § 5's checklist, the author's instruction of 2026-10-11, after defects 558
+   and 604). Nothing else. Measured the first day:
    `run` split into one harness process per case, a pool of 7, read gate B
    18:39 against 19:56 whole, the load at 10 on this Mac's 8 cores and each
    process's four seconds eating the gain; so `run` stays whole until it can
