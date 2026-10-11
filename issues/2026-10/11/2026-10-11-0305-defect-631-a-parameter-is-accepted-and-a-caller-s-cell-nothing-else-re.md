@@ -1,0 +1,16 @@
+---
+kind: defect
+area: resolve
+milestone: none
+filed: 2026-10-11
+commit: none
+github: none
+---
+
+- [ ] **631 — a parameter `@_` is accepted, and a caller's cell nothing else re-binds escapes panel 209's rule through it** | `function f(@_: i64)` checks and runs at exit 0, and a caller's `k @= 1` passed as `f(@k)` and re-bound nowhere else is not refused `never_rebound`, the `@` argument counting as its re-binding; defect 608's twin one level down (608 refused `_ @= e`) | `selfhost/resolve/` (`resolve/meant.declares_no_cell`, 608's repair); panel 210 R2 · **class: blocking**
+
+    **Origin:** filed by the coordinator at 03:05 on 2026-10-11 from panel 210's completeness critic (`docs/panel/210-reports/critic.md`), its builds under `.claude/worktrees/scratch-b15/210-critic/` (ignored by git), the seat's measurement on the tree frozen at `1dd890751`, not re-run by the coordinator.
+
+    **Class: blocking**, 2026-10-11 (`.claude/rules/verification.md` § Bounded discovery): a wrong program accepted: a cell nothing can re-bind.
+
+    Measured at `7c01e6f96b9dd80678938e5a1eaf0c4747589eb6`, 2026-10-11 (lane b21-resolve), not repaired: **spec § 5 as it stands does not make either half an error, so the repair waits for panel 210's D2c sentence** (R2 lands with R3) and nothing is landed here. The reproducer stands on the lane's compiler: `function f(@_: i64) -> i64` with `k @= 1` and `print(f(@k))` checks at exit 0 and `run` prints 1; `f(@_)` with no caller exit 0; its named twin, `function f(@x: i64) -> i64` returning `x` with the same caller, exit 0; `_ @= 1` refused `never_rebound` (defect 608). What the text says, read with `grep -n -i cell spec/heroes-spec.md` (lines 115, 131, 134, 138, 415, 417, 423): a cell is what `@=` declares (`:134`), and no line calls an `@` parameter one; § 9 names it a *mutable parameter*, copy in and copy out, the copy-out always made; so *a cell nothing re-binds* (`:138`) reaches `_ @= e`, the reading defect 608 landed on with no spec change, and does not reach `@_`, whose only `_` sentence (`:139-140`) says it binds nothing and is never unused. The caller's half is the same: *an `@` argument counting* (`:138`) counts every `@` argument, and the copy-out does re-bind `k` with the value it held. The sitting read it so before this lane did: the spec-warden's § 2 (*a cell nothing re-binds does not reach it on a literal reading*, § 5 *derives acceptance* for an `@` parameter only read) and the critic's § 3 and § 8 (*D2c calls an error and the route accepts*). `@_` is the one `@` parameter nothing can ever write, so it falls under D2c's *an `@` parameter nothing writes or ends* by construction; landing its refusal before that sentence would be a refusal the document derives as legal (CLAUDE.md § 12, spec beats compiler). When D2c lands, the repair owed is the one the item names: `@_` refused at the parameter as 608's wildcard is, and the caller's `@` argument to it not counted as a re-binding.
