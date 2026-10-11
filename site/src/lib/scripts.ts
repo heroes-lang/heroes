@@ -47,18 +47,24 @@ export function assertScriptsHonest(distDir: string): string {
   let pages = 0;
   let enhancing = 0;
   const seen = new Set<string>();
-  const tag = /<script\b([^>]*)>([\s\S]*?)<\/script>/g;
+  // Case-blind, and a closing tag may carry spaces or attributes, as HTML
+  // allows (defect 667): `<SCRIPT>` and `</script >` are scripts a browser
+  // runs, and until then this check did not see them.
+  const tag = /<script\b([^>]*)>([\s\S]*?)<\/script\b[^>]*>/gi;
 
   for (const file of files) {
     pages += 1;
     const html = readFileSync(file, 'utf8');
+    const where = file.slice(distDir.length);
+    const opened = (html.match(/<script\b/gi) ?? []).length;
+    let paired = 0;
     for (const match of html.matchAll(tag)) {
+      paired += 1;
       const attrs = match[1];
       const body = match[2];
       if (/type\s*=\s*"application\/ld\+json"/.test(attrs)) continue;
 
       const declared = /data-enhances\s*=\s*"([^"]+)"/.exec(attrs);
-      const where = file.slice(distDir.length);
       if (declared === null) {
         throw new Error(
           `${where}: a <script> that declares nothing.\n` +
@@ -69,7 +75,7 @@ export function assertScriptsHonest(distDir: string): string {
       if (!DECLARED.has(declared[1])) {
         throw new Error(`${where}: a script declares "${declared[1]}", which nobody decided on.`);
       }
-      if (/\bsrc\s*=/.test(attrs)) {
+      if (/\bsrc\s*=/i.test(attrs)) {
         throw new Error(`${where}: the "${declared[1]}" script has a src, and a script here is inline or it is not here.`);
       }
       for (const word of WRITES_TO_THE_BROWSER) {
@@ -82,6 +88,15 @@ export function assertScriptsHonest(distDir: string): string {
       }
       enhancing += 1;
       seen.add(declared[1]);
+    }
+    // A `<script` the pattern could not pair with its closing tag, one left
+    // open to the end of the page, is a script this check never read, so it
+    // is refused rather than passed by not being seen.
+    if (paired !== opened) {
+      throw new Error(
+        `${where}: ${opened} <script tags open and ${paired} pair with a closing tag.\n` +
+          `  a script this check cannot read to its end is one it cannot judge.`
+      );
     }
   }
 

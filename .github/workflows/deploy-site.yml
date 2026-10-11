@@ -53,6 +53,13 @@ concurrency:
   group: deploy-site
   cancel-in-progress: true
 
+# The job reads the repository and writes nothing to GitHub: what it publishes
+# goes to Cloudflare under Cloudflare's own token. So GITHUB_TOKEN is held to a
+# read of the contents, stated here rather than left to the repository's default
+# (defect 668), the shape `ci.yml` already has.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
