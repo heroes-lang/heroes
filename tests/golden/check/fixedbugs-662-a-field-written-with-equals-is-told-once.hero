@@ -1,0 +1,16 @@
+# Fixed 2026-10-11, defect 662, lane b22-662: the shape beside, a field of
+# an `@` parameter written with `=`. It is no shadow: the parser refuses the
+# line, and that is the one message, the parameter's sweep never running.
+# Corrected 2026-10-11, defect 646: that one message is now `declared_place`
+# at the `=`, its `guess` writing `@`, no longer the line's generic end.
+
+record P
+    x: i64
+
+function move(@p: P)
+    p.x = p.x + 1  #~ declared_place
+
+function main()
+    q: P @= P(x: 0)
+    move(@q)
+    print(q.x)

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-646-an-element-written-with-equals-is-told-as-a-write.hero:7:11: error[declared_place]: `xs[0] = …` would bind a name, and a field or an element is no name — it is written with `@`: `xs[0] @ …`

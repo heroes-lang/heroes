@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-646-a-root-that-is-not-mutable-is-told-the-same.hero:13:9: error[declared_place]: `p.x = …` would bind a name, and a field or an element is no name — it is written with `@`: `p.x @ …`
+tests/golden/check/fixedbugs-646-a-root-that-is-not-mutable-is-told-the-same.hero:21:9: error[declared_place]: `q.x = …` would bind a name, and a field or an element is no name — it is written with `@`: `q.x @ …`
+tests/golden/check/fixedbugs-646-a-root-that-is-not-mutable-is-told-the-same.hero:22:12: error[expected_end_of_line]: expected the end of the line, found `=` — one statement per line, no semicolons
