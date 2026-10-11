@@ -51,6 +51,7 @@ use absence
 use cases
 use expectation
 use freed_bytes
+use platform_skips
 use report
 use shell
 use strings
@@ -275,6 +276,11 @@ function sanitised_failed(@r: report.Report, scratch: str, compiler: str, item: 
     # still judged at `-O0` and `-O2` above, so the runtime's own report stays
     # pinned where it prints.
     if !want.sanitizer.is_err()
+        # A stack overflow on Windows is the runtime's to tell under the
+        # sanitiser too (`platform_skips.runtime_tells`, defect 641), and is
+        # judged by the case's ending, as at `-O0` and `-O2`.
+        if platform_skips.runtime_tells(want.sanitizer.must())
+            return judged(@r, item: item, level: level, want: want, said: sanitised)
         missing = expectation.sanitizer_unmet(want, err: sanitised.must().err)
 
         if !missing.is_err()
