@@ -3,7 +3,7 @@ kind: defect
 area: resolve
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: a2167890c0036d0341a4aac2eba1fdf83fc4fa2d
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** found by the landing session of panel 209 at 11:53 on 2026-10-11, reading panel 187's R2 over the recovery plan cut again for defect 661, the first R2 run after batch 21 landed panel 210.
 
     **Class: adjacent**, 2026-10-11: a second message for one mistake, found beside the work, the one message it repeats being true and its fix certain.
+
+    Repaired at `a2167890c0036d0341a4aac2eba1fdf83fc4fa2d`, 2026-10-11 (lane b22-662), gated by its cases and the compiler's own tests; the net is owed at the batch's close. `resolve/meant.bind` counts a `=` over a mutable local in scope, an `@` parameter or a cell, as that local's write, and the shadow is the one message, offering `@` at the `=` as a `guess` where no type is written: a shadow inside a block meant a name the block alone sees, and `@` writes the local past it. The cell shape beside, `v @= 0` over `v = v + 1`, lost the same second message and its `certain` `=` fix, which left the shadow standing. Shapes measured, the trunk's compiler against the lane's: the reproducer, a branch, a loop and a typed or untyped cell each 2 messages to 1; a real `@` write beside the shadow and an `@`-less parameter shadowed 1 and 1; a field written with `=` the parser's one message, no shadow. Five `tests/golden/check/fixedbugs-662-*` cases; check 695/0 whole, annotations and fixes on fixedbugs-662 5/0, never-written 3/0 and fixedbugs-63 5/0, full 38/0, layout on both modules 4/0, own tests 1617 passed.
