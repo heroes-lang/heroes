@@ -3,7 +3,7 @@ kind: defect
 area: cli
 milestone: none
 filed: 2026-10-10
-commit: none
+commit: 123a1d1372f0519fbaad2ea951b29f118502427a
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: improvement**, 2026-10-10: nothing is wrong at exit 0 and no message is false; a migration is possible today, one root at a time, and this would make it one command.
 
     **Measured 2026-10-11** (lane b20-tools, its compiler built from `42656199`, in a scratch tree): a root holding no diagnostic, `use lib/geom`, and `lib/geom.hero` holding `y @= util.one(x)` beside `use lib/util`: `check main.hero --apply --in-place` names `lib/geom.hero:4` as not applied and writes nothing, exit 0; `check lib/geom.hero --apply --in-place`, run from the root and from `lib/`, answers its `use` as an unknown module and writes nothing. So no invocation, and no two composed, writes that fix: *possible today, one root at a time* holds of a module with no `use` line only. The repair writes files the command line does not name, which `--in-place`'s row in `selfhost/cli/table.hero` (*with --apply, rewrite the file*) and panel 193's R4 document (`not_applied`) do not say, so it was put to the coordinator as a question of the surface (`.claude/rules/cli-surface.md`) and not landed. The message `--in-place` gave there, false, was defect 621.
+
+    Repaired at `123a1d137`, 2026-10-11 (lane b21-apply), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Panel 211's route C (provisional, author reading pending): `heroes check <directory> --apply --in-place` takes every `.hero` under the directory declaring `function main` as a root, hidden directories and `build/` passed over, and writes a file's certain fixes only where every root reading it computes the same text, rounds held in memory, every write asked before the first byte, a disputed file named with its roots and left; 607's own case is `check <dir> --apply --in-place`, one command, `rewrote lib/geom.hero` and the root clean after. A file operand keeps panel 193's answer: `check <f> --apply --json` and `check <f> --json` over the 3,498 tracked `.hero` files of `bdeadbfa5`, base and repair, 6,996 answers each, byte for byte. Cases: 19 `surface` rows on copies of `tests/golden/surface-fixtures/tree607/` (`tests/harness/apply_tree.hero`), three tracked-path `--in-place` rows moved onto copies with them, and `selfhost/cli/consensus.hero`'s tests. Over copies of `selfhost`, `tests/harness` and `examples`: 0 disputes, 0 writes, the seat's prediction. `check selfhost/main.hero` 84.68, 84.66, 84.53e9 instructions retired before, 84.70, 84.67, 84.52e9 after. design.md §4.17 at `71ba9dc2`, `site/src/llms.txt` at `7ee38871`.
