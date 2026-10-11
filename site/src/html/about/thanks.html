@@ -25,6 +25,12 @@
     Heroes uses clang to check C function declarations against library headers.</li>
     <li><b>Rust</b>: the Rust team, and Graydon Hoare, who started it.
     The first compiler used a restricted set of Rust features, chosen to make conversion to Heroes straightforward.</li>
+    <li><b>Zig</b>: Andrew Kelley, and <b>Nim</b>:
+    <a href="https://nim-lang.org">Andreas Rumpf</a>. The C file the Heroes
+    compiler can always be rebuilt from is kept in the repository, as Zig keeps
+    in its own the ready-made program it starts compiling itself from, and Nim keeps the
+    C its compiler generated, with scripts to build it, in a repository of its
+    own, each copy made from a named version of Nim&rsquo;s source.</li>
   </ul>
 
   <h2>The value model</h2>
@@ -70,7 +76,11 @@
     <li><b>Modula-3</b>: <a href="https://en.wikipedia.org/wiki/Luca_Cardelli">Luca Cardelli</a>,
     James Donahue, Lucille Glassman, Mick Jordan, Bill Kalsow and
     <a href="https://en.wikipedia.org/wiki/Greg_Nelson_(computer_scientist)">Greg
-    Nelson</a>. A model for concentrating unsafe operations in an identifiable part of the program that can be reviewed.</li>
+    Nelson</a>. A model for concentrating unsafe operations in an identifiable part of the program that can be reviewed.
+    Its definition also gave Heroes the shape of <code>use</code>:
+    <code>IMPORT I</code> is short for <code>IMPORT I AS I</code>, and the same
+    local name may not be used twice, so a <code>use</code> may rename what it
+    brings in, and a name only has to be unique within one file.</li>
   </ul>
 
   <h2>Keeping the language small</h2>
@@ -87,7 +97,15 @@
     thousand lines, once showed how little a self-hosting compiler needs; that
     is history, not a size this project holds itself to. Wirth
     also wrote an entire operating system in a language with no raw pointers, and
-    nothing argues harder for this whole approach.</li>
+    nothing argues harder for this whole approach. Oberon dropped
+    Modula&rsquo;s variant record, which Wirth found mostly misused to get
+    around the types, and for that reason Heroes refused to bind a C union, a
+    type whose fields all share one piece of memory, as a <code>variant</code>.
+    And the Oberon report&rsquo;s rule for itself, that what it leaves unsaid
+    follows from the rules it states or is left out on purpose, is a test the
+    Heroes specification applies: it says outright that there are no anonymous
+    functions, functions written in place without a name, because nothing in
+    its rules lets a reader work that out.</li>
   </ul>
 
   <h2>Types and alternatives considered</h2>
@@ -109,6 +127,38 @@
     one is a thank-you for something Heroes does <i>not</i> use: whole-program
     inference can make it harder to connect an error to its cause. Knowing precisely what was being given up, and
     why, is what their work makes possible.</li>
+    <li><b>Rust</b> again, the Rust team. Its manual, the Rust Reference,
+    counts two kinds of statement, a declaration and an expression, and puts <code>let</code> among
+    the declarations. In Heroes too a declaration is not a value, so one written
+    as the short body of a case of <code>match</code>, the form that picks among
+    cases, as in <code>=&gt; x = 5</code>, is refused as the program is read.
+    Rust&rsquo;s own check for a type that contains itself once overflowed the
+    stack, the memory a program uses to keep track of its calls, so the Heroes
+    check for such a type walks it step by step instead of calling itself
+    deeper and deeper.</li>
+    <li><b>Rust</b> and <b>Zig</b> together: a float, a number with a fractional
+    part, cannot be the key of a map. Rust&rsquo;s map asks its keys for
+    equality and a hash, a number worked out from the key to find it again, and
+    Zig refuses to hash a float key while the program compiles.</li>
+    <li><b>C++</b>: <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
+    Stroustrup</a>, who designed it, and WG 21, the ISO and IEC working group
+    that keeps its standard. Stroustrup&rsquo;s paper on concepts says that a
+    C++ template, a piece of code written once for many types, hides in its body
+    what it needs from its argument, and that the error appears only when the
+    template is used, long after the point of call. So Heroes reports, inside
+    a function written for many types and at the place it is written, an
+    operation those types may not allow.</li>
+    <li><b>Swift</b> again, and <b>Java</b>:
+    <a href="https://en.wikipedia.org/wiki/James_Gosling">James Gosling</a>, who
+    designed Java, and Oracle, which develops it. In a function written for many
+    types, a type parameter (the stand-in for the types it works on) that
+    appears nowhere in its signature, the line naming its parameters and
+    result, is an error where the function is declared, as in Swift. One that
+    the arguments leave open takes the type its context asks for, as Java works
+    out a generic method&rsquo;s result from the assignment or the parameter it
+    goes to. Swift also kept both layers of a value that may fail inside a
+    value that may fail: its <code>try?</code> flattens only its own result,
+    and such nested values stay legal. Heroes keeps both layers too.</li>
   </ul>
 
   <h2>What the language feels like to use</h2>
@@ -121,7 +171,24 @@
     <a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike</a> and
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>. One
     canonical format with no options, unused variables as errors, a line that
-    ends without a semicolon, and the initial choice to omit generics.</li>
+    ends without a semicolon, and the initial choice to omit generics.
+    Escapes are split as Go splits them (an escape is a backslash that changes
+    what the next character means): the one for a single quote is allowed only
+    in a character written between single quotes, the one for a double quote
+    only in a text between double quotes. A structure that contains itself
+    directly, or inside an array, a list of values, is refused as a type with no
+    size, as Go refuses it, and the message names the whole loop of types, the
+    repair Go made when its own error named only one. What a function written
+    for many types may do with them is declared, as in Go&rsquo;s design for
+    type parameters, and never deduced from whatever its body happens to do. As
+    in Go, the types worked out for a call are the same whatever order its
+    parameters come in, and an argument whose type is written counts before one
+    whose type is not. Go&rsquo;s tracker, its public list of reported
+    problems, is also the evidence for a limit: working out a type from where a
+    value is used stops being easy to pin to one place once calls nest, as in
+    <code>f(f(f(0)))</code>, so Heroes does it one level deep, from a written
+    type, a declared result or the parameter of a function that is not
+    generic.</li>
     <li><b>Nim</b>: <a href="https://nim-lang.org">Andreas Rumpf</a>. The foreign-function mechanism, reusing previous compilation results for each module, and <code>nim r</code>, which is
     <code>heroes run</code>. Also the standing warning the project repeats to
     itself: copy Nim&rsquo;s surface, never its implementation.</li>
@@ -149,6 +216,22 @@
     <li><b>Ruby</b>: <a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro
     Matsumoto</a>. The reading rhythm (named blocks, named arguments, dot
     chains), used as a guide to readability, without adopting metaprogramming, the ability to alter code behaviour through other code.</li>
+    <li><b>Unicode</b>: the Unicode Consortium, in a report edited by Robin Leroy
+    and <a href="https://en.wikipedia.org/wiki/Mark_Davis_(Unicode)">Mark
+    Davis</a>. Two invisible characters, the zero-width joiner and non-joiner,
+    stay allowed in a string, because their guide to handling source code says
+    the spelling of some major languages needs them.</li>
+    <li><b>Haskell</b>: the committee that designed it, named further down for
+    its early compilers. Its report defines <code>filter</code> as giving back
+    the elements that satisfy the function it is handed, and the Heroes
+    specification says the same in words: <code>filter</code> keeps what the
+    function accepts.</li>
+    <li><b>C</b> again, in Dennis Ritchie&rsquo;s own history of it: B and early
+    C spelled <code>+=</code> as <code>=+</code>, a mistake repaired in 1976.
+    That is the evidence behind refusing <code>=@</code>, the reversed form of
+    the <code>@=</code> that declares a Heroes variable that can change: a
+    reader could take <code>=@</code> for <code>=</code> followed by
+    <code>@</code>.</li>
   </ul>
 
   <h2>Error messages and unfinished code</h2>
@@ -161,6 +244,16 @@
     Catarina Coquand on the first version. Typed holes, unfinished expressions for which the tool reports the expected type: in Heroes, <code>???</code> is a legal
     expression, and the compiler answers it by saying what belongs in the
     gap.</li>
+    <li><b>GCC</b>: the GNU Project, and <b>GHC</b>, the Glasgow Haskell
+    Compiler: Kevin Hammond, who wrote it first,
+    <a href="https://en.wikipedia.org/wiki/Simon_Marlow">Simon Marlow</a>,
+    <a href="https://en.wikipedia.org/wiki/Simon_Peyton_Jones">Simon Peyton
+    Jones</a> and the Glasgow Haskell Team. In Heroes, a form the compiler
+    cannot translate yet is reported as a kind of message of its own. GCC files
+    its &ldquo;sorry, unimplemented&rdquo; as a kind apart, beside errors and
+    warnings, and
+    GHC&rsquo;s <code>Sorry</code> stands beside its <code>Panic</code>, for
+    something known not to work yet, which is not counted as a bug.</li>
   </ul>
 
   <h2>Immutability at scale</h2>
@@ -195,6 +288,236 @@
     <a href="https://en.wikipedia.org/wiki/Philip_Wadler">Philip Wadler</a>. Early implementations of this high-level language also used C.</li>
   </ul>
 
+  <h2>Where Heroes meets C</h2>
+  <p>
+    A Heroes program calls C libraries directly, and it runs on a runtime written in C, the piece of program that sits underneath and keeps things working while it runs. The rules below, for what crosses between Heroes and C, were taken from projects that had worked at that border first.
+  </p>
+  <ul class="lineage">
+    <li><b>Rust</b> again, the Rust team. In Heroes a C union is built naming
+    exactly one of its fields, as Rust builds its own, and one built with more
+    is refused. Turning text that C hands over into a Heroes string is a check
+    that can fail and repairs nothing, as Rust&rsquo;s <code>to_str</code> fails
+    on text that is not valid UTF-8, the usual way of storing text as bytes,
+    beside a separate conversion that replaces the bad bytes, and as Swift
+    spells its checking conversion apart from the others. Rust&rsquo;s
+    documentation is the evidence against handing C a value nobody has filled:
+    calling <code>mem::uninitialized</code> is undefined behaviour, where
+    anything at all may happen, on nearly every type. So Heroes obtains a record
+    that a C function fills from a function that returns it. Rust reports one C
+    function declared under one name with two different types, though not
+    between its crates, the packages it builds separately; Heroes reports it
+    between its own modules too, before the linker, the program that joins the
+    compiled pieces into one executable, puts the program together. And
+    Rust&rsquo;s <code>thread::spawn</code> asks for the work it hands a new
+    thread, a line of work that runs alongside the others, to be passed by
+    value, under conditions written into its signature. In Heroes, likewise,
+    the place where a thread is created checks what crosses into it, and lets
+    through only what was measured safe to cross.</li>
+    <li><b>GCC</b> again, the GNU Project. In Heroes a C function that hands out
+    memory is declared with the function that gives it back, as GCC&rsquo;s
+    <code>malloc</code> attribute pairs an allocator with its deallocator. The C
+    that Heroes writes zeroes a union itself, because GCC 15 no longer promises
+    that <code>{0}</code> clears all of one. A length handed to C is counted in
+    C&rsquo;s own unit, as GCC&rsquo;s <code>access</code> attribute counts
+    elements of the type pointed to, or bytes when the pointer is
+    <code>void *</code>. And passing C a pointer of the wrong type is an error in
+    every C file Heroes writes, as GCC 14 made it, because such warnings
+    &ldquo;are easily ignored, resulting in difficult to diagnose bugs&rdquo;,
+    and as clang 22 does by default.</li>
+    <li><b>Clang</b> again: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris
+    Lattner</a>, its original author, and the LLVM Developer Group. In
+    clang&rsquo;s reference counting for Objective-C, a counted value may start
+    out as a null pointer, an address that points nowhere, and counting a null
+    pointer up or down does nothing. Its static analyzer, which looks for
+    mistakes without running the code, sets an annotation that holds memory
+    beside one that takes it over: a holder will give the memory back at some
+    later point, and giving back held memory is reported as giving back memory
+    one does not own.</li>
+    <li><b>Racket</b>: PLT Inc. In Racket, calling by hand the function that
+    frees a value cancels the most recent automatic release registered for it.
+    Heroes, so that no value is freed twice, refuses while compiling a call of a
+    C library&rsquo;s freeing function on a value the compiler will free by
+    itself.</li>
+    <li><b>C</b> again, in the words of its standard. A header name holding a
+    quote, a backslash, <code>//</code> or <code>/*</code> is refused, because C
+    leaves undefined what happens to such a name. Heroes makes no promise about
+    the padding bytes inside a record, the gaps C may leave between its fields,
+    because C11 leaves their values unspecified after a store. And where C99
+    lets a function ask for an array of at least N elements, clang checks the
+    array passed in and warns only when it is too small; Heroes checks a length
+    against the field of a C record it goes into in the same way, only where
+    that length is a number known while compiling.</li>
+    <li><b>The Linux kernel</b>:
+    <a href="https://en.wikipedia.org/wiki/Linus_Torvalds">Linus Torvalds</a>,
+    its author, and its community contributors. C&rsquo;s plain
+    <code>char</code> has no sign of its own: on some machines it can hold
+    negative numbers and on others it cannot. Heroes fixes its sign with one
+    compiler flag, the same on every machine, and a patch for the kernel, the
+    core of the operating system, proposed adding the opposite flag. A proposal
+    to make Rust&rsquo;s <code>c_char</code> the same everywhere was closed by
+    its own author the next day.</li>
+    <li><b>Go</b> and <b>Zig</b> again. The options a C library&rsquo;s package
+    hands to the compiler are admitted word by word, by their whole name, as
+    cgo, Go&rsquo;s way of calling C, admits them since a security flaw. On
+    Windows, the words a program is started with reach it through WTF-8, an
+    encoding built on UTF-8, with nothing lost, as Go converts what Windows
+    hands it and Zig converts every Windows path. In Go, a
+    conversion that lost characters had once made the function that removes a
+    folder and its contents hang.</li>
+    <li><b>gnulib</b>: the GNU Project. A float prints as gnulib prints it:
+    starting from one digit for the tiniest values and from a fixed count,
+    <code>FLOAT_DIG</code>, for the rest, digits are added until the printed
+    text reads back as the same number.</li>
+    <li><b>Nim</b> again: <a href="https://nim-lang.org">Andreas Rumpf</a>. A
+    Nim program whose threads raised errors into one value shared by the whole
+    program freed the same memory twice, because Nim&rsquo;s reference counting
+    is not atomic (an atomic step is one no other thread can interrupt
+    halfway). On that evidence Heroes refused to let several threads share its
+    counted values.</li>
+    <li><b>CPython</b>, the reference implementation of Python:
+    <a href="https://en.wikipedia.org/wiki/Guido_van_Rossum">Guido van
+    Rossum</a>, its author, with the Python core developers and community,
+    supported by the Python Software Foundation; and <b>OCaml</b>:
+    <a href="https://en.wikipedia.org/wiki/Xavier_Leroy">Xavier Leroy</a>,
+    <a href="https://en.wikipedia.org/wiki/Damien_Doligez">Damien Doligez</a>,
+    J&eacute;r&ocirc;me Vouillon, Didier R&eacute;my and Asc&aacute;nder
+    Su&aacute;rez, developed at the French Institute for Research in Computer
+    Science and Automation. Both ask a thread that C creates to register with
+    them before it runs their code. From that rule comes the Heroes one: its
+    runtime notices a thread it does not know and stops cleanly instead of
+    corrupting memory.</li>
+    <li><b>Chromium</b>: Google, its author, and the Chromium Projects, which
+    Google controls; and <b>LLVM</b>: Chris Lattner and
+    <a href="https://en.wikipedia.org/wiki/Vikram_Adve">Vikram Adve</a>, its
+    authors, and the LLVM Developer Group. On macOS, LLVM&rsquo;s code asks for
+    the main thread&rsquo;s stack size for a thread it creates, because the
+    default for other threads there is 512KB, and Chromium gives a created thread the larger of the default and the
+    current limit, since macOS applies that limit to the main thread alone. The
+    Heroes runtime does the same: a thread it creates gets at least the stack of
+    the thread that ran <code>main</code>, the function a program starts
+    from.</li>
+    <li><b>Java</b> again. Its virtual machine&rsquo;s specification states
+    what happens when the stack runs out, a <code>StackOverflowError</code>, and
+    allows stacks of a fixed or a growing size without choosing one. Heroes does
+    the same: running out of stack stops the program the same way everywhere,
+    and no depth is promised.</li>
+    <li><b>D</b>: <a href="https://en.wikipedia.org/wiki/Walter_Bright">Walter
+    Bright</a>, joined later by
+    <a href="https://en.wikipedia.org/wiki/Andrei_Alexandrescu">Andrei
+    Alexandrescu</a>, and the D Language Foundation; and <b>Zig</b> again.
+    D&rsquo;s <code>scope(exit)</code> runs
+    its action when the current block closes, not where it is written, and
+    Zig&rsquo;s <code>defer</code> runs when its block is left, its
+    <code>errdefer</code> only when the function returns an error. Heroes has no
+    such statement; the panel that weighed one ruled that if it ever enters,
+    it ends with its block, as theirs do.</li>
+  </ul>
+
+  <h2>Somebody got there first</h2>
+  <p>
+    Heroes reached each rule below on its own, and found out only afterwards that somebody had got there first. The credit is theirs.
+  </p>
+  <ul class="lineage">
+    <li><b><i>Native Implementation of Mutable Value Semantics</i></b>: Dimitri
+    Racordon, Denys Shabalin, Daniel Zheng,
+    <a href="https://en.wikipedia.org/wiki/David_Abrahams_(computer_programmer)">Dave
+    Abrahams</a> and Brennan Saeta, named above for Hylo. Besides the sentence
+    Heroes depends on, their paper already held two more of the rules Heroes follows: the
+    compiler writes by itself, for each type, how its values are copied and how
+    they are destroyed; and an array keeps count of the places that share it and
+    is checked at the moment it is changed, so that it is copied only when a
+    change requires it.</li>
+    <li><b>Ada</b>: <a href="https://en.wikipedia.org/wiki/Jean_Ichbiah">Jean
+    Ichbiah</a> for Ada 83, and Tucker Taft for Ada 95 through 2012. Until Ada
+    2012, a call that could change two of its arguments copied both back at the
+    end, in an order the language left unspecified. Ada 2012 then made the call
+    illegal when two parameters it may write to are the same variable of a
+    simple type, such as a number, and the compiler can tell that they
+    are.</li>
+    <li><b>Swift</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>,
+    Doug Gregor, John McCall, Ted Kremenek, Joe Groff and Apple. Passing the same
+    variable twice to one call, in two places that may each change it, counts as
+    two overlapping changes, and they conflict. Counting references is written as
+    explicit instructions in the intermediate language, the halfway form the
+    compiler translates a program into before it reaches the machine. When a
+    list separated by commas is left open, Swift&rsquo;s compiler ends it at a
+    new line that begins with a word that could never start an item. A bug
+    report brought over to GitHub from the old tracker opens its title with its old key in square brackets and
+    repeats it in a row of its text.</li>
+    <li><b>Go</b>: <a href="https://en.wikipedia.org/wiki/Robert_Griesemer">Robert Griesemer</a>,
+    <a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike</a> and
+    <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>, its
+    designers, and Google and contributors, its developers. A calculation
+    made only of constants is worked out exactly, a constant with a declared type
+    must fit in it, and dividing a constant by zero is not allowed. The name of a
+    package to import is first taken out of its quotation marks and only then
+    checked, and it is refused if it is empty or holds a character that is not
+    allowed. An @ in an option handed to the linker on Apple&rsquo;s systems
+    could be used to run any code at all, and was registered as a security
+    flaw. Since version 1.20, code written once for many kinds of
+    value, asking only that its values be comparable, may also be used with a
+    kind whose comparison can stop the program with an error while it
+    runs.</li>
+    <li><b>Rust</b>: the Rust team. When a variable is never used and a piece of
+    text in quotation marks names it between braces, the compiler asks whether
+    its value was meant to be filled in there, and suggests how to write that.
+    In the form of its messages made to be read by other programs, the place of
+    a mistake is given by two counts of bytes from the start of the file,
+    counted from zero, the second just past the end, with the column numbers
+    beside them. And the fixed limit on the steps the compiler may take to work
+    out a constant became a warning, repeated at ever longer intervals.</li>
+    <li><b>Zig</b>: Andrew Kelley and the Zig Software Foundation, which develops
+    it. A name declared inside a function may not be the same as the name of
+    something declared further down the same file. A variable declared as
+    changeable and never changed is an error, and the repair is to declare it
+    constant. A report on their tracker says it is not acceptable for the same
+    piece of code to compile one time and not another.</li>
+    <li><b>C#</b>: <a href="https://en.wikipedia.org/wiki/Anders_Hejlsberg">Anders Hejlsberg</a>,
+    who designed it, and Mads Torgersen, who develops it, both at Microsoft. A
+    name declared inside a function may not take a name the code around it
+    already uses, and the compiler reports it in whichever order the two
+    declarations are written. A calculation made only of constants is checked by
+    default, and a result too large for its type is an error while the program
+    is still being compiled.</li>
+    <li><b>C</b>: <a href="https://en.wikipedia.org/wiki/Dennis_Ritchie">Dennis Ritchie</a>,
+    who designed it, and WG 14, the ISO and IEC working group that writes its
+    international standard. The standard asks that a calculation made only of
+    constants give a value its type can hold.</li>
+    <li><b>D</b>: <a href="https://en.wikipedia.org/wiki/Walter_Bright">Walter Bright</a>,
+    joined later by
+    <a href="https://en.wikipedia.org/wiki/Andrei_Alexandrescu">Andrei
+    Alexandrescu</a>, and the D Language Foundation. In D&rsquo;s description of
+    the C library, the name handed to <code>getenv</code>, the C function that
+    looks up by name a setting of the environment the program runs in, carries
+    the word <code>scope</code>, while the function handed to
+    <code>atexit</code>, which C keeps to call when the program ends, carries no
+    mark.</li>
+    <li><b>GCC</b>: the GNU Project. When GCC compiles itself in stages, the
+    compilers of the second stage and the third are compared, and if they
+    differ, it is usually the second stage&rsquo;s compiler that compiled GCC
+    wrongly. Its tool that looks for mistakes in code without running it knows
+    that memory handed out by one function may be correctly given back through
+    any one of several others, and follows each piece of memory against that
+    whole set. When it optimises a whole program at the moment its pieces are
+    joined, GCC warns without being asked if files compiled separately declare
+    one name, visible to the whole program, with different types. While it reads
+    a system header, GCC shows no warnings; a header is a system one when it
+    sits in a folder the compiler chooses, or in one added with an option that
+    marks it as such. And an instruction written in the source to change how
+    warnings are reported counts for more than any option the compiler was
+    started with.</li>
+    <li><b>Clang</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>,
+    its original author, and the LLVM Developer Group. In its checks for code
+    run by several threads at the same time, the annotation on a function that tries to take something and may fail begins
+    with <code>true</code> or <code>false</code>, the answer by which the
+    function says it succeeded.</li>
+    <li><b>Microsoft SAL</b>: Microsoft, whose source-code annotation language
+    describes how a function uses what it is given and what it guarantees when
+    it finishes. A function carries at most one <code>_Success_</code>
+    annotation, and it states the condition under which the function
+    succeeded.</li>
+  </ul>
+
   <h2>Choices to consider carefully</h2>
   <p>
     The project also studied the limits and costs of other languages&rsquo; choices. These precedents help determine which approaches to adopt and which to avoid. What was refused here, and who refused it, has a page of its own: <a href="/why/not/">the refusals&nbsp;&rarr;</a>
@@ -214,12 +537,6 @@
     stored as a tree with names as labels: the origin of an idea that was
     explored here at length and then dropped in favour of one readable
     syntax.</li>
-    <li><b>Ada</b>: <a href="https://en.wikipedia.org/wiki/Jean_Ichbiah">Jean Ichbiah</a> for
-    Ada 83, and Tucker Taft for Ada 95 through 2012. One refusal was borrowed
-    whole: passing the same variable twice to one call when both can be written
-    to. Ada allowed it for three decades, watched what happened, and made
-    it illegal in 2012. Heroes made it illegal on day one, on their evidence,
-    and the compiler offers the same repair.</li>
   </ul>
 
   <h2 id="tracklist">And the name</h2>

@@ -26,6 +26,13 @@
     Heroes usa clang per controllare le dichiarazioni delle funzioni C sugli header delle librerie.</li>
     <li><b>Rust</b>: il team di Rust, e Graydon Hoare, che l&rsquo;ha
     avviato. Il primo compilatore usava un insieme ristretto di funzionalità Rust, scelto per facilitarne la conversione in Heroes.</li>
+    <li><b>Zig</b>: Andrew Kelley, e <b>Nim</b>:
+    <a href="https://nim-lang.org">Andreas Rumpf</a>. Il file C da cui si può
+    sempre ricostruire il compilatore di Heroes sta nel repository, come Zig
+    tiene nel suo il programma già pronto da cui parte per compilarsi, e Nim tiene
+    il C generato dal suo compilatore, con gli script per compilarlo, in un
+    repository a parte, ogni copia fatta da una versione dichiarata dei sorgenti
+    di Nim.</li>
   </ul>
 
   <h2>Il modello dei valori</h2>
@@ -70,7 +77,12 @@
     <li><b>Modula-3</b>: <a href="https://en.wikipedia.org/wiki/Luca_Cardelli">Luca Cardelli</a>, James
     Donahue, Lucille Glassman, Mick Jordan, Bill Kalsow e
     <a href="https://en.wikipedia.org/wiki/Greg_Nelson_(computer_scientist)">Greg
-    Nelson</a>. Il modello per concentrare le operazioni non sicure in una parte riconoscibile e verificabile del programma.</li>
+    Nelson</a>. Il modello per concentrare le operazioni non sicure in una parte riconoscibile e verificabile del programma.
+    Dalla sua definizione viene anche la forma di <code>use</code> in Heroes:
+    <code>IMPORT I</code> è l&rsquo;abbreviazione di <code>IMPORT I AS I</code>,
+    e lo stesso nome locale non si può usare due volte, quindi un
+    <code>use</code> può rinominare quello che porta dentro, e un nome deve
+    essere unico solo dentro un file.</li>
   </ul>
 
   <h2>Mantenere piccolo il linguaggio</h2>
@@ -87,7 +99,16 @@
     stesso; è storia, non un traguardo che questo progetto si è dato. Wirth ha
     anche
     scritto un intero sistema operativo in un linguaggio senza puntatori grezzi, e
-    non c&rsquo;è argomento più forte a favore di tutto questo approccio.</li>
+    non c&rsquo;è argomento più forte a favore di tutto questo approccio.
+    Oberon ha eliminato il record con varianti di Modula, che secondo
+    Wirth veniva usato soprattutto per aggirare i tipi, e per questo Heroes ha
+    rifiutato di legare come <code>variant</code> una union del C, un tipo i cui
+    campi condividono tutti lo stesso pezzo di memoria. E la regola che il
+    rapporto su Oberon si dà, che quello che non dice si ricava dalle regole che
+    enuncia o è taciuto di proposito, è un criterio che la specifica di Heroes
+    applica a se stessa: dice apertamente che non ci sono funzioni anonime,
+    funzioni scritte sul posto senza un nome, perché niente nelle sue regole
+    permette di ricavarlo.</li>
   </ul>
 
   <h2>I tipi e le alternative valutate</h2>
@@ -108,6 +129,43 @@
     è un grazie per una cosa che Heroes <i>non</i> usa: l&rsquo;inferenza su tutto
     il programma può rendere più difficile collegare un errore alla sua causa. Sapere esattamente a che cosa si
     stava rinunciando, e perché, è quello che il loro lavoro rende possibile.</li>
+    <li><b>Rust</b> di nuovo, il team di Rust. Il suo manuale conta due tipi di
+    istruzione, la dichiarazione e l&rsquo;espressione, e mette <code>let</code>
+    fra le dichiarazioni. Anche in Heroes una dichiarazione non è un valore,
+    quindi una scritta come corpo breve di un caso di <code>match</code>, la
+    forma che sceglie fra più casi, come in <code>=&gt; x = 5</code>, viene
+    rifiutata già mentre il programma viene letto. Il controllo di Rust per un
+    tipo che contiene se stesso una volta ha esaurito lo stack, la memoria in
+    cui un programma tiene traccia delle sue chiamate, e per questo il controllo
+    di Heroes su un tipo così lo percorre un passo alla volta invece di chiamare
+    se stesso sempre più a fondo.</li>
+    <li><b>Rust</b> e <b>Zig</b> insieme: un float, un numero con la parte
+    decimale, non può essere la chiave di una mappa. La mappa di Rust chiede
+    alle sue chiavi l&rsquo;uguaglianza e un hash, un numero ricavato dalla
+    chiave per ritrovarla, e Zig rifiuta già in compilazione di calcolare
+    l&rsquo;hash di una chiave float.</li>
+    <li><b>C++</b>: <a href="https://en.wikipedia.org/wiki/Bjarne_Stroustrup">Bjarne
+    Stroustrup</a>, che l&rsquo;ha progettato, e WG 21, il gruppo di lavoro di
+    ISO e IEC che ne cura lo standard. L&rsquo;articolo di Stroustrup sui
+    concept dice che un template del C++, un pezzo di codice scritto una volta
+    per molti tipi, nasconde nel suo corpo quello che chiede al suo argomento, e
+    che l&rsquo;errore compare solo quando il template viene usato, molto dopo
+    il punto della chiamata. Per questo Heroes segnala dentro la funzione
+    scritta per molti tipi, nel punto in cui è scritta, un&rsquo;operazione che
+    quei tipi potrebbero non permettere.</li>
+    <li><b>Swift</b> di nuovo, e <b>Java</b>:
+    <a href="https://en.wikipedia.org/wiki/James_Gosling">James Gosling</a>, che
+    ha progettato Java, e Oracle, che lo sviluppa. In una funzione scritta per
+    molti tipi, un parametro di tipo (il segnaposto per i tipi su cui lavora) che
+    non compare da nessuna parte nella sua firma, la riga che ne nomina
+    parametri e risultato, è un errore dove la funzione è dichiarata, come in
+    Swift. Uno che gli argomenti lasciano aperto prende il tipo che il contesto
+    chiede, come Java ricava il risultato di un metodo generico
+    dall&rsquo;assegnazione o dal parametro a cui va. Swift ha anche conservato
+    tutti e due i livelli di un valore che può fallire dentro un valore che può
+    fallire: il suo <code>try?</code> appiattisce solo il proprio risultato, e
+    valori annidati così restano legali. Anche Heroes conserva tutti e due i
+    livelli.</li>
   </ul>
 
   <h2>Che effetto fa usarlo</h2>
@@ -119,7 +177,25 @@
     <a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike</a> e
     <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>. Un solo
     formato canonico senza opzioni, le variabili non usate come errori, una riga
-    che finisce senza punto e virgola, e la scelta iniziale di non includere i generici.</li>
+    che finisce senza punto e virgola, e la scelta iniziale di non includere i generici.
+    Gli escape sono divisi come in Go (un escape è una barra rovesciata che
+    cambia il senso del carattere che segue): quello dell&rsquo;apice vale solo
+    in un carattere scritto fra apici, quello delle virgolette solo in un testo
+    fra virgolette. Una struttura che contiene se stessa direttamente, o dentro
+    un array, una lista di valori, è rifiutata come un tipo senza dimensione,
+    come la rifiuta Go, e il messaggio nomina tutto il giro dei tipi, la
+    correzione che Go ha fatto quando il suo errore ne nominava uno solo. Quello
+    che una funzione scritta per molti tipi può farne è dichiarato, come nel
+    progetto dei parametri di tipo di Go, e mai ricavato da quello che il suo
+    corpo si trova a fare. Come in Go, i tipi ricavati per una chiamata sono gli
+    stessi in qualunque ordine vengano i suoi parametri, e un argomento con il
+    tipo scritto conta prima di uno che non ce l&rsquo;ha. Il tracker di Go,
+    l&rsquo;elenco pubblico dei problemi segnalati, è anche la prova di un
+    limite: ricavare un tipo dal punto in cui un valore viene usato smette di
+    essere facile da collegare a un solo posto quando le chiamate si annidano,
+    come in <code>f(f(f(0)))</code>, e Heroes lo fa a un solo livello, da un
+    tipo scritto, da un risultato dichiarato o dal parametro di una funzione che
+    non è generica.</li>
     <li><b>Nim</b>: <a href="https://nim-lang.org">Andreas Rumpf</a>. Il meccanismo per chiamare funzioni
     esterne, il riuso dei risultati di compilazione per ogni modulo, e <code>nim r</code>, che è
     <code>heroes run</code>. E anche l&rsquo;avvertimento che il progetto continua a ripetersi: copia la superficie di Nim, mai la sua implementazione.</li>
@@ -149,6 +225,23 @@
     <li><b>Ruby</b>: <a href="https://en.wikipedia.org/wiki/Yukihiro_Matsumoto">Yukihiro
     Matsumoto</a>. Il ritmo di lettura (blocchi con un nome, argomenti con
     un nome, catene di punti), usato come riferimento per la leggibilità, senza riprendere il metaprogramming, cioè la possibilità di modificare il comportamento del codice tramite altro codice.</li>
+    <li><b>Unicode</b>: l&rsquo;Unicode Consortium, in un rapporto curato da
+    Robin Leroy e <a href="https://en.wikipedia.org/wiki/Mark_Davis_(Unicode)">Mark
+    Davis</a>. Due caratteri invisibili, lo zero-width joiner e il non-joiner,
+    restano ammessi in una stringa, perché la loro guida al trattamento del
+    codice sorgente dice che servono all&rsquo;ortografia di alcune grandi
+    lingue.</li>
+    <li><b>Haskell</b>: il comitato che l&rsquo;ha progettato, nominato più giù
+    per i suoi primi compilatori. Il suo rapporto definisce <code>filter</code>
+    come la funzione che restituisce gli elementi che soddisfano la funzione
+    ricevuta, e la specifica di Heroes dice la stessa cosa a parole:
+    <code>filter</code> tiene quello che la funzione accetta.</li>
+    <li><b>C</b> di nuovo, nella storia che ne ha scritto Dennis Ritchie: B e il
+    primo C scrivevano <code>+=</code> come <code>=+</code>, un errore corretto
+    nel 1976. È la prova dietro il rifiuto di <code>=@</code>, la forma
+    rovesciata di <code>@=</code>, con cui si dichiara una variabile di Heroes
+    che può cambiare: chi legge potrebbe scambiare <code>=@</code> per un
+    <code>=</code> seguito da <code>@</code>.</li>
   </ul>
 
   <h2>Messaggi d&rsquo;errore e codice incompleto</h2>
@@ -161,6 +254,17 @@
     Catarina Coquand sulla prima versione. I buchi tipati, punti incompleti per cui lo strumento indica il tipo atteso: in Heroes
     <code>???</code> è un&rsquo;espressione legale, e il compilatore risponde
     dicendo che cosa va nel buco.</li>
+    <li><b>GCC</b>: il Progetto GNU, e <b>GHC</b>, il Glasgow Haskell Compiler:
+    Kevin Hammond, che l&rsquo;ha scritto per primo,
+    <a href="https://en.wikipedia.org/wiki/Simon_Marlow">Simon Marlow</a>,
+    <a href="https://en.wikipedia.org/wiki/Simon_Peyton_Jones">Simon Peyton
+    Jones</a> e il Glasgow Haskell Team. In Heroes una forma che il compilatore
+    non sa ancora tradurre è segnalata con un tipo di messaggio a sé. GCC tiene
+    il suo &ldquo;sorry, unimplemented&rdquo; come un tipo a parte, accanto agli
+    errori e ai warning (gli avvisi che, a differenza di un errore, lasciano compilare il
+    programma), e in GHC <code>Sorry</code> sta accanto a <code>Panic</code>,
+    per qualcosa che si sa che non funziona ancora e che non conta come
+    bug.</li>
   </ul>
 
   <h2>Immutabilità su larga scala</h2>
@@ -196,6 +300,248 @@
     <a href="https://en.wikipedia.org/wiki/Philip_Wadler">Philip Wadler</a>. Anche le prime implementazioni di questo linguaggio di alto livello hanno usato il C.</li>
   </ul>
 
+  <h2>Dove Heroes incontra il C</h2>
+  <p>
+    Un programma Heroes chiama direttamente le librerie C, e gira sopra un runtime scritto in C, il pezzo di programma che sta sotto e tiene in funzione le cose mentre gira. Le regole qui sotto, su che cosa passa fra Heroes e il C, vengono da progetti che avevano lavorato su quel confine prima.
+  </p>
+  <ul class="lineage">
+    <li><b>Rust</b> di nuovo, il team di Rust. In Heroes una union del C si
+    costruisce nominando uno solo dei suoi campi, come Rust costruisce le sue, e
+    una costruita con più campi viene rifiutata. Trasformare in una stringa di
+    Heroes un testo che arriva dal C è un controllo che può fallire e non ripara
+    niente, come <code>to_str</code> di Rust fallisce su un testo che non è
+    UTF-8 valido, il modo più comune di scrivere un testo in byte, accanto a una
+    conversione separata che sostituisce i byte sbagliati, e come Swift scrive a
+    parte la sua conversione che verifica. La documentazione di Rust è la prova
+    contro il passare al C un valore che nessuno ha riempito: chiamare
+    <code>mem::uninitialized</code> ha un comportamento non definito, in cui può
+    succedere qualunque cosa, su quasi ogni tipo. Per questo Heroes ottiene un
+    record che una funzione C riempie da una funzione che lo restituisce. Rust
+    segnala una funzione C dichiarata con lo stesso nome e due tipi diversi, ma
+    non fra i suoi crate, i pacchetti che compila separatamente; Heroes la
+    segnala anche fra i suoi moduli, prima che il linker, il programma che unisce
+    i pezzi compilati in un solo eseguibile, metta insieme il programma. E
+    <code>thread::spawn</code> di Rust chiede che il lavoro affidato a un nuovo
+    thread, una linea di lavoro che va avanti insieme alle altre, gli sia
+    passato per valore, a condizioni scritte nella sua firma. In Heroes, allo
+    stesso modo, il punto in cui nasce un thread controlla quello che vi entra,
+    e lascia passare solo quello che è stato misurato sicuro.</li>
+    <li><b>GCC</b> di nuovo, il Progetto GNU. In Heroes una funzione C che dà
+    memoria si dichiara insieme alla funzione che la restituisce, come l&rsquo;attributo
+    <code>malloc</code> di GCC accoppia chi alloca la memoria con chi la libera.
+    Il C che Heroes scrive azzera da sé una union, perché GCC 15 non promette più
+    che <code>{0}</code> la azzeri tutta. Una lunghezza passata al C si conta
+    nell&rsquo;unità del C, come l&rsquo;attributo <code>access</code> di GCC
+    conta gli elementi del tipo puntato, o i byte quando il puntatore è
+    <code>void *</code>. E passare al C un puntatore del tipo sbagliato è un
+    errore in ogni file C che Heroes scrive, come l&rsquo;ha reso GCC 14, perché
+    quei warning &ldquo;si ignorano facilmente e portano a bug difficili da
+    diagnosticare&rdquo;, e come fa clang 22 per impostazione predefinita.</li>
+    <li><b>Clang</b> di nuovo: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris
+    Lattner</a>, il suo autore originale, e l&rsquo;LLVM Developer Group. Nel
+    conteggio dei riferimenti di clang per Objective-C, un valore contato può
+    partire come puntatore nullo, un indirizzo che non punta a niente, e contare
+    in più o in meno un puntatore nullo non fa niente. Il suo analizzatore
+    statico, che cerca errori nel codice senza eseguirlo, mette accanto
+    all&rsquo;annotazione che prende in carico la memoria quella che la tiene:
+    chi la tiene la restituirà più avanti, e restituire memoria tenuta viene
+    segnalato come restituire memoria che non si possiede.</li>
+    <li><b>Racket</b>: PLT Inc. In Racket, chiamare a mano la funzione che
+    libera un valore annulla l&rsquo;ultimo rilascio automatico registrato per
+    quel valore. Heroes, perché nessun valore venga liberato due volte, rifiuta
+    in compilazione una chiamata della funzione di liberazione di una libreria C
+    su un valore che il compilatore libererà da sé.</li>
+    <li><b>C</b> di nuovo, nelle parole del suo standard. Il nome di un header
+    che contiene un apice, una barra rovesciata, <code>//</code> o
+    <code>/*</code> viene rifiutato, perché il C lascia non definito che cosa
+    succede a un nome così. Heroes non promette niente sui byte di riempimento
+    dentro un record, i vuoti che il C può lasciare fra i suoi campi, perché C11
+    lascia non specificato il loro valore dopo una scrittura. E dove C99
+    permette a una funzione di chiedere un array di almeno N elementi, clang
+    controlla l&rsquo;array passato e dà un warning solo quando è troppo
+    piccolo; Heroes controlla allo stesso modo una lunghezza rispetto al campo
+    del record C in cui va, solo dove quella lunghezza è un numero noto già in
+    compilazione.</li>
+    <li><b>Il kernel Linux</b>:
+    <a href="https://en.wikipedia.org/wiki/Linus_Torvalds">Linus Torvalds</a>, il
+    suo autore, e la comunità che ci contribuisce. Il <code>char</code> semplice
+    del C non ha un segno suo: su alcune macchine può contenere numeri negativi
+    e su altre no. Heroes gliene fissa uno con un&rsquo;unica opzione del
+    compilatore, uguale su ogni macchina, e una patch per il kernel, il cuore
+    del sistema operativo, proponeva di aggiungere l&rsquo;opzione opposta. Una
+    proposta di rendere uguale ovunque il <code>c_char</code> di Rust è stata
+    chiusa dal suo stesso autore il giorno dopo.</li>
+    <li><b>Go</b> e <b>Zig</b> di nuovo. Le opzioni che il pacchetto di una
+    libreria C passa al compilatore sono ammesse parola per parola, con il loro
+    nome intero, come le ammette cgo, il modo in cui Go chiama il C, dopo una
+    falla di sicurezza. Su Windows, le parole con cui un programma viene avviato
+    gli arrivano in WTF-8, una codifica costruita su UTF-8, senza perdere niente,
+    come Go converte quello che Windows gli passa e Zig converte ogni percorso di
+    Windows. In Go, una conversione che perdeva caratteri aveva
+    fatto bloccare la funzione che cancella una cartella con il suo
+    contenuto.</li>
+    <li><b>gnulib</b>: il Progetto GNU. Un float si stampa come lo stampa
+    gnulib: partendo da una cifra per i valori più piccoli e da un numero fisso,
+    <code>FLOAT_DIG</code>, per gli altri, si aggiungono cifre finché il testo
+    stampato non si rilegge come lo stesso numero.</li>
+    <li><b>Nim</b> di nuovo: <a href="https://nim-lang.org">Andreas Rumpf</a>. Un
+    programma Nim i cui thread sollevavano errori dentro un valore condiviso da
+    tutto il programma ha liberato due volte la stessa memoria, perché il
+    conteggio dei riferimenti di Nim non è atomico (un passo atomico è uno che
+    nessun altro thread può interrompere a metà). Su questa prova Heroes ha
+    rifiutato di far condividere a più thread i suoi valori contati.</li>
+    <li><b>CPython</b>, l&rsquo;implementazione di riferimento di Python:
+    <a href="https://en.wikipedia.org/wiki/Guido_van_Rossum">Guido van
+    Rossum</a>, il suo autore, con gli sviluppatori principali e la comunità di
+    Python, sostenuti dalla Python Software Foundation; e <b>OCaml</b>:
+    <a href="https://en.wikipedia.org/wiki/Xavier_Leroy">Xavier Leroy</a>,
+    <a href="https://en.wikipedia.org/wiki/Damien_Doligez">Damien Doligez</a>,
+    Jérôme Vouillon, Didier Rémy e Ascánder Suárez, sviluppato
+    dall&rsquo;istituto francese di ricerca in informatica e automazione (French
+    Institute for Research in Computer Science and Automation). Tutti e due
+    chiedono a un thread creato dal C di registrarsi prima di eseguire il loro
+    codice. Da quella regola viene quella di Heroes: il suo runtime si accorge di
+    un thread che non conosce e si ferma in modo pulito invece di corrompere la
+    memoria.</li>
+    <li><b>Chromium</b>: Google, il suo autore, e i Chromium Projects, che
+    Google controlla; e <b>LLVM</b>: Chris Lattner e
+    <a href="https://en.wikipedia.org/wiki/Vikram_Adve">Vikram Adve</a>, i suoi
+    autori, e l&rsquo;LLVM Developer Group. Su macOS il codice di LLVM chiede,
+    per un thread che crea, la dimensione dello stack del thread principale,
+    perché lì gli altri thread ricevono di base 512KB, e Chromium dà a un thread creato il valore più grande fra
+    quello predefinito e il limite corrente, perché macOS applica quel limite
+    solo al thread principale. Il runtime di Heroes fa lo stesso: un thread che
+    crea riceve almeno lo stack del thread che ha eseguito <code>main</code>, la
+    funzione da cui parte un programma.</li>
+    <li><b>Java</b> di nuovo. La specifica della sua macchina virtuale stabilisce
+    che cosa succede quando lo stack finisce, uno
+    <code>StackOverflowError</code>, e ammette stack di dimensione fissa o
+    variabile senza sceglierne una. Heroes fa lo stesso: finire lo stack ferma
+    il programma allo stesso modo ovunque, e nessuna profondità è
+    promessa.</li>
+    <li><b>D</b>: <a href="https://en.wikipedia.org/wiki/Walter_Bright">Walter
+    Bright</a>, a cui poi si è unito
+    <a href="https://en.wikipedia.org/wiki/Andrei_Alexandrescu">Andrei
+    Alexandrescu</a>, e la D Language Foundation; e <b>Zig</b> di nuovo. Lo
+    <code>scope(exit)</code> di D esegue la sua azione quando si chiude il blocco
+    in cui sta, non dove è scritto, e il <code>defer</code> di Zig quando si esce
+    dal suo blocco, il suo <code>errdefer</code> solo quando la funzione
+    restituisce un errore. Heroes non ha un&rsquo;istruzione così; il panel che
+    ne ha valutata una ha stabilito che, se mai entrerà, finirà con il suo
+    blocco, come le loro.</li>
+  </ul>
+
+  <h2>Qualcuno c&rsquo;era arrivato prima</h2>
+  <p>
+    Heroes è arrivato da solo a ciascuna delle regole qui sotto, e solo dopo ha scoperto che qualcuno c&rsquo;era arrivato prima. Il merito è loro.
+  </p>
+  <ul class="lineage">
+    <li><b><i>Native Implementation of Mutable Value Semantics</i></b>: Dimitri
+    Racordon, Denys Shabalin, Daniel Zheng,
+    <a href="https://en.wikipedia.org/wiki/David_Abrahams_(computer_programmer)">Dave
+    Abrahams</a> e Brennan Saeta, già nominati più su per Hylo. Oltre alla frase
+    su cui Heroes si appoggia, il loro articolo conteneva già altre due regole
+    di Heroes: il compilatore scrive da sé, per ogni tipo, come copiarne i valori e
+    come eliminarli; e un array tiene il conto dei punti che lo condividono e
+    viene controllato nel momento in cui lo si modifica, così che sia copiato
+    solo quando una modifica lo richiede.</li>
+    <li><b>Ada</b>: <a href="https://en.wikipedia.org/wiki/Jean_Ichbiah">Jean
+    Ichbiah</a> per Ada 83, e Tucker Taft da Ada 95 fino al 2012. Fino ad Ada
+    2012, una chiamata che poteva modificare due dei suoi argomenti li ricopiava
+    indietro alla fine, in un ordine che il linguaggio lasciava non specificato.
+    Ada 2012 ha poi reso illegale la chiamata quando due parametri in cui può
+    scrivere sono la stessa variabile di un tipo semplice, come un numero, e il
+    compilatore sa che lo sono.</li>
+    <li><b>Swift</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>,
+    Doug Gregor, John McCall, Ted Kremenek, Joe Groff e Apple. Passare la stessa
+    variabile due volte alla stessa chiamata, in due posti che possono entrambi
+    modificarla, vale come due modifiche sovrapposte, che vanno in conflitto. Il
+    conteggio dei riferimenti è scritto con istruzioni esplicite nel linguaggio
+    intermedio, la forma a metà strada in cui il compilatore traduce un programma
+    prima di arrivare alla macchina. Quando una lista separata da virgole resta
+    aperta, il compilatore di Swift la fa finire a una riga nuova che comincia
+    con una parola che non potrebbe mai aprire un elemento. Una segnalazione di
+    bug portata su GitHub dal vecchio tracker apre il titolo con la sua vecchia sigla fra parentesi quadre e la ripete in
+    una riga del testo.</li>
+    <li><b>Go</b>: <a href="https://en.wikipedia.org/wiki/Robert_Griesemer">Robert Griesemer</a>,
+    <a href="https://en.wikipedia.org/wiki/Rob_Pike">Rob Pike</a> e
+    <a href="https://en.wikipedia.org/wiki/Ken_Thompson">Ken Thompson</a>, che
+    l&rsquo;hanno progettato, e Google e i contributori, che lo sviluppano. Un
+    calcolo fatto solo
+    di costanti si svolge in modo esatto, una costante con un tipo dichiarato
+    deve starci dentro, e dividere una costante per zero non è permesso. Il nome
+    di un pacchetto da importare viene prima tolto dalle virgolette e solo dopo
+    controllato, e viene rifiutato se è vuoto o se contiene un carattere non
+    ammesso. Una @ in un&rsquo;opzione passata al linker sui sistemi di Apple
+    permetteva di far eseguire codice qualsiasi, ed è stata registrata come falla
+    di sicurezza. Dalla versione 1.20, un codice scritto una volta per molti tipi
+    di valore, che chiede solo di poterne confrontare i valori, si può usare
+    anche con un tipo il cui confronto può fermare il programma con un errore
+    mentre gira.</li>
+    <li><b>Rust</b>: il team di Rust. Quando una variabile non viene mai usata e
+    un testo fra virgolette la nomina fra parentesi graffe, il compilatore chiede
+    se lì si voleva inserire il suo valore, e suggerisce come scriverlo. Nella
+    forma dei suoi messaggi fatta per essere letta da altri programmi, il punto
+    di un errore è dato da due conteggi di byte dall&rsquo;inizio del file,
+    contati da zero, il secondo subito dopo la fine, con accanto i numeri di
+    colonna. E il limite fisso ai passi che il compilatore può fare per calcolare
+    una costante è diventato un warning, ripetuto a intervalli sempre più
+    lunghi.</li>
+    <li><b>Zig</b>: Andrew Kelley e la Zig Software Foundation, che lo sviluppa.
+    Un nome dichiarato dentro una funzione non può essere uguale a quello di
+    qualcosa dichiarato più avanti nello stesso file. Una variabile dichiarata
+    modificabile e mai modificata è un errore, e la correzione è dichiararla
+    costante. Una segnalazione sul loro tracker dice che non è accettabile che lo
+    stesso pezzo di codice compili una volta sì e una volta no.</li>
+    <li><b>C#</b>: <a href="https://en.wikipedia.org/wiki/Anders_Hejlsberg">Anders Hejlsberg</a>,
+    che l&rsquo;ha progettato, e Mads Torgersen, che lo sviluppa, entrambi in
+    Microsoft. Un nome dichiarato dentro una funzione non può prendere un nome
+    che il codice attorno usa già, e il compilatore lo segnala in qualunque
+    ordine siano scritte le due dichiarazioni. Un calcolo fatto solo di costanti
+    è controllato per impostazione predefinita, e un risultato troppo grande per
+    il suo tipo è un errore già durante la compilazione.</li>
+    <li><b>C</b>: <a href="https://en.wikipedia.org/wiki/Dennis_Ritchie">Dennis Ritchie</a>,
+    che l&rsquo;ha progettato, e WG 14, il gruppo di lavoro di ISO e IEC che ne
+    scrive lo standard internazionale. Lo standard chiede che un calcolo fatto
+    solo di costanti dia un valore che il suo tipo può contenere.</li>
+    <li><b>D</b>: <a href="https://en.wikipedia.org/wiki/Walter_Bright">Walter Bright</a>,
+    a cui poi si è unito
+    <a href="https://en.wikipedia.org/wiki/Andrei_Alexandrescu">Andrei
+    Alexandrescu</a>, e la D Language Foundation. Nella descrizione che D dà
+    della libreria del C, il nome passato a <code>getenv</code>, la funzione del
+    C che cerca per nome un&rsquo;impostazione dell&rsquo;ambiente in cui il
+    programma gira, porta la parola <code>scope</code>, mentre la funzione
+    passata ad <code>atexit</code>, che il C conserva per chiamarla quando il
+    programma finisce, non porta nessun segno.</li>
+    <li><b>GCC</b>: il Progetto GNU. Quando GCC compila se stesso in più fasi, si
+    confrontano i compilatori della seconda e della terza fase, e se sono diversi
+    di solito è il compilatore della seconda ad aver compilato GCC in modo
+    sbagliato. Il suo strumento che cerca errori nel codice senza eseguirlo sa
+    che la memoria data da una funzione si può restituire correttamente con una
+    qualunque di più funzioni, e segue ogni pezzo di memoria confrontandolo con
+    tutto quell&rsquo;insieme. Quando ottimizza un programma intero nel momento
+    in cui i suoi pezzi vengono uniti, GCC dà un warning senza che glielo si
+    chieda se file compilati separatamente dichiarano con tipi diversi lo stesso
+    nome, visibile a tutto il programma. Mentre legge un header di sistema GCC
+    non mostra warning; un header è di sistema quando si trova in una cartella
+    scelta dal compilatore, o in una aggiunta con un&rsquo;opzione che la
+    dichiara tale. E un&rsquo;istruzione scritta nel sorgente per cambiare come
+    vengono segnalati i warning vale più di qualunque opzione con cui il
+    compilatore è stato avviato.</li>
+    <li><b>Clang</b>: <a href="https://en.wikipedia.org/wiki/Chris_Lattner">Chris Lattner</a>,
+    il suo autore originale, e l&rsquo;LLVM Developer Group. Nei suoi controlli
+    per il codice eseguito da più thread nello stesso momento,
+    l&rsquo;annotazione su una funzione che prova a prendere
+    qualcosa e può non riuscirci comincia con vero o falso
+    (<code>true</code> o <code>false</code>), la risposta con cui la funzione
+    dice di esserci riuscita.</li>
+    <li><b>Microsoft SAL</b>: Microsoft, il cui linguaggio di annotazioni per il
+    codice sorgente descrive come una funzione usa quello che riceve e che cosa
+    garantisce quando finisce. Una funzione porta al massimo
+    un&rsquo;annotazione <code>_Success_</code>, e quell&rsquo;annotazione dice a
+    quale condizione la funzione è riuscita.</li>
+  </ul>
+
   <h2>Le scelte da valutare con cautela</h2>
   <p>
     Il progetto ha studiato anche i limiti e i costi delle scelte di altri linguaggi. Questi precedenti aiutano a capire quali soluzioni adottare e quali evitare. Quello che qui è stato rifiutato, e chi lo ha rifiutato, ha una pagina sua: <a href="/it/why/not/">i no di Heroes&nbsp;&rarr;</a>
@@ -214,13 +560,6 @@
     conservato come albero con i nomi come etichette: l&rsquo;origine di
     un&rsquo;idea che qui è stata esplorata a lungo e poi abbandonata in favore di
     una sola sintassi leggibile.</li>
-    <li><b>Ada</b>: <a href="https://en.wikipedia.org/wiki/Jean_Ichbiah">Jean Ichbiah</a> per Ada
-    83, e Tucker Taft da Ada 95 fino al 2012. Un rifiuto è stato preso in prestito
-    per intero: passare la stessa variabile due volte alla stessa chiamata quando
-    tutti e due i parametri possono scriverci. Ada l&rsquo;ha permesso per tre decenni,
-    ha guardato che cosa succedeva, e nel 2012 l&rsquo;ha reso illegale. Heroes
-    l&rsquo;ha reso illegale dal primo giorno, sulla base delle loro prove, e il
-    compilatore propone la stessa riparazione.</li>
   </ul>
 
   <h2 id="tracklist">E il nome</h2>
