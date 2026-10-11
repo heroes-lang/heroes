@@ -19,6 +19,7 @@ use cli/process
 use mutate/json_fields
 use mutate/json_read
 use mutate/judged
+use mutate/own
 use mutate/plan
 use mutate/planted
 
@@ -110,11 +111,13 @@ function judged_share(job: Job, phase: i64, index: i64) -> ()?
             lines @ lines.push(task.to_str() + "\t" + json_fields.written(row))
             task @ task + JOBS
     else if phase == SINGLES
+        # The corpus phase's records, joined before this phase began.
+        corpus = own.read_corpus(job.out)?
         task: i64 @= index
 
         while task < p.singles.len()
             one = p.singles[task]
-            got = planted.single(at, one: one, original: original(at, file: one.file, @texts)?)?
+            got = planted.single(at, one: one, original: original(at, file: one.file, @texts)?, corpus: corpus)?
             lines @ lines.push(task.to_str() + "\t" + json_fields.written(got.row))
             alone_lines @ alone_lines.push(
                 json_fields.written(.fields(names: ["key", "normal", "control"], values: [json_fields.string(one.key), json_fields.strings(got.normal_codes), json_fields.strings(got.control_codes)]))

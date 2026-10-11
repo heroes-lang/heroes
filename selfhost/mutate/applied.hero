@@ -19,7 +19,10 @@
 
 use mutate/child
 use mutate/hunks
+use mutate/json_fields
+use mutate/json_read
 use mutate/judged
+use mutate/own
 
 # What the two judgements found.
 record Printed
@@ -29,11 +32,20 @@ record Printed
     # `judge.py`'s flags, in its order.
     flags: [str]
 
+# The unmutated program's own messages in the normal arm, from the run's
+# `corpus.jsonl` (`mutate/own.hero`), and the name they were told under;
+# the mutant's hunks, which carry their lines, and the mutant's own name.
+record Program
+    diags: [json_read.Json]
+    used: str
+    applied: hunks.Applied
+    mutant_rel: str
+
 # `answer` is `check --apply` on the mutant `text`, of the program
 # `original`; `normal` is the mutant's normal arm. What `--apply` printed
 # is planted under `applied_rel`, and the program, where `fmt` must compare
 # the two, under `original_rel`.
-function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, text: str, original: str, normal: judged.Arm, answer: child.Answer) -> Printed?
+function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, text: str, original: str, normal: judged.Arm, program: Program, answer: child.Answer) -> Printed?
     printed = answer.out
     none: [str] = []
     changed = answer.exit == 0 && printed != text && printed != ""
@@ -46,8 +58,16 @@ function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, tex
     if !changed && !moved
         return ok(Printed(changed: false, stands: none, flags: none))
     judged.plant(at, rel: applied_rel, text: printed)?
-    after = judged.checked(at, rel: applied_rel, permissive: false)?
-    mine = judged.codes_of(normal)
+    told = judged.checked(at, rel: applied_rel, permissive: false)?
+    delta = newlines(printed) - newlines(text)
+
+    # The program's own messages leave both arms before a code is called
+    # standing or new (defect 663): `--apply` repairs a mutant stopped at the
+    # parser, and what it writes reaches the checks that tell the unmutated
+    # program what it always carried, which the mutant was never told.
+    after = less_own(told, used: applied_rel, program: program, delta: delta)
+    own_normal = less_own(normal, used: program.mutant_rel, program: program, delta: 0)
+    mine = judged.codes_of(own_normal)
     theirs = judged.codes_of(after)
     stands: {str: bool} @= {}
     fresh: {str: bool} @= {}
@@ -65,15 +85,14 @@ function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, tex
         if fresh.len() > 0
             flags @ flags.push("APPLY-NEW")
         after_places = places(after)
-        exact = shared_place(a: places(normal), b: after_places)
-        delta = newlines(printed) - newlines(text)
+        exact = shared_place(a: places(own_normal), b: after_places)
 
         if exact || delta != 0 && stands.len() > 0
             flags @ flags.push("APPLY-SAME")
 
             if shared_place(a: normal.certain, b: after_places)
                 flags @ flags.push("APPLY-SAME-OWN")
-        clean = after.exit == 0 && after.messages.len() == 0
+        clean = clean_of(told: told, after: after)
 
         if clean && printed != original && another_program(at, applied_rel: applied_rel, original_rel: original_rel, original: original)?
             flags @ flags.push("APPLY-OTHER")
@@ -127,10 +146,156 @@ function newlines(text: str) -> i64
 
     return n
 
+# `arm`, told under `used`, less the program's own messages, each taken
+# out once where `mutate/own.hero`'s key agrees: its code, its words, and
+# its line carried through the mutant's hunks and then, where the fix
+# moved lines (`delta`), anywhere between there and `delta` further, since
+# which side of the fix it stood on is not known. A message off that range
+# stays the arm's, the loud direction.
+function less_own(arm: judged.Arm, used: str, program: Program, delta: i64) -> judged.Arm
+    taken: {i64: bool} @= {}
+    kept: [judged.Message] @= []
+
+    for m in arm.messages
+        d = judged.message_json(m)
+        line = judged.line_of(m)
+        theirs: i64 @= -1
+
+        for index in range(from: 0, to: program.diags.len())
+            t = program.diags[index]
+            was = hunks.mapped(program.applied, line: json_fields.whole_field(t, name: "line").default(-1))
+            free = taken[index].is_err()
+
+            if theirs < 0 && free && within(line: line, a: was, b: was + delta) && own.key(d, used: used, line: line) == own.key(t, used: program.used, line: line)
+                theirs @ index
+
+        if theirs < 0
+            kept @ kept.push(m)
+        else
+            taken[theirs] @ true
+
+    return judged.Arm(exit: arm.exit, messages: kept, other: arm.other, certain: arm.certain)
+
+# Whether what `--apply` wrote checks clean but for the program's own
+# messages, APPLY-OTHER's first question (defect 665): `after` is `told`
+# less them, the measure `fresh` and `stands` read, so the three flags read
+# one. An exit 1 is clean only where it told messages and every one was the
+# program's, with no other line on stderr; an exit past 1 never is.
+function clean_of(told: judged.Arm, after: judged.Arm) -> bool
+    if after.messages.len() > 0
+        return false
+
+    if told.exit == 0
+        return true
+    return told.exit == 1 && told.messages.len() > 0 && told.other.len() == 0
+
+function within(line: i64, a: i64, b: i64) -> bool
+    return a <= line && line <= b || b <= line && line <= a
+
 ## Tests
+
+# A corpus record of `examples/ledger/db/sqlite.hero`, told `never_rebound`
+# at line 322 under `zzb_3.hero`, and a mutant of it at line 140 with
+# `lines` lines above it, as `planted.single` builds the two.
+function sqlite_program(lines: [str]) -> Program
+    row = "{\"file\": \"examples/ledger/db/sqlite.hero\", \"path_used\": \"examples/ledger/db/zzb_3.hero\", \"normal\": {\"exit\": 1, \"diags\": [{\"file\": \"examples/ledger/db/zzb_3.hero\", \"line\": 322, \"col\": 5, \"kind\": \"error\", \"code\": \"never_rebound\", \"msg\": \"`rows` in zzb_3.hero is never rebound\"}], \"other\": []}}\n"
+    corpus: {str: json_read.Json} @= {}
+    corpus["examples/ledger/db/sqlite.hero"] @ json_read.read_lines(row).must()[0]
+    original: [str] @= []
+
+    for _ in range(from: 0, to: 330)
+        original @ original.push("x")
+
+    applied = hunks.apply(
+        original,
+        sets: [hunks.Tagged(tag: "a", hunks: [hunks.Hunk(start: 139, end: 140, lines: lines, site: [139])])]
+    ).must()
+    return Program(
+        diags: own.program_diags(corpus, file: "examples/ledger/db/sqlite.hero", arm: "normal"),
+        used: own.program_used(corpus, file: "examples/ledger/db/sqlite.hero"),
+        applied: applied,
+        mutant_rel: "examples/ledger/db/zzm_k.hero"
+    )
+
+function said(code: str, line: i64, msg: str) -> judged.Message
+    return judged.Message(
+        file: .null_value,
+        line: json_fields.whole(line),
+        col: .null_value,
+        code: .text(v: code),
+        msg: .text(v: msg)
+    )
+
+function arm_of(messages: [judged.Message]) -> judged.Arm
+    return judged.Arm(exit: 1, messages: messages, other: [], certain: [])
+
+test "the program's own code leaves what --apply wrote, and a code of the fix's stays (defect 663)"
+    program = sqlite_program(["union = 1"])
+    carried = said(code: "never_rebound", line: 322, msg: "`rows` in zzm_k_applied.hero is never rebound")
+    mine = said(code: "type_mismatch", line: 140, msg: "m")
+    after = less_own(arm_of([carried, mine]), used: "examples/ledger/db/zzm_k_applied.hero", program: program, delta: 0)
+    assert keys(judged.codes_of(after)) == ["type_mismatch"]
+
+    # Told twice, it is taken out once; at another line, it is the mutant's.
+    twice = less_own(
+        arm_of([carried, carried]),
+        used: "examples/ledger/db/zzm_k_applied.hero",
+        program: program,
+        delta: 0
+    )
+    assert twice.messages.len() == 1
+    elsewhere = said(code: "never_rebound", line: 200, msg: "`rows` in zzm_k_applied.hero is never rebound")
+    assert less_own(arm_of([elsewhere]), used: "examples/ledger/db/zzm_k_applied.hero", program: program, delta: 0).messages.len() == 1
+
+    # The mutant's normal arm, told under its own name, loses it the same way.
+    normal = said(code: "never_rebound", line: 322, msg: "`rows` in zzm_k.hero is never rebound")
+    assert less_own(arm_of([normal]), used: "examples/ledger/db/zzm_k.hero", program: program, delta: 0).messages.len() == 0
+
+test "a code the program carries at a line the mutant or the fix moved is still the program's"
+    # The mutant wrote two lines for one, so the program's 322 is the mutant's 323.
+    two = sqlite_program(["union = 1", "y"])
+    moved = said(code: "never_rebound", line: 323, msg: "`rows` in zzm_k_applied.hero is never rebound")
+    assert less_own(arm_of([moved]), used: "examples/ledger/db/zzm_k_applied.hero", program: two, delta: 0).messages.len() == 0
+
+    # The fix took a line out above it: 322 in the mutant, 321 in what it wrote.
+    one = sqlite_program(["union = 1"])
+    fixed = said(code: "never_rebound", line: 321, msg: "`rows` in zzm_k_applied.hero is never rebound")
+    assert less_own(arm_of([fixed]), used: "examples/ledger/db/zzm_k_applied.hero", program: one, delta: -1).messages.len() == 0
+
+    # Read with no move, the same message is kept, the loud direction.
+    assert less_own(arm_of([fixed]), used: "examples/ledger/db/zzm_k_applied.hero", program: one, delta: 0).messages.len() == 1
+    assert within(line: 3, a: 4, b: 2)
+    assert !within(line: 5, a: 2, b: 4)
 
 test "a place is a code and a line, and two lists share one or not"
     assert shared_place(a: ["c\t3", "d\t4"], b: ["d\t4"])
     assert !shared_place(a: ["c\t3"], b: ["c\t4"])
     assert newlines("a\nb\n") == 2
     assert newlines("") == 0
+
+test "what --apply wrote is clean for APPLY-OTHER where only the program's own message stands, and not where another code does (defect 665)"
+    program = sqlite_program(["union = 1"])
+    used = "examples/ledger/db/zzm_k_applied.hero"
+    carried = said(code: "never_rebound", line: 322, msg: "`rows` in zzm_k_applied.hero is never rebound")
+    alone = judged.Arm(exit: 1, messages: [carried], other: [], certain: [])
+    assert clean_of(told: alone, after: less_own(alone, used: used, program: program, delta: 0))
+
+    # Another code beside it: not clean, so never APPLY-OTHER.
+    other = judged.Arm(
+        exit: 1,
+        messages: [carried, said(code: "type_mismatch", line: 140, msg: "m")],
+        other: [],
+        certain: []
+    )
+    assert !clean_of(told: other, after: less_own(other, used: used, program: program, delta: 0))
+
+    # An exit past 1, a line on stderr outside the document, or an exit 1
+    # that told nothing, is never clean; an exit 0 with nothing told is.
+    crashed = judged.Arm(exit: 2, messages: [carried], other: [], certain: [])
+    assert !clean_of(told: crashed, after: less_own(crashed, used: used, program: program, delta: 0))
+    noisy = judged.Arm(exit: 1, messages: [carried], other: ["linking failed"], certain: [])
+    assert !clean_of(told: noisy, after: less_own(noisy, used: used, program: program, delta: 0))
+    silent = judged.Arm(exit: 1, messages: [], other: [], certain: [])
+    assert !clean_of(told: silent, after: silent)
+    quiet = judged.Arm(exit: 0, messages: [], other: [], certain: [])
+    assert clean_of(told: quiet, after: quiet)

@@ -13,6 +13,7 @@ use mutate/hunks
 use mutate/json_fields
 use mutate/json_read
 use mutate/judged
+use mutate/own
 use mutate/plan
 
 # A single's record, and the codes it was told on its own site in each arm,
@@ -40,8 +41,10 @@ function beside(path: str, name: str) -> str
         return name
     return d + "/" + name
 
-# One mutant alone. `original` is its program's text.
-function single(at: judged.Place, one: plan.Single, original: str) -> Single?
+# One mutant alone. `original` is its program's text, and `corpus` the
+# run's record of every program unmutated (`mutate/own.hero`), whose own
+# messages `--apply`'s judgement takes out (defect 663).
+function single(at: judged.Place, one: plan.Single, original: str, corpus: {str: json_read.Json}) -> Single?
     applied = hunks.apply(hunks.lines_of(original), sets: [hunks.Tagged(tag: "a", hunks: one.hunks)])?
     site = hunks.statement_site(applied, tag: "a", statements: one.statements)
     text = hunks.text_of(applied.lines, newline: hunks.ends_newline(original))
@@ -57,7 +60,13 @@ function single(at: judged.Place, one: plan.Single, original: str) -> Single?
 
     if normal.messages.len() > 0
         answer = judged.child_apply(at, rel: rel)?
-        printed = printed_by.judged_apply(at, applied_rel: beside(path: one.file, name: "zzm_" + one.key + "_applied.hero"), original_rel: beside(path: one.file, name: "zzm_" + one.key + "_original.hero"), text: text, original: original, normal: normal, answer: answer)?
+        program = printed_by.Program(
+            diags: own.program_diags(corpus, file: one.file, arm: "normal"),
+            used: own.program_used(corpus, file: one.file),
+            applied: applied,
+            mutant_rel: rel
+        )
+        printed = printed_by.judged_apply(at, applied_rel: beside(path: one.file, name: "zzm_" + one.key + "_applied.hero"), original_rel: beside(path: one.file, name: "zzm_" + one.key + "_original.hero"), text: text, original: original, normal: normal, program: program, answer: answer)?
         names: [str] @= ["exit", "changed"]
         values: [json_read.Json] @= [json_fields.whole(answer.exit), .truth(v: printed.changed)]
 
