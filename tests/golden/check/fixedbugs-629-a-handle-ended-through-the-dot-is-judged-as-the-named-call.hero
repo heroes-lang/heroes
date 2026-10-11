@@ -1,0 +1,75 @@
+# Fixed 2026-10-11, defect 629, lane b21-resolve. Symptom: `h.h_close()` in a
+# function whose `h` has no `@`, `h_close` a C function whose parameter
+# `consumes`, was accepted, and a later read of the caller's copy aborted at
+# run time; `h_close(x: h)` in the same body was refused. Cause: the
+# borrowed-handle rule (`check/consuming.hero`, panel 145) was asked on the
+# named call's path alone. Now the receiver is the dotted call's first
+# argument (spec § 9, `x.f(y)` is `f(x, y)`) and is judged as the named
+# argument is, beside a field, a binding, an argument and a `when` result;
+# and what the named call leaves alone the dotted one leaves alone, below.
+extern "fixedbugs-629-a-handle-ended-through-the-dot-is-judged-as-the-named-call.h"
+    record H tag hh
+    function h_open() -> H acquires h_close
+    function h_close(x: H consumes)
+    function h_try_close(x: H consumes) -> i64 when 0
+    function h_ref(x: H retains h_close)
+    function h_child(x: H) -> H borrows
+    function h_peek(x: H) -> i64
+
+record Holder
+    h: H
+
+# The reproducer: the receiver is the borrowed parameter itself.
+function closed(h: H)
+    h.h_close()  #~ consumed_borrowed_handle
+
+# A field of a borrowed parameter, as `h_close(x: o.h)` is refused.
+function closed_field(o: Holder)
+    o.h.h_close()  #~ consumed_borrowed_handle
+
+# The dotted call inside a binding and inside an argument, and a `when`
+# result, whose `consumes` counts once the call succeeds.
+function closed_bound(h: H) -> i64
+    rc = h.h_try_close()  #~ consumed_borrowed_handle
+    return rc
+
+function closed_inside(h: H)
+    print(h.h_try_close())  #~ consumed_borrowed_handle
+
+# Left alone: an `@` parameter says the value does not survive, which is
+# the repair the message names, whole or through a field.
+function closed_well(@h: H)
+    h.h_close()
+
+function closed_field_well(@o: Holder)
+    o.h.h_close()
+
+# Left alone: `retains` adds a reference and ends nothing, `borrows` hands
+# back a handle the call keeps, and a receiver that is a call's result is
+# rooted in no parameter.
+function kept(h: H)
+    h.h_ref()
+
+function peeked(h: H) -> i64
+    return h.h_child().h_peek()
+
+function child_closed(h: H)
+    h.h_child().h_close()
+
+function main()
+    closed(h_open())
+    closed_field(Holder(h: h_open()))
+    print(closed_bound(h_open()))
+    closed_inside(h_open())
+    b: H @= h_open()
+    closed_well(@b)
+    o: Holder @= Holder(h: h_open())
+    closed_field_well(@o)
+
+    # Left alone: a local is nobody's borrow.
+    a = h_open()
+    a.h_ref()
+    kept(a)
+    print(peeked(a))
+    child_closed(a)
+    a.h_close()

@@ -29,6 +29,8 @@ use diag
 use resolved
 use resolve/state
 use resolve/unused_sweep
+use resolve/value_lines
+use resolve/written_nowhere
 use stable
 use resolve/top
 use resolve/decls as resolve_decls
@@ -78,7 +80,12 @@ function resolve_asking(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [
         index @ index + 1
 
     top.unused_uses(@r, s, uses)
+
+    # Before the sweep, which leaves the cells marked here to the checker
+    # (defect 630).
+    value_lines.leave_to_the_checker(@r, a, s, decls)
     unused_sweep.report(@r, s)
+    written_nowhere.report(@r, a, s, decls)
 
     # A binding a plain literal holds in braces is told so (panel 184 R2),
     # once the sweep has said which are never read; and so is a binding
@@ -90,6 +97,10 @@ function resolve_asking(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [
     # body has been walked: a definitional cycle is a fact about the
     # finished table, not about any one declaration.
     cycles.report(@r.out, a, s, decls)
+
+    # Once every message of this pass is in: a cell left to the checker is
+    # told here where the checker will not run (defect 630).
+    written_nowhere.tell_deferred(@r, a, s, decls)
 
     # Within the pass, source order. Diagnostics from earlier stages stay
     # ahead of these (parse's rule): grouped by the stage that can explain

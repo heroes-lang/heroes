@@ -1,0 +1,30 @@
+# Defect 630's control, lane b21-resolve, 2026-10-11: where the resolver
+# refuses anything, the checker does not run, so a cell it would have left
+# to the checker is told by the resolver at once, as before the repair,
+# beside the others: here a cell `print` reads, which a line that gives no
+# value never leaves (`print`, `end_lease`, `exit`, a function declared
+# without `->`), one a `()` function reads, and one a dropped `push`
+# computes from, which alone would be told as the drop. The cost this keeps,
+# the trunk's: applied, `dropped`'s `=` leaves the drop told on a binding,
+# the path the repair closes wherever the resolver says nothing else.
+
+function shown(xs: [i64])
+    print(xs.len())
+
+function printed()
+    v @= 0  #~ never_rebound
+    print(v)
+
+function by_a_call_of_nothing()
+    xs @= [1]  #~ never_rebound
+    xs.shown()
+
+function dropped() -> i64
+    xs @= [1]  #~ never_rebound
+    xs.push(4)
+    return xs.len()
+
+function main()
+    printed()
+    by_a_call_of_nothing()
+    print(dropped())

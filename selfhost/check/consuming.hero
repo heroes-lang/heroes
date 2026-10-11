@@ -42,6 +42,7 @@ use parse
 use resolved
 use check/state
 use check/leasing
+use check/moved_calls as calls
 
 # One position a call takes a handle at for good, and with which word: the
 # refusal says what the callee does with the value, and a transfer does not
@@ -102,10 +103,11 @@ function borrowed_root(a: ast.Ast, r: resolved.Resolved, at: i64) -> i64?
 # The rule, at one call: for every parameter the callee marked `consumes`, if
 # the argument in that position is rooted in a borrowed parameter, refuse.
 #
-# It runs on the NAMED-callee path only. A call through a function value carries
-# no declaration, so there is no mark to read — which is a hole this says out
-# loud rather than hides: `(function(Db) -> i64)` erases the word, as it erases
-# every other thing a declaration knows.
+# It runs where the callee is a declaration, named `node_free(n)` or dotted
+# `n.node_free()` (`refuse_borrowed_dotted`). A call through a function value
+# carries no declaration, so there is no mark to read — which is a hole this
+# says out loud rather than hides: `(function(Db) -> i64)` erases the word, as
+# it erases every other thing a declaration knows.
 function refuse_borrowed(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decl: ast.Decl, given: [ast.Arg])
     positions = consuming_positions(decl)
 
@@ -124,6 +126,13 @@ function refuse_borrowed(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s:
                 @c,
                 refusal(borrowed: source.span_text(s, a.exprs[borrowed.must()].span), callee: callee, transfers: one.transfers, span: span)
             )
+
+# The dotted call: its receiver is the call's first argument (spec § 9, `x.f(y)`
+# is `f(x, y)`), so `n.node_free()` is judged as `node_free(n)` is. Until defect
+# 629 only the named spelling was asked, and a borrowed handle ended through
+# the dot was accepted, a later read of the caller's copy aborting at run time.
+function refuse_borrowed_dotted(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decl: ast.Decl, receiver: i64, given: [ast.Arg])
+    refuse_borrowed(@c, a, r, s, decl: decl, given: calls.all_arguments(ok(receiver), given: given))
 
 # The refusal. It names the parameter the caller borrowed, because that is the
 # name to put an `@` on, and the consuming function, because that is what takes

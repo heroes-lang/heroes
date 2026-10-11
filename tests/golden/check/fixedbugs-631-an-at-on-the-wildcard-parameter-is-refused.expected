@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-631-an-at-on-the-wildcard-parameter-is-refused.hero:12:13: error[never_rebound]: `_` binds nothing, so an `@` on it marks a parameter nothing can write — its copy-out hands every caller back the value it passed: remove the `@` here and at every call
+tests/golden/check/fixedbugs-631-an-at-on-the-wildcard-parameter-is-refused.hero:18:13: error[never_rebound]: `_` binds nothing, so an `@` on it marks a parameter nothing can write — its copy-out hands every caller back the value it passed: remove the `@` here and at every call

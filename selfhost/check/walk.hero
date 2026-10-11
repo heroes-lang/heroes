@@ -70,6 +70,7 @@ use check/settling
 use check/empty_binding
 use check/width_class
 use check/discard
+use check/kept_cells
 use value_errors
 use discard_errors
 use data_errors
@@ -746,7 +747,7 @@ function block(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             c.broke @ broke
         else if path_end.is_jump(a, at: sid)
             jumped @ true
-            broke @ path_end.broke_of(@c)
+            broke @ path_end.broke_of(c)
 
         # The first statement that leaves is how the block leaves, since
         # nothing after it runs: a refused `break` before a `return` makes
@@ -1064,6 +1065,7 @@ function valued_expression(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, 
                     @c,
                     discard_errors.discarded_value(got: shown, fallible: discard.is_fallible(c, got), readings: readings, span: span, text: s.text)
                 )
+                kept_cells.claim(@c, a, r, s, value: value, got: got, readings: readings, span: span)
             return falls_with_nothing()
 
     return falls_with_nothing()
@@ -1466,12 +1468,13 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
 
     match r.uses[at]
         .top t =>
-            # §4.8: UFCS does not apply when the first parameter is @,
-            # because l.advance() would hide the mutation the marker
-            # exists to show.
-            if ufcs_hides_the_marker(decls, decl: t.at)
+            # §4.8: UFCS does not apply when the first parameter is @; and a
+            # consuming parameter asks of the receiver what it asks of a
+            # named argument (defect 629).
+            if markers.ufcs_hides_the_marker(decls, decl: t.at)
                 state.push_diagnostic(@c, data_errors.ufcs_on_mutable(name, called))
                 return state.error_ty_of(c)
+            consuming.refuse_borrowed_dotted(@c, a, r, s, decl: decls[t.at], receiver: receiver, given: given)
             return user_call(
                 @c,
                 a,
@@ -1509,11 +1512,6 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
             return state.error_ty_of(c)
 
     return state.error_ty_of(c)
-
-function ufcs_hides_the_marker(decls: [ast.Decl], decl: i64) -> bool
-    return match decls[decl].kind
-        .function_decl fd => fd.value.params.len() > 0 && fd.value.params[0].mutable
-        .constant_decl | .record_decl | .variant_decl | .test_decl => false
 
 ## A call to a declared function — where generics are inferred
 

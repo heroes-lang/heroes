@@ -1,0 +1,1 @@
+tests/golden/check/never-written-parameter-what-writes-it.hero:54:5: error[discarded_value]: this line's value has type `[i64]` and nothing receives it — every value here is a copy, so `p.ys` is unchanged: write `p.ys @ …` to keep the result, or `_ = …` to discard it on purpose

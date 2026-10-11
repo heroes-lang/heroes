@@ -135,7 +135,7 @@ v @ v + 1          # re-binding
 field or element inside one.
 Signatures are always explicit; inference is local only.
 All bindings are initialised. An unused binding or parameter is a compile
-error, and so is a cell nothing re-binds, an `@` argument counting; a read is a use and a write is not, except through an `@` parameter.
+error, and so is a cell nothing re-binds or an `@` parameter nothing writes or ends (section 13), an `@` argument counting; a read is a use and a write is not, except through an `@` parameter.
 `_` names anything you do not use: a payload (`.num _ => 0`), a parameter, a
 value. It binds nothing, so it is never unused and may repeat. A line that
 computes a value must use it: bind it, or discard it on purpose with `_ = f(x)`,

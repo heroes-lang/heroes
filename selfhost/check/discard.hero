@@ -29,6 +29,7 @@ use resolved
 use check/state
 use check/table
 use discard_errors
+use value_parts
 
 # Whether this type is a `T?`. One home for the question: `check/decls`
 # asks it of a signature's result to set `Checker.fallible`, and both
@@ -105,52 +106,25 @@ function readings(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.
 # coordinator's audit). An argument marked `@` is passed over: the call
 # writes that one back already, and `_ = step(@xs)` keeps what it wrote.
 function own_place(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64, got: i64) -> str?
-    for part in parts(a, value)
+    at = own_place_at(c, a, r, value: value, got: got)
+
+    if at.is_err()
+        return fail(code: "absent", msg: "no place of the value's own type")
+    return ok(source.span_text(s, a.exprs[at.must()].span))
+
+# The same place as an expression, which `check/kept_cells.hero` reads the
+# root of (defect 630).
+function own_place_at(c: state.Checker, a: ast.Ast, r: resolved.Resolved, value: i64, got: i64) -> i64?
+    for part in value_parts.parts(a, value)
         if c.out.expr_types[part] == got
             if is_place(a, r, part)
-                return ok(source.span_text(s, a.exprs[part].span))
-            deeper = own_place(c, a, r, s, value: part, got: got)
+                return ok(part)
+            deeper = own_place_at(c, a, r, value: part, got: got)
 
             if !deeper.is_err()
                 return deeper
 
     return fail(code: "absent", msg: "no place of the value's own type")
-
-# The values a value is computed from: a call's receiver and its unmarked
-# arguments, an operator's operands. A comparison's value is a decision
-# about its operands rather than a new state of one, so it has none here.
-function parts(a: ast.Ast, value: i64) -> [i64]
-    out: [i64] @= []
-
-    match a.exprs[value].kind
-        .method m =>
-            out @ out.push(m.receiver)
-            out @ unmarked(out, m.args)
-        .call cl => out @ unmarked(out, cl.args)
-        .binary b =>
-            if !compares(b.op)
-                out @ out.push(b.left).push(b.right)
-        .unary u                                                                       => out @ out.push(u.operand)
-        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return out
-        .name | .hole | .field | .field_name | .index | .variant_case                  => return out
-        .array | .map | .try_expr | .if_expr | .match_expr | .error                    => return out
-
-    return out
-
-function unmarked(out: [i64], given: [ast.Arg]) -> [i64]
-    kept: [i64] @= out
-
-    for arg in given
-        if !arg.mutable
-            kept @ kept.push(arg.value)
-
-    return kept
-
-function compares(op: ast.BinaryOp) -> bool
-    return match op
-        .eq | .ne | .lt | .le | .gt | .ge             => true
-        .add | .sub | .mul | .div | .rem | .and | .or => false
-        .bit_and | .bit_or | .bit_xor | .shl | .shr   => false
 
 # `Place = ident { "." ident | "[" Expression "]" }` (spec § 5), rooted in a
 # local: a name the program bound, a field or an element under one. A

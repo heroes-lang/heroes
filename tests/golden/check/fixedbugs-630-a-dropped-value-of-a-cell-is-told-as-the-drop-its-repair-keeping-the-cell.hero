@@ -1,0 +1,75 @@
+# Fixed 2026-10-11, defect 630, lane b21-resolve. Symptom: `xs @= [1]` over
+# `xs.push(4)` alone was told `never_rebound` with a certain `=`; applied, the
+# next message's first guess wrote `xs @ …` on a binding and was refused
+# `not_mutable`, and its second compiled and printed 1 where the repair the
+# line meant, `xs @ xs.push(4)`, prints 2 (panel 210's critic). Cause: the
+# resolver told the cell before the checker could tell the drop, one mistake
+# told by the rule it was not. Now a cell a value line computes from is the
+# checker's to tell (`resolve/value_lines.hero`), and where the line drops a
+# value of the cell's own type, the one message is the drop's, its first
+# repair writing the value back, which keeps the cell. Every spelling the
+# drop's own reading follows: dotted, called, a chain, an operator, a field,
+# an element, a function's result by its first or a later argument, a call
+# through a function value, and a line in a `test`.
+
+record Bag
+    items: [i64]
+
+function grown(xs: [i64], n: i64) -> [i64]
+    return xs.push(n)
+
+function grown_after(n: i64, xs: [i64]) -> [i64]
+    return xs.push(n)
+
+function dotted() -> i64
+    xs @= [1]
+    xs.push(4)  #~ discarded_value
+    return xs.len()
+
+function called() -> i64
+    xs @= [1]
+    push(xs, 4)  #~ discarded_value
+    return xs.len()
+
+function chained() -> i64
+    xs @= [1]
+    xs.push(4).push(5)  #~ discarded_value
+    return xs.len()
+
+function operated() -> i64
+    total @= 1
+    x = 2
+    total + x  #~ discarded_value
+    return total
+
+function through_a_field() -> i64
+    b @= Bag(items: [1])
+    b.items.push(4)  #~ discarded_value
+    return b.items.len()
+
+function through_an_element() -> i64
+    grid @= [[1], [2]]
+    grid[0].push(1)  #~ discarded_value
+    return grid[0].len()
+
+function by_a_function() -> i64
+    xs @= [1]
+    grown(xs, n: 4)  #~ discarded_value
+    ys @= [1]
+    grown_after(4, ys)  #~ discarded_value
+    return xs.len() + ys.len()
+
+function through_a_value() -> i64
+    f = grown_after
+    xs @= [1]
+    f(4, xs)  #~ discarded_value
+    return xs.len()
+
+function main()
+    print(dotted() + called() + chained() + operated())
+    print(through_a_field() + through_an_element() + by_a_function() + through_a_value())
+
+test "a dropped value in a test is the drop too"
+    xs @= [1]
+    xs.push(4)  #~ discarded_value
+    assert xs.len() == 2
