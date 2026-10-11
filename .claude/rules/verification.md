@@ -833,7 +833,17 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   after staging; paths given by an expansion, by stdin or through `xargs` read
   as every path. The unstaged-only `git restore -- <paths>` and `git checkout
   -- <paths>` keep every staged version and stay the hard stops' *destructive
-  operations are asked for*.
+  operations are asked for*. **Since 2026-10-11 a GitHub write is refused in
+  the assistant's shell, and so is the credential** (defects 671 and 672, panel
+  212): `gh` is read through an allow-list (`view`, `list`, `status`, `diff`,
+  `checks`, `watch`, `download`, `search`, `browse` of a command group, `gh auth
+  status`, `gh api` as a GET, a GraphQL query, and the one POST that renders
+  Markdown and writes nothing), and every other `gh` is refused, `gh api` with a
+  `-f`, `-F` or `--input` being a POST by `gh`'s own rule, a GraphQL `mutation`
+  a write, `gh auth token` a secret printed into a transcript. The author's
+  local settings allowed `gh api` on the repository whole and no refusal stood
+  behind them. What the rule cannot see is a program that spawns `gh` inside, so
+  the transcription program carries its own `--yes`.
 - **Layer 2, per repair**: the form that holds its cases and the compiler's own
   tests.
 - **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.

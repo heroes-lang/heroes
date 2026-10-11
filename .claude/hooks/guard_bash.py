@@ -583,6 +583,131 @@ def verdict(command, cwd=None, seen=frozenset()):
     return None
 
 
+# **A GitHub write is an outward act, asked for every time** (CLAUDE.md § Hard
+# stops; defect 671, panel 212). The tracked settings ask only for `git push*`,
+# and the author's local ones allow `gh api` on the repository and `gh run *`
+# whole, so until this rule a write from the assistant's shell asked nothing:
+# `gh api` with any `-f`, `-F` or `--input` switches to POST on its own
+# (`gh api --help`). The rule is an ALLOW-list of reads and everything else is
+# refused, the direction this guard errs in.
+#
+# What it can and cannot see is the same as the rules around it: the text of a
+# command the assistant types, through the wrappers `command_words` reads. A
+# program that spawns `gh` inside is not seen (the transcription program's own
+# gate is its `--yes`), and an endpoint held in a variable is not seen.
+GH_READS = frozenset({"view", "list", "status", "diff", "checks", "watch",
+                      "download", "search", "browse", "clone", "get"})
+GH_GROUPS = frozenset({"issue", "pr", "run", "release", "label", "repo",
+                       "workflow", "project", "gist", "ruleset", "cache",
+                       "codespace", "variable", "secret", "extension",
+                       "alias", "config", "ssh-key", "gpg-key", "milestone",
+                       "attestation", "agent-task", "org"})
+GH_VALUE_FLAGS = frozenset({"-R", "--repo", "--hostname", "-H", "--header",
+                            "-q", "--jq", "-t", "--template", "--cache",
+                            "-p", "--preview", "-X", "--method", "-f", "-F",
+                            "--field", "--raw-field", "--input"})
+GH_BODY_FLAGS = frozenset({"-f", "-F", "--field", "--raw-field", "--input"})
+# The one POST that changes nothing: it renders Markdown and answers HTML.
+GH_READ_ONLY_POSTS = frozenset({"markdown", "markdown/raw"})
+
+
+def gh_api(args, segment):
+    """The refusal of `gh api <args>`, or None: a read is a GET, an explicit
+    `-X GET` keeping its fields as query parameters; the Markdown renderer and
+    a GraphQL query that carries no `mutation` change nothing."""
+    method, body, endpoint, i = None, False, None, 0
+    while i < len(args):
+        a = args[i]
+        if a in ("-X", "--method") and i + 1 < len(args):
+            method = args[i + 1].upper()
+            i += 2
+        elif a.startswith("--method="):
+            method = a.split("=", 1)[1].upper()
+            i += 1
+        elif a.startswith("-X") and len(a) > 2:
+            method = a[2:].upper()
+            i += 1
+        elif a in GH_BODY_FLAGS:
+            body = True
+            i += 2
+        elif a.startswith(("--field=", "--raw-field=", "--input=")) or (a[:2] in ("-f", "-F") and len(a) > 2):
+            body = True
+            i += 1
+        elif a in GH_VALUE_FLAGS:
+            i += 2
+        elif a.startswith("-"):
+            i += 1
+        else:
+            if endpoint is None:
+                endpoint = a.lstrip("/")
+            i += 1
+    if endpoint in GH_READ_ONLY_POSTS:
+        return None
+    if endpoint == "graphql":
+        if "mutation" in segment.lower():
+            return (
+                "refused: a GraphQL `mutation` writes to GitHub, an outward "
+                "act the author asks for every time. A query is allowed. " + CONTRACT
+            )
+        return None
+    effective = method or ("POST" if body else "GET")
+    if effective not in ("GET", "HEAD"):
+        return (
+            "refused: `gh api` here would send a " + effective + " "
+            + ("(a field or an input switches it to POST) " if method is None else "")
+            + "to GitHub, an outward act the author asks for every time. A "
+            "read is `gh api <endpoint>`, or `-X GET` with its fields as "
+            "query parameters. " + CONTRACT
+        )
+    return None
+
+
+def gh_rule(w, segment):
+    """The refusal of one `gh` command, or None."""
+    words_ = [t for t in w[1:]]
+    # The words that are not flags nor the value of one: the subcommand path.
+    path, i = [], 0
+    while i < len(words_):
+        a = words_[i]
+        if a in GH_VALUE_FLAGS:
+            i += 2
+        elif a.startswith("-"):
+            i += 1
+        else:
+            path.append(a)
+            i += 1
+    if not path:
+        return None
+    head = path[0]
+    if head == "auth":
+        if len(path) > 1 and path[1] == "token":
+            return (
+                "refused: `gh auth token` prints the credential into the "
+                "transcript, and a secret in a transcript is a leaked secret "
+                "(defect 672). `gh auth status` masks it. `.env.example`"
+            )
+        if len(path) > 1 and path[1] == "status":
+            return None
+        return (
+            "refused: `gh auth` other than `status` changes or prints the "
+            "credential, which is the author's to do. " + CONTRACT
+        )
+    if head == "api":
+        index = [k for k, t in enumerate(w) if t == "api"]
+        return gh_api(w[index[0] + 1:], segment) if index else None
+    if head in GH_GROUPS:
+        if len(path) > 1 and path[1] in GH_READS:
+            return None
+        return (
+            "refused: `gh " + " ".join(path[:2]) + "` is not on the list of "
+            "reads (view, list, status, diff, checks, watch, download, "
+            "search, browse). A create, edit, close, delete, comment, rerun "
+            "or cancel changes GitHub, an outward act the author asks for "
+            "every time. " + CONTRACT
+        )
+    return None
+
+
 def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
     """The refusal of one command, or None: `raw` its words as written, `w`
     with the wrappers left out, run in `here`, inside the segment `segment` of
@@ -784,6 +909,12 @@ def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
             "refused: `.env` holds the live keys. `.env.example` is the "
             "shape and carries no value. `.env.example`"
         )
+
+    # A GitHub write, or the credential itself, from the assistant's shell.
+    if os.path.basename(w[0]) == "gh":
+        said = gh_rule(w, segment)
+        if said is not None:
+            return said
 
     # Only when it is being PASSED to the compiler, for the same reason.
     if "--no-line" in w and "heroes" in w[0]:

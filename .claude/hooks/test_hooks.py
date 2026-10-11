@@ -2056,6 +2056,90 @@ class EveryAnswer(unittest.TestCase):
             fmt_check.STARTED = kept
 
 
+class GithubWrites(unittest.TestCase):
+    """Defects 671 and 672, panel 212: a GitHub write, and the credential
+    itself, are refused in the assistant's shell, whatever the permission
+    files allow; a read is not."""
+
+    def setUp(self):
+        self.top = fresh("hooks-671-")
+        self.tree = make_tree(os.path.join(self.top, "tree"))
+
+    def said(self, command):
+        return guard_bash.verdict(command, self.tree)
+
+    def test_gh_api_with_a_field_is_a_post_and_is_refused(self):
+        said = self.said("gh api repos/heroes-lang/heroes/issues -f title=x")
+        self.assertIsNotNone(said)
+        self.assertIn("POST", said)
+        self.assertIn("a field or an input switches it to POST", said)
+        self.assertIsNotNone(self.said("gh api repos/heroes-lang/heroes/issues -F title=x"))
+        self.assertIsNotNone(self.said("gh api repos/heroes-lang/heroes/issues --raw-field title=x"))
+        self.assertIsNotNone(self.said("gh api repos/heroes-lang/heroes/issues --input body.json"))
+        self.assertIsNotNone(self.said("gh api -i repos/heroes-lang/heroes/issues --input -"))
+
+    def test_gh_api_with_a_writing_method_is_refused_in_every_spelling(self):
+        for spelling in ("-X POST", "-XPOST", "--method POST", "--method=patch", "-X DELETE", "-X PUT", "-X patch"):
+            self.assertIsNotNone(self.said("gh api " + spelling + " repos/heroes-lang/heroes/issues/1"), spelling)
+        self.assertIsNotNone(self.said("gh api repos/heroes-lang/heroes/labels/x -X DELETE"))
+
+    def test_gh_api_reads_pass(self):
+        self.assertIsNone(self.said("gh api repos/heroes-lang/heroes"))
+        self.assertIsNone(self.said("gh api -i repos/heroes-lang/heroes --jq .full_name"))
+        self.assertIsNone(self.said("gh api -X GET repos/heroes-lang/heroes/issues -f per_page=1"))
+        self.assertIsNone(self.said("gh api --paginate repos/heroes-lang/heroes/issues?state=all"))
+        self.assertIsNone(self.said("gh api rate_limit --jq '.resources.core'"))
+        self.assertIsNone(self.said("gh api -H 'Accept: application/json' orgs/heroes-lang/issue-fields"))
+
+    def test_the_markdown_renderer_and_a_graphql_query_write_nothing_and_pass(self):
+        self.assertIsNone(self.said("gh api markdown -f text='#1 and @x' -f mode=gfm -f context=heroes-lang/heroes"))
+        self.assertIsNone(self.said("gh api /markdown -X POST -f text=hi"))
+        self.assertIsNone(self.said("gh api graphql -f query='{ viewer { login } }'"))
+        self.assertIsNone(self.said("gh api graphql -i --input query.json"))
+
+    def test_a_graphql_mutation_is_refused_however_it_is_spelled(self):
+        self.assertIsNotNone(self.said("gh api graphql -f query='mutation { addComment(input: {}) { clientMutationId } }'"))
+        self.assertIsNotNone(self.said("gh api graphql -f query='MUTATION { x }'"))
+
+    def test_the_write_subcommands_are_refused_and_the_reads_pass(self):
+        for write in ("issue create -t x", "issue edit 1", "issue close 1", "issue comment 1 -b x", "issue delete 1",
+                      "label create x", "label delete x --yes", "repo delete heroes-lang/heroes --yes",
+                      "repo create x", "repo edit --enable-issues=false", "run rerun 1", "run cancel 1",
+                      "run delete 1", "release create v1", "release delete v1", "pr merge 1", "milestone create",
+                      "workflow run ci.yml", "secret set X", "gist create f"):
+            self.assertIsNotNone(self.said("gh " + write), write)
+        for read in ("issue list", "issue view 1", "pr list", "pr checks 1", "pr diff 1", "run view 1", "run list",
+                     "run watch 1", "release view v1", "label list", "repo view heroes-lang/heroes",
+                     "repo clone heroes-lang/heroes", "search issues x", "auth status", "--version", "help"):
+            self.assertIsNone(self.said("gh " + read), read)
+
+    def test_the_credential_is_never_printed_and_auth_changes_are_the_authors(self):
+        said = self.said("gh auth token")
+        self.assertIsNotNone(said)
+        self.assertIn("leaked secret", said)
+        self.assertIsNotNone(self.said("gh auth token --hostname github.com"))
+        self.assertIsNotNone(self.said("gh auth refresh -s admin:org"))
+        self.assertIsNotNone(self.said("gh auth login"))
+        self.assertIsNotNone(self.said("gh auth logout"))
+        self.assertIsNone(self.said("gh auth status"))
+
+    def test_a_wrapper_or_a_shell_or_a_global_flag_does_not_hide_the_command(self):
+        self.assertIsNotNone(self.said("caffeinate -i gh issue create -t x"))
+        self.assertIsNotNone(self.said("env GH_HOST=github.com gh api -f a=b repos/heroes-lang/heroes/issues"))
+        self.assertIsNotNone(self.said("/usr/bin/time -p gh issue close 1"))
+        self.assertIsNotNone(self.said("sh -c 'gh issue close 1'"))
+        self.assertIsNotNone(self.said("gh -R heroes-lang/heroes issue create -t x"))
+        self.assertIsNotNone(self.said("gh issue create -R heroes-lang/heroes -t x"))
+        self.assertIsNone(self.said("gh -R heroes-lang/heroes issue list"))
+        self.assertIsNotNone(self.said("cd /tmp && gh label delete x"))
+        self.assertIsNotNone(self.said("true; gh api repos/a/b -X DELETE"))
+
+    def test_a_word_that_only_mentions_gh_is_not_a_command(self):
+        self.assertIsNone(self.said("echo gh issue create"))
+        self.assertIsNone(self.said("grep -rn 'gh api' .claude/"))
+        self.assertIsNone(self.said("git log --oneline --grep='gh issue create'"))
+
+
 class Credit(unittest.TestCase):
     """CL-082 and CL-083, 2026-10-11: an issue file, and a file the code cites
     a defect in, are asked of the `records` suite narrowed to them."""
