@@ -3,7 +3,7 @@ kind: defect
 area: mutate
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: 4f6f8b6591aa4fdc95c84b893060f463891bdfba
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** asked by heroes-lang-98 at 12:15 on 2026-10-11, reading the 26 APPLY moves of the R2 the landing session of panel 209 ran at 11:27 (`.claude/worktrees/scratch-b15/r2-plan-397381f1-341bebcd/differential.txt`, untracked); measured by that session at 12:20 on the key named.
 
     **Class: adjacent**, 2026-10-11: real, found beside the work, an instrument's finding less exact than it could be; no program is wrongly accepted and no message is false.
+
+    Repaired at `4f6f8b6591aa4fdc95c84b893060f463891bdfba`, 2026-10-11 (lane b22-663), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Both arms lose the program's own messages before a code is called new or standing, the mutant's normal and what `--apply` wrote, by `mutate/own.hero`'s key, a line the fix moved matched anywhere between the line and the fix's line delta; `planted.single` takes the run's corpus record. Not re-measured on key `0f89625d05eed035`: an R2 is the batch's, after the push.
