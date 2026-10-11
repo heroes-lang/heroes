@@ -30,6 +30,7 @@
  */
 import type { APIRoute } from 'astro';
 import { readText } from '../lib/repo.ts';
+import { withoutTags } from '../lib/tags.ts';
 
 const ORIGIN = 'https://heroes-lang.org';
 
@@ -64,7 +65,7 @@ function entries(): { title: string; summary: string }[] {
   const out: { title: string; summary: string }[] = [];
   const item = /<span class="when">([\s\S]*?)<\/span>\s*<b>([\s\S]*?)<\/b>/g;
   for (const match of html.matchAll(item)) {
-    const strip = (s: string) => decode(s.replace(/<[^>]*>/g, '')).replace(/\s+/g, ' ').trim();
+    const strip = (s: string) => decode(withoutTags(s, 'site/src/html/log.html')).replace(/\s+/g, ' ').trim();
     out.push({ title: strip(match[1]), summary: strip(match[2]) });
   }
   if (out.length === 0) {

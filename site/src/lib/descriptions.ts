@@ -23,6 +23,7 @@
  */
 
 import { readText, isFile } from './repo.ts';
+import { withoutTags } from './tags.ts';
 import { examples } from './examples-model.ts';
 import { groups, groupOf, readingOrder } from '../data/examples.ts';
 import type { Lang } from './i18n.ts';
@@ -59,7 +60,7 @@ function parse(path: string, html: string): Description {
         `  page's meta description, so a fragment cannot go without one.`
     );
   }
-  const text = tagline[1].replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  const text = withoutTags(tagline[1], path).replace(/\s+/g, ' ').trim();
   if (text.length === 0) {
     throw new Error(`${path} has an empty tagline.`);
   }
