@@ -149,9 +149,11 @@ function group_for(s: source.Source, decls: [ast.Decl], label: label_dump.Label,
 
     return group_file.Group(span: decls[0].span, header: label.file)
 
-# Every undefined symbol of the linker's words, in the two spellings
-# `ffi_build.undefined_symbol` reads: GNU's `undefined reference to `x'` and
-# ld64's `"x", referenced from:`, which keeps its symbol as Mach-O spells it.
+# Every undefined symbol of the linker's words, in the spellings
+# `ffi_build.undefined_symbol` reads: GNU's `undefined reference to `x'`,
+# ld64's `"x", referenced from:`, which keeps its symbol as Mach-O spells it,
+# and Windows' two linkers', whose x64 symbol is the C name as written
+# (defect 644).
 function missing_symbols(message: str) -> [Missing]
     out: [Missing] @= []
     seen: {str: bool} @= {}
@@ -162,9 +164,8 @@ function missing_symbols(message: str) -> [Missing]
         if plain.is_err()
             continue
         raw: str @= plain.must()
-        gnu = ffi_lookup.after(text: line, marker: "undefined reference to `")
 
-        if gnu.is_err()
+        if ffi_lookup.has(text: line, needle: "referenced from:")
             raw @ quoted(line)
 
         if raw.len() > 0 && seen[raw].is_err()
@@ -201,3 +202,15 @@ test "an undefined symbol is read as the linker spelled it and as a C name"
     assert got[1].raw == "_main"
     assert got[1].plain == "main"
     assert got[2].raw == "nowhere"
+
+    # Windows' two linkers, as the Windows box wrote them (defect 644): the
+    # symbol as C spells it, and a program left with no `main` as `main`.
+    windows = missing_symbols(
+        "lld-link: error: undefined symbol: fixedbugs_591_nowhere_twice\r\n>>> referenced by x.o:(main)\r\nx.o : error LNK2019: unresolved external symbol fixedbugs_592_print_int referenced in function main\r\nm.exe : fatal error LNK1120: 2 unresolved externals\r\nLINK : fatal error LNK1561: entry point must be defined\r\n"
+    )
+    assert windows.len() == 3
+    assert windows[0].raw == "fixedbugs_591_nowhere_twice"
+    assert windows[0].plain == "fixedbugs_591_nowhere_twice"
+    assert windows[1].raw == "fixedbugs_592_print_int"
+    assert windows[2].raw == "main"
+    assert windows[2].plain == "main"

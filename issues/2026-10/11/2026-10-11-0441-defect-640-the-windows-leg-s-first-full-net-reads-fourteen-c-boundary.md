@@ -3,7 +3,7 @@ kind: defect
 area: emit
 milestone: none
 filed: 2026-10-11
-commit: none
+commit: f6d5801f3ab40a2f473ea8f7fc8a98c0a478436c
 github: none
 ---
 
@@ -12,3 +12,5 @@ github: none
     **Origin:** filed by the coordinator at 04:41 on 2026-10-11 from the CI's Windows x86-64 leg of batch 20's push (`4fb8bd98`, run 38101444166, job 114358017019, its log through the API at `.claude/worktrees/scratch-b15/ci-4fb8/`, ignored by git), the first run of that leg to reach the net past the compiler's own tests (1,607 passed there), as `.claude/rules/verification.md` § The optimistic chain item 5 asks.
 
     **Class: blocking**, 2026-10-11 (`.claude/rules/verification.md` § Bounded discovery): a red CI.
+
+    Repaired at `f6d5801f3ab40a2f473ea8f7fc8a98c0a478436c`, 2026-10-11 (lane b21-win), gated by its cases and the compiler's own tests; the net is owed at the batch's close. Told apart on the Windows box (clang 23.1.1 + lld-link, and clang 20.1.8 + link.exe, the CI's, from the LLVM release tarball): four causes were the compiler's, filed apart and repaired before this commit, 642 (555 not told, 556's line lost: the linkage question's words), 643 and 645 (twoarity: an implicit builtin declaration read as the program's, and C99's `inline` where the target reads Microsoft's), 644 (591's `__asm__` case at exit 2: Windows' two linkers' words). Not portable, rewritten to hold everywhere: 591's two `labs` cases now rename a function their header declares at `long long`, 592's three bind `llabs`, `labs`'s `long` being 32 bits on Windows; the five told byte-identically on this Mac and on the box under both toolchains. A shape Windows' C cannot hold: 562's header-only C99 inline links there, a COMDAT, and prints 6, so the case and its surface row are skipped there by name with that reason (`tests/harness/platform_skips.hero`), judged on the other platforms. Box, clang 20.1.8: `unsupported` whole 238/0 (CI 230/12), `surface` 398/0 (CI 397/2); Mac: `unsupported fixedbugs-5` 60/0, `surface` 408/0, the net's own tests 340, all passed.

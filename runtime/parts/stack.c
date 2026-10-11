@@ -403,12 +403,60 @@ static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
 
 #if defined(HERO_STACK_GUARD_YIELDS_TO_ASAN)
 
-/* ASan owns the signal; its report is the better one. All three doors are empty
- * here, and all three exist, because `parts/spawn.c` calls two of them on every
- * thread it starts and a build configuration is not a place to discover that a
- * function is missing. */
+/* ASan owns the signal; its report is the better one. All three doors exist,
+ * because `parts/spawn.c` calls two of them on every thread it starts and a
+ * build configuration is not a place to discover that a function is missing.
+ *
+ * **EXCEPT A STACK OVERFLOW ON WINDOWS, WHICH ASan THERE DOES NOT RELIABLY
+ * TELL** (defect 641, measured on the Windows box 2026-10-11 with the CI's
+ * clang 20.1.8 and link.exe): `run/fixedbugs-547-a-self-call-through-map-aborts`
+ * built `--sanitize -O0` died 0xC0000005 with nothing on stderr in 3 and in 4
+ * runs of 8, by the old runtime and by one asking a 64 KiB stack guarantee,
+ * and in 1 of 8 with a 1 MiB one, the other runs saying ASan's
+ * `stack-overflow`; ASan reports from its unhandled-exception filter, after
+ * every vectored handler and on what is left of the faulting thread's stack.
+ * The CI's runner wrote nothing for six recursion cases. With this file's
+ * own handler registered, for `EXCEPTION_STACK_OVERFLOW` alone, 10 runs of 10
+ * said `panic: stack exhausted`. So on Windows the sanitizer keeps that one
+ * fault's words in the runtime, as `-O0` and `-O2` do, and every other fault,
+ * a null read, a dead handle, a lend overrun, stays ASan's to name; the
+ * guarantee gives the handler its room on every thread the runtime starts.
+ * POSIX's ASan runs on an alternate stack of its own and keeps all of it. */
+#if defined(_WIN32)
+#include <windows.h>
+#include <io.h>
+
+static LONG WINAPI hero_stack_asan_veh(EXCEPTION_POINTERS *ep) {
+    if (ep->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
+        const char *s = "panic: stack exhausted\n";
+        size_t n = strlen(s);
+        while (n > 0) {
+            int put = _write(2, s, (unsigned int)n);
+            if (put <= 0) break;
+            s += (size_t)put;
+            n -= (size_t)put;
+        }
+        hero_abort();
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static void hero_stack_guard_enter(void) {
+    ULONG guarantee = 64 * 1024;
+    SetThreadStackGuarantee(&guarantee);
+}
+
+static void hero_stack_guard_install(void) {
+    static int done = 0;
+    if (done) return;
+    done = 1;
+    hero_stack_guard_enter();
+    AddVectoredExceptionHandler(0, hero_stack_asan_veh);
+}
+#else
 static void hero_stack_guard_install(void) {}
 static void hero_stack_guard_enter(void) {}
+#endif
 static void hero_stack_guard_leave(void) {}
 
 #elif !defined(_WIN32)

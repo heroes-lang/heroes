@@ -1,0 +1,8 @@
+# A module of defect 643's case (lane b21-win, 2026-10-11): it binds `abs`
+# from the same header.
+
+extern "fixedbugs-643-an-inline-abs.h"
+    function abs(x: i32) -> i32
+
+function magnitude(x: i32) -> i32
+    return abs(x: x)

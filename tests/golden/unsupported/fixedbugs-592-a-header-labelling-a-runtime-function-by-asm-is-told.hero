@@ -3,9 +3,12 @@
 # the header declares `hero_print_int` again with an `__asm__` label, which
 # clang takes, nothing having called it yet, the same cause and the same
 # exit 2 before.
+# Defect 640, lane b21-win, 2026-10-11: the binding was `labs`, whose `long`
+# is 32 bits on Windows, so `labs(x: i64)` was refused there before the
+# link; `llabs` is `long long` on every platform.
 
 extern "fixedbugs-592-a-header-labelling-a-runtime-function-by-asm-is-told.h"  #~ ffi_header_refused
-    function labs(x: i64) -> i64
+    function llabs(x: i64) -> i64
 
 function main()
-    print(labs(-42))
+    print(llabs(-42))
