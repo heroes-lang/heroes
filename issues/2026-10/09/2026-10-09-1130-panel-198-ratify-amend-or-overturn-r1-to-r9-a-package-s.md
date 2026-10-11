@@ -16,3 +16,10 @@ github: none
     **The conservative alternative, the author's to choose instead**: (A) with (V), the list as today with its note computed from the answer and the response-file channel closed, Debian's 22 correct programs left refused; or K without `-isystem`.
 
     **Verdict, 2026-10-09:** **ratified**, R1 to R9, the author answering through the question widget between 11:30 and 11:38 by the clocks read before and after (*Ratifica R1-R9*). Recorded as a reading (CLAUDE.md § 4).
+
+## Prior art
+
+Panel 198 (`docs/panel/198-a-package-s-answer-is-judged-word-by-word-and-value-by-value.md`, `docs/panel/198-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from Go**: [cmd/go's #cgo flag allowlist after CVE-2018-6574](https://github.com/golang/go/issues/23672): the #cgo flag allowlist admits a flag by its whole name, and requests to add more (-Wl,--no-as-needed) followed on 8 February 2018
+- **Reached first by Go**: [CVE-2025-22867, an @ in a linker word read as a file](https://github.com/golang/go/issues/71476): an @ in Darwin linker flags, as in @executable_path, @loader_path or @rpath, allowed arbitrary code execution (CVE-2025-22867)

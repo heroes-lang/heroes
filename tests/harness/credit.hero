@@ -134,9 +134,13 @@ function names_read_day(line: str) -> bool
 
     return false
 
-# The sitting's file the opener names: a code span under `docs/panel/` that
-# the tree holds and that is not a report of the sitting's folder.
-function sitting_named(line: str, known: {str: bool}) -> str
+# The sittings' files the opener names: every code span under `docs/panel/`
+# that the tree holds and that is not a report of a sitting's folder. One issue
+# may carry several sittings (a card ratifying seven of them in one act), and
+# each is held to the same question, so the opener names them all.
+function sittings_named(line: str, known: {str: bool}) -> [str]
+    out: [str] @= []
+
     for span in code_spans(line)
         if !strings.starts_with(text: span, prefix: SITTINGS)
             continue
@@ -145,9 +149,9 @@ function sitting_named(line: str, known: {str: bool}) -> str
             continue
 
         if !known[span].is_err()
-            return span
+            out @ out.push(span)
 
-    return ""
+    return out
 
 # Whether the historian sat: the sitting's folder holds its report, or the
 # synthesis names the seat.
@@ -220,16 +224,18 @@ function prior_art_offences(issue: cards.Issue, section: Section, known: {str: b
     if opener == ""
         out @ out.push(where + "is empty: a section that names no precedent is left out, not written")
         return out
-    sitting = sitting_named(line: opener, known: known)
+    sittings = sittings_named(line: opener, known: known)
 
-    if sitting == ""
+    if sittings.len() == 0
         out @ out.push(
             where + "opens with `" + strings.trimmed(opener) + "`, which names no sitting's file under `docs/panel/` in a code span"
         )
-    else if !historian_sat(sitting: sitting, known: known)
-        out @ out.push(
-            where + "rests on " + sitting + ", a sitting the historian did not sit in: no report of theirs in its folder and no mention in the synthesis"
-        )
+
+    for sitting in sittings
+        if !historian_sat(sitting: sitting, known: known)
+            out @ out.push(
+                where + "rests on " + sitting + ", a sitting the historian did not sit in: no report of theirs in its folder and no mention in the synthesis"
+            )
 
     if !names_read_day(opener)
         out @ out.push(
@@ -584,11 +590,14 @@ test "the opener names the sitting's file in a code span and the day the links w
     known["docs/panel/196-a-sitting.md"] @ true
     known["docs/panel/196-reports/historian.md"] @ true
     opener = "Panel 196 (`docs/panel/196-a-sitting.md`, `docs/panel/196-reports/historian.md`), every link read 2026-10-11."
-    assert sitting_named(line: opener, known: known) == "docs/panel/196-a-sitting.md"
+    assert sittings_named(line: opener, known: known) == ["docs/panel/196-a-sitting.md"]
     assert names_read_day(opener)
     assert !names_read_day("Panel 196, read on the day.")
     assert !names_read_day("read 2026-13-01")
-    assert sitting_named(line: "Panel 196 (docs/panel/196-a-sitting.md)", known: known) == ""
+    assert sittings_named(line: "Panel 196 (docs/panel/196-a-sitting.md)", known: known).len() == 0
+    known["docs/panel/197-another.md"] @ true
+    both = "Panels 196 and 197 (`docs/panel/196-a-sitting.md`, `docs/panel/197-another.md`), read 2026-10-11."
+    assert sittings_named(line: both, known: known) == ["docs/panel/196-a-sitting.md", "docs/panel/197-another.md"]
     assert historian_sat(sitting: "docs/panel/196-a-sitting.md", known: known)
 
 test "a line cites every number it names after the word, in any case, and no day or lane"

@@ -16,3 +16,11 @@ github: none
     **The conservative alternative, the author's to choose instead**: no `rest: zero`, a program's own `{0}` header constant through defect 094's repair (189 tokens for `utsname`), and 092 closed by A's refusal alone.
 
     **Ratified by delegation, 2026-10-06**, on the author's answer at 12:49 by the clock read then, given before the synthesis existed, meant as: *OK, ratify* (`issues/2026-10/06/2026-10-06-1249-the-author-answers-1-2-3-m-issue-files-to-this-session-github.md`, point 3). **What it settles**: R1 to R8 as the synthesis states them. **What it does not settle**: what only the landings measure, the reader test the spec-warden registered above all.
+
+## Prior art
+
+Panels 178 and 194 (`docs/panel/178-the-rest-is-zero-where-it-is-written-and-c-says-which-value-is-valid.md`, `docs/panel/178-reports/historian.md`, `docs/panel/194-the-rest-is-zero-where-a-group-s-construction-says-so-and-a-lend-s-count-is-in-c-s-own-unit.md`, `docs/panel/194-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from C11**: [ISO C11 (N1570) 6.2.6.1p6](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf): the bytes of the object representation that correspond to padding take unspecified values after a store (6.2.6.1p6)
+- **Taken from GCC**: [GCC 15, {0} no longer clears a whole union](https://gcc.gnu.org/gcc-15/changes.html): {0} in C or C++ no longer guarantees clearing the whole of a union
+- **Taken from GCC**: [the access attribute, size in elements of the pointee type or bytes for void *](https://gcc.gnu.org/onlinedocs/gcc-14.2.0/gcc/Common-Function-Attributes.html): the access attribute's size is the number of elements of the referenced type, or of bytes when the pointer is void *

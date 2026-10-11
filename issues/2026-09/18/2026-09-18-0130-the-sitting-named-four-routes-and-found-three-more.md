@@ -105,3 +105,10 @@ the emitted C — but the sentence must say *what the compiling clang says*.
   no design.md citation appears anywhere in its reasoning. **Admissible, with
   the breach recorded**, and a later sitting should know the input discipline
   can be defeated from outside the coordinator's control.
+
+## Prior art
+
+Panel 161 (`docs/panel/161-the-third-char-had-no-spelling-and-the-cheapest-answer-was-a-flag.md`, `docs/panel/161-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from the Linux kernel**: [Would you like signs with those chars? (LWN, 2022-10-24)](https://lwn.net/Articles/911914/): a patch adding -funsigned-char to the kernel's compiler command line was waiting for the 6.2 merge window (LWN, 2022-10-24)
+- **Taken from Rust**: [rust-lang/rust#48633, Signedness of c_char differs on ARMv7 vs. x86_64](https://github.com/rust-lang/rust/issues/48633): a proposal to make the signedness of c_char the same across platforms was opened on 2018-03-01 and closed by its proposer the next day

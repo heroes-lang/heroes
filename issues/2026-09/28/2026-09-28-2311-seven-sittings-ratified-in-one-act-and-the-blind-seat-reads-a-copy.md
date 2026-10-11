@@ -145,3 +145,12 @@ that lane's file.
     MemorySanitizer as a Linux leg once the cache keys include the flags; and
     coalescing the synthetic slots of mutually exclusive arms, its premise
     unrun.
+
+## Prior art
+
+Panels 175, 176 and 177 (`docs/panel/175-a-consuming-call-is-three-things-and-the-runtime-speaks-after-it-listens.md`, `docs/panel/175-reports/historian.md`, `docs/panel/176-a-transfer-names-where-the-life-goes-and-a-reference-joins-the-life-it-finds.md`, `docs/panel/176-reports/historian.md`, `docs/panel/177-a-dead-handle-is-poisoned-where-it-lay-and-remembered-where-it-was.md`, `docs/panel/177-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Reached first by GCC**: [the static analyzer's deallocator_set in sm-malloc.cc](https://github.com/gcc-mirror/gcc/blob/master/gcc/analyzer/sm-malloc.cc): an allocator may have several valid deallocators, so a value is tracked against a deallocator_set
+- **Taken from Clang**: [Static Analyzer ownership annotations, ownership_holds beside ownership_takes](https://clang.llvm.org/docs/analyzer/user-docs/Annotations.html): ownership_holds stands beside ownership_takes: a holder will deallocate the memory at some unspecified point, and releasing held memory is reported as releasing non-owned memory
+- **Reached first by Microsoft SAL**: [_Success_(expr), annotating function behavior](https://learn.microsoft.com/en-us/cpp/code-quality/annotating-function-behavior?view=msvc-170): at most one _Success_ annotation stands on a function, and it states the condition under which the function succeeded
+- **Reached first by Clang**: [thread-safety analysis, TRY_ACQUIRE](https://clang.llvm.org/docs/ThreadSafetyAnalysis.html): the first argument of TRY_ACQUIRE is true or false and says which return value indicates success

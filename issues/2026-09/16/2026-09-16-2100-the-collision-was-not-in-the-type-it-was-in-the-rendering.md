@@ -92,3 +92,9 @@ spelling returns **zero**, and `??` appears nowhere in it. **The relation betwee
 the two halves is stated zero times**, so a sentence here is a first statement
 and not a repetition — and the warden's own **+9** merge is the price its
 argument supports.
+
+## Prior art
+
+Panel 158 (`docs/panel/158-the-sitting-produced-a-resolution-and-left-it-off-its-own-ballot.md`, `docs/panel/158-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from Swift**: [SE-0230, Flatten nested optionals resulting from try?](https://raw.githubusercontent.com/swiftlang/swift-evolution/main/proposals/0230-flatten-optional-try.md): try? flattens only the expression's result, and nested optionals stay legal in the type

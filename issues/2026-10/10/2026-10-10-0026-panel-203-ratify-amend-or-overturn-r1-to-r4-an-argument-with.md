@@ -12,3 +12,9 @@ github: none
     **Origin:** panel 203's synthesis, 2026-10-10 from 00:20, on the tree frozen at `46b80b82`.
 
     **Verdict, 2026-10-10:** **ratified**, R1 to R4, the author answering through the question widget between 00:21 and 00:24 by the clocks read before and after (*Ratifica R1-R4*); in the same widget *close 547 on the measurement* and *yes, one* `--refresh`. Recorded as a reading (CLAUDE.md § 4).
+
+## Prior art
+
+Panel 203 (`docs/panel/203-an-argument-with-no-type-of-its-own-waits-for-the-call-s-others-and-a-self-call-through-a-parameter-aborts-at-run-time.md`, `docs/panel/203-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from Go**: [Go's type inference, Griesemer 2023](https://go.dev/blog/type-inference): the same types are inferred whatever the order of the function parameters, and typed arguments take precedence over untyped ones

@@ -46,3 +46,11 @@ github: none
     **The conservative resolution is untaken rather than rejected**, and it costs
     nothing to keep available: R2 landed as a body rule, so reversing it is a
     deletion. Panel 155's own file records what it would have been.
+
+## Prior art
+
+Panel 155 (`docs/panel/155-the-hole-was-never-made-by-the-generic.md`, `docs/panel/155-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Taken from C++**: [P0557r1, Concepts: The Future of Generic Programming](https://www.stroustrup.com/good_concepts.pdf): a template's requirements on its argument are hidden in its body, and the error appears only at instantiation, long after the point of call
+- **Taken from Go**: [Type Parameters Proposal](https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md): constraints are declared, and not derived from whatever the function body happens to do
+- **Reached first by Go**: [Go 1.20 release notes](https://go.dev/doc/go1.20): a type argument may now satisfy comparable even when its comparison may panic at run time

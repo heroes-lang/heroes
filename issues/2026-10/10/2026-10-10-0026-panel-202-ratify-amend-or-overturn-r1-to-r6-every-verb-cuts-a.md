@@ -12,3 +12,10 @@ github: none
     **Origin:** panel 202's synthesis, 2026-10-10 from 00:16, on the tree frozen at `46b80b82`.
 
     **Verdict, 2026-10-10:** **ratified**, R1 to R6, the author answering through the question widget between 00:21 and 00:24 by the clocks read before and after (*Ratifica R1-R6*). Recorded as a reading (CLAUDE.md § 4).
+
+## Prior art
+
+Panel 202 (`docs/panel/202-every-verb-cuts-a-program-s-c-by-module-and-what-two-modules-headers-disagree-on-is-told-before-the-link.md`, `docs/panel/202-reports/historian.md`): each line says what the cited page itself states, the sitting's own file says what was taken from it, and every link was re-read 2026-10-11.
+
+- **Reached first by GCC**: [-Wlto-type-mismatch](https://gcc.gnu.org/onlinedocs/gcc/Warning-Options.html): GCC warns, by default and under -flto, about type mismatches in global declarations from different compilation units
+- **Taken from Rust**: [clashing_extern_declarations](https://doc.rust-lang.org/rustc/lints/listing/warn-by-default.html): the lint detects an extern function declared under one name with different types, and does not run between crates
