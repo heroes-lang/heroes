@@ -53,7 +53,7 @@ synthesis from 03:23.
 - **L.** The historian's boundary rests on a shape the language refuses; C's
   refusal of a symlink and of a file outside the operand is what remains of it.
 
-## The resolution, provisional (author reading pending)
+## The resolution, ratified by the author (below)
 
 The most robust and complete route at every question (CLAUDE.md § 4,
 CL-040); what conservative would have been is below the list.
@@ -110,4 +110,8 @@ the modules.
 
 ## Author's verdict
 
-(pending)
+**RATIFIED, 2026-10-11**, R1 to R5 as written above, the author answering
+through the question widget between 08:50:29 and 08:51:24 by the clocks read before the question and after the answer,
+choosing *Ratifica R1-R5* over *Alternativa N (flag nuovo)* and *Leggo
+prima*, on the coordinator's summary. Recorded as a reading (CLAUDE.md § 4).
+The author may overturn it. Landed by lane b21-apply (`123a1d13`).
