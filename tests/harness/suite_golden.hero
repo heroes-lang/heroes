@@ -263,6 +263,8 @@ function shape_full() -> Shape
 # batch 13's merge: defect 391's and defect 407's control-arm cases.
 # **14 on 2026-10-08**, as the suite asked at batch 15's gate: defects 445's
 # and 446's control-arm cases, lane b15-box's, and the round's others.
+# **20 on 2026-10-11**, as the suite asked at batch 21's gate: defects 614's
+# three control-arm cases and 625's two, and batch 20's.
 function shape_permissive() -> Shape
     return Shape(
         name: "permissive",
@@ -271,7 +273,7 @@ function shape_permissive() -> Shape
         flags: ["--brief", "--permissive"],
         on_stderr: true,
         want_code: 1,
-        least: 14,
+        least: 20,
         watched: true,
         silent_stdout: false,
         library_skip: false
