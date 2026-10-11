@@ -32,7 +32,10 @@ open.
 § The issues, the author's instruction of that day). **An item the step finishes
 is ticked where it stands**, with what closed it written under it and the card's
 `commit` filled: the commit that repaired a defect, or `self` where the closing
-commit is the one writing the file. Nothing moves, so the link a GitHub issue
+commit is the one writing the file. A `feature` or a `task` closes under a
+`## What was done` section, one line and its commit, which is what its GitHub
+issue says it delivered (`.claude/rules/records.md` § The issues, 2026-10-11).
+Nothing moves, so the link a GitHub issue
 holds to the file never breaks. **An item the step finds** is filed as a new
 file in today's folder, `issues/<year-month>/<day>/<stamp>-<slug>.md`, its card
 first and its kind the one that matches what it asks: a `feature` or `task`

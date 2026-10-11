@@ -19,6 +19,10 @@ labels: ["kind:decision"]
 
 <!-- Who found it, and the day. -->
 
+### Prior art
+
+<!-- Only where the sitting's historian sourced the precedent the resolution rests on: one line per precedent, `Taken from <who>` or `Reached first by <who>`, its link and the day it was re-read. Otherwise this heading is left out, and nothing says why. -->
+
 ### Recommendation
 
 <!-- The resolution recommended, its reason, and the measurement it rests on. -->

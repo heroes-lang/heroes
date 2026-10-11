@@ -17,3 +17,5 @@ github: none
 
     **2026-10-05, the author's *7a*** (`issues/2026-10/05/2026-10-05-0027-the-author-answers-1c-2a-3a-4a-5a-6b-7a.md`):
     the sitting is convened when the author decides to transcribe, not before.
+
+    **2026-10-11, the author's question of 2026-10-07 on the defect numbers** (`issues/2026-10/11/2026-10-11-1501-the-author-asks-that-the-issues-credit-who-got-there-first.md`): the verb asks `field.defect:NNN` before it creates a defect's issue, and the title and the `Record:` permalink before any other's, so a run stopped between a creation and the commit filling `github:` leaves no double; and after the last file a second pass turns every `defect NNN` a body names into a link to that defect's issue (`.claude/rules/records.md` § The issues, CL-083).

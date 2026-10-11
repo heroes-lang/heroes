@@ -81,6 +81,51 @@ where the work was ordinary. **It cuts both ways**: crediting the author for
 something the assistant found is the same falsehood wearing the flattering sign,
 and nobody would check that one (CL-058).
 
+**A ratification is recorded as a reading** (CLAUDE.md § 4, the author's
+instruction of 2026-09-19: *write down that I always read*), and `by
+delegation` is written only where the author says so. Five ratifications before
+that date say `by delegation` on the coordinator's assumption, never put to the
+author, and stand at their dates. CL-058 is about the record being TRUE, not
+about which claim is humbler: said again by the author 2026-09-21, on a
+ratification recorded as *not a reading*, meant as *take the reading for
+granted*. Moved here from CLAUDE.md § 4 on 2026-10-11, as what paid for that
+section's pointer to this one and to CL-082 and CL-083 (`DELTA_GATE`).
+
+**And where somebody outside this project got there first, the record says so
+too** (author instruction 2026-10-07, meant as: *when the issues go to GitHub I
+want them honest in crediting whoever solved these things before me: where a
+decision was favoured by another language's earlier decision, or by something
+found online, the issue says so and names it*; and, the same day, on the first
+draft of this rule: *not something that always applies; only where a sitting
+sat, the historian spoke, and what the historian said was taken into account;
+backwards too, in those cases alone; elsewhere do not even write that the
+search was not made*). So a `decision` issue of a sitting in which the
+historian sat, whose resolution rests on a precedent the historian sourced,
+ends with a `## Prior art` section, written in the session that files the
+sitting:
+
+- its first line names the sitting's file under `docs/panel/`, the historian's
+  report under its `-reports/` folder or the synthesis's seat row where the
+  sitting kept none, and the day every link below was re-read, `read
+  YYYY-MM-DD`;
+- then one line per precedent, in one of two forms and no other:
+  `- **Taken from <language or project>**: [<reference>](<url>): <the rule or
+  refusal adopted on their evidence>`, or `- **Reached first by <language or
+  project>**: [<reference>](<url>): <what Heroes reached on its own and found
+  already reached there>`;
+- only a precedent the historian marked `verified` and the session re-read; a
+  language the sitting merely compared itself with is not prior art, as it is
+  not a borrowing on the site's thanks page.
+
+**Where those conditions are not met the section does not exist**: no *not
+searched* and no *nothing found*, because a sentence about an absence rests on
+the searcher's vocabulary (CLAUDE.md § RUN IT) and the author asked for the
+credit where it is owed and for silence everywhere else. The heading is
+Rust's, the seventh section of the RFC template in `rust-lang/rfcs` (read
+2026-10-07); Swift Evolution's closing *Acknowledgments* is what `**Origin:**`
+already does for the people inside this project. What it cost to learn is
+CL-082. The executor is owed by M-issue-files, its task filed 2026-10-11.
+
 ## Milestone identifiers are names, not numbers
 
 The algorithm, and this is its only home (CL-003; `docs/roadmap/names.md`
@@ -198,20 +243,47 @@ verb renders it (a sitting's question, CLAUDE.md § 4):
 
 - the title is the file's `# ` heading where it opens with one, else a defect's
   bold first field, else the item's second field; a file of several items takes
-  its first's;
+  its first's; **and a defect's title opens with its number as a word**,
+  `Defect 235: <title>`, a file of several `Defects 018 to 021: <title>`,
+  because that number is the name the code, the tests and the commits use
+  (6,925 citations of `defect NNN` under `selfhost/`, `runtime/`, `seed/` and
+  `tests/`, 3,261 test files and 1,504 commit subjects, measured 2026-10-11)
+  and GitHub's number is an address no file knows until `github:` holds it
+  (CL-083);
 - the labels are `kind:<kind>`, `class:<class>` for a defect and
-  `area:<area>`, and the milestone is `M-<name>`;
+  `area:<area>`, and the milestone is `M-<name>`; a defect's issue also
+  carries the organisation's issue field `Defect`, a text field visible to
+  everyone holding its three-digit number, several separated by one space, so
+  that `field.defect:235` finds it (GitHub's documentation, read 2026-10-11);
+  the field is created once, `POST /orgs/heroes-lang/issue-fields` by an
+  organisation administrator, the author's act; and the two issues of the
+  number issued twice, `014`, each hold it and each body names the other;
 - the body opens `Filed YYYY-MM-DD · closed YYYY-MM-DD`, because a transcription
   cannot back-date GitHub's own dates; then the item under the headings of its
   kind's form in `.github/ISSUE_TEMPLATE/`: a defect's second field under *What
   happens* and its third under *Where to look*, then its `**Origin:**`, its
   `**Class:**` and *The repair* under headings of those names; a decision's
-  question, default, recommendation and verdict; a feature's or a task's *What
-  it delivers*; any other paragraph under *Notes*;
-  then `Record:` and the file's permalink;
+  question, default, recommendation and verdict, and its `## Prior art` under
+  *Prior art*, after *Origin* (§ And the record says whose idea it was); a
+  feature's or a task's *What it delivers* and, once closed, its `## What was
+  done` under *What was done*; any other paragraph under *Notes*;
+  then `Record:` and the file's permalink; every section stating a repair or a
+  settling ends with the commit's hash, a card's `self` rendered as the hash of
+  the commit that created the file, `git log --diff-filter=A --format=%H --
+  <file>`, since GitHub links a hash and not a word;
 - a closed issue takes one comment, `Fixed by <commit>` for a defect and
   `Settled by <commit>` for the rest: GitHub links a bare hash to its commit, so
-  no pull request is needed;
+  no pull request is needed; and a defect, a feature or a task whose repair a
+  sitting ruled says *Ruled by panel NNN* under it, linking the sitting's
+  decision issue, where the prior art stands once;
+- **every `defect NNN` a body names becomes a link to that defect's issue in a
+  second pass**, after the last file is transcribed, because the issues are
+  born in the order of their names and a closing text may name a defect born
+  after it;
+- **a transcription stopped between an issue's creation and the commit that
+  fills its `github:` creates no second issue**: before creating a defect's
+  issue the verb asks `field.defect:NNN`, before any other's it searches the
+  title and the `Record:` permalink, and it takes the issue it finds;
 - `github:` in the file is the truth of the mapping, and an issue that disagrees
   with its file is the one corrected;
 - **a question of comprehension is not transcribed**, and since the author's

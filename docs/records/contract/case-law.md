@@ -2042,3 +2042,73 @@ a line citation is wrong in the same silent way whether a map keeps it or not.
 The rule since: a change of shape rewrites the living citations into it in the
 same change, and the dated ones read against the commit that last held the old
 shape.
+
+## CL-082 — Where somebody else got there first the issue says so, and says nothing where nobody did
+2026-10-07 · author instruction · `.claude/rules/records.md` § And the record says whose idea it was
+
+Meant as: *when I create the issues on GitHub I want them to speak: a
+template, what the problem was, what the solution was, in which commit; and
+where there were historical threads, or where I reconstructed something,
+attribute the decision to the online reference or to the historical thread
+too, the other language's issue, that kind of thing; very honest in giving
+the credit to whoever solved these things before me, and the skill that
+creates the issue must take care of it.* CL-058 had settled who inside this
+project found what; this is the same rule pointed outward, and it was
+missing. Measured 2026-10-11: 7 of 2,010 issue files carried a link,
+`.github/ISSUE_TEMPLATE/` had no heading for a precedent, and of the three
+places the repository already credits outsiders, the historian's reports
+(111 files, 36 with a source), design.md's historical appendix and the site's
+thanks page, none reaches an issue.
+
+**What it cost to learn is the first draft of the rule, refused the same
+day.** The coordinator proposed a `## Prior art` on every issue that closes,
+the historian searching at every batch's close, and *not searched* written
+where nothing was found, on the ground that *this repair is too small to have
+a precedent* is a negative claim nobody ran (CL-018). The author's answer,
+meant as: *no, not something that always applies; something that applies
+where a sitting sat, where the historian spoke, where what the historian said
+was taken into account; the rest makes no sense; and yes, backwards too, but
+only in those cases, and elsewhere I would not even write that the search was
+not made.* The refusal is the rule: a credit is owed where a decision rested
+on somebody's earlier one, and a sentence about an absence is a sentence about
+the searcher. Measured the day the rule was written: 186 of 210 sittings'
+syntheses name the historian, which is the backlog's upper bound and not its
+count. The heading's name is itself a borrowing, the seventh section of
+Rust's RFC template, and the rule says so where it stands.
+
+## CL-083 — A defect's number is its name for ever, and GitHub's number is an address written once
+2026-10-07 · author question · `.claude/rules/records.md` § The issues
+
+Meant as: *one thing I noticed: sometimes in the code we cite defect number
+so-and-so; let us not lose that when we carry the defects and every issue to
+GitHub; either a custom field on GitHub, or something of the kind; think about
+it.* Measured 2026-10-11 on the trunk at `51e6bbb9`: **6,925** citations of
+`defect NNN` under `selfhost/`, `runtime/`, `seed/` and `tests/`, on **560**
+distinct numbers; **3,261** test files carrying a number in their names;
+**1,504** commit subjects naming a defect. Four days earlier the first count
+had read 3,548 on 352 numbers: the citations double in a week, and every one
+of them would read as a dangling reference beside an issue numbered in the
+thousands. GitHub's numbers cannot coincide with the defects': one sequence
+for every kind, the decisions between the defects, the order of birth rather
+than the number, and since 2026-10-11 strangers who open issues first
+(`CONTRIBUTING.md`).
+
+**What settled the shape.** The register of a defect is its item line and not
+its file's name: `defect_register` already skips a file that is only ABOUT a
+defect, and 15 numbers stand in two files' names for that reason, while one,
+`014`, stands on two item lines, its five citations in the code all meaning
+the second. So the title says the number as a word, `Defect 235:`, which the
+plainest search finds; the organisation's issue field `Defect` holds it as
+text, since a file of four defects holds four numbers, visible to everyone
+and asked with `field.defect:235`; the twins each hold `014` and name each
+other; the links from body to body are a second pass, since a closing text
+names defects born after it; and the verb that transcribes asks the field
+before it creates, so a run stopped halfway leaves no double. Refused:
+rewriting the citations to GitHub's numbers, which is 6,925 lines and 1,504
+commit messages that cannot be rewritten at all; reserving a GitHub number
+per defect, which GitHub does not offer; and an autolink `Defect <num>`,
+whose prefix with a space the documentation neither allows nor forbids, a
+repository setting left to the author. What the repository owes in exchange
+is a check that every number the code cites resolves in the register,
+`records/defects-cited`, M-issue-files' task of 2026-10-11: on that day every
+one of the 560 did, and nothing guaranteed the 561st.
