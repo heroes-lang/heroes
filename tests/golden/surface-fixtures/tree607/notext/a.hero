@@ -1,0 +1,8 @@
+# A root that is text, whose module's certain fix the root beside it, which
+# is not text, cannot vote for: so the module is not written (panel 211,
+# defect 607). Read by `selfhost/cli/consensus.hero`'s own test; a copy
+# through a file of text could not carry `b.hero`'s byte.
+use lib/m
+
+function main()
+    print(m.two())

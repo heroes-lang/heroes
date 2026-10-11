@@ -1,0 +1,4 @@
+# Its mark is `a.hero`'s.
+function two() -> i64
+    v: i64 @= 2  #~ never_rebound
+    return v

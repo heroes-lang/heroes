@@ -1,0 +1,134 @@
+# What `check <directory> --apply --in-place` writes once its roots agree
+# (`cli/consensus.hero`, panel 211, route C; defect 607): one write per file,
+# every one asked before the first byte, each whole or not at all.
+#
+# Refused together, before anything is written: a file outside the directory
+# named, a symbolic link on the way to one (a write through it lands outside
+# what the directory holds), a landing that cannot be written, a file with a
+# second name, and two names that may be one file holding two texts. A failure
+# after that, a full disk, leaves each file whole and names those written.
+
+use source
+use cli/files as fs
+use cli/io
+use cli/publish
+use cli/strings
+
+# One write per file: two spellings of one name that differ in case alone,
+# which this Mac's volume opens as one file, kept once where their texts
+# agree; where they do not, both stay, and `refused` names them.
+function planned(files: [source.InputFile]) -> [source.InputFile]
+    out: [source.InputFile] @= []
+
+    for one in files
+        twin: bool @= false
+
+        for other in out
+            if folded(other.name) == folded(one.name) && other.text == one.text
+                twin @ true
+
+        if !twin
+            out @ out.push(one)
+
+    return out
+
+# Every write, asked before the first: the first refusal, or "".
+function refused(files: [source.InputFile], dir: str) -> str
+    for one in files
+        if !strings.starts_with(text: one.name, prefix: dir + "/")
+            return "cannot write " + one.name + ": it is outside " + dir + ", the directory named; nothing was written"
+        link = linked(path: one.name, dir: dir)
+
+        if link != ""
+            return "cannot write " + one.name + ": " + link + " is a symbolic link, and a write through it lands outside what " + dir + " holds; nothing was written"
+
+        for other in files
+            if other.name != one.name && folded(other.name) == folded(one.name)
+                return "cannot write " + one.name + " and " + other.name + ": the two names may be one file, and the roots made two texts of them; nothing was written"
+
+        at = match publish.landing_for(one.name)
+            .ok found => found
+            .err e    => return e.msg + "; nothing was written"
+
+        if fs.is_file(at) && fs.names_of(at) != 1
+            return "cannot write " + one.name + ": it has " + fs.names_of(at).to_str() + " names, and a new file under this one would leave the others holding the old text; nothing was written"
+
+    return ""
+
+# A path's parts between its `/`s.
+function parts_of(path: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at <= path.len()
+        if at == path.len() || path[at] == '/'
+            out @ out.push(path.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    return out
+
+# A name with its ASCII capitals made small, as a volume that ignores case
+# compares two names.
+function folded(name: str) -> str
+    pieces: [str] @= []
+
+    for ch in name.chars()
+        pieces @ pieces.push(small_of(ch))
+
+    return pieces.join("")
+
+function small_of(ch: str) -> str
+    big = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    at: i64 @= 0
+
+    while at < big.len()
+        if big.slice(from: at, to: at + 1) == ch
+            return "abcdefghijklmnopqrstuvwxyz".slice(from: at, to: at + 1)
+        at @ at + 1
+
+    return ch
+
+# The first part of `path` below `dir`, the file included, that is a link.
+function linked(path: str, dir: str) -> str
+    pieces: [str] @= [dir]
+
+    for part in parts_of(path.slice(from: dir.len() + 1, to: path.len()))
+        pieces @ pieces.push(part)
+        so_far = pieces.join("/")
+
+        if fs.entry(so_far) == .link
+            return so_far
+
+    return ""
+
+# `files` written, each whole or not at all, each named as it is; a failure
+# names the files already written.
+function writes(files: [source.InputFile]) -> ()?
+    done: [str] @= []
+
+    for one in files
+        result = publish.rewrite(path: one.name, text: one.text)
+
+        if result.is_err()
+            told: str @= publish.message_of(result)
+
+            if done.len() > 0
+                told @ told + "; already rewritten: " + done.join(", ")
+            return fail(code: "not_written", msg: told)
+        io.eprint(text: "rewrote " + one.name)
+        done @ done.push(one.name)
+
+    return ok()
+
+## Tests
+
+test "two spellings of one name are written once where their texts agree"
+    a = source.InputFile(name: "d/lib/geom.hero", module: "", text: "t", is_library: false)
+    b = source.InputFile(name: "d/lib/Geom.hero", module: "", text: "t", is_library: false)
+    c = source.InputFile(name: "d/lib/Geom.hero", module: "", text: "u", is_library: false)
+    assert planned([a, b]).len() == 1
+    assert planned([a, c]).len() == 2
+    assert refused([a, c], dir: "d") != ""
+    assert strings.starts_with(text: refused([a], dir: "e"), prefix: "cannot write d/lib/geom.hero: it is outside e")

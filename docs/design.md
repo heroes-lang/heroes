@@ -2226,13 +2226,14 @@ the one in-scope candidate) may be applied mechanically; a `guess` is prose for 
 golden convention enforces honesty: `x.hero` + `x.expected` (+ `x.fixed` where a certain fix
 exists, and CI asserts that applying it makes the program compile).
 
-**What `check --json` answers, and what a tool may write** (panel 193, provisional, author
-ratification pending; the specification holds none of it). Every answer is a JSON document opening
+**What `check --json` answers, and what a tool may write** (panel 193, ratified 2026-10-06; a
+directory's answer panel 211's, provisional, author ratification pending; the specification holds
+none of it). Every answer is a JSON document opening
 `"schema": 2` and its `"kind"`: `"diagnostics"`, which `check --json` writes to stderr, a clean
 program's holding `"diagnostics": []`; or `"applied"`, which `check --apply --json` writes to
 stdout, beside `--in-place` too, holding as `"output"` the program `--apply` prints or writes, byte
 for byte, the root as `"file"`, how many rounds wrote as `"rounds"`, and as `"not_applied"` the
-certain fixes in another module, which it never writes, each `file:line` once. Every answer names
+certain fixes in another module, which a file named alone never writes, each `file:line` once. Every answer names
 under `"read"` each file it read, every round's, once, with the SHA-256 of its bytes as first read,
 so the root's before any round wrote, and `null` for a file holding a byte that is not UTF-8, which
 is never lexed and takes no fix. Every fix says where it applies, in the text as checked: its
@@ -2243,7 +2244,7 @@ the end excluded, an insertion's end its start; and `text`, the bytes it replace
 is not one, or crosses from one file into another, carries no place. A `certain` fix says what
 `check --apply`'s first round does with it, `"first_round"`: `written`; `withheld`, touching one
 written and made again from the text that one leaves; `twin`, one written, again; `elsewhere`,
-another module's, which `--apply` never writes; or `malformed`. A `guess` carries none, and its
+another module's, which `--apply` on a file never writes; or `malformed`. A `guess` carries none, and its
 place is for showing. **A tool writes the certain fixes marked `written` and nothing else, at their
 bytes, and asks again after any answer that wrote one, until an answer writes none**: that reaches
 what `check --apply` writes when it is itself run until it changes nothing (one `check --apply`
@@ -2252,6 +2253,23 @@ the files read, not the program: a module edited since can make a written fix wr
 check tells. A flag no one answer can hold is refused at exit 2 rather than dropped, as each was
 until defect 371: `--brief` or `--dump-scopes` with `--apply`, `--in-place` without it, and
 `--brief` with `--json`.
+
+**A directory operand writes a module where every root under it agrees** (panel 211, provisional,
+author ratification pending; defect 607). `check <directory> --apply --in-place` takes every
+`.hero` file under the directory declaring `function main` as a root, hidden directories and
+`build/` passed over, and writes a file only where every root that reads it computes the same text
+of it: a certain fix is certain for the program it was computed from, every `use` starting at the
+directory of the file compiled (panel 099 R5), so one module can mean two things to two roots. A
+root stopped before the stage that fixes a file, or not text at all, votes for the file as it
+stands; a file the roots disagree on is not written, and it is named with the roots on each side.
+The rounds repeat in memory, each reading what the rounds before agreed, until a round agrees on
+nothing; then every write is asked before the first byte, and a symbolic link on the way, a file
+with a second name, a file that cannot be written or one outside the directory refuses them all;
+each file is written whole. **The directory is the set of programs that count**: a root above it
+is not asked, and a file it reads can be written under it, so the author names the trees a
+migration means, and a directory holding records or cases wrong on purpose is not one. A directory
+with anything but `--apply --in-place` is refused as a file that cannot be read is, and with
+`--json` as well at exit 2, one root's document being no directory's.
 
 **Implementation cost: zero theory.** The type checker already knows all of this at the moment it
 detects the error — which function, which signature, which record, which line. Today it throws that

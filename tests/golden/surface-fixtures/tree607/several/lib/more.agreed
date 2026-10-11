@@ -1,0 +1,4 @@
+# The root's second module.
+function three() -> i64
+    w: i64 = 3  #~ never_rebound
+    return w

@@ -30,7 +30,7 @@ use stable
 
 # What one pass wrote, and what it did not.
 record Applied
-    # The root file's text with the chosen fixes written in.
+    # The file's text with the chosen fixes written in.
     text: str
 
     # How many fixes were written, and how many were withheld because they
@@ -45,10 +45,16 @@ record Applied
     malformed: i64
 
 function applied(diagnostics: [diag.Diagnostic], s: source.Source) -> Applied
+    return applied_to(diagnostics, s, file: 0)
+
+# The fixes inside the file at `file`, written into its own text; a fix
+# outside it is `elsewhere`. `check <directory> --apply --in-place` asks it
+# of every file a root reads (`cli/consensus.hero`, defect 607).
+function applied_to(diagnostics: [diag.Diagnostic], s: source.Source, file: i64) -> Applied
     edits: [diag.Fix] @= []
     elsewhere: [str] @= []
     malformed: i64 @= 0
-    limit = source_extent.root_end(s)
+    low = s.files[file].start
 
     for d in diagnostics
         for fix in d.fixes
@@ -59,7 +65,7 @@ function applied(diagnostics: [diag.Diagnostic], s: source.Source) -> Applied
                 malformed @ malformed + 1
                 continue
 
-            if fix.span.end > limit
+            if !inside(s, span: fix.span, file: file)
                 found = source.locate(s, fix.span.start)
                 at = found.file + ":" + found.line.to_str()
 
@@ -70,7 +76,7 @@ function applied(diagnostics: [diag.Diagnostic], s: source.Source) -> Applied
 
     ordered = in_order(edits)
     keep = chosen(ordered)
-    whole = source_extent.user_text(s)
+    whole = source_extent.text_of(s, index: file)
     pieces: [str] @= []
     cut: i64 @= 0
     written: i64 @= 0
@@ -83,9 +89,9 @@ function applied(diagnostics: [diag.Diagnostic], s: source.Source) -> Applied
     while at < ordered.len()
         if keep[at] == .write
             fix = ordered[at]
-            pieces @ pieces.push(whole.slice(from: cut, to: fix.span.start))
+            pieces @ pieces.push(whole.slice(from: cut, to: fix.span.start - low))
             pieces @ pieces.push(fix.replacement)
-            cut @ fix.span.end
+            cut @ fix.span.end - low
             written @ written + 1
 
         if keep[at] == .withhold
@@ -100,6 +106,13 @@ function applied(diagnostics: [diag.Diagnostic], s: source.Source) -> Applied
         elsewhere: elsewhere,
         malformed: malformed
     )
+
+# Whether `span` lies inside the file at `file`, a file a fix may be written
+# into: not the library, and not a file that is not text.
+function inside(s: source.Source, span: token.Span, file: i64) -> bool
+    if s.files[file].is_library || source_extent.faulted(s, index: file)
+        return false
+    return span.start >= s.files[file].start && span.end <= source_extent.end_of(s, index: file)
 
 # What becomes of one fix: written, withheld for the next round, or dropped
 # as the twin of one written, the same bytes made into the same text.

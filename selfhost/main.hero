@@ -35,6 +35,7 @@ use library_source
 use cli/lex
 use cli/syntax_cmds
 use cli/check
+use cli/consensus
 use cli/check_flags
 use cli/verbs
 use cli/doctor
@@ -157,6 +158,9 @@ function command(_: i64) -> i64
         if !clash.is_err()
             io.eprint(text: "error: " + clash.must())
             exit(code: 2)
+
+        if process.is_directory(inv.file.default("")) && argv.has(inv, spelling: "--apply") && argv.has(inv, spelling: "--in-place")
+            exit(code: cli_table.exit_code(consensus.run(dir: inv.file.default(""), inv: inv)))
     reading: bool @= false
 
     # `fmt` reads THE FILE IT WAS NAMED and nothing else, where the other

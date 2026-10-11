@@ -78,6 +78,12 @@ function entry(path: str) -> Entry
         return .other
     return .unknown
 
+# Whether what is at `path` is a file, its links followed by the caller.
+function is_file(path: str) -> bool
+    match entry(path)
+        .file                                            => return true
+        .absent | .directory | .link | .other | .unknown => return false
+
 # Whether what is at `path` is neither a file, a directory nor a link: a
 # device, a FIFO, a socket, `NUL`. Nothing there is renamed over.
 function is_special(path: str) -> bool

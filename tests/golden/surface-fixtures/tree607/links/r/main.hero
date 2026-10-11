@@ -1,0 +1,7 @@
+# The surface case makes `r/lib` a link to `../real/lib`, or `r/lib/geom.hero`
+# a link to `../../real/lib/geom.hero`: a write through either lands outside
+# `r/`, the directory named, so nothing is written (panel 211).
+use lib/geom
+
+function main()
+    print(geom.two())

@@ -1,0 +1,5 @@
+# Its marks are the first round's, the parse's; the checker's `never_rebound`
+# is told only once they are written.
+fn one() -> i64  #~ reserved_word
+    v: i64 @ 1  #~ old_cell_symbol
+    return v
