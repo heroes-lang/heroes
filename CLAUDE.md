@@ -184,12 +184,9 @@ records what conservative would have been, so the author can choose it (CL-040).
 Seats veto on soundness, and a veto is a refusal rather than a price. **The
 author READS the sittings** — their instruction, 2026-09-19, in those words:
 *write down that I always read*. So a ratification is recorded as a reading, and
-`by delegation` is written only where the author says so. Five ratifications
-before that date say `by delegation` on the coordinator's assumption, never put
-to them; they stand at their dates. CL-058 is about the record being TRUE, not
-about which claim is humbler — **said again by the author 2026-09-21**, on a
-ratification recorded as *not a reading*: take the reading for granted. **Ask
-once
+`by delegation` is written only where the author says so (the earlier ones and
+the author's second word, `.claude/rules/records.md` § And the record says
+whose idea it was). **Ask once
 per milestone, then convene without asking again**, choosing only the seats whose
 input differs (CL-023). Briefs keep every command short and grep design.md,
 `docs/panel/` and `issues/` first (CL-027). No design change lands without
@@ -281,9 +278,11 @@ beat as a file in `docs/records/book/beats/`, the ROADMAP status, and a local ta
 that would carry that tag is asked for** (CL-042). The close checklist lives in
 `/step`, its only copy.
 
-Naming, release tags, the record vocabulary and **whose idea it was** are in
-`.claude/rules/records.md` (CL-003, CL-058, CL-067). Records are append-only: a
-falsified sentence is corrected underneath, with its date, never deleted.
+Naming, release tags, the record vocabulary, **whose idea it was** and **who
+got there first** are in `.claude/rules/records.md` (CL-003, CL-058, CL-067,
+CL-082); a defect's number is its name for ever, GitHub's an address (CL-083).
+Records are append-only: a falsified sentence is corrected underneath, with its
+date, never deleted.
 
 ## 15. Working instructions that lived in the assistant's memory until 2026-09-03
 Kept as a heading because the records cite it; each instruction now sits in the

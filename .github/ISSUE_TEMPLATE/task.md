@@ -14,3 +14,7 @@ labels: ["kind:task"]
 ### Origin
 
 <!-- Who asked for it, the day, and the milestone it is owed to. -->
+
+### What was done
+
+<!-- Filled when it closes: what landed, in one line, and the commit. -->

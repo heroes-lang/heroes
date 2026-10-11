@@ -304,6 +304,12 @@ is a full panel.
    - the verdict table (verdict · section · cost/delta · prediction ·
      condition, per judge)
    - disagreements, stated plainly — do not smooth them over
+   - **the prior art, per resolution**: the precedent of the historian's report
+     each resolution rests on, `verified` and re-read, or *none*. A resolution
+     resting on one gives the sitting's decision issue a `## Prior art` section
+     (`.claude/rules/records.md` § And the record says whose idea it was, the
+     author's instruction of 2026-10-07); none, and no section is written, not
+     even to say so.
    - **the decision is the author's, asynchronously.** The synthesis adopts
      **the resolution CLAUDE.md § 4 requires**, which is the most robust and
      complete one, never the cheapest and never a compromise; where robust and
@@ -339,5 +345,5 @@ is a full panel.
      harness next runs, score them and append the results — judges accrue
      track records.
 
-5. File the sitting as a `decision` issue, closed the day it is filed. Commit the panel file (and, separately, any
+5. File the sitting as a `decision` issue, closed the day it is filed, ending with its `## Prior art` where step 4 found one. Commit the panel file (and, separately, any
    resulting `spec/` or `design.md` amendment, citing the sitting's own file).
