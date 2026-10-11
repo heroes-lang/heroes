@@ -39,7 +39,7 @@ extern "ffi-a-byte-field-crosses-to-c.h"
     function slot_fill(p: ptr counted_by n lent, n: i64)
 
 function main()
-    s: Slot @ Slot(nsap: [1, 0, 3, 0, 5, 0, 7, 0], tag: [9, 8, 7, 6], id: 0)
+    s: Slot @= Slot(nsap: [1, 0, 3, 0, 5, 0, 7, 0], tag: [9, 8, 7, 6], id: 0)
 
     # C reads the field, told where it ends by the argument beside it. The
     # zeros inside are data here, not a terminator, which is the case a
@@ -57,5 +57,5 @@ function main()
 
     # The other direction is untouched and still copies: a terminated run of
     # the same kind of field is text.
-    t: Slot @ Slot(nsap: [72, 105, 0, 0, 0, 0, 0, 0], tag: [0, 0, 0, 0], id: 1)
+    t: Slot = Slot(nsap: [72, 105, 0, 0, 0, 0, 0, 0], tag: [0, 0, 0, 0], id: 1)
     print(t.nsap.validated_bytes().must())

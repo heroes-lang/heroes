@@ -1,0 +1,55 @@
+# Fixed defect 127, 2026-09-28. Symptom: a literal arm on any integer but an
+# `i64` was refused, `255 =>` on a `u8` as `type_mismatch: expected u8,
+# found i64`, so a byte could not be matched against a character at all, and
+# `-9223372036854775808 =>` was `int_out_of_range` on an `i64` where
+# `x: i64 = -9223372036854775808` compiles. Cause: the checker synthesized a
+# pattern's literal, as an `i64`, where a literal takes the type its context
+# asks for (spec § 2) and a pattern's context is what it matches. Each arm
+# below is checked against its subject's width, the sign folded in, and
+# matches at that width's edges.
+
+function byte_class(b: u8) -> str
+    return match b
+        'a' | 'e' | 'i' | 'o' | 'u' => "vowel"
+        ' '                         => "space"
+        0 | 255                     => "edge"
+        _                           => "other"
+
+function narrow(n: i32) -> i64
+    return match n
+        -2147483648 => 1
+        2147483647  => 2
+        _           => 0
+
+function wide(n: u64) -> i64
+    return match n
+        18446744073709551615 => 1
+        0                    => 2
+        _                    => 0
+
+function signed_edge(n: i64) -> i64
+    return match n
+        -9223372036854775808 => 1
+        9223372036854775807  => 2
+        _                    => 0
+
+function small(n: i8) -> i64
+    return match n
+        -128 => 1
+        127  => 2
+        -0   => 3
+        _    => 0
+
+function main()
+    text = "hi you"
+    classes: [str] @ []
+
+    for i in range(from: 0, to: text.len())
+        classes @ classes.push(byte_class(text[i]))
+
+    print(classes.join(" "))
+    print(byte_class(255), " ", byte_class(0))
+    print(narrow(-2147483648), narrow(2147483647), narrow(0))
+    print(wide(18446744073709551615), wide(0), wide(7))
+    print(signed_edge(-9223372036854775808), signed_edge(9223372036854775807), signed_edge(1))
+    print(small(-128), small(127), small(0), small(5))

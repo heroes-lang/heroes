@@ -31,7 +31,7 @@ record Row
     label: str
 
 function main()
-    rows: [Row] @ [Row(cells: [Cell(n: 1, tag: "x")], label: "a")]
+    rows: [Row] @= [Row(cells: [Cell(n: 1, tag: "x")], label: "a")]
 
     # The witness: index then trailing field, scalar and counted.
     rows[0].label @ "b"
@@ -50,6 +50,6 @@ function main()
 
     # Two array levels, plain element store, and the map insert unmoved.
     rows[0].cells[0] @ Cell(n: 7, tag: "z")
-    m: {str: i64} @ {}
+    m: {str: i64} @= {}
     m["k"] @ 3
     print(rows[0].label, rows[0].cells[0].n, rows[0].cells[0].tag, m["k"].must())

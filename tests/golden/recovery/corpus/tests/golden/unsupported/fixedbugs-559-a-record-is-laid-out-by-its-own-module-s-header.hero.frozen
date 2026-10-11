@@ -1,0 +1,20 @@
+# fixedbugs, defect 559, lane b18-ffi, 2026-10-10 (panel 202's C0; the
+# critic's `skew64`).
+#
+# `fixedbugs-559-skew.h` lays `S` out as `{ long long a; int b; }` where `WIDE`
+# is defined and `{ int a; int b; }` where it is not, and only the other
+# module's header defines it. This module's unit reads its own header alone,
+# so `a` is an `int` and `a: i64` is wrong. Until 2026-10-10 the layout
+# check read every header of the program in one unit, the other module's
+# first, and told *`S.a` is `long long`, a signed 64-bit integer, not `i64`*,
+# a message that refutes itself. It is told what this module's unit reads.
+use fixedbugs559/wide
+
+extern "fixedbugs-559-skew.h"
+    record S
+        a: i64  #~ ffi_field_type
+        b: i32
+
+function main()
+    s = S(a: 1, b: 2)
+    print(wide.doubled(x: 3) + s.a)

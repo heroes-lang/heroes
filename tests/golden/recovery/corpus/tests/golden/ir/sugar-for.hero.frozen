@@ -2,7 +2,7 @@
 # and the fourth is the point: `continue` lands on the step, so the increment
 # happens on that path too.
 function total_of(xs: [i64]) -> i64
-    sum: i64 @ 0
+    sum: i64 @= 0
 
     for x in xs
         sum @ sum + x

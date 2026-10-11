@@ -12,7 +12,7 @@ function h(@xs: [i64])
     xs @ xs.push(1)
 
 function f() -> i64
-    xs: [i64] @ []
+    xs: [i64] @= []
     h(
         @  # the list
             xs

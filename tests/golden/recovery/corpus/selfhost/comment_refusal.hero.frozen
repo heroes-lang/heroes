@@ -1,0 +1,78 @@
+# The comment: where it ends, the characters in it a reader cannot see, and
+# its token. A comment refuses what a string refuses written as itself but
+# the tab, which a comment holds, and writes such a character by its name,
+# `<U+202E>`, the form a diagnostic shows it in (panel 192's R3; defects 251
+# and 283). What is refused and what is said of it are `raw_refusal`'s; this
+# walks a comment, in the one scan that finds its end, a printable byte
+# answered in two comparisons (panel 192's R11, measured). The comment and its
+# token moved here from `scan.hero` at batch 12's round, when that module
+# passed §11's 300 lines once its scan called this one (2026-10-06); `scan`
+# calls them, and `foreign_comment` there takes its token from here.
+
+use diag
+use state
+use token
+use raw_refusal
+
+# `# …` to end of line, retained as a token (doc comments and `##` section
+# headings are the parser's reading of the same span), every character in it
+# a reader cannot see refused in the scan that finds its end. Comments never
+# influence terminator insertion, so this bypasses `emit` and leaves
+# `last_significant` alone.
+function comment(@l: state.LexState, text: str)
+    start = l.pos
+    l.pos @ end_of_comment(@l.diagnostics, text, from: l.pos)
+
+    end: i64 @= l.pos
+
+    # Don't let a trailing carriage return (13) into the comment's text.
+    if end > start && text[end - 1] == 13
+        end @ end - 1
+    comment_token(@l, start: start, end: end)
+
+# The comment token from `start` to `end`. A comment line after one that owes
+# its terminator is held, so that it follows the terminator as it always did
+# (`open_line`).
+function comment_token(@l: state.LexState, start: i64, end: i64)
+    t = token.Token(kind: .comment, span: token.Span(start: start, end: end))
+
+    if l.owed >= 0
+        state.push_token(@l.held, t)
+    else
+        state.push_token(@l.tokens, t)
+
+# Past the comment from `from` to its line's end, every run of characters in
+# it a reader cannot see told once into `diagnostics`; a tab, and a carriage
+# return before the line feed, are held.
+function end_of_comment(@diagnostics: [diag.Diagnostic], text: str, from: i64) -> i64
+    at: i64 @= raw_refusal.clear(text, from: from)
+
+    while at < text.len() && text[at] != 10
+        b = text[at]
+
+        if b == 9 || b == 13 && at + 1 < text.len() && text[at + 1] == 10
+            at @ raw_refusal.clear(text, from: at + 1)
+            continue
+        end = raw_refusal.run_end(text, at: at)
+
+        if end == at
+            at @ raw_refusal.clear(text, from: at + 1)
+            continue
+        state.push_diagnostic(@diagnostics, raw_refusal.told_as(text, from: at, to: end, holder: .comment))
+        at @ raw_refusal.clear(text, from: end)
+
+    return at
+
+## Tests
+
+test "a comment's run a reader cannot see is told once, and a tab is held"
+    said: [diag.Diagnostic] @= []
+    esc: [u8] = [27, 7]
+    text = "# a" + esc.validated_bytes().must() + "b\tc\nx"
+    assert end_of_comment(@said, text, from: 0) == 8
+    assert said.len() == 1
+    assert said[0].code == "invisible_character"
+    assert said[0].fixes[0].replacement == "<U+001B><U+0007>"
+    clean: [diag.Diagnostic] @= []
+    assert end_of_comment(@clean, "# plain\n", from: 0) == 7
+    assert clean.len() == 0

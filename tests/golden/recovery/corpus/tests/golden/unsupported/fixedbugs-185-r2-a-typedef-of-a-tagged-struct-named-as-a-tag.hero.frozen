@@ -1,0 +1,14 @@
+# fixedbugs, panel 185 R2, lane ffi-macro, 2026-10-02.
+#
+# `tagged_t` is a typedef of `struct tagged_s`, named after `tag` with nothing
+# else said of it: C makes an empty `struct tagged_t` up at this line, clang
+# shows no spelling of the type, and defect 145's note gave two readings.
+# `typedef tagged_t hero_q;` compiles, so the note gives the typedef's: a
+# record takes it by its own name, `record tagged_t`, which binds.
+
+extern "fixedbugs-145-types.h"
+    record T tag tagged_t  #~ ffi_unknown_tag
+        a: i32
+
+function main()
+    print(1)

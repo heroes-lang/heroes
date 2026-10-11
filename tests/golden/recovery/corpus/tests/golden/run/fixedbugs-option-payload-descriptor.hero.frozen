@@ -27,17 +27,17 @@ record Held
     inner: Block?
 
 function main()
-    a: Node @ .leaf
-    b: Node @ .leaf
+    a: Node = .leaf
+    b: Node = .leaf
     print(a == b)
 
     # The same shape one level down: a record field nothing builds either.
-    h: Held @ Held(inner: fail(code: "none", msg: "n"))
-    g: Held @ Held(inner: fail(code: "none", msg: "n"))
+    h: Held = Held(inner: fail(code: "none", msg: "n"))
+    g: Held = Held(inner: fail(code: "none", msg: "n"))
     print(h == g)
 
     # And the constructed direction still works, which is what used to.
-    c: Node @ .branch(otherwise: ok(Block(n: 1)))
-    d: Node @ .branch(otherwise: ok(Block(n: 1)))
+    c: Node = .branch(otherwise: ok(Block(n: 1)))
+    d: Node = .branch(otherwise: ok(Block(n: 1)))
     print(c == d)
     print(c == a)

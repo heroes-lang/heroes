@@ -1,0 +1,44 @@
+# A header's `deprecated` attribute is clang's advice to whoever names the
+# name, and the compiler's own lines are nobody's choice (design.md §4.19,
+# Part 8's *this language has no warning level*; panel 205's R5, ratified
+# 2026-10-10; defect 571).
+#
+# **The compiler names every name a group binds**, in its result assertion,
+# its probe, a constant's accessor, a record's field assertions and
+# per-type functions, so `<ucontext.h>` bound through a header of the
+# program's own defining `_XOPEN_SOURCE 600` built at exit 0 and printed
+# clang's `-Wdeprecated-declarations` at the emitted `_Static_assert(
+# HERO_RET_I32(getcontext((void *)0)), ...)`, a line no author wrote, over a
+# correct program that never called it (panel 205's critic, `uc`).
+#
+# **So the warning is quiet on every line of a unit after the groups'
+# close** (`emit/macro_guard.hero`), the program's own definitions as the
+# compiler's assertions, probes, prototypes, prologues and accessors (panel
+# 208's R1, defects 584 and 587): a deprecation is advice about a program,
+# not a mistake in it, and this language has no warning level. Until then it
+# was spoken again over the program's definitions, so the program's own call
+# printed clang's raw text at the emitted C, and `main`'s prologue temporary
+# of a group's record, a line no author wrote, did too (panel 208's
+# compiler-engineer, s3). Nothing about a verdict moves: the warning was never
+# an error, and a unit that binds no group's header writes none of these
+# lines. A name its header marks `unavailable` is clang's error, not its
+# warning, and no line here reaches it (`emit/ffi_unavailable.hero`).
+
+constant QUIET: str
+    "#pragma clang diagnostic ignored \"-Wdeprecated-declarations\""
+
+# The two groups beside it, quiet from the same close: a macro its header
+# marks with `#pragma clang deprecated` (defect 587), and GCC's `warning`
+# attribute, which clang says at -O0 and not at -O2, so it can carry no
+# verdict (panel 208).
+constant BESIDE: [str]
+    [
+        "#pragma clang diagnostic ignored \"-Wdeprecated-pragma\""
+        "#pragma clang diagnostic ignored \"-Wattribute-warning\""
+    ]
+
+## Tests
+
+test "the three lines name the three warnings, each quiet"
+    assert QUIET == "#pragma clang diagnostic ignored \"-Wdeprecated-declarations\""
+    assert BESIDE == ["#pragma clang diagnostic ignored \"-Wdeprecated-pragma\"", "#pragma clang diagnostic ignored \"-Wattribute-warning\""]

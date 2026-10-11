@@ -1,0 +1,23 @@
+# Panel 178, compiler-engineer: `rest: zero` over every kind of field a group record may hold.
+extern "kinds.h"
+    record Pt tag pt
+        x: i32
+        y: i32
+    record Opaque tag opaque
+    record Kinds tag kinds
+        tag: i8
+        ratio: f64
+        on: bool
+        p: ptr
+        name: cstr
+        at: Pt
+        pts: Pt[3]
+        f: f32[2]
+        h: Opaque
+        last: i64
+
+function main()
+    k = Kinds(last: 9, rest: zero)
+    print(k.tag, k.ratio, k.on, k.p == nullptr, k.name == nullptr, k.at.x, k.pts[2].y, k.f[1], k.h == nullptr, k.last)
+    j = Kinds(tag: 1, at: Pt(x: 4, y: 5), rest: zero)
+    print(j.tag, " ", j.at.y, " ", j.last)

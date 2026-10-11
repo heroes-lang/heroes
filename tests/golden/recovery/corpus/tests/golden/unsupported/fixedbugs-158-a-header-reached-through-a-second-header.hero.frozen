@@ -1,0 +1,14 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# the group's header includes a second header, and the second includes the
+# one the machine lacks. clang's line names the second header, which no group
+# names; the stack it prints above the line, `In file included from`, names
+# the group's, and the diagnostic is told on that group with every include
+# clang followed.
+
+extern "fixedbugs-158-depth-two-outer.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

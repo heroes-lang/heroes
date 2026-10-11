@@ -14,7 +14,7 @@ record Db
     handle: CDb
 
 function opened() -> Db?
-    db: CDb @ nullptr
+    db: CDb @= nullptr
 
     if db_open(path: ":memory:".cstr(), out: @db) != 0
         return fail(code: "cannot_open", msg: "no")
@@ -25,6 +25,6 @@ function closed(@db: Db) -> i64
 
 function main()
     result = opened()
-    db: Db @ result.must()
+    db: Db @= result.must()
     _ = closed(@db)
     print(db_changes(db: result.must().handle))

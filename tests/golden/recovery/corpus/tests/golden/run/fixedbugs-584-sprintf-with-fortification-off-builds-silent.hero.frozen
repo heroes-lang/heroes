@@ -1,0 +1,24 @@
+# fixedbugs, defect 584, lane b19-dep, 2026-10-10 (panel 208's R1).
+#
+# SYMPTOM: `sprintf` from `stdio.h`, called, with the program's own header
+# defining `_FORTIFY_SOURCE 0`: the call names the C library's declaration,
+# which this Mac's SDK marks `deprecated`, and clang printed its warning at
+# the emitted C of the call. Fortified, the call is a macro naming
+# `__builtin___sprintf_chk`, and was silent (panel 208's two seats).
+#
+# FIX: `-Wdeprecated-declarations`, `-Wdeprecated-pragma` and
+# `-Wattribute-warning` are ignored over the whole unit after the groups'
+# close, the program's own lines as the compiler's (`emit/deprecation.hero`,
+# panel 208's R1): a deprecation is advice about a program, not a mistake in
+# it, and this language has no warning level.
+
+extern "fixedbugs-584-sprintf-with-fortification-off-builds-silent.h"
+    function malloc(n: u64) -> ptr
+    function free(p: ptr)
+    function sprintf(buf: ptr, format: cstr lent, n: i64) -> i32
+
+function main()
+    p = malloc(64.to_u64().must())
+    k = sprintf(p, "%lld".cstr(), 42)
+    print(k)
+    free(p)

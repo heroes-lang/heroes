@@ -1,0 +1,18 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, the floating-point
+# shape beside the packing: a header's `#pragma clang fp contract(fast)`
+# reached the program's own arithmetic, and at `-O2` on this Mac
+# `tenth * ten - one` was one fused multiply-add, `5.551115123125783e-17`
+# where two rounded steps give `0.0`.
+#
+# FIX: the floating-point state is pushed before the groups and popped after
+# them, and clang's precise model set again (`emit/header_state.hero`).
+
+extern "fixedbugs-582-a-header-s-fp-contract-fast-leaves-the-program-s-arithmetic-unfused.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    one = llabs(-1).to_f64()
+    ten = llabs(-10).to_f64()
+    big = llabs(-10000000000000000).to_f64()
+    tenth = one / ten
+    print(tenth * ten - one, " ", big + one - big)

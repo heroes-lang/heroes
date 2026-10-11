@@ -1,0 +1,3021 @@
+# Fixed 2026-10-01, defect 140, lane emit.
+# Symptom: records nested by value a thousand deep, `record R<i>` holding
+# `R<i-1>`, stopped the compiler at 134: `build` with *stack exhausted in
+# emitsynth.collect*, and `check` itself, where a value of them is compared
+# or used as a map key, with *stack exhausted in checkpartial.reaches_within*
+# from seven hundred deep.
+# Cause: every walk over a record type recursed once per record on the
+# route. Each now keeps a stack of its own and enters what is below a place
+# in the order the recursion did, so what is emitted and what is said are
+# the recursion's own, and the depth is the records', not the machine's.
+# Clang's own limits are measured beside it and are not this file's: with
+# Apple clang 21 on arm64 macOS, records nested 7,000 deep build and 8,000
+# make clang die by signal, and variants 2,000 and 2,500 (2026-10-01).
+# This case: compared, used as a map key's type, and held in an array.
+
+record R0
+    v: i64
+
+record R1
+    inner: R0
+
+record R2
+    inner: R1
+
+record R3
+    inner: R2
+
+record R4
+    inner: R3
+
+record R5
+    inner: R4
+
+record R6
+    inner: R5
+
+record R7
+    inner: R6
+
+record R8
+    inner: R7
+
+record R9
+    inner: R8
+
+record R10
+    inner: R9
+
+record R11
+    inner: R10
+
+record R12
+    inner: R11
+
+record R13
+    inner: R12
+
+record R14
+    inner: R13
+
+record R15
+    inner: R14
+
+record R16
+    inner: R15
+
+record R17
+    inner: R16
+
+record R18
+    inner: R17
+
+record R19
+    inner: R18
+
+record R20
+    inner: R19
+
+record R21
+    inner: R20
+
+record R22
+    inner: R21
+
+record R23
+    inner: R22
+
+record R24
+    inner: R23
+
+record R25
+    inner: R24
+
+record R26
+    inner: R25
+
+record R27
+    inner: R26
+
+record R28
+    inner: R27
+
+record R29
+    inner: R28
+
+record R30
+    inner: R29
+
+record R31
+    inner: R30
+
+record R32
+    inner: R31
+
+record R33
+    inner: R32
+
+record R34
+    inner: R33
+
+record R35
+    inner: R34
+
+record R36
+    inner: R35
+
+record R37
+    inner: R36
+
+record R38
+    inner: R37
+
+record R39
+    inner: R38
+
+record R40
+    inner: R39
+
+record R41
+    inner: R40
+
+record R42
+    inner: R41
+
+record R43
+    inner: R42
+
+record R44
+    inner: R43
+
+record R45
+    inner: R44
+
+record R46
+    inner: R45
+
+record R47
+    inner: R46
+
+record R48
+    inner: R47
+
+record R49
+    inner: R48
+
+record R50
+    inner: R49
+
+record R51
+    inner: R50
+
+record R52
+    inner: R51
+
+record R53
+    inner: R52
+
+record R54
+    inner: R53
+
+record R55
+    inner: R54
+
+record R56
+    inner: R55
+
+record R57
+    inner: R56
+
+record R58
+    inner: R57
+
+record R59
+    inner: R58
+
+record R60
+    inner: R59
+
+record R61
+    inner: R60
+
+record R62
+    inner: R61
+
+record R63
+    inner: R62
+
+record R64
+    inner: R63
+
+record R65
+    inner: R64
+
+record R66
+    inner: R65
+
+record R67
+    inner: R66
+
+record R68
+    inner: R67
+
+record R69
+    inner: R68
+
+record R70
+    inner: R69
+
+record R71
+    inner: R70
+
+record R72
+    inner: R71
+
+record R73
+    inner: R72
+
+record R74
+    inner: R73
+
+record R75
+    inner: R74
+
+record R76
+    inner: R75
+
+record R77
+    inner: R76
+
+record R78
+    inner: R77
+
+record R79
+    inner: R78
+
+record R80
+    inner: R79
+
+record R81
+    inner: R80
+
+record R82
+    inner: R81
+
+record R83
+    inner: R82
+
+record R84
+    inner: R83
+
+record R85
+    inner: R84
+
+record R86
+    inner: R85
+
+record R87
+    inner: R86
+
+record R88
+    inner: R87
+
+record R89
+    inner: R88
+
+record R90
+    inner: R89
+
+record R91
+    inner: R90
+
+record R92
+    inner: R91
+
+record R93
+    inner: R92
+
+record R94
+    inner: R93
+
+record R95
+    inner: R94
+
+record R96
+    inner: R95
+
+record R97
+    inner: R96
+
+record R98
+    inner: R97
+
+record R99
+    inner: R98
+
+record R100
+    inner: R99
+
+record R101
+    inner: R100
+
+record R102
+    inner: R101
+
+record R103
+    inner: R102
+
+record R104
+    inner: R103
+
+record R105
+    inner: R104
+
+record R106
+    inner: R105
+
+record R107
+    inner: R106
+
+record R108
+    inner: R107
+
+record R109
+    inner: R108
+
+record R110
+    inner: R109
+
+record R111
+    inner: R110
+
+record R112
+    inner: R111
+
+record R113
+    inner: R112
+
+record R114
+    inner: R113
+
+record R115
+    inner: R114
+
+record R116
+    inner: R115
+
+record R117
+    inner: R116
+
+record R118
+    inner: R117
+
+record R119
+    inner: R118
+
+record R120
+    inner: R119
+
+record R121
+    inner: R120
+
+record R122
+    inner: R121
+
+record R123
+    inner: R122
+
+record R124
+    inner: R123
+
+record R125
+    inner: R124
+
+record R126
+    inner: R125
+
+record R127
+    inner: R126
+
+record R128
+    inner: R127
+
+record R129
+    inner: R128
+
+record R130
+    inner: R129
+
+record R131
+    inner: R130
+
+record R132
+    inner: R131
+
+record R133
+    inner: R132
+
+record R134
+    inner: R133
+
+record R135
+    inner: R134
+
+record R136
+    inner: R135
+
+record R137
+    inner: R136
+
+record R138
+    inner: R137
+
+record R139
+    inner: R138
+
+record R140
+    inner: R139
+
+record R141
+    inner: R140
+
+record R142
+    inner: R141
+
+record R143
+    inner: R142
+
+record R144
+    inner: R143
+
+record R145
+    inner: R144
+
+record R146
+    inner: R145
+
+record R147
+    inner: R146
+
+record R148
+    inner: R147
+
+record R149
+    inner: R148
+
+record R150
+    inner: R149
+
+record R151
+    inner: R150
+
+record R152
+    inner: R151
+
+record R153
+    inner: R152
+
+record R154
+    inner: R153
+
+record R155
+    inner: R154
+
+record R156
+    inner: R155
+
+record R157
+    inner: R156
+
+record R158
+    inner: R157
+
+record R159
+    inner: R158
+
+record R160
+    inner: R159
+
+record R161
+    inner: R160
+
+record R162
+    inner: R161
+
+record R163
+    inner: R162
+
+record R164
+    inner: R163
+
+record R165
+    inner: R164
+
+record R166
+    inner: R165
+
+record R167
+    inner: R166
+
+record R168
+    inner: R167
+
+record R169
+    inner: R168
+
+record R170
+    inner: R169
+
+record R171
+    inner: R170
+
+record R172
+    inner: R171
+
+record R173
+    inner: R172
+
+record R174
+    inner: R173
+
+record R175
+    inner: R174
+
+record R176
+    inner: R175
+
+record R177
+    inner: R176
+
+record R178
+    inner: R177
+
+record R179
+    inner: R178
+
+record R180
+    inner: R179
+
+record R181
+    inner: R180
+
+record R182
+    inner: R181
+
+record R183
+    inner: R182
+
+record R184
+    inner: R183
+
+record R185
+    inner: R184
+
+record R186
+    inner: R185
+
+record R187
+    inner: R186
+
+record R188
+    inner: R187
+
+record R189
+    inner: R188
+
+record R190
+    inner: R189
+
+record R191
+    inner: R190
+
+record R192
+    inner: R191
+
+record R193
+    inner: R192
+
+record R194
+    inner: R193
+
+record R195
+    inner: R194
+
+record R196
+    inner: R195
+
+record R197
+    inner: R196
+
+record R198
+    inner: R197
+
+record R199
+    inner: R198
+
+record R200
+    inner: R199
+
+record R201
+    inner: R200
+
+record R202
+    inner: R201
+
+record R203
+    inner: R202
+
+record R204
+    inner: R203
+
+record R205
+    inner: R204
+
+record R206
+    inner: R205
+
+record R207
+    inner: R206
+
+record R208
+    inner: R207
+
+record R209
+    inner: R208
+
+record R210
+    inner: R209
+
+record R211
+    inner: R210
+
+record R212
+    inner: R211
+
+record R213
+    inner: R212
+
+record R214
+    inner: R213
+
+record R215
+    inner: R214
+
+record R216
+    inner: R215
+
+record R217
+    inner: R216
+
+record R218
+    inner: R217
+
+record R219
+    inner: R218
+
+record R220
+    inner: R219
+
+record R221
+    inner: R220
+
+record R222
+    inner: R221
+
+record R223
+    inner: R222
+
+record R224
+    inner: R223
+
+record R225
+    inner: R224
+
+record R226
+    inner: R225
+
+record R227
+    inner: R226
+
+record R228
+    inner: R227
+
+record R229
+    inner: R228
+
+record R230
+    inner: R229
+
+record R231
+    inner: R230
+
+record R232
+    inner: R231
+
+record R233
+    inner: R232
+
+record R234
+    inner: R233
+
+record R235
+    inner: R234
+
+record R236
+    inner: R235
+
+record R237
+    inner: R236
+
+record R238
+    inner: R237
+
+record R239
+    inner: R238
+
+record R240
+    inner: R239
+
+record R241
+    inner: R240
+
+record R242
+    inner: R241
+
+record R243
+    inner: R242
+
+record R244
+    inner: R243
+
+record R245
+    inner: R244
+
+record R246
+    inner: R245
+
+record R247
+    inner: R246
+
+record R248
+    inner: R247
+
+record R249
+    inner: R248
+
+record R250
+    inner: R249
+
+record R251
+    inner: R250
+
+record R252
+    inner: R251
+
+record R253
+    inner: R252
+
+record R254
+    inner: R253
+
+record R255
+    inner: R254
+
+record R256
+    inner: R255
+
+record R257
+    inner: R256
+
+record R258
+    inner: R257
+
+record R259
+    inner: R258
+
+record R260
+    inner: R259
+
+record R261
+    inner: R260
+
+record R262
+    inner: R261
+
+record R263
+    inner: R262
+
+record R264
+    inner: R263
+
+record R265
+    inner: R264
+
+record R266
+    inner: R265
+
+record R267
+    inner: R266
+
+record R268
+    inner: R267
+
+record R269
+    inner: R268
+
+record R270
+    inner: R269
+
+record R271
+    inner: R270
+
+record R272
+    inner: R271
+
+record R273
+    inner: R272
+
+record R274
+    inner: R273
+
+record R275
+    inner: R274
+
+record R276
+    inner: R275
+
+record R277
+    inner: R276
+
+record R278
+    inner: R277
+
+record R279
+    inner: R278
+
+record R280
+    inner: R279
+
+record R281
+    inner: R280
+
+record R282
+    inner: R281
+
+record R283
+    inner: R282
+
+record R284
+    inner: R283
+
+record R285
+    inner: R284
+
+record R286
+    inner: R285
+
+record R287
+    inner: R286
+
+record R288
+    inner: R287
+
+record R289
+    inner: R288
+
+record R290
+    inner: R289
+
+record R291
+    inner: R290
+
+record R292
+    inner: R291
+
+record R293
+    inner: R292
+
+record R294
+    inner: R293
+
+record R295
+    inner: R294
+
+record R296
+    inner: R295
+
+record R297
+    inner: R296
+
+record R298
+    inner: R297
+
+record R299
+    inner: R298
+
+record R300
+    inner: R299
+
+record R301
+    inner: R300
+
+record R302
+    inner: R301
+
+record R303
+    inner: R302
+
+record R304
+    inner: R303
+
+record R305
+    inner: R304
+
+record R306
+    inner: R305
+
+record R307
+    inner: R306
+
+record R308
+    inner: R307
+
+record R309
+    inner: R308
+
+record R310
+    inner: R309
+
+record R311
+    inner: R310
+
+record R312
+    inner: R311
+
+record R313
+    inner: R312
+
+record R314
+    inner: R313
+
+record R315
+    inner: R314
+
+record R316
+    inner: R315
+
+record R317
+    inner: R316
+
+record R318
+    inner: R317
+
+record R319
+    inner: R318
+
+record R320
+    inner: R319
+
+record R321
+    inner: R320
+
+record R322
+    inner: R321
+
+record R323
+    inner: R322
+
+record R324
+    inner: R323
+
+record R325
+    inner: R324
+
+record R326
+    inner: R325
+
+record R327
+    inner: R326
+
+record R328
+    inner: R327
+
+record R329
+    inner: R328
+
+record R330
+    inner: R329
+
+record R331
+    inner: R330
+
+record R332
+    inner: R331
+
+record R333
+    inner: R332
+
+record R334
+    inner: R333
+
+record R335
+    inner: R334
+
+record R336
+    inner: R335
+
+record R337
+    inner: R336
+
+record R338
+    inner: R337
+
+record R339
+    inner: R338
+
+record R340
+    inner: R339
+
+record R341
+    inner: R340
+
+record R342
+    inner: R341
+
+record R343
+    inner: R342
+
+record R344
+    inner: R343
+
+record R345
+    inner: R344
+
+record R346
+    inner: R345
+
+record R347
+    inner: R346
+
+record R348
+    inner: R347
+
+record R349
+    inner: R348
+
+record R350
+    inner: R349
+
+record R351
+    inner: R350
+
+record R352
+    inner: R351
+
+record R353
+    inner: R352
+
+record R354
+    inner: R353
+
+record R355
+    inner: R354
+
+record R356
+    inner: R355
+
+record R357
+    inner: R356
+
+record R358
+    inner: R357
+
+record R359
+    inner: R358
+
+record R360
+    inner: R359
+
+record R361
+    inner: R360
+
+record R362
+    inner: R361
+
+record R363
+    inner: R362
+
+record R364
+    inner: R363
+
+record R365
+    inner: R364
+
+record R366
+    inner: R365
+
+record R367
+    inner: R366
+
+record R368
+    inner: R367
+
+record R369
+    inner: R368
+
+record R370
+    inner: R369
+
+record R371
+    inner: R370
+
+record R372
+    inner: R371
+
+record R373
+    inner: R372
+
+record R374
+    inner: R373
+
+record R375
+    inner: R374
+
+record R376
+    inner: R375
+
+record R377
+    inner: R376
+
+record R378
+    inner: R377
+
+record R379
+    inner: R378
+
+record R380
+    inner: R379
+
+record R381
+    inner: R380
+
+record R382
+    inner: R381
+
+record R383
+    inner: R382
+
+record R384
+    inner: R383
+
+record R385
+    inner: R384
+
+record R386
+    inner: R385
+
+record R387
+    inner: R386
+
+record R388
+    inner: R387
+
+record R389
+    inner: R388
+
+record R390
+    inner: R389
+
+record R391
+    inner: R390
+
+record R392
+    inner: R391
+
+record R393
+    inner: R392
+
+record R394
+    inner: R393
+
+record R395
+    inner: R394
+
+record R396
+    inner: R395
+
+record R397
+    inner: R396
+
+record R398
+    inner: R397
+
+record R399
+    inner: R398
+
+record R400
+    inner: R399
+
+record R401
+    inner: R400
+
+record R402
+    inner: R401
+
+record R403
+    inner: R402
+
+record R404
+    inner: R403
+
+record R405
+    inner: R404
+
+record R406
+    inner: R405
+
+record R407
+    inner: R406
+
+record R408
+    inner: R407
+
+record R409
+    inner: R408
+
+record R410
+    inner: R409
+
+record R411
+    inner: R410
+
+record R412
+    inner: R411
+
+record R413
+    inner: R412
+
+record R414
+    inner: R413
+
+record R415
+    inner: R414
+
+record R416
+    inner: R415
+
+record R417
+    inner: R416
+
+record R418
+    inner: R417
+
+record R419
+    inner: R418
+
+record R420
+    inner: R419
+
+record R421
+    inner: R420
+
+record R422
+    inner: R421
+
+record R423
+    inner: R422
+
+record R424
+    inner: R423
+
+record R425
+    inner: R424
+
+record R426
+    inner: R425
+
+record R427
+    inner: R426
+
+record R428
+    inner: R427
+
+record R429
+    inner: R428
+
+record R430
+    inner: R429
+
+record R431
+    inner: R430
+
+record R432
+    inner: R431
+
+record R433
+    inner: R432
+
+record R434
+    inner: R433
+
+record R435
+    inner: R434
+
+record R436
+    inner: R435
+
+record R437
+    inner: R436
+
+record R438
+    inner: R437
+
+record R439
+    inner: R438
+
+record R440
+    inner: R439
+
+record R441
+    inner: R440
+
+record R442
+    inner: R441
+
+record R443
+    inner: R442
+
+record R444
+    inner: R443
+
+record R445
+    inner: R444
+
+record R446
+    inner: R445
+
+record R447
+    inner: R446
+
+record R448
+    inner: R447
+
+record R449
+    inner: R448
+
+record R450
+    inner: R449
+
+record R451
+    inner: R450
+
+record R452
+    inner: R451
+
+record R453
+    inner: R452
+
+record R454
+    inner: R453
+
+record R455
+    inner: R454
+
+record R456
+    inner: R455
+
+record R457
+    inner: R456
+
+record R458
+    inner: R457
+
+record R459
+    inner: R458
+
+record R460
+    inner: R459
+
+record R461
+    inner: R460
+
+record R462
+    inner: R461
+
+record R463
+    inner: R462
+
+record R464
+    inner: R463
+
+record R465
+    inner: R464
+
+record R466
+    inner: R465
+
+record R467
+    inner: R466
+
+record R468
+    inner: R467
+
+record R469
+    inner: R468
+
+record R470
+    inner: R469
+
+record R471
+    inner: R470
+
+record R472
+    inner: R471
+
+record R473
+    inner: R472
+
+record R474
+    inner: R473
+
+record R475
+    inner: R474
+
+record R476
+    inner: R475
+
+record R477
+    inner: R476
+
+record R478
+    inner: R477
+
+record R479
+    inner: R478
+
+record R480
+    inner: R479
+
+record R481
+    inner: R480
+
+record R482
+    inner: R481
+
+record R483
+    inner: R482
+
+record R484
+    inner: R483
+
+record R485
+    inner: R484
+
+record R486
+    inner: R485
+
+record R487
+    inner: R486
+
+record R488
+    inner: R487
+
+record R489
+    inner: R488
+
+record R490
+    inner: R489
+
+record R491
+    inner: R490
+
+record R492
+    inner: R491
+
+record R493
+    inner: R492
+
+record R494
+    inner: R493
+
+record R495
+    inner: R494
+
+record R496
+    inner: R495
+
+record R497
+    inner: R496
+
+record R498
+    inner: R497
+
+record R499
+    inner: R498
+
+record R500
+    inner: R499
+
+record R501
+    inner: R500
+
+record R502
+    inner: R501
+
+record R503
+    inner: R502
+
+record R504
+    inner: R503
+
+record R505
+    inner: R504
+
+record R506
+    inner: R505
+
+record R507
+    inner: R506
+
+record R508
+    inner: R507
+
+record R509
+    inner: R508
+
+record R510
+    inner: R509
+
+record R511
+    inner: R510
+
+record R512
+    inner: R511
+
+record R513
+    inner: R512
+
+record R514
+    inner: R513
+
+record R515
+    inner: R514
+
+record R516
+    inner: R515
+
+record R517
+    inner: R516
+
+record R518
+    inner: R517
+
+record R519
+    inner: R518
+
+record R520
+    inner: R519
+
+record R521
+    inner: R520
+
+record R522
+    inner: R521
+
+record R523
+    inner: R522
+
+record R524
+    inner: R523
+
+record R525
+    inner: R524
+
+record R526
+    inner: R525
+
+record R527
+    inner: R526
+
+record R528
+    inner: R527
+
+record R529
+    inner: R528
+
+record R530
+    inner: R529
+
+record R531
+    inner: R530
+
+record R532
+    inner: R531
+
+record R533
+    inner: R532
+
+record R534
+    inner: R533
+
+record R535
+    inner: R534
+
+record R536
+    inner: R535
+
+record R537
+    inner: R536
+
+record R538
+    inner: R537
+
+record R539
+    inner: R538
+
+record R540
+    inner: R539
+
+record R541
+    inner: R540
+
+record R542
+    inner: R541
+
+record R543
+    inner: R542
+
+record R544
+    inner: R543
+
+record R545
+    inner: R544
+
+record R546
+    inner: R545
+
+record R547
+    inner: R546
+
+record R548
+    inner: R547
+
+record R549
+    inner: R548
+
+record R550
+    inner: R549
+
+record R551
+    inner: R550
+
+record R552
+    inner: R551
+
+record R553
+    inner: R552
+
+record R554
+    inner: R553
+
+record R555
+    inner: R554
+
+record R556
+    inner: R555
+
+record R557
+    inner: R556
+
+record R558
+    inner: R557
+
+record R559
+    inner: R558
+
+record R560
+    inner: R559
+
+record R561
+    inner: R560
+
+record R562
+    inner: R561
+
+record R563
+    inner: R562
+
+record R564
+    inner: R563
+
+record R565
+    inner: R564
+
+record R566
+    inner: R565
+
+record R567
+    inner: R566
+
+record R568
+    inner: R567
+
+record R569
+    inner: R568
+
+record R570
+    inner: R569
+
+record R571
+    inner: R570
+
+record R572
+    inner: R571
+
+record R573
+    inner: R572
+
+record R574
+    inner: R573
+
+record R575
+    inner: R574
+
+record R576
+    inner: R575
+
+record R577
+    inner: R576
+
+record R578
+    inner: R577
+
+record R579
+    inner: R578
+
+record R580
+    inner: R579
+
+record R581
+    inner: R580
+
+record R582
+    inner: R581
+
+record R583
+    inner: R582
+
+record R584
+    inner: R583
+
+record R585
+    inner: R584
+
+record R586
+    inner: R585
+
+record R587
+    inner: R586
+
+record R588
+    inner: R587
+
+record R589
+    inner: R588
+
+record R590
+    inner: R589
+
+record R591
+    inner: R590
+
+record R592
+    inner: R591
+
+record R593
+    inner: R592
+
+record R594
+    inner: R593
+
+record R595
+    inner: R594
+
+record R596
+    inner: R595
+
+record R597
+    inner: R596
+
+record R598
+    inner: R597
+
+record R599
+    inner: R598
+
+record R600
+    inner: R599
+
+record R601
+    inner: R600
+
+record R602
+    inner: R601
+
+record R603
+    inner: R602
+
+record R604
+    inner: R603
+
+record R605
+    inner: R604
+
+record R606
+    inner: R605
+
+record R607
+    inner: R606
+
+record R608
+    inner: R607
+
+record R609
+    inner: R608
+
+record R610
+    inner: R609
+
+record R611
+    inner: R610
+
+record R612
+    inner: R611
+
+record R613
+    inner: R612
+
+record R614
+    inner: R613
+
+record R615
+    inner: R614
+
+record R616
+    inner: R615
+
+record R617
+    inner: R616
+
+record R618
+    inner: R617
+
+record R619
+    inner: R618
+
+record R620
+    inner: R619
+
+record R621
+    inner: R620
+
+record R622
+    inner: R621
+
+record R623
+    inner: R622
+
+record R624
+    inner: R623
+
+record R625
+    inner: R624
+
+record R626
+    inner: R625
+
+record R627
+    inner: R626
+
+record R628
+    inner: R627
+
+record R629
+    inner: R628
+
+record R630
+    inner: R629
+
+record R631
+    inner: R630
+
+record R632
+    inner: R631
+
+record R633
+    inner: R632
+
+record R634
+    inner: R633
+
+record R635
+    inner: R634
+
+record R636
+    inner: R635
+
+record R637
+    inner: R636
+
+record R638
+    inner: R637
+
+record R639
+    inner: R638
+
+record R640
+    inner: R639
+
+record R641
+    inner: R640
+
+record R642
+    inner: R641
+
+record R643
+    inner: R642
+
+record R644
+    inner: R643
+
+record R645
+    inner: R644
+
+record R646
+    inner: R645
+
+record R647
+    inner: R646
+
+record R648
+    inner: R647
+
+record R649
+    inner: R648
+
+record R650
+    inner: R649
+
+record R651
+    inner: R650
+
+record R652
+    inner: R651
+
+record R653
+    inner: R652
+
+record R654
+    inner: R653
+
+record R655
+    inner: R654
+
+record R656
+    inner: R655
+
+record R657
+    inner: R656
+
+record R658
+    inner: R657
+
+record R659
+    inner: R658
+
+record R660
+    inner: R659
+
+record R661
+    inner: R660
+
+record R662
+    inner: R661
+
+record R663
+    inner: R662
+
+record R664
+    inner: R663
+
+record R665
+    inner: R664
+
+record R666
+    inner: R665
+
+record R667
+    inner: R666
+
+record R668
+    inner: R667
+
+record R669
+    inner: R668
+
+record R670
+    inner: R669
+
+record R671
+    inner: R670
+
+record R672
+    inner: R671
+
+record R673
+    inner: R672
+
+record R674
+    inner: R673
+
+record R675
+    inner: R674
+
+record R676
+    inner: R675
+
+record R677
+    inner: R676
+
+record R678
+    inner: R677
+
+record R679
+    inner: R678
+
+record R680
+    inner: R679
+
+record R681
+    inner: R680
+
+record R682
+    inner: R681
+
+record R683
+    inner: R682
+
+record R684
+    inner: R683
+
+record R685
+    inner: R684
+
+record R686
+    inner: R685
+
+record R687
+    inner: R686
+
+record R688
+    inner: R687
+
+record R689
+    inner: R688
+
+record R690
+    inner: R689
+
+record R691
+    inner: R690
+
+record R692
+    inner: R691
+
+record R693
+    inner: R692
+
+record R694
+    inner: R693
+
+record R695
+    inner: R694
+
+record R696
+    inner: R695
+
+record R697
+    inner: R696
+
+record R698
+    inner: R697
+
+record R699
+    inner: R698
+
+record R700
+    inner: R699
+
+record R701
+    inner: R700
+
+record R702
+    inner: R701
+
+record R703
+    inner: R702
+
+record R704
+    inner: R703
+
+record R705
+    inner: R704
+
+record R706
+    inner: R705
+
+record R707
+    inner: R706
+
+record R708
+    inner: R707
+
+record R709
+    inner: R708
+
+record R710
+    inner: R709
+
+record R711
+    inner: R710
+
+record R712
+    inner: R711
+
+record R713
+    inner: R712
+
+record R714
+    inner: R713
+
+record R715
+    inner: R714
+
+record R716
+    inner: R715
+
+record R717
+    inner: R716
+
+record R718
+    inner: R717
+
+record R719
+    inner: R718
+
+record R720
+    inner: R719
+
+record R721
+    inner: R720
+
+record R722
+    inner: R721
+
+record R723
+    inner: R722
+
+record R724
+    inner: R723
+
+record R725
+    inner: R724
+
+record R726
+    inner: R725
+
+record R727
+    inner: R726
+
+record R728
+    inner: R727
+
+record R729
+    inner: R728
+
+record R730
+    inner: R729
+
+record R731
+    inner: R730
+
+record R732
+    inner: R731
+
+record R733
+    inner: R732
+
+record R734
+    inner: R733
+
+record R735
+    inner: R734
+
+record R736
+    inner: R735
+
+record R737
+    inner: R736
+
+record R738
+    inner: R737
+
+record R739
+    inner: R738
+
+record R740
+    inner: R739
+
+record R741
+    inner: R740
+
+record R742
+    inner: R741
+
+record R743
+    inner: R742
+
+record R744
+    inner: R743
+
+record R745
+    inner: R744
+
+record R746
+    inner: R745
+
+record R747
+    inner: R746
+
+record R748
+    inner: R747
+
+record R749
+    inner: R748
+
+record R750
+    inner: R749
+
+record R751
+    inner: R750
+
+record R752
+    inner: R751
+
+record R753
+    inner: R752
+
+record R754
+    inner: R753
+
+record R755
+    inner: R754
+
+record R756
+    inner: R755
+
+record R757
+    inner: R756
+
+record R758
+    inner: R757
+
+record R759
+    inner: R758
+
+record R760
+    inner: R759
+
+record R761
+    inner: R760
+
+record R762
+    inner: R761
+
+record R763
+    inner: R762
+
+record R764
+    inner: R763
+
+record R765
+    inner: R764
+
+record R766
+    inner: R765
+
+record R767
+    inner: R766
+
+record R768
+    inner: R767
+
+record R769
+    inner: R768
+
+record R770
+    inner: R769
+
+record R771
+    inner: R770
+
+record R772
+    inner: R771
+
+record R773
+    inner: R772
+
+record R774
+    inner: R773
+
+record R775
+    inner: R774
+
+record R776
+    inner: R775
+
+record R777
+    inner: R776
+
+record R778
+    inner: R777
+
+record R779
+    inner: R778
+
+record R780
+    inner: R779
+
+record R781
+    inner: R780
+
+record R782
+    inner: R781
+
+record R783
+    inner: R782
+
+record R784
+    inner: R783
+
+record R785
+    inner: R784
+
+record R786
+    inner: R785
+
+record R787
+    inner: R786
+
+record R788
+    inner: R787
+
+record R789
+    inner: R788
+
+record R790
+    inner: R789
+
+record R791
+    inner: R790
+
+record R792
+    inner: R791
+
+record R793
+    inner: R792
+
+record R794
+    inner: R793
+
+record R795
+    inner: R794
+
+record R796
+    inner: R795
+
+record R797
+    inner: R796
+
+record R798
+    inner: R797
+
+record R799
+    inner: R798
+
+record R800
+    inner: R799
+
+record R801
+    inner: R800
+
+record R802
+    inner: R801
+
+record R803
+    inner: R802
+
+record R804
+    inner: R803
+
+record R805
+    inner: R804
+
+record R806
+    inner: R805
+
+record R807
+    inner: R806
+
+record R808
+    inner: R807
+
+record R809
+    inner: R808
+
+record R810
+    inner: R809
+
+record R811
+    inner: R810
+
+record R812
+    inner: R811
+
+record R813
+    inner: R812
+
+record R814
+    inner: R813
+
+record R815
+    inner: R814
+
+record R816
+    inner: R815
+
+record R817
+    inner: R816
+
+record R818
+    inner: R817
+
+record R819
+    inner: R818
+
+record R820
+    inner: R819
+
+record R821
+    inner: R820
+
+record R822
+    inner: R821
+
+record R823
+    inner: R822
+
+record R824
+    inner: R823
+
+record R825
+    inner: R824
+
+record R826
+    inner: R825
+
+record R827
+    inner: R826
+
+record R828
+    inner: R827
+
+record R829
+    inner: R828
+
+record R830
+    inner: R829
+
+record R831
+    inner: R830
+
+record R832
+    inner: R831
+
+record R833
+    inner: R832
+
+record R834
+    inner: R833
+
+record R835
+    inner: R834
+
+record R836
+    inner: R835
+
+record R837
+    inner: R836
+
+record R838
+    inner: R837
+
+record R839
+    inner: R838
+
+record R840
+    inner: R839
+
+record R841
+    inner: R840
+
+record R842
+    inner: R841
+
+record R843
+    inner: R842
+
+record R844
+    inner: R843
+
+record R845
+    inner: R844
+
+record R846
+    inner: R845
+
+record R847
+    inner: R846
+
+record R848
+    inner: R847
+
+record R849
+    inner: R848
+
+record R850
+    inner: R849
+
+record R851
+    inner: R850
+
+record R852
+    inner: R851
+
+record R853
+    inner: R852
+
+record R854
+    inner: R853
+
+record R855
+    inner: R854
+
+record R856
+    inner: R855
+
+record R857
+    inner: R856
+
+record R858
+    inner: R857
+
+record R859
+    inner: R858
+
+record R860
+    inner: R859
+
+record R861
+    inner: R860
+
+record R862
+    inner: R861
+
+record R863
+    inner: R862
+
+record R864
+    inner: R863
+
+record R865
+    inner: R864
+
+record R866
+    inner: R865
+
+record R867
+    inner: R866
+
+record R868
+    inner: R867
+
+record R869
+    inner: R868
+
+record R870
+    inner: R869
+
+record R871
+    inner: R870
+
+record R872
+    inner: R871
+
+record R873
+    inner: R872
+
+record R874
+    inner: R873
+
+record R875
+    inner: R874
+
+record R876
+    inner: R875
+
+record R877
+    inner: R876
+
+record R878
+    inner: R877
+
+record R879
+    inner: R878
+
+record R880
+    inner: R879
+
+record R881
+    inner: R880
+
+record R882
+    inner: R881
+
+record R883
+    inner: R882
+
+record R884
+    inner: R883
+
+record R885
+    inner: R884
+
+record R886
+    inner: R885
+
+record R887
+    inner: R886
+
+record R888
+    inner: R887
+
+record R889
+    inner: R888
+
+record R890
+    inner: R889
+
+record R891
+    inner: R890
+
+record R892
+    inner: R891
+
+record R893
+    inner: R892
+
+record R894
+    inner: R893
+
+record R895
+    inner: R894
+
+record R896
+    inner: R895
+
+record R897
+    inner: R896
+
+record R898
+    inner: R897
+
+record R899
+    inner: R898
+
+record R900
+    inner: R899
+
+record R901
+    inner: R900
+
+record R902
+    inner: R901
+
+record R903
+    inner: R902
+
+record R904
+    inner: R903
+
+record R905
+    inner: R904
+
+record R906
+    inner: R905
+
+record R907
+    inner: R906
+
+record R908
+    inner: R907
+
+record R909
+    inner: R908
+
+record R910
+    inner: R909
+
+record R911
+    inner: R910
+
+record R912
+    inner: R911
+
+record R913
+    inner: R912
+
+record R914
+    inner: R913
+
+record R915
+    inner: R914
+
+record R916
+    inner: R915
+
+record R917
+    inner: R916
+
+record R918
+    inner: R917
+
+record R919
+    inner: R918
+
+record R920
+    inner: R919
+
+record R921
+    inner: R920
+
+record R922
+    inner: R921
+
+record R923
+    inner: R922
+
+record R924
+    inner: R923
+
+record R925
+    inner: R924
+
+record R926
+    inner: R925
+
+record R927
+    inner: R926
+
+record R928
+    inner: R927
+
+record R929
+    inner: R928
+
+record R930
+    inner: R929
+
+record R931
+    inner: R930
+
+record R932
+    inner: R931
+
+record R933
+    inner: R932
+
+record R934
+    inner: R933
+
+record R935
+    inner: R934
+
+record R936
+    inner: R935
+
+record R937
+    inner: R936
+
+record R938
+    inner: R937
+
+record R939
+    inner: R938
+
+record R940
+    inner: R939
+
+record R941
+    inner: R940
+
+record R942
+    inner: R941
+
+record R943
+    inner: R942
+
+record R944
+    inner: R943
+
+record R945
+    inner: R944
+
+record R946
+    inner: R945
+
+record R947
+    inner: R946
+
+record R948
+    inner: R947
+
+record R949
+    inner: R948
+
+record R950
+    inner: R949
+
+record R951
+    inner: R950
+
+record R952
+    inner: R951
+
+record R953
+    inner: R952
+
+record R954
+    inner: R953
+
+record R955
+    inner: R954
+
+record R956
+    inner: R955
+
+record R957
+    inner: R956
+
+record R958
+    inner: R957
+
+record R959
+    inner: R958
+
+record R960
+    inner: R959
+
+record R961
+    inner: R960
+
+record R962
+    inner: R961
+
+record R963
+    inner: R962
+
+record R964
+    inner: R963
+
+record R965
+    inner: R964
+
+record R966
+    inner: R965
+
+record R967
+    inner: R966
+
+record R968
+    inner: R967
+
+record R969
+    inner: R968
+
+record R970
+    inner: R969
+
+record R971
+    inner: R970
+
+record R972
+    inner: R971
+
+record R973
+    inner: R972
+
+record R974
+    inner: R973
+
+record R975
+    inner: R974
+
+record R976
+    inner: R975
+
+record R977
+    inner: R976
+
+record R978
+    inner: R977
+
+record R979
+    inner: R978
+
+record R980
+    inner: R979
+
+record R981
+    inner: R980
+
+record R982
+    inner: R981
+
+record R983
+    inner: R982
+
+record R984
+    inner: R983
+
+record R985
+    inner: R984
+
+record R986
+    inner: R985
+
+record R987
+    inner: R986
+
+record R988
+    inner: R987
+
+record R989
+    inner: R988
+
+record R990
+    inner: R989
+
+record R991
+    inner: R990
+
+record R992
+    inner: R991
+
+record R993
+    inner: R992
+
+record R994
+    inner: R993
+
+record R995
+    inner: R994
+
+record R996
+    inner: R995
+
+record R997
+    inner: R996
+
+record R998
+    inner: R997
+
+record R999
+    inner: R998
+
+function main()
+    xs: [R999] = []
+    print(xs.len())
+    print(xs == xs)
+    m: {R999: i64} = {}
+    print(len(m))

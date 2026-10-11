@@ -1,0 +1,13 @@
+# fixedbugs, defect 171, lane ffimsg, 2026-10-03, a shape beside the
+# defect's: the pointer is a struct's member, and the name the program binds
+# is a macro over it, `#define ops_f the_ops.f`.
+#
+# SYMPTOM, CAUSE and FIX as `fixedbugs-171-a-function-pointer-the-header-holds-called-while-null`:
+# the same false sentence, exit 134, and now the true one.
+
+extern "fixedbugs-171-a-pointer-in-a-struct-behind-a-macro-called-while-null.h"
+    function ops_f(x: i32) -> i32
+
+function main()
+    print("before")
+    print(ops_f(x: 1))

@@ -11,7 +11,7 @@
 # one: push the pieces onto a `[str]` held on a bare place and `join` once.
 #
 # THREE SHAPES, each read the way the language writes it:
-# - a `str` local, declared `name: str @ …`, grown `name @ name + …` inside
+# - a `str` local, declared `name: str @= …`, grown `name @ name + …` inside
 #   a `for` or `while` that runs with it declared, the lexer's dump and every
 #   JSON writer's shape; a match arm's body is read as a statement;
 # - a field grown by a line, `a.b @ a.b + …` with a `\n` in what is added,
@@ -38,11 +38,11 @@ record Site
 
 # Every growth of the three shapes in the module `text`, in order.
 function sites(text: str) -> [Site]
-    out: [Site] @ []
-    declared: {str: i64} @ {}
-    lent: {str: bool} @ {}
-    loops: [i64] @ []
-    at: i64 @ 0
+    out: [Site] @= []
+    declared: {str: i64} @= {}
+    lent: {str: bool} @= {}
+    loops: [i64] @= []
+    at: i64 @= 0
 
     for row in strings.split_on(text: text, byte: 10)
         at @ at + 1
@@ -76,7 +76,7 @@ function sites(text: str) -> [Site]
 
         if grown.len() == 0
             continue
-        slow: bool @ false
+        slow: bool @= false
 
         if strings.contains(text: grown, needle: ".")
             slow @ strings.contains(text: after_store(row), needle: "\\n")
@@ -94,9 +94,9 @@ function sites(text: str) -> [Site]
 # The row with every string and character literal emptied and its comment
 # cut, so that a `#`, a quote or an `@` inside a literal reads as nothing.
 function bare(row: str) -> str
-    kept: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    kept: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < row.len()
         b = row[i]
@@ -122,7 +122,7 @@ function bare(row: str) -> str
 # The index of the quote that closes a literal opened before `from`, a
 # backslash escaping the byte after it, or the end of the row.
 function closing(row: str, from: i64, quote: u8) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < row.len()
         if row[i] == 92
@@ -135,7 +135,7 @@ function closing(row: str, from: i64, quote: u8) -> i64
     return row.len()
 
 function indent_of(row: str) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     while n < row.len() && row[n] == 32
         n @ n + 1
@@ -150,14 +150,14 @@ function arm_body(code: str) -> str
         return code
     return code.slice(from: at.must() + 4, to: code.len())
 
-# `name` in `name: str @ …`, or nothing.
+# `name` in `name: str @= …`, or nothing.
 function declared_str(code: str) -> str
     name = identifier(code, from: 0)
 
     if name.len() == 0 || strings.contains(text: name, needle: ".")
         return ""
 
-    if strings.starts_with(text: code.slice(from: name.len(), to: code.len()), prefix: ": str @")
+    if strings.starts_with(text: code.slice(from: name.len(), to: code.len()), prefix: ": str @=")
         return name
     return ""
 
@@ -183,8 +183,8 @@ function after_store(row: str) -> str
 
 # The names of the `@` parameters of type `str` declared on this line.
 function lent_names(code: str) -> [str]
-    out: [str] @ []
-    i: i64 @ 0
+    out: [str] @= []
+    i: i64 @= 0
 
     while i < code.len()
         if code[i] == 64 && (i == 0 || code[i - 1] == 40 || code[i - 1] == 32)
@@ -199,7 +199,7 @@ function lent_names(code: str) -> [str]
 
 # The identifier, dots included, that starts at `from`, or nothing.
 function identifier(text: str, from: i64) -> str
-    end: i64 @ from
+    end: i64 @= from
 
     while end < text.len() && word_byte(text[end])
         end @ end + 1
@@ -214,7 +214,7 @@ function word_byte(b: u8) -> bool
 ## Tests
 
 test "a str grown in a loop, a field grown by a line and a lent str are found, and their neighbours are not"
-    text = "function f(xs: [str], @w: str) -> str\n    out: str @ \"\"\n    total: i64 @ 0\n\n    for x in xs\n        out @ out + x\n        total @ total + 1\n        once: str @ x\n        once @ once + \"!\"\n        # out @ out + x in a comment\n        say = \"out @ out + x in a literal\"\n\n    out @ out + \"after the loop\"\n    w @ w + \"lent\"\n    return out\n\nfunction g(@f: Page)\n    f.out @ f.out + \"\\n\"\n    f.count @ f.count + 1\n    f.title @ f.title + \" more\"\n\nfunction h(ms: [bool]) -> str\n    text: str @ \"\"\n\n    for m in ms\n        match m\n            .yes => text @ text + \"y\"\n            .no  => text @ \"n\" + text\n\n    return text\n"
+    text = "function f(xs: [str], @w: str) -> str\n    out: str @= \"\"\n    total: i64 @= 0\n\n    for x in xs\n        out @ out + x\n        total @ total + 1\n        once: str @= x\n        once @ once + \"!\"\n        # out @ out + x in a comment\n        say = \"out @ out + x in a literal\"\n\n    out @ out + \"after the loop\"\n    w @ w + \"lent\"\n    return out\n\nfunction g(@f: Page)\n    f.out @ f.out + \"\\n\"\n    f.count @ f.count + 1\n    f.title @ f.title + \" more\"\n\nfunction h(ms: [bool]) -> str\n    text: str @= \"\"\n\n    for m in ms\n        match m\n            .yes => text @ text + \"y\"\n            .no  => text @ \"n\" + text\n\n    return text\n"
     found = sites(text)
     assert found.len() == 4
     assert found[0].line == 6
@@ -229,8 +229,8 @@ test "a str grown in a loop, a field grown by a line and a lent str are found, a
 test "a literal and a comment are emptied, escapes and character literals included"
     assert bare("x @ \"a # b\" + '#'  # a comment") == "x @ \"\" + ''  "
     assert bare("s = \"a \\\" @ b\"") == "s = \"\""
-    assert declared_str("out: str @ \"\"") == "out"
-    assert declared_str("out: str? @ x") == ""
+    assert declared_str("out: str @= \"\"") == "out"
+    assert declared_str("out: str? @= x") == ""
     assert grown_name("a.b @ a.b + c") == "a.b"
     assert grown_name("a @ ab + c") == ""
     assert lent_names("function f(@a: str, b: str, @c: i64, @d: str)") == ["a", "d"]

@@ -1,0 +1,16 @@
+# Defect 245, panel 192's R1, 2026-10-05: the third door a NUL comes through,
+# a binding's own C returning a `str` (the ffi-pragmatist's finding), here a
+# static one `HERO_STR_STATIC` laid out. Its mark is computed by clang where
+# the literal is laid out, so its lend stops as a copied one's does
+# (`fixedbugs-245-a-str-c-copies-holding-a-nul-stops`).
+
+extern "fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.h"
+    function laid_out_by_c() -> str
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function main()
+    laid = laid_out_by_c()
+    print("C laid out ", laid.len(), " bytes")
+    print("C reads ", strlen(s: laid.cstr()))

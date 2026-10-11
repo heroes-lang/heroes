@@ -29,7 +29,7 @@ function widen(@c: Cell)
     c.w @ c.w * 10
 
 function main()
-    h: Holder @ Holder(xs: [Cell(v: 1, w: 2), Cell(v: 3, w: 4), Cell(v: 5, w: 6)], a: [1, 2, 3, 4])
+    h: Holder @= Holder(xs: [Cell(v: 1, w: 2), Cell(v: 3, w: 4), Cell(v: 5, w: 6)], a: [1, 2, 3, 4])
     inc(@h.a[2])
     inc(@h.xs[1].v)
     widen(@h.xs[2])

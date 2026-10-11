@@ -136,7 +136,7 @@ function deeper(a: i64, b: i64) -> i64
     return b
 
 function deepest_of(t: Tree, ids: [i64]) -> i64
-    most: i64 @ 0
+    most: i64 @= 0
 
     for id in ids
         most @ deeper(a: most, b: expr_depth(t, id))
@@ -179,7 +179,7 @@ function shown_expr(t: Tree, id: i64) -> str
         .call c   => c.name + "(" + shown_args(t, c.args) + ")"
 
 function shown_args(t: Tree, ids: [i64]) -> str
-    pieces: [str] @ []
+    pieces: [str] @= []
 
     for id in ids
         pieces @ pieces.push(shown_expr(t, id))
@@ -187,7 +187,7 @@ function shown_args(t: Tree, ids: [i64]) -> str
     return join(pieces, ", ")
 
 test "an arena hands back the index it just filled, and it is the last one"
-    t: Tree @ empty()
+    t: Tree @= empty()
     one = added_expr(@t, .number(value: 1))
     two = added_expr(@t, .number(value: 2))
     assert one == 0
@@ -198,7 +198,7 @@ test "an arena hands back the index it just filled, and it is the last one"
     assert shown_expr(t, sum) == "(1 + 2)"
 
 test "the two arenas count separately"
-    t: Tree @ empty()
+    t: Tree @= empty()
     e = added_expr(@t, .number(value: 7))
     s = added_stmt(@t, .say(value: e))
     assert e == 0
@@ -222,7 +222,7 @@ test "every operator has a spelling, and no two share one"
         .both
         .either
     ]
-    seen: {str: i64} @ {}
+    seen: {str: i64} @= {}
 
     for op in ops
         written = shown_op(op)
@@ -236,7 +236,7 @@ test "a rendered expression says what the tree holds, not what the source said"
     # The rendering is fully parenthesised on purpose: `1 + 2 * 3` and
     # `(1 + 2) * 3` are different trees and must be different text, or the
     # parser's tests would pass on either.
-    t: Tree @ empty()
+    t: Tree @= empty()
     one = added_expr(@t, .number(value: 1))
     two = added_expr(@t, .number(value: 2))
     three = added_expr(@t, .number(value: 3))
@@ -248,7 +248,7 @@ test "a rendered expression says what the tree holds, not what the source said"
     assert shown_expr(t, right_first) == "((1 + 2) * 3)"
 
 test "a call renders its arguments in order, and no arguments is empty parentheses"
-    t: Tree @ empty()
+    t: Tree @= empty()
     a = added_expr(@t, .number(value: 1))
     b = added_expr(@t, .name(value: "x"))
     two_args = added_expr(@t, .call(name: "f", args: [a, b]))
@@ -258,7 +258,7 @@ test "a call renders its arguments in order, and no arguments is empty parenthes
     assert shown_expr(t, no_args) == "now()"
 
 test "depth counts the nesting and a leaf is one"
-    t: Tree @ empty()
+    t: Tree @= empty()
     leaf = added_expr(@t, .number(value: 1))
     assert expr_depth(t, leaf) == 1
     once = added_expr(@t, .negate(on: leaf))
@@ -273,9 +273,9 @@ test "depth counts the nesting and a leaf is one"
 test "a thousand nodes deep is a number and not a crash"
     # Built by hand here; `main.hero` builds the same shape through the PARSER,
     # which is the case panel 104's stack guard is a positive witness for.
-    t: Tree @ empty()
-    at: i64 @ added_expr(@t, .number(value: 0))
-    i: i64 @ 0
+    t: Tree @= empty()
+    at: i64 @= added_expr(@t, .number(value: 0))
+    i: i64 @= 0
 
     while i < 999
         at @ added_expr(@t, .negate(on: at))

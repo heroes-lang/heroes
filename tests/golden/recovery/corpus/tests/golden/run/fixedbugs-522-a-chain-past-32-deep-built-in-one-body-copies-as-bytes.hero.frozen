@@ -1,0 +1,419 @@
+# Defect 522, 2026-10-09 (lane b16-compiler; defect 469's other half): a
+# chain of structs past 32 deep, each level's value built in one body. clang
+# asks of every assignment of a struct whether it holds a `const` field, by a
+# walk that costs the square of the structs it holds by value, so the front
+# end cost the cube of the depth: 3.39, 18.75 and 130.96 billion instructions
+# at 250, 500 and 1,000 levels of this shape. Past the depth `typeorder` hands
+# clang a chain from its bottom, the unit now defines `HERO_COPY`, and each
+# assignment of one of its own structs is a byte copy whose two sides are
+# asserted one type: 1.61, 3.69 and 9.87. This case is 40 levels, every odd
+# one held through an option: each level built, stored, loaded, and read
+# back down through its case's payload and field, the copies' every site,
+# and the values compared whole. Its blessed emission shows the copies.
+variant R0
+    a
+        v: i64
+    b
+
+variant R1
+    a
+        inner: R0?
+    b
+
+variant R2
+    a
+        inner: R1
+    b
+
+variant R3
+    a
+        inner: R2?
+    b
+
+variant R4
+    a
+        inner: R3
+    b
+
+variant R5
+    a
+        inner: R4?
+    b
+
+variant R6
+    a
+        inner: R5
+    b
+
+variant R7
+    a
+        inner: R6?
+    b
+
+variant R8
+    a
+        inner: R7
+    b
+
+variant R9
+    a
+        inner: R8?
+    b
+
+variant R10
+    a
+        inner: R9
+    b
+
+variant R11
+    a
+        inner: R10?
+    b
+
+variant R12
+    a
+        inner: R11
+    b
+
+variant R13
+    a
+        inner: R12?
+    b
+
+variant R14
+    a
+        inner: R13
+    b
+
+variant R15
+    a
+        inner: R14?
+    b
+
+variant R16
+    a
+        inner: R15
+    b
+
+variant R17
+    a
+        inner: R16?
+    b
+
+variant R18
+    a
+        inner: R17
+    b
+
+variant R19
+    a
+        inner: R18?
+    b
+
+variant R20
+    a
+        inner: R19
+    b
+
+variant R21
+    a
+        inner: R20?
+    b
+
+variant R22
+    a
+        inner: R21
+    b
+
+variant R23
+    a
+        inner: R22?
+    b
+
+variant R24
+    a
+        inner: R23
+    b
+
+variant R25
+    a
+        inner: R24?
+    b
+
+variant R26
+    a
+        inner: R25
+    b
+
+variant R27
+    a
+        inner: R26?
+    b
+
+variant R28
+    a
+        inner: R27
+    b
+
+variant R29
+    a
+        inner: R28?
+    b
+
+variant R30
+    a
+        inner: R29
+    b
+
+variant R31
+    a
+        inner: R30?
+    b
+
+variant R32
+    a
+        inner: R31
+    b
+
+variant R33
+    a
+        inner: R32?
+    b
+
+variant R34
+    a
+        inner: R33
+    b
+
+variant R35
+    a
+        inner: R34?
+    b
+
+variant R36
+    a
+        inner: R35
+    b
+
+variant R37
+    a
+        inner: R36?
+    b
+
+variant R38
+    a
+        inner: R37
+    b
+
+variant R39
+    a
+        inner: R38?
+    b
+
+function down(r39: R39) -> i64
+    r38: R38 = match r39
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r37: R37 = match r38
+        .a x => x.inner
+        .b   => .b
+
+    r36: R36 = match r37
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r35: R35 = match r36
+        .a x => x.inner
+        .b   => .b
+
+    r34: R34 = match r35
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r33: R33 = match r34
+        .a x => x.inner
+        .b   => .b
+
+    r32: R32 = match r33
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r31: R31 = match r32
+        .a x => x.inner
+        .b   => .b
+
+    r30: R30 = match r31
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r29: R29 = match r30
+        .a x => x.inner
+        .b   => .b
+
+    r28: R28 = match r29
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r27: R27 = match r28
+        .a x => x.inner
+        .b   => .b
+
+    r26: R26 = match r27
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r25: R25 = match r26
+        .a x => x.inner
+        .b   => .b
+
+    r24: R24 = match r25
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r23: R23 = match r24
+        .a x => x.inner
+        .b   => .b
+
+    r22: R22 = match r23
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r21: R21 = match r22
+        .a x => x.inner
+        .b   => .b
+
+    r20: R20 = match r21
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r19: R19 = match r20
+        .a x => x.inner
+        .b   => .b
+
+    r18: R18 = match r19
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r17: R17 = match r18
+        .a x => x.inner
+        .b   => .b
+
+    r16: R16 = match r17
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r15: R15 = match r16
+        .a x => x.inner
+        .b   => .b
+
+    r14: R14 = match r15
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r13: R13 = match r14
+        .a x => x.inner
+        .b   => .b
+
+    r12: R12 = match r13
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r11: R11 = match r12
+        .a x => x.inner
+        .b   => .b
+
+    r10: R10 = match r11
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r9: R9 = match r10
+        .a x => x.inner
+        .b   => .b
+
+    r8: R8 = match r9
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r7: R7 = match r8
+        .a x => x.inner
+        .b   => .b
+
+    r6: R6 = match r7
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r5: R5 = match r6
+        .a x => x.inner
+        .b   => .b
+
+    r4: R4 = match r5
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r3: R3 = match r4
+        .a x => x.inner
+        .b   => .b
+
+    r2: R2 = match r3
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    r1: R1 = match r2
+        .a x => x.inner
+        .b   => .b
+
+    r0: R0 = match r1
+        .a x => x.inner.default(.b)
+        .b   => .b
+
+    return match r0
+        .a x => x.v
+        .b   => -1
+
+function main()
+    r0: R0 = .a(v: 7)
+    r1: R1 = .a(inner: ok(r0))
+    r2: R2 = .a(inner: r1)
+    r3: R3 = .a(inner: ok(r2))
+    r4: R4 = .a(inner: r3)
+    r5: R5 = .a(inner: ok(r4))
+    r6: R6 = .a(inner: r5)
+    r7: R7 = .a(inner: ok(r6))
+    r8: R8 = .a(inner: r7)
+    r9: R9 = .a(inner: ok(r8))
+    r10: R10 = .a(inner: r9)
+    r11: R11 = .a(inner: ok(r10))
+    r12: R12 = .a(inner: r11)
+    r13: R13 = .a(inner: ok(r12))
+    r14: R14 = .a(inner: r13)
+    r15: R15 = .a(inner: ok(r14))
+    r16: R16 = .a(inner: r15)
+    r17: R17 = .a(inner: ok(r16))
+    r18: R18 = .a(inner: r17)
+    r19: R19 = .a(inner: ok(r18))
+    r20: R20 = .a(inner: r19)
+    r21: R21 = .a(inner: ok(r20))
+    r22: R22 = .a(inner: r21)
+    r23: R23 = .a(inner: ok(r22))
+    r24: R24 = .a(inner: r23)
+    r25: R25 = .a(inner: ok(r24))
+    r26: R26 = .a(inner: r25)
+    r27: R27 = .a(inner: ok(r26))
+    r28: R28 = .a(inner: r27)
+    r29: R29 = .a(inner: ok(r28))
+    r30: R30 = .a(inner: r29)
+    r31: R31 = .a(inner: ok(r30))
+    r32: R32 = .a(inner: r31)
+    r33: R33 = .a(inner: ok(r32))
+    r34: R34 = .a(inner: r33)
+    r35: R35 = .a(inner: ok(r34))
+    r36: R36 = .a(inner: r35)
+    r37: R37 = .a(inner: ok(r36))
+    r38: R38 = .a(inner: r37)
+    r39: R39 = .a(inner: ok(r38))
+    print(down(r39))
+    xs: [R39] = [r39, .b]
+    print(xs[0] == r39)
+    print(xs[1] == r39)
+    print(down(xs[1]))

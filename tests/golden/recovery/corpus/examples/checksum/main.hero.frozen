@@ -62,9 +62,9 @@ function digest_of(text: str) -> Digest
 # ones included, because a checksum with a leading zero dropped is a checksum
 # nobody can compare by eye.
 function hex(value: u32) -> str
-    out: [str] @ []
+    out: [str] @= []
     v = value.to_i64().must()
-    shift: i64 @ 28
+    shift: i64 @= 28
 
     while shift >= 0
         nibble = v >> shift & 15
@@ -77,7 +77,7 @@ function hex(value: u32) -> str
 # Heroes cannot build a character from a byte value (`base64.hero`'s header
 # says why, and it is a language fact rather than a gap in this program).
 function shown(data: [u8]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in data
         out @ out.push(one.to_str())

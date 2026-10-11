@@ -53,10 +53,10 @@ function main()
     print(xs[0] == a)
 
     # A map VALUE reaches the same descriptor; a map KEY reaches `_hash` as well.
-    m: {i64: Color} @ {}
+    m: {i64: Color} @= {}
     m[1] @ a
     print(m[1].must() == a)
-    keyed: {Color: i64} @ {}
+    keyed: {Color: i64} @= {}
     keyed[a] @ 7
     print(keyed[b].must())
 

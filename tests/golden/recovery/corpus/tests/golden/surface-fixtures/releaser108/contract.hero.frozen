@@ -10,7 +10,7 @@ extern "rel.h"
     function h_close_v2(x: commented.H consumes)
 
 function main()
-    h: commented.H @ nullptr
+    h: commented.H @= nullptr
 
     if h_open(n: 7, out: @h) != 0
         return

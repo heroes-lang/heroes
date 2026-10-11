@@ -20,8 +20,12 @@
 #
 # The witness is a group of records only, deliberately: one function in it would
 # have hidden all three.
+#
+# 2026-10-03, defect 226: the diagnostic points at the `package` string, on the
+# head's own line, where it pointed at the group's first member (panel 188's
+# spec-warden).
 
-extern "raylib.h" package "definitely-not-a-real-package-062"   #~v ffi_package
+extern "raylib.h" package "definitely-not-a-real-package-062"   #~ ffi_package
     record Color
         r: u8
         g: u8

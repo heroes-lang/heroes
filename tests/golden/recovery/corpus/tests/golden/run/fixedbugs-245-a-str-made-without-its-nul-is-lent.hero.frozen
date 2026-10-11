@@ -1,0 +1,42 @@
+# Defect 245, panel 192's R1, 2026-10-05: the half the bit must not refuse. A
+# `str` made from one that holds a NUL, which does not hold it itself, is lent
+# to C whole, and C reads every byte the program holds: a slice before the
+# NUL or after it, a single character beside it, a join of one part whose
+# separator is never written, a number, the empty text, and a concatenation
+# of clean texts. The seven shapes the ffi-pragmatist measured allowed; the
+# seven it measured refused are a case each, `fixedbugs-245-a-*-carries-the-
+# nul`.
+
+extern "stdio.h"
+    function fopen(path: cstr lent, mode: cstr lent) -> ptr
+    function fputc(c: i32, stream: ptr) -> i32
+    function fclose(stream: ptr) -> i32
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+constant HELD: str
+    "build/heroes-golden-245-clean.bin"
+
+function held() -> str
+    handle = fopen(path: HELD.cstr(), mode: "wb".cstr())
+    assert handle != nullptr
+
+    for b in [97, 0, 98]
+        _ = fputc(c: b.to_i32().must(), stream: handle)
+
+    _ = fclose(stream: handle)
+    return read_file(HELD).must()
+
+function lent(name: str, s: str)
+    print(name, ": the program holds ", s.len(), ", C reads ", strlen(s: s.cstr()))
+
+function main()
+    s = held()
+    lent(name: "a slice before the NUL", s: s.slice(from: 0, to: 1))
+    lent(name: "a slice after the NUL", s: s.slice(from: 2, to: 3))
+    lent(name: "the first character", s: s.chars()[0])
+    lent(name: "a join of one part", s: join(["x"], s))
+    lent(name: "a number", s: 12345.to_str())
+    lent(name: "the empty text", s: "")
+    lent(name: "clean texts joined", s: "a" + "b")

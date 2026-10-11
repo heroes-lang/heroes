@@ -1,0 +1,25 @@
+# fixedbugs, defect 156, 2026-10-03, the twin of
+# `fixedbugs-156-curl-s-hsts-entry` the author's answer A asks for: that case
+# binds curl's own `struct curl_hstsentry` and is skipped where curl is not
+# installed, the Windows box among them (read there one case at a time at
+# `02e507bc`, `ffi_missing_header` on `curl/curl.h`). Here the struct is
+# copied member for member into this directory's header, so its shape, a
+# tagged struct holding a one-bit field among a pointer, a size and an
+# array, is judged on every platform.
+#
+# SYMPTOM, CAUSE and FIX are the curl case's: binding the bit-field stopped
+# `build` at exit 2 with clang's text, and the layout check now refuses it
+# on its own line, offering `partial`.
+
+extern "fixedbugs-156-bit-fields.h"
+    record Hsts tag hero_hstsentry
+        name: ptr
+        namelen: u64
+        includeSubDomains: u32  #~ ffi_field_type
+        expire: i8[18]
+
+function touch(e: Hsts) -> u64
+    return e.namelen
+
+function main()
+    print(1)

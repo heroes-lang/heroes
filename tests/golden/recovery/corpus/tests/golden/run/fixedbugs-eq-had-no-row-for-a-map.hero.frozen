@@ -32,7 +32,7 @@ function main()
 
     # The sharp one: a record with a map inside it, used as a map KEY. The
     # insert hashes and the lookup compares, so the defect needed both halves.
-    seen: {Box: i64} @ {}
+    seen: {Box: i64} @= {}
     seen[a] @ 1
     print(seen[b].default(0))
     print(seen[c].default(0))

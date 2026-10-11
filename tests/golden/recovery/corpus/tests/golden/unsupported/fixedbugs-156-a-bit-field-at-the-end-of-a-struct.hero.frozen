@@ -1,0 +1,14 @@
+# fixedbugs, defect 156, lane land186, 2026-10-02 (panel 186 R5), a shape
+# beside the critic's: the bit-field is the struct's last member, where no
+# member after it holds the bytes the field assertion asks about.
+
+extern "fixedbugs-156-bit-fields.h"
+    record ATEND
+        a: i32
+        last: u32  #~ ffi_field_type
+
+function touch(v: ATEND) -> i32
+    return v.a
+
+function main()
+    print(1)

@@ -104,8 +104,8 @@ function readable(mode: i64) -> bool
 
 function hex_of(value: i64) -> str
     digits = "0123456789abcdef"
-    out: str @ ""
-    i: i64 @ 7
+    out: str @= ""
+    i: i64 @= 7
 
     while i >= 0
         nibble = value >> i * 4 & 0xf

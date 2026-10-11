@@ -71,7 +71,7 @@ function report(r: entry.Reading, given: [str])
 # is what a set of flags is for: `logs f.log WARN,ERROR` and
 # `mask.PROBLEMS` are the same question asked two ways.
 function show_levels(r: entry.Reading, wanted: i64)
-    shown: i64 @ 0
+    shown: i64 @= 0
 
     for one in r.entries
         if mask.holds(wanted, one.level)
@@ -96,7 +96,7 @@ test "the sample's two hours are tied, so the tie-break is what is being read"
 
 test "a mask filters the sample the way a list of names would"
     r = entry.read(read_file("examples/logs/sample.log").must())
-    problems: [entry.Entry] @ []
+    problems: [entry.Entry] @= []
 
     for one in r.entries
         if mask.holds(mask.PROBLEMS, one.level)

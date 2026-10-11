@@ -33,91 +33,410 @@ function row(name: str, argv: str, code: i64) -> probe.Probe
     return probe.probe(name: name, argv: argv, code: code)
 
 function out_has(p: probe.Probe, needle: str) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.out_has @ p.out_has.push(needle)
     return out
 
 function out_lacks(p: probe.Probe, needle: str) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.out_lacks @ p.out_lacks.push(needle)
     return out
 
 function err_has(p: probe.Probe, needle: str) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.err_has @ p.err_has.push(needle)
     return out
 
 function err_lacks(p: probe.Probe, needle: str) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.err_lacks @ p.err_lacks.push(needle)
     return out
 
 function out_starts(p: probe.Probe, prefix: str) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.out_starts @ prefix
     return out
 
 function err_starts(p: probe.Probe, prefix: str) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.err_starts @ prefix
     return out
 
 function out_is(p: probe.Probe, text: str) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.out_is @ text
     return out
 
 function err_is(p: probe.Probe, text: str) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.err_is @ text
     return out
 
 function out_empty(p: probe.Probe) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.out_state @ "empty"
     return out
 
 function out_nonempty(p: probe.Probe) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.out_state @ "nonempty"
     return out
 
 function err_empty(p: probe.Probe) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.err_state @ "empty"
     return out
 
 function err_nonempty(p: probe.Probe) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.err_state @ "nonempty"
     return out
 
 function err_lines(p: probe.Probe, count: i64) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.err_lines @ count
     return out
 
 function out_lines_max(p: probe.Probe, count: i64) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.out_lines_max @ count
     return out
 
 # Green where this machine lacks the C library the case binds — the same
 # rule every other suite carries, and floored by the caller.
 function may_skip(p: probe.Probe) -> probe.Probe
-    out: probe.Probe @ p
+    out: probe.Probe @= p
     out.library_skip @ true
     return out
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     probe.run_table(scratch: scratch, compiler: compiler, probes: argv_probes(), r: @r)
     probe.run_table(scratch: scratch, compiler: compiler, probes: help_probes(), r: @r)
     probe.run_table(scratch: scratch, compiler: compiler, probes: render_probes(), r: @r)
     probe.run_table(scratch: scratch, compiler: compiler, probes: ffi_probes(), r: @r)
     probe.run_table(scratch: scratch, compiler: compiler, probes: verb_probes(), r: @r)
     probe.run_table(scratch: scratch, compiler: compiler, probes: bracket_probes(), r: @r)
+    in_place_cases(scratch: scratch, compiler: compiler, r: @r)
+    apply_json_in_place(scratch: scratch, compiler: compiler, r: @r)
+    measure_with_no_operand(scratch: scratch, compiler: compiler, r: @r)
+    warning_told_once(scratch: scratch, compiler: compiler, r: @r)
+    recursion_named(scratch: scratch, compiler: compiler, r: @r)
     return ok(r)
+
+# **A clang warning on a bound header is told once, by the program's own unit,
+# never by the pointee probe's file** (defect 248, its surface case being
+# defect 328's remedy). `warning248/lib.h` carries a `#warning`, the repair's
+# own second shape beside the defect's Latin-1 byte (2 copies before, 1 after):
+# a byte that is not UTF-8 is no text, so `fixes` could not copy the case and
+# this could not copy it portably. The case builds a copy made under this
+# run's scratch, never the tree's own: the program's object and the probe's
+# verdict are cached by where the header is, so a build of the tree's copy
+# would tell the warning only while a warm build compiled the unit again,
+# which defect 227's header digest decides, and a cached probe would print
+# nothing whichever compiler asked. A fresh directory asks both, so the count
+# of copies is the compiler's.
+function warning_told_once(scratch: str, compiler: str, @r: report.Report)
+    label = "surface/a bound header's clang warning is told once, by the program's unit, never naming the pointee probe's file (defect 248)"
+    from = "tests/golden/surface-fixtures/warning248"
+    dir = scratch + "/warning248"
+    made = shell.mkdir_all(dir)
+    header = read_file(from + "/lib.h")
+    program = read_file(from + "/main.hero")
+
+    if made.is_err() || header.is_err() || program.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + from + " or make " + dir)
+        return
+
+    if write_file(path: dir + "/lib.h", text: header.must()).is_err() || write_file(path: dir + "/main.hero", text: program.must()).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot write the case's copy under " + dir)
+        return
+    built = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", dir + "/main.hero", "-o", dir + "/program" + shell.exe_suffix()]
+    )
+
+    if built.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + shell.ending(built))
+        return
+    wrong = warning_wrong(built.must())
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n") + "\n  its stderr was:\n" + built.must().err)
+        return
+    report.keep_pass(@r)
+
+# **The stack guard names the recursion beside the frame that ran out**
+# (defect 521, panel 199's route (M)): `recursion521/`, each run at `-O0`,
+# where every platform keeps its frame records. A function met twice on the
+# frame walk is a recursion, so `behind` is told `helper`, the frame being
+# entered, and `climbs` beside it; `mutual` both of its functions, from the
+# first by name, whichever ran out; and `direct` its name alone, the frame
+# being the recursion. The Windows guard walks no frames (`runtime/parts/
+# stack.c`) and says the first sentence alone, which it is held to there.
+# `hidden` binds a header that leaves `#pragma GCC visibility push(hidden)`
+# open (defect 582): glibc's `dladdr` reads only exported symbols, so on
+# Linux the function went unnamed until the guard's close gave the
+# visibility back (`selfhost/emit/header_state.hero`).
+record Told
+    file: str
+    posix: [str]
+    defect: str
+
+function recursion_rows() -> [Told]
+    return [
+        Told(file: "behind", posix: ["panic: stack exhausted in behind.helper, inside the recursion of behind.climbs"], defect: "521")
+        Told(file: "mutual", posix: ["panic: stack exhausted in mutual.ping, inside the recursion of mutual.ping and mutual.pong", "panic: stack exhausted in mutual.pong, inside the recursion of mutual.ping and mutual.pong"], defect: "521")
+        Told(file: "direct", posix: ["panic: stack exhausted in direct.down"], defect: "521")
+        Told(file: "hidden", posix: ["panic: stack exhausted in hidden.down"], defect: "582")
+    ]
+
+function recursion_named(scratch: str, compiler: str, @r: report.Report)
+    for program in recursion_rows()
+        label = "surface/the stack guard names the recursion beside the frame that ran out, `" + program.file + "` at -O0 (defect " + program.defect + ")"
+        ran = shell.run(
+            scratch: scratch,
+            program: compiler,
+            words: [compiler, "run", "tests/golden/surface-fixtures/recursion521/" + program.file + ".hero", "-O0"]
+        )
+
+        if ran.is_err()
+            report.keep_failure(@r, label: label, detail: "  " + shell.ending(ran))
+            continue
+        wanted: [str] @= program.posix
+
+        if shell.exe_suffix() == ".exe"
+            wanted @ ["panic: stack exhausted"]
+        said = strings.trimmed(ran.must().err)
+
+        if ran.must().code == 0 || !told_one(wanted, said: said)
+            report.keep_failure(
+                @r,
+                label: label,
+                detail: "  " + shell.ending(ran) + "\n  where it must abort saying one of:\n    " + wanted.join("\n    ")
+            )
+            continue
+        report.keep_pass(@r)
+
+function told_one(wanted: [str], said: str) -> bool
+    for one in wanted
+        if one == said
+            return true
+
+    return false
+
+# What is wrong with a build of `warning248/`: one sentence each, none when it
+# exits 0 telling clang's warning exactly once and naming no probe's file.
+# The needle opens at `warning: `, so the source line clang quotes under the
+# warning, `#warning "…"`, is not counted as a second copy.
+function warning_wrong(said: shell.Run) -> [str]
+    wrong: [str] @= []
+    copies = strings.split_text(text: said.err, separator: "warning: \"defect 248: a bound header's warning, told once\"").len() - 1
+
+    if said.code != 0
+        wrong @ wrong.push("  exit " + said.code.to_str() + ", where a header clang only warns of builds")
+
+    if copies != 1
+        wrong @ wrong.push(
+            "  clang's warning is told " + copies.to_str() + " times, where the program's unit tells it once"
+        )
+
+    if strings.contains(text: said.err, needle: "pointee-")
+        wrong @ wrong.push("  stderr names the pointee probe's file, which the author never wrote")
+    return wrong
+
+# **`measure` with no operand measures the spec, whatever its pin says**
+# (defect 379). A row stood in the help table asking for exit 0, which is the
+# answer only while the spec's pinned digest is the spec's own: a lane that
+# amended the spec read it red until a paid `measure --refresh` re-pinned the
+# count, and a row cannot ask for an ending a file decides. What the verb owes
+# with no operand is what it answers when the spec is named, both streams and
+# the exit, ending one of the ways its contract names: the verdict under the
+# ceiling at 0, a breach at 1, or the stale record's refusal at 1, which gives
+# no verdict. Whether the pin is fresh is `suite_spec`'s `real`, `budget` and
+# `ledger` at the gate, which stay as strict.
+function measure_with_no_operand(scratch: str, compiler: str, @r: report.Report)
+    label = "surface/measure with no operand measures the spec as naming it does, its pin fresh or stale (defect 379)"
+    bare = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure"])
+    spelled = shell.run(scratch: scratch, program: compiler, words: [compiler, "measure", "spec/heroes-spec.md"])
+
+    if bare.is_err() || spelled.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + shell.ending(bare) + " " + shell.ending(spelled))
+        return
+    wrong = no_operand_wrong(said: bare.must(), spelled: spelled.must())
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n"))
+        return
+    report.keep_pass(@r)
+
+# What is wrong with `said`, `measure` with no operand, beside `spelled`,
+# `measure spec/heroes-spec.md`: one sentence each, none when it is right.
+function no_operand_wrong(said: shell.Run, spelled: shell.Run) -> [str]
+    wrong: [str] @= []
+
+    if said.code != spelled.code || said.out != spelled.out || said.err != spelled.err
+        wrong @ wrong.push(
+            "  `measure` exits " + said.code.to_str() + " and `measure spec/heroes-spec.md` " + spelled.code.to_str() + ", and their streams differ:\n" + report.mismatch(what: "stdout", expected: spelled.out, actual: said.out)
+        )
+
+    if !strings.starts_with(text: said.out, prefix: "spec/heroes-spec.md\n") || said.err != ""
+        wrong @ wrong.push("  its report is not of spec/heroes-spec.md alone, on stdout")
+    verdict = strings.contains(text: said.out, needle: " — the binding number\n") && strings.contains(text: said.out, needle: "An addition needs a named removal")
+    breach = strings.contains(text: said.out, needle: "\nBREACH: ")
+    stale = strings.contains(text: said.out, needle: "\nSTALE: the recorded count is for ") && strings.contains(text: said.out, needle: "No verdict is given against a stale count")
+
+    if !(said.code == 0 && verdict && !stale || said.code == 1 && (stale && !verdict || breach && !stale))
+        wrong @ wrong.push(
+            "  exit " + said.code.to_str() + ", where the verb ends at 0 with its verdict, or at 1 with a breach or with the stale record's refusal and no verdict:\n" + said.out
+        )
+    return wrong
+
+# **`check --apply --in-place --json` writes the file and prints the applied
+# document all the same** (defect 371, panel 193's R4): its `output` is the
+# bytes the file holds afterwards, its `read` the bytes it held before. A
+# row's file is the tree's own, so the case makes its file in scratch.
+function apply_json_in_place(scratch: str, compiler: str, @r: report.Report)
+    label = "surface/check --apply --in-place --json writes the file and prints the document of what it wrote (defect 371)"
+    dir = scratch + "/apply-json-in-place"
+    path = dir + "/p.hero"
+    wanted = "function main()\n    print(1)\n"
+    _ = shell.remove_tree(dir).is_err()
+
+    if shell.mkdir_all(dir).is_err() || write_file(path: path, text: "fn main()\n    print(1)\n").is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot make " + path)
+        return
+    ran = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "check", path, "--apply", "--in-place", "--json"]
+    )
+    after = read_file(path).default("(unreadable)")
+
+    if ran.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + shell.refusal(ran))
+        return
+    said = ran.must()
+    wrong: [str] @= []
+
+    if said.code != 0
+        wrong @ wrong.push("  exit " + said.code.to_str() + ", where a write that succeeded is 0")
+
+    if after != wanted
+        wrong @ wrong.push(report.mismatch(what: path + " afterwards", expected: wanted, actual: after))
+
+    # The bytes it read, `fn main()` and its line, by `shasum -a 256`, and
+    # what it wrote as the document's last field.
+    read_said = strings.contains(
+        text: said.out,
+        needle: "\"sha256\": \"6fab839e9cdb8212aa763381eda66978867e6461bfca0005002f5874b0d6b02a\""
+    )
+    wrote_said = strings.ends_with(
+        text: said.out,
+        suffix: "  \"rounds\": 1,\n  \"not_applied\": [],\n  \"output\": \"function main()\\n    print(1)\\n\"\n}\n"
+    )
+
+    if !strings.contains(text: said.out, needle: "\"kind\": \"applied\"") || !read_said || !wrote_said
+        wrong @ wrong.push("  stdout is not the applied document of what it read and wrote:\n" + said.out)
+
+    if !strings.contains(text: said.err, needle: "rewrote " + path)
+        wrong @ wrong.push("  stderr does not say the file was rewritten: " + said.err)
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n"))
+        return
+    report.keep_pass(@r)
+
+# **A VERB THAT REWRITES THE AUTHOR'S FILE AND CANNOT FINISH LEAVES IT BYTE
+# FOR BYTE** (defect 136), which no row can hold: the case makes its own file
+# and makes the write fail. It fails the way a full disk does, a ceiling on
+# what the child may write (`shell.run_limited`) below the new text and above
+# the message. Measured before the repair on a 2 MB disk image: `fmt
+# --in-place` left the program at 0 bytes and `check --apply --in-place` cut
+# it mid-token, both at exit 2; under this ceiling the same compiler cuts the
+# file at the ceiling. Windows keeps no such ceiling, so there the two cases
+# do not run and are not counted, and the compiler's own tests hold the
+# refusals every platform can make.
+function in_place_cases(scratch: str, compiler: str, @r: report.Report)
+    if !shell.can_limit_writes()
+        return
+    in_place_case(@r, scratch: scratch, compiler: compiler, verb: "fmt", flags: ["--in-place"], text: unformatted())
+    in_place_case(
+        @r,
+        scratch: scratch,
+        compiler: compiler,
+        verb: "check",
+        flags: ["--apply", "--in-place"],
+        text: fn_swaps()
+    )
+
+# Below what either verb writes and above what it says: `fmt` writes 1,746
+# bytes and `check --apply` 2,232 (measured 2026-09-30), and the message
+# that says the file is untouched fits under it.
+constant IN_PLACE_CEILING: i64
+    1024
+
+function in_place_case(@r: report.Report, scratch: str, compiler: str, verb: str, flags: [str], text: str)
+    label = "surface/" + verb + " " + flags.join(" ") + " under a full disk leaves the author's file byte for byte (defect 136)"
+    dir = scratch + "/in-place-" + verb
+    path = dir + "/p.hero"
+    _ = shell.remove_tree(dir).is_err()
+
+    if shell.mkdir_all(dir).is_err() || write_file(path: path, text: text).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot make " + path)
+        return
+    words: [str] @= [compiler, verb, path]
+
+    for flag in flags
+        words @ words.push(flag)
+
+    ran = shell.run_limited(scratch: scratch, program: compiler, words: words, bytes: IN_PLACE_CEILING)
+    after = read_file(path).default("(unreadable)")
+    left = shell.list_entries(scratch: scratch, dir: dir).default([])
+
+    if ran.is_err()
+        report.keep_failure(@r, label: label, detail: "  " + shell.refusal(ran))
+        return
+    said = ran.must()
+    wrong: [str] @= []
+
+    if said.code != 2
+        wrong @ wrong.push("  exit " + said.code.to_str() + ", where a write that failed is 2")
+
+    if !strings.contains(text: said.err, needle: path + " is untouched")
+        wrong @ wrong.push("  stderr does not say the file is untouched: " + said.err)
+
+    if after != text
+        wrong @ wrong.push(report.mismatch(what: path + " afterwards", expected: text, actual: after))
+
+    if left != [path]
+        wrong @ wrong.push("  beside it: " + left.join(", "))
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n"))
+        return
+    report.keep_pass(@r)
+
+# A program of 1,266 bytes `fmt` rewrites into 1,746: eighty `vN=N+N*2`
+# lines.
+function unformatted() -> str
+    lines: [str] @= ["function main()"]
+
+    for n in range(from: 0, to: 80)
+        lines @ lines.push("    v" + n.to_str() + "=" + n.to_str() + "+" + n.to_str() + "*2")
+
+    return lines.join("\n") + "\n"
+
+# A program of 1,872 bytes `check --apply` rewrites into 2,232: sixty `fn` heads,
+# each with the certain swap to `function`.
+function fn_swaps() -> str
+    parts: [str] @= []
+
+    for n in range(from: 0, to: 60)
+        parts @ parts.push("fn f" + n.to_str() + "() -> i64\n    return " + n.to_str() + "\n")
+
+    return parts.join("\n") + "\nfunction main()\n    print(f0())\n"
 
 # **The three exit codes mean three different things** (panel 016): 0 the
 # input is clean, 1 the input has diagnostics, 2 the tool could not run.
@@ -127,6 +446,8 @@ function argv_probes() -> [probe.Probe]
         row(name: "a clean file exits 0", argv: "check examples/gallery/01-points.hero", code: 0)
         row(name: "a file with diagnostics exits 1", argv: "check tests/golden/check/shadowing.hero", code: 1)
         row(name: "a file that is not there exits 2", argv: "check no/such/file.hero", code: 2)
+        row(name: "a root that does not exist is told so, never as unreadable (defect 295)", argv: "check no/such/file.hero", code: 2).err_has("no file is named `no/such/file.hero`").err_lacks("cannot read")
+        row(name: "and a root that is there and is no file, a directory, is told unreadable (defect 295)", argv: "check tests/golden", code: 2).err_has("cannot read `tests/golden`").err_lacks("no file is named")
         row(name: "an unknown flag exits 2", argv: "check --nonsense examples/gallery/00-first.hero", code: 2)
         row(name: "an unknown command exits 2", argv: "frobnicate", code: 2)
         row(name: "a dump is the artifact", argv: "parse examples/gallery/00-first.hero --dump-ast", code: 0).out_nonempty().err_empty()
@@ -139,10 +460,13 @@ function argv_probes() -> [probe.Probe]
         row(name: "a dump prints the tokens", argv: "lex examples/gallery/00-first.hero --dump-tokens", code: 0).out_has("ident main")
         row(name: "json changes how, not what", argv: "lex examples/gallery/00-first.hero --dump-tokens --json", code: 0).out_starts("[\n").out_has("\"kind\"")
         row(name: "json alone selects no output", argv: "lex examples/gallery/00-first.hero --json", code: 0).out_empty()
-        row(name: "json writes a tab inside a string literal as an escape and never raw, so the output is JSON (defect 102)", argv: "lex tests/golden/surface-fixtures/json102/tab.hero --dump-tokens --json", code: 0).out_has("a\\tb").out_lacks("\t")
+        row(name: "json writes a tab inside a token as an escape and never raw, so the output is JSON (defect 102; in a comment since panel 192)", argv: "lex tests/golden/surface-fixtures/json102/tab.hero --dump-tokens --json", code: 0).out_has("a\\tb").out_lacks("\t")
         row(name: "and a control byte by its code, where it arrives inside an error token", argv: "lex tests/golden/surface-fixtures/json102/control.hero --dump-tokens --json", code: 1).out_has("\\u0001")
         row(name: "a control byte the language refuses is named by its code in check's JSON, where the byte went raw", argv: "check tests/golden/surface-fixtures/json102/control.hero --json", code: 1).err_has("\"message\": \"the control character U+0001 is not part of the language's syntax\"")
         row(name: "a character a terminal shows as nothing, or that reorders the line, is named by its code alone, and one that can be seen is shown and named", argv: "check tests/golden/surface-fixtures/json102/unseen.hero", code: 1).err_has("the invisible character U+202E is not").err_has("the invisible character U+200B is not").err_has("`€` (U+20AC) is not")
+        row(name: "and the token dump writes those two by their code as well, and the one that can be seen as itself (defect 291)", argv: "lex tests/golden/surface-fixtures/json102/unseen.hero --dump-tokens", code: 1).out_has("2:11 error <U+202E>\n").out_has("3:11 error <U+200B>\n").out_has("4:11 error €\n").out_lacks("\u{202e}")
+        row(name: "a string's raw ESC reaches the token dump by its code, never as the byte a terminal acts on (defect 290)", argv: "lex tests/golden/surface-fixtures/escape290/main.hero --dump-tokens", code: 1).out_has("str \"<U+001B>[2Jboom\"").out_lacks("\u{1b}").err_lacks("\u{1b}")
+        row(name: "and neither stream of the syntax tree's dump carries the byte (defect 290)", argv: "parse tests/golden/surface-fixtures/escape290/main.hero --dump-ast", code: 1).out_lacks("\u{1b}").err_lacks("\u{1b}").err_has("error[invisible_character]")
         row(name: "a missing operand shows the shape", argv: "check", code: 2).err_is("error: `check` needs a file: `heroes check <file.hero>`\n")
         row(name: "two files are refused", argv: "check a.hero b.hero", code: 2).err_has("takes one file")
         row(name: "-o needs a path", argv: "build examples/gallery/00-first.hero -o", code: 2).err_has("needs a path")
@@ -182,7 +506,6 @@ function help_probes() -> [probe.Probe]
         row(name: "help states the exit codes and the streams", argv: "--help", code: 0).out_has("1 diagnostics were reported, no artifact was produced").out_has("2 the tool could not run.").out_has("HEROES_RUNTIME").out_has("streams: the artifact on stdout")
         row(name: "every flag in the table is documented", argv: "--help", code: 0).out_has("--dump-tokens").out_has("--json").out_has("--dump-ast").out_has("--dump-scopes").out_has("--in-place")
         row(name: "measure states its default", argv: "--help", code: 0).out_has("(default: spec/heroes-spec.md)")
-        row(name: "measure runs with no operand", argv: "measure", code: 0)
         row(name: "probe states its default and names its two flags' values", argv: "--help", code: 0).out_has("  probe [file]\n").out_has("(default: the formatter's fixture directories)").out_has("--family <name>").out_has("--stride <count>")
     ]
 
@@ -192,7 +515,11 @@ function render_probes() -> [probe.Probe]
     return [
         row(name: "the rich form carries the line, the caret and the other end", argv: "check tests/golden/check/certain-labels.hero", code: 1).err_starts("error[wrong_label]: `Point` has nothing called `z` at this position — it is `y`\n").err_has("  at tests/golden/check/certain-labels.hero:10:21").err_has("    a = Point(x: 1, z: 2)").err_has("^").err_has("fix (certain): write `y:`")
         row(name: "brief is one line per diagnostic", argv: "check tests/golden/check/certain-labels.hero --brief", code: 1).err_lines(3).err_starts("tests/golden/check/certain-labels.hero:")
-        row(name: "json is versioned and carries the fixes", argv: "check tests/golden/check/certain-labels.hero --json", code: 1).err_starts("{\n  \"schema\": 1,\n").err_has("\"code\": \"wrong_label\"").err_has("\"certainty\": \"certain\"").err_has("\"line\": 10")
+        row(name: "json is versioned and carries the fixes", argv: "check tests/golden/check/certain-labels.hero --json", code: 1).err_starts("{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n").err_has("\"code\": \"wrong_label\"").err_has("\"certainty\": \"certain\"").err_has("\n      \"line\": 10,\n")
+        row(name: "a certain fix says where it applies and what --apply's first round does with it: the enclosing one withheld, the one inside written (defect 271, panel 193)", argv: "check tests/golden/surface-fixtures/certain137-inside/main.hero --json", code: 1).err_has("\"line\": 25, \"col\": 11, \"end_line\": 25, \"end_col\": 34, \"byte_start\": 726, \"byte_end\": 749, \"text\": \"total(xs.must()).must()\", \"first_round\": \"withheld\"").err_has("\"byte_start\": 732, \"byte_end\": 741, \"text\": \"xs.must()\", \"first_round\": \"written\"").err_has("\"byte_start\": 826, \"byte_end\": 826, \"text\": \"\", \"first_round\": \"written\"")
+        row(name: "a certain fix in another module is placed in that module's own bytes, and --apply's first round leaves it elsewhere", argv: "check tests/golden/surface-fixtures/applyx/main.hero --json", code: 1).err_has("\"file\": \"tests/golden/surface-fixtures/applyx/geom.hero\", \"line\": 3, \"col\": 12, \"end_line\": 3, \"end_col\": 17, \"byte_start\": 66, \"byte_end\": 71, \"text\": \"total\", \"first_round\": \"elsewhere\"")
+        row(name: "a guess carries its place, for showing, and no first round", argv: "check tests/golden/check/a-label-that-names-another-position-of-a-function-value.hero --json", code: 1).err_has("\"certainty\": \"guess\", \"file\": \"tests/golden/check/a-label-that-names-another-position-of-a-function-value.hero\", \"line\": 19, \"col\": 16, \"end_line\": 19, \"end_col\": 18, \"byte_start\": 994, \"byte_end\": 996, \"text\": \"to\"}")
+        row(name: "a message at a CRLF line's end is placed in JSON where the LF file places it (defect 373)", argv: "check tests/golden/check/fixedbugs-373-a-message-at-a-crlf-line-end-is-told-at-the-line-s-end.hero --json", code: 1).err_has("\"line\": 16,\n      \"col\": 8,\n").err_has("\"line\": 17,\n      \"col\": 36,\n")
         row(name: "the thesis rules fire by default", argv: "check tests/golden/check/unused-bindings.hero --brief", code: 1).err_lines(4)
         row(name: "permissive drops them", argv: "check tests/golden/check/unused-bindings.hero --brief --permissive", code: 0).err_empty()
         row(name: "permissive keeps the rest", argv: "check tests/golden/check/unknown-type.hero --brief --permissive", code: 1)
@@ -237,11 +564,17 @@ function ffi_probes() -> [probe.Probe]
         row(name: "a lend C would write through, from a `=` binding, is the author's error at the LEND (panel 166, defect 065)", argv: "build tests/golden/fixedbugs/ffi-a-lent-field-c-would-write.hero", code: 1).err_has("error[field_lend_written]").err_has("`t.nsap.ptr()` lends a field of `t` to `slot_fill`").err_has("`void *`").err_has("`t` is not a `@` name").err_has("would-write.hero:33:18").err_lacks("internal error").err_lacks("discards qualifiers").err_lacks("build/")
         row(name: "an extent past the field is the author's error at the NUMBER, on a partial record too (panel 166, defect 063)", argv: "build tests/golden/fixedbugs/ffi-a-lent-field-extent-overstated.hero", code: 1).err_has("error[field_lend_extent]").err_has("lends a field of 8 bytes, and `n` states 64").err_has("states 4096").err_has("states 24").err_has("state the field's own length, 8").err_lacks("internal error").err_lacks("static assertion").err_lacks("build/")
         row(name: "a cstr that cannot be used says what turns it into a str", argv: "check tests/golden/check/ffi-cstr-has-a-route.hero", code: 1).err_has("error[bad_operand]").err_has("validated").err_has("null_cstr").err_has("not_text")
-        row(name: "a wrong extern return type is the author's error", argv: "build tests/golden/fixedbugs/ffi-return-type.hero", code: 1).err_has("error[ffi_return_type]").err_has("does not return `i64`").err_has("math.h").err_lacks("internal error").err_lacks("_Static_assert").err_lacks("_Generic")
+        row(name: "a wrong extern return type is the author's error", argv: "build tests/golden/fixedbugs/ffi-return-type.hero", code: 1).err_has("error[ffi_return_type]").err_has("returns `double` in `math.h`, not `i64`").err_lacks("internal error").err_lacks("_Static_assert").err_lacks("_Generic")
         row(name: "a wrong pointer return is a diagnostic", argv: "build tests/golden/fixedbugs/ffi-pointer-return.hero", code: 1).err_has("error[ffi_return_type]").err_has("getenv").err_has("stdlib.h").err_lacks("internal error").err_lacks("unary expression").err_lacks("_Generic")
-        row(name: "a wrong extern constant type is the author's error", argv: "build tests/golden/fixedbugs/ffi-constant-type.hero", code: 1).err_has("error[ffi_constant_type]").err_has("`M_PI` is not `i64`").err_has("math.h").err_lacks("does not return").err_lacks("internal error").err_lacks("_Static_assert")
+        row(name: "a wrong extern constant type is the author's error", argv: "build tests/golden/fixedbugs/ffi-constant-type.hero", code: 1).err_has("error[ffi_constant_type]").err_has("`M_PI` is `double` in `math.h`, not `i64`").err_lacks("does not return").err_lacks("internal error").err_lacks("_Static_assert")
         row(name: "a C object is not a constant", argv: "build tests/golden/fixedbugs/ffi-not-constant.hero", code: 1).err_has("error[ffi_not_constant]").err_has("has `stdout`, but not as a constant").err_has("reading it twice could give two answers").err_lacks("internal error").err_lacks("__builtin_constant_p")
         row(name: "a misspelled extern name says the header has no such name", argv: "build tests/golden/fixedbugs/ffi-unknown-name.hero", code: 1).may_skip().err_has("error[ffi_unknown_name]").err_has("declares no `sqlite3_openn`").err_has("sqlite3.h").err_has("fix (guess)").err_has("`sqlite3_open`").err_lacks("ffi_return_type").err_lacks("internal error").err_lacks("_Static_assert")
+        row(name: "a macro-only extern name is told as a macro, and the function it drafts names no declared C type (panel 185 R1)", argv: "build tests/golden/unsupported/fixedbugs-143-a-function-like-macro-of-the-programs-own-header.hero", code: 1).err_has("error[ffi_macro_name]").err_has("defines `SQUARE` as a macro, not a function").err_has("hero_SQUARE(<C type> x)").err_lacks("int32_t x").err_lacks("ffi_unknown_name").err_lacks("declares no").err_lacks("internal error")
+        row(name: "a header-only C99 inline is refused by run as by build, told what C wants (defect 562)", argv: "run tests/golden/unsupported/fixedbugs-562-a-header-only-inline-is-told-what-c-wants.hero", code: 1).err_has("error[ffi_missing_link]").err_has("`twice` is defined only `inline` in `fixedbugs-562-inline.h` line 4").err_has("`static inline`").err_lacks("no group in this program says which library").err_lacks("internal error")
+        row(name: "a program whose one file cannot compile is built by run, a unit per module (defect 453)", argv: "run tests/golden/surface-fixtures/onefile453/main.hero", code: 0).out_is("6\n8\n")
+        row(name: "and refused by --emit-c, naming both modules and both headers, where it was written at exit 0 (defect 453)", argv: "build tests/golden/surface-fixtures/onefile453/main.hero --emit-c", code: 1).err_has("error[ffi_one_file]").err_has("`onefile-int.h`").err_has("and `onefile-long.h`, which another module's group names at ").err_has("wide.hero:2, cannot be compiled together").err_has("conflicting types for 'twice'").out_empty()
+        row(name: "a binding another module's macro rewrites in the one file is refused by --emit-c (defect 453)", argv: "build tests/golden/surface-fixtures/onefile453macro/main.hero --emit-c", code: 1).err_has("error[ffi_one_file]").err_has("`twice`, which this group binds, is not what this module's own unit makes of it").err_has("`onefile-macro.h`").out_empty()
+        row(name: "a binding whose types another module's header changes in the one file is refused by --emit-c, read from clang's dumps (defect 453)", argv: "build tests/golden/surface-fixtures/onefile453type/main.hero --emit-c", code: 1).err_has("error[ffi_one_file]").err_has("`onefile_size`, which this group binds").err_has("`onefile-wide.h`").out_empty()
         row(name: "a missing link is the author's error", argv: "build tests/golden/fixedbugs/ffi-missing-link.hero", code: 1).may_skip().err_has("error[ffi_missing_link]").err_has("ffi-missing-link.hero:").err_has("link \"<library>\"").err_lacks("internal error").err_lacks("build/")
         row(name: "a const pointer reads", argv: "run tests/golden/fixedbugs/ffi-const-pointer.hero", code: 0).out_has("false 3").out_has("ziggy").out_has("stardust")
         row(name: "a cstr is not any pointer", argv: "build tests/golden/fixedbugs/ffi-cstr-is-not-any-pointer.hero", code: 1).err_has("ffi_return_type")
@@ -276,8 +609,10 @@ function verb_probes() -> [probe.Probe]
         row(name: "every module names itself in the emitted C", argv: "build examples/calculator/main.hero --emit-c", code: 0).out_has("examples/calculator/main.hero\"").out_has("examples/calculator/lex.hero\"").out_has("examples/calculator/parse.hero\"").out_has("examples/calculator/eval.hero\"")
         row(name: "a file with no main is the author's error under build", argv: "build tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("error[no_entry_point]").err_has("no-main.hero").err_lacks("internal error").err_lacks("library")
         row(name: "a file with no main is the author's error under run", argv: "run tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("error[no_entry_point]").err_has("no-main.hero").err_lacks("internal error").err_lacks("library")
+        row(name: "a file with no main may be a module, and is told to build the file that uses it (defect 542)", argv: "build tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("note: if another file names this one with `use`, build that file instead").err_has("note: if this file is a program, add `function main()`")
+        row(name: "and so under run, which builds it first", argv: "run tests/golden/surface-fixtures/no-main.hero", code: 1).err_has("note: if another file names this one with `use`, build that file instead")
         row(name: "a file of zero bytes checks clean, where every verb that reads a program panicked on it (defect 109)", argv: "check tests/golden/surface-fixtures/empty109/empty.hero", code: 0).out_empty().err_empty()
-        row(name: "and its diagnostics as JSON are none", argv: "check tests/golden/surface-fixtures/empty109/empty.hero --json", code: 0).out_empty().err_empty()
+        row(name: "and its answer as JSON is a document holding no diagnostic, naming the file it read and its SHA-256 (panel 193's R3 and R5)", argv: "check tests/golden/surface-fixtures/empty109/empty.hero --json", code: 0).out_empty().err_is("{\n  \"schema\": 2,\n  \"kind\": \"diagnostics\",\n  \"read\": [\n    {\"file\": \"tests/golden/surface-fixtures/empty109/empty.hero\", \"sha256\": \"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\"}\n  ],\n  \"diagnostics\": []\n}\n")
         row(name: "its token stream is the end of the file, at line 1 and column 1", argv: "lex tests/golden/surface-fixtures/empty109/empty.hero --dump-tokens", code: 0).out_is("1:1 eof\n").err_empty()
         row(name: "and the same stream as JSON", argv: "lex tests/golden/surface-fixtures/empty109/empty.hero --dump-tokens --json", code: 0).out_is("[\n  {\"kind\": \"eof\", \"text\": \"\", \"line\": 1, \"col\": 1}\n]\n").err_empty()
         row(name: "its syntax tree is a file with nothing in it", argv: "parse tests/golden/surface-fixtures/empty109/empty.hero --dump-ast", code: 0).out_is("file tests/golden/surface-fixtures/empty109/empty.hero\n").err_empty()
@@ -287,6 +622,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "under build it is a program with no main, as any file without one is", argv: "build tests/golden/surface-fixtures/empty109/empty.hero", code: 1).err_has("error[no_entry_point]").err_has("empty109/empty.hero:1:1").err_lacks("panic").err_lacks("internal error")
         row(name: "and under run", argv: "run tests/golden/surface-fixtures/empty109/empty.hero", code: 1).err_has("error[no_entry_point]").err_has("empty109/empty.hero:1:1").err_lacks("panic").err_lacks("internal error")
         row(name: "under test it has no tests", argv: "test tests/golden/surface-fixtures/empty109/empty.hero", code: 0).out_is("no tests in tests/golden/surface-fixtures/empty109/empty.hero\n").err_empty()
+        row(name: "a failing title is printed as its source spells it, so a character a line cannot show reaches the output by its code, never as itself (defect 355)", argv: "test tests/golden/surface-fixtures/title355/title.hero", code: 1).out_has("FAIL \"a title holding \\u{1b}[2J and \\u{202e} here\"").out_lacks("\u{1b}").out_lacks("\u{202e}")
         row(name: "measure counts it", argv: "measure tests/golden/surface-fixtures/empty109/empty.hero", code: 0).out_starts("tests/golden/surface-fixtures/empty109/empty.hero\n").err_empty()
         row(name: "a module of zero bytes that a program imports is joined like any other, and the program owes only what its content does", argv: "check tests/golden/surface-fixtures/empty109/main.hero", code: 1).err_has("error[unused_binding]").err_has("`use empty` is never used").err_lacks("panic").err_lacks("internal error")
         row(name: "mutate over a directory holding a file of zero bytes scores it, where it panicked", argv: "mutate tests/golden/surface-fixtures/empty109/alone", code: 0).out_starts("corpus: 1 programs under tests/golden/surface-fixtures/empty109/alone\n").err_empty()
@@ -307,7 +643,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "and a call that unwraps what cannot fail, with such a character in it, is refused, where check aborted", argv: "check tests/golden/surface-fixtures/nonascii110/main.hero --brief", code: 1).err_has("nonascii110/main.hero:23:9: error[bad_operand]").err_has("nonascii110/main.hero:24:9: error[bad_operand]").err_lacks("panic")
         row(name: "an extern is never callable across a module boundary", argv: "check tests/golden/surface-fixtures/externroute/wrong.hero", code: 1).err_has("error[extern_across_modules]").err_has("`system` is an `extern` of module `bind`").err_has("only `bind` carries the header").err_has("write a Heroes function beside the `extern` in `bind`").err_lacks("internal error")
         row(name: "the route is a Heroes function in the declaring module", argv: "run tests/golden/surface-fixtures/externroute/right.hero", code: 0).out_is("0\n")
-        row(name: "a wrong extern signature is exit 1 on the declaring module's line", argv: "build tests/golden/surface-fixtures/externsignature/wrong.hero", code: 1).err_has("error[ffi_return_type]").err_has("externsignature/bind.hero:13:5").err_has("that is what `math.h` says").err_lacks("internal error").err_lacks("build/").err_lacks("hero_ffi_probe")
+        row(name: "a wrong extern signature is exit 1 on the declaring module's line", argv: "build tests/golden/surface-fixtures/externsignature/wrong.hero", code: 1).err_has("error[ffi_return_type]").err_has("externsignature/bind.hero:13:5").err_has("returns `double` in `math.h`").err_lacks("internal error").err_lacks("build/").err_lacks("hero_ffi_probe")
         row(name: "the same shape with the header's own signature runs", argv: "run tests/golden/surface-fixtures/externsignature/right.hero", code: 0).out_is("4.0\n")
         row(name: "one C symbol carries two bindings, in two modules", argv: "run tests/golden/surface-fixtures/twoarity/main.hero", code: 0).out_is("n = 42\ns = forty-two\n")
         row(name: "a releaser a mark names is read in the mark's own module, checked from the program (defect 085)", argv: "check tests/golden/surface-fixtures/releaser085/main.hero", code: 1).err_has("error[unread_releaser]").err_has("releaser085/bio.hero:7:37").err_has("no `extern` of this module declares it").err_lacks("internal error")
@@ -316,14 +652,22 @@ function verb_probes() -> [probe.Probe]
         row(name: "a handle tag that C names with two words is spelled from clang's own refusal, in the module that declares it and in the one that only uses it (defect 037)", argv: "run tests/golden/surface-fixtures/structtag/main.hero", code: 0).out_is("7\n").err_empty()
         row(name: "a local may not take the name a use bound, and one mistake is one diagnostic", argv: "check tests/golden/surface-fixtures/localtakesamodule/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("what this file calls the module `state`").err_has("use state as <other>").err_has("or rename this binding").err_lacks("module_is_not_a_value").err_lacks("internal error")
         row(name: "a ptr local wearing a module's name is two diagnostics, and the qualifying repair is a guess", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero", code: 1).err_has("error[shadowed_binding]").err_has("error[needs_qualifying]").err_lacks("fix (certain)").err_lacks("internal error")
-        row(name: "apply on it leaves the text untouched, because a fix that reproduced itself was no fix", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero --apply", code: 0).out_is("use window\n\nfunction main()\n    window: ptr @ nullptr  #~ shadowed_binding\n    window @ nullptr\n    _ = window.destroy()  #~ needs_qualifying\n").out_lacks("window.window")
+        row(name: "apply on it leaves the text untouched, because a fix that reproduced itself was no fix", argv: "check tests/golden/surface-fixtures/qualifyptr/main.hero --apply", code: 0).out_is("use window\n\nfunction main()\n    window: ptr @= nullptr  #~ shadowed_binding\n    window @ nullptr\n    _ = window.destroy()  #~ needs_qualifying\n").out_lacks("window.window")
+        row(name: "a function with an `@` parameter named as a value across a module is refused as written, and its qualified call is quiet (defect 398)", argv: "check tests/golden/surface-fixtures/value398/main.hero", code: 1).err_has("error[mutable_parameter_as_value]").err_has("`helper.bump` changes its argument `n` through `@`").err_has("main.hero:8:9").err_lines(6).err_lacks("internal error")
+        row(name: "a generic function of another module used as a value is the instance its position's type names, as one of the same module is (defect 421, beside defect 402)", argv: "run tests/golden/surface-fixtures/value421/main.hero", code: 0).out_is("q1\n31\n2\nthree\n4\n10\n6\n7\neight\n19\n").err_empty()
+        row(name: "and under the sanitizers, the instance two modules reach being one", argv: "run tests/golden/surface-fixtures/value421/main.hero --sanitize", code: 0).out_is("q1\n31\n2\nthree\n4\n10\n6\n7\neight\n19\n").err_empty()
+        row(name: "and through the module's other name", argv: "run tests/golden/surface-fixtures/value421/alias.hero", code: 0).out_is("11\n").err_empty()
+        row(name: "and where nothing asks its type it is refused where it stands, where the build stopped at exit 2", argv: "check tests/golden/surface-fixtures/value421/unbound.hero", code: 1).err_has("error[cannot_infer]").err_has("nothing here says what `A` of `helper.ident` is").err_has("unbound.hero:9:9").err_lacks("internal error")
         row(name: "both spellings of the failure constructor compile, and the label rule still binds a user function", argv: "run tests/golden/surface-fixtures/faillabels/main.hero", code: 0).out_is("1\n2\nthe rule still binds a user function\n").err_empty()
         row(name: "a foreign word that is CALLED keeps its message and loses its certain fix (defect 015)", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero", code: 1).err_has("error[reserved_word]").err_has("to_i64").err_has("fix (guess)").err_lacks("fix (certain)").err_lacks("internal error")
         row(name: "and apply leaves that program untouched, because a fix that broke the program was no fix", argv: "check tests/golden/surface-fixtures/calledforeign/main.hero --apply", code: 0).out_has("n @ int(3)").out_has("n @ switch(3)").out_has("n @ const(3)").out_lacks("i64(3)").out_lacks("match(3)").out_lacks("constant(3)")
         row(name: "a null handle read through by C says so, with its offset, instead of dying at 139 — on every platform, and the level is part of the claim (defect 045, defect 047)", argv: "run tests/golden/surface-fixtures/nullread/main.hero -O0", code: -1).err_has("panic: a null pointer was read through").err_has("at offset 0x0").out_is("7\n")
         row(name: "deep recursion stops with a word at -O0, on every platform", argv: "run tests/golden/surface-fixtures/deep/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "and on a thread the program started, where it said nothing at all until M-thread-stacks", argv: "run tests/golden/surface-fixtures/deepthread/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
-        row(name: "a recursion of WIDE frames stops with the same word at -O0: the probe reaches the guard before sp does (defect 007, `docs/work/DONE.md`)", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
+        row(name: "a correct recursion a hundred thousand deep in tail position still returns at -O2, where a call stays a call (panel 199's R2, defect 508)", argv: "run tests/golden/surface-fixtures/deeptail/main.hero", code: 0).out_is("5000050000\n").err_empty()
+        row(name: "a constant of another module holding a function is called by its qualified name, where the build stopped at exit 2 (defect 510)", argv: "run tests/golden/surface-fixtures/constcall510/main.hero", code: 0).out_is("8\n9\n").err_empty()
+        row(name: "and its wrong calls are told as an unqualified one's are, where check passed them", argv: "check tests/golden/surface-fixtures/constcall510/wrong.hero --brief", code: 1).err_has("wrong.hero:8:11: error[wrong_arity]").err_has("wrong.hero:9:11: error[not_callable]").err_has("wrong.hero:10:25: error[type_mismatch]").err_lacks("internal error")
+        row(name: "a recursion of WIDE frames stops with the same word at -O0: the probe reaches the guard before sp does (defect 007)", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O0", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "and at -O2, where the frame is smaller and the witness is the other one", argv: "run tests/golden/surface-fixtures/wideframe/main.hero -O2", code: -1).err_has("panic: stack exhausted").out_empty()
         row(name: "a nested program runs from its root, the leaf reading the root's module by path", argv: "run tests/golden/surface-fixtures/nested/main.hero", code: 0).out_is("2\n20\n")
         row(name: "a leaf below the root, compiled directly, refuses and names the directory it read from and the file that decided it", argv: "check tests/golden/surface-fixtures/nested/lib/leaf.hero", code: 1).err_has("error[unknown_module]").err_has("reads `tests/golden/surface-fixtures/nested/lib/util.hero`").err_has("from the directory of `tests/golden/surface-fixtures/nested/lib/leaf.hero`, the file you compile")
@@ -333,6 +677,21 @@ function verb_probes() -> [probe.Probe]
         row(name: "json names it too", argv: "check tests/golden/surface-fixtures/cross/main.hero --json", code: 1).err_has("\"line\": 5,")
         row(name: "the hole count names the file the holes are in", argv: "build tests/golden/surface-fixtures/holes/main.hero", code: 1).err_has("no binary: 1 hole in ").err_has("geom.hero")
         row(name: "apply does not panic on a fix in another module", argv: "check tests/golden/surface-fixtures/applyx/main.hero --apply", code: 0).err_has("another module").err_has("geom.hero").out_has("use geom").out_lacks("function area")
+        row(name: "and a fix in a module only a later round reads is told as not applied, where it was dropped in silence", argv: "check tests/golden/surface-fixtures/applylater/main.hero --apply", code: 0).out_has("\nuse geom  #~ use_wants_a_name\n").err_is("note: 1 certain fix(es) are in another module and were not applied: tests/golden/surface-fixtures/applylater/geom.hero:5\n")
+        row(name: "apply with json answers a document holding the program, where it printed the program as text (defect 371, panel 193's R4)", argv: "check tests/golden/surface-fixtures/apply141/remark.hero --apply --json", code: 0).out_is("{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n  \"read\": [\n    {\"file\": \"tests/golden/surface-fixtures/apply141/remark.hero\", \"sha256\": \"0c06c20685b97e8740711b3cc71f77122a89c4666f635f31ec6b2c370a9598c4\"}\n  ],\n  \"file\": \"tests/golden/surface-fixtures/apply141/remark.hero\",\n  \"rounds\": 0,\n  \"not_applied\": [],\n  \"output\": \"# Defect 141 (2026-10-01): a file of one remark, its line open.\"\n}\n").err_empty()
+        row(name: "and where rounds wrote, it says how many, the program inside being what apply writes, one round a link of the chain", argv: "check tests/golden/surface-fixtures/certain137-inside/main.hero --apply --json", code: 0).out_has("  \"rounds\": 3,\n  \"not_applied\": [],\n").out_has("\\n    print(total(xs))  #~ bad_operand bad_operand\\n    k: Counter @= Counter(n: 0)\\n    print(bump(@k))  #~ bad_operand marker_mismatch\\n    print(copy_text(from: \\\"a\\\", to: \\\"b\\\"))  #~ bad_operand needs_label\\n    print(one())  #~ bad_operand\\n").err_empty()
+        row(name: "and it names the fixes left in another module, and every file a round read with its SHA-256", argv: "check tests/golden/surface-fixtures/applylater/main.hero --apply --json", code: 0).out_has("    {\"file\": \"tests/golden/surface-fixtures/applylater/geom.hero\", \"sha256\": \"af570637f6e94adf8a9112328c04bee10739be27944ea9ea3d852108a923a537\"}\n  ],\n  \"file\": \"tests/golden/surface-fixtures/applylater/main.hero\",\n  \"rounds\": 1,\n  \"not_applied\": [\"tests/golden/surface-fixtures/applylater/geom.hero:5\"],\n").err_is("note: 1 certain fix(es) are in another module and were not applied: tests/golden/surface-fixtures/applylater/geom.hero:5\n")
+        row(name: "and with --in-place, a root holding none of the diagnostics says so, and that the certain fix is in another module (defect 621)", argv: "check tests/golden/surface-fixtures/applyx/main.hero --apply --in-place", code: 0).err_is("note: 1 certain fix(es) are in another module and were not applied: tests/golden/surface-fixtures/applyx/geom.hero:3\ntests/golden/surface-fixtures/applyx/main.hero unchanged: none of the diagnostics is in it, and the certain fix(es) named above are in another module\n").out_empty()
+        row(name: "and with --in-place on a file no fix applies to, the document all the same", argv: "check tests/golden/surface-fixtures/apply141/holes.hero --apply --in-place --json", code: 0).out_starts("{\n  \"schema\": 2,\n  \"kind\": \"applied\",\n").out_has("  \"rounds\": 0,\n  \"not_applied\": [],\n").err_empty()
+        row(name: "apply refuses --brief, which it dropped in silence (defect 371)", argv: "check tests/golden/check/certain-labels.hero --apply --brief", code: 2).err_is("error: `--brief` prints the diagnostics one to a line, and `--apply` prints the program instead of them: ask for one\n").out_empty()
+        row(name: "and --dump-scopes, which it dropped the same way", argv: "check tests/golden/check/certain-labels.hero --apply --dump-scopes", code: 2).err_is("error: `--dump-scopes` prints the program's scopes, and `--apply` prints the program with its fixes written: ask for one artifact at a time\n").out_empty()
+        row(name: "in-place without apply is refused, where it was dropped in silence", argv: "check tests/golden/check/certain-labels.hero --in-place", code: 2).err_is("error: `--in-place` rewrites the file with what `--apply` writes, and `--apply` was not given: `heroes check <file.hero> --apply --in-place`\n").out_empty()
+        row(name: "and json with brief is refused, where brief was dropped in silence", argv: "check tests/golden/check/certain-labels.hero --brief --json", code: 2).err_is("error: `--json` and `--brief` are two forms of the diagnostics: ask for one\n").out_empty()
+        row(name: "apply hands a clean file back byte for byte, its open last line included, where it printed nothing (defect 141)", argv: "check tests/golden/surface-fixtures/apply141/clean.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a clean file whose last line is open. `check\n# --apply` owes it back byte for byte; on the compiler of `9d1c209d` it\n# printed nothing, so `check --apply > file` emptied the file.\n\nfunction main()\n    print(1)").err_empty()
+        row(name: "and a file of one remark, its line open", argv: "check tests/golden/surface-fixtures/apply141/remark.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a file of one remark, its line open.").err_empty()
+        row(name: "and a clean file with a hole, where it printed the hole's report", argv: "check tests/golden/surface-fixtures/apply141/holes.hero --apply", code: 0).out_is("# Defect 141 (2026-10-01): a clean file with a hole. `check --apply` owes\n# the program back as it is; on the compiler of `9d1c209d` it printed the\n# hole's report, `check`'s own artifact and not this flag's, and with\n# `--in-place` it printed that report too.\n\nfunction main()\n    n: i64 @= ???\n    print(n)\n").err_empty()
+        row(name: "and with --in-place it prints nothing at all, the file being its own repair", argv: "check tests/golden/surface-fixtures/apply141/holes.hero --apply --in-place", code: 0).out_empty().err_empty()
+        row(name: "a module whose last byte is a stray carriage return is refused there, where check passed it and fmt did not (defect 141)", argv: "check tests/golden/surface-fixtures/apply141/main.hero --brief", code: 1).err_has("apply141/strayed.hero:5:13: error[stray_carriage_return]").err_lacks("internal error")
         row(name: "a comment between two parameters of a group member stays there, with a member following (defect 095)", argv: "fmt tests/golden/surface-fixtures/paramcomment095/following.hero", code: 0).out_is("# Defect 095: a comment between two parameters of a group member, with a\n# member following. `fmt` joined the list onto one line and expelled the\n# comment after it, where `ob_put` took it as documentation, and the tree\n# guard refused at exit 2 a program `check` accepts. This file is canonical:\n# `fmt` prints it back byte for byte.\nextern \"x.h\"\n    record Ob tag ob\n    function ob_get(\n                o: Ob,\n                # a comment between\n                n: i64\n            ) -> Ob retains ob_put\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(0)\n").err_empty()
         row(name: "and with no member following, where it used to leave the group at exit 0", argv: "fmt tests/golden/surface-fixtures/paramcomment095/last.hero", code: 0).out_is("# Defect 095's silent shape: the same comment, and no member following. The\n# expelled comment landed after the group as a file-level remark, and `fmt`\n# exited 0 having MOVED it, which is worse than the refusal. This file is\n# canonical: `fmt` prints it back byte for byte.\nextern \"x.h\"\n    record Ob tag ob\n    function ob_put(o: Ob consumes)\n    function ob_get(\n                o: Ob,\n                # a comment between\n                n: i64\n            ) -> Ob retains ob_put\n\nfunction main()\n    print(0)\n").err_empty()
         row(name: "and at every place a Heroes function's list can hold one, which used to move into the body at exit 0", argv: "fmt tests/golden/surface-fixtures/paramcomment095/heroes.hero", code: 0).out_is("# The shapes beside defect 095's: a Heroes function outside any group, with\n# a comment at every place a parameter list can hold one. Before the repair\n# every one of them was moved into the body at exit 0. This file is\n# canonical: `fmt` prints it back byte for byte.\n\n# after the open paren\nfunction first(\n            # about a\n            a: i64\n        ) -> i64\n    return a\n\n# trailing on a parameter line\nfunction second(\n            a: i64,  # about a\n            b: i64\n        ) -> i64\n    return a + b\n\n# before the closing paren\nfunction third(\n            a: i64\n            # after the last\n        ) -> i64\n    return a\n\n# trailing on the closing line\nfunction fourth(\n            a: i64\n        ) -> i64  # the result\n    return a\n\n# an empty list holding only a remark\nfunction fifth(\n            # nothing to take\n        )\n    print(0)\n\nfunction main()\n    print(first(1) + second(a: 1, b: 2) + third(1) + fourth(1))\n    fifth()\n").err_empty()
@@ -352,39 +711,58 @@ function verb_probes() -> [probe.Probe]
         row(name: "a comment between two match arms or at the end of a block arm gains no blank line under it (defect 101)", argv: "fmt tests/golden/surface-fixtures/comments101/arms.hero", code: 0).out_is("# Defect 101's third shape: a blank line under a comment between two `match`\n# arms, and under the last line of a block arm, which the source does not\n# have. The match-arm walk counted lines, so the comment's own line was a gap;\n# it asks the source now, as every other walk does. This file is canonical:\n# `fmt` prints it back byte for byte.\n\nfunction f(n: i64)\n    match n\n        0 => print(0)\n        # between two arms, at the arms' column\n        1 => print(1)\n\n        # between two arms, a blank line above\n        2 =>\n            print(2)\n            # at the end of a block arm, at its body's column\n        3 =>\n            print(3)\n        # after a block arm, at the arms' column\n        _ => print(4)\n\nfunction main()\n    f(n: 1)\n").err_empty()
         row(name: "a comment on the ( line of a signature written across lines keeps it one parameter per line, where the joined line moved it at exit 0 (defect 101)", argv: "fmt tests/golden/surface-fixtures/comments101/signature.hero", code: 0).out_is("# The silent move defect 101's first repair left, and the shapes beside it:\n# a comment on the `(` line of a signature written across lines, after a\n# parameter there. `fmt` joined the signature onto one line and the comment\n# went to the end of it, at exit 0, the same bytes as the trunk, and the\n# printer's own check could not see it. The signature keeps one parameter\n# per line now whenever a comment sits anywhere from its `(` line to its\n# `)` line, as defect 095's rule does inside the list: here with the `)`\n# line's comment too, with one on every line, and in a group member. A\n# comment trailing a signature of one line trails all of it, and stays.\n\nfunction first(\n            a: i64,  # about a\n            b: i64\n        ) -> i64\n    return a + b\n\nfunction both(\n            a: i64,  # about a\n            b: i64\n        ) -> i64  # the result\n    return a + b\n\nfunction every(  # the list\n            a: i64,  # about a\n            # above b\n            b: i64  # about b\n            # after b\n        ) -> i64  # the result\n    return a + b\n\nfunction whole(a: i64) -> i64  # all of it\n    return a\n\nextern \"x.h\"\n    record Ob tag ob\n    function ob_get(\n                o: Ob,  # the handle\n                n: i32\n            ) -> i32\n    function ob_put(o: Ob consumes)\n\nfunction main()\n    print(first(a: 1, b: 2) + both(a: 1, b: 2) + every(a: 1, b: 2) + whole(1))\n").err_empty()
         row(name: "a comment inside the value of a line that opens a block opens that value, where the first repair refused and the trunk moved it into the block", argv: "fmt tests/golden/surface-fixtures/comments101/conditions.hero", code: 0).out_is("# A comment inside the value of a line that opens a block, which the first\n# repair of defect 101 refused at exit 2 and the trunk moved into the block\n# at exit 0: inside a call in an `if`, an `else if`, a `while`, a `for` and a\n# `match`, with a comment on the opening line and on the closing one, and in\n# a condition the author wrote inside parentheses, after an operator. The\n# value is opened where the comment is, and the block goes on under it.\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction f(n: i64, m: i64) -> i64\n    if n > g(  # the opener\n                a: 1,\n                b: 2\n            )  # the closer\n        return 1\n    else if n < g(\n                a: 3,  # in an else if\n                b: 4\n            )\n        return 2\n\n    while n > g(\n                a: 5,  # in a while\n                b: 6\n            )\n        return 3\n\n    for x in [\n                1  # in a for\n                2\n            ]\n        print(x)\n\n    if (\n                n > 0 &&  # positive\n                m < 10\n            )  # and small\n        return 4\n\n    match g(\n                a: 7,  # in a match\n                b: 8\n            )\n        0 => return 5\n        _ => return 6\n\nfunction main()\n    print(f(n: 1, m: 2))\n").err_empty()
-        row(name: "a comment between an argument's name, a key or an @ and the value keeps the name's line, the value going on the next", argv: "fmt tests/golden/surface-fixtures/comments101/gaps.hero", code: 0).out_is("# A comment between an argument's name and its value, between a map's key\n# and its value, and after a mutable argument's `@`: the first repair of\n# defect 101 refused the first two at exit 2 and moved the third above its\n# argument at exit 0, and the trunk moved each out of its bracket at exit 0.\n# The name keeps its line and its comment, and the value goes on the next,\n# one level in.\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction h(@xs: [i64])\n    xs @ xs.push(1)\n\nfunction f() -> i64\n    xs: [i64] @ []\n    h(\n        @  # the list\n            xs\n    )\n    return g(\n        a:  # after the name\n            1,\n        b:\n            # above the value\n            2\n    )\n\nfunction t() -> {str: i64}\n    return {\n        \"a\":  # after the key\n            1\n        \"b\": 2\n    }\n\nfunction main()\n    print(f())\n    print(t().len())\n").err_empty()
+        row(name: "a comment between an argument's name, a key or an @ and the value keeps the name's line, the value going on the next", argv: "fmt tests/golden/surface-fixtures/comments101/gaps.hero", code: 0).out_is("# A comment between an argument's name and its value, between a map's key\n# and its value, and after a mutable argument's `@`: the first repair of\n# defect 101 refused the first two at exit 2 and moved the third above its\n# argument at exit 0, and the trunk moved each out of its bracket at exit 0.\n# The name keeps its line and its comment, and the value goes on the next,\n# one level in.\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction h(@xs: [i64])\n    xs @ xs.push(1)\n\nfunction f() -> i64\n    xs: [i64] @= []\n    h(\n        @  # the list\n            xs\n    )\n    return g(\n        a:  # after the name\n            1,\n        b:\n            # above the value\n            2\n    )\n\nfunction t() -> {str: i64}\n    return {\n        \"a\":  # after the key\n            1\n        \"b\": 2\n    }\n\nfunction main()\n    print(f())\n    print(t().len())\n").err_empty()
         row(name: "a comment inside parentheses keeps them, broken after its operator, where the tree keeps none", argv: "fmt tests/golden/surface-fixtures/comments101/parens.hero", code: 0).out_is("# A comment inside parentheses, which the tree does not keep: the first\n# repair of defect 101 refused each shape here at exit 2, the trunk moved\n# each at exit 0, and over this file the trunk is no fixpoint (exit 2).\n# §4.15 breaks a long expression inside parentheses, so `fmt` keeps them\n# where a comment needs them: after an operator, the operands of the chain\n# one per line; after the `(` and before the `)`; nested; inside a call's\n# argument, an array's element and a match arm; after a unary operator.\n# Parentheses around no comment are still dropped where they bind nothing.\n\nfunction f(a: i64, b: i64, c: i64) -> i64\n    x = (\n        a +  # after a plus\n        b +  # after another\n        c\n    )\n    y = (\n        a +\n        # own line\n        b\n    ) * 2\n    z = (  # after the paren\n        a - (\n            b -  # nested\n            c\n        )\n        # before the close\n    )\n    w = (\n        (\n            a +  # inner\n            b\n        ) *  # outer\n        2\n    )\n    v = (\n        -  # a minus alone\n            a\n    )\n    u = 1 + 2\n    return x + y + z + w + v + u\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction h(a: i64) -> [i64]\n    x = g(\n        a: (\n            a +  # in an argument\n            1\n        ),\n        b: 2\n    )\n    return [\n        (\n            a *  # in an element\n            2\n        )\n        x\n    ]\n\nfunction k(n: i64) -> i64\n    match n\n        0 => return (\n            n +  # in a match arm\n            1\n        )\n        _ => return 0\n\nfunction main()\n    print(f(a: 1, b: 2, c: 3) + h(1)[0] + k(0))\n").err_empty()
         row(name: "a comment in a key, a receiver, a callee, a base or a prefix opens that part, the rest going on its last line", argv: "fmt tests/golden/surface-fixtures/comments101/parts.hero", code: 0).out_is("# A comment in the part of a value before its own bracket, and in both\n# parts: a map's key and its value, a receiver and its arguments, a callee,\n# an indexed base, and the prefix of a control form at a binary's right\n# edge. The first repair of defect 101 refused all but the base at exit 2;\n# the trunk moved each out of its bracket at exit 0. Each part holding a\n# comment is opened, and the rest of the value goes on its last line.\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction twice(n: i64) -> i64\n    return n * 2\n\nfunction pick(n: i64) -> (function(i64) -> i64)\n    assert n >= 0\n    return twice\n\nfunction key() -> i64\n    m = {\n        g(\n            a: 1,  # inside a key\n            b: 2\n        ): g(\n            a: 3,  # inside its value\n            b: 4\n        )\n    }\n    return m.len()\n\nfunction receiver() -> i64\n    return [\n        1  # in the receiver\n        2\n    ].slice(\n        from: 0,  # in the arguments\n        to: 1\n    ).len()\n\nfunction callee() -> i64\n    return pick(\n        1  # inside the callee\n    )(\n        2\n    )\n\nfunction base() -> i64\n    return [\n        1  # inside the base\n    ][0]\n\nfunction prefix(n: i64) -> i64\n    return g(\n                a: 1,  # in the prefix\n                b: 2\n            ) + match n\n        0 => 1\n        _ => 2\n\nfunction main()\n    print(key() + receiver() + callee() + base() + prefix(0))\n").err_empty()
         row(name: "several comments in nested brackets, on every opener and closer, each stay on their line", argv: "fmt tests/golden/surface-fixtures/comments101/nested.hero", code: 0).out_is("# Several comments in nested brackets, on every opener and every closer,\n# above elements and after the last: each stays on its line, in its\n# bracket. This file is canonical: `fmt` prints it back byte for byte.\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction f() -> i64\n    return g(  # the opener\n        a: g(  # an inner opener\n            a: 1,  # one\n            # above two\n            b: 2  # two\n            # after two\n        ),  # the inner closer\n        # above b\n        b: [\n            3  # three\n            4\n        ].len()  # the length\n    )  # the closer\n\nfunction main()\n    print(f())\n").err_empty()
         row(name: "a comment trailing the last line of a file with no newline stays on it", argv: "fmt tests/golden/surface-fixtures/comments101/lastline.hero", code: 0).out_is("# A comment trailing the last line of a file with no newline at its end.\n# `fmt` ends the file with one, and the comment stays on the line.\n\nfunction main()\n    print(0)  # the last line, no newline after it\n").err_empty()
         row(name: "and one trailing a bracket's last element on the file's last lines stays in the bracket", argv: "fmt tests/golden/surface-fixtures/comments101/lastbracket.hero", code: 0).out_is("# A comment trailing the last element of a bracket on the last lines of a\n# file with no newline at its end: it stays in the bracket, on the line.\n\nfunction main()\n    print(f()[0])\n\nfunction f() -> [i64]\n    return [\n        1\n        2  # the last element\n    ]\n").err_empty()
-        row(name: "a comment after a block's last statement that ends with a ) alone on its line stays in the block (defect 099, the skeptic seat's m1)", argv: "fmt tests/golden/surface-fixtures/comments101/closer.hero", code: 0).out_is("# Defect 099's own class, found by the skeptic seat over 832478b3: a comment\n# after a block's last statement, when that statement ends with the author's\n# `)` alone on its line. `fmt` did not count the `)` line as part of the\n# statement, saw code between the statement and the comment, and printed\n# the comment at the next item's column, outside the block, at exit 0: after\n# a body (`m1`), after an `if` block's last statement (`s2`), after a\n# match's last arm (`s5`), after a loop's body. A `)` alone on its line is\n# part of the statement it closes now, and each comment stays in its block.\n\nfunction f(a: i64) -> i64\n    return a\n    # the last word of f\n\nfunction g(c: bool, a: i64, b: i64) -> i64\n    x: i64 @ 0\n\n    if c\n        x @ a + b\n        # still in the if block\n    return x\n\nfunction h(x: i64, a: i64, b: i64) -> i64\n    y = match x\n        0 => 1\n        _ => a + b\n        # after the last arm, inside the match\n\n    return y\n\nfunction k(a: i64)\n    for i in range(from: 0, to: 3)\n        print(\n            a + i\n        )\n        # after the loop's last statement\n\nfunction main()\n    print(f(a: 1) + g(c: true, a: 1, b: 2) + h(x: 0, a: 1, b: 2))\n    k(a: 1)\n").err_empty()
+        row(name: "a comment after a block's last statement that ends with a ) alone on its line stays in the block (defect 099, the skeptic seat's m1)", argv: "fmt tests/golden/surface-fixtures/comments101/closer.hero", code: 0).out_is("# Defect 099's own class, found by the skeptic seat over 832478b3: a comment\n# after a block's last statement, when that statement ends with the author's\n# `)` alone on its line. `fmt` did not count the `)` line as part of the\n# statement, saw code between the statement and the comment, and printed\n# the comment at the next item's column, outside the block, at exit 0: after\n# a body (`m1`), after an `if` block's last statement (`s2`), after a\n# match's last arm (`s5`), after a loop's body. A `)` alone on its line is\n# part of the statement it closes now, and each comment stays in its block.\n\nfunction f(a: i64) -> i64\n    return a\n    # the last word of f\n\nfunction g(c: bool, a: i64, b: i64) -> i64\n    x: i64 @= 0\n\n    if c\n        x @ a + b\n        # still in the if block\n    return x\n\nfunction h(x: i64, a: i64, b: i64) -> i64\n    y = match x\n        0 => 1\n        _ => a + b\n        # after the last arm, inside the match\n\n    return y\n\nfunction k(a: i64)\n    for i in range(from: 0, to: 3)\n        print(\n            a + i\n        )\n        # after the loop's last statement\n\nfunction main()\n    print(f(a: 1) + g(c: true, a: 1, b: 2) + h(x: 0, a: 1, b: 2))\n    k(a: 1)\n").err_empty()
         row(name: "a run of comments is read from its last one up, so a shallower one cannot pull the block's last comment out (s8)", argv: "fmt tests/golden/surface-fixtures/comments101/runs.hero", code: 0).out_is("# A run of comments read from its last one up (the skeptic seat's `s8`): a\n# comment at column 0 above the `if` block's last comment was printed at the\n# body's column, and pulled the block's last comment out with it, at exit 0.\n# No comment of a run belongs to a shallower block than one after it, since\n# printed in order a later one cannot sit deeper: both stay in the block.\n\nfunction f(c: bool)\n    if c\n        print(1)\n        #        print(2)\n        # the if block's last word\n    print(3)\n\nfunction main()\n    f(c: true)\n").err_empty()
         row(name: "a comment trailing -> (), which fmt drops, is no move (the regression of the second round)", argv: "fmt tests/golden/surface-fixtures/comments101/unitresult.hero", code: 0).out_is("# A regression the second round of defect 101 made (832478b3; trunk exit\n# 0, lane exit 2): a comment trailing a signature written with `-> ()`.\n# `fmt` drops the `-> ()`, which the old guard counted as kept, and it\n# refused the file. The guard leaves `-> ()` out of both files now: after a\n# function's, a function with a parameter's, and an extern member's.\n\nfunction g()  # after an empty list\n    print(1)\n\nfunction h(a: [i64])  # after a parameter\n    print(a.len())\n\nextern \"x.h\"\n    function k()  # after an extern member\n\nfunction main()\n    g()\n    h(a: [1])\n").err_empty()
         row(name: "a comment trailing the author's ) line trails the statement, the element or the condition, where fmt refused (p4, k1, k2)", argv: "fmt tests/golden/surface-fixtures/comments101/closeparen.hero", code: 0).out_is("# A comment trailing the line of the author's `)`, which `fmt` drops where\n# it binds nothing: the first repair of defect 101 refused each at exit 2,\n# since the statement's last line was its value's and not the `)`'s. It\n# trails the statement now: after a value's parentheses (`p4`), after a\n# `while` condition's, after an array element's (`k1`), after a named\n# argument's and its comma (`k2`).\n\nfunction f(a: i64, b: i64) -> i64\n    x = a + b  # after the paren\n    return x\n\nfunction w(a: bool, b: bool)\n    while a && b  # after the close paren\n        print(1)\n\nfunction l(a: i64, b: i64, c: i64) -> [i64]\n    return [\n        a + b  # after the element's paren\n        c\n    ]\n\nfunction n(a: i64, b: i64, c: i64) -> i64\n    return f(\n        a: a + b,  # after the paren and comma\n        b: c\n    )\n\nfunction main()\n    print(f(a: 1, b: 2) + l(a: 1, b: 2, c: 3)[0] + n(a: 1, b: 2, c: 3))\n    w(a: false, b: false)\n").err_empty()
-        row(name: "a comment inside a type stays inside it, the type broken after the token it follows (t1, t2, t7)", argv: "fmt tests/golden/surface-fixtures/comments101/types.hero", code: 0).out_is("# A comment inside a type, which `fmt` printed on one line: the first repair\n# of defect 101 refused each at exit 2. The one-line type breaks after the\n# token the comment follows now, the rest going on four columns in: in a\n# parameter's type (`t1`), a local's (`t2`), and a field's (`t7`). In a\n# signature, which is a block's head, eight columns further (defect 101's\n# fifth round, `continuations.hero`).\n\nfunction f(\n            a: [  # inside a parameter's type\n                i64]\n        ) -> i64\n    x: [  # inside a local's type\n        i64] @ a\n    return x.len()\n\nrecord R\n    a: [  # inside a field's type\n        i64]\n\nfunction main()\n    print(f(a: [1]))\n").err_empty()
-        row(name: "a comment inside index brackets or a mutated place stays inside them (r1, r4, r5, r6, t4)", argv: "fmt tests/golden/surface-fixtures/comments101/indexes.hero", code: 0).out_is("# A comment inside index brackets, which `fmt` printed on one line: the\n# first repair of defect 101 refused each at exit 2. The index breaks after\n# the token the comment follows now: after `[` (`r1`), inside an index's\n# binary (`r4`), in a map's index (`r5`), in a second index (`r6`), and in\n# the place of a mutation (`t4`).\n\nfunction f(a: [i64], m: {str: i64}, g: [[i64]]) -> i64\n    x = a[  # in an index\n        0]\n    y = a[a.len() -  # in an index's binary\n        1]\n    z = m[  # in a map's index\n        \"k\"].must()\n    b: [i64] @ a\n    b[  # in a place\n        0] @ 1\n    return x + y + z + b[0] + g[0][  # in a second index\n        0]\n\nfunction main()\n    print(f(a: [1], m: {\"k\": 2}, g: [[3]]))\n").err_empty()
+        row(name: "a comment inside a type stays inside it, the type broken after the token it follows (t1, t2, t7)", argv: "fmt tests/golden/surface-fixtures/comments101/types.hero", code: 0).out_is("# A comment inside a type, which `fmt` printed on one line: the first repair\n# of defect 101 refused each at exit 2. The one-line type breaks after the\n# token the comment follows now, the rest going on four columns in: in a\n# parameter's type (`t1`), a local's (`t2`), and a field's (`t7`). In a\n# signature, which is a block's head, eight columns further (defect 101's\n# fifth round, `continuations.hero`).\n\nfunction f(\n            a: [  # inside a parameter's type\n                i64]\n        ) -> i64\n    x: [  # inside a local's type\n        i64] = a\n    return x.len()\n\nrecord R\n    a: [  # inside a field's type\n        i64]\n\nfunction main()\n    print(f(a: [1]))\n").err_empty()
+        row(name: "a comment inside index brackets or a mutated place stays inside them (r1, r4, r5, r6, t4)", argv: "fmt tests/golden/surface-fixtures/comments101/indexes.hero", code: 0).out_is("# A comment inside index brackets, which `fmt` printed on one line: the\n# first repair of defect 101 refused each at exit 2. The index breaks after\n# the token the comment follows now: after `[` (`r1`), inside an index's\n# binary (`r4`), in a map's index (`r5`), in a second index (`r6`), and in\n# the place of a mutation (`t4`).\n\nfunction f(a: [i64], m: {str: i64}, g: [[i64]]) -> i64\n    x = a[  # in an index\n        0]\n    y = a[a.len() -  # in an index's binary\n        1]\n    z = m[  # in a map's index\n        \"k\"].must()\n    b: [i64] @= a\n    b[  # in a place\n        0] @ 1\n    return x + y + z + b[0] + g[0][  # in a second index\n        0]\n\nfunction main()\n    print(f(a: [1], m: {\"k\": 2}, g: [[3]]))\n").err_empty()
         row(name: "a ) inside an interpolation's hole is text, and a comment just inside the author's parentheses stays (h4/f1, f3)", argv: "fmt tests/golden/surface-fixtures/comments101/holes.hero", code: 0).out_is("# A `)` or `(` inside an interpolation's hole inside the author's grouping\n# parentheses with a comment (`h4/f1`, `f3`): the first repair matched the\n# parentheses byte by byte and took the literal's `)` for the group's,\n# refusing at exit 2. They are read from the lexer's tokens now, where a\n# literal's brackets are its text, and the comment stays inside the group.\n\nfunction f(a: i64) -> str\n    return (\n        # just inside the paren\n        f\"{a}\" + f\"{\")\"}\"\n    )\n\nfunction g(a: i64) -> str\n    return (\n        # just inside the paren\n        f\"{a}\" + f\"{\"(\"}\"\n    )\n\nfunction main()\n    print(f(a: 1) + g(a: 2))\n").err_empty()
+        row(name: "`}}` and `{{` in an `f` literal are printed as written, beside a hole on either side and in a literal nested in one (defect 173)", argv: "fmt tests/golden/surface-fixtures/braces173/main.hero", code: 0).out_is("# Defect 173's form for the tools that re-print a program (panel 184 R1,\n# 2026-10-02): `{{` and `}}` in the text of an `f` literal, beside a hole on\n# either side, three in a row around one, and in a literal nested in a hole,\n# with a comment at each place one stands. `fmt` prints this file as it is,\n# each dump reads the literal as the lexer does, `heroes mutate` scores it,\n# and `heroes probe` holds every variant of it under both judges.\n\n# The value between two braces of text.\nfunction braced(n: i64) -> str\n    # before the literal\n    return f\"{{{n}}}\"  # after it\n\nfunction main()\n    x = 5\n    word = \"w\"\n    print(f\"{{x}} {x}}} }}\")  # a hole between braces\n    print(\n        # inside the parentheses\n        f\"{f\"}}{word}{{\"} and {\"}\"}\"\n    )\n    print(braced(n: x))\n").err_empty()
+        row(name: "and the token dump shows the piece as it is written, its doubled braces whole", argv: "lex tests/golden/surface-fixtures/braces173/main.hero --dump-tokens", code: 0).out_has("16:21 str_piece }}} }}\"").err_empty()
+        row(name: "and the syntax tree's dump prints the literal as the author wrote it", argv: "parse tests/golden/surface-fixtures/braces173/main.hero --dump-ast", code: 0).out_has("expr print(f\"{{x}} {x}}} }}\")").err_empty()
+        row(name: "and the scopes' dump counts the hole between braces as a read and the braces of text as none", argv: "check tests/golden/surface-fixtures/braces173/main.hero --dump-scopes", code: 0).out_has("bind x (reads 2, writes 0)").err_empty()
+        row(name: "and the IR's strings are the text each brace pair writes, one brace each", argv: "build tests/golden/surface-fixtures/braces173/main.hero --dump-ir", code: 0).out_has("    3  \"{x} \"").out_has("    4  \"} }\"").err_empty()
+        row(name: "and mutate reads the program and scores it", argv: "mutate tests/golden/surface-fixtures/braces173", code: 0).out_starts("corpus: 1 programs under tests/golden/surface-fixtures/braces173")
+        row(name: "`\\u{1b}` is printed as written, in a string, an `f` literal beside a hole and a doubled brace, a constant and a pattern (defect 251)", argv: "fmt tests/golden/surface-fixtures/escape251/main.hero", code: 0).out_is("# Defect 251's form for the tools that re-print a program (panel 192's R5,\n# 2026-10-05): `\\u{1b}` in a string and in the text of an `f` literal,\n# beside a hole and a doubled brace, in a constant's body and in a `match`\n# pattern, with a comment at each place one stands. `fmt` prints this file as\n# it is, each dump reads the literal as the lexer does, `heroes mutate` scores\n# it, and `heroes probe` holds every variant of it under both judges.\n\nconstant RESET: str\n    \"\\u{1b}[0m\"\n\n# The value between two escapes.\nfunction coloured(n: i64) -> str\n    # before the literal\n    return f\"\\u{1b}[3{n}m{{\\u{202e}}}\"  # after it\n\nfunction main()\n    x = 1\n    print(coloured(n: x))  # a call\n\n    match RESET\n        \"\\u{1b}[0m\" => print(\"reset\")\n        _           => print(\"other\")\n\n    print(\n        # inside the parentheses\n        \"\\u{7f}\" + RESET\n    )\n").err_empty()
+        row(name: "and the token dump shows the escape as it is written, its braces the escape's and never a hole's", argv: "lex tests/golden/surface-fixtures/escape251/main.hero --dump-tokens", code: 0).out_has("14:12 str_piece f\"\\u{1b}[3{").out_has("14:24 str_piece }m{{\\u{202e}}}\"").err_empty()
+        row(name: "and the syntax tree's dump prints the literal as the author wrote it", argv: "parse tests/golden/surface-fixtures/escape251/main.hero --dump-ast", code: 0).out_has("return f\"\\u{1b}[3{n}m{{\\u{202e}}}\"").err_empty()
+        row(name: "and the scopes' dump counts the hole beside the escape as a read and the escape's braces as none", argv: "check tests/golden/surface-fixtures/escape251/main.hero --dump-scopes", code: 0).out_has("param n (reads 1, writes 0)").err_empty()
+        row(name: "and the IR's strings are the characters the escapes write, each control by its code", argv: "build tests/golden/surface-fixtures/escape251/main.hero --dump-ir", code: 0).out_has("    0  \"<U+001B>[0m\"").out_has("    1  \"<U+001B>[3\"").out_has("    2  \"m{<U+202E>}\"").out_has("    5  \"<U+007F>\"").err_empty()
+        row(name: "and mutate reads the program and scores it", argv: "mutate tests/golden/surface-fixtures/escape251", code: 0).out_starts("corpus: 1 programs under tests/golden/surface-fixtures/escape251")
+        row(name: "unused_binding on a name a plain literal holds in braces quotes the literal and offers its `f`, a guess (panel 184 R2)", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_has("note: the literal `\"{n + gone} rows\"` holds `n` in braces, and without an `f` before its quote it prints them as they stand").err_has("fix (guess): write the `f`: `f\"{n + gone} rows\"`").err_lacks("fix (certain)")
+        row(name: "and where the binding does not reach the literal, the note alone", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_has("holds `early` in braces where this binding is not in scope").err_lacks("`f\"{early} above\"`")
+        row(name: "and a loop variable's or a payload's rename to `_` is a guess beside the `f`", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_has("fix (guess): write the `f`: `f\"{x + absent}\"`").err_has("fix (guess): rename `x` to `_`").err_has("fix (guess): rename `v` to `_`")
+        row(name: "and a name written `{{taken}}`, or held in a pattern's literal, gains no note", argv: "check tests/golden/check/panel-184-r2-a-name-a-plain-literal-holds-in-braces-is-told-so.hero", code: 1).err_lacks("holds `taken`").err_lacks("holds `label`")
+        row(name: "a plain literal whose braces name what is bound here is refused with both readings as guesses, and its names are read (defect 176, panel 185 R7)", argv: "check tests/golden/check/fixedbugs-176-a-plain-literal-whose-braces-name-what-is-bound-is-refused.hero", code: 1).err_has("fix (guess): write the `f`: `f\"{count} rows\"`").err_has("fix (guess): keep the braces as text: `f\"{{count}} rows\"`").err_lacks("fix (certain)").err_lacks("unused_binding")
+        row(name: "and both rewrites double every brace of text, `}` too (panel 184 R1)", argv: "check tests/golden/check/fixedbugs-176-a-plain-literal-whose-braces-name-what-is-bound-is-refused.hero", code: 1).err_has("fix (guess): write the `f`: `f\"{{{{{i}}}}}\"`").err_has("fix (guess): keep the braces as text: `f\"{{{{{{i}}}}}}\"`").err_has("fix (guess): write the `f`: `f\"{i}}}\"`")
+        row(name: "and the control arm drops it, a thesis rule", argv: "check tests/golden/check/fixedbugs-176-a-plain-literal-whose-braces-name-what-is-bound-is-refused.hero --permissive", code: 0).err_empty()
         row(name: "a comment inside a -> () the author wrote keeps the (), where the guard let it move into the parameter list (k01 to k07)", argv: "fmt tests/golden/surface-fixtures/comments101/unitinside.hero", code: 0).out_is("# A comment inside a `-> ()` the author wrote (the second skeptic seat's\n# `k01` to `k07` over e0e08d18). `fmt` drops `-> ()`, and the output guard\n# read the `()` around the comment as kept tokens and compared the rest by\n# text alone: with no parameters the comment moved into the parameter list\n# at exit 0 (`k01`); with one it was refused at exit 2 (`k04` to `k07`),\n# where the trunk printed it. `fmt` keeps the `()` where a comment is inside\n# it, the one place the comment has: trailing its `(`, on a line of its own,\n# with a comment after the `)` too, and in an extern member.\n\nfunction g() -> (  # inside the unit\n        )\n    print(1)\n\nfunction h(a: i64) -> (  # inside the unit result\n        )\n    print(a)\n\nfunction k(a: i64, b: i64) -> (\n            # inside the unit result, on its own line\n        )\n    print(a + b)\n\nfunction m(a: i64) -> (  # inside the unit result\n        )  # and after it\n    print(a)\n\nextern \"x.h\"\n    function n(a: i64) -> (  # inside an extern member's unit result\n            )\n\nfunction main()\n    g()\n    h(a: 1)\n    k(a: 1, b: 2)\n    m(a: 1)\n").err_empty()
         row(name: "a comment after a dot, or between a name and a list's next element, breaks the line after it, the name going on four columns in", argv: "fmt tests/golden/surface-fixtures/comments101/dots.hero", code: 0).out_is("# A comment after a `.`, between a value and the name after it (62 of the 71\n# positions the second skeptic seat's bracket-break generator found over\n# e0e08d18): the printer opened the value's base and left the comment to the\n# next walk, refused at exit 2, where the trunk moved it at exit 0. The\n# one-line text breaks after the `.` now, the name going on four columns in:\n# after a method's, a field's, a variant case's, and a method's whose\n# arguments hold a comment too, the bracket opening from there. And a name\n# with a `(` on the next line of a list, which is no call: the lexer ends\n# the element there (§4.9), and the `(` was read as the call's.\n\nrecord P\n    x: i64\n\nvariant Shape\n    circle\n        r: i64\n    empty\n\nfunction g(n: i64) -> i64\n    return n\n\nfunction f(t: [i64], p: P) -> i64\n    a = g(\n        t.  # after a method's dot\n            len()\n    )\n    b = g(\n        p.  # after a field's dot\n            x\n    )\n    c = g(\n        t.  # after the dot, with arguments\n            slice(  # and inside them\n                from: 0,\n                to: 1\n            ).len()\n    )\n    s: [Shape] = [\n        .  # after a case's dot\n            circle(r: 1)\n    ]\n    return a + b + c + s.len()\n\nfunction l(n: i64) -> [i64]\n    return [\n        n  # a name, and a list's next element\n        1\n    ]\n\nfunction main()\n    print(f(t: [1, 2], p: P(x: 3)) + l(n: 2).len())\n").err_empty()
         row(name: "a comment just inside the author's parentheses around an operand opens that group, where fmt refused at exit 2", argv: "fmt tests/golden/surface-fixtures/comments101/operands.hero", code: 0).out_is("# A comment just inside the author's parentheses around an operand, not\n# around the whole value (the second skeptic seat's `x = (  # c`). The tree's\n# span of `(a + b) * 2` starts at `a`, so the comment after the `(` was\n# outside the value, which went on one line: `fmt` refused at exit 2, where\n# the trunk moved it at exit 0. A value's extent reaches the parentheses at\n# its edges now, and the group is opened: in a binding, in a call's\n# argument, around a unary operator's operand, and in a condition with a\n# comment after an operator too.\n\nfunction f(a: i64, b: i64) -> i64\n    x = (  # in a binding\n        a + b\n    ) * 2\n    print(\n        (  # in an argument\n            2 + 3\n        ) * 4\n    )\n    n = -(  # around a unary's operand\n        a + b\n    )\n\n    if (  # in a condition\n                a > 0 &&  # positive\n                b < 10\n            )\n        return x + n\n    return 0\n\nfunction main()\n    print(f(a: 1, b: 2))\n").err_empty()
-        row(name: "a comment after the outer of two parentheses around one value stays before the inner one, which fmt keeps", argv: "fmt tests/golden/surface-fixtures/comments101/innermost.hero", code: 0).out_is("# Two of the author's parentheses around one value, a comment after the\n# outer one, inside index brackets (the second skeptic seat's `xs[(  # c`).\n# `fmt` drops the outer pair, and the one-line text's parentheses were\n# matched to the written ones one by one: the outer `(` took the printed\n# `(` of `(a + b)` and the comment moved inside it, refused at exit 2. A\n# printed pair is the written pair around the same tokens now, the\n# innermost of several, and the comment stays before the inner `(`.\n\nfunction f(xs: [i64], a: i64, b: i64, c: i64) -> i64\n    ys: [i64] @ xs\n    ys[(  # after the outer paren\n        (a + b) * c)] @ 1\n    return ys[0]\n\nfunction main()\n    print(f(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))\n").err_empty()
-        row(name: "a comment after a parameter's @, or between an argument's name and its @, stays where it was written", argv: "fmt tests/golden/surface-fixtures/comments101/leads.hero", code: 0).out_is("# A comment in a parameter or an argument before its value: after a mutable\n# parameter's `@` (the second skeptic seat's `function h(@  # c`), which the\n# signature printed above the parameter, and between an argument's name\n# and its `@` (`h(xs:  # c`), which went after the `@`: both refused at\n# exit 2, where the trunk moved them at exit 0. A parameter starts at its\n# `@` now, and the lead of an argument breaks after the token its comment\n# follows.\n\nfunction h(\n            @  # after the parameter's @\n                xs: [i64]\n        )\n    xs @ xs.push(1)\n\nfunction f() -> i64\n    ys: [i64] @ []\n    h(\n        xs:  # between the name and the @\n            @ys\n    )\n    return ys.len()\n\nfunction main()\n    print(f())\n").err_empty()
+        row(name: "a comment after the outer of two parentheses around one value stays before the inner one, which fmt keeps", argv: "fmt tests/golden/surface-fixtures/comments101/innermost.hero", code: 0).out_is("# Two of the author's parentheses around one value, a comment after the\n# outer one, inside index brackets (the second skeptic seat's `xs[(  # c`).\n# `fmt` drops the outer pair, and the one-line text's parentheses were\n# matched to the written ones one by one: the outer `(` took the printed\n# `(` of `(a + b)` and the comment moved inside it, refused at exit 2. A\n# printed pair is the written pair around the same tokens now, the\n# innermost of several, and the comment stays before the inner `(`.\n\nfunction f(xs: [i64], a: i64, b: i64, c: i64) -> i64\n    ys: [i64] @= xs\n    ys[(  # after the outer paren\n        (a + b) * c)] @ 1\n    return ys[0]\n\nfunction main()\n    print(f(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))\n").err_empty()
+        row(name: "a comment after a parameter's @, or between an argument's name and its @, stays where it was written", argv: "fmt tests/golden/surface-fixtures/comments101/leads.hero", code: 0).out_is("# A comment in a parameter or an argument before its value: after a mutable\n# parameter's `@` (the second skeptic seat's `function h(@  # c`), which the\n# signature printed above the parameter, and between an argument's name\n# and its `@` (`h(xs:  # c`), which went after the `@`: both refused at\n# exit 2, where the trunk moved them at exit 0. A parameter starts at its\n# `@` now, and the lead of an argument breaks after the token its comment\n# follows.\n\nfunction h(\n            @  # after the parameter's @\n                xs: [i64]\n        )\n    xs @ xs.push(1)\n\nfunction f() -> i64\n    ys: [i64] @= []\n    h(\n        xs:  # between the name and the @\n            @ys\n    )\n    return ys.len()\n\nfunction main()\n    print(f())\n").err_empty()
         row(name: "a comment inside the result type of a signature with no parameters stays in the type, the list on one line", argv: "fmt tests/golden/surface-fixtures/comments101/results.hero", code: 0).out_is("# A comment inside the result type of a signature with no parameters (the\n# second skeptic seat's `function list() -> [  # c`): the parameter list was\n# opened for it and the comment went after the list's `(`, refused at exit\n# 2, where the trunk moved it at exit 0. A list written on one line stays\n# on one, and the result's type breaks after the token the comment\n# follows: a list's bracket, a map's brace, a key's type.\n\nfunction list() -> [  # after the list's bracket\n            i64]\n    return [1]\n\nfunction table() -> {  # after the map's brace\n            str: i64}\n    return {\"a\": 1}\n\nfunction keyed() -> {str:  # after the key's type\n            i64}\n    return {\"b\": 2}\n\nfunction main()\n    print(list().len() + table().len() + keyed().len())\n").err_empty()
         row(name: "a comma between two comments keeps a line of its own: in arguments, after a ), and between parameters", argv: "fmt tests/golden/surface-fixtures/comments101/commas.hero", code: 0).out_is("# A comma on a line of its own between two comments, one trailing the value\n# before it and one trailing the comma (the second skeptic seat's `a: 1  # c`\n# over `,  # d`): one line cannot hold both, and `fmt` moved the second off\n# the comma, refused at exit 2. The comma keeps its line now: in a call's\n# arguments, after a call's `)`, and between two parameters.\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction f(\n            a: i64  # about a\n            ,  # after its comma\n            b: i64\n        ) -> i64\n    return g(\n        a: g(\n            a: 1  # the inner first\n            ,  # its comma\n            b: 2\n        )  # the inner closer\n        ,  # the outer comma\n        b: a + b\n    )\n\nfunction main()\n    print(f(a: 1, b: 2))\n").err_empty()
         row(name: "and a comment further along that comma's line stays in the value after it: a named type, a value's end, a field, a group, a sign", argv: "fmt tests/golden/surface-fixtures/comments101/nextvalue.hero", code: 0).out_is("# A comma kept on a line of its own after a comment (`commas.hero`), with a\n# comment further along the comma's line, inside the value that follows it\n# (the continuation-column generator over `qualified.hero`, `T90`, and the\n# shapes beside it): the comma's line took that comment as its own and the\n# value was printed without it, refused at exit 2, or, with the comment at\n# the value's end, no fixpoint. A comma's line takes a comment only when it\n# is the comma's next token: in a signature before a named type and before\n# a value's end, and in a call before a field, a group and a sign.\n\nuse money\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction named(\n            n: i64  # before the comma\n            ,\n            b: money.  # after the dot\n                Balance\n        ) -> i64\n    return n + b.cents\n\nfunction ended(\n            n: i64  # before the comma\n            ,\n            b: i64  # at the value's end\n            ,\n            c: i64\n        ) -> i64\n    return n + b + c\n\nfunction field(m: money.Balance) -> i64\n    return g(\n        a: 1  # before the comma\n        ,\n        b: m.  # after the dot\n            cents\n    )\n\nfunction group() -> i64\n    return g(\n        a: 1  # before the comma\n        ,\n        b: (  # after the paren\n            1 + 2\n        )\n    )\n\nfunction sign(x: i64) -> i64\n    return g(\n        a: 1  # before the comma\n        ,\n        b: (\n            -  # after the sign\n                x\n        )\n    )\n\nfunction main()\n    print(named(n: 1, b: money.Balance(cents: 2)) + ended(n: 3, b: 4, c: 5))\n    print(field(m: money.Balance(cents: 6)) + group() + sign(x: 7))\n").err_empty()
-        row(name: "a piece between two breaks starts its own line, four columns in and no further (i01, i02)", argv: "fmt tests/golden/surface-fixtures/comments101/pieces.hero", code: 0).out_is("# A line `fmt` breaks after the tokens two comments follow, in an index (the\n# second skeptic seat's `i01`) and in a function type's parameters (`i02`):\n# the piece between the two breaks kept the space before it and stood one\n# column too far in. A piece after a break starts its line now.\n\nfunction add(n: i64, m: i64) -> i64\n    return n + m\n\nfunction f(xs: [i64], a: i64, b: i64, c: i64) -> i64\n    ys: [i64] @ xs\n    ys[a +  # after the plus\n        b -  # after the minus\n        c] @ 1\n    g: (function(n:  # after the first name\n        i64, m:  # after the second\n        i64) -> i64) @ add\n    return g(n: ys[0], m: 1)\n\nfunction main()\n    print(f(xs: [1, 2], a: 1, b: 1, c: 1))\n").err_empty()
+        row(name: "a piece between two breaks starts its own line, four columns in and no further (i01, i02)", argv: "fmt tests/golden/surface-fixtures/comments101/pieces.hero", code: 0).out_is("# A line `fmt` breaks after the tokens two comments follow, in an index (the\n# second skeptic seat's `i01`) and in a function type's parameters (`i02`):\n# the piece between the two breaks kept the space before it and stood one\n# column too far in. A piece after a break starts its line now.\n\nfunction add(n: i64, m: i64) -> i64\n    return n + m\n\nfunction f(xs: [i64], a: i64, b: i64, c: i64) -> i64\n    ys: [i64] @= xs\n    ys[a +  # after the plus\n        b -  # after the minus\n        c] @ 1\n    g: (function(n:  # after the first name\n        i64, m:  # after the second\n        i64) -> i64) = add\n    return g(n: ys[0], m: 1)\n\nfunction main()\n    print(f(xs: [1, 2], a: 1, b: 1, c: 1))\n").err_empty()
         row(name: "a run of comments whose columns climb is placed in the block of its last comment, the canonical form (d02)", argv: "fmt tests/golden/surface-fixtures/comments101/ascending.hero", code: 0).out_is("# A run of comments whose columns climb after the last line of two nested\n# `if` blocks (the second skeptic seat's `d02`): 4, then 8, then 12, before a\n# line at 4. Columns that contradict the nesting cannot all be kept, since\n# the page prints the run in order and a block it has left does not open\n# again, so the whole run is placed in the block of its last comment, the\n# inner `if`'s: the canonical form `selfhost/print/owners.hero` states, with\n# the reason it reads a run from its last comment up.\n\nfunction f(a: bool, b: bool)\n    if a\n        if b\n            print(1)\n            # c4 body\n            # c8 outer if\n            # c12 inner if\n    print(2)\n\nfunction main()\n    f(a: true, b: true)\n").err_empty()
-        row(name: "a comment inside the author's parentheses inside index brackets keeps them, where the output did not parse (min1)", argv: "fmt tests/golden/surface-fixtures/comments101/indexparens.hero", code: 0).out_is("# A comment inside the author's parentheses inside index brackets (the third\n# skeptic seat's `min1`, and 571 of the 575 refusals its parenthesis\n# generator found over 83ac68c1). `fmt` dropped the parentheses, which bind\n# nothing, and broke the line after `a`: the parser then skipped a line's\n# end before a group's `)` and not before an index's `]`, so the output did\n# not parse, exit 2; since panel 180 it skips one before both. The\n# parentheses around a comment are kept now where the one-line text breaks:\n# after the value, on a line of their own, beside an operand, around a sum,\n# in a mutation's place, and nested.\n\nfunction f(ys: [i64], a: i64, b: i64) -> i64\n    x = ys[(a  # after the value\n    )]\n    y = ys[(a  # on the value's own line\n    )]\n    z = ys[(a\n        # on a line of its own\n    )]\n    w = ys[b + (a  # beside an operand\n    )]\n    v = ys[(a + b  # after a sum\n    )]\n    zs: [i64] @ ys\n    zs[(a  # in a place\n    )] @ 1\n    return x + y + z + w + v + zs[0]\n\nfunction g(cards: [i64], i: i64, n: i64) -> i64\n    return cards[((i  # nested\n    ) + 2) % n]\n\nfunction main()\n    print(f(ys: [1, 2, 3, 4, 5, 6], a: 1, b: 2) + g(cards: [1, 2, 3], i: 0, n: 3))\n").err_empty()
-        row(name: "two comments around the outer parenthesis in index brackets each trail their token, where fmt was no fixpoint (nf1)", argv: "fmt tests/golden/surface-fixtures/comments101/twocomments.hero", code: 0).out_is("# Two comments around the outer parenthesis in index brackets, one after the\n# `[` and one after the `(` (the third skeptic seat's `nf1`, and\n# `innermost.hero` with a comment after its `[`): the parentheses were\n# dropped and the second comment went to a line of its own, where the second\n# pass read it as one: no fixpoint, exit 2. The parentheses stay, and each\n# comment trails the token it follows.\n\nfunction f(ys: [i64], a: i64) -> i64\n    return ys[  # one\n        (  # two\n        a)]\n\nfunction g(xs: [i64], a: i64, b: i64, c: i64) -> i64\n    ys: [i64] @ xs\n    ys[  # after the bracket\n        (  # after the outer paren\n        (a + b) * c)] @ 1\n    return ys[0]\n\nfunction main()\n    print(f(ys: [1, 2], a: 0) + g(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))\n").err_empty()
+        row(name: "a comment inside the author's parentheses inside index brackets keeps them, where the output did not parse (min1)", argv: "fmt tests/golden/surface-fixtures/comments101/indexparens.hero", code: 0).out_is("# A comment inside the author's parentheses inside index brackets (the third\n# skeptic seat's `min1`, and 571 of the 575 refusals its parenthesis\n# generator found over 83ac68c1). `fmt` dropped the parentheses, which bind\n# nothing, and broke the line after `a`: the parser then skipped a line's\n# end before a group's `)` and not before an index's `]`, so the output did\n# not parse, exit 2; since panel 180 it skips one before both. The\n# parentheses around a comment are kept now where the one-line text breaks:\n# after the value, on a line of their own, beside an operand, around a sum,\n# in a mutation's place, and nested.\n\nfunction f(ys: [i64], a: i64, b: i64) -> i64\n    x = ys[(a  # after the value\n    )]\n    y = ys[(a  # on the value's own line\n    )]\n    z = ys[(a\n        # on a line of its own\n    )]\n    w = ys[b + (a  # beside an operand\n    )]\n    v = ys[(a + b  # after a sum\n    )]\n    zs: [i64] @= ys\n    zs[(a  # in a place\n    )] @ 1\n    return x + y + z + w + v + zs[0]\n\nfunction g(cards: [i64], i: i64, n: i64) -> i64\n    return cards[((i  # nested\n    ) + 2) % n]\n\nfunction main()\n    print(f(ys: [1, 2, 3, 4, 5, 6], a: 1, b: 2) + g(cards: [1, 2, 3], i: 0, n: 3))\n").err_empty()
+        row(name: "two comments around the outer parenthesis in index brackets each trail their token, where fmt was no fixpoint (nf1)", argv: "fmt tests/golden/surface-fixtures/comments101/twocomments.hero", code: 0).out_is("# Two comments around the outer parenthesis in index brackets, one after the\n# `[` and one after the `(` (the third skeptic seat's `nf1`, and\n# `innermost.hero` with a comment after its `[`): the parentheses were\n# dropped and the second comment went to a line of its own, where the second\n# pass read it as one: no fixpoint, exit 2. The parentheses stay, and each\n# comment trails the token it follows.\n\nfunction f(ys: [i64], a: i64) -> i64\n    return ys[  # one\n        (  # two\n        a)]\n\nfunction g(xs: [i64], a: i64, b: i64, c: i64) -> i64\n    ys: [i64] @= xs\n    ys[  # after the bracket\n        (  # after the outer paren\n        (a + b) * c)] @ 1\n    return ys[0]\n\nfunction main()\n    print(f(ys: [1, 2], a: 0) + g(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))\n").err_empty()
         row(name: "every pair of the author's inside a pair kept for a comment is kept too, where the guard refused (dp1)", argv: "fmt tests/golden/surface-fixtures/comments101/doubleparens.hero", code: 0).out_is("# Two of the author's pairs of parentheses around one value, a comment just\n# inside the outer one (the third skeptic seat's `dp1`): `fmt` kept the\n# outer pair for the comment and dropped the inner, which the output guard,\n# counting the innermost of several pairs, refused at exit 2. Every pair of\n# the author's inside a pair kept for a comment is kept too: after the inner\n# `)`, after the outer `(`, and in a `return`.\n\nfunction f(a: i64) -> i64\n    x = (\n        (a)  # after the inner paren\n    )\n    y = (  # after the outer paren\n        (a)\n    )\n    return x + y\n\nfunction g(a: i64) -> i64\n    return (\n        (a)  # in a return\n    )\n\nfunction main()\n    print(f(a: 1) + g(a: 2))\n").err_empty()
-        row(name: "a comment inside the parentheses around a mutated place stays there, on a line and in a match arm (pl1)", argv: "fmt tests/golden/surface-fixtures/comments101/parenplace.hero", code: 0).out_is("# A comment inside the author's parentheses around a mutated place (the\n# third skeptic seat's `pl1`, and 43 variants in the arms of\n# `examples/logs` and `examples/ledger`): the place's text stopped at its\n# name, the comment after it was outside, and `fmt` refused at exit 2. A\n# place begins and ends at its parentheses now, on a line and in a match\n# arm.\n\nfunction f(a: i64) -> i64\n    x: i64 @ 0\n    (x  # after the place\n    ) @ a\n\n    match a\n        0 => (x  # in an arm\n        ) @ 1\n        _ => x @ 2\n\n    return x\n\nfunction main()\n    print(f(a: 1))\n").err_empty()
-        row(name: "a comment after the dot of a qualified type stays there, where fmt printed it twice and check misread the name (q2)", argv: "fmt tests/golden/surface-fixtures/comments101/qualified.hero", code: 0).out_is("# A comment after the `.` of a type named from another module (the third\n# skeptic seat's `q2`), which the trunk refuses too: the type's text was its\n# source's, the comment inside it, so `fmt` printed the comment twice and\n# was no fixpoint, exit 2. A qualified type is its two names and the dot:\n# in a parameter, in a result, in a local's type, with a comment on a line\n# of its own, with one trailing the dot and one under it, and inside an\n# array parameter's type.\n\nuse money\n\nfunction f(\n            b: money.  # in a parameter\n                Balance\n        ) -> i64\n    return b.cents\n\nfunction g(n: i64) -> [money.  # in a result\n            Balance]\n    return [money.Balance(cents: n)]\n\nfunction h(n: i64) -> i64\n    xs: [money.  # in a local's type\n        Balance] @ g(n: n)\n    return xs.len()\n\nfunction own(\n            b: money.\n                # on a line of its own after the dot (panel 179's walk.hero O5310)\n                Balance\n        ) -> i64\n    return b.cents\n\nfunction both(\n            n: i64,\n            b: money.  # trailing the dot (walk.hero B12115)\n                # and under it (B15239)\n                Balance\n        ) -> i64\n    return n + b.cents\n\nfunction many(\n            bs: [money.  # in an array parameter (walk.hero T15913)\n                Balance],\n            n: i64\n        ) -> i64\n    return bs.len() + n\n\nfunction main()\n    print(f(b: money.Balance(cents: 1)) + g(n: 2).len() + h(n: 3) + own(b: money.Balance(cents: 4)))\n    print(both(n: 5, b: money.Balance(cents: 6)) + many(bs: g(n: 7), n: 8))\n").err_empty()
+        row(name: "a comment inside the parentheses around a mutated place stays there, on a line and in a match arm (pl1)", argv: "fmt tests/golden/surface-fixtures/comments101/parenplace.hero", code: 0).out_is("# A comment inside the author's parentheses around a mutated place (the\n# third skeptic seat's `pl1`, and 43 variants in the arms of\n# `examples/logs` and `examples/ledger`): the place's text stopped at its\n# name, the comment after it was outside, and `fmt` refused at exit 2. A\n# place begins and ends at its parentheses now, on a line and in a match\n# arm.\n\nfunction f(a: i64) -> i64\n    x: i64 @= 0\n    (x  # after the place\n    ) @ a\n\n    match a\n        0 => (x  # in an arm\n        ) @ 1\n        _ => x @ 2\n\n    return x\n\nfunction main()\n    print(f(a: 1))\n").err_empty()
+        row(name: "a comment after the dot of a qualified type stays there, where fmt printed it twice and check misread the name (q2)", argv: "fmt tests/golden/surface-fixtures/comments101/qualified.hero", code: 0).out_is("# A comment after the `.` of a type named from another module (the third\n# skeptic seat's `q2`), which the trunk refuses too: the type's text was its\n# source's, the comment inside it, so `fmt` printed the comment twice and\n# was no fixpoint, exit 2. A qualified type is its two names and the dot:\n# in a parameter, in a result, in a local's type, with a comment on a line\n# of its own, with one trailing the dot and one under it, and inside an\n# array parameter's type.\n\nuse money\n\nfunction f(\n            b: money.  # in a parameter\n                Balance\n        ) -> i64\n    return b.cents\n\nfunction g(n: i64) -> [money.  # in a result\n            Balance]\n    return [money.Balance(cents: n)]\n\nfunction h(n: i64) -> i64\n    xs: [money.  # in a local's type\n        Balance] = g(n: n)\n    return xs.len()\n\nfunction own(\n            b: money.\n                # on a line of its own after the dot (panel 179's walk.hero O5310)\n                Balance\n        ) -> i64\n    return b.cents\n\nfunction both(\n            n: i64,\n            b: money.  # trailing the dot (walk.hero B12115)\n                # and under it (B15239)\n                Balance\n        ) -> i64\n    return n + b.cents\n\nfunction many(\n            bs: [money.  # in an array parameter (walk.hero T15913)\n                Balance],\n            n: i64\n        ) -> i64\n    return bs.len() + n\n\nfunction main()\n    print(f(b: money.Balance(cents: 1)) + g(n: 2).len() + h(n: 3) + own(b: money.Balance(cents: 4)))\n    print(both(n: 5, b: money.Balance(cents: 6)) + many(bs: g(n: 7), n: 8))\n").err_empty()
         row(name: "every line of a block's head after its first goes eight columns further in, past the body's column (m3, sh3)", argv: "fmt tests/golden/surface-fixtures/comments101/continuations.hero", code: 0).out_is("# Lines of a block's head `fmt` breaks to keep a comment inside it (the\n# third skeptic seat's `m3` and `sh3`): a continuation went at the body's\n# column and read as the body, and a line starting with `)` at the head's\n# own column read as a statement the block then hung under. Every line of\n# a head after its first goes eight columns further in now, four past the\n# body: in a `while`'s index, in an `if`'s list, after the author's\n# parentheses in an index, in a signature's result, and after a kept `()`\n# in a parameter's function type.\n\nfunction f(t: [i64], a: i64, b: i64) -> i64\n    while t[a +  # after the plus\n                1] > 0\n        print(2)\n\n    if t[a] == [  # a list\n                1\n            ][0]\n        print(3)\n\n    while t[(a + b  # after a sum\n            ) * 2] > 0\n        print(1)\n\n    return 0\n\nfunction list() -> [  # in the result\n            i64]\n    return [1]\n\nfunction g(\n            h: (function() -> (  # in a function type's unit\n            ))\n        ) -> i64\n    h()\n    return 0\n\nfunction nothing()\n    print(0)\n\nfunction main()\n    print(f(t: [1, 2, 3, 4], a: 0, b: 1) + list().len() + g(h: nothing))\n").err_empty()
-        row(name: "a comment just inside the author's parentheses with more inside stays there, a unary's and an argument's included (panel 179)", argv: "fmt tests/golden/surface-fixtures/comments101/insidegroups.hero", code: 0).out_is("# A comment just inside the author's parentheses with more inside them (panel\n# 179's compiler-engineer, whose Heroes port of the seats' bracket-break\n# generator found these over 83ac68c1): a unary operator's comment inside\n# such a group, where `fmt` added a group of its own that the second pass\n# read as the author's (no fixpoint, `parens.hero` T59); an argument's group\n# with a comment after its `(`, which the argument's lead took and moved\n# before the `(` (`parens.hero` T116); and a comment before the outer `)` of\n# two pairs in index brackets (`innermost.hero` T39, which the first form of\n# this round's repair already kept).\n\nfunction f(a: i64) -> i64\n    v = (  # after the paren\n        -  # a minus alone\n            a\n    )\n    return v\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction h(a: i64) -> i64\n    x = g(\n        a: (  # after the argument's paren\n            a +  # in an argument\n            1\n        ),\n        b: 2\n    )\n    return x\n\nfunction k(xs: [i64], a: i64, b: i64, c: i64) -> i64\n    ys: [i64] @ xs\n    ys[(  # after the outer paren\n        (a + b) * c  # before the outer close\n    )] @ 1\n    return ys[0]\n\nfunction main()\n    print(f(a: 1) + h(a: 2) + k(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))\n").err_empty()
+        row(name: "a comment just inside the author's parentheses with more inside stays there, a unary's and an argument's included (panel 179)", argv: "fmt tests/golden/surface-fixtures/comments101/insidegroups.hero", code: 0).out_is("# A comment just inside the author's parentheses with more inside them (panel\n# 179's compiler-engineer, whose Heroes port of the seats' bracket-break\n# generator found these over 83ac68c1): a unary operator's comment inside\n# such a group, where `fmt` added a group of its own that the second pass\n# read as the author's (no fixpoint, `parens.hero` T59); an argument's group\n# with a comment after its `(`, which the argument's lead took and moved\n# before the `(` (`parens.hero` T116); and a comment before the outer `)` of\n# two pairs in index brackets (`innermost.hero` T39, which the first form of\n# this round's repair already kept).\n\nfunction f(a: i64) -> i64\n    v = (  # after the paren\n        -  # a minus alone\n            a\n    )\n    return v\n\nfunction g(a: i64, b: i64) -> i64\n    return a + b\n\nfunction h(a: i64) -> i64\n    x = g(\n        a: (  # after the argument's paren\n            a +  # in an argument\n            1\n        ),\n        b: 2\n    )\n    return x\n\nfunction k(xs: [i64], a: i64, b: i64, c: i64) -> i64\n    ys: [i64] @= xs\n    ys[(  # after the outer paren\n        (a + b) * c  # before the outer close\n    )] @ 1\n    return ys[0]\n\nfunction main()\n    print(f(a: 1) + h(a: 2) + k(xs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], a: 1, b: 2, c: 3))\n").err_empty()
         row(name: "a comma the author wrote at the start of a line of its own keeps it, the comment after it on it, in a list, a map, a call, a construction, a method call and a signature (heroes probe, panel 179)", argv: "fmt tests/golden/surface-fixtures/comments101/commacomment.hero", code: 0).out_is("# A comma the author wrote at the start of a line of its own with a comment\n# after it: in a list, a map, a call, a record's construction, a method's\n# arguments and a signature, and in a list under a comment trailing the value\n# before the comma. `heroes probe`'s first run over the fixtures found it\n# (panel 179, 2026-09-28): its bracket break after the `1` of\n# `brackets.hero`'s `[1,  # inside a receiver` put the comma on such a line,\n# and `fmt` printed the comment after it on a line of its own, which its\n# guard refused at exit 2 in every one of these places. The comma keeps its\n# line now, and the comment its place after it.\n\nrecord Point\n    x: i64\n    y: i64\n\nfunction list() -> [i64]\n    return [\n        1\n        ,  # after the comma\n        2\n    ]\n\nfunction both() -> [i64]\n    return [\n        1  # after the value\n        ,  # after the comma\n        2\n    ]\n\nfunction entries() -> {i64: i64}\n    return {\n        1: 2\n        ,  # after the entry's comma\n        3: 4\n    }\n\nfunction call(a: i64, b: bool) -> i64\n    return g(\n        a\n        ,  # after an argument's comma\n        b\n    )\n\nfunction construct() -> Point\n    return Point(\n        x: 1\n        ,  # after a field's comma\n        y: 2\n    )\n\nfunction method(xs: [i64]) -> i64\n    return xs.fold(\n        0\n        ,  # after a method argument's comma\n        add\n    )\n\nfunction signature(\n            a: i64\n            ,  # after a parameter's comma\n            b: i64\n        ) -> i64\n    return a + b\n\nfunction g(a: i64, b: bool) -> i64\n    if b\n        return a\n    return 0\n\nfunction add(acc: i64, item: i64) -> i64\n    return acc + item\n\nfunction main()\n    print(list().len() + both().len() + entries().len())\n    print(call(a: 3, b: true) + construct().x + method([1, 2]) + signature(a: 1, b: 2))\n").err_empty()
-        row(name: "a comment after a dot where the only bracket is the author's parentheses keeps them, as a group, where the line broke at the statement's depth (defect 107)", argv: "fmt tests/golden/surface-fixtures/comments107/statements.hero", code: 0).out_is("# Defect 107 (panel 180's compiler-engineer and its critic, 2026-09-27): a\n# comment after a `.` or a `::` where the only bracket around it is the\n# author's parentheses. `fmt` dropped them, which bind nothing, and broke the\n# line after the token the comment follows, so the next line stood at the\n# statement's depth, where a margin is structure: `a = (p.  # a field` over\n# `x)` was printed `a = p.` over an indented `x`, which does not parse, and\n# `fmt` refused at exit 2. A value no bracket of the page holds is printed\n# as a group now, inside the author's innermost pair around it: here as a\n# binding's value, a declaration's, a mutation's, a `return`'s, an\n# `assert`'s, a discarded one and an arm's, after the dot of a method, a\n# field, a field's name and a variant case with and without its fields.\n\nrecord Point\n    x: i64\n    y: i64\n\nvariant Op\n    plus\n    num\n        v: i64\n\nfunction size(xs: [i64]) -> i64\n    return (\n        xs.  # a return's\n            len()\n    )\n\nfunction main()\n    xs = [1, 2, 3]\n    p = Point(x: 4, y: 5)\n    a = (\n        p.  # a field\n            x\n    )\n    b: str = (\n        Point::  # a field's name\n            y\n    )\n    c: i64 @ (\n        xs.\n            # on a line of its own\n            len()\n    )\n    c @ (\n        p.  # a mutation's value\n            y\n    )\n    op: Op = (\n        .  # a case\n            plus\n    )\n    num: Op = (\n        .  # a case with its fields\n            num(v: 6)\n    )\n    assert (\n        xs.  # an assert's\n            len()\n    ) == 3\n    _ = (\n        xs.  # a discarded value\n            len()\n    )\n    k = 1\n\n    d = match k\n        1 => (\n            p.  # an arm's value\n                x\n        )\n        _ => 0\n\n    print(size(xs: xs) + a + c + d)\n    print(b)\n\n    match op\n        .plus  => print(\"plus\")\n        .num n => print(n.v)\n\n    match num\n        .plus  => print(\"plus\")\n        .num n => print(n.v)\n").err_empty()
-        row(name: "and in the value of a line that opens a block, the group deepened as every head printed across lines is (defect 107)", argv: "fmt tests/golden/surface-fixtures/comments107/heads.hero", code: 0).out_is("# Defect 107 in the value of a line that opens a block: the condition of an\n# `if`, an `else if` and a `while`, what a `for` walks and what a `match`\n# reads, and a condition wrapped whole in the author's parentheses. Printed\n# with the parentheses dropped, the line after the break stood four columns\n# past the head's, and the lexer read it as a block the head opened, one\n# level too deep (`indentation_jump`), exit 2. The group is a head printed\n# across lines, so its lines after the first go eight columns further in\n# (`print/margins.hero`), as every head's do.\n\nrecord Point\n    x: i64\n    y: i64\n\nfunction main()\n    xs = [1, 2, 3]\n    p = Point(x: 4, y: 5)\n\n    if (\n                xs.  # an if\n                    len()\n            ) > 0\n        print(1)\n    else if (\n                p.  # an else if\n                    x\n            ) > 0\n        print(2)\n\n    if (\n                xs.  # the whole condition\n                    len() > 2\n            )\n        print(3)\n    i: i64 @ 0\n\n    while i < (\n                p.  # a while\n                    x\n            )\n        i @ i + 1\n\n    for j in (\n                xs.  # a for\n                    slice(from: 0, to: 2)\n            )\n        print(j)\n\n    match (\n                p.  # a match\n                    y\n            )\n        5 => print(5)\n        _ => print(0)\n\n    print(i)\n").err_empty()
+        row(name: "a comment after a dot where the only bracket is the author's parentheses keeps them, as a group, where the line broke at the statement's depth (defect 107)", argv: "fmt tests/golden/surface-fixtures/comments107/statements.hero", code: 0).out_is("# Defect 107 (panel 180's compiler-engineer and its critic, 2026-09-27): a\n# comment after a `.` or a `::` where the only bracket around it is the\n# author's parentheses. `fmt` dropped them, which bind nothing, and broke the\n# line after the token the comment follows, so the next line stood at the\n# statement's depth, where a margin is structure: `a = (p.  # a field` over\n# `x)` was printed `a = p.` over an indented `x`, which does not parse, and\n# `fmt` refused at exit 2. A value no bracket of the page holds is printed\n# as a group now, inside the author's innermost pair around it: here as a\n# binding's value, a declaration's, a mutation's, a `return`'s, an\n# `assert`'s, a discarded one and an arm's, after the dot of a method, a\n# field, a field's name and a variant case with and without its fields.\n\nrecord Point\n    x: i64\n    y: i64\n\nvariant Op\n    plus\n    num\n        v: i64\n\nfunction size(xs: [i64]) -> i64\n    return (\n        xs.  # a return's\n            len()\n    )\n\nfunction main()\n    xs = [1, 2, 3]\n    p = Point(x: 4, y: 5)\n    a = (\n        p.  # a field\n            x\n    )\n    b: str = (\n        Point::  # a field's name\n            y\n    )\n    c: i64 @= (\n        xs.\n            # on a line of its own\n            len()\n    )\n    c @ (\n        p.  # a mutation's value\n            y\n    )\n    op: Op = (\n        .  # a case\n            plus\n    )\n    num: Op = (\n        .  # a case with its fields\n            num(v: 6)\n    )\n    assert (\n        xs.  # an assert's\n            len()\n    ) == 3\n    _ = (\n        xs.  # a discarded value\n            len()\n    )\n    k = 1\n\n    d = match k\n        1 => (\n            p.  # an arm's value\n                x\n        )\n        _ => 0\n\n    print(size(xs: xs) + a + c + d)\n    print(b)\n\n    match op\n        .plus  => print(\"plus\")\n        .num n => print(n.v)\n\n    match num\n        .plus  => print(\"plus\")\n        .num n => print(n.v)\n").err_empty()
+        row(name: "and in the value of a line that opens a block, the group deepened as every head printed across lines is (defect 107)", argv: "fmt tests/golden/surface-fixtures/comments107/heads.hero", code: 0).out_is("# Defect 107 in the value of a line that opens a block: the condition of an\n# `if`, an `else if` and a `while`, what a `for` walks and what a `match`\n# reads, and a condition wrapped whole in the author's parentheses. Printed\n# with the parentheses dropped, the line after the break stood four columns\n# past the head's, and the lexer read it as a block the head opened, one\n# level too deep (`indentation_jump`), exit 2. The group is a head printed\n# across lines, so its lines after the first go eight columns further in\n# (`print/margins.hero`), as every head's do.\n\nrecord Point\n    x: i64\n    y: i64\n\nfunction main()\n    xs = [1, 2, 3]\n    p = Point(x: 4, y: 5)\n\n    if (\n                xs.  # an if\n                    len()\n            ) > 0\n        print(1)\n    else if (\n                p.  # an else if\n                    x\n            ) > 0\n        print(2)\n\n    if (\n                xs.  # the whole condition\n                    len() > 2\n            )\n        print(3)\n    i: i64 @= 0\n\n    while i < (\n                p.  # a while\n                    x\n            )\n        i @ i + 1\n\n    for j in (\n                xs.  # a for\n                    slice(from: 0, to: 2)\n            )\n        print(j)\n\n    match (\n                p.  # a match\n                    y\n            )\n        5 => print(5)\n        _ => print(0)\n\n    print(i)\n").err_empty()
         row(name: "and around an operand, a member's value, a ?'s base and a pair inside a pair, the innermost pair kept (defect 107)", argv: "fmt tests/golden/surface-fixtures/comments107/operands.hero", code: 0).out_is("# Defect 107 inside a larger value: the author's parentheses around a\n# binary's left or right operand, a unary's operand, a value a member is\n# read from, the base of a `?`, a sum's inner operand, a pair inside a pair\n# around a sum, a method whose arguments hold a comment too, two dots, and\n# the part before a control form. The pair kept is the innermost around the\n# comment: in `(1 + (p.  # c` over `x))` it is the one around `p.x`, and the\n# outer, which binds nothing, is dropped as `fmt` drops every such pair. An\n# element of an array holds its break already and keeps its old form.\n\nrecord Point\n    x: i64\n    y: i64\n\nfunction first(xs: [i64]) -> i64?\n    if xs.len() == 0\n        return fail(code: \"empty\", msg: \"no first element\")\n    return ok(xs[0])\n\nfunction tried(xs: [i64]) -> i64?\n    v = (\n        xs.  # a try's value\n            first()\n    )?\n    return ok(v)\n\nfunction main()\n    xs = [1, 2, 3]\n    p = Point(x: 4, y: 5)\n    a = (\n        xs.  # a left operand\n            len()\n    ) * 2\n    b = 2 * (\n        p.  # a right operand\n            x\n    )\n    c = -(\n        p.  # a unary's operand\n            y\n    )\n    d = (\n        p.  # a member of the group\n            x\n    ).to_str()\n    e = [\n        xs.  # an element's, which the array holds\n            len()\n    ][0]\n    f = 1 + (\n        xs.  # the inner of a sum\n            len()\n    )\n    g = 1 + (\n        p.  # a pair inside a pair\n            x\n    )\n    h = (\n        xs.  # a method with arguments after the dot\n            slice(\n                from: 0,  # and one inside them\n                to: 2\n            )\n    ).len()\n    i = (\n        p.  # two dots\n            x.to_str().  # the second\n            len()\n    )\n    k = true\n\n    j = (\n                p.  # before a control form\n                    y\n            ) + if k\n        1\n    else\n        2\n    print(a + b + c + e + f + g + h + i + j + tried(xs: xs).must())\n    print(d)\n").err_empty()
         row(name: "and under two or three pairs, the innermost kept, and inside a call, which holds the break already (defect 107)", argv: "fmt tests/golden/surface-fixtures/comments107/nesting.hero", code: 0).out_is("# Defect 107 with several of the author's pairs around one value, and the\n# same value inside a call. Two or three pairs around the value keep the\n# innermost, the others binding nothing: no comment stands between them,\n# since one there opens its own pair first (`around.just_inside`). Inside a\n# call's parentheses the break is held already, and the form is the one the\n# trunk printed.\n\nrecord Point\n    x: i64\n    y: i64\n\nfunction main()\n    xs = [1, 2, 3]\n    p = Point(x: 4, y: 5)\n    a = (\n        xs.  # two pairs\n            len()\n    )\n    b = (\n        p.  # three pairs\n            x\n    )\n    print(\n        xs.  # inside a call, which holds the break already\n            len()\n    )\n    print(a + b)\n").err_empty()
         row(name: "and a line continued at the statement's own margin is refused since panel 181, once, and fmt refuses the file at exit 1 (defects 107 and 116)", argv: "fmt tests/golden/surface-fixtures/comments107/margin.hero", code: 1).out_empty().err_has("continuation_outside_brackets").err_has("refusing to format a file with diagnostics").err_lacks("compiler bug")
@@ -399,7 +777,7 @@ function verb_probes() -> [probe.Probe]
         row(name: "and the program runs, each negative pattern matching its value (defect 125)", argv: "run tests/golden/surface-fixtures/patterns125/negative.hero", code: 0).out_is("10\n20\n30\n40\nminus a\n0\n").err_empty()
         row(name: "a comment inside a releaser set is part of no name, on acquires, transfers and retains (defect 108)", argv: "check tests/golden/surface-fixtures/releaser108/sets.hero", code: 0).err_empty()
         row(name: "and the program runs, each handle ended by a name its set gave past a comment", argv: "run tests/golden/surface-fixtures/releaser108/sets.hero", code: 0).out_is("16\neach ended by a name its set gave, past a comment\n").err_empty()
-        row(name: "and fmt keeps each comment after the | it follows, where the set spelled on one line took the comment into it and fmt refused (defect 108)", argv: "fmt tests/golden/surface-fixtures/releaser108/sets.hero", code: 0).out_is("# Defect 108 (panel 180's completeness critic, 2026-09-27): a comment inside\n# an `extern` member's releaser set became part of the next releaser's name.\n# The parser hands the set on as one span, and `handles.releasers` read its\n# text dropping only the blanks, so `acquires h_close |  # either one` over\n# `h_close_v2` named `#eitheroneh_close_v2`: `check` refused it with\n# `unread_releaser`, and the emitter would have handed the runtime that name.\n# A comment is part of no name now, at every place one can stand in a set,\n# on every word that takes one: after a `|` at a line's end, on a line of its\n# own, two of them, one holding a `|`, and after the set's last name before\n# the list's `)`. `fmt` keeps each where it is written, the set broken after\n# the `|` it follows.\n\nextern \"rel.h\"\n    record H tag hh\n    function h_open(\n                n: i64,\n                @out: H acquires h_close |  # either one\n                    h_close_v2\n            ) -> i64\n    function h_make(\n                n: i64,\n                @out: H acquires h_close |\n                    # on a line of its own\n                    h_close_v2 |  # and a third, a | inside\n                    h_close_v3\n            ) -> i64\n    function h_keep(\n                into: H,\n                x: H transfers h_close |  # a transfer's set\n                    # and a second comment\n                    h_close_v2\n            )\n    function h_ref(\n                x: H retains h_close | h_close_v2  # after the set\n            )\n    function h_close(x: H consumes)\n    function h_close_v2(x: H consumes)\n    function h_close_v3(x: H consumes)\n    function h_value(x: H) -> i64\n\nfunction main()\n    a: H @ nullptr\n    b: H @ nullptr\n\n    if h_open(n: 7, out: @a) != 0\n        return\n\n    if h_make(n: 9, out: @b) != 0\n        return\n    print(h_value(x: a) + h_value(x: b))\n    h_close_v2(x: a)\n    h_close_v3(x: b)\n    print(\"each ended by a name its set gave, past a comment\")\n").err_empty()
+        row(name: "and fmt keeps each comment after the | it follows, where the set spelled on one line took the comment into it and fmt refused (defect 108)", argv: "fmt tests/golden/surface-fixtures/releaser108/sets.hero", code: 0).out_is("# Defect 108 (panel 180's completeness critic, 2026-09-27): a comment inside\n# an `extern` member's releaser set became part of the next releaser's name.\n# The parser hands the set on as one span, and `handles.releasers` read its\n# text dropping only the blanks, so `acquires h_close |  # either one` over\n# `h_close_v2` named `#eitheroneh_close_v2`: `check` refused it with\n# `unread_releaser`, and the emitter would have handed the runtime that name.\n# A comment is part of no name now, at every place one can stand in a set,\n# on every word that takes one: after a `|` at a line's end, on a line of its\n# own, two of them, one holding a `|`, and after the set's last name before\n# the list's `)`. `fmt` keeps each where it is written, the set broken after\n# the `|` it follows.\n\nextern \"rel.h\"\n    record H tag hh\n    function h_open(\n                n: i64,\n                @out: H acquires h_close |  # either one\n                    h_close_v2\n            ) -> i64\n    function h_make(\n                n: i64,\n                @out: H acquires h_close |\n                    # on a line of its own\n                    h_close_v2 |  # and a third, a | inside\n                    h_close_v3\n            ) -> i64\n    function h_keep(\n                into: H,\n                x: H transfers h_close |  # a transfer's set\n                    # and a second comment\n                    h_close_v2\n            )\n    function h_ref(\n                x: H retains h_close | h_close_v2  # after the set\n            )\n    function h_close(x: H consumes)\n    function h_close_v2(x: H consumes)\n    function h_close_v3(x: H consumes)\n    function h_value(x: H) -> i64\n\nfunction main()\n    a: H @= nullptr\n    b: H @= nullptr\n\n    if h_open(n: 7, out: @a) != 0\n        return\n\n    if h_make(n: 9, out: @b) != 0\n        return\n    print(h_value(x: a) + h_value(x: b))\n    h_close_v2(x: a)\n    h_close_v3(x: b)\n    print(\"each ended by a name its set gave, past a comment\")\n").err_empty()
         row(name: "two modules declaring one C function, one with a comment inside its set, have one contract (defect 108)", argv: "check tests/golden/surface-fixtures/releaser108/contract.hero", code: 0).err_empty()
         row(name: "and the pair runs", argv: "run tests/golden/surface-fixtures/releaser108/contract.hero", code: 0).out_is("7\none contract\n").err_empty()
         row(name: "dump-tokens shows the file that was named", argv: "lex examples/gallery/00-first.hero --dump-tokens", code: 0).out_starts("1:1 ").out_lacks("range").out_lines_max(39)
@@ -409,6 +787,12 @@ function verb_probes() -> [probe.Probe]
         row(name: "mutate reads the WHOLE corpus — the gate every leg runs, one cheap operator, so a program the tool cannot read is red the day it lands", argv: "mutate examples --operator typo-digit", code: 0).out_has("corpus: ").out_has("| typo-digit |").err_empty()
         row(name: "mutate prints the survivors of one operator", argv: "mutate examples/gallery --operator swap-args --survivors", code: 0).out_has("| swap-args |").out_lacks("| typo-ident |")
         row(name: "an unknown operator names the ones there are", argv: "mutate --operator swapargs", code: 2).err_has("no operator `swapargs`").err_has("swap-args")
+        row(name: "the recovery arm refuses a run folder that already holds anything, before it starts a compiler, so a run never mixes with another's records (defect 210)", argv: "mutate --recovery --compiler no/such/compiler -o tests/golden/surface-fixtures/recovery210/head", code: 2).err_has("tests/golden/surface-fixtures/recovery210/head already holds something, and a run writes into a folder of its own: name a new one").err_lacks("cannot start the compiler").out_empty()
+        row(name: "and a word of the arm given without `--recovery` is refused by name, never read as the metric's (defect 210)", argv: "mutate --compare tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--compare` is a word of the recovery arm alone: `heroes mutate --recovery`\n").out_empty()
+        row(name: "and two runs read against each other are refused where one replayed another plan than the one they are read over (defect 210)", argv: "mutate --recovery -o tests/golden/surface-fixtures/recovery210/head --compare tests/golden/surface-fixtures/recovery210/base", code: 2).err_has("a run replayed another plan than tests/golden/recovery: its digests are plan-singles.jsonl 0000000000000001").out_empty()
+        row(name: "the recovery arm's cut word is refused without `--recovery`, by name, as its other words are (defect 448)", argv: "mutate --cut tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--cut` is a word of the recovery arm alone: `heroes mutate --recovery`\n").out_empty()
+        row(name: "and a cut reads neither a plan nor a run, so `--compare` beside it is refused rather than ignored (defect 448)", argv: "mutate --recovery --cut tests/golden/surface-fixtures/recovery210/base --compare tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--cut` cuts a new plan from a tree and reads neither a plan nor a run: give `--cut <tree> --compiler <path> -o <folder>` alone\n").out_empty()
+        row(name: "and a cut without the compiler that judges it and the folder it writes is refused, before it reads the tree (defect 448)", argv: "mutate --recovery --cut tests/golden/surface-fixtures/recovery210/base", code: 2).err_is("error: `--cut` needs `--compiler <path>`, the compiler that lexes and judges the tree, and `-o <folder>`, the new plan's\n").out_empty()
         row(name: "the zen prints and says nothing on stderr", argv: "this", code: 0).err_empty().out_has("20. We can be heroes, just for one day.\n")
     ]
 
@@ -604,11 +988,28 @@ test "the tables are what this module is, so they are counted"
     # inside a string literal and over a control byte, `check --json` over the
     # same byte, and `check` over characters a terminal cannot show, each
     # pinned where the byte went into JSON raw or into a message unseen.
-    assert argv_probes().len() == 30
+    # 30 -> 31 on 2026-10-05, defect 291: `lex --dump-tokens` over the same
+    # characters a terminal cannot show, each written by its code.
+    # 31 -> 33 on 2026-10-07, defect 328's remedy for defect 295 (lane
+    # b14-harness-b): a root that is not there told so, and a directory given
+    # as the root told unreadable.
+    # 33 -> 35 the same day, defect 328's remedy for defect 290: a string's raw
+    # ESC through the token dump, written by its code, and through the syntax
+    # tree's dump, on neither stream (`escape290/`).
+    assert argv_probes().len() == 35
 
     # 4 -> 5 on 2026-09-28: `probe`'s default and its two flags (panel 179).
-    assert help_probes().len() == 5
-    assert render_probes().len() == 9
+    # 5 -> 4 on 2026-10-07, defect 379: `measure` with no operand left the
+    # table for `measure_with_no_operand`, which asks it what naming the spec
+    # answers, its pin fresh or stale, where the row asked for exit 0.
+    assert help_probes().len() == 4
+
+    # 9 -> 13 on 2026-10-06, defect 271's JSON half (panel 193): a fix's place
+    # and first round, withheld and written inside `certain137-inside`,
+    # elsewhere in `applyx`, a guess's place with no first round, and a CRLF
+    # line's end (defect 373). The commit that added them, `155603c7`, left
+    # this count at 9, so the net's own tests read 1 failed until this line.
+    assert render_probes().len() == 13
 
     # 17 -> 19 on 2026-09-04: defect 010's two rows (`ffi-pointee-void`,
     # `ffi-pointee-opaque`). An addition is the direction this assert
@@ -625,7 +1026,15 @@ test "the tables are what this module is, so they are counted"
     # 21 -> 22 the same day, step 6: an extent past the field, on a `partial`
     # record among the three shapes. The row pins that the caret lands on the
     # NUMBER and that clang's `static assertion` never reaches the author.
-    assert ffi_probes().len() == 22
+    # 22 -> 23 on 2026-10-02, lane ffi-macro, panel 185 R1: a macro-only name
+    # is `ffi_macro_name`, and the row pins that the function its note drafts
+    # carries no C type the declaration wrote.
+    # 23 -> 24 on 2026-10-10, lane b18-ffi, defect 562: a header-only C99
+    # inline is refused by `run` at `-O2` as by `build`, in true words.
+    # 24 -> 28 the same day, defect 453: a program whose one file cannot mean
+    # it is built by `run` and refused by `--emit-c`, its file not compiling,
+    # a macro rewriting a binding, and a type a binding's body reads.
+    assert ffi_probes().len() == 28
 
     # 33 -> 35 on 2026-09-03, M-robustness-guards step 2: `qualifyptr`'s two
     # rows — the program whose `certain` fix reproduced itself, now a guess,
@@ -765,26 +1174,153 @@ test "the tables are what this module is, so they are counted"
     # 149 -> 151 the same day, defect 125: `patterns125/negative.hero`
     # formatted at exit 0 as its own canonical form, where fmt exited 2, and
     # run.
-    assert verb_probes().len() == 151
+    # 151 -> 156 on 2026-10-01, lane 135c's batch gate, defect 141 (rows added
+    # at `fa64c7da`, this count found by the net's own tests at the gate):
+    # `check --apply` handing back a clean file whose last line is open, a
+    # file of one remark, and a file with a hole, byte for byte, nothing on
+    # stdout with `--in-place`, and a module whose last byte is a stray
+    # carriage return refused there.
+    # 156 -> 162 on 2026-10-02, lane fbrace, defect 173 (panel 184 R1): the
+    # walk a new escape owes every tool, over `braces173/main.hero`: `fmt`
+    # printing `}}` as written, the token, syntax-tree, scopes and IR dumps
+    # each held to one line, and `mutate` scoring the file.
+    # 162 -> 166 the same day, panel 184 R2: the note `unused_binding` gives a
+    # name a plain literal holds in braces, its `f` a guess, the note alone
+    # where the binding does not reach the literal, a rename to `_` made a
+    # guess beside it, and no note for `{{taken}}` or a pattern's literal.
+    # 166 -> 169 the same day, defect 176 (panel 185 R7): a plain literal whose
+    # braces name what is bound refused with its two guesses, each doubling
+    # the braces of text, no `unused_binding` beside it, and `--permissive`
+    # dropping it as the thesis rule it is.
+    # 169 -> 170 on 2026-10-05, defect 355 (panel 192's R7): `heroes test`
+    # prints a failing title as its source spells it, so a character a line
+    # cannot show reaches its output by its code and never as itself.
+    # 170 -> 176 the same day, defect 251 (panel 192's R5): the walk a new
+    # escape owes every tool, over `escape251/main.hero`, as defect 173's
+    # `}}` took it: `fmt` printing `\u{1b}` as written, the token,
+    # syntax-tree, scopes and IR dumps each held to a line, and `mutate`
+    # scoring the file.
+    # 176 -> 177 on 2026-10-06: `check --apply` telling a certain fix in a
+    # module only a later round reads (`applylater/`), added by `de2e9770`
+    # with this count left behind.
+    # 177 -> 185 the same day, defect 371 (panel 193's R4): `check --apply
+    # --json` answering the applied document, whole over a clean file, its
+    # rounds over a chain, what it left in another module and every file a
+    # round read, and beside `--in-place`; and the four flags it dropped in
+    # silence, each refused at exit 2.
+    # 185 -> 186 the same day, defect 398 (lane b13-unit): a function with an
+    # `@` parameter named as a value across a module, `value398/`, the one
+    # shape of that defect no `check/` case can hold.
+    # 186 -> 190 on 2026-10-07, defect 421 (lane b14-harness-b): a generic
+    # function of another module used as a value, `value421/`, run at the
+    # default level and under the sanitizers, through the module's other name,
+    # and refused `cannot_infer` where nothing asks its type.
+    # 190 -> 193 the same day, defect 210's recovery arm (lane b14-mutate's,
+    # these rows lane b14-harness-b's, the two meeting at the round): a run
+    # folder that holds something, `--compare` without `--recovery`, and two
+    # runs of another plan, over `recovery210/`.
+    # 193 -> 196 on 2026-10-08, defect 448's `--cut` arm (lane b15-mutate's,
+    # these rows the coordinator's at the round): its word without
+    # `--recovery`, beside `--compare`, and without `--compiler` and `-o`.
+    # 196 -> 197 on 2026-10-09, defect 508 (lane land199, panel 199's R2): a
+    # correct tail recursion a hundred thousand deep at `-O2`, the price of
+    # keeping a call a call, `deeptail/`, a level no `run/` case can name.
+    # 197 -> 199 the same day, defect 510 (lane b16-compiler): a constant of
+    # another module holding a function, called by its qualified name, and its
+    # three wrong calls, `constcall510/`, the spelling no `run/` case can hold.
+    # 199 -> 201 the same day, defect 542 (lane b17-fix): a file with no main
+    # told, under `build` and `run`, the route of a module built alone.
+    # 201 -> 202 on 2026-10-11, defect 621 (lane b20-tools): `applyx/` under
+    # `--apply --in-place`, a root holding none of the diagnostics told so.
+    assert verb_probes().len() == 202
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
     # is a fixture and a row, and this is where the count moves.
     assert bracket_probes().len() == 117
 
+test "measure with no operand is held to naming the spec, and to an ending its contract names, its pin fresh or stale (defect 379)"
+    head = "spec/heroes-spec.md\n  claude-legacy      7338   (64995 ranks)\n"
+    fresh = shell.Run(
+        code: 0,
+        out: head + "  real               9831   claude-opus-5, 2026-10-07 — the binding number\n\nAn addition needs a named removal or a pre-registered falsifiable\n",
+        err: "",
+        started: true,
+        why: 0
+    )
+    stale = shell.Run(
+        code: 1,
+        out: head + "\nSTALE: the recorded count is for 5f6c56b946f3fb85 and this file is 3592499c3ce8c2a6.\nNo verdict is given against a stale count: that is the sentence that\n",
+        err: "",
+        started: true,
+        why: 0
+    )
+    over = shell.Run(
+        code: 1,
+        out: head + "  real              10999   claude-opus-5, 2026-10-07 — the binding number\n\nBREACH: 10999 over the 10240-token ceiling (design.md §1.6).\n",
+        err: "",
+        started: true,
+        why: 0
+    )
+
+    # The three endings the verb's contract names, each the same with no operand
+    # as with the spec named: the pin's staleness is an ending, not a failure.
+    assert no_operand_wrong(said: fresh, spelled: fresh).len() == 0
+    assert no_operand_wrong(said: stale, spelled: stale).len() == 0
+    assert no_operand_wrong(said: over, spelled: over).len() == 0
+
+    # No operand answering otherwise than the spec named, whichever ending.
+    assert no_operand_wrong(said: stale, spelled: fresh).len() > 0
+
+    # An exit that does not go with what was printed: 1 with a verdict and no
+    # breach, 0 with the stale refusal, 2 for anything.
+    fresh_one = shell.Run(code: 1, out: fresh.out, err: "", started: true, why: 0)
+    stale_zero = shell.Run(code: 0, out: stale.out, err: "", started: true, why: 0)
+    refused = shell.Run(code: 2, out: "", err: "error: cannot read spec/heroes-spec.md\n", started: true, why: 0)
+    assert no_operand_wrong(said: fresh_one, spelled: fresh_one).len() == 1
+    assert no_operand_wrong(said: stale_zero, spelled: stale_zero).len() == 1
+    assert no_operand_wrong(said: refused, spelled: refused).len() == 2
+
+    # And a report of another file, or one that writes on stderr.
+    other = shell.Run(code: 0, out: "CLAUDE.md\n" + fresh.out, err: "", started: true, why: 0)
+    assert no_operand_wrong(said: other, spelled: other).len() == 1
+
+test "a bound header's warning is held to one copy, from the program's unit (defect 248)"
+    warned = "In file included from build/tu-1/main.c:6:\nlib.h:6:2: warning: \"defect 248: a bound header's warning, told once\" [-W#warnings]\n    6 | #warning \"defect 248: a bound header's warning, told once\"\n"
+    once = shell.Run(code: 0, out: "", err: warned + "1 warning generated.\nwrote program\n", started: true, why: 0)
+    assert warning_wrong(once).len() == 0
+
+    # The defect's own shape: a second copy from the probe's unit under
+    # `build/`, which is two sentences, the count and the file.
+    twice = shell.Run(
+        code: 0,
+        out: "",
+        err: warned + "In file included from build/pointee-ab/check-cd.c:2:\n" + warned,
+        started: true,
+        why: 0
+    )
+    assert warning_wrong(twice).len() == 2
+
+    # And none at all, which a cached unit would give: the case's own copy is
+    # what keeps that from passing.
+    silent = shell.Run(code: 0, out: "", err: "wrote program\n", started: true, why: 0)
+    assert warning_wrong(silent).len() == 1
+
 test "a probe holds when everything it asks for is true"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     p = row(name: "the zen", argv: "this", code: 0).out_has("We can be heroes").err_empty()
-    assert probe.unmet(scratch: scratch, compiler: shell.some_compiler(), p: p) == ""
+    assert probe.unmet(scratch: scratch, compiler: shell.some_compiler().must(), p: p) == ""
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a probe names every way one invocation disappointed it"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     p = row(name: "wrong", argv: "this", code: 2).out_has("not there").err_nonempty()
-    wrong = probe.unmet(scratch: scratch, compiler: shell.some_compiler(), p: p)
+    wrong = probe.unmet(scratch: scratch, compiler: shell.some_compiler().must(), p: p)
     assert wrong.len() > 0
     assert strings.contains(text: wrong, needle: "exited 0, not 2")
     assert strings.contains(text: wrong, needle: "does not carry `not there`")
     assert strings.contains(text: wrong, needle: "stderr is empty")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the chain leaves the probe it was given alone"
     one = row(name: "a", argv: "b", code: 0)

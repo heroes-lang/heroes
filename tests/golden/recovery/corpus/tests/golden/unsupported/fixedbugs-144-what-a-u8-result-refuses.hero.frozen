@@ -1,0 +1,26 @@
+# Fixed 2026-10-01, defect 144, lane emit: the half of the rule that refuses.
+# Each C type below has a value a `u8` result cannot hold, on every
+# platform this compiler runs on, so its binding is refused at `build`, exit 1,
+# `ffi_return_type`, on its own line. Defect 144 widened what a result may
+# be to every type that holds all of C's values; these are the pairs the
+# widening must still refuse, so a rule that lets one through goes red here.
+# A pair whose verdict is the platform's is measured, not held
+# (`tests/golden/run/fixedbugs-144-every-wider-result-builds.hero`).
+
+extern "fixedbugs-144-results.h"
+    function char_as_u8() -> u8  #~ ffi_return_type
+    function schar_as_u8() -> u8  #~ ffi_return_type
+    function short_as_u8() -> u8  #~ ffi_return_type
+    function int_as_u8() -> u8  #~ ffi_return_type
+    function long_as_u8() -> u8  #~ ffi_return_type
+    function llong_as_u8() -> u8  #~ ffi_return_type
+    function ushort_as_u8() -> u8  #~ ffi_return_type
+    function uint_as_u8() -> u8  #~ ffi_return_type
+    function ulong_as_u8() -> u8  #~ ffi_return_type
+    function ullong_as_u8() -> u8  #~ ffi_return_type
+    function float_as_u8() -> u8  #~ ffi_return_type
+    function double_as_u8() -> u8  #~ ffi_return_type
+    function ldouble_as_u8() -> u8  #~ ffi_return_type
+
+function main()
+    print(1)

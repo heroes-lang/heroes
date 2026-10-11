@@ -45,9 +45,9 @@ constant GOAL: u8
     'E'
 
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -60,7 +60,7 @@ function split_lines(text: str) -> [str]
     return out
 
 function read(text: str) -> Grid?
-    rows: [str] @ []
+    rows: [str] @= []
 
     for line in split_lines(text)
         if line != ""
@@ -102,7 +102,7 @@ function is_open(g: Grid, index: i64) -> bool
 # Where the one square marked `mark` is. Exactly one: a maze with two starts is
 # a maze whose answer depends on which one the reader meant.
 function locate(g: Grid, mark: u8) -> i64?
-    found: i64 @ 0 - 1
+    found: i64 @= 0 - 1
 
     for row in range(from: 0, to: g.height)
         for column in range(from: 0, to: g.width)
@@ -131,7 +131,7 @@ function one_char(mark: u8) -> str
 function neighbours(g: Grid, index: i64) -> [i64]
     row = row_of(g, index)
     column = column_of(g, index)
-    out: [i64] @ []
+    out: [i64] @= []
     out @ step(g, out, row: row - 1, column: column)
     out @ step(g, out, row: row + 1, column: column)
     out @ step(g, out, row: row, column: column - 1)

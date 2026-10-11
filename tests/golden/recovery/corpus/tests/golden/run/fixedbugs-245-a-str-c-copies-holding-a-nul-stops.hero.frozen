@@ -1,0 +1,16 @@
+# Defect 245, panel 192's R1, 2026-10-05: the third door a NUL comes through,
+# a binding's own C returning a `str` (the ffi-pragmatist's finding), here
+# through `hero_str_from_bytes`, which keeps every byte it is given and marks
+# the block, so the lend stops. The static constructor is
+# `fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops`.
+
+extern "fixedbugs-245-a-str-c-copies-holding-a-nul-stops.h"
+    function made_by_c() -> str
+
+extern "string.h"
+    function strlen(s: cstr lent) -> u64
+
+function main()
+    made = made_by_c()
+    print("C made ", made.len(), " bytes")
+    print("C reads ", strlen(s: made.cstr()))

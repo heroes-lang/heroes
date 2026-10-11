@@ -1,0 +1,15 @@
+# fixedbugs, defect 237, lane b8-ffi, 2026-10-03.
+#
+# A package the machine does not have, named with a backtick. The driver's
+# message opens with its marker and the name between backticks, and its
+# reader cut the name at the first backtick, matched no group, and the
+# message reached the author raw, `heroes-ffi-package` and all, at exit 1
+# with no code and no place. The reader asks each group's own name at the
+# head of the message's first line now, and the diagnostic lands on the
+# package string.
+
+extern "stdio.h" package "fixedbugs-237-a`b"  #~ ffi_package
+    function puts(s: cstr lent) -> i32
+
+function main()
+    _ = puts("hi".cstr())

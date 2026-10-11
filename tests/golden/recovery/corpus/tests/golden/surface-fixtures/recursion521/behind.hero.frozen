@@ -1,0 +1,39 @@
+# Defect 521 (panel 199's route (M), 2026-10-09): `climbs` recurses through
+# `helper`, and the stack ran out in `helper`, the frame being entered, so the
+# line named `helper` alone where the recursion is `climbs`. `helper` holds
+# the larger frame, so at `-O0` the stack runs out in it every time, and the
+# guard now names the recursion it finds on the frame walk beside it.
+function helper(n: i64) -> i64
+    a0 = n + 0
+    a1 = a0 + 1
+    a2 = a1 + 2
+    a3 = a2 + 0
+    a4 = a3 + 1
+    a5 = a4 + 2
+    a6 = a5 + 0
+    a7 = a6 + 1
+    a8 = a7 + 2
+    a9 = a8 + 0
+    a10 = a9 + 1
+    a11 = a10 + 2
+    a12 = a11 + 0
+    a13 = a12 + 1
+    a14 = a13 + 2
+    a15 = a14 + 0
+    a16 = a15 + 1
+    a17 = a16 + 2
+    a18 = a17 + 0
+    a19 = a18 + 1
+    a20 = a19 + 2
+    a21 = a20 + 0
+    a22 = a21 + 1
+    a23 = a22 + 2
+    return a23 - 23
+
+function climbs(n: i64) -> i64
+    if n > 1000000000
+        return n
+    return climbs(helper(n))
+
+function main()
+    print(climbs(0))

@@ -1,0 +1,16 @@
+# fixedbugs, defect 152, lane ffi-macro, 2026-10-02.
+#
+# SYMPTOM: a header's `static struct pair the_pair` and `static int32_t
+# counter`, declared as functions, were `internal error`, exit 2: *called
+# object type 'struct pair'*, *called object type 'int32_t'*.
+#
+# FIX: told as objects, the type in the suggested function as the header
+# spells it, a struct by its tag and an integer by its typedef.
+
+extern "fixedbugs-152-names.h"
+    function the_pair() -> i32  #~ ffi_call_shape
+    function counter() -> i32  #~ ffi_call_shape
+
+function main()
+    print(the_pair())
+    print(counter())

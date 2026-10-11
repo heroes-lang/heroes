@@ -1,0 +1,28 @@
+# Defect 314, 2026-10-07. Symptom: a `str` released once more than it was
+# held ran on in silence wherever the allocator left the freed block's first
+# bytes as they were: panel 190's control (two releases of one string) exited
+# 0 with the right output on the Windows box at `-O0` and `-O2`, where only
+# ASan named it, and on this Mac a string of 20,000 bytes or more released
+# twice exited 0 too (measured 2026-10-07 at `dad2da47`, 8 bytes to 5,000
+# named, 20,000 to 4,000,000 not). Cause: the runtime's mark is read in a
+# block already freed, so it saw the release only where the allocator had
+# written over it, and a count found at 0 was taken to -1 in freed memory.
+# Now a block's mark is overwritten by the runtime itself before the block is
+# given back, and a count already at 0 is refused by name
+# (`runtime/parts/str.c`), so the second release is named whatever the
+# allocator does with the block.
+#
+# The string is 65,536 bytes, under the size glibc gives back to the system
+# at once (a read of an unmapped block would be a fault, not this check's to
+# name) and over the size this Mac's allocator leaves intact. A C function of
+# the program's own releases it behind the program's back, and the program's
+# release at the end of its life is the second. AddressSanitizer names the
+# read of the freed block.
+
+extern "fixedbugs-314-a-str-released-twice-is-named-at-every-size.h"
+    function release_behind(s: cstr lent)
+
+function main()
+    word = repeat("ab", 32768)
+    print(word.len())
+    release_behind(s: word.cstr())

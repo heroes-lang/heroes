@@ -1,0 +1,18 @@
+# fixedbugs, defect 571, lane b18-guard, 2026-10-10 (panel 205's R5).
+#
+# SYMPTOM: `getcontext` bound through a header of the program's own defining
+# `_XOPEN_SOURCE 600`: on this Mac, where the SDK marks it `deprecated`,
+# clang printed `-Wdeprecated-declarations` at the emitted
+# `_Static_assert(HERO_RET_I32(getcontext((void *)0)), ...)`, a line no author
+# wrote, at exit 0 (panel 205's critic). Judged where `<ucontext.h>` is.
+#
+# FIX: `-Wdeprecated-declarations` is quiet on the compiler's own lines, from
+# the groups' close and over each group constant's accessor and the
+# per-type functions, and spoken over the program's own definitions
+# (`emit/deprecation.hero`): the verdict is the one it was.
+
+extern "fixedbugs-571-a-deprecated-libc-function-through-a-switch-header-prints-no-clang-words.h"
+    function getcontext(u: ptr) -> i32
+
+function main()
+    print(1)

@@ -42,13 +42,13 @@ function added(a: Amount, b: Amount) -> Amount
 # to `-12` and `-1234 % 100` is `-34` (spec § Failure), so a naive rendering
 # gives `-12.-34`.
 function shown(a: Amount) -> str
-    size: i64 @ a.cents
+    size: i64 @= a.cents
 
     if size < 0
         size @ 0 - size
     whole = size / 100
     rest = size % 100
-    tail: str @ rest.to_str()
+    tail: str @= rest.to_str()
 
     if rest < 10
         tail @ "0" + tail
@@ -110,9 +110,9 @@ function accounts() -> [Account]
 # invented — so the agreement of two routes that share no line is the
 # strongest claim available, and it is stronger than either alone.
 function balances(entries: [Entry]) -> [Balance]
-    names: [str] @ []
-    totals: {str: i64} @ {}
-    counts: {str: i64} @ {}
+    names: [str] @= []
+    totals: {str: i64} @= {}
+    counts: {str: i64} @= {}
 
     for e in entries
         seen = totals[e.account]
@@ -125,7 +125,7 @@ function balances(entries: [Entry]) -> [Balance]
             totals[e.account] @ seen.must() + e.amount.cents
             counts[e.account] @ counts[e.account].must() + 1
 
-    out: [Balance] @ []
+    out: [Balance] @= []
 
     # ORDER: by account name, because `keys(m)` gives no order (spec
     # § Bindings) and this list is printed and compared line by line.
@@ -138,7 +138,7 @@ function balances(entries: [Entry]) -> [Balance]
 
 # What the whole book comes to.
 function total(entries: [Entry]) -> Amount
-    sum: Amount @ Amount(cents: 0)
+    sum: Amount @= Amount(cents: 0)
 
     for e in entries
         sum @ added(a: sum, b: e.amount)
@@ -194,7 +194,7 @@ test "the balances are the four accounts, in name order, with the right totals"
     assert b[1].entries == 4
 
 test "the balances add up to the book's total"
-    sum: i64 @ 0
+    sum: i64 @= 0
 
     for b in balances(book())
         sum @ sum + b.total.cents

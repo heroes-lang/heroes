@@ -1,0 +1,16 @@
+# fixedbugs, defect 156, lane land186, 2026-10-02 (panel 186 R5).
+#
+# `partial` lets a record leave a bit-field out; it does not let one name it.
+# A `partial` record over `BF` naming `flag` is refused on `flag`'s line, as a
+# complete one is.
+
+extern "fixedbugs-156-bit-fields.h"
+    record BF partial
+        kind: i32
+        flag: u32  #~ ffi_field_type
+
+function touch(b: BF) -> i32
+    return b.kind
+
+function main()
+    print(1)

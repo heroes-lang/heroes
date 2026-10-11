@@ -1,0 +1,26 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3), the shapes
+# the panel's ffi-pragmatist vetoed refusing: libc's `struct in6_addr`, whose
+# `s6_addr` is `__u6_addr.__u6_addr8`, compared as two IPv6 addresses, and
+# `struct sigaction`, whose `sa_handler` is a function pointer filling its
+# union. Here in a header of the case's own, so no platform lacks it: a field
+# a macro reaches into a named union compares when it is as wide as that
+# union, which C names, so the width is the union's own `sizeof`.
+
+extern "fixedbugs-151-unions.h"
+    record ADDR
+        addr_bytes: u8[16]
+    record ACT
+        act_one: ptr
+        flags: i32
+    function make_addr(last: u8) -> ADDR
+    function make_act(flags: i32) -> ACT
+
+function main()
+    print(
+        make_addr(last: 1) == make_addr(last: 1),
+        " ",
+        make_addr(last: 1) == make_addr(last: 2),
+        " ",
+        make_addr(last: 7).addr_bytes[15]
+    )
+    print(make_act(flags: 2) == make_act(flags: 2), " ", make_act(flags: 2) == make_act(flags: 3))

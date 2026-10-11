@@ -32,9 +32,9 @@ variant Block
 # The text, split at newlines. A trailing newline does not make a last empty
 # line, which is the convention every `read_file` in this corpus relies on.
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -51,12 +51,12 @@ function is_space(c: u8) -> bool
 
 # The line without its surrounding whitespace.
 function trimmed(line: str) -> str
-    from: i64 @ 0
+    from: i64 @= 0
 
     while from < line.len() && is_space(line[from])
         from @ from + 1
 
-    to: i64 @ line.len()
+    to: i64 @= line.len()
 
     while to > from && is_space(line[to - 1])
         to @ to - 1
@@ -70,7 +70,7 @@ function starts(line: str, word: str) -> bool
 
 # How many times the line opens with `c`.
 function leading(line: str, c: u8) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     while n < line.len() && line[n] == c
         n @ n + 1
@@ -78,7 +78,7 @@ function leading(line: str, c: u8) -> i64
     return n
 
 function digits_of(line: str) -> i64
-    n: i64 @ 0
+    n: i64 @= 0
 
     while n < line.len() && line[n] >= '0' && line[n] <= '9'
         n @ n + 1
@@ -107,7 +107,7 @@ function marker_width(head: str) -> i64
     return n
 
 function number_of(head: str, width: i64) -> i64
-    v: i64 @ 0
+    v: i64 @= 0
 
     for i in range(from: 0, to: width)
         v @ v * 10 + to_i64(head[i] - '0').must()
@@ -131,14 +131,14 @@ function opens_a_block(head: str) -> bool
 
 function read(text: str) -> [Block]
     lines = split_lines(text)
-    out: [Block] @ []
-    i: i64 @ 0
+    out: [Block] @= []
+    i: i64 @= 0
 
     while i < lines.len()
         head = trimmed(lines[i])
 
         if head.starts(word: "```")
-            body: [str] @ []
+            body: [str] @= []
             i @ i + 1
 
             while i < lines.len() && !trimmed(lines[i]).starts(word: "```")
@@ -168,7 +168,7 @@ function read(text: str) -> [Block]
             out @ out.push(.numbered(n: number_of(head, width), text: inline.plain(after(head, width + 1))))
             i @ i + 1
         else
-            parts: [str] @ [inline.plain(head)]
+            parts: [str] @= [inline.plain(head)]
             i @ i + 1
 
             while i < lines.len() && !opens_a_block(trimmed(lines[i]))

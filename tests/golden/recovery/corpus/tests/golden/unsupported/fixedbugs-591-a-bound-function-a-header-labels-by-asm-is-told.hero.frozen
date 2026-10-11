@@ -1,0 +1,10 @@
+# fixedbugs, defect 591, lane b20-pragma, 2026-10-11, a shape beside
+# `fixedbugs-591-a-bound-function-a-header-renames-by-redefine-extname-is-told`:
+# the label is the declaration's own `__asm__`, the same cause, and was the
+# same exit 2. It is told on the binding, the header's line named.
+
+extern "fixedbugs-591-a-bound-function-a-header-labels-by-asm-is-told.h"
+    function fixedbugs_591_twice(x: i64) -> i64  #~ ffi_missing_link
+
+function main()
+    print(fixedbugs_591_twice(x: 21))

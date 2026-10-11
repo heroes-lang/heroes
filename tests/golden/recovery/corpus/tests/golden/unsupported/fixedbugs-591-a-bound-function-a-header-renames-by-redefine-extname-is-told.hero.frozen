@@ -1,0 +1,14 @@
+# fixedbugs, defect 591, lane b20-pragma, 2026-10-11, found by lane b19-pack
+# beside defect 582: the header renames the bound `labs` by `#pragma
+# redefine_extname`, and the linker cannot find the name it gives. On this
+# Mac `redefine_extname labs llabs` failed so, the label having none of
+# Mach-O's underscore, and in the Linux arm64 image it links; this twin names
+# a symbol no platform has. Until then the link said *internal error* at exit
+# 2, the missing name being no group's; it is now read back to the binding
+# through clang's dump of the header list (`cli/renamed.hero`).
+
+extern "fixedbugs-591-a-bound-function-a-header-renames-by-redefine-extname-is-told.h"
+    function labs(x: i64) -> i64  #~ ffi_missing_link
+
+function main()
+    print(labs(-42))

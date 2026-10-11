@@ -1,0 +1,22 @@
+# Defect 507's class and panel 199's R3, ratified 2026-10-09, a shape beside
+# the sitting's found at its landing: a correct program whose recursion ends
+# on the `exit` of a function it hands to the library's `map`. clang said
+# *all paths through this function will call itself* at every level, false;
+# panel 199's R1 spares the function (reading R4 follows what `map` is
+# handed), and since R3 clang's warning is not passed on. It prints 0, 1 and
+# 2 and exits 0 at every level, with no clang warning.
+function stop_at_three(n: i64) -> i64
+    if n > 2
+        exit(code: 0)
+    print(n)
+    return n
+
+function next(n: i64) -> i64
+    return n + 1
+
+function turn(xs: [i64]) -> i64
+    ys = xs.map(stop_at_three)
+    return turn(ys.map(next))
+
+function main()
+    print(turn([0]))

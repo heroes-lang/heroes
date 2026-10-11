@@ -131,7 +131,7 @@ function read_value(@r: Reader) -> value.Json?
 # the string, and `join` is linear.
 function read_string(@r: Reader) -> str?
     advance(@r)
-    parts: [str] @ []
+    parts: [str] @= []
 
     while !at_end(r) && here(r) != '"'
         if here(r) == '\\'
@@ -186,13 +186,13 @@ function escape_at(r: Reader) -> str?
 # digit, because the language deliberately offers no `to_f64` on a `str`:
 # parsing can fail, and a conversion that can fail is not a conversion.
 function read_number(@r: Reader) -> f64?
-    negative: bool @ false
+    negative: bool @= false
 
     if here(r) == '-'
         negative @ true
         advance(@r)
-    whole: f64 @ 0.0
-    digits: i64 @ 0
+    whole: f64 @= 0.0
+    digits: i64 @= 0
 
     while !at_end(r) && is_digit(here(r))
         whole @ whole * 10.0 + to_f64(digit_of(here(r)))
@@ -204,8 +204,8 @@ function read_number(@r: Reader) -> f64?
 
     if !at_end(r) && here(r) == '.'
         advance(@r)
-        scale: f64 @ 1.0
-        after: i64 @ 0
+        scale: f64 @= 1.0
+        after: i64 @= 0
 
         while !at_end(r) && is_digit(here(r))
             scale @ scale / 10.0
@@ -228,13 +228,13 @@ function read_number(@r: Reader) -> f64?
 # fact about `f64` rather than about this program: past ~308 the value is
 # infinite either way, and an uncapped loop would spin on `1e999999999`.
 function read_exponent(@r: Reader) -> i64?
-    negative: bool @ false
+    negative: bool @= false
 
     if !at_end(r) && (here(r) == '+' || here(r) == '-')
         negative @ here(r) == '-'
         advance(@r)
-    exponent: i64 @ 0
-    digits: i64 @ 0
+    exponent: i64 @= 0
+    digits: i64 @= 0
 
     while !at_end(r) && is_digit(here(r))
         exponent @ exponent * 10 + digit_of(here(r))
@@ -252,7 +252,7 @@ function read_exponent(@r: Reader) -> i64?
     return ok(exponent)
 
 function power_of_ten(n: i64) -> f64
-    out: f64 @ 1.0
+    out: f64 @= 1.0
 
     if n < 0
         for _ in range(from: n, to: 0)
@@ -271,7 +271,7 @@ function power_of_ten(n: i64) -> f64
 # out of the loop.
 function read_array(@r: Reader) -> value.Json?
     advance(@r)
-    items: [value.Json] @ []
+    items: [value.Json] @= []
     skip_space(@r)
 
     if at_end(r)
@@ -280,7 +280,7 @@ function read_array(@r: Reader) -> value.Json?
     if here(r) == ']'
         advance(@r)
         return ok(.array(items: items))
-    more: bool @ true
+    more: bool @= true
 
     while more
         items @ items.push(read_value(@r)?)
@@ -303,7 +303,7 @@ function read_array(@r: Reader) -> value.Json?
 # also what most JSON readers do.
 function read_object(@r: Reader) -> value.Json?
     advance(@r)
-    fields: {str: value.Json} @ {}
+    fields: {str: value.Json} @= {}
     skip_space(@r)
 
     if at_end(r)
@@ -312,7 +312,7 @@ function read_object(@r: Reader) -> value.Json?
     if here(r) == '}'
         advance(@r)
         return ok(.object(fields: fields))
-    more: bool @ true
+    more: bool @= true
 
     while more
         skip_space(@r)
@@ -346,7 +346,7 @@ function read_object(@r: Reader) -> value.Json?
 # One document, and nothing after it. The trailing check is the half a happy
 # path never reaches: `1 2` is two valid values and not one valid document.
 function read(text: str) -> value.Json?
-    r: Reader @ Reader(text: text, pos: 0)
+    r: Reader @= Reader(text: text, pos: 0)
     j = read_value(@r)?
     skip_space(@r)
 

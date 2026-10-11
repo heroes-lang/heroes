@@ -1,0 +1,20 @@
+# fixedbugs, defect 191, lane cb4, 2026-10-02.
+#
+# Symptom: on the public CI's Linux leg (Ubuntu clang 18.1.3) a `partial`
+# record named after a typedef of a struct the header keeps opaque, which
+# the program holds no value of, stopped at exit 2, `internal error`, with
+# clang's *incomplete definition of type 'struct opaque_s191'*; on this
+# Mac's clang 21 it was refused, `ffi_unknown_tag`. Cause: its first meeting
+# with clang was the unit's field assertions, and the reader of clang's
+# refusal there found the record only by the typedef's name in clang's
+# words, which clang 21 writes beside the struct's and clang 18 does not.
+# The layout check now asks, by where clang errs and never by what it says,
+# whether the record's name is a type and whether that type has a layout,
+# and refuses the record itself, before any unit compiles, on every clang.
+
+extern "fixedbugs-191-types.h"
+    record opaque191_t partial  #~ ffi_unknown_tag
+        a: i32
+
+function main()
+    print(1)

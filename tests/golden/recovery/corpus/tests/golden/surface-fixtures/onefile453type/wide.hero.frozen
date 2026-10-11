@@ -1,0 +1,7 @@
+# Defect 453, lane b18-ffi, 2026-10-10: a module whose header defines the
+# macro the other module's header chooses a type by.
+extern "onefile-wide.h"
+    function width() -> i64
+
+function bits() -> i64
+    return width()

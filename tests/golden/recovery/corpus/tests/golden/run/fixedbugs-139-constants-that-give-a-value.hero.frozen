@@ -1,0 +1,30 @@
+# Fixed 2026-10-01, defect 139's class, lane flow. The constants beside the
+# refusal that must stay legal and build: a body that is a value `match`, a
+# value `if`, and a `match` statement before the value, which counted as
+# jumping until defect 139's statement half and was refused, *this `i64`
+# produces no value — every branch jumps*.
+
+constant BY_MATCH: i64
+    match 1
+        1 => 5
+        _ => 6
+
+constant BY_IF: i64
+    if true
+        8
+    else
+        9
+
+constant AFTER_A_MATCH: i64
+    match 3
+        3 =>
+            _ = 1
+        _ =>
+            _ = 2
+
+    7
+
+function main()
+    print(BY_MATCH)
+    print(BY_IF)
+    print(AFTER_A_MATCH)

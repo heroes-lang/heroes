@@ -90,10 +90,10 @@ test "a primitive's name answers with its width inside the case"
     assert primitive("double").is_err()
 
 test "type references compare structurally, dense over the arena"
-    a: TypeRef @ .prim(value: .bool_prim)
-    b: TypeRef @ .prim(value: .bool_prim)
+    a: TypeRef = .prim(value: .bool_prim)
+    b: TypeRef = .prim(value: .bool_prim)
     assert a == b
     assert a != .unresolved
-    c: TypeRef @ .top(at: 3)
+    c: TypeRef = .top(at: 3)
     assert c == .top(at: 3)
     assert c != .generic(at: 3)

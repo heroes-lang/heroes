@@ -1,0 +1,18 @@
+# fixedbugs, defect 143, lane ffimsg, 2026-10-03: `fixedbugs-143-the-fd-set-macros`
+# on a header of the tree's own. That case binds `sys/select.h`, which the
+# Windows box lacks, and glibc's `FD_ZERO` is the one statement among them,
+# so the statement shape was reached in the Linux container alone. Here
+# `BITS_ZERO` is a STATEMENT, `do { ... } while (0)`, on every platform: it,
+# and the two expression macros beside it, are told as macros, and the
+# function of the program's own each note drafts takes a statement as well
+# as any, `void` where the declaration takes no value back.
+
+extern "fixedbugs-143-statement-macros.h"
+    function BITS_ZERO(set: ptr)  #~ ffi_macro_name
+    function BITS_SET(n: i32, set: ptr)  #~ ffi_macro_name
+    function BITS_ISSET(n: i32, set: ptr) -> i32  #~ ffi_macro_name
+
+function main()
+    BITS_ZERO(set: nullptr)
+    BITS_SET(n: 1, set: nullptr)
+    print(BITS_ISSET(n: 1, set: nullptr))

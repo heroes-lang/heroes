@@ -22,7 +22,7 @@ extern "fixedbugs-a-fixed-array-element-of-every-field-kind-is-written.h"
     function kinds_check(k: Kinds) -> i64
 
 function main()
-    k: Kinds @ Kinds(
+    k: Kinds @= Kinds(
         name: [0, 0, 0, 0, 0, 0, 0, 0],
         flags: [false, false],
         xs: [0.0, 0.0],

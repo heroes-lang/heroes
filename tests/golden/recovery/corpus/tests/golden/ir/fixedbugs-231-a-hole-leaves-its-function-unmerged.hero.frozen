@@ -1,0 +1,27 @@
+# Defect 231, panel 190's R3 and the one shape it exempts (2026-10-04). A
+# function with two or more ways out leaves by one exit (`ir/exits.hero`),
+# and one the pass cannot merge is refused by the verifier, never left with
+# a sweep in every returning block in silence. A hole is the one way a
+# function with a result falls off its end: the checker holds
+# `missing_return` back in a module with a hole (spec § 12), lowering writes
+# that edge as a `return` with no value, and the pass leaves the function as
+# lowering made it. No binary is made of such a program, and the verifier
+# names this shape as its one exemption, so the dump below still ends with
+# the holes. Measured with the exemption removed, the same day: `--dump-ir`
+# and `build` both exit 2 here, *the lowered program is not well formed*.
+#
+# `capped` falls off its end and keeps both of its returns; `scaled`, in the
+# same program, has two ways out and leaves by one exit.
+
+function capped(n: i64) -> i64
+    if n > 10
+        return 10
+    _ = ???
+
+function scaled(n: i64) -> i64
+    if n > 10
+        return n * 2
+    return n
+
+function main()
+    print(capped(3), scaled(4))

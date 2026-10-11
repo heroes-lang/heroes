@@ -45,11 +45,11 @@ constant CONTRACTIONS: [str]
 # because a pre-tokeniser that loses a character undercounts for free.
 function pieces_of(text: str) -> [str]
     cs = text.chars()
-    out: [str] @ []
-    i: i64 @ 0
+    out: [str] @= []
+    i: i64 @= 0
 
     while i < cs.len()
-        taken: i64 @ contraction(cs: cs, at: i)
+        taken: i64 @= contraction(cs: cs, at: i)
 
         if taken == 0
             taken @ run_of(cs: cs, at: i, kind: is_letter)
@@ -90,14 +90,14 @@ function contraction(cs: [str], at: i64) -> i64
 # nothing else, and three copies of this loop would be three places for the
 # optional space to be subtly wrong.
 function run_of(cs: [str], at: i64, kind: (function(str) -> bool)) -> i64
-    start: i64 @ at
+    start: i64 @= at
 
     if cs[at] == " " && at + 1 < cs.len() && kind(cs[at + 1])
         start @ at + 1
 
     if start >= cs.len() || !kind(cs[start])
         return 0
-    last: i64 @ start
+    last: i64 @= start
 
     while last < cs.len() && kind(cs[last])
         last @ last + 1
@@ -109,12 +109,12 @@ function run_of(cs: [str], at: i64, kind: (function(str) -> bool)) -> i64
 function whitespace(cs: [str], at: i64) -> i64
     if !is_space(cs[at])
         return 0
-    last: i64 @ at
+    last: i64 @= at
 
     while last < cs.len() && is_space(cs[last])
         last @ last + 1
 
-    stop: i64 @ last
+    stop: i64 @= last
 
     if last < cs.len() && last > at
         stop @ last - 1

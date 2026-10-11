@@ -1,0 +1,23 @@
+# FIXED DEFECT 411's shape beside `tests/golden/fixedbugs/ffi-call-arity`,
+# 2026-10-07, lane b13-w411.
+#
+# SYMPTOM, on the round that took the repair: a binding whose parameter count
+# disagrees with the header's was told only that its first `cstr` may be
+# written, and the count it got wrong was not told at all, since the pointee
+# check that asks the read-only question runs before the probe that tells the
+# count.
+#
+# CAUSE: the question names a header parameter by POSITION, and with the counts
+# apart the position is unknown. Here the header takes `(char *x, const char
+# *a, const char *b)` and the binding declares `(a, b)`: asked by position, `a`
+# would be told it may be written, which is false of the header's `a`.
+#
+# FIX: `emit/ffi_read_only.hero`'s `lend_answers` asks a function's read-only
+# questions only where its declared count is the header's, so this binding is
+# told its count, `ffi_call_shape`, and nothing false.
+
+extern "fixedbugs-411-writes.h"
+    function w_shifted(a: cstr lent, b: cstr lent) -> i32  #~ ffi_call_shape
+
+function main()
+    print(w_shifted(a: "a".cstr(), b: "b".cstr()))

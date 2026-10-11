@@ -19,8 +19,8 @@ function main()
     fs: [f64] = empty_of(why: "floats")
     m: {str: bool} = no_map(why: "flags")
     print(xs.len(), " ", fs.len(), " ", len(m))
-    ys: [i64] @ xs
+    ys: [i64] @= xs
     ys @ ys.push(7)
-    gs: [f64] @ fs
+    gs: [f64] @= fs
     gs @ gs.push(1.5)
     print(ys[0], " ", gs[0])

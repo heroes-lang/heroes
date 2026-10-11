@@ -32,9 +32,9 @@ constant LIMIT: i64
 # The escape count for one point, in fixed point. `z = z*z + c` with the
 # products divided back down by the scale after each multiply.
 function escapes_at(cx: i64, cy: i64) -> i64
-    zx: i64 @ 0
-    zy: i64 @ 0
-    n: i64 @ 0
+    zx: i64 @= 0
+    zy: i64 @= 0
+    n: i64 @= 0
 
     while n < LIMIT
         xx = zx * zx / SCALE
@@ -51,9 +51,9 @@ function escapes_at(cx: i64, cy: i64) -> i64
 
 # One row of the picture: how many iterations that whole row took.
 function row_total(row: i64) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
     cy = row * 2 * SCALE / ROWS - SCALE
-    col: i64 @ 0
+    col: i64 @= 0
 
     while col < COLS
         cx = col * 3 * SCALE / COLS - 2 * SCALE
@@ -64,8 +64,8 @@ function row_total(row: i64) -> i64
 
 # A band is eight rows, and the index picks which eight.
 function band(index: i64) -> i64
-    total: i64 @ 0
-    row: i64 @ index * 8
+    total: i64 @= 0
+    row: i64 @= index * 8
 
     while row < index * 8 + 8
         total @ total + row_total(row: row)
@@ -74,14 +74,14 @@ function band(index: i64) -> i64
     return total
 
 function together() -> i64
-    handles: [i64] @ []
-    i: i64 @ 0
+    handles: [i64] @= []
+    i: i64 @= 0
 
     while i < ROWS / 8
         handles @ handles.push(hero_thread_spawn(body: band, arg: i))
         i @ i + 1
 
-    total: i64 @ 0
+    total: i64 @= 0
 
     for h in handles
         total @ total + hero_thread_join(handle: h)
@@ -89,8 +89,8 @@ function together() -> i64
     return total
 
 function alone() -> i64
-    total: i64 @ 0
-    row: i64 @ 0
+    total: i64 @= 0
+    row: i64 @= 0
 
     while row < ROWS
         total @ total + row_total(row: row)

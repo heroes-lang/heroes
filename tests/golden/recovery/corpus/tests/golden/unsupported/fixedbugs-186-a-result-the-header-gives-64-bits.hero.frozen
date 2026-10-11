@@ -1,0 +1,23 @@
+# fixedbugs, defect 186, lane ffimsg, 2026-10-03.
+#
+# SYMPTOM: defect 172's applied program, `-> i32` over a header's `int64_t`,
+# was told *`wide_count` does not return `i32` — that is what the header
+# says, and clang read it*, its note *correct the result type*: neither
+# `int64_t` nor `i64` in it, where `ffi_parameter_type` beside it names the
+# header's type and offers one.
+#
+# CAUSE: the return assertion's message carries the program's declared
+# type, and nothing asked clang the header's.
+#
+# FIX: a refused round asks clang the type of the assertion's own call
+# (`emit/ffi_asked.hero`), and the message names it and offers the type that
+# declares it, a guess, since a result may be declared wider. A `double`
+# declared `f32` takes the same.
+
+extern "fixedbugs-186-results.h"
+    function wide_count() -> i32  #~ ffi_return_type
+    function ratio() -> f32  #~ ffi_return_type
+
+function main()
+    print(wide_count())
+    print(ratio())

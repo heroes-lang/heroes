@@ -1,0 +1,13 @@
+# fixedbugs, defect 158, lane h158, 2026-10-02.
+#
+# Beside `fixedbugs-158-a-header-the-groups-header-includes-in-angle-brackets`:
+# the group writes its header with a directory in front, `./`, and clang
+# prints the place as the include directory joined to that spelling. The
+# whole spelling is matched, and the diagnostic names it as the group wrote
+# it.
+
+extern "./fixedbugs-158-angle.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

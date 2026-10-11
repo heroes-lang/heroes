@@ -2,7 +2,9 @@
 # compiler tells its program unmutated (panel 187's R2 as the fourth round
 # read it, 2026-10-03; defect 210).
 #
-# The corpus was frozen on 2026-09-30, every program of it accepted then.
+# The corpus was frozen on 2026-09-30, every program of it accepted then
+# (cut again on 2026-10-11 from the migrated tree, defect 661, when a change
+# of the surface made the whole corpus a program the compiler refuses).
 # The language has moved since, and a program it now refuses carries that
 # refusal into every mutant of it: `examples/gallery/12-interpolation.hero`
 # is told `lone_brace` by the trunk of 2026-10-07 (panel 184's R2), so each

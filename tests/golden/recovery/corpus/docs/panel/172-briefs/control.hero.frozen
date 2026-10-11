@@ -1,7 +1,0 @@
-extern "giveaway.h"
-    function look(s: cstr lent)
-
-function main()
-    x = "payload"
-    c: cstr @ x.lease()
-    look(s: c)

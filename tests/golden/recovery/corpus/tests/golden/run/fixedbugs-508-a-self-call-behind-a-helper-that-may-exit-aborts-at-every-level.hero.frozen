@@ -1,0 +1,25 @@
+# Defect 508 and panel 199's R2, ratified 2026-10-09: the sitting's `mixed`,
+# `climbs(helper(n))`, ran at `-O2` until `timeout` stopped it (exit 124),
+# the self-call in tail position turned into a jump. Panel 199's R1 refuses
+# `mixed` itself now (`tests/golden/check/fixedbugs-457-*`, `helped`), since
+# its helper only computes; this one's helper may end the program, on a path
+# no run takes, so `check` lets the function through (reading R4) and the
+# run is the witness: the `-O2` words keep a call a call
+# (`-fno-optimize-sibling-calls`), and it aborts at every level. Which frame
+# ran out is named where the platform names one, and is not asked here.
+# Under the sanitiser the runtime's guard yields to ASan, which says
+# `stack-overflow`. clang's *all paths through this function will call
+# itself* was TRUE here, and is not passed on since panel 199's R3
+# (`-Wno-infinite-recursion`): what R4 lets through is where clang's warning
+# cannot tell true from false, the call that may end the program coming
+# before the self-call, so the run is this shape's witness and lands with R3.
+function helper(n: i64) -> i64
+    if n < 0
+        exit(code: 1)
+    return n + 1
+
+function climbs(n: i64) -> i64
+    return climbs(helper(n))
+
+function main()
+    print(climbs(1))

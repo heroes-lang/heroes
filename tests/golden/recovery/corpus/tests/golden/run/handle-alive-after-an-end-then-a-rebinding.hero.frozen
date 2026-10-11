@@ -9,7 +9,7 @@ extern "handle-alive-after-an-end-then-a-rebinding.h"
     function node_peek(n: Node) -> i64
 
 function main()
-    n: Node @ node_new(v: 1)
+    n: Node @= node_new(v: 1)
     node_free(n: n)
     n @ node_new(v: 2)
     print("renewed: ", node_peek(n: n))

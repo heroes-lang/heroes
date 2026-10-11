@@ -16,7 +16,7 @@
 # Bulk regression case.
 
 function main()
-    m: {str: str} @ {}
+    m: {str: str} @= {}
     m["a"] @ "x" + "y"
     m["a"] @ "z" + "w"
     print(m["a"].default("?"))

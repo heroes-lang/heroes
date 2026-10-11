@@ -1,0 +1,14 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3 and R6), the
+# other half of the shape beside the rule: under `#pragma pack(1)` the union
+# `{ uint8_t c[5]; uint32_t i; }` is five bytes, and `c` is as wide as it, so
+# a record naming `c` compares soundly and § 13 admits it, where a formula over
+# the members' natural alignments would round the union to eight and refuse.
+
+extern "fixedbugs-151-unions.h"
+    record PK
+        k: u8
+        c: u8[5]
+    function make_pk(last: u8) -> PK
+
+function main()
+    print(make_pk(last: 1) == make_pk(last: 1), " ", make_pk(last: 1) == make_pk(last: 2))

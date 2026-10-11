@@ -28,10 +28,10 @@
 # diagnostic code made of one backtick — measured, 2026-08-16.)
 
 function main()
-    handles: [ptr] @ []            #~ pointer_element
-    names: [cstr] @ []             #~ pointer_element
-    by_id: {i64: ptr} @ {}         #~ pointer_element
-    texts: {i64: cstr} @ {}        #~ pointer_element
-    tagged: {ptr: i64} @ {}        #~ pointer_element
-    counted: {cstr: i64} @ {}      #~ pointer_element
+    handles: [ptr] = []            #~ pointer_element
+    names: [cstr] = []             #~ pointer_element
+    by_id: {i64: ptr} = {}         #~ pointer_element
+    texts: {i64: cstr} = {}        #~ pointer_element
+    tagged: {ptr: i64} = {}        #~ pointer_element
+    counted: {cstr: i64} = {}      #~ pointer_element
     print(len(handles), len(names), len(by_id), len(texts), len(tagged), len(counted))

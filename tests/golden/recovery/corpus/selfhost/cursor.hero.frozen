@@ -6,8 +6,8 @@
 #
 # 1. **Comments never reach the grammar.** The cursor's position never rests on
 #    a comment, but the spans it passes are kept, because a comment directly
-#    above a declaration IS its documentation (design.md §4.1). `take_docs`
-#    hands that run back when a declaration starts.
+#    above a declaration IS its documentation (design.md §4.1).
+#    `doc_comments.take_docs` hands that run back when a declaration starts.
 # 2. **The parser never stops.** A failed expectation is a diagnostic plus a
 #    recovery move, so a broken first declaration cannot hide the nine after it.
 # 3. **Errors are reported once.** At an `error` token the lexer has already
@@ -37,17 +37,22 @@
 use token
 use diag
 use describe
-use text_lines
+use swap_words
+use report_marks
+use stream_tables
 
 ## Reading the text
 
-# Line and column live in `text_lines.hero` — a seam, not a squeeze: reading
-# lines out of a text has nothing to do with tokens, and the file that does
-# it imports nothing at all. That module's own doc carries why three of its
-# four functions exist.
+# Line and column are `text_lines.hero`'s, which reads lines and no token.
 
 function slice_of(text: str, span: token.Span) -> str
     return text.slice(from: span.start, to: span.end)
+
+# Whether a comment is a `##` section heading, which documents the section and
+# not the declaration under it: `doc_comments.take_docs` and the formatter's
+# page ask it alike.
+function starts_a_section(comment: str) -> bool
+    return comment.len() >= 2 && comment[0] == '#' && comment[1] == '#'
 
 ## The cursor
 
@@ -57,6 +62,8 @@ record Cursor
     tokens: [token.Token]
     pos: i64
     diagnostics: [diag.Diagnostic]
+    # Where those reports stand, kept as each is said (`report_marks`).
+    marks: report_marks.Marks
     # Comment spans passed over since the last `take_docs`.
     comments: [token.Span]
     # Where the author's own text ends. The parse runs over the WHOLE
@@ -69,24 +76,52 @@ record Cursor
     root_end: i64
     # What a head held back over a joined line, for `parse` to place.
     held: [diag.Held]
+    # Where the lexer named every bracket still open, a declaration opening
+    # its line at column 0 (`lexer.LexOutput.closes`): no closer found past
+    # one of these offsets closes an opener before it (`parse/unclosed`).
+    closes: [i64]
+    # Every certain swap the lexer wrote for a word it refused, where the word
+    # begins (`lexer.LexOutput.swaps`): what the parser reads that word as,
+    # decided once, by the stage that writes the fix (defect 146).
+    swaps: [swap_words.Swap]
+    # Whether a lexer made the stream and told the cursor its swaps
+    # (`lexed_cursor`). A stream no lexer made, a test's tokens written by
+    # hand, has none to tell, and its words are read from the text as the
+    # lexer reads them (`parse/swap_reading.swap_at`).
+    lexed: bool
+    # What the parser looks up by a token's index and keeps (`stream_tables`):
+    # each opener's closer, and the last walk back to a token a reader sees.
+    tables: stream_tables.Tables
 
+# A cursor over tokens no lexer made, a test's, all of them the author's.
 function new_cursor(tokens: [token.Token]) -> Cursor
-    return bounded_cursor(tokens: tokens, root_end: -1)
+    none: [i64] = []
+    no_swaps: [swap_words.Swap] = []
+    c: Cursor @= lexed_cursor(tokens: tokens, root_end: -1, closes: none, swaps: no_swaps)
+    c.lexed @ false
+    return c
 
-# The same, told where the author's text stops. -1 means "everything is
-# the author's", which is what a single-file parse is.
-function bounded_cursor(tokens: [token.Token], root_end: i64) -> Cursor
-    said: [diag.Diagnostic] = []
-    comments: [token.Span] = []
-    held: [diag.Held] = []
-    c: Cursor @ Cursor(tokens: tokens, pos: 0, diagnostics: said, comments: comments, root_end: root_end, held: held)
+# The same over a stream the lexer made, told where it closed the brackets a
+# mistake left open and what each word it refused reads as.
+function lexed_cursor(tokens: [token.Token], root_end: i64, closes: [i64], swaps: [swap_words.Swap]) -> Cursor
+    c: Cursor @= Cursor(
+        tokens: tokens,
+        pos: 0,
+        diagnostics: [],
+        marks: report_marks.none(),
+        comments: [],
+        root_end: root_end,
+        held: [],
+        closes: closes,
+        swaps: swaps,
+        lexed: true,
+        tables: stream_tables.none()
+    )
     pass_comments(@c)
     return c
 
 # The current token's span, or the fallback when the current token is
-# past the author's text. The bootstrap asks `src.is_library`; the port
-# asks the boundary it was given, which is the same question with one
-# less dependency.
+# past the author's text, at the boundary the cursor was given.
 function here_or(c: Cursor, fallback: token.Span) -> token.Span
     here = current_span(c)
 
@@ -96,7 +131,7 @@ function here_or(c: Cursor, fallback: token.Span) -> token.Span
 
 function pass_comments(@c: Cursor)
     while c.tokens[c.pos].kind == .comment
-        c.comments @ c.comments.push(c.tokens[c.pos].span)
+        push_span(@c.comments, c.tokens[c.pos].span)
         c.pos @ c.pos + 1
 
 ## Reading
@@ -111,12 +146,10 @@ function at(c: Cursor, kind: token.TokenKind) -> bool
     return c.tokens[c.pos].kind == kind
 
 # The kind `ahead` significant tokens on. Comments are skipped here too, so
-# lookahead sees what the grammar sees. Two places need it: telling
-# `name: value` from a bare argument, and telling `for x in xs` from a
-# condition mistakenly written after `for`.
+# lookahead sees what the grammar sees.
 function peek(c: Cursor, ahead: i64) -> token.TokenKind
-    left: i64 @ ahead
-    i: i64 @ c.pos
+    left: i64 @= ahead
+    i: i64 @= c.pos
 
     while i + 1 < c.tokens.len() && left > 0
         i @ i + 1
@@ -135,30 +168,31 @@ function previous_kind(c: Cursor) -> token.TokenKind
     return c.tokens[c.pos - 1].kind
 
 # The last span a READER CAN SEE — walking back over the tokens that are layout
-# or annotation rather than program text.
+# or annotation rather than program text, on from where the last walk ended
+# once it meets where that one began (defect 258).
 #
 # A statement's own extent is built from this, and the extent is what §4.17's
 # caret underlines. Built from the previous span it reached the line's
 # terminator, whose position is past any trailing comment: `f() # a note` was
 # underlined twenty-three columns wide for a three-column statement, so the part
 # of the message that says WHERE pointed at something the author cannot fix.
-function previous_significant_span(c: Cursor) -> token.Span
-    i: i64 @ 0
-
-    if c.pos > 0
-        i @ c.pos - 1
-
-    while i > 0 && is_invisible(c.tokens[i].kind)
-        i @ i - 1
-
-    return c.tokens[i].span
+function previous_significant_span(@c: Cursor) -> token.Span
+    seen = stream_tables.seen_before(c.tokens, c.tables, at: c.pos - 1)
+    stream_tables.walked(@c.tables, from: c.pos - 1, to: seen.at)
+    return seen.span
 
 function is_invisible(kind: token.TokenKind) -> bool
-    return kind == .comment || kind == .terminator || kind == .indent || kind == .dedent
+    return stream_tables.is_invisible(kind)
 
 # True where the lexer already reported the problem: say nothing more.
 function at_reported_error(c: Cursor) -> bool
     return at(c, .error)
+
+# The word the lexer's certain swap writes over the word it refused at
+# `span`, or a failure where it wrote none: a hint, guidance, a swap wrong
+# where the word stands, or no foreign word at all (`swap_words.hero`).
+function certain_swap(c: Cursor, span: token.Span) -> str?
+    return swap_words.word_at(c.swaps, at: span.start)
 
 ## Moving
 
@@ -194,74 +228,23 @@ function skip_terminators(@c: Cursor)
     while at(c, .terminator)
         _ = bump(@c)
 
-## Documentation
-
-# The comment lines directly above a declaration, in source order (§4.1).
-#
-# Adjacency is the whole rule, and it is two comparisons: the comment must sit
-# on the line immediately above, and it must start in the same column — which is
-# what tells `# doc` on its own line from the trailing `x = 5  # note` on the
-# line before. A `##` section heading ends the run: it documents the section,
-# not the declaration under it.
-function take_docs(@c: Cursor, text: str, decl: token.Span) -> [token.Span]
-    # Counted UPWARD from the declaration instead of downward from byte 0:
-    # `wanted` is how many lines above it the next doc comment must sit, so
-    # the run is 1, 2, 3 … and nothing here needs a line number at all.
-    decl_col = text_lines.column_of(text, decl.start)
-    wanted: i64 @ 1
-    docs: [token.Span] @ []
-    i: i64 @ c.comments.len() - 1
-
-    while i >= 0
-        s = c.comments[i]
-        above = text_lines.lines_above(text: text, comment: s.start, decl: decl.start)
-
-        if above == 0
-            # A trailing comment on the declaration's own line.
-            i @ i - 1
-            continue
-
-        if above != wanted || text_lines.column_of(text, s.start) != decl_col
-            i @ -1
-            continue
-
-        if starts_a_section(slice_of(text, s))
-            i @ -1
-            continue
-        docs @ docs.push(s)
-        wanted @ wanted + 1
-        i @ i - 1
-
-    empty: [token.Span] = []
-    c.comments @ empty
-    return reversed(docs)
-
-function starts_a_section(comment: str) -> bool
-    return comment.len() >= 2 && comment[0] == '#' && comment[1] == '#'
-
-function reversed(spans: [token.Span]) -> [token.Span]
-    out: [token.Span] @ []
-    i: i64 @ spans.len() - 1
-
-    while i >= 0
-        out @ out.push(spans[i])
-        i @ i - 1
-
-    return out
-
 ## Failing
 
-# How many diagnostics have been reported so far. The statement parser compares
-# it before and after: a statement that produced one has already said what is
-# wrong, wherever inside itself the mistake was.
-function diagnostic_count(c: Cursor) -> i64
-    return c.diagnostics.len()
+# A copy of `c` to try a reading on, holding none of `c`'s reports, its own
+# from index 0: one said through `c` while a copy shares them copies them all,
+# once a head in a file of refused heads (defect 184).
+function trial(c: Cursor) -> Cursor
+    none: [diag.Diagnostic] = []
+    copy: Cursor @= c
+    copy.diagnostics @ none
+    copy.marks @ report_marks.none()
+    return copy
 
 # Whether the parser refused anything since it had said `said`. A thesis rule
 # is no refusal: the program keeps a meaning without one, and a recovery keyed
 # on it would drop, from `check --permissive`, what it hides (defect 130).
 function refused_since(c: Cursor, said: i64) -> bool
-    i: i64 @ said
+    i: i64 @= said
 
     while i < c.diagnostics.len()
         if !diag.is_thesis_rule(c.diagnostics[i])
@@ -271,7 +254,33 @@ function refused_since(c: Cursor, said: i64) -> bool
     return false
 
 function error(@c: Cursor, code: str, message: str, span: token.Span)
-    c.diagnostics @ c.diagnostics.push(diag.new_diagnostic(code: code, message: message, span: span))
+    say(@c, diag.new_diagnostic(code: code, message: message, span: span))
+
+# A report the parser says: appended in place, and where it stands marked, so
+# that asking whether one stands on a token is a lookup (defect 265).
+function say(@c: Cursor, d: diag.Diagnostic)
+    push_diagnostic(@c.diagnostics, d)
+    report_marks.noted(@c.marks, said: c.diagnostics)
+
+# Append one diagnostic said, in place. **The array is the parameter, and
+# that is the whole reason this exists**, `state.push_token`'s rule (§4.10):
+# `c.diagnostics @ c.diagnostics.push(d)` is a FIELD place, which the in-place
+# store never reaches, so every diagnostic the parser said copied every one
+# said before it, and a file of N mistakes cost N² copies (defect 146,
+# measured 2026-10-01 on the trunk's compiler: 3,000 `function f() {` heads
+# 0.19 s and 24,000 8.02 s of user time to parse, and `sample` under the
+# array's push). Every parser module appends through this, by `say`.
+function push_diagnostic(@diagnostics: [diag.Diagnostic], d: diag.Diagnostic)
+    diagnostics @ diagnostics.push(d)
+
+# The same for what a head holds back (`Cursor.held`).
+function push_held(@held: [diag.Held], h: diag.Held)
+    held @ held.push(h)
+
+# And for the comment spans passed, a block of many comment lines being
+# many of them.
+function push_span(@spans: [token.Span], s: token.Span)
+    spans @ spans.push(s)
 
 # How the current token is named in "expected X, found Y". Tokens whose text
 # carries information show it; punctuation and keywords are their own text
@@ -289,7 +298,7 @@ test "a comment never rests under the cursor but is kept"
         token.Token(kind: .kw_function, span: token.Span(start: 7, end: 15))
         token.Token(kind: .eof, span: token.Span(start: 15, end: 15))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor = new_cursor(tokens)
     assert current_kind(c) == .kw_function
     assert c.comments.len() == 1
     assert c.pos == 1
@@ -299,7 +308,7 @@ test "bump stops at eof forever"
         token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
         token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     first = bump(@c)
     assert first.kind == .ident
     _ = bump(@c)
@@ -312,7 +321,7 @@ test "expect reports what it found, and says nothing at an error token"
         token.Token(kind: .ident, span: token.Span(start: 0, end: 3))
         token.Token(kind: .eof, span: token.Span(start: 3, end: 3))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     ok_taken = expect(@c, text: "abc", kind: .lparen, code: "expected_args_open", what: "`(`")
     assert !ok_taken
     assert c.diagnostics.len() == 1
@@ -326,7 +335,7 @@ test "expect reports what it found, and says nothing at an error token"
         token.Token(kind: .error, span: token.Span(start: 0, end: 1))
         token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
     ]
-    e: Cursor @ new_cursor(quiet)
+    e: Cursor @= new_cursor(quiet)
     _ = expect(@e, text: "?", kind: .lparen, code: "expected_args_open", what: "`(`")
     assert e.diagnostics.len() == 0
 
@@ -337,7 +346,7 @@ test "peek sees what the grammar sees, skipping comments"
         token.Token(kind: .colon, span: token.Span(start: 6, end: 7))
         token.Token(kind: .eof, span: token.Span(start: 7, end: 7))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor = new_cursor(tokens)
     assert peek(c, 0) == .ident
     assert peek(c, 1) == .colon
 
@@ -350,47 +359,15 @@ test "the caret underlines what a reader can see"
         token.Token(kind: .terminator, span: token.Span(start: 10, end: 10))
         token.Token(kind: .eof, span: token.Span(start: 10, end: 10))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     _ = bump(@c)
     _ = bump(@c)
-    assert previous_significant_span(c) == token.Span(start: 0, end: 3)
-
-test "a doc comment is the run directly above, in the same column"
-    text = "# one\n# two\nfunction f()\n"
-    tokens: [token.Token] = [
-        token.Token(kind: .comment, span: token.Span(start: 0, end: 5))
-        token.Token(kind: .comment, span: token.Span(start: 6, end: 11))
-        token.Token(kind: .kw_function, span: token.Span(start: 12, end: 20))
-        token.Token(kind: .eof, span: token.Span(start: 24, end: 24))
-    ]
-    c: Cursor @ new_cursor(tokens)
-    docs = take_docs(@c, text, token.Span(start: 12, end: 20))
-    assert docs.len() == 2
-    assert slice_of(text, docs[0]) == "# one"
-    assert slice_of(text, docs[1]) == "# two"
-
-    # The run is consumed once.
-    assert c.comments.len() == 0
-
-test "a section heading ends the run rather than documenting the declaration"
-    text = "## Section\n# doc\nfunction f()\n"
-    tokens: [token.Token] = [
-        token.Token(kind: .comment, span: token.Span(start: 0, end: 10))
-        token.Token(kind: .comment, span: token.Span(start: 11, end: 16))
-        token.Token(kind: .kw_function, span: token.Span(start: 17, end: 25))
-        token.Token(kind: .eof, span: token.Span(start: 29, end: 29))
-    ]
-    c: Cursor @ new_cursor(tokens)
-    docs = take_docs(@c, text, token.Span(start: 17, end: 25))
-    assert docs.len() == 1
-    assert slice_of(text, docs[0]) == "# doc"
+    assert previous_significant_span(@c) == token.Span(start: 0, end: 3)
 
 ## Recovery — what to drop after a mistake
 
-# Port of archive/bootstrap-rs/heroes/src/syntax/recover.rs, which is an `impl Cursor` on the
-# Rust side: the same struct, a second file. Here it is the same record and the
-# same file, because the port's cursor is 250 lines rather than 268 + 117 — the
-# Rust split was §11's ceiling, and the port has not reached it.
+# Port of archive/bootstrap-rs/heroes/src/syntax/recover.rs, an `impl Cursor`
+# in a second file on the Rust side; here the same record and file.
 #
 # Four moves, each with a landmark it trusts. The error is the deliverable
 # (§4.17), and a model paying ten turns for ten mistakes is the cost these keep
@@ -402,8 +379,8 @@ test "a section heading ends the run rather than documenting the declaration"
 # of the ENCLOSING block.
 function balanced_block(@c: Cursor) -> token.Span
     open = bump(@c)
-    depth: i64 @ 1
-    last: token.Span @ open.span
+    depth: i64 @= 1
+    last: token.Span @= open.span
 
     while depth > 0 && !at(c, .eof)
         k = current_kind(c)
@@ -433,7 +410,7 @@ function skip_line(@c: Cursor)
 # line, a line end, an indent or a dedent. A construct that ended there has
 # nothing of its line left, and this line is the NEXT one's (defect 130).
 function at_fresh_line(c: Cursor) -> bool
-    i: i64 @ c.pos - 1
+    i: i64 @= c.pos - 1
 
     while i >= 0 && c.tokens[i].kind == .comment
         i @ i - 1
@@ -455,7 +432,7 @@ function drop_rest_of_line(@c: Cursor, from: i64)
 # keyword-first shape made the token stream carry it.
 function recover_to_next_decl(@c: Cursor)
     if !at_fresh_line(c)
-        scanning: bool @ true
+        scanning: bool @= true
 
         while scanning && !at(c, .eof) && !at(c, .indent)
             if bump(@c).kind == .terminator
@@ -463,27 +440,6 @@ function recover_to_next_decl(@c: Cursor)
 
     if at(c, .indent)
         _ = balanced_block(@c)
-
-# Recover inside a bracketed list: drop tokens up to and including the closer
-# matching the opener already consumed.
-#
-# Brackets are the one place where recovery has a landmark it cannot misread,
-# and using it is what keeps a single misplaced separator in a signature from
-# turning the rest of the line into "declarations" — four diagnostics for one
-# mistake, which is the failure mode §4.17 exists to prevent.
-function recover_past_closer(@c: Cursor, opener: token.TokenKind, closer: token.TokenKind)
-    depth: i64 @ 1
-
-    while !at(c, .eof)
-        k = bump(@c).kind
-
-        if k == opener
-            depth @ depth + 1
-        else if k == closer
-            depth @ depth - 1
-
-            if depth == 0
-                return
 
 test "a balanced block takes its nested blocks with it"
     tokens: [token.Token] = [
@@ -496,7 +452,7 @@ test "a balanced block takes its nested blocks with it"
         token.Token(kind: .kw_function, span: token.Span(start: 14, end: 22))
         token.Token(kind: .eof, span: token.Span(start: 22, end: 22))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     _ = balanced_block(@c)
 
     # It resumes on the next line of the ENCLOSING block, not inside.
@@ -510,7 +466,7 @@ test "a broken line is dropped without leaving the block"
         token.Token(kind: .ident, span: token.Span(start: 4, end: 5))
         token.Token(kind: .eof, span: token.Span(start: 5, end: 5))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     skip_line(@c)
     assert current_kind(c) == .ident
     assert c.pos == 3
@@ -521,7 +477,7 @@ test "a broken line is dropped without leaving the block"
         token.Token(kind: .dedent, span: token.Span(start: 1, end: 1))
         token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
     ]
-    d: Cursor @ new_cursor(stopping)
+    d: Cursor @= new_cursor(stopping)
     skip_line(@d)
     assert current_kind(d) == .dedent
 
@@ -540,7 +496,7 @@ test "a failed construct drops only its own line, past a comment line"
         token.Token(kind: .terminator, span: token.Span(start: 14, end: 14))
         token.Token(kind: .eof, span: token.Span(start: 15, end: 15))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     assert at_fresh_line(c)
     _ = bump(@c)
     assert !at_fresh_line(c)
@@ -560,13 +516,32 @@ test "a failed construct drops only its own line, past a comment line"
 
 test "a thesis rule is no refusal to a recovery"
     tokens: [token.Token] = [token.Token(kind: .eof, span: token.Span(start: 0, end: 0))]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     here = token.Span(start: 0, end: 0)
     error(@c, code: "declaration_in_arm", message: "m", span: here)
     assert !refused_since(c, 0)
     error(@c, code: "expected_expression", message: "m", span: here)
     assert refused_since(c, 0)
     assert !refused_since(c, 2)
+
+# What `parse/loop_habit.a_loop` asks of the copy a `for` head's condition is
+# read on: it stands where the cursor stands, holds none of its reports, and
+# what it says stays its own (defect 184).
+test "a trial copy holds none of the cursor's reports, and its own stay its own"
+    tokens: [token.Token] = [
+        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
+        token.Token(kind: .eof, span: token.Span(start: 1, end: 1))
+    ]
+    c: Cursor @= new_cursor(tokens)
+    error(@c, code: "expected_expression", message: "said before", span: current_span(c))
+    t: Cursor @= trial(c)
+    assert t.pos == c.pos
+    assert t.diagnostics.len() == 0
+    assert !refused_since(t, 0)
+    error(@t, code: "expected_expression", message: "said on the copy", span: current_span(t))
+    assert refused_since(t, 0)
+    assert c.diagnostics.len() == 1
+    assert c.diagnostics[0].message == "said before"
 
 test "one bad declaration costs one, and never costs the next"
     # `function f(` … then a body, then the next declaration. Recovery eats the
@@ -582,32 +557,12 @@ test "one bad declaration costs one, and never costs the next"
         token.Token(kind: .kw_record, span: token.Span(start: 18, end: 24))
         token.Token(kind: .eof, span: token.Span(start: 24, end: 24))
     ]
-    c: Cursor @ new_cursor(tokens)
+    c: Cursor @= new_cursor(tokens)
     _ = bump(@c)
     _ = bump(@c)
     _ = bump(@c)
     recover_to_next_decl(@c)
     assert current_kind(c) == .kw_record
-
-test "a bracket is the landmark recovery cannot misread"
-    tokens: [token.Token] = [
-        token.Token(kind: .ident, span: token.Span(start: 0, end: 1))
-        token.Token(kind: .lparen, span: token.Span(start: 1, end: 2))
-        token.Token(kind: .ident, span: token.Span(start: 2, end: 3))
-        token.Token(kind: .rparen, span: token.Span(start: 3, end: 4))
-        token.Token(kind: .rparen, span: token.Span(start: 4, end: 5))
-        token.Token(kind: .comma, span: token.Span(start: 5, end: 6))
-        token.Token(kind: .eof, span: token.Span(start: 6, end: 6))
-    ]
-    c: Cursor @ new_cursor(tokens)
-
-    # The opener is already consumed by the caller, so nesting starts at 1.
-    _ = bump(@c)
-    _ = bump(@c)
-    recover_past_closer(@c, opener: .lparen, closer: .rparen)
-
-    # It stopped after the closer that matches, not the first one it saw.
-    assert current_kind(c) == .rparen
 
 # A fixed defect gets a case named after it (CLAUDE.md §9). Symptom:
 # the last declaration in a file, reported at "the next token", landed
@@ -624,11 +579,12 @@ test "fixedbugs: past the boundary, the fallback is what the caret gets"
     keyword = token.Span(start: 0, end: 8)
 
     # Unbounded: the current token answers, whatever it is.
-    plain: Cursor @ new_cursor(tokens)
+    plain: Cursor = new_cursor(tokens)
     assert here_or(plain, keyword).start == current_span(plain).start
 
     # Bounded: a token at or past the author's end yields the fallback.
-    bounded: Cursor @ bounded_cursor(tokens: tokens, root_end: 20)
+    none: [i64] = []
+    bounded: Cursor @= lexed_cursor(tokens: tokens, root_end: 20, closes: none, swaps: [])
     _ = bump(@bounded)
     assert current_span(bounded).start == 40
     assert here_or(bounded, keyword).start == 0

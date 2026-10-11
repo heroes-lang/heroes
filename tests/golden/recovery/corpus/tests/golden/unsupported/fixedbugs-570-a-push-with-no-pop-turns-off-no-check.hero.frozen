@@ -1,0 +1,21 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# SYMPTOM: a header of the program's own writing a `push` and an `ignored "-Wsign-conversion"` with no `pop` before
+# `#include <stdlib.h>` turned the build's `-Werror=sign-conversion` off for
+# every line the compiler wrote after it, and `abs(x: u32)` against C's
+# `int abs(int)` built and printed `5`; through a header that only includes
+# `<stdlib.h>` it is refused `ffi_parameter_type`.
+#
+# CAUSE: a pragma outranks the command line for the rest of the unit, and
+# the probe that checks the parameter stands after the header.
+#
+# FIX: after the groups' includes, and again at the probe region, every
+# warning a check of a binding rests on is raised again
+# (`emit/checks_raised.hero`), the build's `-Werror` words and clang's three
+# default errors, so the message is the one a plain header gets.
+
+extern "fixedbugs-570-a-push-with-no-pop-turns-off-no-check.h"
+    function abs(x: u32) -> i32  #~ ffi_parameter_type
+
+function main()
+    print(abs(5))

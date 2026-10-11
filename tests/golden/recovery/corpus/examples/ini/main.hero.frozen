@@ -29,11 +29,11 @@ record Config
     sections: {str: {str: str}}
 
 function parse(text: str) -> Config?
-    sections: {str: {str: str}} @ {}
-    current: str @ ""
+    sections: {str: {str: str}} @= {}
+    current: str @= ""
     empty: {str: str} = {}
     sections[current] @ empty
-    number: i64 @ 0
+    number: i64 @= 0
 
     for line in split_lines(text)
         number @ number + 1
@@ -67,7 +67,7 @@ function parse(text: str) -> Config?
 
         if key.len() == 0
             return fail(code: "empty_key", msg: "line " + number.to_str() + " has a value and no key")
-        inner: {str: str} @ sections[current].default(empty)
+        inner: {str: str} @= sections[current].default(empty)
 
         if !inner[key].is_err()
             return fail(
@@ -99,7 +99,7 @@ function value_of(c: Config, section: str, key: str) -> str?
 # prints it, so the order is observed. The empty section is dropped when it
 # holds nothing, which is why this is not just `keys`.
 function section_names(c: Config) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for name in sort(keys(c.sections))
         if c.sections[name].must().len() > 0
@@ -108,8 +108,8 @@ function section_names(c: Config) -> [str]
     return out
 
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    piece: str @ ""
+    out: [str] @= []
+    piece: str @= ""
 
     for ch in text.chars()
         if ch == "\n"
@@ -124,8 +124,8 @@ function split_lines(text: str) -> [str]
     return out
 
 function without_spaces(text: str) -> str
-    first: i64 @ 0
-    last: i64 @ text.len()
+    first: i64 @= 0
+    last: i64 @= text.len()
 
     while first < last && text[first] == ' '
         first @ first + 1
@@ -148,7 +148,7 @@ function ends_with(text: str, suffix: str) -> bool
     return text.slice(from: text.len() - suffix.len(), to: text.len()) == suffix
 
 function index_of_equals(text: str) -> i64?
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '='

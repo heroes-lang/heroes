@@ -1,0 +1,18 @@
+# Defect 273, 2026-10-04. `read_file` of a directory died `panic: out of
+# memory`, exit 134, on Linux arm64 (Debian clang 22.1.8), where its type
+# promises `.err`; this Mac answered `read_failed`, and a file under `/proc`
+# read on Linux as an empty text at exit 0. The runtime sized the file by
+# `fseek(SEEK_END)` and `ftell`, which answer for a regular file only: a
+# directory's end there is an offset near 2^63. The open file is now asked what
+# it is, a directory fails before a byte is read, and every read goes on to the
+# file's end. `build/` is a directory wherever the compiler runs, so the case
+# reads it on every platform; the path below it is one nothing writes.
+
+function main()
+    match read_file("build")
+        .ok text => print("read a directory: ", len(text), " bytes")
+        .err e   => print("a directory: ", e.code)
+
+    match read_file("build/heroes-golden-273-absent.txt")
+        .ok _  => print("read a file that is not there")
+        .err e => print("absent: ", e.code)

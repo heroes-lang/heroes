@@ -1,0 +1,9 @@
+function f(k: i64) -> i64
+    match k
+        0 => return 1
+        _ => return 2
+    print(9)
+    return 0
+
+function main()
+    print(f(k: 5))

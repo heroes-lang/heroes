@@ -1,0 +1,10 @@
+# Panel 178 spec-warden: a UTF-8 byte into C's signed char without a new form.
+function as_char(b: u8) -> i8
+    if b > 127
+        return (b.to_i64().must() - 256).to_i8().must()
+    return b.to_i8().must()
+
+function main()
+    path = "è"
+    print(path[0], " ", path[1])
+    print(as_char(path[0]), " ", as_char(path[1]))

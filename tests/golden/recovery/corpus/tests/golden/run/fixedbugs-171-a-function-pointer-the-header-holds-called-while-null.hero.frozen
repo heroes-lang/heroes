@@ -1,0 +1,26 @@
+# fixedbugs, defect 171, lane ffimsg, 2026-10-03.
+#
+# SYMPTOM: `own.h`'s `static int32_t (*hook)(int32_t) = 0;` bound as
+# `function hook(x: i32) -> i32` and called built at exit 0, and the run
+# said *a `ptr` holding `nullptr` reached C where C calls it back*, exit 134:
+# a callback the program never passed.
+#
+# CAUSE: the runtime knows only that the program went to execute at address
+# zero (defect 013's witness, the PC), and its sentence named one way there,
+# a callback. The program's own call through the header's pointer is
+# another.
+#
+# FIX: the sentence names its causes by example, this one among them. The
+# binding is not refused, and that is measured: a loader's API is made of
+# such pointers, set at run time and called as functions, a correct program
+# (`fixedbugs-171-a-loaders-pointers-set-then-called`). Under `--sanitize`
+# AddressSanitizer meets the jump to address zero before the runtime does,
+# and the `.expected` says so (panel 173's `!sanitizer:`); the sentence is
+# judged at `-O0` and `-O2`.
+
+extern "fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.h"
+    function hook(x: i32) -> i32
+
+function main()
+    print("before")
+    print(hook(x: 1))

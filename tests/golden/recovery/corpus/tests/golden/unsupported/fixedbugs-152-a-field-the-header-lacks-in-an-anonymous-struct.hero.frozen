@@ -1,0 +1,22 @@
+# fixedbugs, defect 152's lane, ffi-macro, 2026-10-02.
+#
+# SYMPTOM: a record over a typedef of an anonymous struct, `record anon_s`, naming a field the header lacks was
+# `internal error`, exit 2, quoting clang's *no member named 'c' in 'anon_s'*.
+#
+# CAUSE: `ffi_unknown_field` found the record only by the struct's tag taken
+# as its Heroes name, which is one shape of the six a header can write.
+#
+# FIX: the field is found by the line clang names: the field assertion stands
+# under `#line` at the field itself, so the location names the field whatever
+# the header calls its type, and the message quotes the type as clang spells it.
+
+extern "fixedbugs-152-fields.h"
+    record anon_s
+        a: i32
+        c: i32  #~ ffi_unknown_field
+
+function touch(t: anon_s)
+    _ = t
+
+function main()
+    print(1)

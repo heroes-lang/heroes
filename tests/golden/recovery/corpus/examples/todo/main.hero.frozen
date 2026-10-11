@@ -84,7 +84,7 @@ function show(tasks: [list.Task])
 # Everything from `at` on, joined by a space — so `add buy milk` is one task and
 # not two arguments the shell happened to split.
 function rest_of(given: [str], at: i64) -> str
-    words: [str] @ []
+    words: [str] @= []
 
     for i in range(from: at, to: len(given))
         words @ words.push(given[i])
@@ -94,7 +94,7 @@ function rest_of(given: [str], at: i64) -> str
 function number_of(word: str) -> i64?
     if word.len() == 0
         return fail(code: ERR_NO_NUMBER, msg: "`done` needs the number of a task")
-    v: i64 @ 0
+    v: i64 @= 0
 
     for i in range(from: 0, to: word.len())
         if word[i] < '0' || word[i] > '9'

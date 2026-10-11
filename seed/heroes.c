@@ -6581,6 +6581,7 @@ HERO_STR_STATIC(hero_str_6cf3c36b, "worker ");
 HERO_STR_STATIC(hero_str_6427edd5, "a worker of phase ");
 HERO_STR_STATIC(hero_str_416da72e, " could not read its job");
 HERO_STR_STATIC(hero_str_63cb08d2, "unwritable");
+HERO_STR_STATIC(hero_str_3c39ef2d, "/corpus/");
 HERO_STR_STATIC(hero_str_eeabb97, ".frozen");
 HERO_STR_STATIC(hero_str_6a408130, "other_plan");
 HERO_STR_STATIC(hero_str_5f62c954, "a run replayed another plan than ");
@@ -6657,9 +6658,9 @@ HERO_STR_STATIC(hero_str_17f10e42, "/singles.jsonl");
 HERO_STR_STATIC(hero_str_746f5348, "!write_file(path: dir + \"/pairs.jsonl\", text: pair_row(told) + \"\\n\").is_err()");
 HERO_STR_STATIC(hero_str_122a1d71, "/pairs.jsonl");
 HERO_STR_STATIC(hero_str_4fd5d1a0, "tests/golden/recovery");
-HERO_STR_STATIC(hero_str_180b9b0b, "plan-singles.jsonl 64c2003e30605cb8");
-HERO_STR_STATIC(hero_str_5d78ae81, "plan-pairs.jsonl 656a459179018366");
-HERO_STR_STATIC(hero_str_2e88e658, "plan-base.jsonl 072c08b4400b7193");
+HERO_STR_STATIC(hero_str_586bcbe0, "plan-singles.jsonl 3ac53ba5453d4b4f");
+HERO_STR_STATIC(hero_str_637be3fa, "plan-pairs.jsonl 02790d993c83fc61");
+HERO_STR_STATIC(hero_str_22f0cd89, "plan-base.jsonl 712f83a441da889f");
 HERO_STR_STATIC(hero_str_7f41251b, "plan-singles.jsonl");
 HERO_STR_STATIC(hero_str_295a36be, "plan-pairs.jsonl");
 HERO_STR_STATIC(hero_str_110d1f8f, "plan-base.jsonl");
@@ -6678,7 +6679,6 @@ HERO_STR_STATIC(hero_str_f849713, "site");
 HERO_STR_STATIC(hero_str_4afdbc6b, "stmt_lines");
 HERO_STR_STATIC(hero_str_3744c41e, "a statement's lines are not two numbers");
 HERO_STR_STATIC(hero_str_3f63c3eb, "LEGAL");
-HERO_STR_STATIC(hero_str_3c39ef2d, "/corpus/");
 HERO_STR_STATIC(hero_str_6bfd0c99, " already holds something, and a run writes into a folder of its own: name a new one");
 HERO_STR_STATIC(hero_str_4913d79a, "/work");
 HERO_STR_STATIC(hero_str_2f10f0da, " --version` exited ");
@@ -1163060,98 +1163060,98 @@ bb7:
     return t24;
 }
 
-#line 454 "selfhost/mutate/cut.hero"
+#line 456 "selfhost/mutate/cut.hero"
 HeroStr h_mutatecut_digest_of(HeroArrayHeader * h0_rows) {
-#line 454 "selfhost/mutate/cut.hero"
+#line 456 "selfhost/mutate/cut.hero"
     HeroStr h1_ret0 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroArrayHeader * t6; HeroStr t7; HeroArrayHeader * t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroArrayHeader * t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroArrayHeader * t18; HeroStr t19; HeroArrayHeader * t20; HeroStr t21; goto bb0;
-#line 454 "selfhost/mutate/cut.hero"
+#line 456 "selfhost/mutate/cut.hero"
 bb0:
     t1 = h0_rows;
-#line 455 "selfhost/mutate/cut.hero"
+#line 457 "selfhost/mutate/cut.hero"
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
-#line 455 "selfhost/mutate/cut.hero"
+#line 457 "selfhost/mutate/cut.hero"
     t3 = INT64_C(0);
-#line 455 "selfhost/mutate/cut.hero"
+#line 457 "selfhost/mutate/cut.hero"
     t4 = t2 == t3;
-#line 455 "selfhost/mutate/cut.hero"
+#line 457 "selfhost/mutate/cut.hero"
     if (t4) goto bb2; else goto bb3;
-#line 455 "selfhost/mutate/cut.hero"
+#line 457 "selfhost/mutate/cut.hero"
 bb1:
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t8 = h0_rows;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t9 = HERO_STR_LIT(hero_str_a);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t10 = hero_str_join(t8, t9);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t16 = h2_own2;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     h2_own2 = t10;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     hero_str_decref(t16);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t11 = HERO_STR_LIT(hero_str_a);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t12 = hero_str_concat(t10, t11);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t17 = h3_own3;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     h3_own3 = t12;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     hero_str_decref(t17);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t13 = hero_array_new(&hero_desc_str, 1);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     hero_array_push_owned(&t13, &t12);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t18 = h4_own4;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     h4_own4 = t13;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     hero_array_decref(t18);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t14 = h_mutatestrata_hkey(t13);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     t19 = h5_own5;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     h5_own5 = t14;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     hero_str_decref(t19);
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     h1_ret0 = t14;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
     goto bb4;
-#line 457 "selfhost/mutate/cut.hero"
+#line 459 "selfhost/mutate/cut.hero"
 bb2:
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     t5 = HERO_STR_LIT(hero_str_0);
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     t6 = hero_array_new(&hero_desc_str, 1);
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     hero_array_push_owned(&t6, &t5);
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     t20 = h6_own6;
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     h6_own6 = t6;
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     hero_array_decref(t20);
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     t7 = h_mutatestrata_hkey(t6);
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     t21 = h7_own7;
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     h7_own7 = t7;
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     hero_str_decref(t21);
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     h1_ret0 = t7;
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     goto bb4;
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
 bb3:
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
     goto bb1;
-#line 456 "selfhost/mutate/cut.hero"
+#line 458 "selfhost/mutate/cut.hero"
 bb4:
 #line 1163157 "main.c"
     t15 = h1_ret0;
@@ -1171148,38 +1171148,38 @@ bb0:
 }
 
 #if HERO_STATIC_CONSTANTS
-#line 31 "selfhost/mutate/plan.hero"
-HERO_ARRAY_STATIC(hero_constant_h_mutateplan_PINNED_4, HeroStr, &hero_desc_str, 3, HERO_STR_LIT(hero_str_180b9b0b), HERO_STR_LIT(hero_str_5d78ae81), HERO_STR_LIT(hero_str_2e88e658));
-#line 31 "selfhost/mutate/plan.hero"
+#line 36 "selfhost/mutate/plan.hero"
+HERO_ARRAY_STATIC(hero_constant_h_mutateplan_PINNED_4, HeroStr, &hero_desc_str, 3, HERO_STR_LIT(hero_str_586bcbe0), HERO_STR_LIT(hero_str_637be3fa), HERO_STR_LIT(hero_str_22f0cd89));
+#line 36 "selfhost/mutate/plan.hero"
 HeroArrayHeader * h_mutateplan_PINNED(void) {
 #line 1171156 "main.c"
     return HERO_ARRAY_LIT(hero_constant_h_mutateplan_PINNED_4);
 }
 #else
 
-#line 31 "selfhost/mutate/plan.hero"
+#line 36 "selfhost/mutate/plan.hero"
 HeroArrayHeader * h_mutateplan_PINNED(void) {
-#line 31 "selfhost/mutate/plan.hero"
+#line 36 "selfhost/mutate/plan.hero"
     HeroArrayHeader * h0_own0 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroArrayHeader * t4; HeroArrayHeader * t5; goto bb0;
-#line 31 "selfhost/mutate/plan.hero"
+#line 36 "selfhost/mutate/plan.hero"
 bb0:
-#line 33 "selfhost/mutate/plan.hero"
-    t1 = HERO_STR_LIT(hero_str_180b9b0b);
-    t2 = HERO_STR_LIT(hero_str_5d78ae81);
-    t3 = HERO_STR_LIT(hero_str_2e88e658);
-#line 32 "selfhost/mutate/plan.hero"
+#line 38 "selfhost/mutate/plan.hero"
+    t1 = HERO_STR_LIT(hero_str_586bcbe0);
+    t2 = HERO_STR_LIT(hero_str_637be3fa);
+    t3 = HERO_STR_LIT(hero_str_22f0cd89);
+#line 37 "selfhost/mutate/plan.hero"
     t4 = hero_array_new(&hero_desc_str, 3);
-#line 32 "selfhost/mutate/plan.hero"
+#line 37 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&t4, &t1);
-#line 32 "selfhost/mutate/plan.hero"
+#line 37 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&t4, &t2);
-#line 32 "selfhost/mutate/plan.hero"
+#line 37 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&t4, &t3);
-#line 32 "selfhost/mutate/plan.hero"
+#line 37 "selfhost/mutate/plan.hero"
     t5 = h0_own0;
-#line 32 "selfhost/mutate/plan.hero"
+#line 37 "selfhost/mutate/plan.hero"
     h0_own0 = t4;
-#line 32 "selfhost/mutate/plan.hero"
+#line 37 "selfhost/mutate/plan.hero"
     hero_array_decref(t5);
 #line 1171185 "main.c"
     hero_array_incref(t4);
@@ -1171189,38 +1171189,38 @@ bb0:
 #endif
 
 #if HERO_STATIC_CONSTANTS
-#line 38 "selfhost/mutate/plan.hero"
+#line 43 "selfhost/mutate/plan.hero"
 HERO_ARRAY_STATIC(hero_constant_h_mutateplan_PLAN_FILES_4, HeroStr, &hero_desc_str, 3, HERO_STR_LIT(hero_str_7f41251b), HERO_STR_LIT(hero_str_295a36be), HERO_STR_LIT(hero_str_110d1f8f));
-#line 38 "selfhost/mutate/plan.hero"
+#line 43 "selfhost/mutate/plan.hero"
 HeroArrayHeader * h_mutateplan_PLAN_FILES(void) {
 #line 1171197 "main.c"
     return HERO_ARRAY_LIT(hero_constant_h_mutateplan_PLAN_FILES_4);
 }
 #else
 
-#line 38 "selfhost/mutate/plan.hero"
+#line 43 "selfhost/mutate/plan.hero"
 HeroArrayHeader * h_mutateplan_PLAN_FILES(void) {
-#line 38 "selfhost/mutate/plan.hero"
+#line 43 "selfhost/mutate/plan.hero"
     HeroArrayHeader * h0_own0 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroArrayHeader * t4; HeroArrayHeader * t5; goto bb0;
-#line 38 "selfhost/mutate/plan.hero"
+#line 43 "selfhost/mutate/plan.hero"
 bb0:
-#line 40 "selfhost/mutate/plan.hero"
+#line 45 "selfhost/mutate/plan.hero"
     t1 = HERO_STR_LIT(hero_str_7f41251b);
     t2 = HERO_STR_LIT(hero_str_295a36be);
     t3 = HERO_STR_LIT(hero_str_110d1f8f);
-#line 39 "selfhost/mutate/plan.hero"
+#line 44 "selfhost/mutate/plan.hero"
     t4 = hero_array_new(&hero_desc_str, 3);
-#line 39 "selfhost/mutate/plan.hero"
+#line 44 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&t4, &t1);
-#line 39 "selfhost/mutate/plan.hero"
+#line 44 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&t4, &t2);
-#line 39 "selfhost/mutate/plan.hero"
+#line 44 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&t4, &t3);
-#line 39 "selfhost/mutate/plan.hero"
+#line 44 "selfhost/mutate/plan.hero"
     t5 = h0_own0;
-#line 39 "selfhost/mutate/plan.hero"
+#line 44 "selfhost/mutate/plan.hero"
     h0_own0 = t4;
-#line 39 "selfhost/mutate/plan.hero"
+#line 44 "selfhost/mutate/plan.hero"
     hero_array_decref(t5);
 #line 1171226 "main.c"
     hero_array_incref(t4);
@@ -1171229,1396 +1171229,1396 @@ bb0:
 }
 #endif
 
-#line 68 "selfhost/mutate/plan.hero"
+#line 73 "selfhost/mutate/plan.hero"
 h_0opt_4c1a4938 h_mutateplan_read_plan(HeroStr h0_dir) {
-#line 68 "selfhost/mutate/plan.hero"
+#line 73 "selfhost/mutate/plan.hero"
     h_0opt_f87774a h1_f0 = {0}; HeroStr h2_singles_text = {0}; h_0opt_f87774a h3_f1 = {0}; HeroStr h4_base_text = {0}; h_0opt_f87774a h5_f2 = {0}; HeroStr h6_pairs_text = {0}; HeroMapHeader * h7_base = {0}; h_0opt_867bda h8_f3 = {0}; HeroArrayHeader * h9_xs0 = {0}; int64_t h10_i0; h_mutatejsonread_Json h11_row = {0}; h_0opt_f87774a h12_f4 = {0}; HeroArrayHeader * h13_singles = {0}; HeroMapHeader * h14_seen = {0}; int64_t h15_number; h_0opt_867bda h16_f5 = {0}; HeroArrayHeader * h17_xs1 = {0}; int64_t h18_i1; h_mutatejsonread_Json h19_row = {0}; h_0opt_52afa93 h20_one = {0}; h_0opt_52afa93 h21_f6 = {0}; h_0opt_52afa93 h22_f7 = {0}; h_0opt_473cb9ae h23_f8 = {0}; h_0opt_52afa93 h24_f9 = {0}; h_0opt_52afa93 h25_f10 = {0}; HeroArrayHeader * h26_pairs = {0}; h_0opt_867bda h27_f11 = {0}; HeroArrayHeader * h28_xs2 = {0}; int64_t h29_i2; h_mutatejsonread_Json h30_row = {0}; h_0opt_bdd0d7c h31_p = {0}; bool h32_b0; bool h33_b1; h_0opt_bdd0d7c h34_f12 = {0}; h_0opt_bdd0d7c h35_f13 = {0}; h_0opt_473cb9ae h36_f14 = {0}; h_0opt_bdd0d7c h37_f15 = {0}; h_0opt_473cb9ae h38_f16 = {0}; h_0opt_bdd0d7c h39_f17 = {0}; h_0opt_4c1a4938 h40_ret0 = {0}; HeroStr h41_own41 = {0}; h_0opt_f87774a h42_own42 = {0}; HeroStr h43_own43 = {0}; h_0opt_f87774a h44_own44 = {0}; h_0opt_4c1a4938 h45_own45 = {0}; HeroStr h46_own46 = {0}; h_0opt_f87774a h47_own47 = {0}; h_0opt_4c1a4938 h48_own48 = {0}; HeroMapHeader * h49_own49 = {0}; h_0opt_867bda h50_own50 = {0}; h_0opt_4c1a4938 h51_own51 = {0}; h_0opt_4c1a4938 h52_own52 = {0}; h_0opt_f87774a h53_own53 = {0}; HeroArrayHeader * h54_own54 = {0}; HeroMapHeader * h55_own55 = {0}; h_0opt_867bda h56_own56 = {0}; h_0opt_4c1a4938 h57_own57 = {0}; h_0opt_4c1a4938 h58_own58 = {0}; h_0opt_52afa93 h59_own59 = {0}; HeroArrayHeader * h60_own60 = {0}; h_0opt_867bda h61_own61 = {0}; HeroStr h62_own62 = {0}; HeroStr h63_own63 = {0}; HeroStr h64_own64 = {0}; HeroStr h65_own65 = {0}; HeroStr h66_own66 = {0}; HeroStr h67_own67 = {0}; h_0opt_4c1a4938 h68_own68 = {0}; h_0opt_473cb9ae h69_own69 = {0}; HeroStr h70_own70 = {0}; HeroStr h71_own71 = {0}; HeroStr h72_own72 = {0}; HeroStr h73_own73 = {0}; h_0opt_4c1a4938 h74_own74 = {0}; h_0opt_4c1a4938 h75_own75 = {0}; h_0opt_bdd0d7c h76_own76 = {0}; h_mutateplan_Plan h77_own77 = {0}; h_0opt_4c1a4938 h78_own78 = {0}; h_0opt_473cb9ae h79_own79 = {0}; h_0opt_473cb9ae h80_own80 = {0}; HeroStr h81_own81 = {0}; HeroStr h82_own82 = {0}; HeroStr h83_own83 = {0}; HeroStr h84_own84 = {0}; h_0opt_4c1a4938 h85_own85 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; h_0opt_f87774a t4; h_0opt_f87774a t5; int64_t t6; int64_t t7; bool t8; h_0opt_f87774a t9; HeroFailure t10; h_0opt_4c1a4938 t11; h_0opt_f87774a t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; h_0opt_f87774a t17; h_0opt_f87774a t18; int64_t t19; int64_t t20; bool t21; h_0opt_f87774a t22; HeroFailure t23; h_0opt_4c1a4938 t24; h_0opt_f87774a t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; h_0opt_f87774a t30; h_0opt_f87774a t31; int64_t t32; int64_t t33; bool t34; h_0opt_f87774a t35; HeroFailure t36; h_0opt_4c1a4938 t37; h_0opt_f87774a t38; HeroStr t39; HeroMapHeader * t40; HeroStr t41; h_0opt_867bda t42; h_0opt_867bda t43; int64_t t44; int64_t t45; bool t46; h_0opt_867bda t47; HeroFailure t48; h_0opt_4c1a4938 t49; h_0opt_867bda t50; HeroArrayHeader * t51; int64_t t52; int64_t t53; HeroArrayHeader * t54; int64_t t55; bool t56; HeroArrayHeader * t57; int64_t t58; h_mutatejsonread_Json t59; h_mutatejsonread_Json t60; HeroStr t61; h_0opt_f87774a t62; h_0opt_f87774a t63; int64_t t64; int64_t t65; bool t66; h_0opt_f87774a t67; HeroFailure t68; h_0opt_4c1a4938 t69; h_0opt_f87774a t70; HeroStr t71; h_mutatejsonread_Json t72; int64_t t73; int64_t t74; int64_t t75; HeroArrayHeader * t76; HeroMapHeader * t77; int64_t t78; HeroStr t79; h_0opt_867bda t80; h_0opt_867bda t81; int64_t t82; int64_t t83; bool t84; h_0opt_867bda t85; HeroFailure t86; h_0opt_4c1a4938 t87; h_0opt_867bda t88; HeroArrayHeader * t89; int64_t t90; int64_t t91; HeroArrayHeader * t92; int64_t t93; bool t94; HeroArrayHeader * t95; int64_t t96; h_mutatejsonread_Json t97; int64_t t98; int64_t t99; int64_t t100; h_mutatejsonread_Json t101; HeroMapHeader * t102; h_0opt_52afa93 t103; h_0opt_52afa93 t104; h_0opt_52afa93 t105; int64_t t106; int64_t t107; bool t108; HeroStr t109; HeroStr t110; HeroStr t111; HeroStr t112; int64_t t113; HeroStr t114; HeroStr t115; HeroStr t116; HeroStr t117; h_0opt_52afa93 t118; HeroStr t119; HeroStr t120; h_0opt_4c1a4938 t121; HeroMapHeader * t122; h_0opt_52afa93 t123; h_0opt_52afa93 t124; int64_t t125; int64_t t126; bool t127; h_0opt_52afa93 t128; HeroFailure t129; h_0opt_52afa93 t130; h_mutateplan_Single t131; HeroStr t132; h_0opt_473cb9ae t133; h_0opt_473cb9ae t134; int64_t t135; int64_t t136; bool t137; bool t138; HeroStr t139; HeroStr t140; HeroStr t141; HeroStr t142; int64_t t143; HeroStr t144; HeroStr t145; HeroStr t146; HeroStr t147; h_0opt_4c1a4938 t148; h_0opt_52afa93 t149; h_0opt_52afa93 t150; int64_t t151; int64_t t152; bool t153; h_0opt_52afa93 t154; HeroFailure t155; h_0opt_52afa93 t156; h_mutateplan_Single t157; HeroStr t158; bool t159; h_0opt_52afa93 t161; h_0opt_52afa93 t162; int64_t t163; int64_t t164; bool t165; h_0opt_52afa93 t166; HeroFailure t167; h_0opt_52afa93 t168; h_mutateplan_Single t169; int64_t t171; int64_t t172; int64_t t173; HeroArrayHeader * t174; int64_t t175; HeroStr t176; h_0opt_867bda t177; h_0opt_867bda t178; int64_t t179; int64_t t180; bool t181; h_0opt_867bda t182; HeroFailure t183; h_0opt_4c1a4938 t184; h_0opt_867bda t185; HeroArrayHeader * t186; int64_t t187; int64_t t188; HeroArrayHeader * t189; int64_t t190; bool t191; HeroArrayHeader * t192; int64_t t193; h_mutatejsonread_Json t194; int64_t t195; int64_t t196; int64_t t197; h_mutatejsonread_Json t198; h_0opt_bdd0d7c t199; h_0opt_bdd0d7c t200; h_0opt_bdd0d7c t201; int64_t t202; int64_t t203; bool t204; HeroMapHeader * t205; h_0opt_bdd0d7c t206; h_0opt_bdd0d7c t207; int64_t t208; int64_t t209; bool t210; h_0opt_bdd0d7c t211; HeroFailure t212; h_0opt_bdd0d7c t213; h_mutateplan_Pair t214; HeroStr t215; h_0opt_473cb9ae t216; h_0opt_473cb9ae t217; int64_t t218; int64_t t219; bool t220; bool t221; HeroMapHeader * t222; h_0opt_bdd0d7c t223; h_0opt_bdd0d7c t224; int64_t t225; int64_t t226; bool t227; h_0opt_bdd0d7c t228; HeroFailure t229; h_0opt_bdd0d7c t230; h_mutateplan_Pair t231; HeroStr t232; h_0opt_473cb9ae t233; h_0opt_473cb9ae t234; int64_t t235; int64_t t236; bool t237; bool t238; HeroStr t239; HeroStr t240; HeroStr t241; HeroStr t242; int64_t t243; HeroStr t244; HeroStr t245; HeroStr t246; HeroStr t247; h_0opt_4c1a4938 t248; h_0opt_bdd0d7c t250; h_0opt_bdd0d7c t251; int64_t t252; int64_t t253; bool t254; h_0opt_bdd0d7c t255; HeroFailure t256; h_0opt_bdd0d7c t257; h_mutateplan_Pair t258; int64_t t260; int64_t t261; int64_t t262; HeroArrayHeader * t263; HeroArrayHeader * t264; h_mutateplan_Plan t265; h_0opt_4c1a4938 t266; h_0opt_4c1a4938 t267; HeroStr t268; h_0opt_f87774a t269; h_0opt_f87774a t270; HeroStr t271; HeroStr t272; h_0opt_f87774a t273; h_0opt_f87774a t274; h_0opt_4c1a4938 t275; HeroStr t276; HeroStr t277; h_0opt_f87774a t278; h_0opt_f87774a t279; h_0opt_4c1a4938 t280; HeroStr t281; HeroMapHeader * t282; HeroMapHeader * t283; h_0opt_867bda t284; h_0opt_867bda t285; h_0opt_4c1a4938 t286; HeroArrayHeader * t287; h_0opt_4c1a4938 t288; h_mutatejsonread_Json t289; h_0opt_f87774a t290; h_0opt_f87774a t291; HeroArrayHeader * t292; HeroArrayHeader * t293; HeroMapHeader * t294; HeroMapHeader * t295; h_0opt_867bda t296; h_0opt_867bda t297; h_0opt_4c1a4938 t298; HeroArrayHeader * t299; h_0opt_4c1a4938 t300; h_mutatejsonread_Json t301; h_0opt_52afa93 t302; h_0opt_52afa93 t303; h_0opt_52afa93 t304; HeroArrayHeader * t305; HeroArrayHeader * t306; h_0opt_867bda t307; h_0opt_867bda t308; h_0opt_52afa93 t309; HeroStr t310; HeroStr t311; HeroStr t312; HeroStr t313; HeroStr t314; HeroStr t315; h_0opt_4c1a4938 t316; h_0opt_52afa93 t317; h_0opt_473cb9ae t318; h_0opt_473cb9ae t319; HeroStr t320; HeroStr t321; HeroStr t322; HeroStr t323; h_0opt_4c1a4938 t324; h_0opt_52afa93 t325; HeroArrayHeader * t326; h_0opt_4c1a4938 t327; h_mutatejsonread_Json t328; h_0opt_bdd0d7c t329; h_0opt_bdd0d7c t330; h_0opt_bdd0d7c t331; h_mutateplan_Plan t332; h_0opt_4c1a4938 t333; h_0opt_bdd0d7c t334; h_0opt_bdd0d7c t335; h_0opt_473cb9ae t336; h_0opt_473cb9ae t337; h_0opt_bdd0d7c t338; h_0opt_473cb9ae t339; h_0opt_473cb9ae t340; HeroStr t341; HeroStr t342; HeroStr t343; HeroStr t344; h_0opt_4c1a4938 t345; goto bb0;
-#line 68 "selfhost/mutate/plan.hero"
+#line 73 "selfhost/mutate/plan.hero"
 bb0:
     t1 = h0_dir;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t2 = HERO_STR_LIT(hero_str_32731992);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t3 = hero_str_concat(t1, t2);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t268 = h41_own41;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h41_own41 = t3;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     hero_str_decref(t268);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t4 = h_mutateplan_read_text(t3);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t269 = h42_own42;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h42_own42 = t4;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t269);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t270 = h1_f0;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t4);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h1_f0 = t4;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t270);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t5 = h1_f0;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t6 = t5.tag;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t7 = INT64_C(0);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t8 = t6 == t7;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     if (t8) goto bb1; else goto bb2;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
 bb1:
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t12 = h1_f0;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t13 = t12.as.ok;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t271 = h2_singles_text;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     hero_str_incref(t13);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h2_singles_text = t13;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     hero_str_decref(t271);
     t14 = h0_dir;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t15 = HERO_STR_LIT(hero_str_4ea1c6bb);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t16 = hero_str_concat(t14, t15);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t272 = h43_own43;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h43_own43 = t16;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     hero_str_decref(t272);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t17 = h_mutateplan_read_text(t16);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t273 = h44_own44;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h44_own44 = t17;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t273);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t274 = h3_f1;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t17);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h3_f1 = t17;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t274);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t18 = h3_f1;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t19 = t18.tag;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t20 = INT64_C(0);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t21 = t19 == t20;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     if (t21) goto bb3; else goto bb4;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
 bb2:
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t9 = h1_f0;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t10 = t9.as.err;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t10);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t11 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = t10};
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     t275 = h45_own45;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h45_own45 = t11;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t275);
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     h40_ret0 = t11;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 69 "selfhost/mutate/plan.hero"
+#line 74 "selfhost/mutate/plan.hero"
 bb3:
     t25 = h3_f1;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t26 = t25.as.ok;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t276 = h4_base_text;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     hero_str_incref(t26);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h4_base_text = t26;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     hero_str_decref(t276);
     t27 = h0_dir;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t28 = HERO_STR_LIT(hero_str_2c6bc281);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t29 = hero_str_concat(t27, t28);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t277 = h46_own46;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h46_own46 = t29;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     hero_str_decref(t277);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t30 = h_mutateplan_read_text(t29);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t278 = h47_own47;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h47_own47 = t30;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t278);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t279 = h5_f2;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t30);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h5_f2 = t30;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t279);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t31 = h5_f2;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t32 = t31.tag;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t33 = INT64_C(0);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t34 = t32 == t33;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     if (t34) goto bb5; else goto bb6;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
 bb4:
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t22 = h3_f1;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t23 = t22.as.err;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t23);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t24 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = t23};
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     t280 = h48_own48;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h48_own48 = t24;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t280);
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     h40_ret0 = t24;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 70 "selfhost/mutate/plan.hero"
+#line 75 "selfhost/mutate/plan.hero"
 bb5:
     t38 = h5_f2;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t39 = t38.as.ok;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t281 = h6_pairs_text;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     hero_str_incref(t39);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h6_pairs_text = t39;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     hero_str_decref(t281);
     t40 = hero_map_new(&hero_desc_str, &h_mutatejsonread_Json_desc, 0);
-#line 72 "selfhost/mutate/plan.hero"
+#line 77 "selfhost/mutate/plan.hero"
     t282 = h49_own49;
-#line 72 "selfhost/mutate/plan.hero"
+#line 77 "selfhost/mutate/plan.hero"
     h49_own49 = t40;
-#line 72 "selfhost/mutate/plan.hero"
+#line 77 "selfhost/mutate/plan.hero"
     hero_map_decref(t282);
-#line 72 "selfhost/mutate/plan.hero"
+#line 77 "selfhost/mutate/plan.hero"
     t283 = h7_base;
-#line 72 "selfhost/mutate/plan.hero"
+#line 77 "selfhost/mutate/plan.hero"
     hero_map_incref(t40);
-#line 72 "selfhost/mutate/plan.hero"
+#line 77 "selfhost/mutate/plan.hero"
     h7_base = t40;
-#line 72 "selfhost/mutate/plan.hero"
+#line 77 "selfhost/mutate/plan.hero"
     hero_map_decref(t283);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t41 = h4_base_text;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t42 = h_mutatejsonread_read_lines(t41);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t284 = h50_own50;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h50_own50 = t42;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t284);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t285 = h8_f3;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h_0opt_867bda_retain(&t42);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h8_f3 = t42;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t285);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t43 = h8_f3;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t44 = t43.tag;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t45 = INT64_C(0);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t46 = t44 == t45;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     if (t46) goto bb7; else goto bb8;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
 bb6:
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t35 = h5_f2;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t36 = t35.as.err;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t36);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t37 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = t36};
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     t286 = h51_own51;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h51_own51 = t37;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t286);
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     h40_ret0 = t37;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 71 "selfhost/mutate/plan.hero"
+#line 76 "selfhost/mutate/plan.hero"
 bb7:
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t50 = h8_f3;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t51 = t50.as.ok;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t287 = h9_xs0;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     hero_array_incref(t51);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h9_xs0 = t51;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     hero_array_decref(t287);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t52 = INT64_C(0);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h10_i0 = t52;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     goto bb9;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
 bb8:
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t47 = h8_f3;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t48 = t47.as.err;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t48);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t49 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = t48};
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t288 = h52_own52;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h52_own52 = t49;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t288);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h40_ret0 = t49;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
 bb9:
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t53 = h10_i0;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t54 = h9_xs0;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t56 = t53 < t55;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     if (t56) goto bb10; else goto bb12;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
 bb10:
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t57 = h9_xs0;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t58 = h10_i0;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t57 + 1))[t58]);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t289 = h11_row;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_retain(&t59);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h11_row = t59;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_release(&t289);
     t60 = h11_row;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t61 = HERO_STR_LIT(hero_str_1c38eb);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t62 = h_mutatejsonfields_text_field(t60, t61);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t290 = h53_own53;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h53_own53 = t62;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t290);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t291 = h12_f4;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t62);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h12_f4 = t62;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t291);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t63 = h12_f4;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t64 = t63.tag;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t65 = INT64_C(0);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t66 = t64 == t65;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     if (t66) goto bb13; else goto bb14;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
 bb11:
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t73 = h10_i0;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     t74 = INT64_C(1);
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t73, t74, &t75)) hero_panic_overflow();
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     h10_i0 = t75;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
     goto bb9;
-#line 74 "selfhost/mutate/plan.hero"
+#line 79 "selfhost/mutate/plan.hero"
 bb12:
-#line 77 "selfhost/mutate/plan.hero"
+#line 82 "selfhost/mutate/plan.hero"
     t76 = hero_array_new(&h_mutateplan_Single_desc, 1);
-#line 77 "selfhost/mutate/plan.hero"
+#line 82 "selfhost/mutate/plan.hero"
     t292 = h54_own54;
-#line 77 "selfhost/mutate/plan.hero"
+#line 82 "selfhost/mutate/plan.hero"
     h54_own54 = t76;
-#line 77 "selfhost/mutate/plan.hero"
+#line 82 "selfhost/mutate/plan.hero"
     hero_array_decref(t292);
-#line 77 "selfhost/mutate/plan.hero"
+#line 82 "selfhost/mutate/plan.hero"
     t293 = h13_singles;
-#line 77 "selfhost/mutate/plan.hero"
+#line 82 "selfhost/mutate/plan.hero"
     hero_array_incref(t76);
-#line 77 "selfhost/mutate/plan.hero"
+#line 82 "selfhost/mutate/plan.hero"
     h13_singles = t76;
-#line 77 "selfhost/mutate/plan.hero"
+#line 82 "selfhost/mutate/plan.hero"
     hero_array_decref(t293);
     t77 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
-#line 78 "selfhost/mutate/plan.hero"
+#line 83 "selfhost/mutate/plan.hero"
     t294 = h55_own55;
-#line 78 "selfhost/mutate/plan.hero"
+#line 83 "selfhost/mutate/plan.hero"
     h55_own55 = t77;
-#line 78 "selfhost/mutate/plan.hero"
+#line 83 "selfhost/mutate/plan.hero"
     hero_map_decref(t294);
-#line 78 "selfhost/mutate/plan.hero"
+#line 83 "selfhost/mutate/plan.hero"
     t295 = h14_seen;
-#line 78 "selfhost/mutate/plan.hero"
+#line 83 "selfhost/mutate/plan.hero"
     hero_map_incref(t77);
-#line 78 "selfhost/mutate/plan.hero"
+#line 83 "selfhost/mutate/plan.hero"
     h14_seen = t77;
-#line 78 "selfhost/mutate/plan.hero"
+#line 83 "selfhost/mutate/plan.hero"
     hero_map_decref(t295);
     t78 = INT64_C(0);
-#line 79 "selfhost/mutate/plan.hero"
+#line 84 "selfhost/mutate/plan.hero"
     h15_number = t78;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t79 = h2_singles_text;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t80 = h_mutatejsonread_read_lines(t79);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t296 = h56_own56;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h56_own56 = t80;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t296);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t297 = h16_f5;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h_0opt_867bda_retain(&t80);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h16_f5 = t80;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t297);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t81 = h16_f5;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t82 = t81.tag;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t83 = INT64_C(0);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t84 = t82 == t83;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     if (t84) goto bb15; else goto bb16;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
 bb13:
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t70 = h12_f4;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t71 = t70.as.ok;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t72 = h11_row;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_retain(&t72);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     hero_map_set(&(h7_base), &t71, &t72);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     goto bb11;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
 bb14:
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t67 = h12_f4;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t68 = t67.as.err;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t68);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t69 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = t68};
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     t298 = h57_own57;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h57_own57 = t69;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t298);
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     h40_ret0 = t69;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 75 "selfhost/mutate/plan.hero"
+#line 80 "selfhost/mutate/plan.hero"
 bb15:
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t88 = h16_f5;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t89 = t88.as.ok;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t299 = h17_xs1;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     hero_array_incref(t89);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h17_xs1 = t89;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     hero_array_decref(t299);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t90 = INT64_C(0);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h18_i1 = t90;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     goto bb17;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
 bb16:
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t85 = h16_f5;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t86 = t85.as.err;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t86);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t87 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = t86};
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t300 = h58_own58;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h58_own58 = t87;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t300);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h40_ret0 = t87;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
 bb17:
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t91 = h18_i1;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t92 = h17_xs1;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t93 = ((void)(t92 == NULL ? ((void)hero_array_len(t92), hero_unreachable()) : (void)0), t92->len);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t94 = t91 < t93;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     if (t94) goto bb18; else goto bb20;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
 bb18:
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t95 = h17_xs1;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t96 = h18_i1;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t97 = ((void)((t95 == NULL || t96 < 0 || t96 >= t95->len) ? ((void)hero_array_at(t95, t96), hero_unreachable()) : (void)0), (void)(t95->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t95 + 1))[t96]);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t301 = h19_row;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_retain(&t97);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h19_row = t97;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_release(&t301);
     t98 = h15_number;
-#line 82 "selfhost/mutate/plan.hero"
+#line 87 "selfhost/mutate/plan.hero"
     t99 = INT64_C(1);
-#line 82 "selfhost/mutate/plan.hero"
+#line 87 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t98, t99, &t100)) hero_panic_overflow();
-#line 82 "selfhost/mutate/plan.hero"
+#line 87 "selfhost/mutate/plan.hero"
     h15_number = t100;
     t101 = h19_row;
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     t102 = h7_base;
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     t103 = h_mutateplan_single(t101, t102);
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     t302 = h59_own59;
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     h59_own59 = t103;
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t302);
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     t303 = h20_one;
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_retain(&t103);
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     h20_one = t103;
-#line 83 "selfhost/mutate/plan.hero"
+#line 88 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t303);
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     t104 = h20_one;
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     t304 = h21_f6;
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_retain(&t104);
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     h21_f6 = t104;
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t304);
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     t105 = h21_f6;
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     t106 = t105.tag;
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     t107 = INT64_C(1);
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     t108 = t106 == t107;
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
     if (t108) goto bb22; else goto bb23;
-#line 85 "selfhost/mutate/plan.hero"
+#line 90 "selfhost/mutate/plan.hero"
 bb19:
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t171 = h18_i1;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     t172 = INT64_C(1);
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t171, t172, &t173)) hero_panic_overflow();
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     h18_i1 = t173;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
     goto bb17;
-#line 81 "selfhost/mutate/plan.hero"
+#line 86 "selfhost/mutate/plan.hero"
 bb20:
-#line 96 "selfhost/mutate/plan.hero"
+#line 101 "selfhost/mutate/plan.hero"
     t174 = hero_array_new(&h_mutateplan_Pair_desc, 1);
-#line 96 "selfhost/mutate/plan.hero"
+#line 101 "selfhost/mutate/plan.hero"
     t305 = h60_own60;
-#line 96 "selfhost/mutate/plan.hero"
+#line 101 "selfhost/mutate/plan.hero"
     h60_own60 = t174;
-#line 96 "selfhost/mutate/plan.hero"
+#line 101 "selfhost/mutate/plan.hero"
     hero_array_decref(t305);
-#line 96 "selfhost/mutate/plan.hero"
+#line 101 "selfhost/mutate/plan.hero"
     t306 = h26_pairs;
-#line 96 "selfhost/mutate/plan.hero"
+#line 101 "selfhost/mutate/plan.hero"
     hero_array_incref(t174);
-#line 96 "selfhost/mutate/plan.hero"
+#line 101 "selfhost/mutate/plan.hero"
     h26_pairs = t174;
-#line 96 "selfhost/mutate/plan.hero"
+#line 101 "selfhost/mutate/plan.hero"
     hero_array_decref(t306);
     t175 = INT64_C(0);
-#line 97 "selfhost/mutate/plan.hero"
+#line 102 "selfhost/mutate/plan.hero"
     h15_number = t175;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t176 = h6_pairs_text;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t177 = h_mutatejsonread_read_lines(t176);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t307 = h61_own61;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h61_own61 = t177;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t307);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t308 = h27_f11;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h_0opt_867bda_retain(&t177);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h27_f11 = t177;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t308);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t178 = h27_f11;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t179 = t178.tag;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t180 = INT64_C(0);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t181 = t179 == t180;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     if (t181) goto bb33; else goto bb34;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
 bb21:
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t122 = h14_seen;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t123 = h20_one;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t309 = h22_f7;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_retain(&t123);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     h22_f7 = t123;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t309);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t124 = h22_f7;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t125 = t124.tag;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t126 = INT64_C(0);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t127 = t125 == t126;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     if (t127) goto bb25; else goto bb26;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
 bb22:
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t109 = HERO_STR_LIT(hero_str_d3a6cd);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t110 = h0_dir;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t111 = HERO_STR_LIT(hero_str_4468aced);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t112 = hero_str_concat(t110, t111);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t310 = h62_own62;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h62_own62 = t112;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     hero_str_decref(t310);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t113 = h15_number;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t114 = hero_int_to_str(t113);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t311 = h63_own63;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h63_own63 = t114;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     hero_str_decref(t311);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t115 = hero_str_concat(t112, t114);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t312 = h64_own64;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h64_own64 = t115;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     hero_str_decref(t312);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t116 = HERO_STR_LIT(hero_str_1dce);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t117 = hero_str_concat(t115, t116);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t313 = h65_own65;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h65_own65 = t117;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     hero_str_decref(t313);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t118 = h20_one;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t119 = h_mutateplan_why(t118);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t314 = h66_own66;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h66_own66 = t119;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     hero_str_decref(t314);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t120 = hero_str_concat(t117, t119);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t315 = h67_own67;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h67_own67 = t120;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     hero_str_decref(t315);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     hero_str_incref(t109);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     hero_str_incref(t120);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t121 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = {.code = t109, .msg = t120}};
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     t316 = h68_own68;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h68_own68 = t121;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t316);
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     h40_ret0 = t121;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
 bb23:
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
     goto bb21;
-#line 86 "selfhost/mutate/plan.hero"
+#line 91 "selfhost/mutate/plan.hero"
 bb24:
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t149 = h20_one;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t317 = h24_f9;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_retain(&t149);
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     h24_f9 = t149;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t317);
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t150 = h24_f9;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t151 = t150.tag;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t152 = INT64_C(0);
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t153 = t151 == t152;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     if (t153) goto bb29; else goto bb30;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
 bb25:
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t130 = h22_f7;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t131 = t130.as.ok;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t132 = t131.f_key;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     {
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
       const void *found = hero_map_find(t122, &t132);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
       if (found == NULL) {
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
         t133 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
       } else {
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
         t133 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
         (&hero_desc_bool)->copy(&t133.as.ok, found);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
       }
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     }
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t318 = h69_own69;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     h69_own69 = t133;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_release(&t318);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t319 = h23_f8;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_retain(&t133);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     h23_f8 = t133;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_release(&t319);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t134 = h23_f8;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t135 = t134.tag;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t136 = INT64_C(1);
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t137 = t135 == t136;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t138 = !t137;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     if (t138) goto bb27; else goto bb28;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
 bb26:
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t128 = h22_f7;
-#line 88 "selfhost/mutate/plan.hero"
+#line 93 "selfhost/mutate/plan.hero"
     t129 = t128.as.err;
 #line 1172061 "main.c"
     hero_panic_must(t129);
     hero_unreachable();
 bb27:
-#line 90 "selfhost/mutate/plan.hero"
+#line 95 "selfhost/mutate/plan.hero"
     t139 = HERO_STR_LIT(hero_str_d3a6cd);
     t140 = h0_dir;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t141 = HERO_STR_LIT(hero_str_4468aced);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t142 = hero_str_concat(t140, t141);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t320 = h70_own70;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     h70_own70 = t142;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     hero_str_decref(t320);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t143 = h15_number;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t144 = hero_int_to_str(t143);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t321 = h71_own71;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     h71_own71 = t144;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     hero_str_decref(t321);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t145 = hero_str_concat(t142, t144);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t322 = h72_own72;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     h72_own72 = t145;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     hero_str_decref(t322);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t146 = HERO_STR_LIT(hero_str_15c1118d);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t147 = hero_str_concat(t145, t146);
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     t323 = h73_own73;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     h73_own73 = t147;
-#line 91 "selfhost/mutate/plan.hero"
+#line 96 "selfhost/mutate/plan.hero"
     hero_str_decref(t323);
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     hero_str_incref(t139);
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     hero_str_incref(t147);
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     t148 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = {.code = t139, .msg = t147}};
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     t324 = h74_own74;
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     h74_own74 = t148;
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t324);
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     h40_ret0 = t148;
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
 bb28:
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
     goto bb24;
-#line 89 "selfhost/mutate/plan.hero"
+#line 94 "selfhost/mutate/plan.hero"
 bb29:
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t156 = h24_f9;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t157 = t156.as.ok;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t158 = t157.f_key;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t159 = true;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     hero_map_set(&(h14_seen), &t158, &t159);
     t161 = h20_one;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t325 = h25_f10;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_retain(&t161);
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     h25_f10 = t161;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t325);
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t162 = h25_f10;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t163 = t162.tag;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t164 = INT64_C(0);
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t165 = t163 == t164;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     if (t165) goto bb31; else goto bb32;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
 bb30:
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t154 = h24_f9;
-#line 93 "selfhost/mutate/plan.hero"
+#line 98 "selfhost/mutate/plan.hero"
     t155 = t154.as.err;
 #line 1172163 "main.c"
     hero_panic_must(t155);
     hero_unreachable();
 bb31:
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t168 = h25_f10;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t169 = t168.as.ok;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&h13_singles, &t169);
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     goto bb19;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
 bb32:
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t166 = h25_f10;
-#line 94 "selfhost/mutate/plan.hero"
+#line 99 "selfhost/mutate/plan.hero"
     t167 = t166.as.err;
 #line 1172181 "main.c"
     hero_panic_must(t167);
     hero_unreachable();
 bb33:
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t185 = h27_f11;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t186 = t185.as.ok;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t326 = h28_xs2;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     hero_array_incref(t186);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h28_xs2 = t186;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     hero_array_decref(t326);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t187 = INT64_C(0);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h29_i2 = t187;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     goto bb35;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
 bb34:
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t182 = h27_f11;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t183 = t182.as.err;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t183);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t184 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = t183};
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t327 = h75_own75;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h75_own75 = t184;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t327);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h40_ret0 = t184;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
 bb35:
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t188 = h29_i2;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t189 = h28_xs2;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t190 = ((void)(t189 == NULL ? ((void)hero_array_len(t189), hero_unreachable()) : (void)0), t189->len);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t191 = t188 < t190;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     if (t191) goto bb36; else goto bb38;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
 bb36:
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t192 = h28_xs2;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t193 = h29_i2;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t194 = ((void)((t192 == NULL || t193 < 0 || t193 >= t192->len) ? ((void)hero_array_at(t192, t193), hero_unreachable()) : (void)0), (void)(t192->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t192 + 1))[t193]);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t328 = h30_row;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_retain(&t194);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h30_row = t194;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_release(&t328);
     t195 = h15_number;
-#line 100 "selfhost/mutate/plan.hero"
+#line 105 "selfhost/mutate/plan.hero"
     t196 = INT64_C(1);
-#line 100 "selfhost/mutate/plan.hero"
+#line 105 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t195, t196, &t197)) hero_panic_overflow();
-#line 100 "selfhost/mutate/plan.hero"
+#line 105 "selfhost/mutate/plan.hero"
     h15_number = t197;
     t198 = h30_row;
-#line 101 "selfhost/mutate/plan.hero"
+#line 106 "selfhost/mutate/plan.hero"
     t199 = h_mutateplan_pair(t198);
-#line 101 "selfhost/mutate/plan.hero"
+#line 106 "selfhost/mutate/plan.hero"
     t329 = h76_own76;
-#line 101 "selfhost/mutate/plan.hero"
+#line 106 "selfhost/mutate/plan.hero"
     h76_own76 = t199;
-#line 101 "selfhost/mutate/plan.hero"
+#line 106 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t329);
-#line 101 "selfhost/mutate/plan.hero"
+#line 106 "selfhost/mutate/plan.hero"
     t330 = h31_p;
-#line 101 "selfhost/mutate/plan.hero"
+#line 106 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_retain(&t199);
-#line 101 "selfhost/mutate/plan.hero"
+#line 106 "selfhost/mutate/plan.hero"
     h31_p = t199;
-#line 101 "selfhost/mutate/plan.hero"
+#line 106 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t330);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t200 = h31_p;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t331 = h34_f12;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_retain(&t200);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h34_f12 = t200;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t331);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t201 = h34_f12;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t202 = t201.tag;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t203 = INT64_C(1);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t204 = t202 == t203;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h33_b1 = t204;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     if (t204) goto bb41; else goto bb40;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
 bb37:
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t260 = h29_i2;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     t261 = INT64_C(1);
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t260, t261, &t262)) hero_panic_overflow();
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     h29_i2 = t262;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
     goto bb35;
-#line 99 "selfhost/mutate/plan.hero"
+#line 104 "selfhost/mutate/plan.hero"
 bb38:
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     t263 = h13_singles;
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     t264 = h26_pairs;
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     hero_array_incref(t263);
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     hero_array_incref(t264);
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     t265 = (h_mutateplan_Plan){.f_singles = t263, .f_pairs = t264};
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     t332 = h77_own77;
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     h77_own77 = t265;
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     h_mutateplan_Plan_release(&t332);
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     h_mutateplan_Plan_retain(&t265);
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     t266 = (h_0opt_4c1a4938){.tag = INT64_C(0), .as.ok = t265};
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     t333 = h78_own78;
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     h78_own78 = t266;
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t333);
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     h40_ret0 = t266;
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 107 "selfhost/mutate/plan.hero"
+#line 112 "selfhost/mutate/plan.hero"
 bb39:
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t250 = h31_p;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t334 = h39_f17;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_retain(&t250);
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     h39_f17 = t250;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t334);
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t251 = h39_f17;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t252 = t251.tag;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t253 = INT64_C(0);
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t254 = t252 == t253;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     if (t254) goto bb50; else goto bb51;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
 bb40:
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t205 = h14_seen;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t206 = h31_p;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t335 = h35_f13;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_retain(&t206);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h35_f13 = t206;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t335);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t207 = h35_f13;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t208 = t207.tag;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t209 = INT64_C(0);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t210 = t208 == t209;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     if (t210) goto bb42; else goto bb43;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
 bb41:
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t221 = h33_b1;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h32_b0 = t221;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     if (t221) goto bb45; else goto bb44;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
 bb42:
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t213 = h35_f13;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t214 = t213.as.ok;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t215 = t214.f_a;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     {
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
       const void *found = hero_map_find(t205, &t215);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
       if (found == NULL) {
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
         t216 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
       } else {
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
         t216 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
         (&hero_desc_bool)->copy(&t216.as.ok, found);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
       }
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     }
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t336 = h79_own79;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h79_own79 = t216;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_release(&t336);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t337 = h36_f14;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_retain(&t216);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h36_f14 = t216;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_release(&t337);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t217 = h36_f14;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t218 = t217.tag;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t219 = INT64_C(1);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t220 = t218 == t219;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h33_b1 = t220;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     goto bb41;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
 bb43:
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t211 = h35_f13;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t212 = t211.as.err;
 #line 1172453 "main.c"
     hero_panic_must(t212);
     hero_unreachable();
 bb44:
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t222 = h14_seen;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t223 = h31_p;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t338 = h37_f15;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_retain(&t223);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h37_f15 = t223;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t338);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t224 = h37_f15;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t225 = t224.tag;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t226 = INT64_C(0);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t227 = t225 == t226;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     if (t227) goto bb46; else goto bb47;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
 bb45:
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t238 = h32_b0;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     if (t238) goto bb48; else goto bb49;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
 bb46:
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t230 = h37_f15;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t231 = t230.as.ok;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t232 = t231.f_b;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     {
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
       const void *found = hero_map_find(t222, &t232);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
       if (found == NULL) {
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
         t233 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
       } else {
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
         t233 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
         (&hero_desc_bool)->copy(&t233.as.ok, found);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
       }
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     }
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t339 = h80_own80;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h80_own80 = t233;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_release(&t339);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t340 = h38_f16;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_retain(&t233);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h38_f16 = t233;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h_0opt_473cb9ae_release(&t340);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t234 = h38_f16;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t235 = t234.tag;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t236 = INT64_C(1);
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t237 = t235 == t236;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     h32_b0 = t237;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     goto bb45;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
 bb47:
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t228 = h37_f15;
-#line 103 "selfhost/mutate/plan.hero"
+#line 108 "selfhost/mutate/plan.hero"
     t229 = t228.as.err;
 #line 1172543 "main.c"
     hero_panic_must(t229);
     hero_unreachable();
 bb48:
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t239 = HERO_STR_LIT(hero_str_d3a6cd);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t240 = h0_dir;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t241 = HERO_STR_LIT(hero_str_1f46570d);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t242 = hero_str_concat(t240, t241);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t341 = h81_own81;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     h81_own81 = t242;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     hero_str_decref(t341);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t243 = h15_number;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t244 = hero_int_to_str(t243);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t342 = h82_own82;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     h82_own82 = t244;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     hero_str_decref(t342);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t245 = hero_str_concat(t242, t244);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t343 = h83_own83;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     h83_own83 = t245;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     hero_str_decref(t343);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t246 = HERO_STR_LIT(hero_str_1828f24a);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t247 = hero_str_concat(t245, t246);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t344 = h84_own84;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     h84_own84 = t247;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     hero_str_decref(t344);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     hero_str_incref(t239);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     hero_str_incref(t247);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t248 = (h_0opt_4c1a4938){.tag = INT64_C(1), .as.err = {.code = t239, .msg = t247}};
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     t345 = h85_own85;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     h85_own85 = t248;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     h_0opt_4c1a4938_release(&t345);
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     h40_ret0 = t248;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     goto bb52;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
 bb49:
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
     goto bb39;
-#line 104 "selfhost/mutate/plan.hero"
+#line 109 "selfhost/mutate/plan.hero"
 bb50:
     t257 = h39_f17;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t258 = t257.as.ok;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&h26_pairs, &t258);
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     goto bb37;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
 bb51:
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t255 = h39_f17;
-#line 105 "selfhost/mutate/plan.hero"
+#line 110 "selfhost/mutate/plan.hero"
     t256 = t255.as.err;
 #line 1172624 "main.c"
     hero_panic_must(t256);
@@ -1172707,94 +1172707,94 @@ bb52:
     return t267;
 }
 
-#line 109 "selfhost/mutate/plan.hero"
+#line 114 "selfhost/mutate/plan.hero"
 h_0opt_f87774a h_mutateplan_read_text(HeroStr h0_path) {
-#line 109 "selfhost/mutate/plan.hero"
+#line 114 "selfhost/mutate/plan.hero"
     h_0opt_f87774a h1_got = {0}; h_0opt_f87774a h2_f0 = {0}; h_0opt_f87774a h3_ret0 = {0}; h_0opt_f87774a h4_own4 = {0}; HeroStr h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr t1; h_0opt_f87774a t2; h_0opt_f87774a t3; h_0opt_f87774a t4; int64_t t5; int64_t t6; bool t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; h_0opt_f87774a t12; h_0opt_f87774a t13; h_0opt_f87774a t14; h_0opt_f87774a t15; h_0opt_f87774a t16; h_0opt_f87774a t17; HeroStr t18; h_0opt_f87774a t19; goto bb0;
-#line 109 "selfhost/mutate/plan.hero"
+#line 114 "selfhost/mutate/plan.hero"
 bb0:
     t1 = h0_path;
-#line 110 "selfhost/mutate/plan.hero"
+#line 115 "selfhost/mutate/plan.hero"
     t2 = h_library_read_file(t1);
-#line 110 "selfhost/mutate/plan.hero"
+#line 115 "selfhost/mutate/plan.hero"
     t15 = h4_own4;
-#line 110 "selfhost/mutate/plan.hero"
+#line 115 "selfhost/mutate/plan.hero"
     h4_own4 = t2;
-#line 110 "selfhost/mutate/plan.hero"
+#line 115 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t15);
-#line 110 "selfhost/mutate/plan.hero"
+#line 115 "selfhost/mutate/plan.hero"
     t16 = h1_got;
-#line 110 "selfhost/mutate/plan.hero"
+#line 115 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t2);
-#line 110 "selfhost/mutate/plan.hero"
+#line 115 "selfhost/mutate/plan.hero"
     h1_got = t2;
-#line 110 "selfhost/mutate/plan.hero"
+#line 115 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t16);
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     t3 = h1_got;
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     t17 = h2_f0;
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t3);
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     h2_f0 = t3;
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t17);
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     t4 = h2_f0;
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     t5 = t4.tag;
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     t6 = INT64_C(1);
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     t7 = t5 == t6;
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
     if (t7) goto bb2; else goto bb3;
-#line 112 "selfhost/mutate/plan.hero"
+#line 117 "selfhost/mutate/plan.hero"
 bb1:
-#line 114 "selfhost/mutate/plan.hero"
+#line 119 "selfhost/mutate/plan.hero"
     t13 = h1_got;
-#line 114 "selfhost/mutate/plan.hero"
+#line 119 "selfhost/mutate/plan.hero"
     h3_ret0 = t13;
-#line 114 "selfhost/mutate/plan.hero"
+#line 119 "selfhost/mutate/plan.hero"
     goto bb4;
-#line 114 "selfhost/mutate/plan.hero"
+#line 119 "selfhost/mutate/plan.hero"
 bb2:
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     t8 = HERO_STR_LIT(hero_str_45d4bee9);
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     t9 = HERO_STR_LIT(hero_str_2d78c599);
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     t10 = h0_path;
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     t11 = hero_str_concat(t9, t10);
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     t18 = h5_own5;
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     h5_own5 = t11;
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     hero_str_decref(t18);
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     hero_str_incref(t8);
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     hero_str_incref(t11);
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     t12 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t11}};
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     t19 = h6_own6;
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     h6_own6 = t12;
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t19);
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     h3_ret0 = t12;
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     goto bb4;
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
 bb3:
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
     goto bb1;
-#line 113 "selfhost/mutate/plan.hero"
+#line 118 "selfhost/mutate/plan.hero"
 bb4:
 #line 1172800 "main.c"
     t14 = h3_ret0;
@@ -1172807,1317 +1172807,1317 @@ bb4:
     return t14;
 }
 
-#line 116 "selfhost/mutate/plan.hero"
+#line 121 "selfhost/mutate/plan.hero"
 h_0opt_52afa93 h_mutateplan_single(h_mutatejsonread_Json h0_row, HeroMapHeader * h1_base) {
-#line 116 "selfhost/mutate/plan.hero"
+#line 121 "selfhost/mutate/plan.hero"
     h_0opt_f87774a h2_f0 = {0}; HeroStr h3_key = {0}; h_0opt_7f976563 h4_measured = {0}; h_0opt_7f976563 h5_f1 = {0}; HeroArrayHeader * h6_found = {0}; h_0opt_867bda h7_f2 = {0}; HeroArrayHeader * h8_xs0 = {0}; int64_t h9_i0; h_mutatejsonread_Json h10_h = {0}; h_0opt_e201354 h11_f3 = {0}; h_0opt_e201354 h12_f4 = {0}; h_0opt_5a58f2ca h13_f5 = {0}; h_0opt_2270cbe7 h14_f6 = {0}; HeroArrayHeader * h15_statements = {0}; h_0opt_867bda h16_f7 = {0}; HeroArrayHeader * h17_xs1 = {0}; int64_t h18_i1; h_mutatejsonread_Json h19_range_of = {0}; h_0opt_867bda h20_f8 = {0}; HeroArrayHeader * h21_ends = {0}; h_0opt_e201354 h22_f9 = {0}; h_0opt_e201354 h23_f10 = {0}; h_0opt_f87774a h24_f11 = {0}; h_0opt_f87774a h25_f12 = {0}; h_0opt_7f976563 h26_f13 = {0}; h_0opt_f87774a h27_f14 = {0}; h_0opt_7f976563 h28_f15 = {0}; h_0opt_f87774a h29_f16 = {0}; h_0opt_7f976563 h30_f17 = {0}; h_0opt_f87774a h31_f18 = {0}; h_0opt_52afa93 h32_ret0 = {0}; h_0opt_f87774a h33_own33 = {0}; h_0opt_7f976563 h34_own34 = {0}; h_0opt_52afa93 h35_own35 = {0}; HeroArrayHeader * h36_own36 = {0}; h_0opt_867bda h37_own37 = {0}; HeroStr h38_own38 = {0}; HeroStr h39_own39 = {0}; h_0opt_52afa93 h40_own40 = {0}; h_0opt_52afa93 h41_own41 = {0}; h_0opt_e201354 h42_own42 = {0}; HeroArrayHeader * h43_own43 = {0}; h_0opt_867bda h44_own44 = {0}; h_0opt_e201354 h45_own45 = {0}; h_0opt_52afa93 h46_own46 = {0}; h_0opt_5a58f2ca h47_own47 = {0}; h_0opt_52afa93 h48_own48 = {0}; h_0opt_2270cbe7 h49_own49 = {0}; h_0opt_52afa93 h50_own50 = {0}; h_mutatehunks_Hunk h51_own51 = {0}; h_0opt_52afa93 h52_own52 = {0}; h_0opt_52afa93 h53_own53 = {0}; h_0opt_867bda h54_own54 = {0}; h_0opt_f87774a h55_own55 = {0}; h_0opt_52afa93 h56_own56 = {0}; h_0opt_e201354 h57_own57 = {0}; h_0opt_52afa93 h58_own58 = {0}; h_0opt_e201354 h59_own59 = {0}; h_0opt_52afa93 h60_own60 = {0}; h_0opt_52afa93 h61_own61 = {0}; h_0opt_f87774a h62_own62 = {0}; h_0opt_52afa93 h63_own63 = {0}; h_0opt_52afa93 h64_own64 = {0}; h_0opt_f87774a h65_own65 = {0}; h_0opt_52afa93 h66_own66 = {0}; h_0opt_f87774a h67_own67 = {0}; h_0opt_52afa93 h68_own68 = {0}; h_0opt_f87774a h69_own69 = {0}; h_mutateplan_Single h70_own70 = {0}; h_0opt_52afa93 h71_own71 = {0}; h_0opt_52afa93 h72_own72 = {0}; h_mutatejsonread_Json t1; HeroStr t2; h_0opt_f87774a t3; h_0opt_f87774a t4; int64_t t5; int64_t t6; bool t7; h_0opt_f87774a t8; HeroFailure t9; h_0opt_52afa93 t10; h_0opt_f87774a t11; HeroStr t12; HeroMapHeader * t13; HeroStr t14; h_0opt_7f976563 t15; h_0opt_7f976563 t16; h_0opt_7f976563 t17; int64_t t18; int64_t t19; bool t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; h_0opt_52afa93 t27; HeroArrayHeader * t28; h_mutatejsonread_Json t29; HeroStr t30; h_0opt_867bda t31; h_0opt_867bda t32; int64_t t33; int64_t t34; bool t35; h_0opt_867bda t36; HeroFailure t37; h_0opt_52afa93 t38; h_0opt_867bda t39; HeroArrayHeader * t40; int64_t t41; int64_t t42; HeroArrayHeader * t43; int64_t t44; bool t45; HeroArrayHeader * t46; int64_t t47; h_mutatejsonread_Json t48; h_mutatejsonread_Json t50; HeroStr t51; h_0opt_e201354 t52; h_0opt_e201354 t53; int64_t t54; int64_t t55; bool t56; h_0opt_e201354 t57; HeroFailure t58; h_0opt_52afa93 t59; h_0opt_e201354 t60; int64_t t61; h_mutatejsonread_Json t62; HeroStr t63; h_0opt_e201354 t64; h_0opt_e201354 t65; int64_t t66; int64_t t67; bool t68; h_0opt_e201354 t69; HeroFailure t70; h_0opt_52afa93 t71; h_0opt_e201354 t72; int64_t t73; h_mutatejsonread_Json t74; HeroStr t75; h_0opt_5a58f2ca t76; h_0opt_5a58f2ca t77; int64_t t78; int64_t t79; bool t80; h_0opt_5a58f2ca t81; HeroFailure t82; h_0opt_52afa93 t83; h_0opt_5a58f2ca t84; HeroArrayHeader * t85; h_mutatejsonread_Json t86; HeroStr t87; h_0opt_2270cbe7 t88; h_0opt_2270cbe7 t89; int64_t t90; int64_t t91; bool t92; h_0opt_2270cbe7 t93; HeroFailure t94; h_0opt_52afa93 t95; h_0opt_2270cbe7 t96; HeroArrayHeader * t97; h_mutatehunks_Hunk t98; int64_t t100; int64_t t101; int64_t t102; HeroArrayHeader * t103; h_mutatejsonread_Json t104; HeroStr t105; h_0opt_867bda t106; h_0opt_867bda t107; int64_t t108; int64_t t109; bool t110; h_0opt_867bda t111; HeroFailure t112; h_0opt_52afa93 t113; h_0opt_867bda t114; HeroArrayHeader * t115; int64_t t116; int64_t t117; HeroArrayHeader * t118; int64_t t119; bool t120; HeroArrayHeader * t121; int64_t t122; h_mutatejsonread_Json t123; h_mutatejsonread_Json t124; h_0opt_867bda t125; h_0opt_867bda t126; int64_t t127; int64_t t128; bool t129; h_0opt_867bda t130; HeroFailure t131; h_0opt_52afa93 t132; h_0opt_867bda t133; HeroArrayHeader * t134; HeroArrayHeader * t135; int64_t t136; int64_t t137; bool t138; HeroStr t139; HeroStr t140; h_0opt_52afa93 t141; HeroArrayHeader * t143; int64_t t144; h_mutatejsonread_Json t145; h_0opt_e201354 t146; h_0opt_e201354 t147; int64_t t148; int64_t t149; bool t150; h_0opt_e201354 t151; HeroFailure t152; h_0opt_52afa93 t153; h_0opt_e201354 t154; int64_t t155; HeroArrayHeader * t156; int64_t t157; h_mutatejsonread_Json t158; h_0opt_e201354 t159; h_0opt_e201354 t160; int64_t t161; int64_t t162; bool t163; h_0opt_e201354 t164; HeroFailure t165; h_0opt_52afa93 t166; h_0opt_e201354 t167; int64_t t168; h_mutatehunks_Lines t169; int64_t t171; int64_t t172; int64_t t173; HeroStr t174; h_mutatejsonread_Json t175; HeroStr t176; h_0opt_f87774a t177; h_0opt_f87774a t178; int64_t t179; int64_t t180; bool t181; h_0opt_f87774a t182; HeroFailure t183; h_0opt_52afa93 t184; h_0opt_f87774a t185; HeroStr t186; h_mutatejsonread_Json t187; HeroStr t188; h_0opt_f87774a t189; h_0opt_f87774a t190; int64_t t191; int64_t t192; bool t193; h_0opt_f87774a t194; HeroFailure t195; h_0opt_52afa93 t196; h_0opt_f87774a t197; HeroStr t198; HeroArrayHeader * t199; HeroArrayHeader * t200; h_0opt_7f976563 t201; h_0opt_7f976563 t202; int64_t t203; int64_t t204; bool t205; h_0opt_7f976563 t206; HeroFailure t207; h_0opt_7f976563 t208; h_mutatejsonread_Json t209; HeroStr t210; h_0opt_f87774a t211; h_0opt_f87774a t212; int64_t t213; int64_t t214; bool t215; h_0opt_f87774a t216; HeroFailure t217; h_0opt_52afa93 t218; h_0opt_f87774a t219; HeroStr t220; h_0opt_7f976563 t221; h_0opt_7f976563 t222; int64_t t223; int64_t t224; bool t225; h_0opt_7f976563 t226; HeroFailure t227; h_0opt_7f976563 t228; h_mutatejsonread_Json t229; HeroStr t230; h_0opt_f87774a t231; h_0opt_f87774a t232; int64_t t233; int64_t t234; bool t235; h_0opt_f87774a t236; HeroFailure t237; h_0opt_52afa93 t238; h_0opt_f87774a t239; HeroStr t240; HeroStr t241; bool t242; h_0opt_7f976563 t243; h_0opt_7f976563 t244; int64_t t245; int64_t t246; bool t247; h_0opt_7f976563 t248; HeroFailure t249; h_0opt_7f976563 t250; h_mutatejsonread_Json t251; HeroStr t252; h_0opt_f87774a t253; h_0opt_f87774a t254; int64_t t255; int64_t t256; bool t257; h_0opt_f87774a t258; HeroFailure t259; h_0opt_52afa93 t260; h_0opt_f87774a t261; HeroStr t262; HeroStr t263; bool t264; h_mutateplan_Single t265; h_0opt_52afa93 t266; h_0opt_52afa93 t267; h_0opt_f87774a t268; h_0opt_f87774a t269; HeroStr t270; h_0opt_7f976563 t271; h_0opt_7f976563 t272; h_0opt_7f976563 t273; h_0opt_52afa93 t274; HeroArrayHeader * t275; HeroArrayHeader * t276; h_0opt_867bda t277; h_0opt_867bda t278; HeroStr t279; HeroStr t280; h_0opt_52afa93 t281; HeroArrayHeader * t282; h_0opt_52afa93 t283; h_mutatejsonread_Json t284; h_0opt_e201354 t285; h_0opt_e201354 t286; HeroArrayHeader * t287; HeroArrayHeader * t288; h_0opt_867bda t289; h_0opt_867bda t290; h_0opt_e201354 t291; h_0opt_e201354 t292; h_0opt_52afa93 t293; h_0opt_5a58f2ca t294; h_0opt_5a58f2ca t295; h_0opt_52afa93 t296; h_0opt_2270cbe7 t297; h_0opt_2270cbe7 t298; h_0opt_52afa93 t299; h_mutatehunks_Hunk t300; h_0opt_52afa93 t301; HeroArrayHeader * t302; h_0opt_52afa93 t303; h_mutatejsonread_Json t304; h_0opt_867bda t305; h_0opt_867bda t306; h_0opt_f87774a t307; h_0opt_f87774a t308; HeroArrayHeader * t309; h_0opt_52afa93 t310; h_0opt_e201354 t311; h_0opt_e201354 t312; h_0opt_52afa93 t313; h_0opt_e201354 t314; h_0opt_e201354 t315; h_0opt_52afa93 t316; h_0opt_52afa93 t317; h_0opt_f87774a t318; h_0opt_f87774a t319; h_0opt_52afa93 t320; h_0opt_7f976563 t321; h_0opt_52afa93 t322; h_0opt_f87774a t323; h_0opt_f87774a t324; h_0opt_7f976563 t325; h_0opt_52afa93 t326; h_0opt_f87774a t327; h_0opt_f87774a t328; h_0opt_7f976563 t329; h_0opt_52afa93 t330; h_0opt_f87774a t331; h_0opt_f87774a t332; h_mutateplan_Single t333; h_0opt_52afa93 t334; h_0opt_52afa93 t335; goto bb0;
-#line 116 "selfhost/mutate/plan.hero"
+#line 121 "selfhost/mutate/plan.hero"
 bb0:
     t1 = h0_row;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t2 = HERO_STR_LIT(hero_str_1c38eb);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t3 = h_mutatejsonfields_text_field(t1, t2);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t268 = h33_own33;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h33_own33 = t3;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t268);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t269 = h2_f0;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t3);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h2_f0 = t3;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t269);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t4 = h2_f0;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t5 = t4.tag;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t6 = INT64_C(0);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t7 = t5 == t6;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     if (t7) goto bb1; else goto bb2;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
 bb1:
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t11 = h2_f0;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t12 = t11.as.ok;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t270 = h3_key;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     hero_str_incref(t12);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h3_key = t12;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     hero_str_decref(t270);
     t13 = h1_base;
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     t14 = h3_key;
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     {
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
       const void *found = hero_map_find(t13, &t14);
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
       if (found == NULL) {
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
         t15 = (h_0opt_7f976563){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
       } else {
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
         t15 = (h_0opt_7f976563){.tag = INT64_C(0)};
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
         (&h_mutatejsonread_Json_desc)->copy(&t15.as.ok, found);
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
       }
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     }
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     t271 = h34_own34;
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     h34_own34 = t15;
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_release(&t271);
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     t272 = h4_measured;
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_retain(&t15);
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     h4_measured = t15;
-#line 118 "selfhost/mutate/plan.hero"
+#line 123 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_release(&t272);
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     t16 = h4_measured;
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     t273 = h5_f1;
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_retain(&t16);
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     h5_f1 = t16;
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_release(&t273);
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     t17 = h5_f1;
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     t18 = t17.tag;
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     t19 = INT64_C(1);
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     t20 = t18 == t19;
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
     if (t20) goto bb4; else goto bb5;
-#line 120 "selfhost/mutate/plan.hero"
+#line 125 "selfhost/mutate/plan.hero"
 bb2:
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t8 = h2_f0;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t9 = t8.as.err;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t9);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t10 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t9};
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     t274 = h35_own35;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h35_own35 = t10;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t274);
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     h32_ret0 = t10;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 117 "selfhost/mutate/plan.hero"
+#line 122 "selfhost/mutate/plan.hero"
 bb3:
-#line 122 "selfhost/mutate/plan.hero"
+#line 127 "selfhost/mutate/plan.hero"
     t28 = hero_array_new(&h_mutatehunks_Hunk_desc, 1);
-#line 122 "selfhost/mutate/plan.hero"
+#line 127 "selfhost/mutate/plan.hero"
     t275 = h36_own36;
-#line 122 "selfhost/mutate/plan.hero"
+#line 127 "selfhost/mutate/plan.hero"
     h36_own36 = t28;
-#line 122 "selfhost/mutate/plan.hero"
+#line 127 "selfhost/mutate/plan.hero"
     hero_array_decref(t275);
-#line 122 "selfhost/mutate/plan.hero"
+#line 127 "selfhost/mutate/plan.hero"
     t276 = h6_found;
-#line 122 "selfhost/mutate/plan.hero"
+#line 127 "selfhost/mutate/plan.hero"
     hero_array_incref(t28);
-#line 122 "selfhost/mutate/plan.hero"
+#line 127 "selfhost/mutate/plan.hero"
     h6_found = t28;
-#line 122 "selfhost/mutate/plan.hero"
+#line 127 "selfhost/mutate/plan.hero"
     hero_array_decref(t276);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t29 = h0_row;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t30 = HERO_STR_LIT(hero_str_315c8ddf);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t31 = h_mutatejsonfields_items_field(t29, t30);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t277 = h37_own37;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h37_own37 = t31;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t277);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t278 = h7_f2;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h_0opt_867bda_retain(&t31);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h7_f2 = t31;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t278);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t32 = h7_f2;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t33 = t32.tag;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t34 = INT64_C(0);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t35 = t33 == t34;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     if (t35) goto bb6; else goto bb7;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
 bb4:
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t21 = HERO_STR_LIT(hero_str_d3a6cd);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t22 = HERO_STR_LIT(hero_str_60);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t23 = h3_key;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t24 = hero_str_concat(t22, t23);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t279 = h38_own38;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     h38_own38 = t24;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     hero_str_decref(t279);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t25 = HERO_STR_LIT(hero_str_6d05fa5);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t26 = hero_str_concat(t24, t25);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t280 = h39_own39;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     h39_own39 = t26;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     hero_str_decref(t280);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     hero_str_incref(t21);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     hero_str_incref(t26);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t27 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = {.code = t21, .msg = t26}};
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     t281 = h40_own40;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     h40_own40 = t27;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t281);
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     h32_ret0 = t27;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
 bb5:
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
     goto bb3;
-#line 121 "selfhost/mutate/plan.hero"
+#line 126 "selfhost/mutate/plan.hero"
 bb6:
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t39 = h7_f2;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t40 = t39.as.ok;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t282 = h8_xs0;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     hero_array_incref(t40);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h8_xs0 = t40;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     hero_array_decref(t282);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t41 = INT64_C(0);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h9_i0 = t41;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     goto bb8;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
 bb7:
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t36 = h7_f2;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t37 = t36.as.err;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t37);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t38 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t37};
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t283 = h41_own41;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h41_own41 = t38;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t283);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h32_ret0 = t38;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
 bb8:
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t42 = h9_i0;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t43 = h8_xs0;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t44 = ((void)(t43 == NULL ? ((void)hero_array_len(t43), hero_unreachable()) : (void)0), t43->len);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t45 = t42 < t44;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     if (t45) goto bb9; else goto bb11;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
 bb9:
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t46 = h8_xs0;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t47 = h9_i0;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t48 = ((void)((t46 == NULL || t47 < 0 || t47 >= t46->len) ? ((void)hero_array_at(t46, t47), hero_unreachable()) : (void)0), (void)(t46->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t46 + 1))[t47]);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t284 = h10_h;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_retain(&t48);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h10_h = t48;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_release(&t284);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t50 = h10_h;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t51 = HERO_STR_LIT(hero_str_724db1e1);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t52 = h_mutatejsonfields_whole_field(t50, t51);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t285 = h42_own42;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h42_own42 = t52;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_e201354_release(&t285);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t286 = h11_f3;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_e201354_retain(&t52);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h11_f3 = t52;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_e201354_release(&t286);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t53 = h11_f3;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t54 = t53.tag;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t55 = INT64_C(0);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t56 = t54 == t55;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     if (t56) goto bb12; else goto bb13;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
 bb10:
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t100 = h9_i0;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     t101 = INT64_C(1);
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t100, t101, &t102)) hero_panic_overflow();
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     h9_i0 = t102;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
     goto bb8;
-#line 124 "selfhost/mutate/plan.hero"
+#line 129 "selfhost/mutate/plan.hero"
 bb11:
-#line 129 "selfhost/mutate/plan.hero"
+#line 134 "selfhost/mutate/plan.hero"
     t103 = hero_array_new(&h_mutatehunks_Lines_desc, 1);
-#line 129 "selfhost/mutate/plan.hero"
+#line 134 "selfhost/mutate/plan.hero"
     t287 = h43_own43;
-#line 129 "selfhost/mutate/plan.hero"
+#line 134 "selfhost/mutate/plan.hero"
     h43_own43 = t103;
-#line 129 "selfhost/mutate/plan.hero"
+#line 134 "selfhost/mutate/plan.hero"
     hero_array_decref(t287);
-#line 129 "selfhost/mutate/plan.hero"
+#line 134 "selfhost/mutate/plan.hero"
     t288 = h15_statements;
-#line 129 "selfhost/mutate/plan.hero"
+#line 134 "selfhost/mutate/plan.hero"
     hero_array_incref(t103);
-#line 129 "selfhost/mutate/plan.hero"
+#line 134 "selfhost/mutate/plan.hero"
     h15_statements = t103;
-#line 129 "selfhost/mutate/plan.hero"
+#line 134 "selfhost/mutate/plan.hero"
     hero_array_decref(t288);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t104 = h0_row;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t105 = HERO_STR_LIT(hero_str_4afdbc6b);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t106 = h_mutatejsonfields_items_field(t104, t105);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t289 = h44_own44;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h44_own44 = t106;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t289);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t290 = h16_f7;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h_0opt_867bda_retain(&t106);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h16_f7 = t106;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t290);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t107 = h16_f7;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t108 = t107.tag;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t109 = INT64_C(0);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t110 = t108 == t109;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     if (t110) goto bb20; else goto bb21;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
 bb12:
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t60 = h11_f3;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t61 = t60.as.ok;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t62 = h10_h;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t63 = HERO_STR_LIT(hero_str_1aab3b);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t64 = h_mutatejsonfields_whole_field(t62, t63);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t291 = h45_own45;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h45_own45 = t64;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_e201354_release(&t291);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t292 = h12_f4;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_e201354_retain(&t64);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h12_f4 = t64;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_e201354_release(&t292);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t65 = h12_f4;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t66 = t65.tag;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t67 = INT64_C(0);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t68 = t66 == t67;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     if (t68) goto bb14; else goto bb15;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
 bb13:
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t57 = h11_f3;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t58 = t57.as.err;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t58);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t59 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t58};
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t293 = h46_own46;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h46_own46 = t59;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t293);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h32_ret0 = t59;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
 bb14:
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t72 = h12_f4;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t73 = t72.as.ok;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t74 = h10_h;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t75 = HERO_STR_LIT(hero_str_1d0204);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t76 = h_mutatejsonfields_texts_field(t74, t75);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t294 = h47_own47;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h47_own47 = t76;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_5a58f2ca_release(&t294);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t295 = h13_f5;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_5a58f2ca_retain(&t76);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h13_f5 = t76;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_5a58f2ca_release(&t295);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t77 = h13_f5;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t78 = t77.tag;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t79 = INT64_C(0);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t80 = t78 == t79;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     if (t80) goto bb16; else goto bb17;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
 bb15:
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t69 = h12_f4;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t70 = t69.as.err;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t70);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t71 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t70};
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t296 = h48_own48;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h48_own48 = t71;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t296);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h32_ret0 = t71;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
 bb16:
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t84 = h13_f5;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t85 = t84.as.ok;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t86 = h10_h;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t87 = HERO_STR_LIT(hero_str_f849713);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t88 = h_mutatejsonfields_wholes_field(t86, t87);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t297 = h49_own49;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h49_own49 = t88;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_2270cbe7_release(&t297);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t298 = h14_f6;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_2270cbe7_retain(&t88);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h14_f6 = t88;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_2270cbe7_release(&t298);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t89 = h14_f6;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t90 = t89.tag;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t91 = INT64_C(0);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t92 = t90 == t91;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     if (t92) goto bb18; else goto bb19;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
 bb17:
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t81 = h13_f5;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t82 = t81.as.err;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t82);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t83 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t82};
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t299 = h50_own50;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h50_own50 = t83;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t299);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h32_ret0 = t83;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
 bb18:
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t96 = h14_f6;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t97 = t96.as.ok;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     hero_array_incref(t85);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     hero_array_incref(t97);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t98 = (h_mutatehunks_Hunk){.f_start = t61, .f_end = t73, .f_lines = t85, .f_site = t97};
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t300 = h51_own51;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h51_own51 = t98;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_mutatehunks_Hunk_release(&t300);
-#line 125 "selfhost/mutate/plan.hero"
+#line 130 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&h6_found, &t98);
-#line 125 "selfhost/mutate/plan.hero"
+#line 130 "selfhost/mutate/plan.hero"
     goto bb10;
-#line 125 "selfhost/mutate/plan.hero"
+#line 130 "selfhost/mutate/plan.hero"
 bb19:
     t93 = h14_f6;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t94 = t93.as.err;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t94);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t95 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t94};
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     t301 = h52_own52;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h52_own52 = t95;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t301);
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     h32_ret0 = t95;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 126 "selfhost/mutate/plan.hero"
+#line 131 "selfhost/mutate/plan.hero"
 bb20:
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t114 = h16_f7;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t115 = t114.as.ok;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t302 = h17_xs1;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     hero_array_incref(t115);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h17_xs1 = t115;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     hero_array_decref(t302);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t116 = INT64_C(0);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h18_i1 = t116;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     goto bb22;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
 bb21:
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t111 = h16_f7;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t112 = t111.as.err;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t112);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t113 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t112};
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t303 = h53_own53;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h53_own53 = t113;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t303);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h32_ret0 = t113;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
 bb22:
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t117 = h18_i1;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t118 = h17_xs1;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t119 = ((void)(t118 == NULL ? ((void)hero_array_len(t118), hero_unreachable()) : (void)0), t118->len);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t120 = t117 < t119;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     if (t120) goto bb23; else goto bb25;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
 bb23:
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t121 = h17_xs1;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t122 = h18_i1;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t123 = ((void)((t121 == NULL || t122 < 0 || t122 >= t121->len) ? ((void)hero_array_at(t121, t122), hero_unreachable()) : (void)0), (void)(t121->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t121 + 1))[t122]);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t304 = h19_range_of;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_retain(&t123);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h19_range_of = t123;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h_mutatejsonread_Json_release(&t304);
     t124 = h19_range_of;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t125 = h_mutatejsonfields_items_of(t124);
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t305 = h54_own54;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h54_own54 = t125;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t305);
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t306 = h20_f8;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h_0opt_867bda_retain(&t125);
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h20_f8 = t125;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h_0opt_867bda_release(&t306);
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t126 = h20_f8;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t127 = t126.tag;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t128 = INT64_C(0);
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t129 = t127 == t128;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     if (t129) goto bb26; else goto bb27;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
 bb24:
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t171 = h18_i1;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     t172 = INT64_C(1);
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t171, t172, &t173)) hero_panic_overflow();
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     h18_i1 = t173;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
     goto bb22;
-#line 131 "selfhost/mutate/plan.hero"
+#line 136 "selfhost/mutate/plan.hero"
 bb25:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t174 = h3_key;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t175 = h0_row;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t176 = HERO_STR_LIT(hero_str_393d);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t177 = h_mutatejsonfields_text_field(t175, t176);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t307 = h55_own55;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h55_own55 = t177;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t307);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t308 = h24_f11;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t177);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h24_f11 = t177;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t308);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t178 = h24_f11;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t179 = t178.tag;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t180 = INT64_C(0);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t181 = t179 == t180;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     if (t181) goto bb35; else goto bb36;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb26:
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t133 = h20_f8;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t134 = t133.as.ok;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t309 = h21_ends;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     hero_array_incref(t134);
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h21_ends = t134;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     hero_array_decref(t309);
-#line 134 "selfhost/mutate/plan.hero"
+#line 139 "selfhost/mutate/plan.hero"
     t135 = h21_ends;
-#line 134 "selfhost/mutate/plan.hero"
+#line 139 "selfhost/mutate/plan.hero"
     t136 = ((void)(t135 == NULL ? ((void)hero_array_len(t135), hero_unreachable()) : (void)0), t135->len);
-#line 134 "selfhost/mutate/plan.hero"
+#line 139 "selfhost/mutate/plan.hero"
     t137 = INT64_C(2);
-#line 134 "selfhost/mutate/plan.hero"
+#line 139 "selfhost/mutate/plan.hero"
     t138 = t136 != t137;
-#line 134 "selfhost/mutate/plan.hero"
+#line 139 "selfhost/mutate/plan.hero"
     if (t138) goto bb29; else goto bb30;
-#line 134 "selfhost/mutate/plan.hero"
+#line 139 "selfhost/mutate/plan.hero"
 bb27:
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t130 = h20_f8;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t131 = t130.as.err;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t131);
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t132 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t131};
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     t310 = h56_own56;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h56_own56 = t132;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t310);
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     h32_ret0 = t132;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 132 "selfhost/mutate/plan.hero"
+#line 137 "selfhost/mutate/plan.hero"
 bb28:
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t143 = h21_ends;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t144 = INT64_C(0);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t145 = ((void)((t143 == NULL || t144 < 0 || t144 >= t143->len) ? ((void)hero_array_at(t143, t144), hero_unreachable()) : (void)0), (void)(t143->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t143 + 1))[t144]);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t146 = h_mutatejsonfields_whole_of(t145);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t311 = h57_own57;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h57_own57 = t146;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h_0opt_e201354_release(&t311);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t312 = h22_f9;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h_0opt_e201354_retain(&t146);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h22_f9 = t146;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h_0opt_e201354_release(&t312);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t147 = h22_f9;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t148 = t147.tag;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t149 = INT64_C(0);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t150 = t148 == t149;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     if (t150) goto bb31; else goto bb32;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
 bb29:
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     t139 = HERO_STR_LIT(hero_str_d3a6cd);
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     t140 = HERO_STR_LIT(hero_str_3744c41e);
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     hero_str_incref(t139);
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     hero_str_incref(t140);
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     t141 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = {.code = t139, .msg = t140}};
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     t313 = h58_own58;
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     h58_own58 = t141;
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t313);
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     h32_ret0 = t141;
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
 bb30:
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
     goto bb28;
-#line 135 "selfhost/mutate/plan.hero"
+#line 140 "selfhost/mutate/plan.hero"
 bb31:
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t154 = h22_f9;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t155 = t154.as.ok;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t156 = h21_ends;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t157 = INT64_C(1);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t158 = ((void)((t156 == NULL || t157 < 0 || t157 >= t156->len) ? ((void)hero_array_at(t156, t157), hero_unreachable()) : (void)0), (void)(t156->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t156 + 1))[t157]);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t159 = h_mutatejsonfields_whole_of(t158);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t314 = h59_own59;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h59_own59 = t159;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h_0opt_e201354_release(&t314);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t315 = h23_f10;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h_0opt_e201354_retain(&t159);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h23_f10 = t159;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h_0opt_e201354_release(&t315);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t160 = h23_f10;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t161 = t160.tag;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t162 = INT64_C(0);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t163 = t161 == t162;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     if (t163) goto bb33; else goto bb34;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
 bb32:
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t151 = h22_f9;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t152 = t151.as.err;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t152);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t153 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t152};
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t316 = h60_own60;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h60_own60 = t153;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t316);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h32_ret0 = t153;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
 bb33:
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t167 = h23_f10;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t168 = t167.as.ok;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t169 = (h_mutatehunks_Lines){.f_first = t155, .f_last = t168};
-#line 136 "selfhost/mutate/plan.hero"
+#line 141 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&h15_statements, &t169);
-#line 136 "selfhost/mutate/plan.hero"
+#line 141 "selfhost/mutate/plan.hero"
     goto bb24;
-#line 136 "selfhost/mutate/plan.hero"
+#line 141 "selfhost/mutate/plan.hero"
 bb34:
     t164 = h23_f10;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t165 = t164.as.err;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t165);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t166 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t165};
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     t317 = h61_own61;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h61_own61 = t166;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t317);
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     h32_ret0 = t166;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 137 "selfhost/mutate/plan.hero"
+#line 142 "selfhost/mutate/plan.hero"
 bb35:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t185 = h24_f11;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t186 = t185.as.ok;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t187 = h0_row;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t188 = HERO_STR_LIT(hero_str_dc6a21c);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t189 = h_mutatejsonfields_text_field(t187, t188);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t318 = h62_own62;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h62_own62 = t189;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t318);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t319 = h25_f12;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t189);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h25_f12 = t189;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t319);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t190 = h25_f12;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t191 = t190.tag;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t192 = INT64_C(0);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t193 = t191 == t192;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     if (t193) goto bb37; else goto bb38;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb36:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t182 = h24_f11;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t183 = t182.as.err;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t183);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t184 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t183};
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t320 = h63_own63;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h63_own63 = t184;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t320);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h32_ret0 = t184;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb37:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t197 = h25_f12;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t198 = t197.as.ok;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t199 = h6_found;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t200 = h15_statements;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t201 = h4_measured;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t321 = h26_f13;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_retain(&t201);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h26_f13 = t201;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_release(&t321);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t202 = h26_f13;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t203 = t202.tag;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t204 = INT64_C(0);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t205 = t203 == t204;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     if (t205) goto bb39; else goto bb40;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb38:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t194 = h25_f12;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t195 = t194.as.err;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t195);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t196 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t195};
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t322 = h64_own64;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h64_own64 = t196;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t322);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h32_ret0 = t196;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb39:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t208 = h26_f13;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t209 = t208.as.ok;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t210 = HERO_STR_LIT(hero_str_724dac31);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t211 = h_mutatejsonfields_text_field(t209, t210);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t323 = h65_own65;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h65_own65 = t211;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t323);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t324 = h27_f14;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t211);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h27_f14 = t211;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t324);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t212 = h27_f14;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t213 = t212.tag;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t214 = INT64_C(0);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t215 = t213 == t214;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     if (t215) goto bb41; else goto bb42;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb40:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t206 = h26_f13;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t207 = t206.as.err;
 #line 1173876 "main.c"
     hero_panic_must(t207);
     hero_unreachable();
 bb41:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t219 = h27_f14;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t220 = t219.as.ok;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t221 = h4_measured;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t325 = h28_f15;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_retain(&t221);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h28_f15 = t221;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_release(&t325);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t222 = h28_f15;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t223 = t222.tag;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t224 = INT64_C(0);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t225 = t223 == t224;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     if (t225) goto bb43; else goto bb44;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb42:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t216 = h27_f14;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t217 = t216.as.err;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t217);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t218 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t217};
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t326 = h66_own66;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h66_own66 = t218;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t326);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h32_ret0 = t218;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb43:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t228 = h28_f15;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t229 = t228.as.ok;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t230 = HERO_STR_LIT(hero_str_695248b9);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t231 = h_mutatejsonfields_text_field(t229, t230);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t327 = h67_own67;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h67_own67 = t231;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t327);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t328 = h29_f16;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t231);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h29_f16 = t231;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t328);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t232 = h29_f16;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t233 = t232.tag;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t234 = INT64_C(0);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t235 = t233 == t234;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     if (t235) goto bb45; else goto bb46;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb44:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t226 = h28_f15;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t227 = t226.as.err;
 #line 1173964 "main.c"
     hero_panic_must(t227);
     hero_unreachable();
 bb45:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t239 = h29_f16;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t240 = t239.as.ok;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t241 = HERO_STR_LIT(hero_str_3f63c3eb);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t242 = hero_str_eq(t240, t241);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t243 = h4_measured;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t329 = h30_f17;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_retain(&t243);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h30_f17 = t243;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_7f976563_release(&t329);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t244 = h30_f17;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t245 = t244.tag;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t246 = INT64_C(0);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t247 = t245 == t246;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     if (t247) goto bb47; else goto bb48;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb46:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t236 = h29_f16;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t237 = t236.as.err;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t237);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t238 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t237};
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t330 = h68_own68;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h68_own68 = t238;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t330);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h32_ret0 = t238;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb47:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t250 = h30_f17;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t251 = t250.as.ok;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t252 = HERO_STR_LIT(hero_str_5c2bdb2a);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t253 = h_mutatejsonfields_text_field(t251, t252);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t331 = h69_own69;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h69_own69 = t253;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t331);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t332 = h31_f18;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t253);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h31_f18 = t253;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t332);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t254 = h31_f18;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t255 = t254.tag;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t256 = INT64_C(0);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t257 = t255 == t256;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     if (t257) goto bb49; else goto bb50;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb48:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t248 = h30_f17;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t249 = t248.as.err;
 #line 1174056 "main.c"
     hero_panic_must(t249);
     hero_unreachable();
 bb49:
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t261 = h31_f18;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t262 = t261.as.ok;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t263 = HERO_STR_LIT(hero_str_3f63c3eb);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t264 = hero_str_eq(t262, t263);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_str_incref(t174);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_str_incref(t186);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_str_incref(t198);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_array_incref(t199);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_array_incref(t200);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_str_incref(t220);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t265 = (h_mutateplan_Single){.f_key = t174, .f_op = t186, .f_file = t198, .f_hunks = t199, .f_statements = t200, .f_stage = t220, .f_normal_legal = t242, .f_control_legal = t264};
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t333 = h70_own70;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h70_own70 = t265;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_mutateplan_Single_release(&t333);
-#line 140 "selfhost/mutate/plan.hero"
+#line 145 "selfhost/mutate/plan.hero"
     h_mutateplan_Single_retain(&t265);
-#line 140 "selfhost/mutate/plan.hero"
+#line 145 "selfhost/mutate/plan.hero"
     t266 = (h_0opt_52afa93){.tag = INT64_C(0), .as.ok = t265};
-#line 140 "selfhost/mutate/plan.hero"
+#line 145 "selfhost/mutate/plan.hero"
     t334 = h71_own71;
-#line 140 "selfhost/mutate/plan.hero"
+#line 145 "selfhost/mutate/plan.hero"
     h71_own71 = t266;
-#line 140 "selfhost/mutate/plan.hero"
+#line 145 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t334);
-#line 140 "selfhost/mutate/plan.hero"
+#line 145 "selfhost/mutate/plan.hero"
     h32_ret0 = t266;
-#line 140 "selfhost/mutate/plan.hero"
+#line 145 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 140 "selfhost/mutate/plan.hero"
+#line 145 "selfhost/mutate/plan.hero"
 bb50:
     t258 = h31_f18;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t259 = t258.as.err;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t259);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t260 = (h_0opt_52afa93){.tag = INT64_C(1), .as.err = t259};
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     t335 = h72_own72;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h72_own72 = t260;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t335);
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     h32_ret0 = t260;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
     goto bb51;
-#line 141 "selfhost/mutate/plan.hero"
+#line 146 "selfhost/mutate/plan.hero"
 bb51:
 #line 1174123 "main.c"
     t267 = h32_ret0;
@@ -1174193,324 +1174193,324 @@ bb51:
     return t267;
 }
 
-#line 144 "selfhost/mutate/plan.hero"
+#line 149 "selfhost/mutate/plan.hero"
 h_0opt_bdd0d7c h_mutateplan_pair(h_mutatejsonread_Json h0_row) {
-#line 144 "selfhost/mutate/plan.hero"
+#line 149 "selfhost/mutate/plan.hero"
     h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_f1 = {0}; h_0opt_f87774a h3_f2 = {0}; h_0opt_f87774a h4_f3 = {0}; h_0opt_f87774a h5_f4 = {0}; h_0opt_bdd0d7c h6_ret0 = {0}; h_0opt_f87774a h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; h_0opt_bdd0d7c h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; h_0opt_bdd0d7c h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_0opt_bdd0d7c h13_own13 = {0}; h_0opt_f87774a h14_own14 = {0}; h_0opt_bdd0d7c h15_own15 = {0}; h_mutateplan_Pair h16_own16 = {0}; h_0opt_bdd0d7c h17_own17 = {0}; h_0opt_bdd0d7c h18_own18 = {0}; h_mutatejsonread_Json t1; HeroStr t2; h_0opt_f87774a t3; h_0opt_f87774a t4; int64_t t5; int64_t t6; bool t7; h_0opt_f87774a t8; HeroFailure t9; h_0opt_bdd0d7c t10; h_0opt_f87774a t11; HeroStr t12; h_mutatejsonread_Json t13; HeroStr t14; h_0opt_f87774a t15; h_0opt_f87774a t16; int64_t t17; int64_t t18; bool t19; h_0opt_f87774a t20; HeroFailure t21; h_0opt_bdd0d7c t22; h_0opt_f87774a t23; HeroStr t24; h_mutatejsonread_Json t25; HeroStr t26; h_0opt_f87774a t27; h_0opt_f87774a t28; int64_t t29; int64_t t30; bool t31; h_0opt_f87774a t32; HeroFailure t33; h_0opt_bdd0d7c t34; h_0opt_f87774a t35; HeroStr t36; h_mutatejsonread_Json t37; HeroStr t38; h_0opt_f87774a t39; h_0opt_f87774a t40; int64_t t41; int64_t t42; bool t43; h_0opt_f87774a t44; HeroFailure t45; h_0opt_bdd0d7c t46; h_0opt_f87774a t47; HeroStr t48; h_mutatejsonread_Json t49; HeroStr t50; h_0opt_f87774a t51; h_0opt_f87774a t52; int64_t t53; int64_t t54; bool t55; h_0opt_f87774a t56; HeroFailure t57; h_0opt_bdd0d7c t58; h_0opt_f87774a t59; HeroStr t60; h_mutateplan_Pair t61; h_0opt_bdd0d7c t62; h_0opt_bdd0d7c t63; h_0opt_f87774a t64; h_0opt_f87774a t65; h_0opt_f87774a t66; h_0opt_f87774a t67; h_0opt_bdd0d7c t68; h_0opt_f87774a t69; h_0opt_f87774a t70; h_0opt_bdd0d7c t71; h_0opt_f87774a t72; h_0opt_f87774a t73; h_0opt_bdd0d7c t74; h_0opt_f87774a t75; h_0opt_f87774a t76; h_0opt_bdd0d7c t77; h_mutateplan_Pair t78; h_0opt_bdd0d7c t79; h_0opt_bdd0d7c t80; goto bb0;
-#line 144 "selfhost/mutate/plan.hero"
+#line 149 "selfhost/mutate/plan.hero"
 bb0:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t1 = h0_row;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t2 = HERO_STR_LIT(hero_str_61);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t3 = h_mutatejsonfields_text_field(t1, t2);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t64 = h7_own7;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h7_own7 = t3;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t64);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t65 = h1_f0;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t3);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h1_f0 = t3;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t65);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t4 = h1_f0;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t5 = t4.tag;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t6 = INT64_C(0);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t7 = t5 == t6;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     if (t7) goto bb1; else goto bb2;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb1:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t11 = h1_f0;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t12 = t11.as.ok;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t13 = h0_row;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t14 = HERO_STR_LIT(hero_str_62);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t15 = h_mutatejsonfields_text_field(t13, t14);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t66 = h8_own8;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h8_own8 = t15;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t66);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t67 = h2_f1;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t15);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h2_f1 = t15;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t67);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t16 = h2_f1;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t17 = t16.tag;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t18 = INT64_C(0);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t19 = t17 == t18;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     if (t19) goto bb3; else goto bb4;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb2:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t8 = h1_f0;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t9 = t8.as.err;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t9);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t10 = (h_0opt_bdd0d7c){.tag = INT64_C(1), .as.err = t9};
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t68 = h9_own9;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h9_own9 = t10;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t68);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h6_ret0 = t10;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     goto bb11;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb3:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t23 = h2_f1;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t24 = t23.as.ok;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t25 = h0_row;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t26 = HERO_STR_LIT(hero_str_d18814f);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t27 = h_mutatejsonfields_text_field(t25, t26);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t69 = h10_own10;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h10_own10 = t27;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t69);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t70 = h3_f2;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t27);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h3_f2 = t27;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t70);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t28 = h3_f2;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t29 = t28.tag;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t30 = INT64_C(0);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t31 = t29 == t30;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     if (t31) goto bb5; else goto bb6;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb4:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t20 = h2_f1;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t21 = t20.as.err;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t21);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t22 = (h_0opt_bdd0d7c){.tag = INT64_C(1), .as.err = t21};
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t71 = h11_own11;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h11_own11 = t22;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t71);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h6_ret0 = t22;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     goto bb11;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb5:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t35 = h3_f2;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t36 = t35.as.ok;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t37 = h0_row;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t38 = HERO_STR_LIT(hero_str_d3aceea);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t39 = h_mutatejsonfields_text_field(t37, t38);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t72 = h12_own12;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h12_own12 = t39;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t72);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t73 = h4_f3;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t39);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h4_f3 = t39;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t73);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t40 = h4_f3;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t41 = t40.tag;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t42 = INT64_C(0);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t43 = t41 == t42;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     if (t43) goto bb7; else goto bb8;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb6:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t32 = h3_f2;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t33 = t32.as.err;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t33);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t34 = (h_0opt_bdd0d7c){.tag = INT64_C(1), .as.err = t33};
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t74 = h13_own13;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h13_own13 = t34;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t74);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h6_ret0 = t34;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     goto bb11;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb7:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t47 = h4_f3;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t48 = t47.as.ok;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t49 = h0_row;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t50 = HERO_STR_LIT(hero_str_dc6a21c);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t51 = h_mutatejsonfields_text_field(t49, t50);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t75 = h14_own14;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h14_own14 = t51;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t75);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t76 = h5_f4;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t51);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h5_f4 = t51;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t76);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t52 = h5_f4;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t53 = t52.tag;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t54 = INT64_C(0);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t55 = t53 == t54;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     if (t55) goto bb9; else goto bb10;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb8:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t44 = h4_f3;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t45 = t44.as.err;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t45);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t46 = (h_0opt_bdd0d7c){.tag = INT64_C(1), .as.err = t45};
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t77 = h15_own15;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h15_own15 = t46;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t77);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h6_ret0 = t46;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     goto bb11;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb9:
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t59 = h5_f4;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t60 = t59.as.ok;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_str_incref(t12);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_str_incref(t24);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_str_incref(t36);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_str_incref(t48);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_str_incref(t60);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t61 = (h_mutateplan_Pair){.f_a = t12, .f_b = t24, .f_a_op = t36, .f_b_op = t48, .f_file = t60};
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t78 = h16_own16;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h16_own16 = t61;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_mutateplan_Pair_release(&t78);
-#line 145 "selfhost/mutate/plan.hero"
+#line 150 "selfhost/mutate/plan.hero"
     h_mutateplan_Pair_retain(&t61);
-#line 145 "selfhost/mutate/plan.hero"
+#line 150 "selfhost/mutate/plan.hero"
     t62 = (h_0opt_bdd0d7c){.tag = INT64_C(0), .as.ok = t61};
-#line 145 "selfhost/mutate/plan.hero"
+#line 150 "selfhost/mutate/plan.hero"
     t79 = h17_own17;
-#line 145 "selfhost/mutate/plan.hero"
+#line 150 "selfhost/mutate/plan.hero"
     h17_own17 = t62;
-#line 145 "selfhost/mutate/plan.hero"
+#line 150 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t79);
-#line 145 "selfhost/mutate/plan.hero"
+#line 150 "selfhost/mutate/plan.hero"
     h6_ret0 = t62;
-#line 145 "selfhost/mutate/plan.hero"
+#line 150 "selfhost/mutate/plan.hero"
     goto bb11;
-#line 145 "selfhost/mutate/plan.hero"
+#line 150 "selfhost/mutate/plan.hero"
 bb10:
     t56 = h5_f4;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t57 = t56.as.err;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t57);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t58 = (h_0opt_bdd0d7c){.tag = INT64_C(1), .as.err = t57};
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     t80 = h18_own18;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h18_own18 = t58;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h_0opt_bdd0d7c_release(&t80);
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     h6_ret0 = t58;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
     goto bb11;
-#line 146 "selfhost/mutate/plan.hero"
+#line 151 "selfhost/mutate/plan.hero"
 bb11:
 #line 1174516 "main.c"
     t63 = h6_ret0;
@@ -1174535,213 +1174535,213 @@ bb11:
     return t63;
 }
 
-#line 150 "selfhost/mutate/plan.hero"
+#line 155 "selfhost/mutate/plan.hero"
 h_0opt_5a58f2ca h_mutateplan_digests(HeroStr h0_dir) {
-#line 150 "selfhost/mutate/plan.hero"
+#line 155 "selfhost/mutate/plan.hero"
     HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_name = {0}; h_0opt_f87774a h5_f0 = {0}; h_0opt_5a58f2ca h6_ret0 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_0opt_5a58f2ca h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; h_0opt_5a58f2ca h16_own16 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; HeroStr t10; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; h_0opt_f87774a t20; h_0opt_f87774a t21; int64_t t22; int64_t t23; bool t24; h_0opt_f87774a t25; HeroFailure t26; h_0opt_5a58f2ca t27; h_0opt_f87774a t28; HeroStr t29; HeroStr t30; HeroStr t31; int64_t t33; int64_t t34; int64_t t35; HeroArrayHeader * t36; h_0opt_5a58f2ca t37; h_0opt_5a58f2ca t38; HeroArrayHeader * t39; HeroArrayHeader * t40; HeroArrayHeader * t41; HeroArrayHeader * t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; h_0opt_f87774a t47; h_0opt_f87774a t48; h_0opt_5a58f2ca t49; HeroStr t50; HeroStr t51; h_0opt_5a58f2ca t52; goto bb0;
-#line 150 "selfhost/mutate/plan.hero"
+#line 155 "selfhost/mutate/plan.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
-#line 151 "selfhost/mutate/plan.hero"
+#line 156 "selfhost/mutate/plan.hero"
     t39 = h7_own7;
-#line 151 "selfhost/mutate/plan.hero"
+#line 156 "selfhost/mutate/plan.hero"
     h7_own7 = t1;
-#line 151 "selfhost/mutate/plan.hero"
+#line 156 "selfhost/mutate/plan.hero"
     hero_array_decref(t39);
-#line 151 "selfhost/mutate/plan.hero"
+#line 156 "selfhost/mutate/plan.hero"
     t40 = h1_out;
-#line 151 "selfhost/mutate/plan.hero"
+#line 156 "selfhost/mutate/plan.hero"
     hero_array_incref(t1);
-#line 151 "selfhost/mutate/plan.hero"
+#line 156 "selfhost/mutate/plan.hero"
     h1_out = t1;
-#line 151 "selfhost/mutate/plan.hero"
+#line 156 "selfhost/mutate/plan.hero"
     hero_array_decref(t40);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t2 = h_mutateplan_PLAN_FILES();
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t41 = h8_own8;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     h8_own8 = t2;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     hero_array_decref(t41);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t42 = h2_xs0;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     hero_array_incref(t2);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     h2_xs0 = t2;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     hero_array_decref(t42);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t3 = INT64_C(0);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     h3_i0 = t3;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     goto bb1;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
 bb1:
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t4 = h3_i0;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t5 = h2_xs0;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t7 = t4 < t6;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     if (t7) goto bb2; else goto bb4;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
 bb2:
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t8 = h2_xs0;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t9 = h3_i0;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t43 = h4_name;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     hero_str_incref(t10);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     h4_name = t10;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     hero_str_decref(t43);
     t12 = h4_name;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t13 = HERO_STR_LIT(hero_str_20);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t14 = hero_str_concat(t12, t13);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t44 = h9_own9;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h9_own9 = t14;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     hero_str_decref(t44);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t15 = h0_dir;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t16 = HERO_STR_LIT(hero_str_2f);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t17 = hero_str_concat(t15, t16);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t45 = h10_own10;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h10_own10 = t17;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     hero_str_decref(t45);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t18 = h4_name;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t19 = hero_str_concat(t17, t18);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t46 = h11_own11;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h11_own11 = t19;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     hero_str_decref(t46);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t20 = h_mutateplan_read_text(t19);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t47 = h12_own12;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h12_own12 = t20;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t47);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t48 = h5_f0;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_retain(&t20);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h5_f0 = t20;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h_0opt_f87774a_release(&t48);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t21 = h5_f0;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t22 = t21.tag;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t23 = INT64_C(0);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t24 = t22 == t23;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     if (t24) goto bb5; else goto bb6;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
 bb3:
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t33 = h3_i0;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     t34 = INT64_C(1);
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow();
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     h3_i0 = t35;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
     goto bb1;
-#line 153 "selfhost/mutate/plan.hero"
+#line 158 "selfhost/mutate/plan.hero"
 bb4:
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
     t36 = h1_out;
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
     hero_array_incref(t36);
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
     t37 = (h_0opt_5a58f2ca){.tag = INT64_C(0), .as.ok = t36};
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
     t49 = h13_own13;
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
     h13_own13 = t37;
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
     h_0opt_5a58f2ca_release(&t49);
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
     h6_ret0 = t37;
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
     goto bb7;
-#line 156 "selfhost/mutate/plan.hero"
+#line 161 "selfhost/mutate/plan.hero"
 bb5:
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t28 = h5_f0;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t29 = t28.as.ok;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t30 = h_clidigest_digest(t29);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t50 = h14_own14;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h14_own14 = t30;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     hero_str_decref(t50);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t31 = hero_str_concat(t14, t30);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t51 = h15_own15;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h15_own15 = t31;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     hero_str_decref(t51);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     hero_array_push_owned(&h1_out, &t31);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     goto bb3;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
 bb6:
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t25 = h5_f0;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t26 = t25.as.err;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t26);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t27 = (h_0opt_5a58f2ca){.tag = INT64_C(1), .as.err = t26};
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     t52 = h16_own16;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h16_own16 = t27;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h_0opt_5a58f2ca_release(&t52);
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     h6_ret0 = t27;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
     goto bb7;
-#line 154 "selfhost/mutate/plan.hero"
+#line 159 "selfhost/mutate/plan.hero"
 bb7:
 #line 1174747 "main.c"
     t38 = h6_ret0;
@@ -1174763,113 +1174763,113 @@ bb7:
     return t38;
 }
 
-#line 159 "selfhost/mutate/plan.hero"
+#line 164 "selfhost/mutate/plan.hero"
 HeroArrayHeader * h_mutateplan_files(h_mutateplan_Plan h0_p) {
-#line 159 "selfhost/mutate/plan.hero"
+#line 164 "selfhost/mutate/plan.hero"
     HeroMapHeader * h1_seen = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_mutateplan_Single h4_one = {0}; HeroMapHeader * h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroMapHeader * t1; h_mutateplan_Plan t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; h_mutateplan_Single t11; h_mutateplan_Single t12; HeroStr t13; bool t14; int64_t t15; int64_t t16; int64_t t17; HeroMapHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroMapHeader * t21; HeroMapHeader * t22; HeroArrayHeader * t23; h_mutateplan_Single t24; HeroArrayHeader * t25; HeroArrayHeader * t26; goto bb0;
-#line 159 "selfhost/mutate/plan.hero"
+#line 164 "selfhost/mutate/plan.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
-#line 160 "selfhost/mutate/plan.hero"
+#line 165 "selfhost/mutate/plan.hero"
     t21 = h5_own5;
-#line 160 "selfhost/mutate/plan.hero"
+#line 165 "selfhost/mutate/plan.hero"
     h5_own5 = t1;
-#line 160 "selfhost/mutate/plan.hero"
+#line 165 "selfhost/mutate/plan.hero"
     hero_map_decref(t21);
-#line 160 "selfhost/mutate/plan.hero"
+#line 165 "selfhost/mutate/plan.hero"
     t22 = h1_seen;
-#line 160 "selfhost/mutate/plan.hero"
+#line 165 "selfhost/mutate/plan.hero"
     hero_map_incref(t1);
-#line 160 "selfhost/mutate/plan.hero"
+#line 165 "selfhost/mutate/plan.hero"
     h1_seen = t1;
-#line 160 "selfhost/mutate/plan.hero"
+#line 165 "selfhost/mutate/plan.hero"
     hero_map_decref(t22);
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t2 = h0_p;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t3 = t2.f_singles;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t23 = h2_xs0;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     hero_array_incref(t3);
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     h2_xs0 = t3;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     hero_array_decref(t23);
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t4 = INT64_C(0);
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     h3_i0 = t4;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     goto bb1;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
 bb1:
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t5 = h3_i0;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t6 = h2_xs0;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t8 = t5 < t7;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     if (t8) goto bb2; else goto bb4;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
 bb2:
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t9 = h2_xs0;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t10 = h3_i0;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_mutateplan_Single) ? hero_unreachable() : (void)0), ((h_mutateplan_Single const *)(const void *)(t9 + 1))[t10]);
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t24 = h4_one;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     h_mutateplan_Single_retain(&t11);
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     h4_one = t11;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     h_mutateplan_Single_release(&t24);
     t12 = h4_one;
-#line 163 "selfhost/mutate/plan.hero"
+#line 168 "selfhost/mutate/plan.hero"
     t13 = t12.f_file;
-#line 163 "selfhost/mutate/plan.hero"
+#line 168 "selfhost/mutate/plan.hero"
     t14 = true;
-#line 163 "selfhost/mutate/plan.hero"
+#line 168 "selfhost/mutate/plan.hero"
     hero_map_set(&(h1_seen), &t13, &t14);
-#line 163 "selfhost/mutate/plan.hero"
+#line 168 "selfhost/mutate/plan.hero"
     goto bb3;
-#line 163 "selfhost/mutate/plan.hero"
+#line 168 "selfhost/mutate/plan.hero"
 bb3:
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t15 = h3_i0;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     t16 = INT64_C(1);
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     h3_i0 = t17;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
     goto bb1;
-#line 162 "selfhost/mutate/plan.hero"
+#line 167 "selfhost/mutate/plan.hero"
 bb4:
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     t18 = h1_seen;
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     t19 = hero_map_keys(t18);
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     t25 = h6_own6;
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     h6_own6 = t19;
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     hero_array_decref(t25);
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     t20 = hero_array_sort(t19);
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     t26 = h7_own7;
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     h7_own7 = t20;
-#line 167 "selfhost/mutate/plan.hero"
+#line 172 "selfhost/mutate/plan.hero"
     hero_array_decref(t26);
 #line 1174875 "main.c"
     hero_array_incref(t20);
@@ -1174882,99 +1174882,99 @@ bb4:
     return t20;
 }
 
-#line 170 "selfhost/mutate/plan.hero"
+#line 175 "selfhost/mutate/plan.hero"
 HeroMapHeader * h_mutateplan_by_key(h_mutateplan_Plan h0_p) {
-#line 170 "selfhost/mutate/plan.hero"
+#line 175 "selfhost/mutate/plan.hero"
     HeroMapHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_mutateplan_Single h4_one = {0}; HeroMapHeader * h5_own5 = {0}; HeroMapHeader * t1; h_mutateplan_Plan t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; h_mutateplan_Single t11; h_mutateplan_Single t12; HeroStr t13; h_mutateplan_Single t14; int64_t t15; int64_t t16; int64_t t17; HeroMapHeader * t18; HeroMapHeader * t19; HeroMapHeader * t20; HeroArrayHeader * t21; h_mutateplan_Single t22; goto bb0;
-#line 170 "selfhost/mutate/plan.hero"
+#line 175 "selfhost/mutate/plan.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &h_mutateplan_Single_desc, 0);
-#line 171 "selfhost/mutate/plan.hero"
+#line 176 "selfhost/mutate/plan.hero"
     t19 = h5_own5;
-#line 171 "selfhost/mutate/plan.hero"
+#line 176 "selfhost/mutate/plan.hero"
     h5_own5 = t1;
-#line 171 "selfhost/mutate/plan.hero"
+#line 176 "selfhost/mutate/plan.hero"
     hero_map_decref(t19);
-#line 171 "selfhost/mutate/plan.hero"
+#line 176 "selfhost/mutate/plan.hero"
     t20 = h1_out;
-#line 171 "selfhost/mutate/plan.hero"
+#line 176 "selfhost/mutate/plan.hero"
     hero_map_incref(t1);
-#line 171 "selfhost/mutate/plan.hero"
+#line 176 "selfhost/mutate/plan.hero"
     h1_out = t1;
-#line 171 "selfhost/mutate/plan.hero"
+#line 176 "selfhost/mutate/plan.hero"
     hero_map_decref(t20);
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t2 = h0_p;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t3 = t2.f_singles;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t21 = h2_xs0;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     hero_array_incref(t3);
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     h2_xs0 = t3;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     hero_array_decref(t21);
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t4 = INT64_C(0);
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     h3_i0 = t4;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     goto bb1;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
 bb1:
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t5 = h3_i0;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t6 = h2_xs0;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t8 = t5 < t7;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     if (t8) goto bb2; else goto bb4;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
 bb2:
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t9 = h2_xs0;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t10 = h3_i0;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(h_mutateplan_Single) ? hero_unreachable() : (void)0), ((h_mutateplan_Single const *)(const void *)(t9 + 1))[t10]);
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t22 = h4_one;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     h_mutateplan_Single_retain(&t11);
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     h4_one = t11;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     h_mutateplan_Single_release(&t22);
     t12 = h4_one;
-#line 174 "selfhost/mutate/plan.hero"
+#line 179 "selfhost/mutate/plan.hero"
     t13 = t12.f_key;
-#line 174 "selfhost/mutate/plan.hero"
+#line 179 "selfhost/mutate/plan.hero"
     t14 = h4_one;
-#line 174 "selfhost/mutate/plan.hero"
+#line 179 "selfhost/mutate/plan.hero"
     h_mutateplan_Single_retain(&t14);
-#line 174 "selfhost/mutate/plan.hero"
+#line 179 "selfhost/mutate/plan.hero"
     hero_map_set(&(h1_out), &t13, &t14);
-#line 174 "selfhost/mutate/plan.hero"
+#line 179 "selfhost/mutate/plan.hero"
     goto bb3;
-#line 174 "selfhost/mutate/plan.hero"
+#line 179 "selfhost/mutate/plan.hero"
 bb3:
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t15 = h3_i0;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     t16 = INT64_C(1);
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow();
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     h3_i0 = t17;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
     goto bb1;
-#line 173 "selfhost/mutate/plan.hero"
+#line 178 "selfhost/mutate/plan.hero"
 bb4:
-#line 176 "selfhost/mutate/plan.hero"
+#line 181 "selfhost/mutate/plan.hero"
     t18 = h1_out;
 #line 1174980 "main.c"
     hero_map_incref(t18);
@@ -1174985,38 +1174985,38 @@ bb4:
     return t18;
 }
 
-#line 178 "selfhost/mutate/plan.hero"
+#line 183 "selfhost/mutate/plan.hero"
 HeroStr h_mutateplan_why(h_0opt_52afa93 h0_got) {
-#line 178 "selfhost/mutate/plan.hero"
+#line 183 "selfhost/mutate/plan.hero"
     h_0opt_52afa93 h1_s0 = {0}; HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; h_0opt_52afa93 t1; h_0opt_52afa93 t2; int64_t t3; HeroStr t4; h_0opt_52afa93 t5; HeroFailure t6; HeroFailure t7; HeroStr t8; HeroStr t9; h_0opt_52afa93 t10; HeroStr t11; HeroFailure t12; HeroStr t13; goto bb0;
-#line 178 "selfhost/mutate/plan.hero"
+#line 183 "selfhost/mutate/plan.hero"
 bb0:
     t1 = h0_got;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     t10 = h1_s0;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_retain(&t1);
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     h1_s0 = t1;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     h_0opt_52afa93_release(&t10);
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     t2 = h1_s0;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     t3 = t2.tag;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     switch (t3) {
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
         case 0: goto bb2;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
         case 1: goto bb3;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
         default: hero_unreachable();
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     }
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
 bb1:
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     t9 = h2_r0;
 #line 1175022 "main.c"
     hero_str_incref(t9);
@@ -1175025,45 +1175025,45 @@ bb1:
     hero_failure_release(&h3_e);
     return t9;
 bb2:
-#line 180 "selfhost/mutate/plan.hero"
+#line 185 "selfhost/mutate/plan.hero"
     t4 = HERO_STR_LIT(hero_str_0);
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     t11 = h2_r0;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     hero_str_incref(t4);
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     h2_r0 = t4;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     hero_str_decref(t11);
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     goto bb1;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
 bb3:
-#line 181 "selfhost/mutate/plan.hero"
+#line 186 "selfhost/mutate/plan.hero"
     t5 = h1_s0;
-#line 181 "selfhost/mutate/plan.hero"
+#line 186 "selfhost/mutate/plan.hero"
     t6 = t5.as.err;
-#line 181 "selfhost/mutate/plan.hero"
+#line 186 "selfhost/mutate/plan.hero"
     t12 = h3_e;
-#line 181 "selfhost/mutate/plan.hero"
+#line 186 "selfhost/mutate/plan.hero"
     hero_failure_retain(&t6);
-#line 181 "selfhost/mutate/plan.hero"
+#line 186 "selfhost/mutate/plan.hero"
     h3_e = t6;
-#line 181 "selfhost/mutate/plan.hero"
+#line 186 "selfhost/mutate/plan.hero"
     hero_failure_release(&t12);
-#line 181 "selfhost/mutate/plan.hero"
+#line 186 "selfhost/mutate/plan.hero"
     t7 = h3_e;
-#line 181 "selfhost/mutate/plan.hero"
+#line 186 "selfhost/mutate/plan.hero"
     t8 = t7.msg;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     t13 = h2_r0;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     hero_str_incref(t8);
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     h2_r0 = t8;
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     hero_str_decref(t13);
-#line 179 "selfhost/mutate/plan.hero"
+#line 184 "selfhost/mutate/plan.hero"
     goto bb1;
 #line 1175069 "main.c"
 }
@@ -1270553,30 +1270553,30 @@ bb3:
     return t25;
 }
 
-#line 28 "selfhost/mutate/own.hero"
+#line 30 "selfhost/mutate/own.hero"
 h_0opt_77f29bc2 h_mutateown_read_corpus(HeroStr h0_run) {
-#line 28 "selfhost/mutate/own.hero"
+#line 30 "selfhost/mutate/own.hero"
     HeroStr h1_own1 = {0}; h_0opt_77f29bc2 h2_own2 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; h_0opt_77f29bc2 t4; HeroStr t5; h_0opt_77f29bc2 t6; goto bb0;
-#line 28 "selfhost/mutate/own.hero"
+#line 30 "selfhost/mutate/own.hero"
 bb0:
     t1 = h0_run;
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     t2 = HERO_STR_LIT(hero_str_bf2c5a2);
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     t3 = hero_str_concat(t1, t2);
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     t5 = h1_own1;
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     h1_own1 = t3;
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     hero_str_decref(t5);
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     t4 = h_mutateown_read_corpus_at(t3);
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     t6 = h2_own2;
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     h2_own2 = t4;
-#line 29 "selfhost/mutate/own.hero"
+#line 31 "selfhost/mutate/own.hero"
     h_0opt_77f29bc2_release(&t6);
 #line 1270582 "main.c"
     h_0opt_77f29bc2_retain(&t4);
@@ -1270585,310 +1270585,310 @@ bb0:
     return t4;
 }
 
-#line 32 "selfhost/mutate/own.hero"
+#line 34 "selfhost/mutate/own.hero"
 h_0opt_77f29bc2 h_mutateown_read_corpus_at(HeroStr h0_path) {
-#line 32 "selfhost/mutate/own.hero"
+#line 34 "selfhost/mutate/own.hero"
     HeroMapHeader * h1_out = {0}; h_0opt_f87774a h2_text = {0}; h_0opt_f87774a h3_f0 = {0}; h_0opt_f87774a h4_f1 = {0}; h_0opt_867bda h5_f2 = {0}; HeroArrayHeader * h6_xs0 = {0}; int64_t h7_i0; h_mutatejsonread_Json h8_row = {0}; h_0opt_f87774a h9_f3 = {0}; h_0opt_77f29bc2 h10_ret0 = {0}; HeroMapHeader * h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_0opt_77f29bc2 h13_own13 = {0}; h_0opt_867bda h14_own14 = {0}; h_0opt_77f29bc2 h15_own15 = {0}; h_0opt_f87774a h16_own16 = {0}; h_0opt_77f29bc2 h17_own17 = {0}; h_0opt_77f29bc2 h18_own18 = {0}; HeroMapHeader * t1; HeroStr t2; h_0opt_f87774a t3; h_0opt_f87774a t4; h_0opt_f87774a t5; int64_t t6; int64_t t7; bool t8; HeroMapHeader * t9; h_0opt_77f29bc2 t10; h_0opt_f87774a t11; h_0opt_f87774a t12; int64_t t13; int64_t t14; bool t15; h_0opt_f87774a t16; HeroFailure t17; h_0opt_f87774a t18; HeroStr t19; h_0opt_867bda t20; h_0opt_867bda t21; int64_t t22; int64_t t23; bool t24; h_0opt_867bda t25; HeroFailure t26; h_0opt_77f29bc2 t27; h_0opt_867bda t28; HeroArrayHeader * t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; int64_t t33; bool t34; HeroArrayHeader * t35; int64_t t36; h_mutatejsonread_Json t37; h_mutatejsonread_Json t38; HeroStr t39; h_0opt_f87774a t40; h_0opt_f87774a t41; int64_t t42; int64_t t43; bool t44; h_0opt_f87774a t45; HeroFailure t46; h_0opt_77f29bc2 t47; h_0opt_f87774a t48; HeroStr t49; h_mutatejsonread_Json t50; int64_t t51; int64_t t52; int64_t t53; HeroMapHeader * t54; h_0opt_77f29bc2 t55; h_0opt_77f29bc2 t56; HeroMapHeader * t57; HeroMapHeader * t58; h_0opt_f87774a t59; h_0opt_f87774a t60; h_0opt_f87774a t61; h_0opt_f87774a t62; h_0opt_77f29bc2 t63; h_0opt_867bda t64; h_0opt_867bda t65; HeroArrayHeader * t66; h_0opt_77f29bc2 t67; h_mutatejsonread_Json t68; h_0opt_f87774a t69; h_0opt_f87774a t70; h_0opt_77f29bc2 t71; h_0opt_77f29bc2 t72; goto bb0;
-#line 32 "selfhost/mutate/own.hero"
+#line 34 "selfhost/mutate/own.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &h_mutatejsonread_Json_desc, 0);
-#line 33 "selfhost/mutate/own.hero"
+#line 35 "selfhost/mutate/own.hero"
     t57 = h11_own11;
-#line 33 "selfhost/mutate/own.hero"
+#line 35 "selfhost/mutate/own.hero"
     h11_own11 = t1;
-#line 33 "selfhost/mutate/own.hero"
+#line 35 "selfhost/mutate/own.hero"
     hero_map_decref(t57);
-#line 33 "selfhost/mutate/own.hero"
+#line 35 "selfhost/mutate/own.hero"
     t58 = h1_out;
-#line 33 "selfhost/mutate/own.hero"
+#line 35 "selfhost/mutate/own.hero"
     hero_map_incref(t1);
-#line 33 "selfhost/mutate/own.hero"
+#line 35 "selfhost/mutate/own.hero"
     h1_out = t1;
-#line 33 "selfhost/mutate/own.hero"
+#line 35 "selfhost/mutate/own.hero"
     hero_map_decref(t58);
     t2 = h0_path;
-#line 34 "selfhost/mutate/own.hero"
+#line 36 "selfhost/mutate/own.hero"
     t3 = h_library_read_file(t2);
-#line 34 "selfhost/mutate/own.hero"
+#line 36 "selfhost/mutate/own.hero"
     t59 = h12_own12;
-#line 34 "selfhost/mutate/own.hero"
+#line 36 "selfhost/mutate/own.hero"
     h12_own12 = t3;
-#line 34 "selfhost/mutate/own.hero"
+#line 36 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t59);
-#line 34 "selfhost/mutate/own.hero"
+#line 36 "selfhost/mutate/own.hero"
     t60 = h2_text;
-#line 34 "selfhost/mutate/own.hero"
+#line 36 "selfhost/mutate/own.hero"
     h_0opt_f87774a_retain(&t3);
-#line 34 "selfhost/mutate/own.hero"
+#line 36 "selfhost/mutate/own.hero"
     h2_text = t3;
-#line 34 "selfhost/mutate/own.hero"
+#line 36 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t60);
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     t4 = h2_text;
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     t61 = h3_f0;
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     h_0opt_f87774a_retain(&t4);
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     h3_f0 = t4;
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t61);
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     t5 = h3_f0;
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     t6 = t5.tag;
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     t7 = INT64_C(1);
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     t8 = t6 == t7;
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
     if (t8) goto bb2; else goto bb3;
-#line 36 "selfhost/mutate/own.hero"
+#line 38 "selfhost/mutate/own.hero"
 bb1:
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t11 = h2_text;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t62 = h4_f1;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h_0opt_f87774a_retain(&t11);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h4_f1 = t11;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t62);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t12 = h4_f1;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t13 = t12.tag;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t14 = INT64_C(0);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t15 = t13 == t14;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     if (t15) goto bb4; else goto bb5;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
 bb2:
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     t9 = h1_out;
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     hero_map_incref(t9);
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     t10 = (h_0opt_77f29bc2){.tag = INT64_C(0), .as.ok = t9};
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     t63 = h13_own13;
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     h13_own13 = t10;
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     h_0opt_77f29bc2_release(&t63);
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     h10_ret0 = t10;
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     goto bb14;
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
 bb3:
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
     goto bb1;
-#line 37 "selfhost/mutate/own.hero"
+#line 39 "selfhost/mutate/own.hero"
 bb4:
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t18 = h4_f1;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t19 = t18.as.ok;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t20 = h_mutatejsonread_read_lines(t19);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t64 = h14_own14;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h14_own14 = t20;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h_0opt_867bda_release(&t64);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t65 = h5_f2;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h_0opt_867bda_retain(&t20);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h5_f2 = t20;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h_0opt_867bda_release(&t65);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t21 = h5_f2;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t22 = t21.tag;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t23 = INT64_C(0);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t24 = t22 == t23;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     if (t24) goto bb6; else goto bb7;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
 bb5:
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t16 = h4_f1;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t17 = t16.as.err;
 #line 1270729 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 bb6:
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t28 = h5_f2;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t29 = t28.as.ok;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t66 = h6_xs0;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     hero_array_incref(t29);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h6_xs0 = t29;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     hero_array_decref(t66);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t30 = INT64_C(0);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h7_i0 = t30;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     goto bb8;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
 bb7:
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t25 = h5_f2;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t26 = t25.as.err;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     hero_failure_retain(&t26);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t27 = (h_0opt_77f29bc2){.tag = INT64_C(1), .as.err = t26};
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t67 = h15_own15;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h15_own15 = t27;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h_0opt_77f29bc2_release(&t67);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h10_ret0 = t27;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     goto bb14;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
 bb8:
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t31 = h7_i0;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t32 = h6_xs0;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t34 = t31 < t33;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     if (t34) goto bb9; else goto bb11;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
 bb9:
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t35 = h6_xs0;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t36 = h7_i0;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t35 + 1))[t36]);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t68 = h8_row;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_retain(&t37);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h8_row = t37;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_release(&t68);
     t38 = h8_row;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t39 = HERO_STR_LIT(hero_str_dc6a21c);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t40 = h_mutatejsonfields_text_field(t38, t39);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t69 = h16_own16;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h16_own16 = t40;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t69);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t70 = h9_f3;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h_0opt_f87774a_retain(&t40);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h9_f3 = t40;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t70);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t41 = h9_f3;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t42 = t41.tag;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t43 = INT64_C(0);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t44 = t42 == t43;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     if (t44) goto bb12; else goto bb13;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
 bb10:
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t51 = h7_i0;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     t52 = INT64_C(1);
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     if (__builtin_add_overflow(t51, t52, &t53)) hero_panic_overflow();
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     h7_i0 = t53;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
     goto bb8;
-#line 39 "selfhost/mutate/own.hero"
+#line 41 "selfhost/mutate/own.hero"
 bb11:
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
     t54 = h1_out;
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
     hero_map_incref(t54);
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
     t55 = (h_0opt_77f29bc2){.tag = INT64_C(0), .as.ok = t54};
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
     t71 = h17_own17;
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
     h17_own17 = t55;
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
     h_0opt_77f29bc2_release(&t71);
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
     h10_ret0 = t55;
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
     goto bb14;
-#line 42 "selfhost/mutate/own.hero"
+#line 44 "selfhost/mutate/own.hero"
 bb12:
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t48 = h9_f3;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t49 = t48.as.ok;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t50 = h8_row;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_retain(&t50);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     hero_map_set(&(h1_out), &t49, &t50);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     goto bb10;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
 bb13:
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t45 = h9_f3;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t46 = t45.as.err;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     hero_failure_retain(&t46);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t47 = (h_0opt_77f29bc2){.tag = INT64_C(1), .as.err = t46};
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     t72 = h18_own18;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h18_own18 = t47;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h_0opt_77f29bc2_release(&t72);
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     h10_ret0 = t47;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
     goto bb14;
-#line 40 "selfhost/mutate/own.hero"
+#line 42 "selfhost/mutate/own.hero"
 bb14:
 #line 1270894 "main.c"
     t56 = h10_ret0;
@@ -1270912,281 +1270912,281 @@ bb14:
     return t56;
 }
 
-#line 46 "selfhost/mutate/own.hero"
+#line 48 "selfhost/mutate/own.hero"
 HeroArrayHeader * h_mutateown_program_diags(HeroMapHeader * h0_corpus, HeroStr h1_file, HeroStr h2_arm) {
-#line 46 "selfhost/mutate/own.hero"
+#line 48 "selfhost/mutate/own.hero"
     HeroArrayHeader * h3_none = {0}; h_0opt_7f976563 h4_row = {0}; h_0opt_7f976563 h5_f0 = {0}; h_0opt_7f976563 h6_f1 = {0}; h_0opt_7f976563 h7_got = {0}; h_0opt_7f976563 h8_f2 = {0}; h_0opt_7f976563 h9_f3 = {0}; h_0opt_867bda h10_f4 = {0}; HeroArrayHeader * h11_r0 = {0}; HeroArrayHeader * h12_ret0 = {0}; HeroArrayHeader * h13_own13 = {0}; h_0opt_7f976563 h14_own14 = {0}; h_0opt_7f976563 h15_own15 = {0}; h_0opt_867bda h16_own16 = {0}; HeroArrayHeader * t1; HeroMapHeader * t2; HeroStr t3; h_0opt_7f976563 t4; h_0opt_7f976563 t5; h_0opt_7f976563 t6; int64_t t7; int64_t t8; bool t9; HeroArrayHeader * t10; h_0opt_7f976563 t11; h_0opt_7f976563 t12; int64_t t13; int64_t t14; bool t15; h_0opt_7f976563 t16; HeroFailure t17; h_0opt_7f976563 t18; h_mutatejsonread_Json t19; HeroStr t20; h_0opt_7f976563 t21; h_0opt_7f976563 t22; h_0opt_7f976563 t23; int64_t t24; int64_t t25; bool t26; HeroArrayHeader * t27; h_0opt_7f976563 t28; h_0opt_7f976563 t29; int64_t t30; int64_t t31; bool t32; h_0opt_7f976563 t33; HeroFailure t34; h_0opt_7f976563 t35; h_mutatejsonread_Json t36; HeroStr t37; h_0opt_867bda t38; h_0opt_867bda t39; int64_t t40; int64_t t41; bool t42; h_0opt_867bda t43; HeroArrayHeader * t44; HeroArrayHeader * t45; HeroArrayHeader * t46; HeroArrayHeader * t47; HeroArrayHeader * t48; HeroArrayHeader * t49; h_0opt_7f976563 t50; h_0opt_7f976563 t51; h_0opt_7f976563 t52; h_0opt_7f976563 t53; h_0opt_7f976563 t54; h_0opt_7f976563 t55; h_0opt_7f976563 t56; h_0opt_7f976563 t57; h_0opt_867bda t58; h_0opt_867bda t59; HeroArrayHeader * t60; HeroArrayHeader * t61; goto bb0;
-#line 46 "selfhost/mutate/own.hero"
+#line 48 "selfhost/mutate/own.hero"
 bb0:
     t1 = hero_array_new(&h_mutatejsonread_Json_desc, 1);
-#line 47 "selfhost/mutate/own.hero"
+#line 49 "selfhost/mutate/own.hero"
     t48 = h13_own13;
-#line 47 "selfhost/mutate/own.hero"
+#line 49 "selfhost/mutate/own.hero"
     h13_own13 = t1;
-#line 47 "selfhost/mutate/own.hero"
+#line 49 "selfhost/mutate/own.hero"
     hero_array_decref(t48);
-#line 47 "selfhost/mutate/own.hero"
+#line 49 "selfhost/mutate/own.hero"
     t49 = h3_none;
-#line 47 "selfhost/mutate/own.hero"
+#line 49 "selfhost/mutate/own.hero"
     hero_array_incref(t1);
-#line 47 "selfhost/mutate/own.hero"
+#line 49 "selfhost/mutate/own.hero"
     h3_none = t1;
-#line 47 "selfhost/mutate/own.hero"
+#line 49 "selfhost/mutate/own.hero"
     hero_array_decref(t49);
     t2 = h0_corpus;
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     t3 = h1_file;
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     {
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
       const void *found = hero_map_find(t2, &t3);
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
       if (found == NULL) {
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
         t4 = (h_0opt_7f976563){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
       } else {
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
         t4 = (h_0opt_7f976563){.tag = INT64_C(0)};
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
         (&h_mutatejsonread_Json_desc)->copy(&t4.as.ok, found);
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
       }
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     }
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     t50 = h14_own14;
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     h14_own14 = t4;
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t50);
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     t51 = h4_row;
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t4);
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     h4_row = t4;
-#line 48 "selfhost/mutate/own.hero"
+#line 50 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t51);
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     t5 = h4_row;
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     t52 = h5_f0;
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t5);
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     h5_f0 = t5;
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t52);
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     t6 = h5_f0;
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     t7 = t6.tag;
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     t8 = INT64_C(1);
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     t9 = t7 == t8;
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
     if (t9) goto bb2; else goto bb3;
-#line 50 "selfhost/mutate/own.hero"
+#line 52 "selfhost/mutate/own.hero"
 bb1:
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t11 = h4_row;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t53 = h6_f1;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t11);
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     h6_f1 = t11;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t53);
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t12 = h6_f1;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t13 = t12.tag;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t14 = INT64_C(0);
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t15 = t13 == t14;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     if (t15) goto bb4; else goto bb5;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
 bb2:
-#line 51 "selfhost/mutate/own.hero"
+#line 53 "selfhost/mutate/own.hero"
     t10 = h3_none;
-#line 51 "selfhost/mutate/own.hero"
+#line 53 "selfhost/mutate/own.hero"
     h12_ret0 = t10;
-#line 51 "selfhost/mutate/own.hero"
+#line 53 "selfhost/mutate/own.hero"
     goto bb14;
-#line 51 "selfhost/mutate/own.hero"
+#line 53 "selfhost/mutate/own.hero"
 bb3:
-#line 51 "selfhost/mutate/own.hero"
+#line 53 "selfhost/mutate/own.hero"
     goto bb1;
-#line 51 "selfhost/mutate/own.hero"
+#line 53 "selfhost/mutate/own.hero"
 bb4:
     t18 = h6_f1;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t19 = t18.as.ok;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t20 = h2_arm;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t21 = h_mutatejsonfields_field(t19, t20);
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t54 = h15_own15;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     h15_own15 = t21;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t54);
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t55 = h7_got;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t21);
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     h7_got = t21;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t55);
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     t22 = h7_got;
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     t56 = h8_f2;
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t22);
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     h8_f2 = t22;
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t56);
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     t23 = h8_f2;
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     t24 = t23.tag;
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     t25 = INT64_C(1);
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     t26 = t24 == t25;
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
     if (t26) goto bb7; else goto bb8;
-#line 54 "selfhost/mutate/own.hero"
+#line 56 "selfhost/mutate/own.hero"
 bb5:
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t16 = h6_f1;
-#line 52 "selfhost/mutate/own.hero"
+#line 54 "selfhost/mutate/own.hero"
     t17 = t16.as.err;
 #line 1271075 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 bb6:
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t28 = h7_got;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t57 = h9_f3;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t28);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h9_f3 = t28;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t57);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t29 = h9_f3;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t30 = t29.tag;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t31 = INT64_C(0);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t32 = t30 == t31;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     if (t32) goto bb9; else goto bb10;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
 bb7:
-#line 55 "selfhost/mutate/own.hero"
+#line 57 "selfhost/mutate/own.hero"
     t27 = h3_none;
-#line 55 "selfhost/mutate/own.hero"
+#line 57 "selfhost/mutate/own.hero"
     h12_ret0 = t27;
-#line 55 "selfhost/mutate/own.hero"
+#line 57 "selfhost/mutate/own.hero"
     goto bb14;
-#line 55 "selfhost/mutate/own.hero"
+#line 57 "selfhost/mutate/own.hero"
 bb8:
-#line 55 "selfhost/mutate/own.hero"
+#line 57 "selfhost/mutate/own.hero"
     goto bb6;
-#line 55 "selfhost/mutate/own.hero"
+#line 57 "selfhost/mutate/own.hero"
 bb9:
     t35 = h9_f3;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t36 = t35.as.ok;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t37 = HERO_STR_LIT(hero_str_6986a7d5);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t38 = h_mutatejsonfields_items_field(t36, t37);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t58 = h16_own16;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h16_own16 = t38;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h_0opt_867bda_release(&t58);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t59 = h10_f4;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h_0opt_867bda_retain(&t38);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h10_f4 = t38;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h_0opt_867bda_release(&t59);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t39 = h10_f4;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t40 = t39.tag;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t41 = INT64_C(0);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t42 = t40 == t41;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     if (t42) goto bb11; else goto bb12;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
 bb10:
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t33 = h9_f3;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t34 = t33.as.err;
 #line 1271150 "main.c"
     hero_panic_must(t34);
     hero_unreachable();
 bb11:
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t43 = h10_f4;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t44 = t43.as.ok;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t60 = h11_r0;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     hero_array_incref(t44);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h11_r0 = t44;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     hero_array_decref(t60);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     goto bb13;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
 bb12:
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t45 = h3_none;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t61 = h11_r0;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     hero_array_incref(t45);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h11_r0 = t45;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     hero_array_decref(t61);
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     goto bb13;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
 bb13:
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     t46 = h11_r0;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     h12_ret0 = t46;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
     goto bb14;
-#line 56 "selfhost/mutate/own.hero"
+#line 58 "selfhost/mutate/own.hero"
 bb14:
 #line 1271192 "main.c"
     t47 = h12_ret0;
@@ -1271207,181 +1271207,181 @@ bb14:
     return t47;
 }
 
-#line 58 "selfhost/mutate/own.hero"
+#line 60 "selfhost/mutate/own.hero"
 HeroStr h_mutateown_program_used(HeroMapHeader * h0_corpus, HeroStr h1_file) {
-#line 58 "selfhost/mutate/own.hero"
+#line 60 "selfhost/mutate/own.hero"
     h_0opt_7f976563 h2_row = {0}; h_0opt_7f976563 h3_f0 = {0}; h_0opt_7f976563 h4_f1 = {0}; h_0opt_f87774a h5_f2 = {0}; HeroStr h6_r0 = {0}; HeroStr h7_ret0 = {0}; h_0opt_7f976563 h8_own8 = {0}; h_0opt_f87774a h9_own9 = {0}; HeroMapHeader * t1; HeroStr t2; h_0opt_7f976563 t3; h_0opt_7f976563 t4; h_0opt_7f976563 t5; int64_t t6; int64_t t7; bool t8; HeroStr t9; h_0opt_7f976563 t10; h_0opt_7f976563 t11; int64_t t12; int64_t t13; bool t14; h_0opt_7f976563 t15; HeroFailure t16; h_0opt_7f976563 t17; h_mutatejsonread_Json t18; HeroStr t19; h_0opt_f87774a t20; h_0opt_f87774a t21; int64_t t22; int64_t t23; bool t24; h_0opt_f87774a t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; h_0opt_7f976563 t30; h_0opt_7f976563 t31; h_0opt_7f976563 t32; h_0opt_7f976563 t33; h_0opt_f87774a t34; h_0opt_f87774a t35; HeroStr t36; HeroStr t37; goto bb0;
-#line 58 "selfhost/mutate/own.hero"
+#line 60 "selfhost/mutate/own.hero"
 bb0:
     t1 = h0_corpus;
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     t2 = h1_file;
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     {
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
       const void *found = hero_map_find(t1, &t2);
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
       if (found == NULL) {
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
         t3 = (h_0opt_7f976563){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
       } else {
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
         t3 = (h_0opt_7f976563){.tag = INT64_C(0)};
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
         (&h_mutatejsonread_Json_desc)->copy(&t3.as.ok, found);
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
       }
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     }
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     t30 = h8_own8;
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     h8_own8 = t3;
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t30);
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     t31 = h2_row;
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t3);
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     h2_row = t3;
-#line 59 "selfhost/mutate/own.hero"
+#line 61 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t31);
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     t4 = h2_row;
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     t32 = h3_f0;
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t4);
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     h3_f0 = t4;
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t32);
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     t5 = h3_f0;
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     t6 = t5.tag;
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     t7 = INT64_C(1);
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     t8 = t6 == t7;
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
     if (t8) goto bb2; else goto bb3;
-#line 61 "selfhost/mutate/own.hero"
+#line 63 "selfhost/mutate/own.hero"
 bb1:
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t10 = h2_row;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t33 = h4_f1;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h_0opt_7f976563_retain(&t10);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h4_f1 = t10;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h_0opt_7f976563_release(&t33);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t11 = h4_f1;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t12 = t11.tag;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t13 = INT64_C(0);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t14 = t12 == t13;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     if (t14) goto bb4; else goto bb5;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
 bb2:
-#line 62 "selfhost/mutate/own.hero"
+#line 64 "selfhost/mutate/own.hero"
     t9 = HERO_STR_LIT(hero_str_0);
-#line 62 "selfhost/mutate/own.hero"
+#line 64 "selfhost/mutate/own.hero"
     h7_ret0 = t9;
-#line 62 "selfhost/mutate/own.hero"
+#line 64 "selfhost/mutate/own.hero"
     goto bb9;
-#line 62 "selfhost/mutate/own.hero"
+#line 64 "selfhost/mutate/own.hero"
 bb3:
-#line 62 "selfhost/mutate/own.hero"
+#line 64 "selfhost/mutate/own.hero"
     goto bb1;
-#line 62 "selfhost/mutate/own.hero"
+#line 64 "selfhost/mutate/own.hero"
 bb4:
     t17 = h4_f1;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t18 = t17.as.ok;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t19 = HERO_STR_LIT(hero_str_66950602);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t20 = h_mutatejsonfields_text_field(t18, t19);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t34 = h9_own9;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h9_own9 = t20;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t34);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t35 = h5_f2;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h_0opt_f87774a_retain(&t20);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h5_f2 = t20;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t35);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t21 = h5_f2;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t22 = t21.tag;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t23 = INT64_C(0);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t24 = t22 == t23;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     if (t24) goto bb6; else goto bb7;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
 bb5:
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t15 = h4_f1;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t16 = t15.as.err;
 #line 1271345 "main.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb6:
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t25 = h5_f2;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t26 = t25.as.ok;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t36 = h6_r0;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     hero_str_incref(t26);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h6_r0 = t26;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     hero_str_decref(t36);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     goto bb8;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
 bb7:
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t27 = HERO_STR_LIT(hero_str_0);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t37 = h6_r0;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     hero_str_incref(t27);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h6_r0 = t27;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     hero_str_decref(t37);
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     goto bb8;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
 bb8:
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     t28 = h6_r0;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     h7_ret0 = t28;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
     goto bb9;
-#line 63 "selfhost/mutate/own.hero"
+#line 65 "selfhost/mutate/own.hero"
 bb9:
 #line 1271387 "main.c"
     t29 = h7_ret0;
@@ -1271396,518 +1271396,518 @@ bb9:
     return t29;
 }
 
-#line 67 "selfhost/mutate/own.hero"
+#line 69 "selfhost/mutate/own.hero"
 HeroArrayHeader * h_mutateown_own(HeroArrayHeader * h0_diags, HeroStr h1_used, HeroArrayHeader * h2_theirs, HeroStr h3_their_used, h_mutatehunks_Applied h4_applied) {
-#line 67 "selfhost/mutate/own.hero"
+#line 69 "selfhost/mutate/own.hero"
     HeroMapHeader * h5_owed = {0}; HeroArrayHeader * h6_xs0 = {0}; int64_t h7_i0; h_mutatejsonread_Json h8_d = {0}; h_0opt_e201354 h9_f0 = {0}; int64_t h10_r0; int64_t h11_line; HeroStr h12_k = {0}; h_0opt_e201354 h13_f1 = {0}; int64_t h14_r1; HeroArrayHeader * h15_out = {0}; HeroArrayHeader * h16_xs1 = {0}; int64_t h17_i1; h_mutatejsonread_Json h18_d = {0}; h_0opt_e201354 h19_f2 = {0}; int64_t h20_r2; HeroStr h21_k = {0}; h_0opt_e201354 h22_f3 = {0}; int64_t h23_r3; int64_t h24_left; HeroArrayHeader * h25_ret0 = {0}; HeroMapHeader * h26_own26 = {0}; h_0opt_e201354 h27_own27 = {0}; HeroArrayHeader * h28_own28 = {0}; HeroStr h29_own29 = {0}; h_0opt_e201354 h30_own30 = {0}; h_0opt_e201354 h31_own31 = {0}; HeroStr h32_own32 = {0}; h_0opt_e201354 h33_own33 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; bool t4; HeroArrayHeader * t5; HeroMapHeader * t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; bool t12; HeroArrayHeader * t13; int64_t t14; h_mutatejsonread_Json t15; h_mutatejsonread_Json t16; HeroStr t17; h_0opt_e201354 t18; h_0opt_e201354 t19; int64_t t20; int64_t t21; bool t22; h_0opt_e201354 t23; int64_t t24; int64_t t25; int64_t t26; h_mutatejsonread_Json t27; HeroStr t28; h_mutatehunks_Applied t29; int64_t t30; int64_t t31; HeroStr t32; HeroStr t33; HeroMapHeader * t34; HeroStr t35; h_0opt_e201354 t36; h_0opt_e201354 t37; int64_t t38; int64_t t39; bool t40; h_0opt_e201354 t41; int64_t t42; int64_t t43; int64_t t44; int64_t t45; int64_t t46; int64_t t47; int64_t t48; int64_t t49; HeroArrayHeader * t50; HeroArrayHeader * t51; int64_t t52; int64_t t53; HeroArrayHeader * t54; int64_t t55; bool t56; HeroArrayHeader * t57; int64_t t58; h_mutatejsonread_Json t59; h_mutatejsonread_Json t60; HeroStr t61; h_mutatejsonread_Json t62; HeroStr t63; h_0opt_e201354 t64; h_0opt_e201354 t65; int64_t t66; int64_t t67; bool t68; h_0opt_e201354 t69; int64_t t70; int64_t t71; int64_t t72; HeroStr t73; HeroMapHeader * t74; HeroStr t75; h_0opt_e201354 t76; h_0opt_e201354 t77; int64_t t78; int64_t t79; bool t80; h_0opt_e201354 t81; int64_t t82; int64_t t83; int64_t t84; int64_t t85; int64_t t86; bool t87; HeroStr t88; int64_t t89; int64_t t90; int64_t t91; h_mutatejsonread_Json t93; int64_t t95; int64_t t96; int64_t t97; HeroArrayHeader * t98; HeroArrayHeader * t99; HeroMapHeader * t100; HeroMapHeader * t101; HeroArrayHeader * t102; h_mutatejsonread_Json t103; h_0opt_e201354 t104; h_0opt_e201354 t105; HeroArrayHeader * t106; HeroArrayHeader * t107; HeroArrayHeader * t108; HeroStr t109; HeroStr t110; h_0opt_e201354 t111; h_0opt_e201354 t112; h_mutatejsonread_Json t113; h_0opt_e201354 t114; h_0opt_e201354 t115; HeroStr t116; HeroStr t117; h_0opt_e201354 t118; h_0opt_e201354 t119; goto bb0;
-#line 67 "selfhost/mutate/own.hero"
+#line 69 "selfhost/mutate/own.hero"
 bb0:
     t1 = h2_theirs;
-#line 68 "selfhost/mutate/own.hero"
+#line 70 "selfhost/mutate/own.hero"
     t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len);
-#line 68 "selfhost/mutate/own.hero"
+#line 70 "selfhost/mutate/own.hero"
     t3 = INT64_C(0);
-#line 68 "selfhost/mutate/own.hero"
+#line 70 "selfhost/mutate/own.hero"
     t4 = t2 == t3;
-#line 68 "selfhost/mutate/own.hero"
+#line 70 "selfhost/mutate/own.hero"
     if (t4) goto bb2; else goto bb3;
-#line 68 "selfhost/mutate/own.hero"
+#line 70 "selfhost/mutate/own.hero"
 bb1:
-#line 70 "selfhost/mutate/own.hero"
+#line 72 "selfhost/mutate/own.hero"
     t6 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
-#line 70 "selfhost/mutate/own.hero"
+#line 72 "selfhost/mutate/own.hero"
     t100 = h26_own26;
-#line 70 "selfhost/mutate/own.hero"
+#line 72 "selfhost/mutate/own.hero"
     h26_own26 = t6;
-#line 70 "selfhost/mutate/own.hero"
+#line 72 "selfhost/mutate/own.hero"
     hero_map_decref(t100);
-#line 70 "selfhost/mutate/own.hero"
+#line 72 "selfhost/mutate/own.hero"
     t101 = h5_owed;
-#line 70 "selfhost/mutate/own.hero"
+#line 72 "selfhost/mutate/own.hero"
     hero_map_incref(t6);
-#line 70 "selfhost/mutate/own.hero"
+#line 72 "selfhost/mutate/own.hero"
     h5_owed = t6;
-#line 70 "selfhost/mutate/own.hero"
+#line 72 "selfhost/mutate/own.hero"
     hero_map_decref(t101);
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t7 = h2_theirs;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t102 = h6_xs0;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     hero_array_incref(t7);
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     h6_xs0 = t7;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     hero_array_decref(t102);
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t8 = INT64_C(0);
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     h7_i0 = t8;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     goto bb4;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
 bb2:
-#line 69 "selfhost/mutate/own.hero"
+#line 71 "selfhost/mutate/own.hero"
     t5 = h0_diags;
-#line 69 "selfhost/mutate/own.hero"
+#line 71 "selfhost/mutate/own.hero"
     h25_ret0 = t5;
-#line 69 "selfhost/mutate/own.hero"
+#line 71 "selfhost/mutate/own.hero"
     goto bb27;
-#line 69 "selfhost/mutate/own.hero"
+#line 71 "selfhost/mutate/own.hero"
 bb3:
-#line 69 "selfhost/mutate/own.hero"
+#line 71 "selfhost/mutate/own.hero"
     goto bb1;
-#line 69 "selfhost/mutate/own.hero"
+#line 71 "selfhost/mutate/own.hero"
 bb4:
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t9 = h7_i0;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t10 = h6_xs0;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t12 = t9 < t11;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     if (t12) goto bb5; else goto bb7;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
 bb5:
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t13 = h6_xs0;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t14 = h7_i0;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t13 + 1))[t14]);
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t103 = h8_d;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_retain(&t15);
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     h8_d = t15;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_release(&t103);
     t16 = h8_d;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t17 = HERO_STR_LIT(hero_str_e9474c4);
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t18 = h_mutatejsonfields_whole_field(t16, t17);
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t104 = h27_own27;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     h27_own27 = t18;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     h_0opt_e201354_release(&t104);
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t105 = h9_f0;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     h_0opt_e201354_retain(&t18);
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     h9_f0 = t18;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     h_0opt_e201354_release(&t105);
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t19 = h9_f0;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t20 = t19.tag;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t21 = INT64_C(0);
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t22 = t20 == t21;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     if (t22) goto bb8; else goto bb9;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
 bb6:
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t47 = h7_i0;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     t48 = INT64_C(1);
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow();
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     h7_i0 = t49;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
     goto bb4;
-#line 72 "selfhost/mutate/own.hero"
+#line 74 "selfhost/mutate/own.hero"
 bb7:
-#line 77 "selfhost/mutate/own.hero"
+#line 79 "selfhost/mutate/own.hero"
     t50 = hero_array_new(&h_mutatejsonread_Json_desc, 1);
-#line 77 "selfhost/mutate/own.hero"
+#line 79 "selfhost/mutate/own.hero"
     t106 = h28_own28;
-#line 77 "selfhost/mutate/own.hero"
+#line 79 "selfhost/mutate/own.hero"
     h28_own28 = t50;
-#line 77 "selfhost/mutate/own.hero"
+#line 79 "selfhost/mutate/own.hero"
     hero_array_decref(t106);
-#line 77 "selfhost/mutate/own.hero"
+#line 79 "selfhost/mutate/own.hero"
     t107 = h15_out;
-#line 77 "selfhost/mutate/own.hero"
+#line 79 "selfhost/mutate/own.hero"
     hero_array_incref(t50);
-#line 77 "selfhost/mutate/own.hero"
+#line 79 "selfhost/mutate/own.hero"
     h15_out = t50;
-#line 77 "selfhost/mutate/own.hero"
+#line 79 "selfhost/mutate/own.hero"
     hero_array_decref(t107);
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t51 = h0_diags;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t108 = h16_xs1;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     hero_array_incref(t51);
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     h16_xs1 = t51;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     hero_array_decref(t108);
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t52 = INT64_C(0);
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     h17_i1 = t52;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     goto bb14;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
 bb8:
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t23 = h9_f0;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t24 = t23.as.ok;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     h10_r0 = t24;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     goto bb10;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
 bb9:
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t25 = INT64_C(-1);
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     h10_r0 = t25;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     goto bb10;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
 bb10:
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     t26 = h10_r0;
-#line 73 "selfhost/mutate/own.hero"
+#line 75 "selfhost/mutate/own.hero"
     h11_line = t26;
     t27 = h8_d;
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     t28 = h3_their_used;
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     t29 = h4_applied;
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     t30 = h11_line;
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     t31 = h_mutatehunks_mapped(t29, t30);
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     t32 = h_mutateown_key(t27, t28, t31);
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     t109 = h29_own29;
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     h29_own29 = t32;
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     hero_str_decref(t109);
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     t110 = h12_k;
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     hero_str_incref(t32);
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     h12_k = t32;
-#line 74 "selfhost/mutate/own.hero"
+#line 76 "selfhost/mutate/own.hero"
     hero_str_decref(t110);
     t33 = h12_k;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t34 = h5_owed;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t35 = h12_k;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     {
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
       const void *found = hero_map_find(t34, &t35);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
       if (found == NULL) {
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
         t36 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
       } else {
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
         t36 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
         (&hero_desc_int)->copy(&t36.as.ok, found);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
       }
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     }
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t111 = h30_own30;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     h30_own30 = t36;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     h_0opt_e201354_release(&t111);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t112 = h13_f1;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     h_0opt_e201354_retain(&t36);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     h13_f1 = t36;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     h_0opt_e201354_release(&t112);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t37 = h13_f1;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t38 = t37.tag;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t39 = INT64_C(0);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t40 = t38 == t39;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     if (t40) goto bb11; else goto bb12;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
 bb11:
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t41 = h13_f1;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t42 = t41.as.ok;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     h14_r1 = t42;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     goto bb13;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
 bb12:
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t43 = INT64_C(0);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     h14_r1 = t43;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     goto bb13;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
 bb13:
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t44 = h14_r1;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     t45 = INT64_C(1);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow();
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     hero_map_set(&(h5_owed), &t33, &t46);
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
     goto bb6;
-#line 75 "selfhost/mutate/own.hero"
+#line 77 "selfhost/mutate/own.hero"
 bb14:
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t53 = h17_i1;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t54 = h16_xs1;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len);
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t56 = t53 < t55;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     if (t56) goto bb15; else goto bb17;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
 bb15:
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t57 = h16_xs1;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t58 = h17_i1;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? ((void)hero_array_at(t57, t58), hero_unreachable()) : (void)0), (void)(t57->elem->size != sizeof(h_mutatejsonread_Json) ? hero_unreachable() : (void)0), ((h_mutatejsonread_Json const *)(const void *)(t57 + 1))[t58]);
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t113 = h18_d;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_retain(&t59);
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     h18_d = t59;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_release(&t113);
     t60 = h18_d;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t61 = h1_used;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t62 = h18_d;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t63 = HERO_STR_LIT(hero_str_e9474c4);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t64 = h_mutatejsonfields_whole_field(t62, t63);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t114 = h31_own31;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h31_own31 = t64;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h_0opt_e201354_release(&t114);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t115 = h19_f2;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h_0opt_e201354_retain(&t64);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h19_f2 = t64;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h_0opt_e201354_release(&t115);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t65 = h19_f2;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t66 = t65.tag;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t67 = INT64_C(0);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t68 = t66 == t67;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     if (t68) goto bb18; else goto bb19;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
 bb16:
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t95 = h17_i1;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     t96 = INT64_C(1);
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     if (__builtin_add_overflow(t95, t96, &t97)) hero_panic_overflow();
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     h17_i1 = t97;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
     goto bb14;
-#line 79 "selfhost/mutate/own.hero"
+#line 81 "selfhost/mutate/own.hero"
 bb17:
-#line 88 "selfhost/mutate/own.hero"
+#line 90 "selfhost/mutate/own.hero"
     t98 = h15_out;
-#line 88 "selfhost/mutate/own.hero"
+#line 90 "selfhost/mutate/own.hero"
     h25_ret0 = t98;
-#line 88 "selfhost/mutate/own.hero"
+#line 90 "selfhost/mutate/own.hero"
     goto bb27;
-#line 88 "selfhost/mutate/own.hero"
+#line 90 "selfhost/mutate/own.hero"
 bb18:
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t69 = h19_f2;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t70 = t69.as.ok;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h20_r2 = t70;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     goto bb20;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
 bb19:
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t71 = INT64_C(-1);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h20_r2 = t71;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     goto bb20;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
 bb20:
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t72 = h20_r2;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t73 = h_mutateown_key(t60, t61, t72);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t116 = h32_own32;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h32_own32 = t73;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     hero_str_decref(t116);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     t117 = h21_k;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     hero_str_incref(t73);
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     h21_k = t73;
-#line 80 "selfhost/mutate/own.hero"
+#line 82 "selfhost/mutate/own.hero"
     hero_str_decref(t117);
     t74 = h5_owed;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t75 = h21_k;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     {
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
       const void *found = hero_map_find(t74, &t75);
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
       if (found == NULL) {
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
         t76 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
       } else {
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
         t76 = (h_0opt_e201354){.tag = INT64_C(0)};
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
         (&hero_desc_int)->copy(&t76.as.ok, found);
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
       }
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     }
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t118 = h33_own33;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     h33_own33 = t76;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     h_0opt_e201354_release(&t118);
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t119 = h22_f3;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     h_0opt_e201354_retain(&t76);
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     h22_f3 = t76;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     h_0opt_e201354_release(&t119);
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t77 = h22_f3;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t78 = t77.tag;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t79 = INT64_C(0);
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t80 = t78 == t79;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     if (t80) goto bb21; else goto bb22;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
 bb21:
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t81 = h22_f3;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t82 = t81.as.ok;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     h23_r3 = t82;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     goto bb23;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
 bb22:
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t83 = INT64_C(0);
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     h23_r3 = t83;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     goto bb23;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
 bb23:
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     t84 = h23_r3;
-#line 81 "selfhost/mutate/own.hero"
+#line 83 "selfhost/mutate/own.hero"
     h24_left = t84;
-#line 83 "selfhost/mutate/own.hero"
+#line 85 "selfhost/mutate/own.hero"
     t85 = h24_left;
-#line 83 "selfhost/mutate/own.hero"
+#line 85 "selfhost/mutate/own.hero"
     t86 = INT64_C(0);
-#line 83 "selfhost/mutate/own.hero"
+#line 85 "selfhost/mutate/own.hero"
     t87 = t85 > t86;
-#line 83 "selfhost/mutate/own.hero"
+#line 85 "selfhost/mutate/own.hero"
     if (t87) goto bb25; else goto bb26;
-#line 83 "selfhost/mutate/own.hero"
+#line 85 "selfhost/mutate/own.hero"
 bb24:
-#line 83 "selfhost/mutate/own.hero"
+#line 85 "selfhost/mutate/own.hero"
     goto bb16;
-#line 83 "selfhost/mutate/own.hero"
+#line 85 "selfhost/mutate/own.hero"
 bb25:
     t88 = h21_k;
-#line 84 "selfhost/mutate/own.hero"
+#line 86 "selfhost/mutate/own.hero"
     t89 = h24_left;
-#line 84 "selfhost/mutate/own.hero"
+#line 86 "selfhost/mutate/own.hero"
     t90 = INT64_C(1);
-#line 84 "selfhost/mutate/own.hero"
+#line 86 "selfhost/mutate/own.hero"
     if (__builtin_sub_overflow(t89, t90, &t91)) hero_panic_overflow();
-#line 84 "selfhost/mutate/own.hero"
+#line 86 "selfhost/mutate/own.hero"
     hero_map_set(&(h5_owed), &t88, &t91);
-#line 84 "selfhost/mutate/own.hero"
+#line 86 "selfhost/mutate/own.hero"
     goto bb24;
-#line 84 "selfhost/mutate/own.hero"
+#line 86 "selfhost/mutate/own.hero"
 bb26:
-#line 86 "selfhost/mutate/own.hero"
+#line 88 "selfhost/mutate/own.hero"
     t93 = h18_d;
-#line 86 "selfhost/mutate/own.hero"
+#line 88 "selfhost/mutate/own.hero"
     hero_array_push_owned(&h15_out, &t93);
-#line 86 "selfhost/mutate/own.hero"
+#line 88 "selfhost/mutate/own.hero"
     goto bb24;
-#line 86 "selfhost/mutate/own.hero"
+#line 88 "selfhost/mutate/own.hero"
 bb27:
 #line 1271913 "main.c"
     t99 = h25_ret0;
@@ -1271935,212 +1271935,212 @@ bb27:
     return t99;
 }
 
-#line 92 "selfhost/mutate/own.hero"
+#line 94 "selfhost/mutate/own.hero"
 HeroStr h_mutateown_key(h_mutatejsonread_Json h0_d, HeroStr h1_used, int64_t h2_line) {
-#line 92 "selfhost/mutate/own.hero"
+#line 94 "selfhost/mutate/own.hero"
     h_0opt_f87774a h3_f0 = {0}; HeroStr h4_r0 = {0}; HeroStr h5_code = {0}; h_0opt_f87774a h6_f1 = {0}; HeroStr h7_r1 = {0}; HeroStr h8_words = {0}; h_0opt_f87774a h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; h_mutatejsonread_Json t1; HeroStr t2; h_0opt_f87774a t3; h_0opt_f87774a t4; int64_t t5; int64_t t6; bool t7; h_0opt_f87774a t8; HeroStr t9; HeroStr t10; HeroStr t11; h_mutatejsonread_Json t12; HeroStr t13; h_0opt_f87774a t14; h_0opt_f87774a t15; int64_t t16; int64_t t17; bool t18; h_0opt_f87774a t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; int64_t t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; h_0opt_f87774a t35; h_0opt_f87774a t36; HeroStr t37; HeroStr t38; HeroStr t39; h_0opt_f87774a t40; h_0opt_f87774a t41; HeroStr t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroStr t49; HeroStr t50; goto bb0;
-#line 92 "selfhost/mutate/own.hero"
+#line 94 "selfhost/mutate/own.hero"
 bb0:
     t1 = h0_d;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t2 = HERO_STR_LIT(hero_str_d614769);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t3 = h_mutatejsonfields_text_field(t1, t2);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t35 = h9_own9;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     h9_own9 = t3;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t35);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t36 = h3_f0;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     h_0opt_f87774a_retain(&t3);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     h3_f0 = t3;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t36);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t4 = h3_f0;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t5 = t4.tag;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t6 = INT64_C(0);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t7 = t5 == t6;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     if (t7) goto bb1; else goto bb2;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
 bb1:
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t8 = h3_f0;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t9 = t8.as.ok;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t37 = h4_r0;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     hero_str_incref(t9);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     h4_r0 = t9;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     hero_str_decref(t37);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     goto bb3;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
 bb2:
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t10 = HERO_STR_LIT(hero_str_0);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t38 = h4_r0;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     hero_str_incref(t10);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     h4_r0 = t10;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     hero_str_decref(t38);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     goto bb3;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
 bb3:
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t11 = h4_r0;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     t39 = h5_code;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     hero_str_incref(t11);
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     h5_code = t11;
-#line 93 "selfhost/mutate/own.hero"
+#line 95 "selfhost/mutate/own.hero"
     hero_str_decref(t39);
     t12 = h0_d;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t13 = HERO_STR_LIT(hero_str_1cc615);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t14 = h_mutatejsonfields_text_field(t12, t13);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t40 = h10_own10;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     h10_own10 = t14;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t40);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t41 = h6_f1;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     h_0opt_f87774a_retain(&t14);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     h6_f1 = t14;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     h_0opt_f87774a_release(&t41);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t15 = h6_f1;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t16 = t15.tag;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t17 = INT64_C(0);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t18 = t16 == t17;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     if (t18) goto bb4; else goto bb5;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
 bb4:
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t19 = h6_f1;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t20 = t19.as.ok;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t42 = h7_r1;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     hero_str_incref(t20);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     h7_r1 = t20;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     hero_str_decref(t42);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     goto bb6;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
 bb5:
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t21 = HERO_STR_LIT(hero_str_0);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t43 = h7_r1;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     hero_str_incref(t21);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     h7_r1 = t21;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     hero_str_decref(t43);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     goto bb6;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
 bb6:
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t22 = h7_r1;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     t44 = h8_words;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     hero_str_incref(t22);
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     h8_words = t22;
-#line 94 "selfhost/mutate/own.hero"
+#line 96 "selfhost/mutate/own.hero"
     hero_str_decref(t44);
     t23 = h5_code;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t24 = HERO_STR_LIT(hero_str_9);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t25 = hero_str_concat(t23, t24);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t45 = h11_own11;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     h11_own11 = t25;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     hero_str_decref(t45);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t26 = h2_line;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t27 = hero_int_to_str(t26);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t46 = h12_own12;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     h12_own12 = t27;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     hero_str_decref(t46);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t28 = hero_str_concat(t25, t27);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t47 = h13_own13;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     h13_own13 = t28;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     hero_str_decref(t47);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t29 = HERO_STR_LIT(hero_str_9);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t30 = hero_str_concat(t28, t29);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t48 = h14_own14;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     h14_own14 = t30;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     hero_str_decref(t48);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t31 = h8_words;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t32 = h1_used;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t33 = h_mutateown_named_alike(t31, t32);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t49 = h15_own15;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     h15_own15 = t33;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     hero_str_decref(t49);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t34 = hero_str_concat(t30, t33);
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     t50 = h16_own16;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     h16_own16 = t34;
-#line 95 "selfhost/mutate/own.hero"
+#line 97 "selfhost/mutate/own.hero"
     hero_str_decref(t50);
 #line 1272146 "main.c"
     hero_str_incref(t34);
@@ -1272161,92 +1272161,92 @@ bb6:
     return t34;
 }
 
-#line 97 "selfhost/mutate/own.hero"
+#line 99 "selfhost/mutate/own.hero"
 HeroStr h_mutateown_named_alike(HeroStr h0_text, HeroStr h1_used) {
-#line 97 "selfhost/mutate/own.hero"
+#line 99 "selfhost/mutate/own.hero"
     HeroStr h2_base = {0}; HeroStr h3_whole = {0}; HeroStr h4_ret0 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; goto bb0;
-#line 97 "selfhost/mutate/own.hero"
+#line 99 "selfhost/mutate/own.hero"
 bb0:
     t1 = h1_used;
-#line 98 "selfhost/mutate/own.hero"
+#line 100 "selfhost/mutate/own.hero"
     t2 = hero_str_len(t1);
-#line 98 "selfhost/mutate/own.hero"
+#line 100 "selfhost/mutate/own.hero"
     t3 = INT64_C(0);
-#line 98 "selfhost/mutate/own.hero"
+#line 100 "selfhost/mutate/own.hero"
     t4 = t2 == t3;
-#line 98 "selfhost/mutate/own.hero"
+#line 100 "selfhost/mutate/own.hero"
     if (t4) goto bb2; else goto bb3;
-#line 98 "selfhost/mutate/own.hero"
+#line 100 "selfhost/mutate/own.hero"
 bb1:
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     t6 = h1_used;
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     t7 = h_mutateown_base_name(t6);
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     t17 = h5_own5;
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     h5_own5 = t7;
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     hero_str_decref(t17);
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     t18 = h2_base;
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     hero_str_incref(t7);
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     h2_base = t7;
-#line 100 "selfhost/mutate/own.hero"
+#line 102 "selfhost/mutate/own.hero"
     hero_str_decref(t18);
     t8 = h0_text;
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     t9 = h1_used;
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     t10 = HERO_STR_LIT(hero_str_46);
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     t11 = h_mutateown_replaced(t8, t9, t10);
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     t19 = h6_own6;
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     h6_own6 = t11;
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     hero_str_decref(t19);
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     t20 = h3_whole;
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     hero_str_incref(t11);
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     h3_whole = t11;
-#line 101 "selfhost/mutate/own.hero"
+#line 103 "selfhost/mutate/own.hero"
     hero_str_decref(t20);
     t12 = h3_whole;
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
     t13 = h2_base;
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
     t14 = HERO_STR_LIT(hero_str_46);
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
     t15 = h_mutateown_replaced(t12, t13, t14);
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
     t21 = h7_own7;
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
     h7_own7 = t15;
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
     hero_str_decref(t21);
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
     h4_ret0 = t15;
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
     goto bb4;
-#line 102 "selfhost/mutate/own.hero"
+#line 104 "selfhost/mutate/own.hero"
 bb2:
-#line 99 "selfhost/mutate/own.hero"
+#line 101 "selfhost/mutate/own.hero"
     t5 = h0_text;
-#line 99 "selfhost/mutate/own.hero"
+#line 101 "selfhost/mutate/own.hero"
     h4_ret0 = t5;
-#line 99 "selfhost/mutate/own.hero"
+#line 101 "selfhost/mutate/own.hero"
     goto bb4;
-#line 99 "selfhost/mutate/own.hero"
+#line 101 "selfhost/mutate/own.hero"
 bb3:
-#line 99 "selfhost/mutate/own.hero"
+#line 101 "selfhost/mutate/own.hero"
     goto bb1;
-#line 99 "selfhost/mutate/own.hero"
+#line 101 "selfhost/mutate/own.hero"
 bb4:
 #line 1272252 "main.c"
     t16 = h4_ret0;
@@ -1272259,97 +1272259,97 @@ bb4:
     return t16;
 }
 
-#line 104 "selfhost/mutate/own.hero"
+#line 106 "selfhost/mutate/own.hero"
 HeroStr h_mutateown_base_name(HeroStr h0_path) {
-#line 104 "selfhost/mutate/own.hero"
+#line 106 "selfhost/mutate/own.hero"
     int64_t h1_at; HeroStr h2_ret0 = {0}; HeroStr h3_own3 = {0}; HeroStr t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; bool t7; HeroStr t8; int64_t t9; uint8_t t10; uint8_t t11; bool t12; HeroStr t13; int64_t t14; int64_t t15; int64_t t16; HeroStr t17; int64_t t18; HeroStr t19; int64_t t20; int64_t t21; int64_t t22; HeroStr t23; HeroStr t24; HeroStr t25; goto bb0;
-#line 104 "selfhost/mutate/own.hero"
+#line 106 "selfhost/mutate/own.hero"
 bb0:
     t1 = h0_path;
-#line 105 "selfhost/mutate/own.hero"
+#line 107 "selfhost/mutate/own.hero"
     t2 = hero_str_len(t1);
-#line 105 "selfhost/mutate/own.hero"
+#line 107 "selfhost/mutate/own.hero"
     t3 = INT64_C(1);
-#line 105 "selfhost/mutate/own.hero"
+#line 107 "selfhost/mutate/own.hero"
     if (__builtin_sub_overflow(t2, t3, &t4)) hero_panic_overflow();
-#line 105 "selfhost/mutate/own.hero"
+#line 107 "selfhost/mutate/own.hero"
     h1_at = t4;
-#line 105 "selfhost/mutate/own.hero"
+#line 107 "selfhost/mutate/own.hero"
     goto bb1;
-#line 105 "selfhost/mutate/own.hero"
+#line 107 "selfhost/mutate/own.hero"
 bb1:
-#line 107 "selfhost/mutate/own.hero"
+#line 109 "selfhost/mutate/own.hero"
     t5 = h1_at;
-#line 107 "selfhost/mutate/own.hero"
+#line 109 "selfhost/mutate/own.hero"
     t6 = INT64_C(0);
-#line 107 "selfhost/mutate/own.hero"
+#line 109 "selfhost/mutate/own.hero"
     t7 = t5 >= t6;
-#line 107 "selfhost/mutate/own.hero"
+#line 109 "selfhost/mutate/own.hero"
     if (t7) goto bb2; else goto bb3;
-#line 107 "selfhost/mutate/own.hero"
+#line 109 "selfhost/mutate/own.hero"
 bb2:
     t8 = h0_path;
-#line 108 "selfhost/mutate/own.hero"
+#line 110 "selfhost/mutate/own.hero"
     t9 = h1_at;
-#line 108 "selfhost/mutate/own.hero"
+#line 110 "selfhost/mutate/own.hero"
     t10 = ((void)((t8.ptr == NULL || t9 < 0 || t9 >= t8.len) ? ((void)hero_str_byte(t8, t9), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t8.ptr[t9]);
-#line 108 "selfhost/mutate/own.hero"
+#line 110 "selfhost/mutate/own.hero"
     t11 = UINT64_C(47);
-#line 108 "selfhost/mutate/own.hero"
+#line 110 "selfhost/mutate/own.hero"
     t12 = t10 == t11;
-#line 108 "selfhost/mutate/own.hero"
+#line 110 "selfhost/mutate/own.hero"
     if (t12) goto bb5; else goto bb6;
-#line 108 "selfhost/mutate/own.hero"
+#line 110 "selfhost/mutate/own.hero"
 bb3:
-#line 112 "selfhost/mutate/own.hero"
+#line 114 "selfhost/mutate/own.hero"
     t23 = h0_path;
-#line 112 "selfhost/mutate/own.hero"
+#line 114 "selfhost/mutate/own.hero"
     h2_ret0 = t23;
-#line 112 "selfhost/mutate/own.hero"
+#line 114 "selfhost/mutate/own.hero"
     goto bb7;
-#line 112 "selfhost/mutate/own.hero"
+#line 114 "selfhost/mutate/own.hero"
 bb4:
-#line 110 "selfhost/mutate/own.hero"
+#line 112 "selfhost/mutate/own.hero"
     t20 = h1_at;
-#line 110 "selfhost/mutate/own.hero"
+#line 112 "selfhost/mutate/own.hero"
     t21 = INT64_C(1);
-#line 110 "selfhost/mutate/own.hero"
+#line 112 "selfhost/mutate/own.hero"
     if (__builtin_sub_overflow(t20, t21, &t22)) hero_panic_overflow();
-#line 110 "selfhost/mutate/own.hero"
+#line 112 "selfhost/mutate/own.hero"
     h1_at = t22;
-#line 110 "selfhost/mutate/own.hero"
+#line 112 "selfhost/mutate/own.hero"
     goto bb1;
-#line 110 "selfhost/mutate/own.hero"
+#line 112 "selfhost/mutate/own.hero"
 bb5:
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     t13 = h0_path;
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     t14 = h1_at;
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     t15 = INT64_C(1);
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow();
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     t17 = h0_path;
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     t18 = hero_str_len(t17);
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     t19 = hero_str_slice(t13, t16, t18);
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     t25 = h3_own3;
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     h3_own3 = t19;
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     hero_str_decref(t25);
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     h2_ret0 = t19;
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     goto bb7;
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
 bb6:
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
     goto bb4;
-#line 109 "selfhost/mutate/own.hero"
+#line 111 "selfhost/mutate/own.hero"
 bb7:
 #line 1272355 "main.c"
     t24 = h2_ret0;
@@ -1272358,175 +1272358,175 @@ bb7:
     return t24;
 }
 
-#line 115 "selfhost/mutate/own.hero"
+#line 117 "selfhost/mutate/own.hero"
 HeroStr h_mutateown_replaced(HeroStr h0_text, HeroStr h1_from, HeroStr h2_to) {
-#line 115 "selfhost/mutate/own.hero"
+#line 117 "selfhost/mutate/own.hero"
     HeroArrayHeader * h3_parts = {0}; int64_t h4_plain; int64_t h5_at; HeroStr h6_ret0 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroArrayHeader * t6; int64_t t7; int64_t t8; int64_t t9; HeroStr t10; int64_t t11; int64_t t12; HeroStr t13; int64_t t14; bool t15; HeroStr t16; int64_t t17; HeroStr t18; bool t19; HeroStr t21; int64_t t22; int64_t t23; HeroStr t24; HeroStr t27; int64_t t29; HeroStr t30; int64_t t31; int64_t t32; int64_t t33; int64_t t34; int64_t t35; int64_t t36; HeroStr t38; int64_t t39; HeroStr t40; int64_t t41; HeroStr t42; HeroArrayHeader * t44; HeroStr t45; HeroStr t46; HeroStr t47; HeroArrayHeader * t48; HeroArrayHeader * t49; HeroStr t50; HeroStr t51; HeroStr t52; goto bb0;
-#line 115 "selfhost/mutate/own.hero"
+#line 117 "selfhost/mutate/own.hero"
 bb0:
     t1 = h1_from;
-#line 116 "selfhost/mutate/own.hero"
+#line 118 "selfhost/mutate/own.hero"
     t2 = hero_str_len(t1);
-#line 116 "selfhost/mutate/own.hero"
+#line 118 "selfhost/mutate/own.hero"
     t3 = INT64_C(0);
-#line 116 "selfhost/mutate/own.hero"
+#line 118 "selfhost/mutate/own.hero"
     t4 = t2 == t3;
-#line 116 "selfhost/mutate/own.hero"
+#line 118 "selfhost/mutate/own.hero"
     if (t4) goto bb2; else goto bb3;
-#line 116 "selfhost/mutate/own.hero"
+#line 118 "selfhost/mutate/own.hero"
 bb1:
-#line 118 "selfhost/mutate/own.hero"
+#line 120 "selfhost/mutate/own.hero"
     t6 = hero_array_new(&hero_desc_str, 1);
-#line 118 "selfhost/mutate/own.hero"
+#line 120 "selfhost/mutate/own.hero"
     t48 = h7_own7;
-#line 118 "selfhost/mutate/own.hero"
+#line 120 "selfhost/mutate/own.hero"
     h7_own7 = t6;
-#line 118 "selfhost/mutate/own.hero"
+#line 120 "selfhost/mutate/own.hero"
     hero_array_decref(t48);
-#line 118 "selfhost/mutate/own.hero"
+#line 120 "selfhost/mutate/own.hero"
     t49 = h3_parts;
-#line 118 "selfhost/mutate/own.hero"
+#line 120 "selfhost/mutate/own.hero"
     hero_array_incref(t6);
-#line 118 "selfhost/mutate/own.hero"
+#line 120 "selfhost/mutate/own.hero"
     h3_parts = t6;
-#line 118 "selfhost/mutate/own.hero"
+#line 120 "selfhost/mutate/own.hero"
     hero_array_decref(t49);
     t7 = INT64_C(0);
-#line 119 "selfhost/mutate/own.hero"
+#line 121 "selfhost/mutate/own.hero"
     h4_plain = t7;
     t8 = INT64_C(0);
-#line 120 "selfhost/mutate/own.hero"
+#line 122 "selfhost/mutate/own.hero"
     h5_at = t8;
-#line 120 "selfhost/mutate/own.hero"
+#line 122 "selfhost/mutate/own.hero"
     goto bb4;
-#line 120 "selfhost/mutate/own.hero"
+#line 122 "selfhost/mutate/own.hero"
 bb2:
-#line 117 "selfhost/mutate/own.hero"
+#line 119 "selfhost/mutate/own.hero"
     t5 = h0_text;
-#line 117 "selfhost/mutate/own.hero"
+#line 119 "selfhost/mutate/own.hero"
     h6_ret0 = t5;
-#line 117 "selfhost/mutate/own.hero"
+#line 119 "selfhost/mutate/own.hero"
     goto bb10;
-#line 117 "selfhost/mutate/own.hero"
+#line 119 "selfhost/mutate/own.hero"
 bb3:
-#line 117 "selfhost/mutate/own.hero"
+#line 119 "selfhost/mutate/own.hero"
     goto bb1;
-#line 117 "selfhost/mutate/own.hero"
+#line 119 "selfhost/mutate/own.hero"
 bb4:
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
     t9 = h5_at;
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
     t10 = h1_from;
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
     t11 = hero_str_len(t10);
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
     if (__builtin_add_overflow(t9, t11, &t12)) hero_panic_overflow();
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
     t13 = h0_text;
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
     t14 = hero_str_len(t13);
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
     t15 = t12 <= t14;
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
     if (t15) goto bb5; else goto bb6;
-#line 122 "selfhost/mutate/own.hero"
+#line 124 "selfhost/mutate/own.hero"
 bb5:
     t16 = h0_text;
-#line 123 "selfhost/mutate/own.hero"
+#line 125 "selfhost/mutate/own.hero"
     t17 = h5_at;
-#line 123 "selfhost/mutate/own.hero"
+#line 125 "selfhost/mutate/own.hero"
     t18 = h1_from;
-#line 123 "selfhost/mutate/own.hero"
+#line 125 "selfhost/mutate/own.hero"
     t19 = h_bytes_bytes_at(t16, t17, t18);
-#line 123 "selfhost/mutate/own.hero"
+#line 125 "selfhost/mutate/own.hero"
     if (t19) goto bb8; else goto bb9;
-#line 123 "selfhost/mutate/own.hero"
+#line 125 "selfhost/mutate/own.hero"
 bb6:
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     t38 = h0_text;
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     t39 = h4_plain;
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     t40 = h0_text;
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     t41 = hero_str_len(t40);
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     t42 = hero_str_slice(t38, t39, t41);
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     t50 = h8_own8;
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     h8_own8 = t42;
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     hero_str_decref(t50);
-#line 131 "selfhost/mutate/own.hero"
+#line 133 "selfhost/mutate/own.hero"
     hero_array_push_owned(&h3_parts, &t42);
     t44 = h3_parts;
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
     t45 = HERO_STR_LIT(hero_str_0);
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
     t46 = hero_str_join(t44, t45);
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
     t51 = h9_own9;
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
     h9_own9 = t46;
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
     hero_str_decref(t51);
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
     h6_ret0 = t46;
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
     goto bb10;
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
 bb7:
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
     goto bb4;
-#line 132 "selfhost/mutate/own.hero"
+#line 134 "selfhost/mutate/own.hero"
 bb8:
-#line 124 "selfhost/mutate/own.hero"
+#line 126 "selfhost/mutate/own.hero"
     t21 = h0_text;
-#line 124 "selfhost/mutate/own.hero"
+#line 126 "selfhost/mutate/own.hero"
     t22 = h4_plain;
-#line 124 "selfhost/mutate/own.hero"
+#line 126 "selfhost/mutate/own.hero"
     t23 = h5_at;
-#line 124 "selfhost/mutate/own.hero"
+#line 126 "selfhost/mutate/own.hero"
     t24 = hero_str_slice(t21, t22, t23);
-#line 124 "selfhost/mutate/own.hero"
+#line 126 "selfhost/mutate/own.hero"
     t52 = h10_own10;
-#line 124 "selfhost/mutate/own.hero"
+#line 126 "selfhost/mutate/own.hero"
     h10_own10 = t24;
-#line 124 "selfhost/mutate/own.hero"
+#line 126 "selfhost/mutate/own.hero"
     hero_str_decref(t52);
-#line 124 "selfhost/mutate/own.hero"
+#line 126 "selfhost/mutate/own.hero"
     hero_array_push_owned(&h3_parts, &t24);
     t27 = h2_to;
-#line 125 "selfhost/mutate/own.hero"
+#line 127 "selfhost/mutate/own.hero"
     hero_array_push_owned(&h3_parts, &t27);
     t29 = h5_at;
-#line 126 "selfhost/mutate/own.hero"
+#line 128 "selfhost/mutate/own.hero"
     t30 = h1_from;
-#line 126 "selfhost/mutate/own.hero"
+#line 128 "selfhost/mutate/own.hero"
     t31 = hero_str_len(t30);
-#line 126 "selfhost/mutate/own.hero"
+#line 128 "selfhost/mutate/own.hero"
     if (__builtin_add_overflow(t29, t31, &t32)) hero_panic_overflow();
-#line 126 "selfhost/mutate/own.hero"
+#line 128 "selfhost/mutate/own.hero"
     h5_at = t32;
     t33 = h5_at;
-#line 127 "selfhost/mutate/own.hero"
+#line 129 "selfhost/mutate/own.hero"
     h4_plain = t33;
-#line 127 "selfhost/mutate/own.hero"
+#line 129 "selfhost/mutate/own.hero"
     goto bb7;
-#line 127 "selfhost/mutate/own.hero"
+#line 129 "selfhost/mutate/own.hero"
 bb9:
-#line 129 "selfhost/mutate/own.hero"
+#line 131 "selfhost/mutate/own.hero"
     t34 = h5_at;
-#line 129 "selfhost/mutate/own.hero"
+#line 131 "selfhost/mutate/own.hero"
     t35 = INT64_C(1);
-#line 129 "selfhost/mutate/own.hero"
+#line 131 "selfhost/mutate/own.hero"
     if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow();
-#line 129 "selfhost/mutate/own.hero"
+#line 131 "selfhost/mutate/own.hero"
     h5_at = t36;
-#line 129 "selfhost/mutate/own.hero"
+#line 131 "selfhost/mutate/own.hero"
     goto bb7;
-#line 129 "selfhost/mutate/own.hero"
+#line 131 "selfhost/mutate/own.hero"
 bb10:
 #line 1272532 "main.c"
     t47 = h6_ret0;
@@ -1272539,86 +1272539,86 @@ bb10:
     return t47;
 }
 
-#line 136 "selfhost/mutate/own.hero"
+#line 138 "selfhost/mutate/own.hero"
 h_mutatejsonread_Json h_mutateown_told(HeroStr h0_code, int64_t h1_line, HeroStr h2_msg) {
-#line 136 "selfhost/mutate/own.hero"
+#line 138 "selfhost/mutate/own.hero"
     HeroArrayHeader * h3_own3 = {0}; h_mutatejsonread_Json h4_own4 = {0}; h_mutatejsonread_Json h5_own5 = {0}; h_mutatejsonread_Json h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_mutatejsonread_Json h8_own8 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroArrayHeader * t4; HeroStr t5; h_mutatejsonread_Json t6; int64_t t7; h_mutatejsonread_Json t8; HeroStr t9; h_mutatejsonread_Json t10; HeroArrayHeader * t11; h_mutatejsonread_Json t12; HeroArrayHeader * t13; h_mutatejsonread_Json t14; h_mutatejsonread_Json t15; h_mutatejsonread_Json t16; HeroArrayHeader * t17; h_mutatejsonread_Json t18; goto bb0;
-#line 136 "selfhost/mutate/own.hero"
+#line 138 "selfhost/mutate/own.hero"
 bb0:
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     t1 = HERO_STR_LIT(hero_str_d614769);
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     t2 = HERO_STR_LIT(hero_str_e9474c4);
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     t3 = HERO_STR_LIT(hero_str_1cc615);
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     t4 = hero_array_new(&hero_desc_str, 3);
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     hero_array_push_owned(&t4, &t1);
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     hero_array_push_owned(&t4, &t2);
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     hero_array_push_owned(&t4, &t3);
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     t13 = h3_own3;
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     h3_own3 = t4;
-#line 138 "selfhost/mutate/own.hero"
+#line 140 "selfhost/mutate/own.hero"
     hero_array_decref(t13);
     t5 = h0_code;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t6 = h_mutatejsonfields_string(t5);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t14 = h4_own4;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     h4_own4 = t6;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_release(&t14);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t7 = h1_line;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t8 = h_mutatejsonfields_whole(t7);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t15 = h5_own5;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     h5_own5 = t8;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_release(&t15);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t9 = h2_msg;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t10 = h_mutatejsonfields_string(t9);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t16 = h6_own6;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     h6_own6 = t10;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_release(&t16);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t11 = hero_array_new(&h_mutatejsonread_Json_desc, 3);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     hero_array_push_owned(&t11, &t6);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     hero_array_push_owned(&t11, &t8);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     hero_array_push_owned(&t11, &t10);
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     t17 = h7_own7;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     h7_own7 = t11;
-#line 139 "selfhost/mutate/own.hero"
+#line 141 "selfhost/mutate/own.hero"
     hero_array_decref(t17);
-#line 137 "selfhost/mutate/own.hero"
+#line 139 "selfhost/mutate/own.hero"
     hero_array_incref(t4);
-#line 137 "selfhost/mutate/own.hero"
+#line 139 "selfhost/mutate/own.hero"
     hero_array_incref(t11);
-#line 137 "selfhost/mutate/own.hero"
+#line 139 "selfhost/mutate/own.hero"
     t12 = (h_mutatejsonread_Json){.tag = h_mutatejsonread_Json_tag_fields, .as.c_fields = {.f_names = t4, .f_values = t11}};
-#line 137 "selfhost/mutate/own.hero"
+#line 139 "selfhost/mutate/own.hero"
     t18 = h8_own8;
-#line 137 "selfhost/mutate/own.hero"
+#line 139 "selfhost/mutate/own.hero"
     h8_own8 = t12;
-#line 137 "selfhost/mutate/own.hero"
+#line 139 "selfhost/mutate/own.hero"
     h_mutatejsonread_Json_release(&t18);
 #line 1272624 "main.c"
     h_mutatejsonread_Json_retain(&t12);

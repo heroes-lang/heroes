@@ -19,13 +19,16 @@
 #
 # **The root file is `files[0]`, and every offset the author can see is what
 # it would have been if their file were alone.** Files are appended in load
-# order, never sorted, and nothing is ever prepended.
+# order, never sorted, and nothing is ever prepended. Nor is anything added
+# inside a file: each file's own bytes are exactly what its author wrote
+# (`from_files`, defect 141).
 #
 # The library (§1.11 Tier 2) is an ordinary module in every respect but one:
 # a diagnostic pointing into it is a compiler bug, not a user error, and
 # nothing that hands a program back may print it.
 
 use token
+use char_column
 use module/names as module_names
 
 ## The two tables
@@ -65,6 +68,20 @@ record Source
     # In load order, never empty, files[0] the root. Sorted by `start` by
     # construction, which is what lets `file_of` binary-search it.
     files: [FileEntry]
+    # Every byte of a file that is not UTF-8, where its U+FFFD stands in
+    # `text`, ascending; empty for a compilation of text (panel 189). Set by
+    # the read (`module/reading.hero`) and told by `not_text.hero`; a file
+    # holding one is never lexed (`lexer.lex_files`).
+    faults: [Fault]
+    # The offset of every byte of `text` continuing a character, ascending:
+    # a column without a walk of its line (`char_column.at`, defect 372).
+    continuations: [i64]
+
+# A byte that is not part of a well-formed UTF-8 sequence: where the U+FFFD
+# that stands for it begins, and its value (panel 189, defect 227).
+record Fault
+    at: i64
+    byte: i64
 
 # The module component the library's own functions get, whatever is being
 # compiled: `range` is `h_library_range` in every program (panel 028 R3b —
@@ -99,17 +116,27 @@ function with_library(name: str, user: str, library: str) -> Source
 
 # The general constructor: N files, concatenated in the order given.
 #
-# **One blank line joins each pair**, and it is load-bearing twice: two
-# declarations butted together would be one line to the parser, and the
-# boundary offset has to fall on a line start for the file table to agree
-# with the line numbering. The previous file's last line is closed first if
-# it had no newline — done HERE rather than after each file so that the LAST
-# file is left exactly as written: a trailing newline the author did not
-# type would move the eof token's position.
+# **One newline joins each pair, and it belongs to neither file.** It is
+# load-bearing twice: two declarations butted together would be one line to
+# the parser, and the boundary offset has to fall on a line start for the
+# file table to agree with the line numbering. After a file whose last line
+# ends, it makes a blank line; after one whose last line is open, it ends
+# that line. Either way it stands outside both files, so a file's own text
+# (`source_extent.text_of`) is exactly its author's bytes, and the lexer
+# reads a file in a compilation as it reads the file alone.
+#
+# **Until defect 141 an open last line was first closed with a newline of
+# this function's own**, inside the file's text. The root then held a byte
+# its author never typed: `check --apply` wrote it into the file (22 bytes
+# came out 29 where the one certain fix makes 28), a CRLF file got a bare
+# `\n`, and a stray `\r` ending a file became a line ending the lexer
+# accepts, so `check` passed a file that `fmt`, which reads the root alone,
+# refused at that `\r`. The same closer once read the last byte of a file of
+# none (defect 109).
 function from_files(inputs: [InputFile]) -> Source
     assert inputs.len() > 0
     name = inputs[0].name
-    table: [FileEntry] @ []
+    table: [FileEntry] @= []
 
     # `lines_before` is the newline count of the accumulated text, kept
     # incrementally: the first shape of this line re-ran starts_of over
@@ -118,31 +145,18 @@ function from_files(inputs: [InputFile]) -> Source
     # inside each pass — measured as most of the compiler's load time
     # (docs/measurements/012). Counting only what each step appends is
     # the same number read once.
-    newlines: i64 @ 0
+    newlines: i64 @= 0
 
     # The pieces are joined once (defect 105: `text @ text + input.text`
     # copied the compilation so far at every file).
-    pieces: [str] @ []
-    size: i64 @ 0
-
-    # Whether the text so far ends inside a line: its last byte is not a
-    # newline. **A question about the bytes, answered only where a byte
-    # exists** (defect 109): this read the last byte of the last file, and a
-    # first file of zero bytes has none, so every verb that reads a program
-    # died with `string index out of range` before a token was lexed. A text
-    # with no byte in it ends no line, so nothing needs closing.
-    open: bool @ false
+    pieces: [str] @= []
+    size: i64 @= 0
 
     for input in inputs
         if table.len() > 0
-            if open
-                pieces @ pieces.push("\n")
-                size @ size + 1
-                newlines @ newlines + 1
             pieces @ pieces.push("\n")
             size @ size + 1
             newlines @ newlines + 1
-            open @ false
         entry = FileEntry(
             name: input.name,
             module: input.module,
@@ -154,19 +168,19 @@ function from_files(inputs: [InputFile]) -> Source
         table @ table.push(entry)
         pieces @ pieces.push(input.text)
         size @ size + input.text.len()
-
-        if input.text.len() > 0
-            open @ input.text[input.text.len() - 1] != '\n'
         newlines @ newlines + newlines_in(input.text)
 
     whole = pieces.join("")
-    return Source(name: name, text: whole, line_starts: starts_of(whole), files: table)
+    none: [Fault] = []
+    starts = starts_of(whole)
+    more = char_column.continuations_of(whole)
+    return Source(name: name, text: whole, line_starts: starts, files: table, faults: none, continuations: more)
 
 # The '\n' count of one segment — what `starts_of(text).len() - 1` answers
 # for a whole text, without building the array.
 function newlines_in(text: str) -> i64
-    count: i64 @ 0
-    i: i64 @ 0
+    count: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -178,8 +192,8 @@ function newlines_in(text: str) -> i64
 # Byte offset of the first byte of each line. starts[0] == 0, and the length
 # is the number of lines, which is what makes it double as a line count.
 function starts_of(text: str) -> [i64]
-    starts: [i64] @ [0]
-    i: i64 @ 0
+    starts: [i64] @= [0]
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -193,8 +207,8 @@ function starts_of(text: str) -> [i64]
 # The greatest index whose start is <= offset. Both tables this file owns
 # are sorted by construction, which is what makes the binary search honest.
 function floor_start(starts: [i64], offset: i64) -> i64
-    lo: i64 @ 0
-    hi: i64 @ starts.len() - 1
+    lo: i64 @= 0
+    hi: i64 @= starts.len() - 1
 
     while lo < hi
         mid = (lo + hi + 1) / 2
@@ -209,8 +223,8 @@ function floor_start(starts: [i64], offset: i64) -> i64
 # `floor_start` over the files' starts, read in place rather than copied
 # into an array at every call.
 function file_of(s: Source, offset: i64) -> i64
-    lo: i64 @ 0
-    hi: i64 @ s.files.len() - 1
+    lo: i64 @= 0
+    hi: i64 @= s.files.len() - 1
 
     while lo < hi
         mid = (lo + hi + 1) / 2
@@ -253,11 +267,12 @@ record Position
 # 1-based line and column in the whole text; **the column counts
 # characters**, not bytes — the consumer is the reader, and for a caret a
 # byte is not a column (the byte-counting version disagreed with its own
-# caret by three columns on one tabbed line, 2026-08-12).
+# caret by three columns on one tabbed line, 2026-08-12). `char_column` counts
+# it, a CRLF line's end at its carriage return (defect 373).
 function line_col(s: Source, offset: i64) -> Position
     line = floor_start(s.line_starts, offset)
     start = s.line_starts[line]
-    col = s.text.slice(from: start, to: offset).chars().len() + 1
+    col = char_column.at(s.text, continuations: s.continuations, start: start, offset: offset)
     return Position(line: line + 1, col: col)
 
 # The 1-based line in the whole text — the printer's question. `locate`
@@ -270,7 +285,7 @@ function line_of(s: Source, offset: i64) -> i64
 # The 1-based line WITHIN ITS OWN FILE, for a diagnostic or a `#line` that
 # names that file rather than the root.
 function file_line_of(s: Source, offset: i64) -> i64
-    line: i64 @ line_of(s, offset) - file_at(s, offset).lines_before
+    line: i64 @= line_of(s, offset) - file_at(s, offset).lines_before
 
     if line < 1
         line @ 1
@@ -290,11 +305,31 @@ function locate(s: Source, offset: i64) -> Location
     entry = file_at(s, offset)
 
     # `file_line_of`'s number, from the position and the entry in hand.
-    line: i64 @ p.line - entry.lines_before
+    line: i64 @= p.line - entry.lines_before
 
     if line < 1
         line @ 1
     return Location(file: entry.name, line: line, col: p.col)
+
+# Where an offset is AS A `#line` NAMES IT: the file that holds it and the
+# line within that file, with no column (defect 228, 2026-10-03). `locate`
+# counts the column's characters from the line's start, and the emitter asked
+# it once for every instruction it placed, so a line N bytes long cost about
+# N squared over 2: 24 million characters walked for one 2,000-piece
+# concatenation, 80 million for 1,000 nested loops, where every instruction
+# walked its line's indentation. A `#line` carries no column, so this asks
+# two sorted tables and walks no line.
+record SourceLine
+    file: str
+    line: i64
+
+function source_line(s: Source, offset: i64) -> SourceLine
+    entry = file_at(s, offset)
+    line: i64 @= line_of(s, offset) - entry.lines_before
+
+    if line < 1
+        line @ 1
+    return SourceLine(file: entry.name, line: line)
 
 # How to name THE OTHER END of a mistake, from where the caret is: `line 12`
 # when both ends are in one file, `geom.hero:12` when they are not. Every
@@ -360,15 +395,19 @@ test "the library is appended and unopenable"
     assert s.files[1].name == "<heroes library>"
     assert s.files[1].module == "library"
 
-test "a file without a trailing newline is closed before the joiner"
+test "a file whose last line is open is joined as written: the joiner ends that line"
     inputs: [InputFile] = [
         user_file(name: "a.hero", text: "constant A: i64\n    1")
         user_file(name: "b.hero", text: "constant B: i64\n    2\n")
     ]
     s = from_files(inputs)
 
-    # a.hero's 21 bytes, the added closer, the blank line: b starts at 23.
-    assert s.files[1].start == 23
+    # a.hero's 21 bytes and the joiner, nothing between them: b starts at 22,
+    # on a line start, and is its own line 1 (defect 141).
+    assert s.files[1].start == 22
+    assert s.text.slice(from: 0, to: 22) == "constant A: i64\n    1\n"
+    assert line_of(s, s.files[1].start) == 3
+    assert file_line_of(s, s.files[1].start) == 1
 
 test "lines_before is the newline count of everything before the file"
     inputs: [InputFile] = [
@@ -382,8 +421,8 @@ test "lines_before is the newline count of everything before the file"
     # a.hero's two lines, then the blank joiner line.
     assert s.files[1].lines_before == 3
 
-    # b.hero's own newline, the closer its missing one costs, the joiner.
-    assert s.files[2].lines_before == 6
+    # b.hero's own newline, then the joiner, which ends its open last line.
+    assert s.files[2].lines_before == 5
 
     # And the numbers agree with what locate answers through them.
     assert file_line_of(s, s.files[2].start) == 1
@@ -407,11 +446,11 @@ test "an empty file between two others is joined like any other, whatever came b
     ]
     s = from_files(inputs)
 
-    # a.hero's 21 bytes, its closer, the joiner: b starts at 23 and holds
-    # nothing, so c follows one joiner later.
-    assert s.files[1].start == 23
-    assert s.files[2].start == 24
-    assert s.files[2].lines_before == 4
+    # a.hero's 21 bytes and the joiner: b starts at 22 and holds nothing, so
+    # c follows one joiner later.
+    assert s.files[1].start == 22
+    assert s.files[2].start == 23
+    assert s.files[2].lines_before == 3
     assert file_line_of(s, s.files[2].start) == 1
     assert locate(s, s.files[2].start).file == "c.hero"
 
@@ -432,6 +471,28 @@ test "files that are all empty are only their joiners, and a lone empty file is 
     assert alone.line_starts.len() == 1
     assert line_col(alone, 0).line == 1
     assert line_col(alone, 0).col == 1
+
+test "a `#line`'s place is locate's file and line, whatever the column, in every file"
+    # Defect 228: `source_line` answers what `locate` answers but the column,
+    # which it never walks for. Held to `locate` at every offset of three
+    # files, a long line, a character above ASCII, and the joiners included.
+    inputs: [InputFile] = [
+        user_file(name: "a.hero", text: "x = 1\n" + repeat("y", 300) + " = \"é\"\n")
+        user_file(name: "b.hero", text: "")
+        user_file(name: "c.hero", text: "z = 2\n    w = 3")
+    ]
+    s = from_files(inputs)
+    at: i64 @= 0
+
+    while at < s.text.len()
+        # `locate` slices to the offset, so it is asked only where a
+        # character starts: never at a continuation byte, 0x80 to 0xBF.
+        if s.text[at] < 128 || s.text[at] >= 192
+            one = source_line(s, at)
+            two = locate(s, at)
+            assert one.file == two.file
+            assert one.line == two.line
+        at @ at + 1
 
 test "the column counts characters, not bytes"
     # `è` is two bytes; the caret after it must say column 3, not 4.

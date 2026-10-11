@@ -1,0 +1,9 @@
+# Panel 178 ffi-pragmatist: the repair ffi_unknown_tag's note offers for glibc's
+# pthread_mutex_t (a typedef of an anonymous union): a HANDLE.
+extern "pthread.h"
+    record Mutex tag pthread_mutex_t
+    function pthread_mutex_lock(m: Mutex) -> i32
+
+function main()
+    m: Mutex = nullptr
+    print(pthread_mutex_lock(m))

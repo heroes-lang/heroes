@@ -384,7 +384,9 @@ test "a checkout, a folder that holds something and a tree that is not there are
 # The witness that this generator is the Python's: ten programs of the
 # frozen corpus that between them hold a site of all 96 operators, their
 # tokens as the lexer of the tree the frozen plan was cut from dumped them
-# (c85bccb8's `lex --dump-tokens --json`, `tests/golden/recovery/cut/`),
+# (c85bccb8's `lex --dump-tokens --json`, `tests/golden/recovery/cut/`, the
+# ten programs' texts of that day under its own `corpus/` since defect 661,
+# when the plan beside it was cut again from the migrated tree),
 # and what the Python instrument (`recovery.py`, `ops.py`, `model.py`,
 # `edits.py`, run 2026-10-08) made of them: every operator's sites, rows
 # and order, as a count and the SHA-1 of its rows (`sites.txt`); the
@@ -398,7 +400,7 @@ test "the operators, the strata and the pairs are the Python instrument's on ten
     programs: [model.Program] @= []
 
     for i in range(from: 0, to: listed.len())
-        text = read_file("tests/golden/recovery/corpus/" + listed[i] + ".frozen").must()
+        text = read_file(dir + "/corpus/" + listed[i] + ".frozen").must()
         read = tokens.read_dump(
             read_file(dir + "/dump-" + i.to_str() + ".json").must(),
             lines: model.split_lines(text)

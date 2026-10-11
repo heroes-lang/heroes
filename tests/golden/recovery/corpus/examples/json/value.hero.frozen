@@ -56,7 +56,7 @@ function render(j: Json) -> str
 # Every element, rendered. Separate from `render` because a `match` arm is one
 # expression and a loop is not one.
 function rendered(items: [Json]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for item in items
         out @ out.push(render(item))
@@ -64,7 +64,7 @@ function rendered(items: [Json]) -> [str]
     return out
 
 function pairs(fields: {str: Json}) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for k in sort(keys(fields))
         out @ out.push(quote(k) + ":" + render(fields[k].must()))
@@ -77,7 +77,7 @@ function pairs(fields: {str: Json}) -> [str]
 # prices: `+` on `str` copies both sides, so accumulating in a loop is
 # quadratic, and `join` is linear.
 function quote(s: str) -> str
-    out: [str] @ ["\""]
+    out: [str] @= ["\""]
 
     for c in s.chars()
         if c == "\""
@@ -107,7 +107,7 @@ function size(j: Json) -> i64
         .object o  => 1 + size_of_fields(o.fields)
 
 function size_of_all(items: [Json]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for item in items
         total @ total + size(item)
@@ -115,7 +115,7 @@ function size_of_all(items: [Json]) -> i64
     return total
 
 function size_of_fields(fields: {str: Json}) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for k in keys(fields)
         total @ total + size(fields[k].must())
@@ -133,7 +133,7 @@ function depth(j: Json) -> i64
         .object o  => 1 + deepest(fields_of(o.fields))
 
 function deepest(items: [Json]) -> i64
-    best: i64 @ 0
+    best: i64 @= 0
 
     for item in items
         d = depth(item)
@@ -144,7 +144,7 @@ function deepest(items: [Json]) -> i64
     return best
 
 function fields_of(fields: {str: Json}) -> [Json]
-    out: [Json] @ []
+    out: [Json] @= []
 
     for k in sort(keys(fields))
         out @ out.push(fields[k].must())
@@ -178,7 +178,7 @@ test "a string is escaped on the way out"
     assert quote("a\nb") == "\"a\\nb\""
 
 test "an object prints its keys in sorted order"
-    m: {str: Json} @ {}
+    m: {str: Json} @= {}
     m["z"] @ .number(v: 1.0)
     m["a"] @ .boolean(b: false)
     assert render(.object(fields: m)) == "{\"a\":false,\"z\":1.0}"

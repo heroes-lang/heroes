@@ -1,0 +1,32 @@
+# Defect 382, 2026-10-06. A `constant` of an array was a function that built
+# the array again at every read. Since panel 195 a constant whose body is
+# literals is written twice in the C below: under `#if HERO_STATIC_CONSTANTS`
+# one static block per array literal, `HERO_ARRAY_STATIC`, inner blocks
+# first, an empty one a header alone, a case a compound literal, and the
+# function returning the outer block's address; under `#else` the function
+# that builds it, which is what a build under AddressSanitizer compiles
+# (`heroes_runtime.h` sets the switch to 0 there). `SHOUT` holds an `f"..."`
+# element, a call, so it is written once, the build alone.
+
+variant Mark
+    plain
+    count
+        n: i64
+
+constant DIGITS: [i64]
+    [3, -1, 4]
+
+constant WORDS: [str]
+    ["ziggy", "mars"]
+
+constant GRID: [[i64]]
+    [[1, 2], []]
+
+constant MARKS: [Mark]
+    [.plain, .count(n: 5)]
+
+constant SHOUT: [str]
+    [f"{DIGITS[0]}!"]
+
+function main()
+    print(DIGITS[1], " ", WORDS[1], " ", GRID[0][1], " ", MARKS.len(), " ", SHOUT[0])

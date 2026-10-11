@@ -1,0 +1,17 @@
+# fixedbugs, defect 232, lane b8-ffi, 2026-10-03.
+#
+# A header the machine lacks, named with U+E000, a private-use code point,
+# after `fixedbugs-232-`. clang writes that code point back as `<U+XXXX>` in
+# *'...' file not found*, on this Mac and on Linux (panel 188's
+# compiler-engineer, stage E).
+# The reader of that line matched the group's header whole against clang's
+# text, so the build stopped at exit 2 with clang's words. It asks each
+# group's header in clang's spelling now, a character as itself or as
+# `<U+XXXX>` (`emit/clang_name.hero`), and the message names the header as
+# clang printed it, so the code point can be seen.
+
+extern "fixedbugs-232-.h"
+    function seven() -> i32  #~ ffi_missing_header
+
+function main()
+    print(seven())

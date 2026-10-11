@@ -83,7 +83,7 @@ function group(@p: Parse) -> Expr?
 # A product of one or more factors.
 function term(@p: Parse) -> Expr?
     first = factor(@p)?
-    children: [Expr] @ [first]
+    children: [Expr] @= [first]
 
     while !p.parse_at_end() && p.parse_here() == .times
         parse_advance(@p)
@@ -96,7 +96,7 @@ function term(@p: Parse) -> Expr?
 # A sum of one or more terms.
 function expression(@p: Parse) -> Expr?
     first = term(@p)?
-    children: [Expr] @ [first]
+    children: [Expr] @= [first]
 
     while !p.parse_at_end() && p.parse_here() == .plus
         parse_advance(@p)

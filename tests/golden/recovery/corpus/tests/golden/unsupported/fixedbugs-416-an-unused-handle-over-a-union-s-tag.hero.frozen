@@ -1,0 +1,24 @@
+# Defect 416, lane run400, 2026-10-06; found beside defect 400 by the same
+# lane.
+#
+# SYMPTOM: a handle over a union's tag that nothing uses, `heroes test`
+# refused with `ffi_tag_is_a_union` (with no test block at all), and `build`
+# and `run` wrote and ran the program at exit 0. Each verdict was the other
+# verb's contradiction.
+#
+# CAUSE: `test` compiles the fused unit, which defines every type's per-type
+# functions and so spells every group record; `build` compiles one unit per
+# module, which spelled only the records that module's code reached. A
+# declaration nothing reached was never compiled against its header there.
+#
+# FIX: each module's unit reaches every group record the module declares
+# (`emit/members.hero`'s `group_records`), so every verb asks the header
+# about every binding the program writes, as the layout check already did of
+# a record with fields: a declaration the header refutes is a mistake in the
+# program whether or not a line uses it.
+
+extern "fixedbugs-400-tags-of-three-kinds.h"
+    record UH tag utag  #~ ffi_tag_is_a_union
+
+function main()
+    print(1)

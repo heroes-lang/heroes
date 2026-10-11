@@ -1,0 +1,5 @@
+extern "b.h"
+    function twice(x: f64) -> f64
+
+function right(x: f64) -> f64
+    return twice(x: x)

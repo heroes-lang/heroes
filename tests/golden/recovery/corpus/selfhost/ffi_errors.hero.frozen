@@ -37,7 +37,7 @@ function ffi_type(name: str, what: str, span: token.Span) -> diag.Diagnostic
 # what the reader wrote. The refusal is one level down, so the message
 # has to say which level.
 function ffi_callback_carries(callback: str, carried: str, what: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_type",
         message: "`" + callback + "` cannot cross the FFI boundary, and it is " + what + " — the callback may stand there, but `" + carried + "` inside it cannot (§4.19)",
         span: span
@@ -58,7 +58,7 @@ function ffi_callback_carries(callback: str, carried: str, what: str, span: toke
 # function type crosses — true of a parameter, and the sentence a reader
 # would take as permission here.
 function ffi_result_position(function_name: str, name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_type",
         message: "`" + function_name + "` cannot return `" + name + "` — a function type crosses the FFI boundary as a *parameter* only (§4.19)",
         span: span
@@ -110,7 +110,7 @@ function ffi_parameter_position(parameter: str, function_name: str, name: str, w
 # would be a second name for one question (`ffi_parameter_position`'s own
 # reasoning, one function up).
 function counted_by_shape(parameter: str, function_name: str, why: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "counted_by_shape",
         message: "`counted_by` on `" + parameter + "` of `" + function_name + "` names no extent — " + why,
         span: span
@@ -122,22 +122,22 @@ function counted_by_shape(parameter: str, function_name: str, why: str, span: to
 
 # `lent` on a parameter nothing lends to (panel 171): one code, and `why`
 # carries which shape, as `counted_by_shape` does one function up. The word is
-# read on a by-value `cstr` or `ptr` — the two types a lend produces — and
-# nowhere else; unread, it is refused, which is `check/marks.hero`'s rule for
-# the handle words applied to this one.
+# read on a by-value `cstr` or `ptr` — the two types a lend produces — and on
+# an `@` parameter since panel 196's R3; unread, it is refused, which is
+# `check/marks.hero`'s rule for the handle words applied to this one.
 function lent_shape(parameter: str, function_name: str, why: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "lent_shape",
         message: "`lent` on `" + parameter + "` of `" + function_name + "` is a word nothing reads — " + why,
         span: span
     )
     d.notes @ d.notes.push(
-        "`lent` says the call keeps nothing of what it is handed, so a lend — `s.cstr()`, `f.ptr()` — may land on the parameter. It is read on a by-value `cstr` or `ptr` and nowhere else"
+        "`lent` says the call keeps nothing of what it is handed, so a lend — `s.cstr()`, `f.ptr()` — may land on the parameter. It is read on a by-value `cstr` or `ptr`, and on an `@` parameter, where it says C keeps nothing of the address after the call, and nowhere else"
     )
     return d
 
 function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_field_type",
         message: "`" + name + "` cannot be a field of a `record` in an `extern` group — the header owns the layout, and it can hold a number, `bool`, `ptr`, `cstr`, or another record of the group (§4.19)",
         span: span
@@ -153,11 +153,11 @@ function ffi_field_type(name: str, why: str, span: token.Span) -> diag.Diagnosti
 # Port note: Rust calls this parameter `record`; Heroes reserves the
 # word, so the port says `holder`.
 function partial_operation(holder: str, shown: str, what: str, span: token.Span) -> diag.Diagnostic
-    through: str @ ""
+    through: str @= ""
 
     if holder != shown
         through @ " — reached through `" + shown + "`"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "ffi_partial_operation",
         message: "`" + holder + "` is `partial`, so it cannot be " + what + through + ": the fields it does not name are part of the answer, and this program cannot see them",
         span: span
@@ -188,17 +188,83 @@ function fixed_index_out_of_range(shown: str, length: i64, got_text: str, span: 
         span: span
     )
 
-# `i32[4]` in an ordinary record (panel 062).
-function fixed_outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+# A fixed array where no group's record holds it (panel 062): an ordinary
+# record's field, and since the sweep asks every written type, a binding, a
+# constant, a parameter, a result, or an element of another type. So the
+# message names no record, and the notes name each repair that works with
+# the condition that makes it the program's: where the array is meant for
+# a C struct's field, that struct declared in its header's group and the
+# elements written out where it is built; where nothing C's holds it, the
+# `[T]` it becomes and how one is built.
+#
+# **One note said *use `[T]` here* until defect 399** (2026-10-06, panel
+# 194's blind readers, task 1): a program whose `utsname` fields are
+# `i8[256]` and which built them from a binding of that type, written as the
+# note said, met five `type_mismatch`, a `[T]` never being a fixed array;
+# what works for it is the literal written in the construction. The first
+# reading is offered only where a group's field could hold the type, one
+# dimension of a number, `bool`, `ptr`, `cstr` or a record.
+#
+# **What it is told comes from the checker since defects 405 and 408**
+# (2026-10-06), `check/fixed_repairs.hero`, where it was read off the type's
+# spelling: `growable` is the `[T]` with every fixed array inside it growable
+# too, which `[i64[2]][3]`'s spelling could not give, and `into` is where the
+# program builds it into a group record's field, when it does. Then the
+# construction is named, with `rest: zero` where it can end it, and the `[T]`
+# is not offered: a C struct holds it, so `[T]` is the dead end defect 399 was.
+# The places no fixed array stands name a function's result since defect 424:
+# the note said *binding, constant or parameter* at a result too.
+function fixed_outside_a_group(name: str, growable: str, fills: bool, into: BuiltInto?, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "fixed_outside_a_group",
-        message: "`" + name + "` is a C array member, so it belongs to a `record` inside an `extern` group — this record's layout is this language's, and a fixed array exists to match one a C compiler chose (§4.19)",
+        message: "`" + name + "` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)",
         span: span
     )
+    no_value = ": no binding, constant, parameter or result holds a fixed array, and `" + growable + "` is not one"
+
+    if !into.is_err()
+        d.notes @ d.notes.push(built_into(into.must()) + no_value)
+        return d
+
+    if fills
+        d.notes @ d.notes.push(
+            "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `" + name + "` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`" + no_value
+        )
     d.notes @ d.notes.push(
-        "use `[T]` here: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+        "where no C struct holds it, use `" + growable + "`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
     )
     return d
+
+# Where a program builds a fixed array refused outside a group into fields
+# of a group's `record` (defect 408): the record, the fields one
+# construction fills from that value in the order written, the first one's
+# type, where the construction is, and whether it may end with `rest: zero`,
+# which a field called `rest` forbids (panel 194's R1).
+record BuiltInto
+    holder: str
+    fields: [str]
+    field_type: str
+    at: str
+    rests: bool
+
+# The construction named, and the two ways it is written without the value.
+function built_into(b: BuiltInto) -> str
+    names: [str] @= []
+
+    for f in b.fields
+        names @ names.push("`" + f + "`")
+
+    which: str @= "field " + names[0] + " is"
+    them: str @= names[0]
+
+    if names.len() > 1
+        which @ "fields " + names.slice(from: 0, to: names.len() - 1).join(", ") + " and " + names[names.len() - 1] + " are"
+        them @ "those fields"
+    head = "`" + b.holder + "`'s " + which + " built from it at " + b.at + ": write the elements there instead, `" + b.fields[0] + ": [a, b, …]`, as many as `" + b.field_type + "` says"
+
+    if !b.rests
+        return head + ", and `rest: zero` cannot end that construction, `" + b.holder + "` having a field called `rest`"
+    return head + ", or, where they are zero, leave " + them + " out and end that construction with `rest: zero`, which makes zero every field it does not name"
 
 # A map key that reaches a float (panel 069 R4). A compile error where
 # `==` on a float is not, because key-eligibility is a property of the
@@ -212,11 +278,11 @@ function fixed_outside_a_group(name: str, span: token.Span) -> diag.Diagnostic
 # `reached` empty means the key type IS a float; otherwise it names the
 # member that is one — the reader's next act differs.
 function float_map_key(key: str, reached: str, span: token.Span) -> diag.Diagnostic
-    because: str @ "it is a float"
+    because: str @= "it is a float"
 
     if reached.len() > 0
         because @ "`" + reached + "` is a float"
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "float_map_key",
         message: "`" + key + "` cannot be a map key, because " + because,
         span: span
@@ -241,6 +307,37 @@ test "the fixed-array messages carry both numbers and the last index"
     assert short.message == "`f32[4]` holds exactly 4, and this literal has 3 — a fixed array's length is part of its type, so the two must agree (§4.19)"
     past = fixed_index_out_of_range(shown: "i32[4]", length: 4, got_text: "7", span: span)
     assert past.message == "`i32[4]` holds 4, so its last index is 3, and this is 7 — a fixed array's length is part of its type, so the index is checked here rather than at run time"
+
+# Defect 399: the reader's binding of a C struct's `i8[256]` is told both
+# repairs, the one that works for it first, `rest: zero` in it since defect
+# 408; a type no group's field holds is told the `[T]` alone. Where the
+# program builds the value into a group record's fields, that construction
+# is named instead, and no `[T]` (defect 408). What the checker hands in is
+# `check/fixed_repairs.hero`'s, tested there on programs.
+test "a fixed array outside a group is told the repairs that work, each under its condition"
+    span = token.Span(start: 0, end: 4)
+    none: BuiltInto? = fail(code: "none", msg: "built into no group record")
+    bytes_field = fixed_outside_a_group(name: "i8[256]", growable: "[i8]", fills: true, into: none, span: span)
+    assert bytes_field.message == "`i8[256]` is a C array member, so it stands only as a field of a `record` inside an `extern` group, whose layout a C compiler chose — here no group's record holds it (§4.19)"
+    assert bytes_field.notes.len() == 2
+    assert bytes_field.notes[0] == "where it is meant for a C struct's field, that struct is a `record` inside the `extern` group of its header, and the array is written out where the record is built, as many elements as `i8[256]` says, `R(field: [a, b, …])`, or, where they are zero, left out of a construction that ends with `rest: zero`, `R(rest: zero)`: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one"
+    assert bytes_field.notes[1] == "where no C struct holds it, use `[i8]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+    nested = fixed_outside_a_group(name: "i64[2][3]", growable: "[[i64]]", fills: false, into: none, span: span)
+    assert nested.notes.len() == 1
+    assert nested.notes[0] == "where no C struct holds it, use `[[i64]]`, built as `[a, b, c]` or grown with `push`: it grows, it is compared and hashed like any other value, and it is what every Heroes record holds"
+    uts = BuiltInto(
+        holder: "Uts",
+        fields: ["sysname", "nodename", "machine"],
+        field_type: "i8[65]",
+        at: "line 9",
+        rests: true
+    )
+    built = fixed_outside_a_group(name: "i8[65]", growable: "[i8]", fills: true, into: ok(uts), span: span)
+    assert built.notes.len() == 1
+    assert built.notes[0] == "`Uts`'s fields `sysname`, `nodename` and `machine` are built from it at line 9: write the elements there instead, `sysname: [a, b, …]`, as many as `i8[65]` says, or, where they are zero, leave those fields out and end that construction with `rest: zero`, which makes zero every field it does not name: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one"
+    odd = BuiltInto(holder: "Odd", fields: ["head"], field_type: "i8[4]", at: "line 3", rests: false)
+    held = fixed_outside_a_group(name: "i8[4]", growable: "[i8]", fills: true, into: ok(odd), span: span)
+    assert held.notes[0] == "`Odd`'s field `head` is built from it at line 3: write the elements there instead, `head: [a, b, …]`, as many as `i8[4]` says, and `rest: zero` cannot end that construction, `Odd` having a field called `rest`: no binding, constant, parameter or result holds a fixed array, and `[i8]` is not one"
 
 test "a float key splits on is-a-float versus reaches-one"
     span = token.Span(start: 0, end: 4)

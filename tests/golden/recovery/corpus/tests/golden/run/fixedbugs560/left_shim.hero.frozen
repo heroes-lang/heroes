@@ -1,0 +1,6 @@
+# fixedbugs, defect 560: a module binding a shim of the program's own.
+extern "fixedbugs-560-left-shim.h"
+    function fixedbugs_560_low(status: i32) -> i32
+
+function low(status: i32) -> i32
+    return fixedbugs_560_low(status: status)

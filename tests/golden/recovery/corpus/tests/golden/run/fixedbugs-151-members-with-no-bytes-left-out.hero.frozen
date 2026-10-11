@@ -1,0 +1,29 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R4), found in
+# the panel's compiler-engineer's shapes beside the defect.
+#
+# SYMPTOM: a record over a struct whose GNU empty struct member and
+# zero-length array have no bytes, naming the one member that has, was told
+# *does not name `x`*, which it declares.
+#
+# CAUSE: the positional probe counted one zero per declared field into
+# members C counts but stores nothing in.
+#
+# FIX: a member left out is complete where C says its size is zero.
+#
+# **Narrowed 2026-10-02**, on the Windows box's pre-push leg at `b48d02b8`:
+# with its clang 23.1.1 and the MSVC target the empty struct has 4 bytes, so
+# `record ZE` leaving `e` out was refused `ffi_incomplete_record` there, and
+# rightly (R4: a member left out is complete only where C says it has no
+# bytes). The case stated a GNU fact as everyone's; it holds the zero-length
+# array alone now, 0 bytes on every target measured, and the empty struct is
+# witnessed both ways, missing for MSVC's target and complete for a GNU one,
+# by `selfhost/cli/layout.hero`'s test, which asks this machine's clang for
+# each.
+
+extern "fixedbugs-151-unions.h"
+    record ZE
+        x: i32
+    function make_ze() -> ZE
+
+function main()
+    print(make_ze().x)

@@ -11,6 +11,7 @@
 # is that a test with no successor is a promise that stops being checked
 # on the day the bootstrap is archived.
 
+use absence
 use expectation
 use report
 use shell
@@ -18,7 +19,7 @@ use spec_text
 use strings
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     built_binary_runs(@r, scratch: scratch, compiler: compiler)
     a_retired_flag_leaves_the_file_alone(@r, scratch: scratch, compiler: compiler)
     the_split_program_prints_what_the_whole_one_prints(@r, scratch: scratch, compiler: compiler)
@@ -38,8 +39,14 @@ function run_all(scratch: str, compiler: str) -> report.Report?
 function built_binary_runs(@r: report.Report, scratch: str, compiler: str)
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", "examples/gallery/00-first.hero"])
 
+    # How the run ended, in its own words (defect 317): *the build did not
+    # run* was written here of a build that ran and exited 1 as well.
     if said.is_err() || said.must().code != 0
-        report.keep_failure(@r, label: "special/build says where", detail: "  the build did not run")
+        report.keep_failure(
+            @r,
+            label: "special/build says where",
+            detail: "  `build examples/gallery/00-first.hero`: " + shell.ending(said)
+        )
         return
 
     if said.must().out.len() > 0
@@ -93,8 +100,16 @@ function a_retired_flag_leaves_the_file_alone(@r: report.Report, scratch: str, c
     )
     after = read_file("examples/gallery/00-first.hero")
 
-    if said.is_err() || before.is_err() || after.is_err()
-        report.keep_failure(@r, label: "special/a retired flag", detail: "  cannot run the compiler or read the file")
+    if said.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/a retired flag",
+            detail: "  `fmt --write examples/gallery/00-first.hero`: " + shell.refusal(said)
+        )
+        return
+
+    if before.is_err() || after.is_err()
+        report.keep_failure(@r, label: "special/a retired flag", detail: "  cannot read examples/gallery/00-first.hero")
         return
 
     if said.must().code != 2
@@ -126,8 +141,20 @@ function the_split_program_prints_what_the_whole_one_prints(@r: report.Report, s
     split = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", "examples/calculator/main.hero"])
     whole = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", "examples/calculator/whole.hero"])
 
-    if split.is_err() || whole.is_err()
-        report.keep_failure(@r, label: "special/split and whole", detail: "  cannot run the compiler")
+    if split.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/split and whole",
+            detail: "  `run examples/calculator/main.hero`: " + shell.refusal(split)
+        )
+        return
+
+    if whole.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/split and whole",
+            detail: "  `run examples/calculator/whole.hero`: " + shell.refusal(whole)
+        )
         return
 
     if split.must().code != 0
@@ -154,8 +181,12 @@ function the_bare_invocation_is_the_help(@r: report.Report, scratch: str, compil
     asked = shell.run(scratch: scratch, program: compiler, words: [compiler, "--help"])
     bare = shell.run(scratch: scratch, program: compiler, words: [compiler])
 
-    if asked.is_err() || bare.is_err()
-        report.keep_failure(@r, label: "special/the bare invocation", detail: "  cannot run the compiler")
+    if asked.is_err()
+        report.keep_failure(@r, label: "special/the bare invocation", detail: "  `--help`: " + shell.refusal(asked))
+        return
+
+    if bare.is_err()
+        report.keep_failure(@r, label: "special/the bare invocation", detail: "  no words: " + shell.refusal(bare))
         return
 
     if asked.must().out != bare.must().out
@@ -183,8 +214,20 @@ function the_levels_are_not_the_same_build(@r: report.Report, scratch: str, comp
         words: [compiler, "build", "examples/gallery/00-first.hero", "-O0"]
     )
 
-    if at_o2.is_err() || at_o0.is_err()
-        report.keep_failure(@r, label: "special/the levels differ", detail: "  cannot run the compiler")
+    if at_o2.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/the levels differ",
+            detail: "  `build examples/gallery/00-first.hero -O2`: " + shell.refusal(at_o2)
+        )
+        return
+
+    if at_o0.is_err()
+        report.keep_failure(
+            @r,
+            label: "special/the levels differ",
+            detail: "  `build examples/gallery/00-first.hero -O0`: " + shell.refusal(at_o0)
+        )
         return
 
     if at_o2.must().code != 0 || at_o0.must().code != 0
@@ -227,9 +270,13 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
     said = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", path])
 
     if said.is_err()
-        report.keep_failure(@r, label: "special/a failing test", detail: "  cannot run the compiler")
+        report.keep_failure(
+            @r,
+            label: "special/a failing test",
+            detail: "  `test " + path + "`: " + shell.refusal(said)
+        )
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     if said.must().code != 1
         wrong @ wrong.push("    a failing test is exit 1, and it exited " + said.must().code.to_str())
@@ -286,63 +333,46 @@ function a_failing_test_says_what_and_where(@r: report.Report, scratch: str, com
 # in it that does not run is a lie in the one document a reader is told
 # to trust.
 function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str, compiler: str)
-    spec = read_file("spec/heroes-spec.md")
+    program = specs_program()
 
-    if spec.is_err()
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot read spec/heroes-spec.md")
-        return
-
-    # By title and not by the literal text `## FFI`: the heading carries a
-    # section number since M-anchored-spec, and a needle that included the
-    # number would go stale the day a section is inserted before it.
-    after = spec_text.section_named(text: spec.must(), name: "FFI")
-
-    if after.is_err()
-        report.keep_failure(
-            @r,
-            label: "special/the spec's example",
-            detail: "  the spec has no `## FFI` section, numbered or not"
-        )
-        return
-    rest = spec.must().slice(from: after.must(), to: spec.must().len())
-    blocks = strings.split_text(text: rest, separator: "```")
-
-    if blocks.len() < 2
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  the FFI section has no fenced block")
-        return
-    block = blocks[1]
-
-    if !strings.contains(text: block, needle: "extern \"sqlite3.h\"")
-        report.keep_failure(
-            @r,
-            label: "special/the spec's example",
-            detail: "  the FFI section's first block is not the sqlite example any more:\n" + block
-        )
+    if program.is_err()
+        report.keep_failure(@r, label: "special/the spec's example", detail: "  " + unread(program))
         return
     path = scratch + "/spec-ffi.hero"
 
-    # `Db`, not `ptr`, since 2026-09-13: the document's own fence declares the
-    # handle now (panel 145, defect 029), and this body is what a reader would
-    # write from it. The two move together on purpose — a body that still said
-    # `ptr` would be the one program in the tree that reads the spec and ignores
-    # it, and this check exists to prove the example is a program and not a
-    # picture.
-    program = block + "\nfunction main()\n    db: Db @ nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
-
-    if write_file(path: path, text: program).is_err()
+    if write_file(path: path, text: program.must()).is_err()
         report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot write " + path)
         return
     said = shell.run_guarded(scratch: scratch, words: [compiler, "run", path])
 
     if said.is_err()
-        report.keep_failure(@r, label: "special/the spec's example", detail: "  cannot run the compiler")
+        report.keep_failure(
+            @r,
+            label: "special/the spec's example",
+            detail: "  `run " + path + "`: " + shell.refusal(said)
+        )
         return
 
-    if shell.machine_lacks_the_library(said.must().err)
-        report.keep_pass(@r)
+    # A machine with no sqlite cannot open the spec's database, and that says
+    # nothing of the example: skipped, by name, never a pass. It is the
+    # machine's only where the example binds what the compiler says is missing
+    # and the machine, asked, lacks it (`absence`); until defect 246 the
+    # compiler's words alone made it a PASS.
+    if said.must().code != 0
+        lacks = absence.machine_lacks(scratch: scratch, path: path, expected: "", said: said.must().err)
+
+        if !lacks.is_err()
+            report.keep_skip(@r, label: "special/the spec's example", detail: "  " + lacks.must())
+            return
+        detail: str @= "  the spec's own example did not open a database: exit " + said.must().code.to_str() + ", stdout `" + said.must().out + "`\n" + said.must().err
+        why = absence.refused(lacks)
+
+        if why.len() > 0
+            detail @ detail + "\n  not skipped for a missing library: " + why
+        report.keep_failure(@r, label: "special/the spec's example", detail: detail)
         return
 
-    if said.must().code != 0 || said.must().out != "0\n"
+    if said.must().out != "0\n"
         report.keep_failure(
             @r,
             label: "special/the spec's example",
@@ -350,6 +380,49 @@ function the_specs_own_example_opens_a_database(@r: report.Report, scratch: str,
         )
         return
     report.keep_pass(@r)
+
+# The program the check above runs: the FFI section's first fenced block of
+# `spec/heroes-spec.md`, the sqlite example, and a `main` that opens a
+# database with it; or why the spec does not hold one. Its own function since
+# defect 449, so the test below plants its stand-in's words at the place the
+# compiler tells them, read from the same program.
+function specs_program() -> str?
+    spec = read_file("spec/heroes-spec.md")
+
+    if spec.is_err()
+        return fail(code: "unread", msg: "cannot read spec/heroes-spec.md")
+
+    # By title and not by the literal text `## FFI`: the heading carries a
+    # section number since M-anchored-spec, and a needle that included the
+    # number would go stale the day a section is inserted before it.
+    after = spec_text.section_named(text: spec.must(), name: "FFI")
+
+    if after.is_err()
+        return fail(code: "unread", msg: "the spec has no `## FFI` section, numbered or not")
+    rest = spec.must().slice(from: after.must(), to: spec.must().len())
+    blocks = strings.split_text(text: rest, separator: "```")
+
+    if blocks.len() < 2
+        return fail(code: "unread", msg: "the FFI section has no fenced block")
+    block = blocks[1]
+
+    if !strings.contains(text: block, needle: "extern \"sqlite3.h\"")
+        return fail(code: "unread", msg: "the FFI section's first block is not the sqlite example any more:\n" + block)
+
+    # `Db`, not `ptr`, since 2026-09-13: the document's own fence declares the
+    # handle now (panel 145, defect 029), and this body is what a reader would
+    # write from it. The two move together on purpose — a body that still said
+    # `ptr` would be the one program in the tree that reads the spec and ignores
+    # it, and this check exists to prove the example is a program and not a
+    # picture.
+    return ok(
+        block + "\nfunction main()\n    db: Db @= nullptr\n    rc = sqlite3_open(path: \":memory:\".cstr(), @db)\n    print(rc)\n    _ = sqlite3_close(db)\n"
+    )
+
+function unread(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 # **A search path reaches clang as ONE argv word.** The path a user types
 # goes onto a command line, and a command line is a shell's input: a
@@ -376,7 +449,11 @@ function a_search_path_is_one_word(@r: report.Report, scratch: str, compiler: st
     )
 
     if said.is_err()
-        report.keep_failure(@r, label: "special/one argv word", detail: "  cannot run the compiler")
+        report.keep_failure(
+            @r,
+            label: "special/one argv word",
+            detail: "  `build examples/gallery/00-first.hero --include " + hostile + "`: " + shell.refusal(said)
+        )
         return
 
     if said.must().code != 0
@@ -410,7 +487,11 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
         )
 
         if said.is_err()
-            report.keep_failure(@r, label: "special/a path that names nothing", detail: "  cannot run the compiler")
+            report.keep_failure(
+                @r,
+                label: "special/a path that names nothing",
+                detail: "  `build examples/gallery/00-first.hero " + flag + " /no/such/directory`: " + shell.refusal(said)
+            )
             return
 
         if said.must().code != 2
@@ -450,6 +531,46 @@ function a_search_path_that_names_nothing(@r: report.Report, scratch: str, compi
         )
         return
     report.keep_pass(@r)
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): a missing
+# library was counted as a PASS on the compiler's words alone, so the spec's own
+# example read green on any machine, or under any compiler, that said so. The
+# example binds `sqlite3.h` and nothing else, so a header it does not bind is a
+# failure everywhere, and `sqlite3.h` itself is a failure where this machine has
+# it and a skip by name where it does not: never a pass.
+test "fixedbugs: the spec's example is never a pass for a missing library"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    assert !shell.remove_tree(scratch).is_err()
+    assert !shell.mkdir_all(scratch).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+
+    # Told where the compiler tells a header the example's group cannot open,
+    # its first declaration (defect 449), whichever header is named.
+    path = scratch + "/spec-ffi.hero"
+    program = specs_program().must()
+    at = path + ":" + absence.group_place(source: program, header: "sqlite3.h").must()
+    elsewhere = absence.missing_header_said(
+        header: absence.NOWHERE,
+        tail: absence.HEADER_LOOKED,
+        at: at
+    )
+    assert !write_file(path: scratch + "/spec-ffi.said", text: elsewhere).is_err()
+    unbound: report.Report @= report.empty()
+    the_specs_own_example_opens_a_database(@unbound, scratch: scratch, compiler: compiler.must())
+    assert unbound.passed == 0
+    assert unbound.failed == 1
+    assert unbound.skips.len() == 0
+    assert strings.contains(text: unbound.failures[0], needle: "binds no such header")
+    its_own = absence.missing_header_said(header: "sqlite3.h", tail: absence.HEADER_LOOKED, at: at)
+    assert !write_file(path: scratch + "/spec-ffi.said", text: its_own).is_err()
+    claimed: report.Report @= report.empty()
+    the_specs_own_example_opens_a_database(@claimed, scratch: scratch, compiler: compiler.must())
+    assert claimed.passed == 0
+    assert claimed.failed + claimed.skips.len() == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the failing-test probe is itself falsifiable"
     # The one shape that would make the check above vacuous: a compiler
@@ -522,7 +643,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     if built(scratch: scratch, compiler: compiler, source: dir + "/checked.hero", binary: dir + "/checked").is_err() || built(scratch: scratch, compiler: compiler, source: dir + "/plain.hero", binary: dir + "/plain").is_err()
         report.keep_failure(@r, label: label, detail: "  the two programs did not build")
         return
-    wrong: [str] @ []
+    wrong: [str] @= []
 
     # **THIS CASE CANNOT BE BUILT WITH AN ARGUMENT LIST, AND THAT IS A
     # FACT ABOUT THE LANGUAGE RATHER THAN A GAP IN THE RUNTIME.** The
@@ -550,7 +671,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     )
 
     if checked.is_err()
-        report.keep_failure(@r, label: label, detail: "  the checked program could not run at all")
+        report.keep_failure(@r, label: label, detail: "  the checked program: " + shell.refusal(checked))
         return
 
     # The comment above promises this and the code did not keep the promise:
@@ -584,7 +705,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
     )
 
     if plain.is_err()
-        report.keep_failure(@r, label: label, detail: "  the plain program could not run at all")
+        report.keep_failure(@r, label: label, detail: "  the plain program: " + shell.refusal(plain))
         return
 
     if plain.must().code != 134
@@ -605,7 +726,7 @@ function one_bad_argument_does_not_kill_the_other_two(@r: report.Report, scratch
 # ARRAY would have thrown the good arguments away with the bad one, which
 # is the failure this case exists to prove does not happen.
 constant CHECKED_PROGRAM: str
-    "function main()\n    n: i64 @ 0\n    for one in args_checked()\n        n @ n + 1\n        if one.is_err()\n            print(n.to_str() + \" not text\")\n        else\n            print(n.to_str() + \" \" + one.must())\n"
+    "function main()\n    n: i64 @= 0\n    for one in args_checked()\n        n @ n + 1\n        if one.is_err()\n            print(n.to_str() + \" not text\")\n        else\n            print(n.to_str() + \" \" + one.must())\n"
 
 constant PLAIN_PROGRAM: str
     "function main()\n    print(len(args()))\n"

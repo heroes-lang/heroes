@@ -1,0 +1,10 @@
+# Defect 453, lane b18-ffi, 2026-10-10 (panel 202's R3): `build` compiles a
+# unit per module and prints 6 and 8; the one file `--emit-c` writes reads
+# both headers, which declare `twice` two ways, and clang refuses it. Until
+# 2026-10-10 it was written at exit 0.
+use wide
+use narrow
+
+function main()
+    print(wide.doubled(x: 3))
+    print(narrow.doubled(x: 4))

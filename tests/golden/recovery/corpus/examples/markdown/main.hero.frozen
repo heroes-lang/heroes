@@ -48,7 +48,7 @@ function show(source: str, given: [str])
 # precisely here: a jump is a valid arm body and yields no value, so the `match`
 # stays exhaustive without a case that pretends to compute something.
 function headings(document: [blocks.Block]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for b in document
         match b

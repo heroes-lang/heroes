@@ -35,8 +35,8 @@ record Node
     children: [Node]
 
 function chain(depth: i64, tip: i64) -> Node
-    n: Node @ Node(label: tip, children: [])
-    i: i64 @ 0
+    n: Node @= Node(label: tip, children: [])
+    i: i64 @= 0
 
     while i < depth
         n @ Node(label: i, children: [n])

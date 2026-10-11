@@ -37,9 +37,9 @@ constant ERR_PARSE: str
 # run out.
 function program(source: str) -> tree.Tree?
     tokens = scan.scanned(source)?
-    c: cursor.Cursor @ cursor.over(tokens)
-    t: tree.Tree @ tree.empty()
-    top: [i64] @ []
+    c: cursor.Cursor @= cursor.over(tokens)
+    t: tree.Tree @= tree.empty()
+    top: [i64] @= []
     cursor.skipped_lines(@c)
 
     while !cursor.done(c)
@@ -100,7 +100,7 @@ function if_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
     condition = expr.parsed(@c, @t)?
     line_end(@c)?
     then = block(@c, @t)?
-    otherwise: [i64] @ []
+    otherwise: [i64] @= []
 
     if cursor.accepted(@c, want: .kw_else)
         line_end(@c)?
@@ -130,7 +130,7 @@ function fn_statement(@c: cursor.Cursor, @t: tree.Tree) -> i64?
 # A parameter list, refusing a repeated name — and quoting the whole list when
 # it does, which is `each.joined` instantiated at `str` from this module.
 function parameters(@c: cursor.Cursor) -> [str]?
-    names: [str] @ []
+    names: [str] @= []
 
     if cursor.accepted(@c, want: .rparen)
         return ok(names)
@@ -156,7 +156,7 @@ function parameters(@c: cursor.Cursor) -> [str]?
 # function consumes: the caller does, because only the caller knows which of
 # the two it is willing to see.
 function block(@c: cursor.Cursor, @t: tree.Tree) -> [i64]?
-    made: [i64] @ []
+    made: [i64] @= []
     cursor.skipped_lines(@c)
 
     while !closes_a_block(cursor.here(c))
@@ -190,10 +190,10 @@ function line_end(@c: cursor.Cursor) -> ()?
 # walk, for the reason the module header gives: the predicate would have to
 # know which name it is hunting, and this language has no closures to carry it.
 function repeats(names: [str]) -> bool
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < names.len()
-        j: i64 @ i + 1
+        j: i64 @= i + 1
 
         while j < names.len()
             if names[i] == names[j]

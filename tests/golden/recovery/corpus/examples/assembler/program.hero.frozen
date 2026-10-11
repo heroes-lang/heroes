@@ -74,12 +74,12 @@ function is_space(c: u8) -> bool
     return c == ' ' || c == '\t' || c == 13
 
 function trimmed(line: str) -> str
-    from: i64 @ 0
+    from: i64 @= 0
 
     while from < line.len() && is_space(line[from])
         from @ from + 1
 
-    to: i64 @ line.len()
+    to: i64 @= line.len()
 
     while to > from && is_space(line[to - 1])
         to @ to - 1
@@ -87,9 +87,9 @@ function trimmed(line: str) -> str
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -102,7 +102,7 @@ function split_lines(text: str) -> [str]
     return out
 
 function index_of(text: str, c: u8) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == c
@@ -114,9 +114,9 @@ function index_of(text: str, c: u8) -> i64
 # Split at `c`, with the empty pieces dropped. `add r0, r1` and `add r0,r1` are
 # the same instruction: the separator is the comma and the spaces are noise.
 function split_on(text: str, c: u8) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i <= text.len()
         if i == text.len() || text[i] == c
@@ -135,13 +135,13 @@ function split_on(text: str, c: u8) -> [str]
 # the assembler's business, and a reader who mistypes one wants to be told which
 # line it was on, which is why `number` travels with it.
 function read_line(text: str, number: i64) -> Line
-    body: str @ text
+    body: str @= text
     at = index_of(body, ';')
 
     if at >= 0
         body @ body.slice(from: 0, to: at)
     body @ trimmed(body)
-    label: str @ ""
+    label: str @= ""
     colon = index_of(body, ':')
 
     if colon >= 0
@@ -159,8 +159,8 @@ function read_line(text: str, number: i64) -> Line
     return Line(label: label, mnemonic: mnemonic, operands: split_on(rest, ','), number: number)
 
 function read(text: str) -> [Line]
-    out: [Line] @ []
-    number: i64 @ 0
+    out: [Line] @= []
+    number: i64 @= 0
 
     for line in split_lines(text)
         number @ number + 1
@@ -188,8 +188,8 @@ function register_of(word: str, number: i64) -> i64?
     return ok(n)
 
 function number_of(word: str, number: i64) -> i64?
-    body: str @ word
-    negative: bool @ false
+    body: str @= word
+    negative: bool @= false
 
     if body.len() > 0 && body[0] == '-'
         negative @ true
@@ -197,7 +197,7 @@ function number_of(word: str, number: i64) -> i64?
 
     if body.len() == 0
         return fail(code: ERR_BAD_NUMBER, msg: "line " + number.to_str() + ": `" + word + "` is not a number")
-    v: i64 @ 0
+    v: i64 @= 0
 
     for i in range(from: 0, to: body.len())
         if body[i] < '0' || body[i] > '9'

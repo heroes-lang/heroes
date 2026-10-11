@@ -59,6 +59,8 @@ variant TokenKind
     kw_fail
     eq
     at
+    # `@=`, the symbol that declares a mutable cell (panel 209).
+    at_eq
     colon
     # `::`, the field-name operator: `Point::x` is the `str` `"x"`.
     # Two bytes rather than a second meaning for `.`, which already
@@ -104,6 +106,124 @@ variant TokenKind
     eof
     error
 
+## The line ends of the stream the lexer lays out
+
+# Whether a token of `kind` ends a line: a terminator, an indent or a dedent.
+# One copy for the lexer's and the parser's modules, which held ten of this
+# and of `ends_a_line` until 2026-10-03 (lane b8-recovery).
+function is_line_end(kind: TokenKind) -> bool
+    return kind == .terminator || kind == .indent || kind == .dedent
+
+# The same, the stream's end counted with them.
+function ends_a_line(kind: TokenKind) -> bool
+    return is_line_end(kind) || kind == .eof
+
+## Brackets
+
+# Whether a token of `kind` closes a bracket.
+function is_closer(kind: TokenKind) -> bool
+    return kind == .rparen || kind == .rbracket || kind == .rbrace
+
+# The opener a closer closes, a `(` for any other kind; and the closer an
+# opener owes, a `)` for any other. Here since defect 196, from
+# `pairing` and `parse/unclosed`, which kept one each.
+function opener_of(closer: TokenKind) -> TokenKind
+    if closer == .rbracket
+        return .lbracket
+
+    if closer == .rbrace
+        return .lbrace
+    return .lparen
+
+function closer_of(opener: TokenKind) -> TokenKind
+    if opener == .lbracket
+        return .rbracket
+
+    if opener == .lbrace
+        return .rbrace
+    return .rparen
+
+# Whether a token of `kind` can begin an expression, spec § 7's `Unary` and
+# `Primary`: what `while` needs after it to be a loop, so what a `certain`
+# *use `while`* for a `for` over a condition needs (defect 131's third
+# round). Enumerated, so a new token kind is answered for, not defaulted.
+# Moved here from `parse/opening.hero` with defect 202, a table of kinds that
+# reads no parse, as the two above came here.
+function begins_an_expression(kind: TokenKind) -> bool
+    return match kind
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece        => true
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if              => true
+        .kw_match | .lparen | .lbracket | .lbrace | .dot                                        => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_else | .kw_for             => false
+        .kw_while | .kw_in | .kw_break | .kw_continue | .kw_return | .kw_test                   => false
+        .kw_assert | .kw_extern | .kw_use | .eq | .at | .at_eq | .colon | .colon_colon | .comma => false
+        .question | .arrow | .fat_arrow | .pipe | .rparen | .rbracket | .rbrace | .plus         => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                   => false
+        .and_and | .or_or | .amp | .caret | .shl | .shr | .comment | .terminator                => false
+        .indent | .dedent | .eof | .error                                                       => false
+
+# A token of `kind` over `start` to `end`: a stream written by hand, as the
+# parser's tests write theirs, eight modules of which held a copy as `tok`
+# until 2026-10-03 (lane b8-recovery).
+function made(kind: TokenKind, start: i64, end: i64) -> Token
+    return Token(kind: kind, span: Span(start: start, end: end))
+
+## What a line may begin or hold
+
+# Whether a token only ever goes on with a line above it and begins none of
+# its own: an operator but the three that also begin a value, `-`, `!` and
+# `~`; a separator or a closer; `else` and `in`. Enumerated, so a new token
+# kind is answered for, not defaulted. Moved here from `parse/orphans` with
+# defect 193, a table of kinds that reads no parse.
+function continues_a_line(kind: TokenKind) -> bool
+    return match kind
+        .plus | .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge         => true
+        .and_and | .or_or | .amp | .pipe | .caret | .shl | .shr | .eq | .at | .at_eq | .comma => true
+        .colon | .colon_colon | .question | .arrow | .fat_arrow | .rparen | .rbracket         => true
+        .rbrace | .kw_else | .kw_in                                                           => true
+        .minus | .bang | .tilde | .ident | .int_lit | .float_lit | .str_lit | .str_piece      => false
+        .char_lit | .kw_true | .kw_false | .kw_nullptr | .hole | .kw_fail | .kw_if            => false
+        .kw_match | .lparen | .lbracket | .lbrace | .dot | .kw_constant | .kw_function        => false
+        .kw_record | .kw_variant | .kw_for | .kw_while | .kw_break | .kw_continue             => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_use | .comment | .terminator    => false
+        .indent | .dedent | .eof | .error                                                     => false
+
+# A token no statement begins with, which at the head of a line can only go
+# on with the line above: a binary operator (spec § 7), the `?` that
+# propagates and the `::` that names a field. ENUMERATED, never a catch-all:
+# a new kind is a compile error here until somebody decides it, which is
+# `layout.is_line_ender`'s own discipline. `-` answers true, and the caller
+# asks panel 180's question of it. Moved here from `open_line` with defect
+# 351, a table of kinds that reads no lexer, which `next_line` asks too.
+function can_only_go_on(kind: TokenKind) -> bool
+    return match kind
+        .or_or | .and_and | .eq_eq | .bang_eq | .lt | .le | .gt | .ge                         => true
+        .pipe | .caret | .amp | .shl | .shr | .plus | .minus | .star | .slash | .percent      => true
+        .question | .colon_colon                                                              => true
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                    => false
+        .kw_constant | .kw_function | .kw_record | .kw_variant | .kw_match | .kw_if           => false
+        .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue                    => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use               => false
+        .kw_true | .kw_false | .kw_fail | .eq | .at | .at_eq | .colon | .comma | .dot | .hole => false
+        .arrow | .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace             => false
+        .rbrace | .bang | .tilde | .comment | .terminator | .indent | .dedent | .eof          => false
+        .error                                                                                => false
+
+# A token spec § 8's `Pattern` is written with, or the `|` that joins two.
+# ENUMERATED, so that a new kind is answered for here. Moved here from
+# `parse/margin_arms` with defect 193, a table of kinds that reads no parse.
+function of_a_pattern(k: TokenKind) -> bool
+    return match k
+        .dot | .ident | .minus | .int_lit | .str_lit | .char_lit | .pipe | .comment                     => true
+        .float_lit | .str_piece | .kw_constant | .kw_function | .kw_record | .kw_variant                => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in | .kw_break | .kw_continue         => false
+        .kw_return | .kw_test | .kw_assert | .kw_extern | .kw_nullptr | .kw_use | .kw_true              => false
+        .kw_false | .kw_fail | .eq | .at | .at_eq | .colon | .colon_colon | .comma | .question | .arrow => false
+        .fat_arrow | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace | .plus              => false
+        .star | .slash | .percent | .eq_eq | .bang_eq | .lt | .le | .gt | .ge | .and_and                => false
+        .or_or | .amp | .caret | .shl | .shr | .bang | .tilde | .hole | .terminator | .indent           => false
+        .dedent | .eof | .error                                                                         => false
+
 ## The stable names
 
 # Stable lowercase name, used by `heroes lex --json` and the snapshots. These
@@ -141,6 +261,7 @@ function kind_name(kind: TokenKind) -> str
         .kw_fail     => "kw_fail"
         .eq          => "eq"
         .at          => "at"
+        .at_eq       => "at_eq"
         .colon       => "colon"
         .colon_colon => "colon_colon"
         .comma       => "comma"
@@ -182,6 +303,18 @@ function kind_name(kind: TokenKind) -> str
         .eof         => "eof"
         .error       => "error"
 
+test "a token that can only go on is a binary operator, the propagating `?` or `::`"
+    assert can_only_go_on(.plus)
+    assert can_only_go_on(.and_and)
+    assert can_only_go_on(.question)
+    assert can_only_go_on(.colon_colon)
+    assert !can_only_go_on(.lparen)
+    assert !can_only_go_on(.lbracket)
+    assert !can_only_go_on(.dot)
+    assert !can_only_go_on(.hole)
+    assert !can_only_go_on(.arrow)
+    assert !can_only_go_on(.bang)
+
 test "the four literal kinds keep their Rust names through kind_name"
     assert kind_name(.int_lit) == "int"
     assert kind_name(.float_lit) == "float"
@@ -189,7 +322,7 @@ test "the four literal kinds keep their Rust names through kind_name"
     assert kind_name(.char_lit) == "char"
 
 test "kinds compare structurally"
-    k: TokenKind @ .lparen
+    k: TokenKind @= .lparen
     assert k == .lparen
     assert k != .rparen
     k @ .eof
@@ -197,7 +330,7 @@ test "kinds compare structurally"
 
 test "a token carries its span by value"
     t = Token(kind: .hole, span: Span(start: 4, end: 7))
-    u: Token @ t
+    u: Token @= t
     u.span.start @ 0
     assert t.span.start == 4
     assert u.span.start == 0

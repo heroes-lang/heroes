@@ -60,8 +60,8 @@ constant END_OF_FILE: i64
 # input of a size a person types or a test writes, and the comment says so
 # rather than pretending otherwise.
 function fed() -> str?
-    bytes: [i64] @ []
-    going: bool @ true
+    bytes: [i64] @= []
+    going: bool @= true
 
     while going
         c = to_i64(getchar()).must()
@@ -80,7 +80,7 @@ function fed() -> str?
 # from C, and these bytes came from C one at a time. So the check is here,
 # and it is the one every reader of foreign bytes owes.
 function text_of(bytes: [i64]) -> str?
-    out: str @ ""
+    out: str @= ""
 
     for b in bytes
         if b > 127
@@ -123,10 +123,10 @@ record Count
 # `wc -l` too, and a program that disagreed with that would be answering a
 # different question.
 function counted(text: str) -> Count
-    lines: i64 @ 0
-    words: i64 @ 0
-    inside: bool @ false
-    at: i64 @ 0
+    lines: i64 @= 0
+    words: i64 @= 0
+    inside: bool @= false
+    at: i64 @= 0
 
     while at < text.len()
         b = text[at]
@@ -164,9 +164,9 @@ function main()
 # from the same walk, so the program answers more than one question about
 # what it was fed.
 function longest(text: str) -> i64
-    best: i64 @ 0
-    here: i64 @ 0
-    at: i64 @ 0
+    best: i64 @= 0
+    here: i64 @= 0
+    at: i64 @= 0
 
     while at < text.len()
         if text[at] == '\n'

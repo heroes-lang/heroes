@@ -1,0 +1,88 @@
+# examples/gallery/ — the site's teaching programs, each ONE FILE and its own
+# program (defect 606, 2026-10-11).
+#
+# `corpus` and `warnings` find a program by its directory's `main.hero`, which
+# the gallery has none of: its programs are `00-first.hero` to
+# `13-lease.hero`, side by side. So until this module ten of its fourteen
+# were built, checked or run by no suite, and the harness named four by hand
+# (`00-first` 38 rows, `09-holes` 5, `13-lease` 2, `01-points` 1); the other
+# ten were read by `canonical`, which asks `fmt` alone, and by `mutate`,
+# which asks nothing of whether the program compiles. M-inferred-cell's step 1
+# landed with `12-interpolation.hero` refused by its own compiler,
+# `error[never_rebound]`, and its gate green. The gallery is what the site
+# shows, so a page could teach a program the compiler refuses.
+#
+# What a gallery program is owed is read off the program, never off a list of
+# its names: every `.hero` directly in the directory is one, and what `check`
+# hands back for it says which of two it is. A FINISHED program checks clean
+# and prints what `<stem>.expected` beside it says, in the
+# `tests/golden/run/` convention; an UNFINISHED one is a lesson about `???`,
+# whose holes are `check`'s artifact at exit 0 and which produces no binary
+# (spec § 12), so there is nothing to run and no C to judge. Its build's
+# refusal is `surface`'s row, `a hole stops the build and says how many`.
+
+use shell
+use strings
+
+constant DIR: str
+    "examples/gallery"
+
+# Measured 2026-10-11: fourteen `.hero` files, `00-first` to `13-lease`. A
+# walk that finds fewer has stopped reaching the gallery, and every
+# comparison under it would pass vacuously (`floors.hero`).
+constant LEAST: i64
+    14
+
+# Every program of the gallery, sorted: each `.hero` directly in it. The C
+# header `13-lease.h` and the expectations are its files, not programs.
+function programs(scratch: str) -> [str]?
+    out: [str] @= []
+
+    for entry in shell.list_entries(scratch: scratch, dir: DIR)?
+        if strings.ends_with(text: entry, suffix: ".hero")
+            out @ out.push(entry)
+
+    return ok(out)
+
+# The name a report gives one, `gallery/<stem>`, which is also where its
+# binary goes under the suite's directory of binaries.
+function name_of(path: str) -> str
+    return "gallery/" + strings.without_suffix(text: strings.base_name(path), suffix: ".hero")
+
+# What a finished program prints, beside it: `<stem>.expected`.
+function expected_of(path: str) -> str
+    return strings.without_suffix(text: path, suffix: ".hero") + ".expected"
+
+# Whether `check`'s answer is the report of a program with holes: exit 0, its
+# artifact on stdout opening with the first hole (`selfhost/check/holes.hero`
+# writes `hole at <file>:<line>:<col>` first). A clean program's artifact is
+# no bytes at all, and a refused one exits 1, so neither reads as unfinished.
+function unfinished(said: shell.Run) -> bool
+    return said.code == 0 && strings.starts_with(text: said.out, prefix: "hole at ")
+
+# `check` asked of one program, its answer whole.
+function checked(scratch: str, compiler: str, path: str) -> shell.Run?
+    return shell.run_guarded(scratch: scratch, words: [compiler, "check", path])
+
+## Tests
+
+test "the gallery is every .hero directly in it, and nothing else there"
+    found = programs("build/harness-selftest")
+    assert !found.is_err()
+    assert found.must().len() >= LEAST
+
+    for path in found.must()
+        assert strings.starts_with(text: path, prefix: DIR + "/")
+        assert strings.ends_with(text: path, suffix: ".hero")
+
+test "a program's name, binary and expectation are read off its path"
+    assert name_of("examples/gallery/12-interpolation.hero") == "gallery/12-interpolation"
+    assert expected_of("examples/gallery/12-interpolation.hero") == "examples/gallery/12-interpolation.expected"
+
+test "only check's report of a hole reads as unfinished"
+    holes = shell.Run(code: 0, out: "hole at examples/gallery/09-holes.hero:24:5\n", err: "", started: true, why: 0)
+    clean = shell.Run(code: 0, out: "", err: "", started: true, why: 0)
+    refused = shell.Run(code: 1, out: "", err: "error[never_rebound]: ...", started: true, why: 0)
+    assert unfinished(holes)
+    assert !unfinished(clean)
+    assert !unfinished(refused)

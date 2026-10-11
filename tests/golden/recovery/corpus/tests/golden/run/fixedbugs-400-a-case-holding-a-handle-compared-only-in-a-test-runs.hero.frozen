@@ -1,0 +1,28 @@
+# Defect 400, lane run400, 2026-10-06: the shape beside the defect's own, a
+# handle reached by the comparison through a variant's case.
+#
+# SYMPTOM: `Slot` compared in a test and nowhere else passed `heroes test`
+# and was refused by `build` and `run`, exit 1, *declares no `opaque`*.
+#
+# CAUSE: `==` on a variant reaches every record its cases hold, so the build
+# asked whether `Opaque` is a union, writing `*(opaque * *)0`, an expression,
+# where clang never says *must use 'struct' tag*.
+#
+# FIX: the record's own question, asked of the header once the round is
+# refused (`cli/header_ask.hero`), is what teaches `struct opaque`.
+
+extern "fixedbugs-400-a-struct-tag-with-no-typedef.h"
+    record Opaque tag opaque
+
+variant Slot
+    empty
+    held
+        h: Opaque
+
+function main()
+    print(1)
+
+test "a case holding a handle compared in a test alone"
+    a: Slot = .held(h: nullptr)
+    b: Slot = .held(h: nullptr)
+    assert a == b

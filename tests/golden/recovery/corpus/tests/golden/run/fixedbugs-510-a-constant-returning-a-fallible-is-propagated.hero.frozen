@@ -1,0 +1,23 @@
+# Defect 510's shape beside it, 2026-10-09: a constant holding a function
+# whose result is fallible, its call propagated with `?` and tested with
+# `.is_err()`. Both calls reached the accessor with an argument, and clang
+# refused the C at exit 2; each now reads the constant and calls what it
+# holds, so the error reaches the caller unchanged.
+function half(n: i64) -> i64?
+    if n % 2 == 1
+        return fail(code: "odd", msg: "an odd number has no half")
+    return ok(n / 2)
+
+constant HALF: (function(i64) -> i64?)
+    half
+
+function quarter(n: i64) -> i64?
+    return ok(HALF(HALF(n)?)?)
+
+function main()
+    print(quarter(8).must())
+    print(HALF(3).is_err())
+
+    match quarter(6)
+        .ok q  => print(q)
+        .err e => print(e.code)

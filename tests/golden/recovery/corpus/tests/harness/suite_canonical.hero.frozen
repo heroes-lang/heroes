@@ -39,6 +39,11 @@
 #     diagnostic is an input, and canonicalising an input changes what the
 #     test tests.
 #
+# `tests/golden/permissive/` joined them on 2026-10-04 (defect 211), for the
+# same three: it is `check/`'s question asked of the control arm, three of its
+# four cases are refused by the parser, and every expectation cites a line and
+# a column.
+#
 # `archive/` is excluded because nothing builds it and CLAUDE.md §5
 # declares the Rust it holds spent. `tests/emission/` and
 # `tests/golden/**/*.expected` hold no `.hero` at all.
@@ -80,14 +85,22 @@ constant SOURCE_DIRS: [str]
 # passes. Re-based to today's count by `floors.check`, which is what noticed.
 # **667 on 2026-09-25**, printed by `floors.check` at the merge of panel 177's
 # landing with defect 097's, whose goldens took the tree 27% past 524.
+# **844 on 2026-10-02**, printed by `floors.check` at the round's third gate:
+# the trunk's 831 files sat under its quarter, and lane h158's four and lane
+# land186's nine took the tree 26.5% past 667. The tree's count, the same on
+# every platform, since the walk reads files and builds nothing.
+# **1075 on 2026-10-07**, printed by `floors.check` at batch 13's gate: its
+# lanes' cases took the tree 27% past 844.
+# **1361 on 2026-10-10**, printed by `floors.check` at batch 19's gate: the
+# night's batches took the tree 27% past 1075.
 constant LEAST: i64
-    667
+    1361
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
-    seen: i64 @ 0
-    crooked: [str] @ []
-    refused: [str] @ []
+    r: report.Report @= report.empty()
+    seen: i64 @= 0
+    crooked: [str] @= []
+    refused: [str] @= []
 
     # `list_tree` and not `list_entries`, because `examples/` keeps its
     # programs one directory down — `gallery/`, `calculator/` and thirteen
@@ -158,16 +171,25 @@ test "the walk names the directories that were swept, and the floor is under the
     # reached 524 and `floors.check` reported the floor as outgrown — the numbers
     # here move with it, because a bracket taken from an old tree brackets
     # nothing. **524 until 2026-09-25**, when the tree reached 667 at panel
-    # 177's landing and the floor moved to it; 88% of 667 is 587.
-    assert LEAST <= 667
-    assert LEAST > 587
+    # 177's landing and the floor moved to it; 88% of 667 is 587. **667
+    # until 2026-10-02**, when the tree reached 844 at the round's third gate
+    # and the floor moved to it; 88% of 844 is 742. **844 until 2026-10-07**,
+    # when the tree reached 1075 at batch 13's gate; 88% of 1075 is 946.
+    # **1075 until 2026-10-10**, when the tree reached 1361 at batch 19's
+    # gate; 88% of 1361 is 1197.
+    assert LEAST <= 1361
+    assert LEAST > 1197
 
-test "the two exempt directories are named nowhere in the walk"
-    # tests/golden/check and tests/golden/unsupported are the test's data
-    # rather than the project's source, and the reasons are measured at the
-    # top of this file. This asserts the exemption rather than trusting the
-    # list to stay right: 23 of those files cannot be parsed at all, and
-    # a walk that reached them would report the compiler broken.
+test "the exempt directories are named nowhere in the walk"
+    # tests/golden/check, tests/golden/unsupported, tests/golden/permissive
+    # and tests/golden/full are the test's data rather than the project's
+    # source, and the reasons are measured at the top of this file. This
+    # asserts the exemption rather than trusting the list to stay right: 23 of
+    # the first two's files could not be parsed at all on 2026-08-26, and a
+    # walk that reached such a file would report the compiler broken; a case
+    # of `full/` holds an ESC byte in a string on purpose (defect 289).
     for dir in SOURCE_DIRS
         assert dir != "tests/golden/check"
         assert dir != "tests/golden/unsupported"
+        assert dir != "tests/golden/permissive"
+        assert dir != "tests/golden/full"

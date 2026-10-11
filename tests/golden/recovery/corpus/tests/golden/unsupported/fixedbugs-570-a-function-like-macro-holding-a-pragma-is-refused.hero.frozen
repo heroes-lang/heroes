@@ -1,0 +1,32 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# Beside `fixedbugs-570-a-macro-naming-the-bound-function-holds-a-pragma`:
+# a function-like macro is not expanded by the probe's `(my_twice)(a0)`, so
+# its probe stands, and it is expanded at every call.
+#
+# SYMPTOM: `#define my_twice(x) (_Pragma("clang diagnostic ignored
+# \"-Wincompatible-pointer-types-discards-qualifiers\"") my_twice(x))`:
+# `main`'s call expanded the pragma, and the lend of an immutable field
+# after it built, and C wrote into `t`.
+#
+# FIX: every name the compiler writes but a constant's, a function's and
+# each releaser, a record's name and tag and each field, is preprocessed as
+# the compiler writes it under a file of its own before any unit compiles
+# (`cli/pragma_ask.hero`), and a `#pragma` its expansion prints refuses it,
+# `ffi_macro_name`, at its declaration: a raise after the name cannot reach
+# the line it stands on.
+
+extern "fixedbugs-570-a-function-like-macro-holding-a-pragma-is-refused.h"
+    record Slot
+        nsap: u8[8]
+        id: i64
+    function slot_make() -> Slot
+    function slot_fill(p: ptr counted_by n lent, n: i64)
+    function slot_sum(p: ptr counted_by n lent, n: i64) -> i64
+    function my_twice(x: i32) -> i32  #~ ffi_macro_name
+
+function main()
+    t = slot_make()
+    print(my_twice(2))
+    slot_fill(p: t.nsap.ptr(), n: 8)
+    print(slot_sum(p: t.nsap.ptr(), n: 8))
