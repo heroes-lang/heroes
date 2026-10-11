@@ -1,0 +1,7 @@
+tests/golden/permissive/fixedbugs-625-the-control-arm-holds-a-re-binding-written-with-the-cell-symbol-to-its-cell-s-type.hero:16:10: error[type_mismatch]: expected `i64`, found `str`
+tests/golden/permissive/fixedbugs-625-the-control-arm-holds-a-re-binding-written-with-the-cell-symbol-to-its-cell-s-type.hero:20:10: error[type_mismatch]: expected `i64`, found `str`
+tests/golden/permissive/fixedbugs-625-the-control-arm-holds-a-re-binding-written-with-the-cell-symbol-to-its-cell-s-type.hero:21:10: error[type_mismatch]: expected `i64`, found `i64?`
+tests/golden/permissive/fixedbugs-625-the-control-arm-holds-a-re-binding-written-with-the-cell-symbol-to-its-cell-s-type.hero:23:10: error[int_out_of_range]: `300` does not fit a `u8`
+tests/golden/permissive/fixedbugs-625-the-control-arm-holds-a-re-binding-written-with-the-cell-symbol-to-its-cell-s-type.hero:26:14: error[type_mismatch]: expected `i64`, found `str`
+tests/golden/permissive/fixedbugs-625-the-control-arm-holds-a-re-binding-written-with-the-cell-symbol-to-its-cell-s-type.hero:29:18: error[type_mismatch]: expected `i64`, found `bool`
+tests/golden/permissive/fixedbugs-625-the-control-arm-holds-a-re-binding-written-with-the-cell-symbol-to-its-cell-s-type.hero:33:18: error[type_mismatch]: expected `i64`, found `f64`

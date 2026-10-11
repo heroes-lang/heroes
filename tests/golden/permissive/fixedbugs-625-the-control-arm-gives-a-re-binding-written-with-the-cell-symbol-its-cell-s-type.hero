@@ -1,0 +1,19 @@
+# Fixed 2026-10-11, defect 625, lane b21-misc: the shapes beside the
+# re-binding written `v @= e` under `check --permissive`, whose value the
+# cell's type now gives its context as `v @ e`'s does: a value that fits is
+# told nothing, an empty literal takes the cell's type (it was told
+# `cannot_infer`), and a bare `nullptr` the handle's (it was told *not which
+# handle `p` will hold*). The type error below is the witness that the
+# checker walked them.
+
+function wrong() -> i64
+    return "text"  #~ type_mismatch
+
+function main()
+    v @= 0
+    v @= 5
+    xs: [i64] @= [1]
+    xs @= []
+    p: ptr @= nullptr
+    p @= nullptr
+    print(v + xs.len() + wrong(), p == nullptr)
