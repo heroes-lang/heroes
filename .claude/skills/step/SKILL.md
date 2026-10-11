@@ -143,6 +143,15 @@ for `<name>` is CLAUDE.md §14 — its only home.
 
 Milestone close — the checklist (this is its only copy):
 - goldens pass (ASan-clean where applicable); determinism diff empty (from M-scalars-run on);
+- **the emissions of the cases this Mac skips, blessed on Linux arm64 before
+  the push**, at every batch's close and every milestone's that moved the
+  emitted C (author instruction 2026-10-11, after defects 558 and 604, the
+  second the same omission a day later): `emission` whole in
+  `heroes-linux-arm64:latest` with the round's compiler built from its
+  regenerated seed, the tree copied from `git ls-files`, read before, blessed
+  with `UPDATE_EMISSION=1`, read after; only the files of the cases this Mac
+  skips (`SKIP emission/...` in the Mac's gate) copied back, a moved line of
+  any other file being a platform divergence to file, not to bless;
 - journal `docs/records/journal/NNN-<slug>.md`, 3 sections: **goal** · **what
   surprised** (impersonal — shapes and rules, never scores) · **what broke
   and why**;
