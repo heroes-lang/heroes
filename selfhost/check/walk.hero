@@ -806,8 +806,12 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
     return falls_with_nothing()
 
 # A binding or a cell born, apart for `statement`'s frame (below): `_ @= e`, past
-# `never_rebound` in the control arm, is the discard `_ = e` (spec § 5; defect 614).
+# `never_rebound` in the control arm, is the discard `_ = e` (spec § 5; defect
+# 614), and `v @= e` past `cell_redeclared` the `v @ e` the resolver read (625).
 function birth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], ty: i64?, value: i64, name: token.Span, cell: bool, span: token.Span) -> Outcome
+    if cell && !r.rebinds[name.start].is_err()
+        check(@c, a, r, s, decls, id: value, expected: c.out.local_types[r.rebinds[name.start].must()])
+        return falls_with_nothing()
     held = born(@c, a, r, s, decls, ty: ty, value: value, name: name, cell: cell && source.span_text(s, name) != "_")
     discard.refuse(@c, a, s, decls, name: name, value: value, ty: held, span: span)
     state.bind_local(@c, name, ty: held)
@@ -2130,7 +2134,7 @@ function checked_program(text: str) -> state.Checker
 
                 result = lower.lower_ty(@c, p.tree, out, fd.value.result)
                 c.result @ result
-                c.fallible @ is_fallible(c, result)
+                c.fallible @ discard.is_fallible(c, result)
 
                 if !fd.value.body.is_err()
                     _ = block(@c, p.tree, out, s, p.decls, body: fd.value.body.must(), want: .nothing)
@@ -2143,13 +2147,6 @@ function checked_program(text: str) -> state.Checker
             .record_decl | .variant_decl => continue
 
     return c
-
-function is_fallible(c: state.Checker, ty: i64) -> bool
-    return match table.get(c.out.types, ty)
-        .fallible                                                 => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .function_ty | .named            => false
-        .case_ty | .failure | .generic | .error                   => false
 
 test "a real program checks clean, end to end through both ports"
     c = checked_program(
@@ -2464,3 +2461,17 @@ test "defect 614: a cell on the wildcard is read as the discard it runs as"
     empty = checked_program("function main()\n    _ @= []\n").out.diagnostics
     assert empty.len() == 1
     assert empty[0].fixes[0].title == "annotate the binding: `_: [i64] = []`"
+
+# Defect 625: `v @= e` where `@` was meant is the resolver's re-binding of the
+# `v` above, which it tells `cell_redeclared` and declares nothing for; past
+# that refusal (the control arm) the checker holds `e` to the cell's type as
+# `v @ e`'s value is held, so a wrong one is told and a right one is not.
+test "defect 625: a re-binding written with the cell's symbol is typed against its cell"
+    wrong = checked_program("function main()\n    v @= 0\n    v @= \"text\"\n    print(v + 1)\n").out.diagnostics
+    assert wrong.len() == 1
+    assert wrong[0].code == "type_mismatch"
+    meant = checked_program("function main()\n    v @= 0\n    v @ \"text\"\n    print(v + 1)\n").out.diagnostics
+    assert meant.len() == 1 && meant[0].message == wrong[0].message
+    lines = "function main()\n    v: [i64] @= [1]\n    v @= "
+    assert checked_program(lines + "[]\n    print(v.len())\n").out.diagnostics.len() == 0
+    assert checked_program(lines + "5\n    print(v.len())\n").out.diagnostics[0].code == "type_mismatch"

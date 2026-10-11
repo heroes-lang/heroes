@@ -1,0 +1,38 @@
+# Fixed 2026-10-11, defect 625, lane b21-misc: under `check --permissive`,
+# which drops `cell_redeclared`, `v @= 0` then `v @= "text"` then
+# `print(v + 1)` exited 0. The resolver reads the second line as `v`'s
+# re-binding, the `@` that was meant (`resolve/meant.meant_rebinding`), and
+# declares nothing; the checker read it as a cell born and typed its value
+# against no local. It now types the value as `v @ e`'s, against the cell's
+# type, and tells what that line tells: a `str`, a `T?`, a literal past the
+# cell's width, an `@` parameter, in a loop, an `if` and a `match` arm.
+
+function h(n: i64) -> i64?
+    if n > 0
+        return ok(n)
+    return fail(code: "neg", msg: "negative")
+
+function into(@n: i64)
+    n @= "x"  #~ type_mismatch
+
+function main()
+    v @= 0
+    v @= "text"  #~ type_mismatch
+    v @= h(1)  #~ type_mismatch
+    b: u8 @= 1
+    b @= 300  #~ int_out_of_range
+
+    for i in [1, 2]
+        v @= "a"  #~ type_mismatch
+
+        if i > 1
+            v @= true  #~ type_mismatch
+
+    k = match v
+        0 =>
+            v @= 1.5  #~ type_mismatch
+            1
+        _ => 0
+
+    into(@v)
+    print(v + k, b)
