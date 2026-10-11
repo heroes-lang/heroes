@@ -100,7 +100,7 @@ function no_readings() -> Readings
 function discarded_value(got: str, fallible: bool, readings: Readings, span: token.Span, text: str) -> diag.Diagnostic
     at = front.before(text, at: span.start)
     first = text.slice(from: at.opening, to: at.opening + 1)
-    continues = at.begins_line && (first == "-" || first == "." || first == "(" || first == "[")
+    continues = continues_above(span, text: text)
     reading: str @= main_reading(readings)
 
     # `-fee` under `total = base` is the rest of that line, and the `fee` it
@@ -160,6 +160,28 @@ function discarded_value(got: str, fallible: bool, readings: Readings, span: tok
         front.written(at, title: "discard it explicitly", words: "_ = ", statement: true, certainty: certainty)
     )
     return d
+
+# Whether the line begins with one of the four tokens that begin a value
+# AND go on with one, `-`, `.`, `(`, `[`, so it may be the rest of the line
+# above (panel 181, item 5; defect 120).
+function continues_above(span: token.Span, text: str) -> bool
+    at = front.before(text, at: span.start)
+    first = text.slice(from: at.opening, to: at.opening + 1)
+    return at.begins_line && (first == "-" || first == "." || first == "(" || first == "[")
+
+# Whether the message's first repair writes the value back into its place,
+# `xs @ …`: a `T?` names the place wherever there is one, any other value
+# where the place is the reading it leads with and the line is not the rest
+# of the one above. The never-re-bound verdict on the place's cell waits on
+# this answer (`check/kept_cells.hero`, defect 630), so it is read off the
+# same facts `discarded_value` reads.
+function writes_back(fallible: bool, readings: Readings, span: token.Span, text: str) -> bool
+    if readings.place.is_err()
+        return false
+
+    if fallible
+        return true
+    return main_reading(readings) == "place" && !continues_above(span, text: text)
 
 # The reading the message leads with, most likely first: a value a function
 # ends on is what it returns, a `bool` in a test is what it asserts, and a

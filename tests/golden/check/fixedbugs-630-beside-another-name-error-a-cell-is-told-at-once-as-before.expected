@@ -1,0 +1,3 @@
+tests/golden/check/fixedbugs-630-beside-another-name-error-a-cell-is-told-at-once-as-before.hero:15:5: error[never_rebound]: `v` is declared a mutable cell and nothing re-binds it — a value written once is a binding: write `=` where the `@=` is
+tests/golden/check/fixedbugs-630-beside-another-name-error-a-cell-is-told-at-once-as-before.hero:19:5: error[never_rebound]: `xs` is declared a mutable cell and nothing re-binds it — a value written once is a binding: write `=` where the `@=` is
+tests/golden/check/fixedbugs-630-beside-another-name-error-a-cell-is-told-at-once-as-before.hero:23:5: error[never_rebound]: `xs` is declared a mutable cell and nothing re-binds it — a value written once is a binding: write `=` where the `@=` is

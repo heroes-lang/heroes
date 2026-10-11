@@ -1,0 +1,61 @@
+# The never-re-bound verdict the resolver left to the checker (defect 630;
+# spec § 5, panel 209's R1b; design.md §4.17 one mistake, one message).
+#
+# `xs @= [1]` over `xs.push(4)` alone: nothing re-binds `xs`, and the line
+# drops the array it computed from it. One mistake, and the repair is the
+# drop's, `xs @ xs.push(4)`, which keeps the cell; told first as a cell
+# nothing re-binds, its certain `=` took away the `@=` that repair needs.
+# The resolver cannot tell the drop, so it leaves such a cell untold
+# (`resolve/value_lines.hero`, `Local.deferred`), and the checker,
+# which types the line, decides:
+#
+# - at a line whose value nothing receives (`discarded_value`), where the
+#   message's first repair writes the value back into its place, the cell
+#   at that place's root is kept: the repair re-binds it;
+# - after the walk, every cell left and not kept is told as the resolver
+#   tells one, at its name, the certain fix writing `=`: a value block's
+#   last line, a `()` call, a value of another type, a `return` or `assert`
+#   reading, or a line that is the rest of the one above.
+
+use token
+use source
+use ast
+use resolved
+use discard_errors
+use check/state
+use check/discard
+use check/leasing
+use resolve/errors
+
+# At a dropped value: the cell its first repair writes back, kept.
+function claim(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64, got: i64, readings: discard_errors.Readings, span: token.Span)
+    if !discard_errors.writes_back(discard.is_fallible(c, got), readings, span: span, text: s.text)
+        return
+    place = discard.own_place_at(c, a, r, value: value, got: got)
+
+    if place.is_err()
+        return
+    root = leasing.place_root(a, at: place.must())
+
+    if root.is_err()
+        return
+
+    match r.uses[root.must()]
+        .local l =>
+            if r.locals[l.at].deferred
+                c.kept[l.at] @ true
+        .top | .module | .builtin | .unresolved => return
+
+# After the walk: every cell left to the checker that no dropped value's
+# repair writes back, told never re-bound.
+function told(@c: state.Checker, r: resolved.Resolved, s: source.Source)
+    at: i64 @= 0
+
+    while at < r.locals.len()
+        if r.locals[at].deferred && c.kept[at].is_err()
+            local = r.locals[at]
+            state.push_diagnostic(
+                @c,
+                errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
+            )
+        at @ at + 1
