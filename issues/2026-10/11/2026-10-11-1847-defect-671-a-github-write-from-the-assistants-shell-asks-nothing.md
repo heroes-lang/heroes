@@ -3,7 +3,7 @@ kind: defect
 area: process
 milestone: M-issue-files
 filed: 2026-10-11
-commit: none
+commit: ca3d3532a4d7b96cc11683d7de7c3b22318eca1b
 github: none
 ---
 
@@ -14,3 +14,5 @@ github: none
     **Class: blocking**, 2026-10-11 (`.claude/rules/verification.md` § Bounded discovery): a hard stop of the contract that the machine does not enforce, on the eve of 2,014 GitHub writes; the transcription cannot begin over it.
 
     **What a repair owes**: a refusal in `guard_bash.py`, tested in `test_hooks.py`, of every GitHub write from the assistant's shell (`gh api` with a method other than GET, `-X`, `-f`, `-F`, `--input`, except the one read-only POST to `/markdown`; the write subcommands of `gh issue`, `gh label`, `gh repo`, `gh release` and `gh milestone`; `gh api graphql` carrying `mutation`), through the wrappers the guard already reads (`env`, `time`, `caffeinate`, `timeout`, a shell's `-c`); and an `ask` entry in the tracked `settings.json` for the transcription program's `push`. The author's `settings.local.json` is not edited by the assistant.
+
+    **2026-10-11, lane panel-212**: Repaired at `ca3d3532`, gated by its cases (nine in `test_hooks.py`, six red on the previous guard) and the hooks' own tests (171 OK); the net is owed at the batch's close. `guard_bash.py` reads `gh` through an allow-list of reads and refuses every other verb, `gh api` as anything but a GET, a GraphQL `mutation` and `gh auth` but `status`, through the wrappers it already reads. Left open on purpose: the tracked `settings.json`'s `ask` entry for the transcription program's `push`, which waits for the program.
