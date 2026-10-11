@@ -95,6 +95,11 @@ list of things this language refuses on purpose, each with the condition that
 would make the refusal wrong — if what you want is there, the interesting issue
 is about that condition and not about the feature.
 
+## Conduct
+
+`CODE_OF_CONDUCT.md` is the Contributor Covenant 3.0, with where a report goes
+written in.
+
 ## Security
 
 `SECURITY.md`.

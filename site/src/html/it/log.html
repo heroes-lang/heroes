@@ -8,6 +8,11 @@
   </p>
 
   <ol class="log">
+    <li id="59">
+      <span class="when">Una variabile che cambia ha un simbolo tutto suo</span>
+      <b>Una variabile il cui valore può cambiare, una cella, ora si dichiara <code>v @= 0</code> e prende il tipo dal suo valore; <code>v @ v + 1</code> la cambia, e una cella che niente cambia mai è rifiutata, con una correzione che scrive <code>=</code>.</b> La domanda e la grafia erano dell&rsquo;autore: perché una cella deve portarsi dietro il tipo e un nome fisso no? Perché <code>@</code> faceva due lavori, e solo il tipo li distingueva. La vecchia riga <code>v: i64 @ 0</code> è rifiutata con una correzione che il compilatore applica da solo, e quella correzione ha riscritto 1.181 file in un solo commit. La riscrittura ha sbagliato nell&rsquo;unico posto che il compilatore non vede, il testo dentro la stringa di un test, e dodici test del compilatore sono falliti tutti insieme.
+      <a class="more" href="/it/docs/bindings-and-mutation/">Come si dichiara una cella</a>
+    </li>
     <li id="58">
       <span class="when">Un buco che non era dove diceva il nome</span>
       <b>La milestone cercava programmi che <code>heroes check</code> accetta e <code>heroes build</code> rifiuta, e ha trovato che una sola faccia su quattro era quel divario, ed era già chiusa da una seduta tenuta lo stesso giorno di quella che l&rsquo;aveva nominata.</b> Il buco vero era una discesa nel codice che si arrendeva dopo sedici livelli, difesa da un argomento vero: la guardia a runtime esiste e scatta. All&rsquo;argomento mancava una frase, e cioè che una guardia che autorizza un silenzio a compile-time è una guardia su cui il compilatore si appoggia per sbagliare in silenzio. Dieci difetti aperti dalle sue stesse sedute e dieci chiusi, uno aperto dall&rsquo;autore chiedendo perché la CI fosse rossa; e la specifica è uscita più corta di com&rsquo;era entrata, con due regole in più.
