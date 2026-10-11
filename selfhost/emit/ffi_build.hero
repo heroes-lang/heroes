@@ -121,16 +121,36 @@ function ends_the_name(line: str, marker: str) -> bool
     rest = ffi_lookup.after(text: line, marker: marker)
     return !rest.is_err() && (rest.must().len() == 0 || rest.must()[0] == ':')
 
-# The symbol out of a linker's complaint, in the spellings the two
-# platforms produce. GNU ld and lld write "undefined reference to
-# `sqrt'"; Apple's ld64 writes '"_sqrt", referenced from:' on its own
-# line. THE LEADING UNDERSCORE IS MACH-O'S, not the program's, and
-# stripping it is what lets one declaration() lookup serve both.
+# The symbol out of a linker's complaint, in the spellings the platforms
+# produce. GNU ld and lld write "undefined reference to `sqrt'"; Apple's
+# ld64 writes '"_sqrt", referenced from:' on its own line. THE LEADING
+# UNDERSCORE IS MACH-O'S, not the program's, and stripping it is what lets
+# one declaration() lookup serve both.
+#
+# **And Windows' two linkers** (defect 644, measured on the Windows box
+# 2026-10-11): lld-link writes `lld-link: error: undefined symbol: sqrt`,
+# and MSVC's link.exe, the CI's, `error LNK2019: unresolved external symbol
+# sqrt referenced in function main` (LNK2001 with no function after it). An
+# x64 C name is spelled as C spells it; one a header imports from a DLL is
+# `__imp_` before it, which is the import's and not the program's. Until
+# then every symbol either wrote was read as none, and a missing `link` was
+# *internal error: linking failed* at exit 2 there.
+#
+# **A program with no `main` is told by neither as a symbol**: link.exe
+# writes `fatal error LNK1561: entry point must be defined` and lld-link
+# `error: subsystem must be defined`, each because no `main` was found to
+# start the console program the compiler links (it passes no `/ENTRY` and no
+# `/SUBSYSTEM`), so each line reads as the symbol `main`, which only a header
+# renaming the unit's own `main` can take away (`cli/renamed.hero`).
 function undefined_symbol(line: str) -> str?
     gnu = ffi_lookup.after(text: line, marker: "undefined reference to `")
 
     if !gnu.is_err()
         return ok(ffi_lookup.up_to_quote(gnu.must()))
+    windows = windows_symbol(line)
+
+    if !windows.is_err()
+        return windows
 
     if ffi_lookup.has(text: line, needle: "referenced from:")
         opened = ffi_lookup.after(text: line, marker: "\"")
@@ -151,6 +171,38 @@ function undefined_symbol(line: str) -> str?
             return ok(quoted.slice(from: 1, to: quoted.len()))
         return ok(quoted)
     return fail(code: "none", msg: "not an undefined-symbol line")
+
+# The symbol out of lld-link's or link.exe's complaint, `__imp_` taken off.
+function windows_symbol(line: str) -> str?
+    if ffi_lookup.has(text: line, needle: "entry point must be defined") || ffi_lookup.has(text: line, needle: "subsystem must be defined")
+        return ok("main")
+    lld = ffi_lookup.after(text: line, marker: "error: undefined symbol: ")
+    rest: str @= ""
+
+    if !lld.is_err()
+        rest @ lld.must()
+    else
+        msvc = ffi_lookup.after(text: line, marker: "unresolved external symbol ")
+
+        if msvc.is_err()
+            return fail(code: "none", msg: "not a Windows linker's undefined symbol")
+        rest @ msvc.must()
+    letters: [str] @= []
+
+    for ch in rest.chars()
+        if ch == " " || ch == "\r"
+            break
+        letters @ letters.push(ch)
+
+    symbol = letters.join("")
+    imported = ffi_lookup.after(text: symbol, marker: "__imp_")
+
+    if symbol.len() == 0
+        return fail(code: "none", msg: "no symbol after the linker's words")
+
+    if !imported.is_err() && symbol.len() > 6 && symbol.slice(from: 0, to: 6) == "__imp_"
+        return imported
+    return ok(symbol)
 
 # A header the preprocessor could not find, named by an extern group
 # in this program — the class that stops §4.19's ladder one directory
@@ -269,6 +321,18 @@ test "the linker's two spellings, the library, the header, the package"
     # A symbol nobody declared stays the compiler's own failure.
     ours = "  \"_h_t_Point_hash\", referenced from:"
     assert missing_link(s, parsed.decls, line: ours).is_err()
+
+    # Windows' two linkers, as the Windows box wrote them (defect 644).
+    lld = "lld-link: error: undefined symbol: sqrt"
+    assert missing_link(s, parsed.decls, line: lld).must().message == d.must().message
+    msvc = "main-1.o : error LNK2019: unresolved external symbol sqrt referenced in function h_t_main"
+    assert missing_link(s, parsed.decls, line: msvc).must().message == d.must().message
+    assert !missing_link(s, parsed.decls, line: "x.o : error LNK2001: unresolved external symbol __imp_sqrt\r").is_err()
+    assert missing_link(s, parsed.decls, line: "lld-link: error: undefined symbol: h_t_Point_hash").is_err()
+    assert undefined_symbol("LINK : fatal error LNK1561: entry point must be defined").must() == "main"
+    assert undefined_symbol("lld-link: error: subsystem must be defined").must() == "main"
+    assert undefined_symbol("u.exe : fatal error LNK1120: 3 unresolved externals").is_err()
+    assert undefined_symbol(">>> referenced by C:\\w\\u.o:(main)").is_err()
 
     # The library, in both linker spellings, lands on the quoted name.
     lib = missing_library(s, parsed.decls, line: "ld: library 'sdl2' not found")
