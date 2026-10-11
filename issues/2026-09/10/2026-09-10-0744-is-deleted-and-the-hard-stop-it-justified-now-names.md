@@ -27,3 +27,13 @@ github: none
     is the sentence replaced. The two surviving citations are in `DESIGN-LOG.md`
     and `docs/contract/case-law.md`, both append-only records the citation check
     skips by construction and both dated history.
+
+## What was done
+
+The site's CNAME file, a GitHub Pages artifact on a site that ships to
+Cloudflare Pages by Direct Upload, was deleted, and the four living documents
+that cited it as the reason a push is asked for were repointed first, at the
+site's deploy workflow and the five paths whose push deploys the site; CL-042
+was corrected underneath with the day's date rather than rewritten. Landed at
+`d821d7e4`, "A hard stop was resting on a file that never did anything, and
+the rule now names what actually publishes".

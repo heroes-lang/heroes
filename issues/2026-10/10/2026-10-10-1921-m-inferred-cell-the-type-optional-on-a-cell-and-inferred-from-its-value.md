@@ -12,3 +12,14 @@ github: none
     **Origin:** panel 209's synthesis, 2026-10-10, ratified 17:57; filed at the milestone's opening, 19:21.
 
     **Closed** at step 3, `e2165913`, 2026-10-10: `declare.ty` optional, `born` in `check/walk.hero`, `cannot_infer` at the birth with the cell poisoned, the `nullptr` rule, the width class's note and fix, `cell_redeclared` and `declared_place` each with a certain fix; nine goldens and two questions of `docs/learn/`.
+
+## What was done
+
+The type became optional on `@=` and inferred from the value as `=`'s is:
+`declare.ty` optional, `born` in the checker's walk, `cannot_infer` told at
+the birth with a `guess` fix naming the annotation and the cell poisoned, the
+`nullptr` rule, the width class's note and fix, and `cell_redeclared` and
+`declared_place` each with a certain fix; nine goldens and two questions of
+`docs/learn/`, and no annotation the tree holds was stripped. Landed at
+`e2165913`, "M-inferred-cell step 3: a cell's type is optional and inferred
+from its value, with what the value cannot say told at the birth".

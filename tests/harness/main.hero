@@ -20,7 +20,8 @@
 # suite runs only that one.
 #
 # The third word narrows a suite that walks cases: to the cases whose name
-# holds it, or, written `<i>/<n>`, to shard `i` of `n` of `run` or a golden
+# holds it (and `records` to one path, the two checks that can judge a file
+# alone, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run` or a golden
 # form, its cases dealt round by their sorted index so that `n` processes
 # started with `1/n` to `n/n` run each case exactly once (defect 537,
 # `cases.selected`). A shard asks none of the whole suite's questions, its
@@ -383,7 +384,7 @@ function main()
     # The record checks read the tree rather than the compiler, so they
     # take no compiler at all.
     if only == "" || only == "records"
-        got = suite_records.run_all(scratch)
+        got = suite_records.run_all(scratch: scratch, only: pick)
 
         if got.is_err()
             print("harness: the record checks could not run" + why(got))
@@ -541,10 +542,12 @@ function main()
         exit(1)
 
 # The suites the third word may narrow: the ones that walk cases (the six
-# golden forms, `run`, `fixes`, `annotations`) and `layout`, which walks
-# modules and is asked about one file by the write-time hook.
+# golden forms, `run`, `fixes`, `annotations`), `layout`, which walks
+# modules and is asked about one file by the write-time hook, and `records`,
+# asked by the same hook about one issue file or one file the code cites a
+# defect in (`credit.hero`).
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "fixes", "annotations", "layout"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "fixes", "annotations", "layout", "records"]
         if name == suite
             return true
 
@@ -594,15 +597,21 @@ function shown(name: str, pick: str) -> str
 
     return name + " (only " + pick + ")"
 
-test "the third word binds the suites that walk cases and no other"
+test "the third word binds the suites that walk cases, records narrowed to a path, and no other"
     assert takes_cases("check")
     assert takes_cases("permissive")
     assert takes_cases("full")
     assert takes_cases("run")
     assert takes_cases("fixes")
     assert takes_cases("layout")
-    assert !takes_cases("records")
+
+    # `records` takes a path since 2026-10-11, the write hook's question of
+    # one issue file or one file citing a defect (`credit.hero`); it walks no
+    # cases and takes no shard.
+    assert takes_cases("records")
+    assert !takes_shards("records")
     assert !takes_cases("emission")
+    assert !takes_cases("spec")
     assert !takes_cases("")
 
 test "a narrowed suite says so on its line"

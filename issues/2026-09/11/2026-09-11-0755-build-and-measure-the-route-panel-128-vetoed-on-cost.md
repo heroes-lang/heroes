@@ -54,3 +54,15 @@ github: none
     `check/type_labels.hero`, where it fires per position. And `fold` is still
     not reached, which is now a question in `docs/work/DECIDE.md` rather than an
     open defect.
+
+## What was done
+
+A function type carries parameter names, mandatory where two parameters share
+a type and part of the type's identity through the interned `ty_key`:
+`heroes mutate --operator swap-args` read 100% against 17% before, three
+ceilings rose, the parser's `certain` fix that dropped a name was inverted and
+the refusal moved into the checker, firing per position. The line count the
+veto named was not met, 432 with comments against about 150, and panel 129
+records that number. Landed at `619eec7b`, "The defect list is empty for the
+first time since 2026-09-10, and the milestone the author asked for next is
+the one the sitting recommended against".

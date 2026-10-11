@@ -346,3 +346,15 @@ and is not on the trunk or this milestone's.
     passed, 0 failed*, with the compiler's 828 tests and the net's own 179, in
     68 minutes. The two legs after it are the next two pushes' Windows legs,
     scored when they run, and the prediction is not renewed.
+
+## What was done
+
+Every prediction of panels 174 to 177 and 179 to 182 and of the six ledger
+rows was scored, voided, lapsed or carried with its reason, panels 179 to 182
+tallying 22 held, 9 falsified, 3 lapsed, 1 void and 1 not yet checkable;
+eight predictions are carried to their seats' horizons, every Windows clause
+over json-c, OpenSSL or SQLite is unrun and said so, and panel 174's
+Windows-leg prediction was scored beneath on 2026-09-29 from the close's push.
+Landed at `c7b03a12`, "M-agreed-retention close: the predictions of its eight
+sittings scored, 93 rows, and panel 179's landing score corrected beneath
+it".

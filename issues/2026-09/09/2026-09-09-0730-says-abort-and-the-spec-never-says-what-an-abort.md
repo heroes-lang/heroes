@@ -56,3 +56,7 @@ github: none
     program, saying why*, at **+14** real tokens against R6's +12, covering all
     eight sites where the document said the word and defined it nowhere. Route
     (a), the local clause on `.must()` alone, would have left seven undefined.
+
+## What was done
+
+Route (b) landed with the interpolation clause: one definition of abort in the spec, *an abort ends the program, saying why*, at +14 real tokens against R6's +12, covering all eight sites where the document said the word and defined it nowhere, where route (a) would have left seven undefined. Landed at `7bd3b8c5`, "M-interpolated-strings step 1 and close: the form lands, and the skipping scan turned out to be free".

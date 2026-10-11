@@ -16,3 +16,13 @@ github: none
     listed the five other places the page already names it. The `h1` keeps the
     full path. The Italian tail became `esempi di Heroes`, which appears in one
     place in the tree.
+
+## What was done
+
+The example pages stopped titling themselves with a repository path, on 136
+pages, so the word that tells two pages apart starts at character one, the
+`h1` keeping the full path and the Italian tail becoming `esempi di Heroes`;
+a four-seat site panel, put the question with the measurement and no proposed
+answer, found the path did not earn its place there. Landed at `44177d3c`,
+"The sitemap could not say what had changed, and the audit written to catch
+that passed on the one run it existed for".

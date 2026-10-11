@@ -12,3 +12,7 @@ github: none
     changes is that a language whose whole point is being read by a model stops
     leaving its own position to be guessed. The tokens are each vendor's
     documented ones, read from their own pages in this session.
+
+## What was done
+
+The robots file says yes to the model crawlers by name, each by its vendor's documented token read from their own pages; the blanket allow already permitted every one of them, so nothing changed in behaviour, and the site's own position stopped being left to be guessed. Landed at `44177d3c`, "The sitemap could not say what had changed, and the audit written to catch that passed on the one run it existed for".

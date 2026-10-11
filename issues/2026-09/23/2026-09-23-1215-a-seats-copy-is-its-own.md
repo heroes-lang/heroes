@@ -53,3 +53,13 @@ wrote that whether a subagent's scratchpad is the coordinator's was not
 measured. The critic's line 226 says it: *the scratchpad this session shares
 with it*. So one location really was every seat's, and a directory per seat is
 the smallest rule that makes two seats unable to meet.
+
+## What was done
+
+One paragraph landed in the panel skill's step 3, on the author's answer of
+2026-09-23 to the recommendation put at the milestone's panel gate: every
+brief names a directory per seat, copied from the frozen tree, where the seat
+builds its own compiler from the seed, and no seat reads, builds or runs
+inside another's; the section What closed it above carries the two facts it
+rests on. Landed at `64c92654`, "M-agreed-retention step 2: a seat's copy is
+its own, on the author's word".

@@ -103,3 +103,13 @@ github: none
     milestones*. They are named here so the next close reads them rather than
     rediscovering them, which is what panel 036's *"score at M-ffi-ladder
     close"* failed to get and why this section exists at all.
+
+## What was done
+
+Every prediction of panels 166 to 173 was scored or lapsed with its reason,
+one table per sitting: many lapse because the milestone changed direction
+twice and a prediction conditioned on a route nobody took cannot be scored,
+and four stay open with a horizon, two historians' and the critic's two,
+named so the next close reads them rather than rediscovering them. Landed at
+`316d69c4`, "M-declared-extents step 32: the milestone closes, and the
+questions it leaves get a home".

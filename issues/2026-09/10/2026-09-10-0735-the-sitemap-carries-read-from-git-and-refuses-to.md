@@ -19,3 +19,7 @@ github: none
     sitemap, where identical dates exit 1 naming the count. The audit reads the
     file that ships and not a list the config kept while building, which is what
     the first version did and why it passed on the one run that mattered.
+
+## What was done
+
+The sitemap carries `<lastmod>` read from git, 184 addresses dated over 15 distinct dates where it was 0 of 184, a page's date being the last commit touching its own sources and never the shared layout, with `fetch-depth: 0` on the deploy checkout and two guards both seen red before they were trusted: the history check at build start and the audit over the sitemap that ships. Landed at `44177d3c`, "The sitemap could not say what had changed, and the audit written to catch that passed on the one run it existed for".

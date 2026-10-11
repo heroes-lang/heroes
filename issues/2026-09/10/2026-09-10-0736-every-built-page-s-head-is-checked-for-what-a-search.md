@@ -13,3 +13,7 @@ github: none
     rather than where a sentence is long; canonical equal to the page's own
     address; no two pages sharing a title or a description. 186 pages pass. Four
     sabotages were run one at a time and each was seen red with its own message.
+
+## What was done
+
+Every built page's head is checked for title, description and canonical present, a description of at most 160 characters and a title of at most 60, a canonical equal to the page's own address and no two pages sharing a title or a description; 186 pages passed, and four sabotages run one at a time were each seen red with their own message. Landed at `44177d3c`, "The sitemap could not say what had changed, and the audit written to catch that passed on the one run it existed for".

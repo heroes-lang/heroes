@@ -36,3 +36,7 @@ github: none
     the same value*, at **+10** real tokens against R6's +9. The guarantee is the
     runtime's own (`runtime/parts/f64.c`, round-trip and nothing about shortest),
     stated where a reader of the spec meets it.
+
+## What was done
+
+The guarantee landed with the interpolation clause, as panel 121 R6 said it would: the spec's float sentence now reads *and reads back as the same value*, at +10 real tokens against R6's +9, stating where a reader meets it the round-trip the runtime already gave and nothing about shortest. Landed at `7bd3b8c5`, "M-interpolated-strings step 1 and close: the form lands, and the skipping scan turned out to be free".

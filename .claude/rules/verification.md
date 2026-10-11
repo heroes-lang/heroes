@@ -776,7 +776,13 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   (defect 384): a compiler built before a source of its tree was written, the
   file written aside, has its refusal told as its age, with the rebuild and
   its words beneath, never as *does not parse*; an older compiler that accepts
-  the file says nothing.
+  the file says nothing. **Since 2026-10-11 an issue file is asked of the
+  `records` suite narrowed to it** (`tests/harness/credit.hero`: its
+  `## Prior art`, and a closed feature's or task's `## What was done` against
+  its card's commit), and a file under `selfhost/`, `runtime/`, `seed/` or
+  `tests/` that cites a `defect NNN` is asked whether the number names a
+  defect of `issues/` (`records/defects-cited`), the author's instructions of
+  2026-10-07 (CL-082, CL-083).
 - **Layer 1, before a commit** (`.claude/hooks/guard_bash.py`): a harness run
   whose named compiler is older than `seed/heroes.c` or the newest file under
   `selfhost/` or `runtime/` is refused (2026-09-18 cost 31 minutes and two nets

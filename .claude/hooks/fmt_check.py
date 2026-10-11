@@ -36,7 +36,14 @@ hook now says, on the one file written and nothing else:
   day, beside three lanes' work so only a size: 24.83 s with the harness built
   cold, 6.82 and 7.02 s warm. The suite decides which directories it sweeps: a
   case it does not select (exit 2, *no case ... matches*) gets no opinion, nor
-  does a case whose `.hero` or `.expected` is not written yet.
+  does a case whose `.hero` or `.expected` is not written yet;
+- for an issue file, `issues/**/*.md`, its `## Prior art` and a closed
+  feature's or task's `## What was done`, asked of the `records` suite narrowed
+  to it (`tests/harness/credit.hero`); and for a file under `selfhost/`,
+  `runtime/`, `seed/` or `tests/` whose text cites a `defect NNN`, whether the
+  number names a defect of `issues/` (`records/defects-cited`): the author's
+  instructions of 2026-10-07, CL-082 and CL-083, since 2026-10-11. A file that
+  is neither a program nor one of these has no question here.
 
 It NOTICES and does not rewrite. A suite reading the tree owns the tree until it
 exits (CL-025), and a hook that edited a file under a running suite would be the
@@ -87,6 +94,7 @@ would read as a pass.
 
 import json
 import os
+import re
 import sys
 import time
 
@@ -105,6 +113,11 @@ STARTED = time.monotonic()
 # The least a slow question is given; under it the question is not asked.
 FLOOR = 5.0
 LAYER ="(layer 0, `.claude/rules/verification.md` § A suite is the last judge, CL-079)"
+
+# The roots whose files are asked whether a `defect NNN` they cite names a
+# defect of `issues/` (`credit.hero`'s `CITED_ROOTS`), and the shape of one.
+CITED_ROOTS = ("selfhost/", "runtime/", "seed/", "tests/")
+CITES = re.compile(rb"(?i)defects?[ -][0-9]")
 
 
 class Place:
@@ -195,6 +208,49 @@ def ask(compiler, args, root):
     return marks.bounded([compiler] + args, root, limit)
 
 
+def asks_records(place, text):
+    """Whether the `records` suite has a question about `place` alone: an
+    issue file, held to its `## Prior art` and a closed feature's or task's
+    `## What was done` (`credit.prior_art`), or a file under the cited roots
+    whose `text` cites a defect (`credit.defects_cited`)."""
+    if place.rel is None:
+        return False
+    if place.rel.startswith("issues/") and place.rel.endswith(".md"):
+        return True
+    return place.rel.startswith(CITED_ROOTS) and CITES.search(text) is not None
+
+
+def records_rows(compiler, root, rel, limit):
+    """The `records` suite narrowed to `rel`, run in `root`: the rows of each
+    of its failures, [] when it passes, None when it could not answer within
+    `limit` seconds or selected nothing."""
+    done = marks.bounded([compiler, "run", "tests/harness/main.hero", "--", "./heroes", "records", rel], root, limit)
+    if done is None or done.returncode not in (0, 1):
+        return None
+    rows, inside = [], False
+    for row in done.stdout.decode("utf-8", errors="replace").split("\n"):
+        if row.startswith("FAIL records/"):
+            inside = True
+            rows.append(row)
+        elif inside and row.startswith("  ") and not row.startswith("  records"):
+            rows.append(row)
+        else:
+            inside = False
+    return rows
+
+
+def records_narrowed(compiler, place):
+    """What the `records` suite says of `place` alone, within what the budget
+    leaves, or None."""
+    limit = left()
+    if limit is None:
+        return None
+    rows = records_rows(compiler, place.tree, place.rel, limit)
+    if not rows:
+        return None
+    return place.shown + " is refused by the `records` suite narrowed to it:\n" + "\n".join(rows)
+
+
 def main():
     try:
         payload = json.load(sys.stdin)
@@ -202,14 +258,34 @@ def main():
         return 0
 
     path = (payload.get("tool_input") or {}).get("file_path")
-    if not isinstance(path, str) or not (path.endswith(".hero") or path.endswith(".expected")):
+    if not isinstance(path, str):
         return 0
+    program = path.endswith(".hero") or path.endswith(".expected")
 
     session = payload.get("cwd") or os.getcwd()
     path = os.path.abspath(os.path.join(session, path))
     if not os.path.isfile(path):
         return 0
     place = Place(path, session)
+    if not program:
+        # An issue file, or a file the code cites a defect in, has one question
+        # here, the `records` suite's narrowed to it; any other file has none.
+        try:
+            with open(path, "rb") as handle:
+                text = handle.read()
+        except OSError:
+            return 0
+        if not asks_records(place, text):
+            return 0
+        if not trees.runnable(place.compiler):
+            print(
+                place.shown + " was not judged: its tree, " + place.tree + ", has no compiler "
+                "built, so the `records` suite could not be asked about it. Build it there: "
+                "`clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`.\n" + LAYER,
+                file=sys.stderr,
+            )
+            return 2
+        return say([records_narrowed(place.compiler, place)])
     if not trees.runnable(place.compiler):
         if place.tree is None:
             return 0
@@ -308,6 +384,12 @@ def main():
     # 5. A golden case's marks against its expectation.
     if parses:
         refusals += marks_against_expectation(compiler, place)
+
+    # 6. A module under the cited roots that cites a defect: the number
+    #    resolved in the defects' register, by the `records` suite narrowed to
+    #    the file (CL-083).
+    if asks_records(place, on_disk):
+        beside.append(records_narrowed(compiler, place))
     return say([told(place, refusals)] + beside)
 
 

@@ -73,3 +73,15 @@ github: none
     of the embedded library text, where five comment lines had shifted every
     `#line` in every program's C. It predicted the headline over `examples/` would
     not move: it did not, and the record says so first.
+
+## What was done
+
+The role inversion through a generic callback closed with two changes and a
+library signature rather than the four parts the sitting priced: `fold`'s own
+type can now say what it wants, and the rule is agreement of names, which
+catches 7 of 7 transposed callbacks in this repository where the sitting's
+recommended rule caught 2 of 7; the author was given both numbers and chose
+agreement. The emission traces did not move once the explanation left the
+embedded library text. Landed at `28915417`, "The records for a rule the
+author chose against the sitting's recommendation, with the number that
+decided it in every one of them".

@@ -124,7 +124,10 @@ credit where it is owed and for silence everywhere else. The heading is
 Rust's, the seventh section of the RFC template in `rust-lang/rfcs` (read
 2026-10-07); Swift Evolution's closing *Acknowledgments* is what `**Origin:**`
 already does for the people inside this project. What it cost to learn is
-CL-082. The executor is owed by M-issue-files, its task filed 2026-10-11.
+CL-082. The executor is `records/prior-art` (`tests/harness/credit.hero`),
+which also holds a closed `feature`'s or `task`'s `## What was done` to its
+card's commit, and the write hook asks it of an issue file as it is written
+(`.claude/rules/verification.md` § A suite is the last judge).
 
 ## Milestone identifiers are names, not numbers
 
@@ -166,7 +169,8 @@ a top-level `issues` folder, it is more orderly; we change the rules, toward a
 final definition*. **Every item this project tracks is one file in `issues/`, and
 one file is one GitHub issue.** `tests/harness/cards.hero` reads them, and
 `records/cards`, `lists`, `defects`, `numbering`, `counts`, `verdicts`, `homes`,
-`tagged` and `appended` are this section's executors.
+`tagged`, `appended`, `prior-art` and `defects-cited` are this section's
+executors.
 
 **What an issue is**, the card's `kind`: a `defect`, a measured failure, its
 class on its line (§ The lists); a `decision`, a question with the default it

@@ -12,3 +12,14 @@ github: none
     **Origin:** panel 209's synthesis, 2026-10-10; filed at the milestone's opening, 19:22.
 
     **Closed** at step 4, `7a0a7b2e`, 2026-10-10: the spec's W1b-min at 10,024 real (ledger row 108), design.md §4.4 and §4.5, `operators.md`'s two rows rewritten and two added with their operators, the site's two editions, the messages writing `v @= 0`; the seed regenerated at the close with the fixpoint verified.
+
+## What was done
+
+The documents and the instruments the landing owed: the spec's W1b-min text
+applied and refreshed at 10,024 real (ledger row 108), design.md §4.4 and
+§4.5 rewritten citing the sitting, the operator table's two rows rewritten
+and two added with `heroes mutate` taught them, the site's two editions, the
+messages that write a declaration's shape writing `v @= 0`, and the seed
+regenerated at the close with the fixpoint verified. Landed at `7a0a7b2e`,
+"M-inferred-cell step 4: the documents say what the compiler does, and the
+messages that write a declaration's shape write `v @= 0`".

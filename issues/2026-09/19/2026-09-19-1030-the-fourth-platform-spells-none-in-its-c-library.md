@@ -79,3 +79,13 @@ census produced, and the fourth platform moves it in the direction the first
 three already pointed: **the sets are disjoint**. A byte-typed, fixed-extent array
 parameter exists on every platform and no two platforms spell the same ones.
 Windows adds two, both in an API nothing in this project binds.
+
+## What was done
+
+The census was walked on the Windows headers, copied off the box and run on
+this Mac with a Windows target: the UCRT spells no byte-typed fixed-extent
+array parameter, structurally, and Win32 spells two, both in the smart-card
+API, so the sets stay disjoint across four platforms and the milestone's
+question does not move; the rows and the three values of `L_tmpnam` are under
+the section What closed it above. Landed at `61fa67e4`, "M-declared-extents
+step 3: panel 166 finds the mark was there and the lend was discarding it".

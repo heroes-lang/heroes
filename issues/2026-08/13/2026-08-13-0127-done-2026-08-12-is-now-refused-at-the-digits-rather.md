@@ -8,3 +8,7 @@ github: none
 ---
 
 - [x] Covered | **DONE 2026-08-12.** `1e300` is now `exponent_literal`, refused at the digits rather than reported as `expected ')' … found a name (e300)`; the `%` abort no longer calls itself `integer overflow` for an operation whose remainder is 0. The adversarial case `run/adversarial-division-edges` had been asserting the misleading message since it was written — its own comment says it exists for `%` rather than `/`. Was: panel 035 | Two messages owed, both refusals made honest: `1e300` must teach rather than say `expected ')' … found a name (e300)`, and the `%` abort must stop calling itself `integer overflow` for an operation that overflows nothing | crates/heroes/src/lexer/scan.rs · runtime/parts/panic.c | a refusal whose message misleads is worse than the form it refuses
+
+## What was done
+
+Done 2026-08-12: `1e300` is now `exponent_literal`, refused at the digits rather than reported as an unexpected name, and the `%` abort no longer calls itself `integer overflow` for an operation whose remainder is 0. The adversarial case `tests/golden/run/adversarial-division-edges.hero` had been asserting the misleading message since it was written. Landed at `5629e8e0`, "Two owed refusals made honest, and a golden that agreed with the wrong answer".

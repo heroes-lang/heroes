@@ -11,3 +11,7 @@ github: none
     showing them**, measured from source rather than from a build three hours
     stale: 188, 164, 161 and 161 characters, and a 62-character title. All are
     under the limits the build now enforces.
+
+## What was done
+
+The four descriptions of 188, 164, 161 and 161 characters and the 62-character title, measured from source rather than from a stale build, were brought under the limits the build now enforces. Landed at `44177d3c`, "The sitemap could not say what had changed, and the audit written to catch that passed on the one run it existed for".
