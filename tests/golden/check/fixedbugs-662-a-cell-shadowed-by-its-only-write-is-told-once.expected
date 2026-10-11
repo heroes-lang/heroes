@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-662-a-cell-shadowed-by-its-only-write-is-told-once.hero:10:5: error[shadowed_binding]: `v` is already in scope, bound at line 9 — shadowing is an error here: a name means one thing for as long as it is visible
+tests/golden/check/fixedbugs-662-a-cell-shadowed-by-its-only-write-is-told-once.hero:12:5: error[shadowed_binding]: `w` is already in scope, bound at line 11 — shadowing is an error here: a name means one thing for as long as it is visible

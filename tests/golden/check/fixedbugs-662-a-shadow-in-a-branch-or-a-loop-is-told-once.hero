@@ -1,0 +1,18 @@
+# Fixed 2026-10-11, defect 662, lane b22-662: the shape beside, the `=`
+# that shadows an `@` parameter standing inside an `if` and inside a loop,
+# its only would-be write. One message each, the shadow, as at the top of
+# the body: the write is counted wherever the `=` stands.
+
+function grow(@rows: [i64], wanted: bool)
+    if wanted
+        rows = rows.push(1)  #~ shadowed_binding
+
+function fill(@rows: [i64])
+    for k in [1, 2, 3]
+        rows = rows.push(k)  #~ shadowed_binding
+
+function main()
+    xs: [i64] @= []
+    grow(@xs, wanted: true)
+    fill(@xs)
+    print(xs.len())

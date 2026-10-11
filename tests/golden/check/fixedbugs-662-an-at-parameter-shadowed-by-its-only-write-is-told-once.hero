@@ -1,0 +1,21 @@
+# Fixed 2026-10-11, defect 662, lane b22-662. Symptom: `function
+# grow(@rows: [i64])` over `rows = rows.push(1)` was told twice, panel 210's
+# `never_rebound` at the parameter beside `shadowed_binding` at the `=`, for
+# one mistake: the write was meant and spelled with the wrong symbol. Cause:
+# the refused shadow declared nothing and counted no write, so the sweep
+# found the parameter written nowhere. Now a `=` over a name already
+# mutable here counts as its write, and the shadow is the one message, its
+# fix a `guess` writing `@` at the `=`. A shadow over a parameter with no
+# `@` is told as before, with no fix.
+
+function grow(@rows: [i64])
+    rows = rows.push(1)  #~ shadowed_binding
+
+function twice(n: i64) -> i64
+    n = n + n  #~ shadowed_binding
+    return n
+
+function main()
+    xs: [i64] @= []
+    grow(@xs)
+    print(xs.len() + twice(2))
