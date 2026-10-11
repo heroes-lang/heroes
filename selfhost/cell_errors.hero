@@ -6,12 +6,35 @@
 # and the line is read as that write. `f() @ 1` and `f() @= 1` name no place
 # at all: told at the value, as `grammar_expr.expression_or_mutation` told the
 # first until this module took it, and the statement is still a mutation, so
-# its value says its own mistakes.
+# its value says its own mistakes. And the cell's old symbol after a type,
+# whose words `parse/annotation.cell_symbol` says (`old_symbol`).
 
+use token
 use diag
 use ast
 use cursor
 use expr_kinds
+
+# The `@` after a type, the cell's symbol until panel 209 (2026-10-10), told
+# once with a certain fix writing `@=`, how `check --apply` rewrote the tree's
+# 1671 files. On the wildcard the fix writes `=`: `_` binds nothing, so a cell
+# on it is one nothing can re-bind (defect 608), and `@=` would write a line
+# refused again, a second pass for one line. A message only, built from the
+# `symbol` as written at `at` and reading no parse, so it stands here, outside
+# `parse/`'s budget. Said by the parser, so `fmt` refuses the line as it
+# refuses every line the parser recovers, and never rewrites the symbol.
+function old_symbol(symbol: str, at: token.Span, wildcard: bool) -> diag.Diagnostic
+    message: str @= "`@` after a type declared a cell until panel 209; a cell is declared `" + symbol + "=`, and `@` alone re-binds one — write `@=`"
+    meant: str @= "@="
+    title: str @= "write `@=`"
+
+    if wildcard
+        message @ "`@` after a type declared a cell until panel 209, and `_` binds nothing, so no cell can be declared on it — a value dropped on purpose is written `_: T = …`: write `=`"
+        meant @ "="
+        title @ "write `=`: `_` drops the value"
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "old_cell_symbol", message: message, span: at)
+    d.fixes @ d.fixes.push(diag.Fix(title: title, replacement: meant, span: at, certainty: .certain))
+    return d
 
 # Eats the `@` or `@=` after `place`, telling what is wrong with either, and
 # says whether a mutation's value follows; false, and nothing moved, where

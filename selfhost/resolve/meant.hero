@@ -94,10 +94,9 @@ function meant_rebinding(@r: state.Resolver, s: source.Source, name: token.Span,
     r.out.locals[at].writes @ r.out.locals[at].writes + 1
     return true
 
-# `_ @= e` or `_: T @= e` (or the old `@`, which `parse/annotation` leaves to
-# this one message for the wildcard): a discard written with the cell's
-# symbol, a cell nothing can re-bind since `_` binds nothing (spec § 5;
-# defect 608). Told once at the `_` with the certain fix that writes `=`, and
+# `_ @= e` or `_: T @= e` (the old `_: T @ e` is the parser's to tell,
+# `cell_errors.old_symbol`): a discard written with the cell's symbol, a cell
+# nothing can re-bind since `_` binds nothing (spec § 5; defect 608). Told once at the `_` with the certain fix that writes `=`, and
 # nothing declared, as `state.declare` declares nothing for `_`. False, and
 # nothing said, for any other name.
 function wildcard_cell(@r: state.Resolver, s: source.Source, name: token.Span, symbol: token.Span) -> bool
