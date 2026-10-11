@@ -1,0 +1,19 @@
+# fixedbugs, defect 643, lane b21-win, 2026-10-11, the twin on a header of the
+# program's own of the Windows surface row *one C symbol carries two
+# bindings, in two modules*, which the CI's Windows leg read red (defect 640).
+#
+# The header gives `abs` a C99 inline definition, which provides no external
+# definition (C11 6.7.4p7), and two modules bind it. clang's dump of the
+# header list holds its own implicit declaration of the builtin `abs`, marked
+# `extern`, before the header's, and that one was read as the program's: the
+# definition read external, and the program was refused `ffi_defined_twice`
+# at exit 1, a correct program refused on every platform. An implicit
+# declaration is clang's, and is not read.
+use fixedbugs643/other
+
+extern "fixedbugs-643-an-inline-abs.h"
+    function abs(x: i32) -> i32
+
+function main()
+    print(abs(x: -3))
+    print(other.magnitude(x: -4))

@@ -1,0 +1,307 @@
+# A unit's top-level declarations as clang's `-ast-dump` writes them, and
+# what C makes of each name's declarations read together: which give an
+# external definition and which only a C99 inline one (design.md §4.19; panel
+# 202's C2; defects 556, 562, 643 and 645). Split from
+# `cli/defined_twice.hero` on 2026-10-11, past §11's 300 lines, along the
+# seam between reading clang's dump and telling the program what it found;
+# `defined_twice` asks it of a header list, and `cli/dump_meaning.hero` reads
+# its rows with `top_of` and `child`.
+
+use bytes
+use emit/ffi_lookup
+
+# One top-level declaration of the dump: its kind, its name, the words after
+# its type, and whether a line under it is its body or GNU's inline mark.
+record Top
+    kind: str
+    name: str
+    flags: [str]
+    body: bool
+    gnu: bool
+    implicit: bool
+
+function external_definitions(dumped: str) -> {str: bool}
+    return merged(tops_of(dumped), comdat_inline: false).external
+
+# The dump's top-level declarations, each with its body and GNU mark read
+# from the lines under it.
+function tops_of(dumped: str) -> [Top]
+    tops: [Top] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= dumped.len()
+        if at == dumped.len() || dumped[at] == 10
+            row = dumped.slice(from: start, to: at)
+
+            if bytes.bytes_at(text: row, at: 0, needle: "|-") || bytes.bytes_at(text: row, at: 0, needle: "`-")
+                tops @ tops.push(top_of(row))
+            else if tops.len() > 0 && child(row)
+                last = tops.len() - 1
+
+                if found_at(text: row, needle: "-CompoundStmt ") == 3
+                    tops[last].body @ true
+
+                if found_at(text: row, needle: "-GNUInlineAttr ") == 3
+                    tops[last].gnu @ true
+            start @ at + 1
+        at @ at + 1
+
+    return tops
+
+# Whether a line is a direct child of the top-level declaration above it.
+function child(row: str) -> bool
+    return bytes.bytes_at(text: row, at: 0, needle: "| |-") || bytes.bytes_at(text: row, at: 0, needle: "| `-") || bytes.bytes_at(text: row, at: 0, needle: "  |-") || bytes.bytes_at(text: row, at: 0, needle: "  `-")
+
+# A top-level line: `|-FunctionDecl 0x… <range> loc [used] name 'type'[:'type'] flags`.
+function top_of(row: str) -> Top
+    kind_end: i64 @= 2
+
+    while kind_end < row.len() && row[kind_end] != 32
+        kind_end @ kind_end + 1
+
+    kind = row.slice(from: 2, to: kind_end)
+    quote = found_at(text: row, needle: " '")
+    none: [str] = []
+
+    if quote < 0
+        return Top(kind: kind, name: "", flags: none, body: false, gnu: false, implicit: false)
+    name_start: i64 @= quote
+
+    while name_start > 0 && row[name_start - 1] != 32
+        name_start @ name_start - 1
+
+    after: i64 @= closing(row, from: quote + 2)
+
+    if after + 1 < row.len() && row[after] == 58 && row[after + 1] == 39
+        after @ closing(row, from: after + 2)
+    flags: [str] @= []
+
+    for word in ffi_lookup.words(row.slice(from: after, to: row.len()))
+        flags @ flags.push(word)
+
+    return Top(
+        kind: kind,
+        name: row.slice(from: name_start, to: quote),
+        flags: flags,
+        body: false,
+        gnu: false,
+        implicit: marked_implicit(row, before: name_start)
+    )
+
+# Whether clang's words between a declaration's location and its name, the
+# marks `implicit`, `used`, `referenced` and `invalid`, hold `implicit`.
+function marked_implicit(row: str, before: i64) -> bool
+    end: i64 @= before - 1
+
+    while end > 0
+        start: i64 @= end
+
+        while start > 0 && row[start - 1] != 32
+            start @ start - 1
+
+        word = row.slice(from: start, to: end)
+
+        if word == "implicit"
+            return true
+
+        if word != "used" && word != "referenced" && word != "invalid"
+            return false
+        end @ start - 1
+
+    return false
+
+# The byte after the `'` that closes a quoted type opened before `from`.
+function closing(row: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < row.len() && row[at] != 39
+        at @ at + 1
+
+    return at + 1
+
+# Each name's declarations as C reads them together: external linkage where
+# the first is not `static`, a function's definition external where it has a
+# body and is no C99 inline definition, an object's where one declaration is
+# not `extern` or has an initialiser.
+record Merged
+    external: {str: bool}
+    inline_only: {str: bool}
+
+function merged(tops: [Top], comdat_inline: bool) -> Merged
+    first_static: {str: bool} @= {}
+    seen: {str: bool} @= {}
+    function_body: {str: bool} @= {}
+    not_inline: {str: bool} @= {}
+    any_inline: {str: bool} @= {}
+    gnu: {str: bool} @= {}
+    object_defined: {str: bool} @= {}
+    functions: {str: bool} @= {}
+
+    for top in tops
+        if top.name.len() == 0 || top.implicit || top.kind != "FunctionDecl" && top.kind != "VarDecl"
+            continue
+
+        if seen[top.name].is_err()
+            seen[top.name] @ true
+
+            if holds(top.flags, word: "static")
+                first_static[top.name] @ true
+
+        if top.kind == "FunctionDecl"
+            functions[top.name] @ true
+
+            if top.body
+                function_body[top.name] @ true
+
+            if top.gnu
+                gnu[top.name] @ true
+
+            if !holds(top.flags, word: "inline") || holds(top.flags, word: "extern")
+                not_inline[top.name] @ true
+
+            if holds(top.flags, word: "inline")
+                any_inline[top.name] @ true
+        else if !holds(top.flags, word: "extern") || holds(top.flags, word: "cinit") || holds(top.flags, word: "callinit")
+            object_defined[top.name] @ true
+
+    out: {str: bool} @= {}
+    inline: {str: bool} @= {}
+
+    # ORDER: none — two sets are built, keyed by name.
+    for name in keys(seen)
+        if first_static[name].is_err()
+            if !functions[name].is_err()
+                if !function_body[name].is_err() && gnu[name].is_err() && !(comdat_inline && !any_inline[name].is_err())
+                    if !not_inline[name].is_err()
+                        out[name] @ true
+                    else
+                        inline[name] @ true
+            else if !object_defined[name].is_err()
+                out[name] @ false
+
+    return Merged(external: out, inline_only: inline)
+
+function holds(words: [str], word: str) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+# The byte offset of `needle` in `text`, or -1.
+function found_at(text: str, needle: str) -> i64
+    at: i64 @= 0
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return at
+        at @ at + 1
+
+    return -1
+
+# Whether clang's target reads C's `inline` as Microsoft's compiler does: its
+# triple's fourth word, the environment, is `msvc` (a version may follow).
+function microsoft(target: str) -> bool
+    word: i64 @= 0
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < target.len() && word < 3
+        if target[at] == '-'
+            word @ word + 1
+            start @ at + 1
+        at @ at + 1
+
+    return word == 3 && start + 4 <= target.len() && target.slice(from: start, to: start + 4) == "msvc"
+
+## Tests
+
+# The shapes the dump writes, as this Mac's clang 21 wrote them for a header
+# of each: a definition, a tentative object, an initialised one, a
+# declaration, a `static` one, a C99 inline definition, an `extern inline`
+# one, a GNU inline one, and a prototype then its definition.
+test "a dump's external definitions are read at its top level, as C reads the declarations together"
+    rows: [str] = [
+        "TranslationUnitDecl 0x1 <<invalid sloc>> <invalid sloc>"
+        "|-FunctionDecl 0x2 </x/c.h:1:1, col:34> col:5 twice 'int (int)'"
+        "| |-ParmVarDecl 0x3 <col:11, col:15> col:15 used x 'int'"
+        "| `-CompoundStmt 0x4 <col:18, col:34>"
+        "|-VarDecl 0x5 <line:2:1, col:5> col:5 used counter 'int'"
+        "|-VarDecl 0x6 <line:3:1, col:14> col:5 inited 'int' cinit"
+        "| `-IntegerLiteral 0x7 <col:14> 'int' 1"
+        "|-VarDecl 0x8 <line:4:1, col:12> col:12 justdecl 'int' extern"
+        "|-VarDecl 0x9 <line:5:1, col:12> col:12 st 'int' static"
+        "|-FunctionDecl 0xa <line:6:1, col:35> col:12 c99 'int (int)' inline"
+        "| `-CompoundStmt 0xb <col:23, col:35>"
+        "|-FunctionDecl 0xc <line:7:1, col:41> col:19 ei 'int (int)' extern inline"
+        "| `-CompoundStmt 0xd <col:29, col:41>"
+        "|-FunctionDecl 0xe <line:8:1, col:69> col:47 gi 'int (int)' extern inline"
+        "| |-CompoundStmt 0xf <col:57, col:69>"
+        "| `-GNUInlineAttr 0x10 <col:16>"
+        "|-FunctionDecl 0x11 <line:9:1, col:14> col:5 proto 'size_t (int)':'unsigned long (int)'"
+        "|-FunctionDecl 0x12 prev 0x11 <col:17, col:46> col:21 proto 'size_t (int)':'unsigned long (int)'"
+        "| `-CompoundStmt 0x13 <col:34, col:46>"
+        "`-FunctionDecl 0x14 <line:10:1, col:41> col:19 bump 'int (void)' static inline"
+        "  `-CompoundStmt 0x15 <col:30, col:41>"
+    ]
+    got = external_definitions(rows.join("\n") + "\n")
+    assert got["twice"].must()
+    assert !got["counter"].must()
+    assert !got["inited"].must()
+    assert got["ei"].must()
+    assert got["proto"].must()
+
+    for name in ["justdecl", "st", "c99", "gi", "bump"]
+        assert got[name].is_err()
+
+    assert got.len() == 5
+
+    # And the one C99 inline definition alone, `c99` (defect 562).
+    assert keys(merged(tops_of(rows.join("\n") + "\n"), comdat_inline: false).inline_only) == ["c99"]
+
+    # clang's implicit declaration of a builtin is not the program's: the
+    # Windows C library's `inline` `printf` and an `inline` `fabs` are C99
+    # inline definitions, as clang 23.1.1 and this Mac's clang 21 wrote them
+    # (defect 643), and an implicit `used` one is read past its mark.
+    builtins: [str] = [
+        "TranslationUnitDecl 0x1 <<invalid sloc>> <invalid sloc>"
+        "|-FunctionDecl 0x2 <line:950:37> col:37 implicit printf 'int (const char *, ...)' extern external-linkage"
+        "|-FunctionDecl 0x3 prev 0x2 <C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\ucrt\\corecrt_stdio_config.h:26:31, C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\ucrt\\stdio.h:963:5> line:950:37 printf 'int (const char *, ...)' inline external-linkage"
+        "| `-CompoundStmt 0x4 <line:954:5, line:963:5>"
+        "|-FunctionDecl 0x5 <./f.h:1:15> col:15 implicit used fabs 'double (double)' extern"
+        "`-FunctionDecl 0x6 prev 0x5 <col:1, col:55> col:15 fabs 'double (double)' inline"
+        "  `-CompoundStmt 0x7 <col:31, col:55>"
+    ]
+    read_builtins = merged(tops_of(builtins.join("\n") + "\n"), comdat_inline: false)
+    assert read_builtins.external.len() == 0
+    assert sort(keys(read_builtins.inline_only)) == ["fabs", "printf"]
+    assert top_of("|-FunctionDecl 0x2 <line:1:1> col:1 implicit used x 'int'").implicit
+    assert !top_of("|-FunctionDecl 0x2 <line:1:1> col:1 used x 'int' extern").implicit
+    assert !top_of("|-VarDecl 0x2 <line:1:1> col:1 implicit_named 'int'").implicit
+
+    # On Microsoft's reading of `inline` no inline function is defined
+    # twice: the shape of the Windows C library's `sprintf`, an `inline`
+    # definition and a later declaration without it, which C99 makes
+    # external, and the `extern inline` one, which C99 makes external too.
+    microsoft_rows: [str] = [
+        "TranslationUnitDecl 0x1 <<invalid sloc>> <invalid sloc>"
+        "|-FunctionDecl 0x2 <line:1:1, line:4:5> line:1:37 sprintf 'int (char *const, const char *const, ...)' inline external-linkage"
+        "| `-CompoundStmt 0x3 <line:2:5, line:4:5>"
+        "|-FunctionDecl 0x4 prev 0x2 <line:5:1, col:60> col:30 sprintf 'int (char *const, const char *const, ...)' external-linkage"
+        "|-FunctionDecl 0x5 <line:6:1, col:61> col:25 thrice 'long long (long long)' extern inline external-linkage"
+        "| `-CompoundStmt 0x6 <col:44, col:61>"
+        "`-FunctionDecl 0x7 <line:7:1, col:45> col:5 plain 'int (int)' external-linkage"
+        "  `-CompoundStmt 0x8 <col:20, col:45>"
+    ]
+    c99_reading = merged(tops_of(microsoft_rows.join("\n") + "\n"), comdat_inline: false)
+    assert sort(keys(c99_reading.external)) == ["plain", "sprintf", "thrice"]
+    ms_reading = merged(tops_of(microsoft_rows.join("\n") + "\n"), comdat_inline: true)
+    assert keys(ms_reading.external) == ["plain"]
+    assert ms_reading.inline_only.len() == 0
+    assert microsoft("x86_64-pc-windows-msvc")
+    assert microsoft("aarch64-pc-windows-msvc19.40.0")
+    assert !microsoft("x86_64-pc-windows-gnu")
+    assert !microsoft("arm64-apple-darwin25.0.0")
+    assert !microsoft("x86_64-pc-linux-gnu")
+    assert !microsoft("")
