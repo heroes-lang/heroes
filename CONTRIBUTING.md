@@ -1,68 +1,110 @@
 # Contributing
 
-**Issues and questions are welcome. Code is not, yet.**
+**Issues and questions are welcome from anyone. Code is welcome from
+authorized contributors, through an issue first.**
 
-Today this repository takes reports and questions, and not patches. Code
-contributions are meant to open later, and the rest of this file says why they
-are shut now and what has to be true before they are not, because a refusal with
-no reason reads as a door with no handle, and one with no date reads as a wall.
+Heroes is below `1.0.0` and moves along a roadmap, `docs/ROADMAP.md` § The
+chain, where every row is a milestone and every change belongs to one. A patch
+that arrives unannounced cannot be placed on that chain, and a language that is
+still moving can make it stale before anyone reads it. A patch from somebody the
+maintainer knows, agreed in an issue, can be placed, read and merged. So the
+door is open, and it opens in this order: ask once to be authorized, then one
+issue per change, then the pull request.
 
-## Why not code, yet
+## Who may send code
 
-This repository is one person learning compilers, and the way it is built is the
-point of it rather than a detail of it. Every line goes through a written
-contract, `CLAUDE.md`; every design change goes through a panel of five judges
-with differentiated inputs, recorded in `docs/panel/`; every decision is one
-dated file in `issues/`; every claim is measured in the session that writes
-it, or it says out loud that it is unmeasured. A patch arriving from outside that
-process cannot carry its own panel session, its own measurement or its own case
-law, and the honest options today would be to merge it without them, which breaks
-the thing being demonstrated, or to redo it here, which wastes your afternoon.
+Authorized contributors are the people the maintainer has added as
+collaborators of this repository, which GitHub shows on their pull requests. To
+become one, open *An offer to contribute* from the issue chooser: what you want
+to work on, why, and which row of the chain or which open defect it serves. The
+maintainer answers in the issue; on *yes* you are added as a collaborator with
+the Triage role, which carries no right to push and needs none, since a change
+arrives as a pull request from a fork. There is one maintainer and no rota, so
+an answer arrives in days rather than hours.
 
-So it is not a judgement of your patch, which nobody has read. It is that the
-process a patch would have to enter is still being written, in public, by the
-person writing the compiler.
+A pull request from somebody not yet authorized is closed with a link to this
+file, and the defect or the idea inside it is reopened as an issue and answered
+there, so nothing you found is lost.
 
-## What has to be true before code opens
+## The three steps, for every change
 
-Stated so that it is a condition and not a mood, and so that you can check it
-yourself rather than wait to be told:
+1. **Open an issue first.** A defect, a question, or an offer to contribute: the
+   forms are in the issue chooser. One change per issue.
+2. **Wait for the answer, in the issue.** The maintainer says one of three
+   things: *accepted*, with where it sits (a defect's number, a milestone's
+   row) and anything the change must respect; *later*, with the condition it
+   waits on; or *no*, with the reason, which for a refused feature is a row of
+   `docs/design.md` Part 6 and the condition that would make the refusal wrong.
+   A change to the language itself, the specification, a syntax, a semantics, a
+   class of diagnostic, the architecture, goes through a design sitting
+   (`docs/panel/`) before any code is written; the maintainer convenes it, and
+   the issue is where you ask for one.
+3. **Then open the pull request**, from a fork, its first line naming the issue
+   (`Closes #NNN`). A pull request with no accepted issue behind it is closed
+   with a link to this file, and its content reopened as an issue.
 
-- **The language stops moving under a patch.** While the version is below
-  `1.0.0` the surface still changes between minor versions, which means a patch
-  can be made stale by a decision it never heard about. The compatibility
-  paragraph that `1.0.0` owes is the same milestone that makes an outside patch
-  survivable.
-- **The process a change goes through is reachable from outside.** A design
-  change here needs a panel session and a design-log line; today both are things
-  that happen inside one working session, and neither has a shape somebody
-  outside can take part in.
-- **The rules a patch must satisfy are checkable before it is sent.** Most of
-  them already are, and the three suites in `README.md` are how: what is missing
-  is the part of the contract that lives in a session rather than in a test.
+## What a pull request carries
 
-None of the three has a date, and this file will say so plainly rather than
-inventing one. When they are met, this section is replaced by the shape a
-contribution takes, and the change is announced where everything else here is,
-in the build log at heroes-lang.org.
+What the maintainer checks before merging, written out so you can check it
+first:
+
+- **One change, the one the issue agreed**, in commits that carry only its
+  files.
+- **Formatted at the moment of writing**: `heroes fmt <file> --in-place` on every
+  `.hero` file touched. The canonical form is what makes two versions
+  comparable, so an unformatted file is a diff nobody can read.
+- **Its cases.** A golden case per shape under `tests/golden/`, every
+  diagnostic annotated in the source that provokes it (`#~ <code>` on the line,
+  `#~v <code>` for the next) as well as snapshotted in its `.expected`; a
+  repaired defect gets a case named after it, `fixedbugs-NNN-<slug>`. A change
+  nothing can falsify is not landed.
+- **The three suites green on your machine**, with the commands `README.md`
+  gives: the compiler's own tests, the net, and the net's own tests. The CI runs
+  them again on four platforms after the merge, and a red leg files a defect.
+- **`seed/heroes.c` untouched.** The seed is the compiler's own C, written by
+  the compiler, and the maintainer regenerates it at the close of each batch
+  with its fixpoint verified; a hand edit there is reverted.
+- **No second binary, no script, no Makefile.** A new capability is a `heroes`
+  subcommand or flag, and a diagnostic says how to fix the program it names.
+- **English everywhere**: code, comments, messages, commit bodies.
+- **The licence travels with it.** Apache-2.0 § 5 already says that a
+  contribution you send on purpose is licensed under the same terms, so there is
+  no agreement to sign. The commit that merges names you, and so does the
+  record, which says whose idea a thing was.
+
+## What does not open
+
+- A change to the language without its sitting, however small the diff.
+- Anything `docs/design.md` Part 6 refuses, unless the issue is about the
+  condition that row names.
+- Speed as the reason for a change. A cost that stops a needed program from
+  running at all is a defect; a faster compiler with nothing else to show is
+  not.
+
+## How a change is merged
+
+The maintainer merges, with a merge commit and never a rebase, because the
+record cites commit hashes and a rebase would falsify them. The issue's file
+under `issues/` is written by the maintainer; you do not need to learn the
+record's format to contribute to the compiler.
 
 ## What the licence lets you do anyway, and that is not withdrawn
 
 Heroes is Apache-2.0 (`LICENSE`), with a runtime exception
 (`LICENSE-RUNTIME-EXCEPTION`) so that a program you compile owes nothing for the
 runtime inside it. **That licence grants you the right to fork, modify and
-redistribute, in writing, and a repository that takes no patches does not take
-that back.** Fork it, cut it up, build something else out of it. Attribution is
-owed by whoever redistributes Heroes itself, never by somebody who merely uses
-it. If you do build something, an issue saying so would be read with pleasure.
+redistribute, in writing, and a repository that reads patches through an issue
+first does not take that back.** Fork it, cut it up, build something else out
+of it. Attribution is owed by whoever redistributes Heroes itself, never by
+somebody who merely uses it. If you do build something, an issue saying so
+would be read with pleasure.
 
 ## If you want to support it
 
 Buy the book. *Heroes of code* is the author's history of programming languages,
 and it came before this compiler did: the name, the bolt and the panel's
-historian seat all come out of it. This project takes no code contributions yet
-and asks for nobody's money, so a copy is the one thing that funds the time the
-language is built in.
+historian seat all come out of it. This project asks for nobody's money, so a
+copy is the one thing that funds the time the language is built in.
 
 Published on Amazon, in
 [English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
@@ -92,7 +134,7 @@ compiler you built it with (`heroes --version`).
 
 `heroes doctor` reports what your machine is missing. `design.md` Part 6 is a
 list of things this language refuses on purpose, each with the condition that
-would make the refusal wrong — if what you want is there, the interesting issue
+would make the refusal wrong. If what you want is there, the interesting issue
 is about that condition and not about the feature.
 
 ## Conduct
