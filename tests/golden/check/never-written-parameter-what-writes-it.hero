@@ -1,0 +1,75 @@
+# Panel 210's R1, ratified 2026-10-11, landed by lane b21-resolve: what
+# writes or ends an `@` parameter, so it is not refused. `@` to it, a field
+# or an element; an `@` argument, to a function or to C's out-parameter; a
+# lend C writes through; a `consumes` or `transfers` argument, named or
+# dotted (spec § 13: *mark the parameter `@` and the value does not survive
+# the call*; defect 629); and a value of its own type computed from it and
+# dropped, whose one message is the drop's, its first repair the write.
+extern "never-written-parameter-what-writes-it.h"
+    record H tag hh
+    record Slot
+        nsap: u8[8]
+        id: i64
+    function h_open() -> H acquires h_close
+    function h_close(x: H consumes)
+    function h_into(child: H transfers h_close, parent: H)
+    function put_seven(@out: i64)
+    function slot_fill(p: ptr counted_by n lent, n: i64)
+
+record P
+    x: i64
+    ys: [i64]
+
+function by_name(@n: i64)
+    n @ n + 1
+
+function by_field(@p: P)
+    p.x @ 1
+
+function by_element(@p: P)
+    p.ys[0] @ 2
+
+function bumped(@n: i64)
+    n @ n + 1
+
+function by_argument(@n: i64)
+    bumped(@n)
+
+function by_c(@n: i64)
+    put_seven(@n)
+
+function by_lend(@s: Slot)
+    slot_fill(p: s.nsap.ptr(), n: 8)
+
+function ended(@h: H)
+    h_close(x: h)
+
+function ended_dotted(@h: H)
+    h.h_close()
+
+function handed_on(@h: H, parent: H)
+    h.h_into(parent: parent)
+
+function dropped(@p: P)
+    p.ys.push(4)  #~ discarded_value
+
+function main()
+    k @= 1
+    by_name(@k)
+    by_argument(@k)
+    by_c(@k)
+    p @= P(x: 0, ys: [1])
+    by_field(@p)
+    by_element(@p)
+    dropped(@p)
+    s @= Slot(nsap: [0, 0, 0, 0, 0, 0, 0, 0], id: 0)
+    by_lend(@s)
+    a: H @= h_open()
+    ended(@a)
+    b: H @= h_open()
+    ended_dotted(@b)
+    root = h_open()
+    c: H @= h_open()
+    handed_on(h: @c, parent: root)
+    h_close(x: root)
+    print(k + p.x + s.id)

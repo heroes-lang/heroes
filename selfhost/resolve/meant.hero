@@ -31,21 +31,23 @@ use resolve/errors
 
 # A field lent to C through `.ptr()` is a place C may write: spec § 13, *C
 # writes back through the lend only where the binding is a `@` name*. So
-# the cell at the lend's root counts as written, by C, and is not a cell
-# nothing re-binds. `s.cstr()` and `s.lease()` lend bytes C only reads, and
+# the cell or `@` parameter at the lend's root counts as written, by C, and
+# is not one nothing re-binds (panel 210). `s.cstr()` and `s.lease()` lend
+# bytes C only reads, and
 # a lease's cell is written by `end_lease(@x)`, an `@` argument.
 function lent_for_writing(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token.Span, receiver: i64)
     if source.span_text(s, name) == "ptr"
         meant_write(@r, a, s, receiver)
 
-# The cell at the root of `id`, a name or a field or index path over one,
-# counted as written once.
+# The cell or `@` parameter at the root of `id`, a name or a field or index
+# path over one, counted as written once: a mutable local, never a `=`
+# binding, whose one message is the marker's (panel 210).
 function meant_write(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
     match a.exprs[id].kind
         .name =>
             local = state.lookup_local(r, source.span_text(s, a.exprs[id].span))
 
-            if !local.is_err() && r.out.locals[local.must()].kind == .cell
+            if !local.is_err() && r.out.locals[local.must()].mutable
                 r.out.locals[local.must()].writes @ r.out.locals[local.must()].writes + 1
         .field f => meant_write(@r, a, s, f.base)
         .index i => meant_write(@r, a, s, i.base)
@@ -68,6 +70,40 @@ function meant_by_signature(@r: state.Resolver, a: ast.Ast, s: source.Source, wr
         if arg.mutable != takes
             meant_write(@r, a, s, arg.value)
         k @ k + 1
+
+# The arguments `given` handed to a parameter that ends or hands on its
+# handle (`params`, by position from `first`, 1 behind a UFCS receiver):
+# each root that is an `@` parameter is written by the call, spec § 13's
+# *mark the parameter `@` and the value does not survive the call* (panel
+# 210). A cell's is not: a `=` binding is ended the same way, so a cell only
+# ended is still one nothing re-binds.
+function ended_by_signature(@r: state.Resolver, a: ast.Ast, s: source.Source, params: [ast.Param], first: i64, given: [ast.Arg])
+    if params.len() == 0
+        return
+    k: i64 @= first
+
+    for arg in given
+        if k < params.len() && ends(params[k])
+            ended_write(@r, a, s, arg.value)
+        k @ k + 1
+
+function ends(p: ast.Param) -> bool
+    return p.consumes || !p.transfers.is_err()
+
+# The `@` parameter at the root of `id`, counted as written once.
+function ended_write(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
+    match a.exprs[id].kind
+        .name =>
+            local = state.lookup_local(r, source.span_text(s, a.exprs[id].span))
+
+            if !local.is_err() && r.out.locals[local.must()].kind == .param && r.out.locals[local.must()].mutable
+                r.out.locals[local.must()].writes @ r.out.locals[local.must()].writes + 1
+        .field f => ended_write(@r, a, s, f.base)
+        .index i => ended_write(@r, a, s, i.base)
+
+        .field_name | .int_lit | .float_lit | .str_lit | .interp | .char_lit | .bool_lit | .null_ptr => return
+        .hole | .unary | .binary | .call | .method | .variant_case                                   => return
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                                  => return
 
 # A `@=` that declares no cell, told once: the wildcard's at any type, or a
 # re-binding where no type is written (`typed` false). True where told, and

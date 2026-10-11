@@ -118,7 +118,7 @@ function lease_name_at(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
     # freed bytes — `check` exit 0, `heap-use-after-free` under the sanitizer.
     # The predicate is `check/lending.hero`'s, beside `argument_of`, because
     # the lend has the same door and one rule cannot live in two files.
-    if into[at].is_err() || lending.keeps_its_argument(@c, a, r, decls, into: into, at: at)
+    if into[at].is_err() || lending.keeps_its_argument(c, a, r, decls, into: into, at: at)
         state.push_diagnostic(@c, lease_errors.lease_escapes(name: name, span: a.exprs[at].span))
         return
 

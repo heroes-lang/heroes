@@ -25,7 +25,7 @@ use discard_errors
 use check/state
 use check/discard
 use check/leasing
-use resolve/errors
+use resolve/written_nowhere
 
 # At a dropped value: the cell its first repair writes back, kept.
 function claim(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64, got: i64, readings: discard_errors.Readings, span: token.Span)
@@ -48,14 +48,10 @@ function claim(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
 
 # After the walk: every cell left to the checker that no dropped value's
 # repair writes back, told never re-bound.
-function told(@c: state.Checker, r: resolved.Resolved, s: source.Source)
+function told(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     at: i64 @= 0
 
     while at < r.locals.len()
         if r.locals[at].deferred && c.kept[at].is_err()
-            local = r.locals[at]
-            state.push_diagnostic(
-                @c,
-                errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
-            )
+            state.push_diagnostic(@c, written_nowhere.verdict(a, s, decls, out: r, at: at))
         at @ at + 1

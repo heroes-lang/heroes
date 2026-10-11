@@ -181,7 +181,7 @@ function constructed_record(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl],
 
 # The clause as the two sweeps ask it: a construction that KEEPS, and whose
 # record is not already condemned by its own fields.
-function keeps_its_argument(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], into: {i64: i64}, at: i64) -> bool
+function keeps_its_argument(c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], into: {i64: i64}, at: i64) -> bool
     if into[at].is_err()
         return false
     built = constructed_record(a, r, decls, call: into[at].must())
@@ -220,7 +220,7 @@ function lent_only_into_c(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s
         # one too put two messages on one span, which is the thing it exists to
         # avoid: `10:19 field_lend_escapes` and `10:19 field_lend_needs_a_header`
         # for the same mistake.
-        kept = keeps_its_argument(@c, a, r, decls, into: into, at: at)
+        kept = keeps_its_argument(c, a, r, decls, into: into, at: at)
 
         if into[at].is_err() || kept
             if is_builtin_named(a, r, at, name: "cstr")
