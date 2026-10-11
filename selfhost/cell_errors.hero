@@ -3,7 +3,8 @@
 # §4.4, §4.17; panel 209). `@=` declares a cell, and a cell is a bare name:
 # `p.x @= 1` or `xs[0] @= 2` can only be the write of a field or an element,
 # so it is told once, at the symbol, with the certain fix that writes `@`,
-# and the line is read as that write. `f() @ 1` and `f() @= 1` name no place
+# and the line is read as that write; `p.x = 1` the same, its fix a `guess`
+# (defect 646, `equals_on_place`). `f() @ 1` and `f() @= 1` name no place
 # at all: told at the value, as `grammar_expr.expression_or_mutation` told the
 # first until this module took it, and the statement is still a mutation, so
 # its value says its own mistakes. And the cell's old symbol after a type,
@@ -36,13 +37,18 @@ function old_symbol(symbol: str, at: token.Span, wildcard: bool) -> diag.Diagnos
     d.fixes @ d.fixes.push(diag.Fix(title: title, replacement: meant, span: at, certainty: .certain))
     return d
 
-# Eats the `@` or `@=` after `place`, telling what is wrong with either, and
+# Eats the `@`, `@=` or `=` after `place`, telling what is wrong with each, and
 # says whether a mutation's value follows; false, and nothing moved, where
 # neither stands, or where the `@=` follows a bare name, which
 # `grammar_expr.bind_stmt` reads as the declaration it is.
 function written(@c: cursor.Cursor, a: ast.Ast, text: str, place: i64) -> bool
     if cursor.eat(@c, .at)
         not_a_place(@c, a, place: place, symbol: "@")
+        return true
+
+    if cursor.at(c, .eq) && a.exprs[place].kind != .name && expr_kinds.is_place(a, place)
+        equals = cursor.bump(@c).span
+        equals_on_place(@c, spelled: cursor.slice_of(text, a.exprs[place].span), at: equals)
         return true
 
     if !cursor.at(c, .at_eq) || a.exprs[place].kind == .name
@@ -61,6 +67,22 @@ function written(@c: cursor.Cursor, a: ast.Ast, text: str, place: i64) -> bool
     d.fixes @ d.fixes.push(diag.Fix(title: "write `@`", replacement: "@", span: at, certainty: .certain))
     cursor.say(@c, d)
     return true
+
+# `p.x = e` or `xs[0] = e` (defect 646): `=` binds a name, and a field or an
+# element is no name, so the line can only be the write `p.x @ e`, told once
+# at the `=` and read as that write, as `declared_place` tells `@=`. The fix
+# writing `@` is a `guess`: the parser cannot see whether the root is mutable,
+# and a root that is not is told `not_mutable` once the `@` is written.
+function equals_on_place(@c: cursor.Cursor, spelled: str, at: token.Span)
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "declared_place",
+        message: "`" + spelled + " = …` would bind a name, and a field or an element is no name — it is written with `@`: `" + spelled + " @ …`",
+        span: at
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "write `@`: write `" + spelled + "`", replacement: "@", span: at, certainty: .guess)
+    )
+    cursor.say(@c, d)
 
 # The left of the symbol is no place: told at the value, unless what refused
 # the value already spoke there.

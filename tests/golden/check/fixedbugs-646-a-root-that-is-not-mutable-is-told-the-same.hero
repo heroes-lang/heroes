@@ -1,0 +1,23 @@
+# Fixed 2026-10-11, defect 646, lane b22-662: the shape beside, a field
+# written with `=` whose root is not mutable, a parameter with no `@` and a
+# `=` binding. The parser cannot see a root's mutability, so the line is
+# told the same, `declared_place` with the `guess` writing `@`; once that
+# `@` is written the resolver tells `not_mutable` at the root, the mistake
+# the `=` hid. A left side that is no place, `f(1) = 2`, keeps the
+# parser's end of the line.
+
+record P
+    x: i64
+
+function moved(p: P) -> i64
+    p.x = p.x + 1  #~ declared_place
+    return p.x
+
+function one(n: i64) -> i64
+    return n
+
+function main()
+    q = P(x: 0)
+    q.x = 2  #~ declared_place
+    one(1) = 2  #~ expected_end_of_line
+    print(moved(q))

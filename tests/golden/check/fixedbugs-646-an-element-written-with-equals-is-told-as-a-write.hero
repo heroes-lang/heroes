@@ -1,0 +1,8 @@
+# Fixed 2026-10-11, defect 646, lane b22-662: the shape beside, an element
+# of a cell written with `=`. One `declared_place` at the `=`, its fix a
+# `guess` writing `@`, as for a field.
+
+function main()
+    xs: [i64] @= [1, 2]
+    xs[0] = 5  #~ declared_place
+    print(xs[0])

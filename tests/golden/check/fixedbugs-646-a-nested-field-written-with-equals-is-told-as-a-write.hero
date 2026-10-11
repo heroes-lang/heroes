@@ -1,0 +1,19 @@
+# Fixed 2026-10-11, defect 646, lane b22-662: the shape beside, a field of
+# a field of an `@` parameter written with `=`, and an element's field. One
+# `declared_place` each, at the `=`, the whole place quoted back.
+
+record Inner
+    c: i64
+
+record Outer
+    b: Inner
+
+function bump(@a: Outer, @rows: [Inner])
+    a.b.c = a.b.c + 1  #~ declared_place
+    rows[0].c = 7  #~ declared_place
+
+function main()
+    o: Outer @= Outer(b: Inner(c: 0))
+    rs: [Inner] @= [Inner(c: 1)]
+    bump(@o, @rs)
+    print(o.b.c + rs[0].c)

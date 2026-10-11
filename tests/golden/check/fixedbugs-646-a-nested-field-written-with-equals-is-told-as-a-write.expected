@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-646-a-nested-field-written-with-equals-is-told-as-a-write.hero:12:11: error[declared_place]: `a.b.c = …` would bind a name, and a field or an element is no name — it is written with `@`: `a.b.c @ …`
+tests/golden/check/fixedbugs-646-a-nested-field-written-with-equals-is-told-as-a-write.hero:13:15: error[declared_place]: `rows[0].c = …` would bind a name, and a field or an element is no name — it is written with `@`: `rows[0].c @ …`
