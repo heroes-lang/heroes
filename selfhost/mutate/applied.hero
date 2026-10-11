@@ -92,7 +92,7 @@ function judged_apply(at: judged.Place, applied_rel: str, original_rel: str, tex
 
             if shared_place(a: normal.certain, b: after_places)
                 flags @ flags.push("APPLY-SAME-OWN")
-        clean = told.exit == 0 && told.messages.len() == 0
+        clean = clean_of(told: told, after: after)
 
         if clean && printed != original && another_program(at, applied_rel: applied_rel, original_rel: original_rel, original: original)?
             flags @ flags.push("APPLY-OTHER")
@@ -175,6 +175,19 @@ function less_own(arm: judged.Arm, used: str, program: Program, delta: i64) -> j
             taken[theirs] @ true
 
     return judged.Arm(exit: arm.exit, messages: kept, other: arm.other, certain: arm.certain)
+
+# Whether what `--apply` wrote checks clean but for the program's own
+# messages, APPLY-OTHER's first question (defect 665): `after` is `told`
+# less them, the measure `fresh` and `stands` read, so the three flags read
+# one. An exit 1 is clean only where it told messages and every one was the
+# program's, with no other line on stderr; an exit past 1 never is.
+function clean_of(told: judged.Arm, after: judged.Arm) -> bool
+    if after.messages.len() > 0
+        return false
+
+    if told.exit == 0
+        return true
+    return told.exit == 1 && told.messages.len() > 0 && told.other.len() == 0
 
 function within(line: i64, a: i64, b: i64) -> bool
     return a <= line && line <= b || b <= line && line <= a
@@ -259,3 +272,30 @@ test "a place is a code and a line, and two lists share one or not"
     assert !shared_place(a: ["c\t3"], b: ["c\t4"])
     assert newlines("a\nb\n") == 2
     assert newlines("") == 0
+
+test "what --apply wrote is clean for APPLY-OTHER where only the program's own message stands, and not where another code does (defect 665)"
+    program = sqlite_program(["union = 1"])
+    used = "examples/ledger/db/zzm_k_applied.hero"
+    carried = said(code: "never_rebound", line: 322, msg: "`rows` in zzm_k_applied.hero is never rebound")
+    alone = judged.Arm(exit: 1, messages: [carried], other: [], certain: [])
+    assert clean_of(told: alone, after: less_own(alone, used: used, program: program, delta: 0))
+
+    # Another code beside it: not clean, so never APPLY-OTHER.
+    other = judged.Arm(
+        exit: 1,
+        messages: [carried, said(code: "type_mismatch", line: 140, msg: "m")],
+        other: [],
+        certain: []
+    )
+    assert !clean_of(told: other, after: less_own(other, used: used, program: program, delta: 0))
+
+    # An exit past 1, a line on stderr outside the document, or an exit 1
+    # that told nothing, is never clean; an exit 0 with nothing told is.
+    crashed = judged.Arm(exit: 2, messages: [carried], other: [], certain: [])
+    assert !clean_of(told: crashed, after: less_own(crashed, used: used, program: program, delta: 0))
+    noisy = judged.Arm(exit: 1, messages: [carried], other: ["linking failed"], certain: [])
+    assert !clean_of(told: noisy, after: less_own(noisy, used: used, program: program, delta: 0))
+    silent = judged.Arm(exit: 1, messages: [], other: [], certain: [])
+    assert !clean_of(told: silent, after: silent)
+    quiet = judged.Arm(exit: 0, messages: [], other: [], certain: [])
+    assert clean_of(told: quiet, after: quiet)
