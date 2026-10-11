@@ -1,0 +1,80 @@
+# The cases whose shape cannot exist on a platform, judged where it holds and
+# skipped there by name with its reason (`.claude/rules/platforms.md`, the
+# author's answer *A* of 2026-10-03, which says the same of a header a
+# platform lacks; defect 640).
+#
+# **A skip here is a fact about C on that platform, never about the machine**:
+# a missing header or library is `absence.hero`'s, asked of the machine each
+# run. What stands here holds of every machine of the platform, so it is
+# written down once with the measurement that found it, and a case or a
+# surface row is named whole, so a renamed one stops being skipped and is
+# judged, loudly, rather than skipped in silence (the test below holds each
+# name to a case or a row that exists).
+
+use shell
+use strings
+
+# Why a case or a surface row named `name` is not judged on this machine, or
+# absent where it is.
+function reason(name: str) -> str?
+    if shell.exe_suffix() == ".exe"
+        for one in windows()
+            if one.name == name
+                return ok(one.why)
+
+    return fail(code: "judged", msg: "judged on this machine")
+
+record Skip
+    name: str
+    why: str
+
+constant INLINE_ON_WINDOWS: str
+    "the Windows target reads C's `inline` as Microsoft's compiler does: a header's `inline` definition is emitted in every unit that calls it, a COMDAT the linker keeps once (clang -S -emit-llvm on the Windows box, 2026-10-11, clang 23.1.1), so a header-only C99 inline links there and the program prints 6, where C11 6.7.4p7 gives no external definition; it is judged on the platforms whose C reads the standard's rule (defect 640)"
+
+# The cases and rows Windows cannot hold, by the name the report gives them.
+function windows() -> [Skip]
+    return [
+        Skip(name: "fixedbugs-562-a-header-only-inline-is-told-what-c-wants", why: INLINE_ON_WINDOWS)
+        Skip(name: "a header-only C99 inline is refused by run as by build, told what C wants (defect 562)", why: INLINE_ON_WINDOWS)
+    ]
+
+# Whether the report a case's `!sanitizer:` line names is the runtime's to
+# tell on this machine: a stack overflow on Windows, where ASan wrote nothing
+# in 3 and 4 of 8 runs of one case and the runtime's handler keeps the fault
+# (`runtime/parts/stack.c`, defect 641, measured on the Windows box
+# 2026-10-11 with the CI's clang 20.1.8). Such a run is judged by the case's
+# own ending, `!panic: stack exhausted`, as its `-O0` and `-O2` runs are.
+function runtime_tells(needle: str) -> bool
+    return shell.exe_suffix() == ".exe" && needle == STACK_OVERFLOW
+
+constant STACK_OVERFLOW: str
+    "stack-overflow"
+
+## Tests
+
+# Each name is a case of `tests/golden/` or a row the surface table names, so
+# a case renamed or a row reworded is judged rather than skipped in silence.
+test "every name skipped on Windows is a case or a surface row that exists"
+    path = "tests/golden/unsupported/fixedbugs-562-a-header-only-inline-is-told-what-c-wants.hero"
+    assert shell.exists(path)
+    assert windows()[0].name + ".hero" == "fixedbugs-562-a-header-only-inline-is-told-what-c-wants.hero"
+    surface = read_file("tests/harness/suite_surface.hero")
+    assert !surface.is_err()
+    assert strings.contains(text: surface.must(), needle: "row(name: \"" + windows()[1].name + "\"")
+    assert windows().len() == 2
+
+# On a machine that is not Windows nothing is skipped by name.
+test "a name is judged where its platform's C holds its shape"
+    if shell.exe_suffix() != ".exe"
+        assert reason("fixedbugs-562-a-header-only-inline-is-told-what-c-wants").is_err()
+    else
+        assert !reason("fixedbugs-562-a-header-only-inline-is-told-what-c-wants").is_err()
+    assert reason("fixedbugs-562-another-case").is_err()
+
+# A stack overflow's report is the runtime's on Windows alone, and no other
+# report is (defect 641).
+test "only a stack overflow's report is the runtime's, and only on Windows"
+    on_windows = shell.exe_suffix() == ".exe"
+    assert runtime_tells("stack-overflow") == on_windows
+    assert !runtime_tells("on unknown address")
+    assert !runtime_tells("heap-use-after-free")
