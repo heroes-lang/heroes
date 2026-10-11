@@ -333,8 +333,9 @@ function never_rebound(name: str, span: token.Span, symbol: token.Span) -> diag.
 # `_ @= e`, or `_: T @= e`: the wildcard binds nothing (spec § 5), so the cell
 # its symbol would declare is one nothing can ever re-bind, R1b's rule at the
 # one name no write reaches, a hole in its module or not (defect 608). The
-# same code and the same certain fix at the symbol, `@=` or the old `@`: the
-# line runs as the discard `_ = e`, so writing `=` changes nothing it does.
+# same code and the same certain fix at the symbol `written` (the old `@` on
+# `_` is the parser's, `cell_errors.old_symbol`): the line runs as the
+# discard `_ = e`, so writing `=` changes nothing it does.
 function never_rebound_wildcard(written: str, span: token.Span, symbol: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "never_rebound",
