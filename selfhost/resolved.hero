@@ -149,23 +149,22 @@ record Resolved
     # signature change.
     fn_labels: {i64: [str]}
     diagnostics: [diag.Diagnostic]
+    # The local a `v @= e` re-binds where `@` was meant, by the name's start,
+    # which declares nothing (`resolve/meant`), so the checker types `e` as
+    # `v @ e`'s value where the control arm drops the refusal (defect 625).
+    rebinds: {i64: i64}
 
 function new_resolved() -> Resolved
-    uses: [Ref] = []
-    type_uses: [vocab.TypeRef] = []
-    locals: [Local] = []
-    holes_in: [str] = []
-    fn_labels: {i64: [str]} = {}
-    diagnostics: [diag.Diagnostic] = []
     return Resolved(
-        uses: uses,
-        type_uses: type_uses,
-        locals: locals,
+        uses: [],
+        type_uses: [],
+        locals: [],
         top: name_rows.new_name_rows(),
         module_uses: name_rows.new_use_rows(),
-        holes_in: holes_in,
-        fn_labels: fn_labels,
-        diagnostics: diagnostics
+        holes_in: [],
+        fn_labels: {},
+        diagnostics: [],
+        rebinds: {}
     )
 
 # What one file calls each module it `use`s, or absent where it wrote no `use`.
