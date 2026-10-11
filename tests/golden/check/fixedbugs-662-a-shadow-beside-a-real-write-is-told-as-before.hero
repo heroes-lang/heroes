@@ -1,0 +1,13 @@
+# Fixed 2026-10-11, defect 662, lane b22-662: the shape beside, an `@`
+# parameter written by `@` on one line and shadowed by `=` on the next. It
+# was told once before the repair and is told once after, the shadow, now
+# with the `guess` that writes `@`.
+
+function grow(@rows: [i64])
+    rows @ rows.push(2)
+    rows = rows.push(1)  #~ shadowed_binding
+
+function main()
+    xs: [i64] @= []
+    grow(@xs)
+    print(xs.len())

@@ -28,6 +28,7 @@ use diag
 use source
 use resolve/state
 use resolve/errors
+use resolve/binding as resolve_binding
 
 # A field lent to C through `.ptr()` is a place C may write: spec § 13, *C
 # writes back through the lend only where the binding is a `@` name*. So
@@ -130,6 +131,43 @@ function meant_rebinding(@r: state.Resolver, s: source.Source, name: token.Span,
     state.push_diagnostic(@r, cell_redeclared(name: source.span_text(s, name), bound_at: bound_at, span: symbol))
     r.out.locals[at].writes @ r.out.locals[at].writes + 1
     r.out.rebinds[name.start] @ at
+    return true
+
+# `v = e` binds `v`, unless `v` is already mutable here (below).
+function bind(@r: state.Resolver, s: source.Source, decls: [ast.Decl], name: token.Span, ty: i64?, value: i64)
+    if !shadows_a_mutable(@r, s, name: name, typed: !ty.is_err())
+        _ = state.declare(@r, s, decls, name, resolve_binding.bind_binding(ty: ty, value: value)).is_err()
+
+# `v = e` where `v` is already a mutable local in scope, a cell or an `@`
+# parameter (defect 662): refused as any shadow is (spec § 5), and what it was
+# meant to be is the local's write, `v @ e`. So the write is counted on the
+# local, and the sweep's *nothing writes it* does not tell the one mistake a
+# second time, and the refusal offers `@` at the `=` where no type is written:
+# a `guess`, since a shadow inside a block meant a name the block alone sees,
+# and `@` writes the local past it. Nothing declared, as `state.declare`
+# declares nothing for a shadow. False, and nothing said, where no such local
+# stands.
+function shadows_a_mutable(@r: state.Resolver, s: source.Source, name: token.Span, typed: bool) -> bool
+    text = source.span_text(s, name)
+    previous = state.lookup_local(r, text)
+
+    if previous.is_err() || !r.out.locals[previous.must()].mutable
+        return false
+    at = previous.must()
+    bound_at = source.elsewhere(s, here: name.start, there: r.out.locals[at].name.start)
+    d: diag.Diagnostic @= errors.shadowed(name: text, bound_at: bound_at, span: name)
+    k: i64 @= name.end
+
+    while k < s.text.len() && (s.text[k] == ' ' || s.text[k] == '\t')
+        k @ k + 1
+
+    if !typed && k < s.text.len() && s.text[k] == '='
+        title = "write `@`: change the `" + text + "` bound at " + bound_at + " rather than declare a second"
+        d.fixes @ d.fixes.push(
+            diag.Fix(title: title, replacement: "@", span: token.Span(start: k, end: k + 1), certainty: .guess)
+        )
+    state.push_diagnostic(@r, d)
+    r.out.locals[at].writes @ r.out.locals[at].writes + 1
     return true
 
 # `_ @= e` or `_: T @= e` (the old `_: T @ e` is the parser's to tell,
