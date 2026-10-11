@@ -23,8 +23,8 @@ extern "fixedbugs-two-marks-on-one-call-are-two-obligations.h"
     function both_open(n: i64, @a: Slot acquires slot_close, @b: Conn acquires conn_close)
 
 function main()
-    a: Slot @ nullptr
-    b: Conn @ nullptr
+    a: Slot @= nullptr
+    b: Conn @= nullptr
     both_open(n: 1, @a, @b)
     slot_close(a)
     conn_close(b)

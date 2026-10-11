@@ -36,12 +36,12 @@ extern "sqlite3.h" link "sqlite3"
     function sqlite3_prepare_v2(db: ptr, sql: cstr lent, n: i32, @stmt: ptr, @tail: cstr) -> i64
 
 function main()
-    db: ptr @ nullptr
+    db: ptr @= nullptr
 
     if sqlite3_open(path: ":memory:".cstr(), db: @db) != SQLITE_OK
         print("no database")
         return
-    stmt: ptr @ nullptr
-    tail: cstr @ nullptr
+    stmt: ptr @= nullptr
+    tail: cstr @= nullptr
     rc = sqlite3_prepare_v2(db: db, sql: "select 1".cstr(), n: -1, stmt: @stmt, tail: @tail)
     print(rc == SQLITE_OK)

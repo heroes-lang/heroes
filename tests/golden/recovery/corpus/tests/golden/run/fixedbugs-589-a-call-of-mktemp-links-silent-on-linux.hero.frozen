@@ -1,0 +1,32 @@
+# fixedbugs, defect 589, lane b19-dep, 2026-10-10 (the author's decision after
+# panel 208's R3).
+#
+# SYMPTOM: on Linux a program calling glibc's `mktemp` built at exit 0 and
+# printed GNU ld's `<emitted C>:(.text+0x..): warning: the use of `mktemp' is
+# dangerous, better use `mkstemp' or `mkdtemp'`, under a line naming the
+# function the call stands in: a `.gnu.warning` section's text, at a path the
+# author never wrote. Judged where `sys/prctl.h` is, which is Linux.
+#
+# FIX: the link runs under `LC_ALL=C` and exactly the lines of a section
+# warning's shape are dropped from what the linker says, each with the line
+# above it that names the function (`cli/link_warning.hero`); every other line
+# of the linker passes as it did, and LLD prints none.
+
+extern "sys/prctl.h"
+    constant PR_GET_PDEATHSIG: i32
+
+extern "stdlib.h"
+    function mktemp(template: ptr) -> ptr
+    function malloc(n: u64) -> ptr
+    function free(p: ptr)
+
+extern "string.h"
+    function strcpy(dst: ptr, src: cstr lent) -> ptr
+    function strlen(s: ptr) -> u64
+
+function main()
+    p = malloc(32.to_u64().must())
+    _ = strcpy(p, "heroes-589-XXXXXX".cstr())
+    named = mktemp(p)
+    print(strlen(named))
+    free(p)

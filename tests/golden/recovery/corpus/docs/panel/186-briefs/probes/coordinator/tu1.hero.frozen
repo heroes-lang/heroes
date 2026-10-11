@@ -1,0 +1,7 @@
+extern "tu.h"
+    record UI tag utag
+        i: i32
+    function make_u() -> UI
+
+function main()
+    print(make_u().i)

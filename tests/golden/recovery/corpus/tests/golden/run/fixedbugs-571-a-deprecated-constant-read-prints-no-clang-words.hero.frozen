@@ -1,0 +1,16 @@
+# fixedbugs, defect 571, lane b18-guard, 2026-10-10 (panel 205's R5).
+#
+# SYMPTOM: an enumerator marked `deprecated`, bound as a constant and read:
+# clang printed its warning at the constant's two assertions and in its
+# accessor, the compiler's lines, at exit 0.
+#
+# FIX: `-Wdeprecated-declarations` is quiet on the compiler's own lines, from
+# the groups' close and over each group constant's accessor and the
+# per-type functions, and spoken over the program's own definitions
+# (`emit/deprecation.hero`): the verdict is the one it was.
+
+extern "fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.h"
+    constant OLD_LIMIT: i64
+
+function main()
+    print(OLD_LIMIT)

@@ -23,7 +23,7 @@ function ends_with(text: str, suffix: str) -> bool
     if suffix.len() > text.len()
         return false
     offset = text.len() - suffix.len()
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < suffix.len()
         if text[offset + i] != suffix[i]
@@ -65,7 +65,7 @@ function boundary_at_or_below(text: str, at: i64) -> i64
     if at >= text.len()
         return text.len()
 
-    cut: i64 @ at
+    cut: i64 @= at
 
     while cut > 0 && text[cut] >= 128 && text[cut] <= 191
         cut @ cut - 1
@@ -80,9 +80,9 @@ function boundary_at_or_below(text: str, at: i64) -> i64
 # writes that byte, and reading it is what makes a directory walk sound —
 # see shell.list_entries.
 function split_on(text: str, byte: u8) -> [str]
-    pieces: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    pieces: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == byte
@@ -102,8 +102,8 @@ function lines(text: str) -> [str]
 
 # The part of a path after its last `/`.
 function base_name(path: str) -> str
-    cut: i64 @ 0
-    i: i64 @ 0
+    cut: i64 @= 0
+    i: i64 @= 0
 
     while i < path.len()
         if path[i] == 47
@@ -114,12 +114,12 @@ function base_name(path: str) -> str
 
 # `text` without leading or trailing spaces, tabs, newlines or returns.
 function trimmed(text: str) -> str
-    head: i64 @ 0
+    head: i64 @= 0
 
     while head < text.len() && is_space(byte: text[head])
         head @ head + 1
 
-    tail: i64 @ text.len()
+    tail: i64 @= text.len()
 
     while tail > head && is_space(byte: text[tail - 1])
         tail @ tail - 1
@@ -138,11 +138,11 @@ function is_space(byte: u8) -> bool
 function contains(text: str, needle: str) -> bool
     if needle.len() > text.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start + needle.len() <= text.len()
-        i: i64 @ 0
-        hit: bool @ true
+        i: i64 @= 0
+        hit: bool @= true
 
         while i < needle.len()
             if text[start + i] != needle[i]
@@ -161,7 +161,7 @@ function contains(text: str, needle: str) -> bool
 function starts_with(text: str, prefix: str) -> bool
     if prefix.len() > text.len()
         return false
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < prefix.len()
         if text[i] != prefix[i]
@@ -183,8 +183,8 @@ function without_prefix(text: str, prefix: str) -> str
 # a file somebody edits: `!exit: three` is a broken case, and a broken
 # case must be reported by name, not by killing the harness.
 function to_number(text: str) -> i64?
-    body: str @ text
-    negative: bool @ false
+    body: str @= text
+    negative: bool @= false
 
     if starts_with(text: text, prefix: "-")
         negative @ true
@@ -192,8 +192,8 @@ function to_number(text: str) -> i64?
 
     if body.len() == 0
         return fail(code: "not_a_number", msg: "`" + text + "` has no digits")
-    value: i64 @ 0
-    i: i64 @ 0
+    value: i64 @= 0
+    i: i64 @= 0
 
     while i < body.len()
         digit = body[i]
@@ -211,11 +211,11 @@ function to_number(text: str) -> i64?
 function index_of(text: str, needle: str) -> i64?
     if needle.len() > text.len()
         return fail(code: "absent", msg: "`" + needle + "` is not in the text")
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start + needle.len() <= text.len()
-        i: i64 @ 0
-        hit: bool @ true
+        i: i64 @= 0
+        hit: bool @= true
 
         while i < needle.len()
             if text[start + i] != needle[i]
@@ -233,8 +233,8 @@ function index_of(text: str, needle: str) -> i64?
 # Split on a multi-byte separator, keeping empty pieces. `split_on`
 # takes one byte and this takes a string, because `#~` is two.
 function split_text(text: str, separator: str) -> [str]
-    pieces: [str] @ []
-    rest: str @ text
+    pieces: [str] @= []
+    rest: str @= text
 
     if separator.len() == 0
         return pieces.push(text)
@@ -251,12 +251,12 @@ function split_text(text: str, separator: str) -> [str]
 
 # The words of `text`, with runs of spaces, tabs and newlines dropped.
 function words(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i <= text.len()
-        boundary: bool @ i == text.len()
+        boundary: bool @= i == text.len()
 
         if !boundary
             boundary @ is_space(byte: text[i])

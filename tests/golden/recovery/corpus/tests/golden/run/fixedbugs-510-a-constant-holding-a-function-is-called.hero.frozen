@@ -1,0 +1,28 @@
+# Defect 510, 2026-10-09 (lane b16-land199's reproducer): a constant that
+# holds a function, called by its name, `DOUBLE(4)`. The checker read the
+# call as a call through a value, and the lowering called the constant's
+# zero-argument accessor itself with the argument, so clang refused the C,
+# *too many arguments to function call, expected 0, have 1*, at exit 2. The
+# call now reads the constant, then calls what it holds, as a local holding
+# a function is called. Beside it, the same shape through a constant whose
+# body names another constant, and through a function type whose two
+# parameters share a type, so the call names them.
+function twice(n: i64) -> i64
+    return n * 2
+
+function joined(from: str, to: str) -> str
+    return from + to
+
+constant DOUBLE: (function(i64) -> i64)
+    twice
+
+constant AGAIN: (function(i64) -> i64)
+    DOUBLE
+
+constant JOIN: (function(from: str, to: str) -> str)
+    joined
+
+function main()
+    print(DOUBLE(4))
+    print(AGAIN(DOUBLE(5)))
+    print(JOIN(from: "ziggy ", to: "stardust"))

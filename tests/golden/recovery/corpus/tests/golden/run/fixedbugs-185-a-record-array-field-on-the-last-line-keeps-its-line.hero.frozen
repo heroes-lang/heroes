@@ -1,0 +1,19 @@
+# Defect 185, 2026-10-03: an array field's two assertions, one string holding
+# a newline until that day, so the second rode C's auto-increment onto the
+# line below the field. Here there is none: the field is the file's last
+# line, so it claimed one past the end, and every restore of the generated
+# file after it was one line short. The element is another record of the
+# group, the third spelling that branch writes.
+
+function main()
+    h = Holder(count: 2, cells: [Cell(v: 3), Cell(v: 4)])
+    print(h.cells[0].v + h.cells[1].v)
+    print(h.total())
+
+extern "fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.h"
+    function total(h: Holder) -> i32
+    record Cell
+        v: i32
+    record Holder
+        count: i32
+        cells: Cell[2]

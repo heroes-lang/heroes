@@ -71,12 +71,12 @@ record Walk
 # own copy and the caller's permutation is untouched — which is what lets the
 # walk hand the same array to the counter 5040 times without defending it.
 function flips(order: [i64]) -> i64
-    work: [i64] @ order
-    done: i64 @ 0
+    work: [i64] @= order
+    done: i64 @= 0
 
     while work[0] != 0
-        low: i64 @ 0
-        high: i64 @ work[0]
+        low: i64 @= 0
+        high: i64 @= work[0]
 
         while low < high
             held = work[low]
@@ -92,9 +92,9 @@ function flips(order: [i64]) -> i64
 # The identity permutation, with every counter empty and `at` above the top so
 # that the first `reset` fills them all.
 function start(n: i64) -> Walk
-    order: [i64] @ []
-    left: [i64] @ []
-    i: i64 @ 0
+    order: [i64] @= []
+    left: [i64] @= []
+    i: i64 @= 0
 
     while i < n
         order @ order.push(i)
@@ -121,7 +121,7 @@ function advance(@w: Walk)
             w.ended @ true
             return
         head = w.order[0]
-        i: i64 @ 0
+        i: i64 @= 0
 
         while i < w.at
             w.order[i] @ w.order[i + 1]
@@ -138,10 +138,10 @@ function advance(@w: Walk)
 # permutation and subtracts every odd one, which is the benchmark's rule and
 # the reason `visited` is carried rather than recomputed.
 function fannkuch(n: i64) -> Fannkuch
-    w: Walk @ start(n)
-    checksum: i64 @ 0
-    max_flips: i64 @ 0
-    visited: i64 @ 0
+    w: Walk @= start(n)
+    checksum: i64 @= 0
+    max_flips: i64 @= 0
+    visited: i64 @= 0
 
     while !w.ended
         reset(@w)
@@ -161,8 +161,8 @@ function fannkuch(n: i64) -> Fannkuch
 
 # n! , to check the walk against the number of permutations there are.
 function factorial(n: i64) -> i64
-    out: i64 @ 1
-    i: i64 @ 2
+    out: i64 @= 1
+    i: i64 @= 2
 
     while i <= n
         out @ out * i
@@ -189,7 +189,7 @@ test "the two published numbers for seven cards, which this program did not inve
 test "eight terms of OEIS A000375, from a source that never heard of the benchmark"
     # https://oeis.org/A000375 , offset 1: 0, 1, 2, 4, 7, 10, 16, 22, 30, …
     published = [0, 1, 2, 4, 7, 10, 16, 22]
-    n: i64 @ 1
+    n: i64 @= 1
 
     while n <= published.len()
         assert fannkuch(n).max_flips == published[n - 1]
@@ -199,7 +199,7 @@ test "the walk visits n! permutations, no more and none twice"
     # The count is what notices a generator that skips: a walk missing whole
     # branches still reports the right maximum surprisingly often, because the
     # worst permutation is not rare.
-    n: i64 @ 1
+    n: i64 @= 1
 
     while n <= 7
         assert fannkuch(n).visited == factorial(n)
@@ -209,8 +209,8 @@ test "every permutation is visited, and each of them exactly once"
     # The strongest statement available about the generator, and it needs no
     # oracle: walk seven cards again by hand, keep every permutation seen as a
     # map key, and the map must end up n! large.
-    w: Walk @ start(7)
-    seen: {str: i64} @ {}
+    w: Walk @= start(7)
+    seen: {str: i64} @= {}
 
     while !w.ended
         reset(@w)
@@ -251,8 +251,8 @@ test "the maximum flip count is reached by some permutation the walk saw"
     # A maximum that no visited permutation attains would mean the walk and
     # the counter disagree about what they are looking at.
     said = fannkuch(6)
-    w: Walk @ start(6)
-    reached: bool @ false
+    w: Walk @= start(6)
+    reached: bool @= false
 
     while !w.ended
         reset(@w)
@@ -265,7 +265,7 @@ test "the maximum flip count is reached by some permutation the walk saw"
     assert said.max_flips == 10
 
 function shown(numbers: [i64]) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for one in numbers
         out @ out.push(one.to_str())

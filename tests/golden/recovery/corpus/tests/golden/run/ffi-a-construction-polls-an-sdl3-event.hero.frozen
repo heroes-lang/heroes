@@ -1,0 +1,69 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13); what a
+# construction leaves out is judged by `build` from the header's layout.
+#
+# The ffi-pragmatist's prediction for (1h), held: SDL3's real `SDL_Event`, a
+# union of its event structs, bound by a record naming three of its members,
+# built as `SDL_Event(type: 0)` and polled into, with no C beside the program.
+# Until R7 no Heroes program could read an SDL3 event without hand-written C:
+# a record naming two members could not be built, and SDL3 hands events only
+# through a pointer. A user event is pushed and polled back; the loop stops at
+# it, so an event of the machine's polled first changes nothing. A machine
+# without SDL3 skips the case, which `package` tells (`ffi_package`).
+#
+# 2026-10-08, defect 447: the third member was SDL_KeyboardEvent, whose `type`
+# and `scancode` are enumerated types, and those are `unsigned int` on this
+# Mac and on Debian's clang and `int` on Windows' (measured with C on all
+# three, SDL 3.4.18 there and 3.2.10 on Debian), so `u32` bound on two and
+# `ffi_field_type` refused the case on the third. It is SDL_CommonEvent now,
+# whose `type` is a plain Uint32 on every platform: the case still names three
+# members of the union and still polls a user event back through two of them,
+# and it builds and prints the same five lines on all three.
+
+extern "SDL3/SDL.h" package "sdl3"
+    record SDL_CommonEvent
+        type: u32
+        reserved: u32
+        timestamp: u64
+    record SDL_UserEvent
+        type: u32
+        reserved: u32
+        timestamp: u64
+        windowID: u32
+        code: i32
+        data1: ptr
+        data2: ptr
+    record SDL_Event
+        type: u32
+        common: SDL_CommonEvent
+        user: SDL_UserEvent
+    function SDL_Init(flags: u32) -> bool
+    function SDL_PushEvent(@event: SDL_Event) -> bool
+    function SDL_PollEvent(@event: SDL_Event) -> bool
+    function SDL_Quit()
+
+function main()
+    print(SDL_Init(flags: 0x4000))
+    sent: SDL_Event @= SDL_Event(
+        user: SDL_UserEvent(type: 0x8000, reserved: 0, timestamp: 0, windowID: 0, code: 42, data1: nullptr, data2: nullptr)
+    )
+    print(SDL_PushEvent(@sent))
+    found: bool @= false
+    code: i32 @= 0
+    keyed: u32 @= 0
+    tries: i64 @= 0
+
+    while !found && tries < 64
+        got: SDL_Event @= SDL_Event(type: 0)
+
+        if SDL_PollEvent(@got) && got.type == 0x8000
+            found @ true
+            code @ got.user.code
+            keyed @ got.common.type
+        tries @ tries + 1
+
+    print(found)
+    print(code)
+    print(keyed == 0x8000)
+    SDL_Quit()

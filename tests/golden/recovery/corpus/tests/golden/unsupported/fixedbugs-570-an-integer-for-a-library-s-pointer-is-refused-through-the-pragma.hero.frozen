@@ -1,0 +1,19 @@
+# fixedbugs, defect 570, lane b18-guard, 2026-10-10 (panel 205's R1).
+#
+# Beside `fixedbugs-570-an-integer-for-a-pointer-is-refused-through-the-pragma`,
+# the row through a library's own declaration (panel 205's `icv`).
+#
+# SYMPTOM: through a header writing `#pragma clang diagnostic ignored
+# "-Wint-conversion"` before `#include <string.h>`, `strlen(s: i64)`
+# against `size_t strlen(const char *)` built at exit 0.
+#
+# FIX: after the groups' includes, and again at the probe region, every
+# warning a check of a binding rests on is raised again
+# (`emit/checks_raised.hero`), the build's `-Werror` words and clang's three
+# default errors, so the message is the one a plain header gets.
+
+extern "fixedbugs-570-an-integer-for-a-library-s-pointer-is-refused-through-the-pragma.h"
+    function strlen(s: i64) -> u64  #~ ffi_parameter_type
+
+function main()
+    print(strlen(0))

@@ -24,10 +24,24 @@
 # NOT flagged and must not be — it is a real, non-blank line of the
 # author's file, which is the whole test.
 #
-# `<heroes library>` and any other non-`.hero` name are skipped: there is
-# no file to ask.
+# `<heroes library>` is skipped: there is no file to ask.
+#
+# **And every other name is the generated file, whose restore must name its
+# own next line** (defect 185, 2026-10-03). `.claude/rules/generated-c.md`
+# says the restore carries the printer's own output line count, and until
+# that day nothing asked: this suite skipped every name that was not a
+# `.hero` file, so an array field's two assertions, written as one string
+# holding a newline, left every later restore of the generated file one line
+# short per such field, 261 restores in 19 of the blessed traces, for as long
+# as such fields were emitted. The emitter claims three kinds of name, the
+# author's files, the library and the generated file (measured over the 354
+# traces that day: 40,176 claims on the generated file, 5,964 on the
+# library), so a claim on anything else that does not name its own next line
+# fails here rather than passing unread.
 
+use absence
 use cases
+use one_file_units
 use report
 use floors
 use shell
@@ -36,6 +50,11 @@ use strings
 constant RUN_DIR: str
     "tests/golden/run"
 
+# What the emitter calls the library in a `#line` (`selfhost/source.hero`'s
+# `LIBRARY_FILE`): a name with no file behind it, so no line of it is asked.
+constant LIBRARY_FILE: str
+    "<heroes library>"
+
 # golden.rs floors the corpus at 40 and floors the number that actually emitted
 # at 40 as well — a machine that emits nothing must not report green.
 #
@@ -43,64 +62,275 @@ constant RUN_DIR: str
 # 2026-09-25** (panel 177's landing: fifteen `dead-*` cases, one `limit-*`
 # and a second fault-handler case pinning what the first one used to), re-based
 # to today's count by
-# `floors.check`. The second use below is the SKIP floor and keeps this number
+# `floors.check`; **235 on 2026-10-02**, at the round's gate of lanes
+# recovery-b8, land186 and h158, lane land186's twelve run cases for panel
+# 186 taking the directory from 223 past 181 by more than a quarter, and the
+# suite asking 235; **308 on 2026-10-06**, at batch 12's round, lane ffi13's
+# eight run cases for defect 094 and lane ir12's for 381 and 387 taking it
+# past 235 by more than its slack. The second use below is the SKIP floor and keeps this number
 # deliberately: what it asks is *did this machine emit as many as the tree
 # holds*, so both sides of that comparison have to be the same tree.
+#
+# **That second use was wrong, and the platforms said so on 2026-10-02**: the
+# Linux arm64 container read *only 231 of 235 cases emitted* and the Windows
+# box a red alike, the four cases a library this machine lacks cannot emit,
+# so a floor raised to the Mac's count on a Mac-only gate turned every other
+# platform red. And beneath it a worse hole: ANY case that failed to emit was
+# skipped, a compiler that broke `--emit-c` for one case included. So this
+# number floors the TREE alone now, and a skip is what `run`, `emission`,
+# `determinism`, `corpus` and the golden forms already call one: a case
+# whose build says the machine lacks a library the case binds, and the
+# machine, asked, agrees (`absence.machine_lacks`, defect 246), named,
+# counted, the suite red when the skips reach a third of the tree; every other
+# failure to emit is a failure.
+#
+# **311 on 2026-10-06**, in lane b13-c382: panel 195's fifteen `fixedbugs-382-`
+# run cases took the directory to 311 from 296, which was already past 235 by
+# more than a quarter at that lane's base, and the suite asked 311.
+#
+# **398 on 2026-10-08**, at batch 15's gate: batches 14 and 15 took the
+# directory from 311 to 398, past it by more than a quarter, and the suite
+# asked 398.
+#
+# **498 on 2026-10-10**, at batch 19's gate: batches 18 and 19 took the
+# directory from 398 to 498, past it by more than a quarter, and the suite
+# asked 498.
 constant LEAST: i64
-    181
+    498
 
 function run_all(scratch: str, compiler: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     found = cases.collect(scratch: scratch, dir: RUN_DIR)?
 
     floors.check(@r, label: "lines", found: found.len(), floor: LEAST, what: "cases in " + RUN_DIR)
-    emitted: i64 @ 0
+    skipped: i64 @= 0
 
     for item in found
-        said = shell.run(
-            scratch: scratch,
-            program: compiler,
-            words: [compiler, "build", item.source, "--emit-c"]
-        )
+        one_case(@r, @skipped, scratch: scratch, compiler: compiler, item: item)
 
-        if said.is_err() || said.must().code != 0
-            # A case this machine cannot emit (a missing library) is not
-            # evidence either way.
-            continue
-        emitted @ emitted + 1
-        wrong = offences(c: said.must().out, source: item.source)
-
-        if wrong.len() == 0
-            report.keep_pass(@r)
-        else
-            report.keep_failure(
-                @r,
-                label: "lines/" + item.name,
-                detail: "  " + wrong.len().to_str() + " generated line(s) point at a source line that is blank or absent — `#line` drifted, and a debugger will show the author a line they did not write:\n" + shown(wrong)
-            )
-
-    if emitted < LEAST
+    if starved(skipped: skipped, found: found.len())
         report.keep_failure(
             @r,
             label: "lines",
-            detail: "  only " + emitted.to_str() + " of " + found.len().to_str() + " cases emitted — this machine tested nothing"
+            detail: "  " + skipped.to_str() + " of " + found.len().to_str() + " cases were skipped for a missing library — this machine is not running the corpus"
         )
     return ok(r)
+
+# One case: its C emitted, then every `#line` claim in it asked of the
+# author's file.
+#
+# A case this machine cannot emit for a library it lacks is not evidence either
+# way, and a skip is not a pass: named, and counted for the caller's floor. It
+# is the machine's only where `absence.machine_lacks` says so, the case binding
+# what the compiler says is missing and the machine, asked, lacking it; until
+# defect 246 the compiler's words alone made the skip, and a compiler saying
+# `stdio.h` was missing on a Mac that has it read green here (measured
+# 2026-10-04: 268 passed, 0 failed over one such case, 269 and 0 without it).
+function one_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, item: cases.Case)
+    said = shell.run(
+        scratch: scratch,
+        program: compiler,
+        words: [compiler, "build", item.source, "--emit-c"]
+    )
+
+    # The refusal alone says what happened (defect 317): *the compiler never
+    # ran on* stood here before it, of a compiler that had run and written
+    # bytes that are not UTF-8.
+    if said.is_err()
+        report.keep_failure(
+            @r,
+            label: "lines/" + item.name,
+            detail: "  `build " + item.source + " --emit-c`: " + shell.refusal(said)
+        )
+        return
+
+    # A case whose one file `--emit-c` refuses (`ffi_one_file`, defect 453)
+    # is walked over the units `build` writes for it (`one_file_units`), every
+    # one: never passed over.
+    if said.must().code == 1 && one_file_units.refused_one_file(said.must().err)
+        units_walked(@r, scratch: scratch, compiler: compiler, item: item)
+        return
+
+    if said.must().code != 0
+        lacks = absence.machine_lacks(scratch: scratch, path: item.source, expected: "", said: said.must().err)
+
+        if !lacks.is_err()
+            skipped @ skipped + 1
+            report.keep_skip(@r, label: "lines/" + item.name, detail: "  " + lacks.must())
+            return
+        detail: str @= "  " + item.source + " did not emit (exit " + said.must().code.to_str() + "):\n    " + said.must().err
+        why = absence.refused(lacks)
+
+        if why.len() > 0
+            detail @ detail + "\n  not skipped for a missing library: " + why
+        report.keep_failure(@r, label: "lines/" + item.name, detail: detail)
+        return
+    wrong: [str] @= offences(c: said.must().out, source: item.source)
+
+    for one in entry_offences(c: said.must().out, source: item.source)
+        wrong @ wrong.push(one)
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "lines/" + item.name,
+        detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong: a generated line pointing at a source line that is blank or absent, a restore of the generated file not naming its own next line, or a function's entry off its `function` line — `#line` drifted, and a debugger or a clang note will show the author a line they did not write:\n" + shown(wrong)
+    )
+
+# Every `#line` claim of every unit `build` writes for a case, asked as the
+# one file's are; a function's entry is owed in one of them at least.
+function units_walked(@r: report.Report, scratch: str, compiler: str, item: cases.Case)
+    units = one_file_units.units_of(
+        scratch: scratch,
+        compiler: compiler,
+        source: item.source,
+        tag: item.name + "-lines"
+    )
+
+    if units.is_err()
+        report.keep_failure(
+            @r,
+            label: "lines/" + item.name,
+            detail: "  `--emit-c` refuses " + item.source + "'s one file, and its units could not be asked: " + unread_units(units)
+        )
+        return
+    wrong: [str] @= []
+    entries: i64 @= 0
+
+    for unit in units.must()
+        named = item.source + ", its unit " + unit.name
+
+        for one in offences(c: unit.text, source: named)
+            wrong @ wrong.push(one)
+
+        blind: bool @= false
+
+        for one in entry_offences(c: unit.text, source: named)
+            if strings.contains(text: one, needle: "no function's entry")
+                blind @ true
+            else
+                wrong @ wrong.push(one)
+
+        if !blind
+            entries @ entries + 1
+
+    if entries == 0
+        wrong @ wrong.push("    no unit of " + item.source + " holds a function's entry, so the walk asked nothing")
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "lines/" + item.name,
+        detail: "  " + wrong.len().to_str() + " `#line` claim(s) wrong in the units `build` writes for a program whose one file `--emit-c` refuses:\n" + shown(wrong)
+    )
+
+function unread_units(got: [one_file_units.Unit]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# A machine that skipped a third of the tree for libraries it lacks is not
+# running the corpus, whatever the rest read: the rule `run` and the golden
+# forms already hold (2026-10-02).
+function starved(skipped: i64, found: i64) -> bool
+    return skipped > 0 && skipped * 3 >= found
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
+# the compiler's words for the machine's. A header the machine has, said to be
+# missing, is judged and fails; a header no machine has, which the case binds,
+# is skipped by name.
+test "fixedbugs: a case that cannot emit is skipped only where the machine lacks what it binds"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = scratch + "/lines-absence"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
+    assert !has.is_err()
+    judged: report.Report @= report.empty()
+    none_skipped: i64 @= 0
+    one_case(
+        @judged,
+        @none_skipped,
+        scratch: scratch,
+        compiler: compiler.must(),
+        item: cases.Case(source: has.must(), expected: "", name: "has")
+    )
+    assert judged.failed == 1
+    assert none_skipped == 0
+    assert judged.skips.len() == 0
+    assert strings.contains(text: judged.failures[0], needle: "clang finds `stdio.h`")
+    lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
+    assert !lacks.is_err()
+    excused: report.Report @= report.empty()
+    one_skipped: i64 @= 0
+    one_case(
+        @excused,
+        @one_skipped,
+        scratch: scratch,
+        compiler: compiler.must(),
+        item: cases.Case(source: lacks.must(), expected: "", name: "lacks")
+    )
+    assert excused.failed == 0
+    assert one_skipped == 1
+    assert excused.skips.len() == 1
+    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP lines/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 453's widening in this suite, held as a test (2026-10-10): a program
+# whose one file `--emit-c` refuses is walked over the units `build` writes,
+# and reads as a pass, never a skip.
+test "fixedbugs: a case whose one file --emit-c refuses is walked over its units (defect 453)"
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        return
+    scratch = shell.own_scratch()
+    planted = one_file_units.planted_two_ways(scratch)
+    assert !planted.is_err()
+    judged: report.Report @= report.empty()
+    none_skipped: i64 @= 0
+    one_case(
+        @judged,
+        @none_skipped,
+        scratch: scratch,
+        compiler: compiler.must(),
+        item: cases.Case(source: planted.must(), expected: "", name: "two-ways")
+    )
+    assert judged.passed == 1
+    assert judged.failed == 0
+    assert none_skipped == 0
+    assert judged.skips.len() == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+test "a few skips for a missing library pass, a third of the tree does not"
+    assert !starved(skipped: 0, found: 235)
+    assert !starved(skipped: 4, found: 235)
+    assert !starved(skipped: 78, found: 235)
+    assert starved(skipped: 79, found: 235)
+    assert starved(skipped: 1, found: 3)
 
 # Walks emitted C the way C does — `#line N "f"` anchors the NEXT line,
 # then the count advances — and reports every claim that lands nowhere.
 function offences(c: str, source: str) -> [str]
-    found: [str] @ []
-    claim_file: str @ ""
-    claim_line: i64 @ 0
+    found: [str] @= []
+    claim_file: str @= ""
+    claim_line: i64 @= 0
 
     # A one-entry cache: a case's C alternates between `<heroes library>`
     # (skipped) and the case's own file, so one slot is enough and the
     # cost of a miss is one small file.
-    held: str @ ""
-    body: [str] @ []
-    readable: bool @ false
-    row_number: i64 @ 0
+    held: str @= ""
+    body: [str] @= []
+    readable: bool @= false
+    row_number: i64 @= 0
 
     for row in strings.lines(c)
         row_number @ row_number + 1
@@ -113,10 +343,23 @@ function offences(c: str, source: str) -> [str]
 
             if !space.is_err()
                 number = strings.to_number(rest.slice(from: 0, to: space.must()))
+                named = unquoted(rest.slice(from: space.must() + 1, to: rest.len()))
 
-                if !number.is_err()
+                if !number.is_err() && !named.is_err()
                     claim_line @ number.must()
-                    claim_file @ unquoted(rest.slice(from: space.must() + 1, to: rest.len()))
+                    claim_file @ named.must()
+                else if !number.is_err()
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " `" + strings.trimmed(row) + "` names no file this walk can read: " + unread(named) + " (from " + source + ")"
+                    )
+
+            # A restore of the generated file names the line after its own
+            # (defect 185): it is the printer's count, and a count it got
+            # wrong moves every line of C below it.
+            if generated_claim(claim_file) && claim_line != row_number + 1
+                found @ found.push(
+                    "    C:" + row_number.to_str() + " `" + strings.trimmed(row) + "` names line " + claim_line.to_str() + " of the generated file, and the line after it is " + (row_number + 1).to_str() + " (from " + source + ")"
+                )
             continue
 
         if claim_file.len() == 0
@@ -128,13 +371,21 @@ function offences(c: str, source: str) -> [str]
                 text = read_file(claim_file)
                 readable @ !text.is_err()
 
+                # **A claim on a file this walk cannot read is an offence,
+                # never a pass** (defect 297, 2026-10-04): it was passed over
+                # in silence, which is how a name read wrongly hid, since the
+                # file it misnamed is not there. Said once for each run of
+                # claims on the file.
                 if readable
                     body @ strings.lines(text.must())
                 else
                     body @ []
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " a claim names " + claim_file + ", which this walk cannot read, so no line of it is asked (from " + source + ")"
+                    )
 
             if readable
-                why: str @ ""
+                why: str @= ""
 
                 if claim_line < 1 || claim_line > body.len()
                     why @ "past the end (" + body.len().to_str() + " lines)"
@@ -149,6 +400,93 @@ function offences(c: str, source: str) -> [str]
 
     return found
 
+# THE ENTRY IS THE FUNCTION'S OWN LINE (defect 472, panel 200's R4,
+# 2026-10-10): a function's thread guard, prologue and jump to its first
+# block are one C line, the first after its `{` but for a guarded local's
+# `#define`, claimed by the line its signature is claimed by, so a `step`
+# into the function and a breakpoint on it stop on its `function` line. The
+# walk above asks only that a claim lands on a real line, which the
+# generated file's restore always did; this asks where the entry lands. A
+# case whose C holds no entry is an offence too: a walk that found nothing
+# to ask is blind, never green.
+function entry_offences(c: str, source: str) -> [str]
+    found: [str] @= []
+    file: str @= ""
+    line: i64 @= 0
+    signature_file: str @= ""
+    signature_line: i64 @= 0
+    first_file: str @= ""
+    first_line: i64 @= 0
+
+    # A signature was read and its entry is not found yet; `spread` counts
+    # the indented lines of C read since it that are not the entry's end.
+    pending: bool @= false
+    spread: i64 @= 0
+    entries: i64 @= 0
+    row_number: i64 @= 0
+
+    for row in strings.lines(c)
+        row_number @ row_number + 1
+
+        if strings.starts_with(text: row, prefix: "#line ")
+            rest = strings.without_prefix(text: row, prefix: "#line ")
+            space = strings.index_of(text: rest, needle: " ")
+            file @ ""
+            line @ 0
+
+            if !space.is_err()
+                number = strings.to_number(rest.slice(from: 0, to: space.must()))
+                named = unquoted(rest.slice(from: space.must() + 1, to: rest.len()))
+
+                if !number.is_err() && !named.is_err()
+                    line @ number.must()
+                    file @ named.must()
+            continue
+
+        if strings.starts_with(text: row, prefix: "#define ")
+            line @ line + 1
+            continue
+
+        if pending
+            if strings.ends_with(text: row, suffix: "goto bb0;")
+                entries @ entries + 1
+                pending @ false
+
+                if spread > 0
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " a function's entry is " + (spread + 1).to_str() + " lines of C, the first claimed by " + first_file + ":" + first_line.to_str() + ", where one line claimed by its signature's " + signature_file + ":" + signature_line.to_str() + " is owed (from " + source + ")"
+                    )
+                else if file != signature_file || line != signature_line
+                    found @ found.push(
+                        "    C:" + row_number.to_str() + " a function's entry is claimed by " + file + ":" + line.to_str() + ", and its signature by " + signature_file + ":" + signature_line.to_str() + " (from " + source + ")"
+                    )
+            else if row.len() > 0 && row[0] == 32
+                if spread == 0
+                    first_file @ file
+                    first_line @ line
+                spread @ spread + 1
+            else
+                pending @ false
+
+        if row.len() > 0 && row[0] != 32 && strings.ends_with(text: row, suffix: ") {")
+            pending @ true
+            spread @ 0
+            signature_file @ file
+            signature_line @ line
+        line @ line + 1
+
+    if entries == 0
+        found @ found.push(
+            "    no function's entry, a line ending `goto bb0;` after a signature's `{`, was found in the C of " + source + ", so the walk asked nothing"
+        )
+    return found
+
+# Whether a claim names the generated file: a name, neither the author's
+# `.hero` file nor the library. An empty name is a directive this walk could
+# not read, and claims nothing.
+function generated_claim(file: str) -> bool
+    return file.len() > 0 && !strings.ends_with(text: file, suffix: ".hero") && file != LIBRARY_FILE
+
 # The first three offences and a count of the rest: a drifted `#line`
 # repeats, and five hundred of them in one message is a message nobody
 # reads.
@@ -157,36 +495,77 @@ function shown(wrong: [str]) -> str
         return wrong.join("\n")
     return wrong.slice(from: 0, to: 3).join("\n") + "\n    … and " + (wrong.len() - 3).to_str() + " more"
 
-# `"file.hero"` as `file.hero`, with C's two escapes undone.
+# `"file.hero"` as `file.hero`, each escape the emitter writes in a `#line`
+# name undone: `\"`, `\\`, `\n`, `\r` and `\?` (`selfhost/emit/c_text.hero`'s
+# `line_name`). Any other escape, and a backslash that ends the name, is no
+# name this walk can read, and says so.
+#
+# **It undid two until defect 297 (2026-10-04)**, by dropping the backslash
+# and keeping the byte after it, so `\n` read as `n` and a name holding a line
+# end named another file; since defect 240 the emitter writes three more, and
+# before it an octal escape for each byte above ASCII, read as its digits.
 #
 # **Cut beside a backslash and nowhere else** (found beside defect 110,
 # 2026-09-27): this copied the name a byte at a time, and the emitter writes
 # a path's own bytes into `#line`, so the first file named above ASCII would
 # have stopped the suite with `string slice splits a character`. A backslash
-# is one byte never inside another character; dropping it leaves the byte it
-# escapes at the head of the next run, whatever character that byte starts.
-function unquoted(text: str) -> str
-    body: str @ strings.trimmed(text)
+# and every byte it escapes are ASCII, never inside another character.
+function unquoted(text: str) -> str?
+    body: str @= strings.trimmed(text)
 
     if body.len() >= 2 && body[0] == 34 && body[body.len() - 1] == 34
         body @ body.slice(from: 1, to: body.len() - 1)
-    parts: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    parts: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < body.len()
-        if body[i] == 92 && i + 1 < body.len()
+        if body[i] == 92
+            if i + 1 == body.len()
+                return fail(code: "escape", msg: "`" + body + "` ends with a backslash")
+            meant = undone(body[i + 1])
+
+            if meant.is_err()
+                return fail(
+                    code: "escape",
+                    msg: "`" + body + "` holds an escape at byte " + i.to_str() + " that the emitter does not write"
+                )
             parts @ parts.push(body.slice(from: start, to: i))
-            start @ i + 1
+            parts @ parts.push(meant.must())
+            start @ i + 2
             i @ i + 2
         else
             i @ i + 1
 
     parts @ parts.push(body.slice(from: start, to: body.len()))
-    return parts.join("")
+    return ok(parts.join(""))
+
+# The byte one escape of `line_name` stands for, after its backslash.
+function undone(byte: u8) -> str?
+    if byte == 34
+        return ok("\"")
+
+    if byte == 92
+        return ok("\\")
+
+    if byte == 110
+        return ok("\n")
+
+    if byte == 114
+        return ok("\r")
+
+    if byte == 63
+        return ok("?")
+    return fail(code: "escape", msg: "no escape of `line_name`")
+
+# Why a `#line` name could not be read, for its offence.
+function unread(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
 
 test "a claim that lands on a real line is no offence, and the two bad shapes are"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/lines"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -204,9 +583,10 @@ test "a claim that lands on a real line is no offence, and the two bad shapes ar
     past = "#line 9 " + quoted(tree + "/s.hero") + "\nint x;\n"
     assert offences(c: past, source: "t").len() == 1
     assert strings.contains(text: offences(c: past, source: "t")[0], needle: "past the end")
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the count advances after the anchor, which is the defect this exists for"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/lines"
     assert !shell.mkdir_all(tree).is_err()
     assert !write_file(path: tree + "/s.hero", text: "function main()\n\n    print(1)\n").is_err()
@@ -217,19 +597,90 @@ test "the count advances after the anchor, which is the defect this exists for"
     drifting = "#line 1 " + quoted(tree + "/s.hero") + "\nint a;\nint b;\n"
     assert offences(c: drifting, source: "t").len() == 1
     assert strings.contains(text: offences(c: drifting, source: "t")[0], needle: ":2 is a blank line")
+    assert !shell.remove_tree(scratch).is_err()
 
-test "a name that is not a .hero file is nobody's line"
+test "the library is nobody's line"
     assert offences(c: "#line 400 \"<heroes library>\"\nint x;\n", source: "t").len() == 0
     assert offences(c: "int x;\n", source: "t").len() == 0
 
+test "a restore of the generated file names its own next line, and one short is an offence"
+    # Defect 185's shape: the second row is one line of C to the printer and
+    # two to C, so the restore on row 4 names line 4 where the next is 5.
+    good = "int a;\n#line 3 \"m.c\"\nint b;\n"
+    assert offences(c: good, source: "t").len() == 0
+    short = "int a;\nint b;\nint c;\n#line 4 \"m.c\"\nint d;\n"
+    assert offences(c: short, source: "t").len() == 1
+    assert strings.contains(
+        text: offences(c: short, source: "t")[0],
+        needle: "names line 4 of the generated file, and the line after it is 5"
+    )
+
+    # A claim the walk cannot read names no file, so it is no restore.
+    assert offences(c: "#line x \"m.c\"\nint a;\n", source: "t").len() == 0
+    assert !generated_claim("")
+    assert !generated_claim("<heroes library>")
+    assert !generated_claim("a/b.hero")
+    assert generated_claim("m.c")
+
+test "a function's entry is claimed by its signature's line, and an entry under the generated file is an offence (defect 472)"
+    good = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"a.hero\"\n    int64_t t1; goto bb0;\n#line 3 \"a.hero\"\nbb0:\n"
+    assert entry_offences(c: good, source: "t").len() == 0
+    guarded = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"a.hero\"\n#define h1_x (*p)\n#line 3 \"a.hero\"\n    int64_t *const p = 0; goto bb0;\n"
+    assert entry_offences(c: guarded, source: "t").len() == 0
+    generated = "#line 3 \"a.hero\"\nint64_t f(void) {\n#line 3 \"m.c\"\n    int64_t t1;\n    goto bb0;\n"
+    spread = entry_offences(c: generated, source: "t")
+    assert spread.len() == 1
+    assert strings.contains(
+        text: spread[0],
+        needle: "entry is 2 lines of C, the first claimed by m.c:3, where one line claimed by its signature's a.hero:3 is owed"
+    )
+    accessor = "#line 3 \"a.hero\"\nint64_t f(void) {\n    return X;\n}\n" + good
+    assert entry_offences(c: accessor, source: "t").len() == 0
+    drifted = "#line 3 \"a.hero\"\nint64_t f(void) {\n    int64_t t1; goto bb0;\n"
+    found = entry_offences(c: drifted, source: "t")
+    assert found.len() == 1
+    assert strings.contains(text: found[0], needle: "claimed by a.hero:4, and its signature by a.hero:3")
+    assert strings.contains(text: entry_offences(c: "int x;\n", source: "t")[0], needle: "so the walk asked nothing")
+
 test "unquoted undoes C's escapes"
-    assert unquoted("\"a.hero\"") == "a.hero"
-    assert unquoted(" \"a.hero\" ") == "a.hero"
-    assert unquoted("\"a\\\\b.hero\"") == "a\\b.hero"
-    assert unquoted("\"a\\\"b.hero\"") == "a\"b.hero"
-    assert unquoted("\"café/é€😀.hero\"") == "café/é€😀.hero"
-    assert unquoted("\"é\\\\😀\\\"€\"") == "é\\😀\"€"
-    assert unquoted("\"\"") == ""
+    assert unquoted("\"a.hero\"").must() == "a.hero"
+    assert unquoted(" \"a.hero\" ").must() == "a.hero"
+    assert unquoted("\"a\\\\b.hero\"").must() == "a\\b.hero"
+    assert unquoted("\"a\\\"b.hero\"").must() == "a\"b.hero"
+    assert unquoted("\"café/é€😀.hero\"").must() == "café/é€😀.hero"
+    assert unquoted("\"é\\\\😀\\\"€\"").must() == "é\\😀\"€"
+    assert unquoted("\"\"").must() == ""
+
+# DEFECT 297, held as a test (2026-10-04). A `#line` name is read with the
+# five escapes `line_name` writes undone, so a name holding a line end, a
+# return or a `?` before a trigraph names its own file; any other escape and
+# a backslash ending the name are offences rather than another file's name;
+# and a claim on a file the walk cannot read is an offence, where it was
+# passed over in silence, which is how the old reading's wrong names hid.
+test "fixedbugs: a #line name is read with every escape the emitter writes, and one it cannot read is told (defect 297)"
+    assert unquoted("\"a\\nb.hero\"").must() == "a\nb.hero"
+    assert unquoted("\"a\\rb.hero\"").must() == "a\rb.hero"
+    assert unquoted("\"a?\\?).hero\"").must() == "a??).hero"
+    assert unquoted("\"a\\\\nb.hero\"").must() == "a\\nb.hero"
+    assert unquoted("\"a\\tb.hero\"").is_err()
+    assert unquoted("\"caf\\303\\251.hero\"").is_err()
+    assert unquoted("\"ab\\\"").is_err()
+    scratch = shell.own_scratch()
+
+    # A file named with a line end exists where the platform allows one: there
+    # the claim is asked of that file, and its blank second line is found.
+    if shell.can_run_scripts()
+        assert !write_file(path: scratch + "/a\nb.hero", text: "function main()\n\n    print(1)\n").is_err()
+        found = offences(c: "#line 2 \"" + scratch + "/a\\nb.hero\"\nint x;\n", source: "t")
+        assert found.len() == 1
+        assert strings.contains(text: found[0], needle: ":2 is a blank line")
+    unwritten = offences(c: "#line 1 \"caf\\303\\251.hero\"\nint x;\n", source: "t")
+    assert unwritten.len() == 1
+    assert strings.contains(text: unwritten[0], needle: "names no file this walk can read")
+    gone = offences(c: "#line 1 \"" + scratch + "/gone.hero\"\nint x;\n", source: "t")
+    assert gone.len() == 1
+    assert strings.contains(text: gone[0], needle: "/gone.hero, which this walk cannot read")
+    assert !shell.remove_tree(scratch).is_err()
 
 function quoted(path: str) -> str
     return "\"" + path + "\""

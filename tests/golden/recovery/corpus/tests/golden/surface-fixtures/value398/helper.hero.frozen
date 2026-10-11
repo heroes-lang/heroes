@@ -1,0 +1,4 @@
+# Defect 398's shape across a module (lane b13-unit, 2026-10-06): the
+# function with an `@` parameter that `main.hero` names qualified, as a value.
+function bump(@n: i64)
+    n @ n + 1

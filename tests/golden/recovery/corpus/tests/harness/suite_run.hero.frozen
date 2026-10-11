@@ -1,8 +1,8 @@
-# tests/golden/run/ — every program, three configurations, one
-# expectation.
+# tests/golden/run/ — every program, five configurations (four off Darwin),
+# one expectation.
 #
 # Port of golden_run_cases_produce_their_output_at_both_optimisation
-# _levels (archive/bootstrap-rs/heroes-cli/tests/golden.rs:707). The three
+# _levels (archive/bootstrap-rs/heroes-cli/tests/golden.rs:707). The
 # configurations are the test, and each one exists for a measured reason:
 #
 # -O0        `build -o <binary>`, then the harness runs the binary
@@ -25,6 +25,18 @@
 #            adds is use-after-free and double-free, which is what
 #            reference counting gets wrong.
 #
+# And two more since 2026-10-07, each for a fault the three above pass:
+#
+# --sanitize -O0  the sanitiser again at `-O0` (defect 390): at `-O2`
+#            clang may fold a C write past an object into nothing ASan
+#            checks, and `-O0` catches it. Both sanitised runs are handed
+#            ASan's fill (`freed_bytes.hero`, defect 321), so a C library
+#            reading bytes already freed reads the fill and the answer
+#            moves, where ASan alone keeps them intact and says nothing.
+# Guard Malloc  the `-O0` binary again under Darwin's `libgmalloc`, where
+#            a read of freed bytes faults where it is made (defect 321);
+#            on Darwin only, and a Darwin without it is a failure.
+#
 # A sanitiser's own words are checked separately from the expectation:
 # ASan and UBSan report on stderr and can leave the exit status alone, so
 # a program can print exactly the right thing while UBSan is saying
@@ -35,8 +47,10 @@
 # would be the defect. `expectation.hero` carries the reasoning and the
 # two things the line does not do.
 
+use absence
 use cases
 use expectation
+use freed_bytes
 use report
 use shell
 use strings
@@ -49,11 +63,12 @@ constant RUN_DIR: str
 constant LEAST: i64
     87
 
-# `only` narrows the suite to the cases whose name holds it (cases.matching);
-# a narrowed run is not the whole suite, so its floor is not asked.
+# `only` narrows the suite to the cases whose name holds it, or to a shard of
+# them, `<i>/<n>` (cases.selected, defect 537); a narrowed run is not the whole
+# suite, so its floor is not asked, and a shard's skip ratio is not either.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
-    found = cases.matching(found: cases.collect(scratch: scratch, dir: RUN_DIR)?, only: only)
-    r: report.Report @ report.empty()
+    found = cases.selected(found: cases.collect(scratch: scratch, dir: RUN_DIR)?, only: only)
+    r: report.Report @= report.empty()
 
     if only == "" && found.len() < LEAST
         report.keep_failure(
@@ -63,7 +78,16 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         )
     binaries = scratch + "/binaries"
     shell.mkdir_all(binaries)?
-    skipped: i64 @ 0
+
+    # A Darwin without Guard Malloc runs no leg that sees a C library read
+    # freed bytes, said once here; elsewhere the fill is that leg's only half.
+    match freed_bytes.guard_malloc()
+        .ok => _ = 0
+        .err e =>
+            if e.code != "not_darwin"
+                report.keep_failure(@r, label: "run under Guard Malloc", detail: "  " + e.msg)
+
+    skipped: i64 @= 0
 
     for item in found
         text = read_file(item.expected)
@@ -92,8 +116,12 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
                 if took
                     skipped @ skipped + 1
 
-    # A skip is not a pass — the same floor the unsupported leg carries.
-    if skipped > 0 && skipped * 3 >= found.len()
+    # A skip is not a pass — the same floor the unsupported leg carries. It is
+    # the whole suite's question, asked of a filter's cases as it always was and
+    # of no shard (defect 537): a shard of one in six holding the suite's one
+    # skipped case is not a machine that runs no corpus, and the shards' skips
+    # are summed by whoever split the suite (the gate's script).
+    if skipped > 0 && skipped * 3 >= found.len() && !cases.is_shard(only)
         report.keep_failure(
             @r,
             label: "run",
@@ -101,7 +129,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
         )
     return ok(r)
 
-# One case through the three configurations. Answers whether it was
+# One case through every configuration. Answers whether it was
 # SKIPPED, so the caller can floor the skips; a failure is recorded on
 # the spot and stops this case, because the second configuration's
 # verdict on a program that did not build says nothing.
@@ -120,45 +148,119 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
     # could not run while the branch BELOW reported `did not build (exit -1)` —
     # a number no process produced. `shell.run` now refuses a non-start, so the
     # two are separated by construction and the operating system's own reason
-    # rides in the message.
+    # rides in the message. **And only the refusal says what happened**
+    # (defect 317, 2026-10-04): this line said *the compiler never ran on* of a
+    # compiler that had run and written bytes that are not UTF-8.
     if built.is_err()
         report.keep_failure(
             @r,
             label: "run/" + item.name,
-            detail: "  the compiler never ran on " + item.source + ":\n    " + shell.refusal(built)
+            detail: "  `build " + item.source + "`: " + shell.refusal(built)
         )
         return false
 
     # The machine's own answer, before the case's: a runner with no
-    # pkg-config was never given raylib, and that is nobody's defect.
-    if shell.machine_lacks_the_library(built.must().err)
-        return true
-
+    # pkg-config was never given raylib, and that is nobody's defect. It is
+    # the machine's only where the case binds what the compiler says is
+    # missing and the machine, asked, lacks it (`absence.machine_lacks`); until
+    # defect 246 the compiler's words alone made the skip, before even its
+    # exit code was read.
     if built.must().code != 0
-        report.keep_failure(
-            @r,
-            label: "run/" + item.name,
-            detail: "  did not build (exit " + built.must().code.to_str() + "):\n" + built.must().err
-        )
+        lacks = absence.machine_lacks(scratch: scratch, path: item.source, expected: "", said: built.must().err)
+
+        if !lacks.is_err()
+            report.keep_skip(@r, label: "run/" + item.name, detail: "  " + lacks.must())
+            return true
+        detail: str @= "  did not build (exit " + built.must().code.to_str() + "):\n" + built.must().err
+        why = absence.refused(lacks)
+
+        if why.len() > 0
+            detail @ detail + "\n  not skipped for a missing library: " + why
+        report.keep_failure(@r, label: "run/" + item.name, detail: detail)
         return false
 
     at_o0 = shell.run(scratch: scratch, program: binary, words: [binary])
 
     if judged(@r, item: item, level: "-O0", want: want, said: at_o0)
         return false
+
+    if guard_malloc_failed(@r, scratch: scratch, item: item, want: want, binary: binary)
+        return false
     at_o2 = shell.run(scratch: scratch, program: compiler, words: [compiler, "run", item.source])
 
     if judged(@r, item: item, level: "-O2", want: want, said: at_o2)
         return false
-    sanitised = shell.run(
-        scratch: scratch,
-        program: compiler,
-        words: [compiler, "run", item.source, "--sanitize"]
+
+    # **The sanitiser at both levels** (defect 390): `run --sanitize` builds at
+    # `-O2`, where clang may fold a C write past an object into nothing ASan
+    # checks; measured 2026-10-07, `memset` eight bytes past a record's last
+    # field, in a header's `static inline`: `--sanitize` exit 0 and silent,
+    # `--sanitize -O0` *stack-buffer-overflow*. The `-O0` build is not a
+    # flag of its own: `-O0` and `--sanitize` compose (cli-surface.md, the
+    # stopping rule).
+    for flags in [["--sanitize"], ["--sanitize", "-O0"]]
+        if sanitised_failed(@r, scratch: scratch, compiler: compiler, item: item, want: want, flags: flags)
+            return false
+
+    if tested_failed(@r, scratch: scratch, compiler: compiler, item: item)
+        return false
+
+    report.keep_pass(@r)
+    return false
+
+# **`heroes test` where the case holds tests** (defect 560, 2026-10-10):
+# until then `test` compiled the whole program as one unit, so a program of
+# two modules whose headers each define a `static inline twice` built and
+# printed `6 8` while `test` refused it, and a test asserting what `build`
+# computes failed under `test` alone. A case whose program holds a `test`
+# block is asked `heroes test` too, and every test must pass. Answers
+# whether it FAILED, the failure recorded.
+function tested_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case) -> bool
+    text = read_file(item.source)
+
+    if text.is_err() || !strings.starts_with(text: text.must(), prefix: "test \"") && !strings.contains(text: text.must(), needle: "\ntest \"")
+        return false
+    said = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", item.source])
+
+    if said.is_err()
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name + " under test",
+            detail: "  `test " + item.source + "`: " + shell.refusal(said)
+        )
+        return true
+
+    if said.must().code == 0
+        return false
+    report.keep_failure(
+        @r,
+        label: "run/" + item.name + " under test",
+        detail: "  `test " + item.source + "` exited " + said.must().code.to_str() + ":\n" + said.must().out + said.must().err
     )
+    return true
+
+# One sanitised configuration, `run <case> <flags>` with the fill handed to
+# the program (`freed_bytes.filled`, defect 321): what ASan frees is
+# overwritten, so a C library reading freed bytes reads the fill and the
+# program's answer moves, where ASan alone keeps them and says nothing.
+# Answers whether it FAILED, the failure recorded.
+function sanitised_failed(@r: report.Report, scratch: str, compiler: str, item: cases.Case, want: expectation.Expectation, flags: [str]) -> bool
+    level = flags.join(" ")
+    words: [str] @= [compiler, "run", item.source]
+
+    for flag in flags
+        words @ words.push(flag)
+
+    words @ freed_bytes.filled(words)
+    sanitised = shell.run(scratch: scratch, program: words[0], words: words)
 
     if sanitised.is_err()
-        report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot run the compiler on " + item.source)
-        return false
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name + " at " + level,
+            detail: "  `run " + item.source + " " + level + "`: " + shell.refusal(sanitised)
+        )
+        return true
 
     # **A CASE MAY DECLARE THAT THE SANITISER SPEAKS** (panel 173): its
     # `.expected` carries `!sanitizer: <needle>`, and then the report is the
@@ -169,35 +271,69 @@ function one_case(scratch: str, compiler: str, binaries: str, item: cases.Case, 
     # `tripped a sanitiser`, whatever the `.expected` says.
     #
     # The waiver and the assertion are one line on purpose: a case that stops
-    # provoking the sanitiser goes red. And the ending is still judged at `-O0`
-    # and `-O2` above, so the runtime's own report stays pinned where it prints.
+    # provoking the sanitiser goes red, at either level. And the ending is
+    # still judged at `-O0` and `-O2` above, so the runtime's own report stays
+    # pinned where it prints.
     if !want.sanitizer.is_err()
         missing = expectation.sanitizer_unmet(want, err: sanitised.must().err)
 
         if !missing.is_err()
             report.keep_failure(
                 @r,
-                label: "run/" + item.name + " at --sanitize",
+                label: "run/" + item.name + " at " + level,
                 detail: "  " + item.source + " " + missing.must()
             )
-            return false
-        report.keep_pass(@r)
+            return true
         return false
 
     if strings.contains(text: sanitised.must().err, needle: "AddressSanitizer") || strings.contains(text: sanitised.must().err, needle: "runtime error:")
-        report.keep_failure(@r, label: "run/" + item.name, detail: "  tripped a sanitiser:\n" + sanitised.must().err)
-        return false
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name + " at " + level,
+            detail: "  tripped a sanitiser:\n" + sanitised.must().err
+        )
+        return true
+    return judged(@r, item: item, level: level, want: want, said: sanitised)
 
-    if judged(@r, item: item, level: "--sanitize", want: want, said: sanitised)
+# The `-O0` binary again under Guard Malloc, where this is Darwin (defect
+# 321, `freed_bytes`): every block on a page of its own and a freed one gone,
+# so a read of freed bytes faults where C makes it. Its own messages are
+# kept in a file beside the binary and told with a failure. A case that
+# declares the sanitiser's report is a program C corrupts on purpose, judged
+# by the sanitiser and by the runtime's own report at `-O0` and `-O2`; this
+# leg is not asked of it. Answers whether it FAILED.
+function guard_malloc_failed(@r: report.Report, scratch: str, item: cases.Case, want: expectation.Expectation, binary: str) -> bool
+    library = freed_bytes.guard_malloc()
+
+    if library.is_err() || !want.sanitizer.is_err()
         return false
-    report.keep_pass(@r)
-    return false
+    log = binary + ".gmalloc.txt"
+    words = freed_bytes.guarded(binary: binary, library: library.must(), log: log)
+    said = shell.run(scratch: scratch, program: words[0], words: words)
+
+    if said.is_err()
+        report.keep_failure(
+            @r,
+            label: "run/" + item.name + " at -O0 under Guard Malloc",
+            detail: "  " + shell.refusal(said)
+        )
+        return true
+    wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
+
+    if wrong.is_err()
+        return false
+    report.keep_failure(
+        @r,
+        label: "run/" + item.name + " at -O0 under Guard Malloc",
+        detail: "  " + item.source + " " + wrong.must() + "\n  Guard Malloc said:\n" + read_file(log).default("  (nothing)")
+    )
+    return true
 
 # One configuration against the expectation. Answers whether it FAILED,
 # so the caller stops asking about this case.
 function judged(@r: report.Report, item: cases.Case, level: str, want: expectation.Expectation, said: shell.Run?) -> bool
     if said.is_err()
-        report.keep_failure(@r, label: "run/" + item.name, detail: "  cannot execute the case at " + level)
+        report.keep_failure(@r, label: "run/" + item.name + " at " + level, detail: "  " + shell.refusal(said))
         return true
     wrong = expectation.unmet(want, out: said.must().out, err: said.must().err, code: said.must().code)
 
@@ -206,8 +342,95 @@ function judged(@r: report.Report, item: cases.Case, level: str, want: expectati
     report.keep_failure(@r, label: "run/" + item.name + " at " + level, detail: "  " + item.source + " " + wrong.must())
     return true
 
+# DEFECT 317 at the programs (2026-10-04): a program that writes a byte that is
+# not UTF-8 RAN, and its case fails in the refusal's words at the level it ran
+# at, where it said *cannot execute the case at -O0*. The byte comes through C,
+# since no Heroes literal can spell it.
+test "fixedbugs: a program that writes bytes that are not UTF-8 is told as one that ran (defect 317)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/run-317"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    binaries = scratch + "/binaries-317"
+    assert !shell.mkdir_all(binaries).is_err()
+    program = "extern \"stdio.h\"\n    function putchar(c: i32) -> i32\n\nfunction main()\n    _ = putchar(c: 99)\n    _ = putchar(c: 233)\n    _ = putchar(c: 10)\n"
+    assert !write_file(path: tree + "/latin.hero", text: program).is_err()
+    assert !write_file(path: tree + "/latin.expected", text: "c?\n").is_err()
+    item = cases.Case(source: tree + "/latin.hero", expected: tree + "/latin.expected", name: "latin")
+    got: report.Report @= report.empty()
+    want = expectation.split("c?\n").must()
+    _ = one_case(
+        scratch: scratch,
+        compiler: shell.some_compiler().must(),
+        binaries: binaries,
+        item: item,
+        want: want,
+        r: @got
+    )
+    assert got.failed == 1
+    assert strings.starts_with(text: got.failures[0], prefix: "FAIL run/latin at -O0\n")
+    assert strings.contains(text: got.failures[0], needle: "ran and exited 0, and what it wrote is not UTF-8")
+    assert strings.contains(text: got.failures[0], needle: "on stdout 1 byte is not, in `c<0xE9>`")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 390's control (2026-10-07): a C library writing eight bytes past a
+# record's last field, its `memset` named past the header's fortified macro,
+# as a library compiled apart calls it, so `-O2` sets no trap of its own. The
+# sanitiser at `-O0` names the overflow on every platform. What the other
+# legs make of it is the platform's: on Darwin and Linux the plain runs and
+# the sanitiser at `-O2` pass it, and on Windows the plain `-O0` run falls
+# first, exit 139, with the sanitiser at `-O2` naming it too (defect 505,
+# the CI's Windows leg after batch 14's push). The same call writing the
+# field alone passes every leg, so what the leg sees is the write past it.
+constant SPILL_H: str
+    "#include <stdint.h>\n#include <string.h>\nstatic inline void spill_n(int64_t *out, int64_t n) { (memset)(out, 0x41, (size_t)n); }\n"
+
+function spilling(bytes: i64) -> str
+    return "extern \"spill.h\"\n    function spill_n(@out: i64, n: i64)\n\nrecord Pair\n    a: i64\n    b: i64\n\nfunction main()\n    o: Pair @= Pair(a: 0, b: 0)\n    spill_n(out: @o.b, n: " + bytes.to_str() + ")\n    print(o.a)\n    print(\"done\")\n"
+
+# The sanitiser at `-O0` is asked ALONE, built and run as `one_case` runs it
+# (`sanitised_failed`), and so is the control: whether that leg sees the write
+# is that leg's verdict, never the order of the legs before it. Until defect
+# 505 the case read the first failure of the whole case and asserted it was
+# that leg's, which held where every leg before it passes the program, Darwin
+# and Linux, and failed on Windows, where the plain `-O0` run falls first.
+test "fixedbugs: a C write past a field is seen by the sanitiser at -O0, asked of that leg alone (defects 390 and 505)"
+    scratch = shell.own_scratch()
+    tree = scratch + "/run-390"
+    assert !shell.mkdir_all(tree).is_err()
+    binaries = scratch + "/binaries-390"
+    assert !shell.mkdir_all(binaries).is_err()
+    assert !write_file(path: tree + "/spill.h", text: SPILL_H).is_err()
+    assert !write_file(path: tree + "/over.hero", text: spilling(16)).is_err()
+    assert !write_file(path: tree + "/exact.hero", text: spilling(8)).is_err()
+    want = expectation.split("0\ndone\n").must()
+    compiler = shell.some_compiler().must()
+    over_case = cases.Case(source: tree + "/over.hero", expected: "", name: "over")
+    exact_case = cases.Case(source: tree + "/exact.hero", expected: "", name: "exact")
+    leg = ["--sanitize", "-O0"]
+    seen: report.Report @= report.empty()
+    assert sanitised_failed(@seen, scratch: scratch, compiler: compiler, item: over_case, want: want, flags: leg)
+    assert seen.failed == 1
+    assert strings.starts_with(text: seen.failures[0], prefix: "FAIL run/over at --sanitize -O0\n")
+    assert strings.contains(text: seen.failures[0], needle: "stack-buffer-overflow")
+    unseen: report.Report @= report.empty()
+    assert !sanitised_failed(@unseen, scratch: scratch, compiler: compiler, item: exact_case, want: want, flags: leg)
+    assert unseen.failed == 0
+
+    # The whole case fails at some leg on every platform, whichever falls
+    # first, and its control passes them all.
+    over: report.Report @= report.empty()
+    _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: over_case, want: want, r: @over)
+    assert over.failed == 1
+    assert over.passed == 0
+    exact: report.Report @= report.empty()
+    _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: exact_case, want: want, r: @exact)
+    assert exact.failed == 0
+    assert exact.passed == 1
+    assert !shell.remove_tree(scratch).is_err()
+
 test "the run suite passes a matching program and catches each way one can fail"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/run"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
@@ -220,17 +443,17 @@ test "the run suite passes a matching program and catches each way one can fail"
     assert !write_file(path: tree + "/x.hero", text: "function main()\n    print(7)\n").is_err()
     assert !write_file(path: tree + "/x.expected", text: "7\n").is_err()
     item = cases.Case(source: tree + "/x.hero", expected: tree + "/x.expected", name: "x")
-    compiler = shell.some_compiler()
+    compiler = shell.some_compiler().must()
     assert compiler.len() > 0
 
-    green: report.Report @ report.empty()
+    green: report.Report @= report.empty()
     match_want = expectation.split("7\n").must()
     _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: match_want, r: @green)
     assert green.passed == 1
     assert green.failed == 0
 
     # The wrong output.
-    red: report.Report @ report.empty()
+    red: report.Report @= report.empty()
     other = expectation.split("8\n").must()
     _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: other, r: @red)
     assert red.passed == 0
@@ -238,24 +461,25 @@ test "the run suite passes a matching program and catches each way one can fail"
 
     # An expectation that demands an abort from a program that ends
     # cleanly: the shape §4.14 cares about, in reverse.
-    quiet: report.Report @ report.empty()
+    quiet: report.Report @= report.empty()
     aborting = expectation.split("7\n!panic: overflow\n").must()
     _ = one_case(scratch: scratch, compiler: compiler, binaries: binaries, item: item, want: aborting, r: @quiet)
     assert quiet.passed == 0
     assert quiet.failed == 1
+    assert !shell.remove_tree(scratch).is_err()
 
 test "a program that does not build is a failure naming clang's words"
-    scratch = "build/harness-selftest"
+    scratch = shell.own_scratch()
     tree = scratch + "/run-broken"
     assert !shell.remove_tree(tree).is_err()
     assert !shell.mkdir_all(tree).is_err()
     assert !write_file(path: tree + "/b.hero", text: "function main()\n    print(nope)\n").is_err()
     assert !write_file(path: tree + "/b.expected", text: "\n").is_err()
     item = cases.Case(source: tree + "/b.hero", expected: tree + "/b.expected", name: "b")
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
     _ = one_case(
         scratch: scratch,
-        compiler: shell.some_compiler(),
+        compiler: shell.some_compiler().must(),
         binaries: scratch + "/binaries",
         item: item,
         want: expectation.split("").must(),
@@ -263,3 +487,50 @@ test "a program that does not build is a failure naming clang's words"
     )
     assert r.failed == 1
     assert strings.contains(text: r.failures[0], needle: "did not build")
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 246's cause in this suite, held as a test (2026-10-04): the skip took
+# the compiler's words for the machine's, before even reading its exit code. A
+# header the machine has, said to be missing, is judged and fails; a header no
+# machine has, which the case binds, is skipped by name.
+test "fixedbugs: a program that does not build is skipped only where the machine lacks what it binds"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    tree = scratch + "/run-absence"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    compiler = absence.said_stub(scratch)
+    assert !compiler.is_err()
+    want = expectation.split("7\n").must()
+    has = absence.planted_case(dir: tree, name: "has", bound: "stdio.h", missing: "stdio.h")
+    assert !has.is_err()
+    refuted: report.Report @= report.empty()
+    took = one_case(
+        scratch: scratch,
+        compiler: compiler.must(),
+        binaries: scratch + "/binaries",
+        item: cases.Case(source: has.must(), expected: "", name: "has"),
+        want: want,
+        r: @refuted
+    )
+    assert !took
+    assert refuted.failed == 1
+    assert refuted.skips.len() == 0
+    assert strings.contains(text: refuted.failures[0], needle: "clang finds `stdio.h`")
+    lacks = absence.planted_case(dir: tree, name: "lacks", bound: absence.NOWHERE, missing: absence.NOWHERE)
+    assert !lacks.is_err()
+    excused: report.Report @= report.empty()
+    skipped = one_case(
+        scratch: scratch,
+        compiler: compiler.must(),
+        binaries: scratch + "/binaries",
+        item: cases.Case(source: lacks.must(), expected: "", name: "lacks"),
+        want: want,
+        r: @excused
+    )
+    assert skipped
+    assert excused.failed == 0
+    assert excused.skips.len() == 1
+    assert strings.starts_with(text: excused.skips[0], prefix: "SKIP run/lacks\n")
+    assert !shell.remove_tree(scratch).is_err()

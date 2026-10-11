@@ -1,0 +1,12 @@
+extern "u.h"
+    record P
+        a: i32
+        b: i32
+    record WP
+        p: P
+        i: i32
+    function make_wp() -> WP
+
+function main()
+    w = make_wp()
+    print(w.i)

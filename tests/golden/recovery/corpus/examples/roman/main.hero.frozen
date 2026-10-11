@@ -34,9 +34,9 @@ function to_roman(value: i64) -> str?
 
     if value > LARGEST
         return fail(code: "out_of_range", msg: "the Romans wrote nothing standard above MMMCMXCIX")
-    out: str @ ""
-    left: i64 @ value
-    at: i64 @ 0
+    out: str @= ""
+    left: i64 @= value
+    at: i64 @= 0
     all_values = values()
     all_letters = letters()
 
@@ -68,13 +68,13 @@ function value_of_letter(letter: str) -> i64?
 function from_roman(text: str) -> i64?
     if text.len() == 0
         return fail(code: "empty", msg: "there is no numeral in an empty string")
-    total: i64 @ 0
-    previous: i64 @ 0
+    total: i64 @= 0
+    previous: i64 @= 0
 
     # Walked backwards, so "the one after it" is the one already seen. The
     # forward version needs a lookahead and gets the last letter wrong.
     letters_here = characters(text)
-    i: i64 @ letters_here.len() - 1
+    i: i64 @= letters_here.len() - 1
 
     while i >= 0
         here = value_of_letter(letters_here[i])?
@@ -89,7 +89,7 @@ function from_roman(text: str) -> i64?
     return ok(total)
 
 function characters(text: str) -> [str]
-    out: [str] @ []
+    out: [str] @= []
 
     for ch in text.chars()
         out @ out.push(ch)

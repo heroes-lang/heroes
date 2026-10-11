@@ -80,12 +80,12 @@ test "the pieces are wired together"
     assert got[1] == .number(value: 1)
     assert token.shown(got[2]) == "+"
     assert each.counted(got, token.opens_a_value) == 2
-    built: tree.Tree @ tree.empty()
+    built: tree.Tree @= tree.empty()
     one = tree.added_expr(@built, .number(value: 1))
     two = tree.added_expr(@built, .number(value: 2))
     sum = tree.added_expr(@built, .binary(op: .add, left: one, right: two))
     assert tree.shown_expr(built, sum) == "(1 + 2)"
-    walking: cursor.Cursor @ cursor.over(got)
+    walking: cursor.Cursor @= cursor.over(got)
     assert cursor.bump(@walking) == .kw_print
     assert cursor.here(walking) == .number(value: 1)
 
@@ -292,7 +292,7 @@ function ran(source: str) -> str
 # this file uses, because it checks the TREE without naming an index.
 function rendering(source: str) -> str
     tokens = scan.scanned(source).must()
-    c: cursor.Cursor @ cursor.over(tokens)
-    t: tree.Tree @ tree.empty()
+    c: cursor.Cursor @= cursor.over(tokens)
+    t: tree.Tree @= tree.empty()
     id = parse_expr.parsed(@c, @t).must()
     return tree.shown_expr(t, id)

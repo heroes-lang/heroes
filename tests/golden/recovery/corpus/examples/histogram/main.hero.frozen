@@ -28,11 +28,11 @@ function value_at(n: i64) -> i64
 
 # How often `digit` appears in the whole stream. This is a thread's whole job.
 function count_of(digit: i64) -> i64
-    seen: i64 @ 0
-    n: i64 @ 0
+    seen: i64 @= 0
+    n: i64 @= 0
 
     while n < NUMBERS
-        v: i64 @ value_at(n: n)
+        v: i64 @= value_at(n: n)
 
         if v == 0 && digit == 0
             seen @ seen + 1
@@ -47,14 +47,14 @@ function count_of(digit: i64) -> i64
     return seen
 
 function counts() -> [i64]
-    handles: [i64] @ []
-    d: i64 @ 0
+    handles: [i64] @= []
+    d: i64 @= 0
 
     while d < 10
         handles @ handles.push(hero_thread_spawn(body: count_of, arg: d))
         d @ d + 1
 
-    out: [i64] @ []
+    out: [i64] @= []
 
     for h in handles
         out @ out.push(hero_thread_join(handle: h))
@@ -63,23 +63,23 @@ function counts() -> [i64]
 
 function main()
     found = counts()
-    d: i64 @ 0
+    d: i64 @= 0
 
     while d < 10
         print("digit ", d, ": ", found[d])
         d @ d + 1
 
 test "the ten counts add up to every digit written"
-    total: i64 @ 0
+    total: i64 @= 0
 
     for c in counts()
         total @ total + c
 
-    written: i64 @ 0
-    n: i64 @ 0
+    written: i64 @= 0
+    n: i64 @= 0
 
     while n < NUMBERS
-        v: i64 @ value_at(n: n)
+        v: i64 @= value_at(n: n)
 
         if v == 0
             written @ written + 1

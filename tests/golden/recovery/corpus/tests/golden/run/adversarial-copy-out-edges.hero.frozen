@@ -20,14 +20,14 @@ function walk(@n: i64, @steps: i64) -> bool
     return false
 
 function main()
-    n: i64 @ 5
-    steps: i64 @ 0
+    n: i64 @= 5
+    steps: i64 @= 0
     hit = walk(n: @n, steps: @steps)
     print(hit)
     print(n)
     print(steps)
-    m: i64 @ 0
-    taken: i64 @ 0
+    m: i64 @= 0
+    taken: i64 @= 0
     print(walk(n: @m, steps: @taken))
     print(m)
     print(taken)

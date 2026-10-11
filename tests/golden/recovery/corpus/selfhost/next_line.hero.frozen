@@ -15,16 +15,18 @@
 # fix, an interpolated literal read as a line that may stand alone.
 
 use token
+use punctuation
 use keywords
 use bytes
 use foreign_at
+use text_outline
 
 # Does the line from `from` bind or mutate: a lone `=` or an `@` outside
 # brackets?
 function holds_a_binding(text: str, from: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ from
-    quote: u8 @ 0
+    depth: i64 @= 0
+    i: i64 @= from
+    quote: u8 @= 0
 
     while i < text.len() && text[i] != '\n'
         b = text[i]
@@ -50,9 +52,9 @@ function holds_a_binding(text: str, from: i64) -> bool
 
 # Does the line from `from` hold an arm's `=>` outside brackets?
 function holds_an_arrow(text: str, from: i64) -> bool
-    depth: i64 @ 0
-    i: i64 @ from
-    quote: u8 @ 0
+    depth: i64 @= 0
+    i: i64 @= from
+    quote: u8 @= 0
 
     while i + 1 < text.len() && text[i] != '\n'
         b = text[i]
@@ -80,22 +82,75 @@ function holds_an_arrow(text: str, from: i64) -> bool
 # next line with words hold an arm's `=>`? Then a `-` before `from` signs the
 # pattern of an arm broken after its sign, `-` over `1 => 10` (defect 126):
 # the line that ends with it is refused as one that cannot end, and it is
-# never a subtraction going on with the arm above.
+# never a subtraction going on with the arm above. Past lines that hold
+# operators alone, each one more stray above the same arm (defects 351, 369).
 function arrow_below(text: str, from: i64) -> bool
-    i: i64 @ past_the_line(text, from: past_blanks(text, from: from))
+    i: i64 @= past_the_line(text, from: past_blanks(text, from: from))
 
     while i < text.len() && text[i] == '\n'
         i @ past_blanks(text, from: i + 1)
 
         if i < text.len() && text[i] != '\n' && text[i] != '#'
-            return holds_an_arrow(text, from: i)
+            if holds_an_arrow(text, from: i)
+                return true
+            alone = past_operators(text, at: i)
+
+            if alone < 0
+                return false
+            i @ alone
         i @ past_the_line(text, from: i)
 
     return false
 
+# Does the line with words at `at` hold an arm's `=>`, or operators alone
+# over one (`arrow_below`)?
+function an_arm_below(text: str, at: i64) -> bool
+    alone = past_operators(text, at: at)
+    return holds_an_arrow(text, from: at) || alone >= 0 && arrow_below(text, from: alone)
+
+# Does the line with words at `at`, past the lines below it that hold
+# operators alone, begin what no operator goes on into: an arm, a word that
+# begins afresh, a statement of its own, or nothing, the text's end? Then
+# operators alone on the line above it are strays (`sign_above.stray`,
+# defects 369 and 370).
+function nothing_joins_below(text: str, at: i64) -> bool
+    if holds_an_arrow(text, from: at)
+        return true
+    alone = past_operators(text, at: at)
+
+    if alone < 0
+        first = keywords.keyword(word_at(text, at: at))
+        return !first.is_err() && starts_afresh(first.must()) || stands_alone(text, from: at)
+    i: i64 @= past_the_line(text, from: alone)
+
+    while i < text.len() && text[i] == '\n'
+        i @ past_blanks(text, from: i + 1)
+
+        if i < text.len() && text[i] != '\n' && text[i] != '#'
+            return nothing_joins_below(text, at: i)
+        i @ past_the_line(text, from: i)
+
+    return i >= text.len()
+
+# Past the operators from `at`, each one that can only go on with a line
+# above (`token.can_only_go_on`), and the spaces between and after them; -1
+# where `at` holds none. `- -` is two, `->` and `=>` are none.
+function past_operators(text: str, at: i64) -> i64
+    found: punctuation.Punct @= punctuation.punct_at(text, at: at)
+
+    if found.width == 0 || !token.can_only_go_on(found.kind)
+        return -1
+    i: i64 @= at
+
+    while found.width > 0 && token.can_only_go_on(found.kind)
+        i @ past_blanks(text, from: i + found.width)
+        found @ punctuation.punct_at(text, at: i)
+
+    return i
+
 # `from`, past spaces and carriage returns.
 function past_blanks(text: str, from: i64) -> i64
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && (text[i] == ' ' || text[i] == '\r')
         i @ i + 1
@@ -106,7 +161,7 @@ function past_blanks(text: str, from: i64) -> i64
 function past_the_line(text: str, from: i64) -> i64
     if from >= text.len() || text[from] != '#'
         return from
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len() && text[i] != '\n'
         i @ i + 1
@@ -122,11 +177,11 @@ function stands_alone(text: str, from: i64) -> bool
 
     if !first.is_err() && (first.must() == .kw_if || first.must() == .kw_match)
         return true
-    depth: i64 @ 0
-    i: i64 @ from
-    quote: u8 @ 0
-    last: u8 @ 0
-    called: bool @ false
+    depth: i64 @= 0
+    i: i64 @= from
+    quote: u8 @= 0
+    last: u8 @= 0
+    called: bool @= false
 
     while i < text.len() && text[i] != '\n' && (quote != 0 || text[i] != '#')
         b = text[i]
@@ -159,8 +214,8 @@ function stands_alone(text: str, from: i64) -> bool
 
 # `???` and nothing else but spaces.
 function only_a_hole(line: str) -> bool
-    start: i64 @ 0
-    end: i64 @ line.len()
+    start: i64 @= 0
+    end: i64 @= line.len()
 
     while start < end && line[start] == ' '
         start @ start + 1
@@ -172,18 +227,18 @@ function only_a_hole(line: str) -> bool
 
 # `=` alone, not a byte of `==`, `!=`, `<=`, `>=` or `=>`.
 function lone_eq(text: str, at: i64) -> bool
-    before: u8 @ 0
+    before: u8 @= 0
 
     if at > 0
         before @ text[at - 1]
-    after: u8 @ 0
+    after: u8 @= 0
 
     if at + 1 < text.len()
         after @ text[at + 1]
     return before != '=' && before != '!' && before != '<' && before != '>' && after != '=' && after != '>'
 
 function word_at(text: str, at: i64) -> str
-    end: i64 @ at
+    end: i64 @= at
 
     while end < text.len() && (bytes.is_alnum(text[end]) || text[end] == '_')
         end @ end + 1
@@ -197,17 +252,95 @@ function word_at(text: str, at: i64) -> str
 # either went on with an open line above it and was refused under another
 # code once `check --apply` wrote the swap (defect 132's class, lane 133's
 # finding). A hint or guidance names no word, and `int`'s swap is a name.
-function opening_keyword(text: str, at: i64) -> token.TokenKind?
+# The place is read from the lexer's outline of the text (defect 146).
+function opening_keyword(text: str, at: i64, @outline: text_outline.Outline) -> token.TokenKind?
     word = word_at(text, at: at)
     own = keywords.keyword(word)
 
     if !own.is_err()
         return own
-    swap = foreign_at.certain_swap(text, token.Span(start: at, end: at + word.len()))
+    swap = foreign_at.certain_swap(text, token.Span(start: at, end: at + word.len()), @outline)
 
     if swap.is_err()
         return own
     return keywords.keyword(word_at(swap.must(), at: 0))
+
+# Does the line at `at`, at column 0, open with a word only a declaration
+# opens with: `record`, `variant`, `constant`, `use`, `extern`, `test`, or
+# `function` before a name? Inside brackets a line goes on at any column
+# (design.md §4.15), and a function TYPE opens with `function` there, but
+# before its `(` and never before a name. Measured 2026-09-30 over the 1350
+# tracked `.hero` files and the specification's examples, by the lexer's own
+# token stream: no such line stands inside brackets, so the lexer names there
+# the brackets a mistake left open, and nothing that compiles moves. Since
+# panel 183 R1 that is one case of `ends_a_reach`, which asks this of
+# `function`; `parse/unclosed` asks it where the lexer emptied its stack.
+function opens_a_declaration(text: str, at: i64) -> bool
+    word = word_at(text, at: at)
+    kind = keywords.keyword(word)
+
+    if kind.is_err()
+        return false
+    k = kind.must()
+
+    if k == .kw_function
+        after = at + word.len()
+        name: i64 @= after
+
+        while name < text.len() && text[name] == ' '
+            name @ name + 1
+
+        return name > after && name < text.len() && (bytes.is_alpha(text[name]) || text[name] == '_')
+    return k == .kw_record || k == .kw_variant || k == .kw_constant || k == .kw_use || k == .kw_extern || k == .kw_test
+
+# Does the line at `at`, whose margin is `spaces`, end the reach of the
+# brackets still open, in a statement whose margin is `margin` (panel 183 R1)?
+# Its first word is one no bracket holds in a program that compiles: a word
+# that starts afresh (`starts_afresh`), `if` or `match`, whose blocks no
+# bracket holds, and `function` only before a name, since a function TYPE
+# opens with `function` before its `(`; and none of them directly before a
+# `:`, where it is a label, a parameter's or an argument's name the author
+# took from a C header, libsodium's `variant`. The line stands no deeper than
+# the statement the brackets opened in: a deeper one is a continuation the
+# author meant inside them, `for x in xs` below `[x * 2`, refused where it
+# stands. An `else` stands at its `if`'s margin, and inside brackets at the
+# statement's own where the `if` is an expression there, so it ends a reach
+# only strictly shallower.
+function ends_a_reach(text: str, at: i64, spaces: i64, margin: i64) -> bool
+    if spaces > margin
+        return false
+    word = word_at(text, at: at)
+    kind = keywords.keyword(word)
+
+    if kind.is_err()
+        return false
+    k = kind.must()
+
+    if k == .kw_else
+        return spaces < margin
+
+    if before_a_colon(text, after: at + word.len())
+        return false
+
+    if k == .kw_function
+        return opens_a_declaration(text, at: at)
+    return k == .kw_if || k == .kw_match || starts_afresh(k)
+
+# Is the next thing after `after`, past spaces, one `:` and not a `::`?
+function before_a_colon(text: str, after: i64) -> bool
+    at: i64 @= after
+
+    while at < text.len() && text[at] == ' '
+        at @ at + 1
+
+    return at < text.len() && text[at] == ':' && (at + 1 == text.len() || text[at + 1] != ':')
+
+# Does the line at `at` open with a name, a word that is no keyword
+# (`bracket_reach.a_name_after_a_kept_end`, panel 183 R2)?
+function opens_with_a_name(text: str, at: i64) -> bool
+    if at >= text.len() || !(bytes.is_alpha(text[at]) || text[at] == '_')
+        return false
+    return keywords.keyword(word_at(text, at: at)).is_err()
 
 # A word that begins a declaration or a statement and can continue nothing:
 # a line that begins with one is never the rest of the line above it.
@@ -217,7 +350,7 @@ function starts_afresh(kind: token.TokenKind) -> bool
         .kw_return | .kw_break | .kw_continue | .kw_assert | .kw_for | .kw_while | .kw_else      => true
         .kw_match | .kw_if | .kw_in | .kw_nullptr | .kw_true | .kw_false | .kw_fail              => false
         .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                       => false
-        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe          => false
+        .eq | .at | .at_eq | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
         .hole | .question | .lparen | .rparen | .lbracket | .rbracket | .lbrace | .rbrace        => false
         .plus | .minus | .star | .slash | .percent                                               => false
         .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                                => false
@@ -244,6 +377,33 @@ test "an arm's arrow is found outside brackets and strings only"
     assert !holds_an_arrow("- f(a => b)\n", from: 0)
     assert !holds_an_arrow("- \"=>\"\n", from: 0)
     assert !holds_an_arrow("- fee  # => note\n", from: 0)
+
+test "a line opens a declaration by its first word, and a function type opens none"
+    for text in ["record P\n", "variant V\n", "constant K: i64\n", "use geom\n", "extern \"m.h\"\n", "test \"t\"\n", "function main()\n", "function  f()\n", "function g<T>(x: T)\n", "record\n", "record P {\r\n"]
+        assert opens_a_declaration(text, at: 0)
+
+    for text in ["function(i64) -> i64)\n", "function (i64) -> i64)\n", "function\n", "records = 1\n", "use_count\n", "2]\n", ")\n", "# record\n", "\"record\"\n", "fn main()\n", "match n\n", ""]
+        assert !opens_a_declaration(text, at: 0)
+
+test "a line ends a reach by its first word and its margin, and a label or a function type ends none"
+    for text in ["record P\n", "variant V\n", "constant K: i64\n", "use geom\n", "extern \"m.h\"\n", "test \"t\"\n", "function main()\n", "function g<T>(x: T)\n", "if c\n", "match n\n", "for x in xs\n", "while c\n", "return 1\n", "assert c\n", "break\n", "continue\n"]
+        assert ends_a_reach(text, at: 0, spaces: 0, margin: 0)
+
+    for text in ["function(i64) -> i64)\n", "function\n", "records = 1\n", "use_count\n", "2]\n", ")\n", "# record\n", "\"record\"\n", "fn main()\n", "in xs\n", "true\n", "fail(code: c, msg: m)\n", ""]
+        assert !ends_a_reach(text, at: 0, spaces: 0, margin: 0)
+
+    assert ends_a_reach("    if c\n", at: 4, spaces: 4, margin: 4)
+    assert !ends_a_reach("        for x in xs\n", at: 8, spaces: 8, margin: 4)
+    assert ends_a_reach("    else\n", at: 4, spaces: 4, margin: 8)
+    assert !ends_a_reach("    else\n", at: 4, spaces: 4, margin: 4)
+
+    for text in ["    match: cstr,\n", "    use: cstr, inst: ptr) -> i32\n", "    test : i64\n", "    record: ptr\n", "    variant: i32)\n"]
+        assert !ends_a_reach(text, at: 4, spaces: 4, margin: 4)
+
+    assert ends_a_reach("    constant K: i64\n", at: 4, spaces: 4, margin: 4)
+    assert opens_with_a_name("    y = 3 )\n", at: 4)
+    assert !opens_with_a_name("    if c\n", at: 4)
+    assert !opens_with_a_name("    (x)\n", at: 4)
 
 test "a sign alone on its line, or before a comment, finds the arm's arrow on the next line with words"
     assert arrow_below("-\n        1 => 10\n", from: 1)

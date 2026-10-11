@@ -1,0 +1,24 @@
+# FIXED DEFECT 411, found by panel 196's completeness critic 2026-10-06 and
+# repaired the same day in lane b13-w411.
+#
+# SYMPTOM: `SHA256_Final(md: cstr lent, ...)` lent `s.cstr()` built at exit 0,
+# and C wrote SHA-256's 32 bytes through the `str` a copy `t = s` shared:
+# `t[0]` printed 186. The same call on a literal was SIGBUS.
+#
+# CAUSE: the refusal read clang's words *discards qualifiers* about the probe's
+# call, and clang tells a `const char *` handed to an `unsigned char *` as
+# `-Wpointer-sign`, a warning, so it never fired. Now the pointee check asks the
+# header whether the parameter's pointer points at `const` bytes
+# (`emit/ffi_mutable.hero`), and the refusal is its answer.
+#
+# THIS SHAPE: `char *`, refused before this repair by clang's phrase and now by
+# the header's answer, with the same message.
+
+extern "fixedbugs-411-writes.h"
+    function w_char(p: cstr lent) -> i32  #~ ffi_writable_parameter
+
+function main()
+    s = "0123456789abcdef".repeat(1)
+    t = s
+    print(w_char(p: s.cstr()))
+    print(t)

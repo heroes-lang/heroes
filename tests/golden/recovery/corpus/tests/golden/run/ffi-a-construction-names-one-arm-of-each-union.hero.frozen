@@ -1,0 +1,30 @@
+# Panel 186 R7, lane land186, 2026-10-02: a group's record over a C union is
+# built naming exactly one member of each union, an anonymous struct's fields
+# counting as one, and every field outside them (spec § 13); what a
+# construction leaves out is judged by `build` from the header's layout.
+#
+# The natural program, as the sitting's third blind reading wrote it from the
+# spec alone (`docs/panel/186-briefs/blind-3/program.hero.txt`): the record
+# names both arms, a value is built holding `f` and read through C, and the
+# equality is written field by field, since `==` over an `f32` arm is
+# refused (R3). Until R7 the construction was `missing_fields` at `check`.
+
+extern "ffi-a-construction.h"
+    record SA
+        kind: i32
+        i: i32
+        f: f32
+        x: i32
+    function make_sa() -> SA
+    function sa_f(s: SA) -> f32
+    function sa_x(s: SA) -> i32
+
+function main()
+    s = make_sa()
+    print(s.i)
+    t = SA(kind: 2, f: 1.5, x: 4)
+    print(sa_f(t))
+    print(sa_x(t))
+    a = make_sa()
+    b = make_sa()
+    print(a.kind == b.kind && a.i == b.i && a.x == b.x)

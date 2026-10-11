@@ -50,6 +50,7 @@ function describe(kind: token.TokenKind) -> str
         .kw_fail     => "`fail`"
         .eq          => "`=`"
         .at          => "`@`"
+        .at_eq       => "`@=`"
         .colon       => "`:`"
         .colon_colon => "`::`"
         .comma       => "`,`"

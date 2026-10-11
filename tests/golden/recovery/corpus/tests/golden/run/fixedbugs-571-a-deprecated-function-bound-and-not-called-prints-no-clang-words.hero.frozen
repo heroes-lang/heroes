@@ -1,0 +1,19 @@
+# fixedbugs, defect 571, lane b18-guard, 2026-10-10 (panel 205's R5).
+#
+# SYMPTOM: a header's `twice`, marked `deprecated`, bound beside the function
+# the program calls: clang printed `-Wdeprecated-declarations` at the
+# compiler's own result assertion and probe of `twice`, lines no author
+# wrote, over a correct program at exit 0 (panel 205's critic, `uc`, through
+# `<ucontext.h>` on this Mac).
+#
+# FIX: `-Wdeprecated-declarations` is quiet on the compiler's own lines, from
+# the groups' close and over each group constant's accessor and the
+# per-type functions, and spoken over the program's own definitions
+# (`emit/deprecation.hero`): the verdict is the one it was.
+
+extern "fixedbugs-571-a-deprecated-function-bound-and-not-called-prints-no-clang-words.h"
+    function twice(x: i64) -> i64
+    function thrice(x: i64) -> i64
+
+function main()
+    print(thrice(x: 14))

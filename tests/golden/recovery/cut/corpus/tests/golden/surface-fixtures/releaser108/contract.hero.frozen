@@ -1,0 +1,19 @@
+# Two modules declare one C function, `commented.hero` with a comment inside
+# the releaser set and this one without: the same contract, which `check`
+# accepts and `run` keeps, where the trunk refused it (`contract_differs`).
+
+use commented
+
+extern "rel.h"
+    function h_open(n: i64, @out: commented.H acquires h_close | h_close_v2) -> i64
+    function h_close(x: commented.H consumes)
+    function h_close_v2(x: commented.H consumes)
+
+function main()
+    h: commented.H @ nullptr
+
+    if h_open(n: 7, out: @h) != 0
+        return
+    print(commented.value(x: h))
+    h_close_v2(x: h)
+    print("one contract")

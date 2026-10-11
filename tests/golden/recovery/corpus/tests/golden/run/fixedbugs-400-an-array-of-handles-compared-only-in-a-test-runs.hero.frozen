@@ -1,0 +1,24 @@
+# Defect 400, lane run400, 2026-10-06: the shape beside the defect's own, a
+# handle reached by the comparison through an array.
+#
+# SYMPTOM: `[Opaque]` compared in a test and nowhere else passed `heroes
+# test` and was refused by `build` and `run`, exit 1, *declares no `opaque`*.
+#
+# CAUSE: `==` on an array reaches its element, so the build asked whether
+# `Opaque` is a union, writing `*(opaque * *)0`, an expression, where clang
+# never says *must use 'struct' tag*.
+#
+# FIX: the record's own question, asked of the header once the round is
+# refused (`cli/header_ask.hero`), is what teaches `struct opaque`.
+
+extern "fixedbugs-400-a-struct-tag-with-no-typedef.h"
+    record Opaque tag opaque
+
+function main()
+    print(1)
+
+test "an array of handles compared in a test alone"
+    h: Opaque = nullptr
+    a = [h]
+    b = [h]
+    assert a == b

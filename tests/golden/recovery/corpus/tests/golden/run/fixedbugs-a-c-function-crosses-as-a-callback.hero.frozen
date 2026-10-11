@@ -34,7 +34,7 @@ extern "fixedbugs-a-c-function-crosses-as-a-callback.h"
     function blob_frees() -> i64
 
 function main()
-    b: ptr @ blob_make()
+    b: ptr = blob_make()
 
     # The line the defect was about: `counting_free` is a C function's NAME
     # standing as a value, and C is the one that calls it.

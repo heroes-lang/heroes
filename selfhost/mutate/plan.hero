@@ -23,16 +23,21 @@ use mutate/json_read
 constant DEFAULT: str
     "tests/golden/recovery"
 
-# The three files of the plan as pinned on 2026-10-07, each by its digest
+# The three files of the plan as pinned, each by its digest
 # (`cli/digest.hero`): a run writes its plan's into `run.json`, and two runs
-# are read against each other only over one plan. Copied from
-# `scratchpad/inst-187/round10` byte for byte (sha1 `3625b4f3` and
-# `6afdde28`), and `plan-base.jsonl` cut from that run's `singles.jsonl`.
+# are read against each other only over one plan. **Cut again on 2026-10-11
+# (defect 661)** by `heroes mutate --recovery --cut` from the exported tree of
+# `397381f1` with that commit's compiler: the plan frozen on 2026-09-30 held
+# 2,138 cells in the form panel 209 retired, each told `old_cell_symbol`, and a
+# differential across that change read 19,186 findings that were the
+# migration's and no round's. Until that day the three digests were
+# `64c2003e30605cb8`, `656a459179018366` and `072c08b4400b7193` (pinned on
+# 2026-10-07, copied from `scratchpad/inst-187/round10` byte for byte).
 constant PINNED: [str]
     [
-        "plan-singles.jsonl 64c2003e30605cb8"
-        "plan-pairs.jsonl 656a459179018366"
-        "plan-base.jsonl 072c08b4400b7193"
+        "plan-singles.jsonl 3ac53ba5453d4b4f"
+        "plan-pairs.jsonl 02790d993c83fc61"
+        "plan-base.jsonl 712f83a441da889f"
     ]
 
 constant PLAN_FILES: [str]
@@ -209,16 +214,18 @@ test "a plan's three files are read whole, and the base's LEGAL is each arm's"
         .err e => assert e.msg == dir + "/plan-singles.jsonl, mutant 1: `k1` has no line in plan-base.jsonl"
 
 # The plan in the tree is the one pinned, whole: a frozen plan that moved is
-# a plan two runs of it can no longer be read against (panel 187's R2).
-test "the pinned plan is the one frozen on 2026-09-30, with every program it mutates in its corpus"
+# a plan two runs of it can no longer be read against (panel 187's R2). The
+# counts were 13,594 singles, 16,041 pairs, 634 programs and 653 corpus files
+# until the plan was cut again on 2026-10-11 (defect 661).
+test "the pinned plan is the one cut on 2026-10-11, with every program it mutates in its corpus"
     assert digests(DEFAULT).must() == PINNED
     p = read_plan(DEFAULT).must()
-    assert p.singles.len() == 13594
-    assert p.pairs.len() == 16041
+    assert p.singles.len() == 14209
+    assert p.pairs.len() == 15737
     programs = files(p)
-    assert programs.len() == 634
+    assert programs.len() == 1356
     walked = process.walk(DEFAULT + "/corpus").must()
-    assert walked.files.len() == 653
+    assert walked.files.len() == 1379
     frozen: {str: bool} @= {}
 
     for path in walked.files

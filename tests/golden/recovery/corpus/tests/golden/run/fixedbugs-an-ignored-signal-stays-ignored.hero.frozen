@@ -14,6 +14,6 @@ extern "fixedbugs-an-ignored-signal-stays-ignored.h"
 
 function main()
     word = repeat("ab", 4)
-    held: cstr @ word.lease()
+    held: cstr @= word.lease()
     print("ignored: ", raise_ignored())
     end_lease(@held)

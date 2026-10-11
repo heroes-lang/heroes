@@ -1,0 +1,58 @@
+# Defect 506, 2026-10-08. A map's key in the author's parentheses, with a
+# comment after its `(`: `fmt` read the entry as beginning on its key's own
+# line rather than on the `(` line, so it printed that comment above the
+# entry, out of the parentheses it was written in, and its guard refused at
+# exit 2, *this is a compiler bug*, a program `check` accepts; with no other
+# comment inside them it dropped the parentheses as well. An entry begins
+# with its key, so the parentheses `fmt` asks about are the key's. Every key
+# below is in the form `fmt` prints, so the `canonical` suite holds `fmt` to
+# it byte for byte, and the values say each key was read whole.
+
+function show(m: {str: i64})
+    print(m.len(), " ", m["ziggy"].default(0))
+
+function main()
+    # The reproducer, a remark on the key as well.
+    first = {
+        (  # on the key's parenthesis
+            "ziggy"  # on the key
+        ): 8
+    }
+
+    # The second entry's key, and a key that is a sum.
+    second = {
+        "mars": 7
+        (  # on the second key's parenthesis
+            "zig" + "gy"
+        ): 9
+    }
+
+    # A comment after the `(` and one on a line of its own under it.
+    third = {
+        (  # trailing the parenthesis
+            # on a line of its own
+            "ziggy"
+        ): 10
+    }
+
+    # In a map inside a map.
+    nested = {
+        "a": {
+            (  # in the inner map
+                "ziggy"
+            ): 11
+        }
+    }
+    show(first)
+    show(second)
+    show(third)
+    show(nested["a"].default({}))
+
+    # In an argument.
+    show(
+        {
+            (  # in an argument
+                "ziggy"
+            ): 12
+        }
+    )

@@ -9,6 +9,7 @@
 
 use token
 use source
+use shown_char
 
 ## The kind
 
@@ -57,6 +58,11 @@ record Diagnostic
     span: token.Span
     fixes: [Fix]
     notes: [str]
+    # The openers the lexer named never closed whose closer this report names
+    # with its own edit, one `]]` for two, so the lexer's report of each is
+    # withdrawn where this one is said and stands where it is not (defect
+    # 459, `parse/unclosed.withdrawn`). Empty for every other report.
+    carries: [token.Span]
 
 # A diagnostic the parser held back because the lexer joined the line it
 # is about into a block's head (`parse/opening`, defect 131): `cause` spans
@@ -75,7 +81,28 @@ record Held
 function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
     fixes: [Fix] = []
     notes: [str] = []
-    return Diagnostic(kind: .error_kind, code: code, message: message, span: span, fixes: fixes, notes: notes)
+    carries: [token.Span] = []
+    return Diagnostic(
+        kind: .error_kind,
+        code: code,
+        message: message,
+        span: span,
+        fixes: fixes,
+        notes: notes,
+        carries: carries
+    )
+
+# Where the openers the reports of `said` carry begin (defect 459): the
+# lexer's report of each is then withdrawn. A map, asked once per report, so
+# a file of many reports costs their sum and never their product.
+function carried(said: [Diagnostic]) -> {i64: bool}
+    starts: {i64: bool} @= {}
+
+    for d in said
+        for span in d.carries
+            starts[span.start] @ true
+
+    return starts
 
 # A form the backend cannot emit yet. The message names the CAPABILITY
 # and never the milestone (§4.17: everything needed without opening
@@ -88,15 +115,34 @@ function new_diagnostic(code: str, message: str, span: token.Span) -> Diagnostic
 function new_unsupported(code: str, message: str, span: token.Span) -> Diagnostic
     fixes: [Fix] = []
     notes: [str] = []
-    return Diagnostic(kind: .unsupported_kind, code: code, message: message, span: span, fixes: fixes, notes: notes)
+    carries: [token.Span] = []
+    return Diagnostic(
+        kind: .unsupported_kind,
+        code: code,
+        message: message,
+        span: span,
+        fixes: fixes,
+        notes: notes,
+        carries: carries
+    )
 
 # Whether this code is one of the rules the THESIS adds, as opposed to
 # a rule without which the program has no meaning. check --permissive
 # drops exactly these, which is what makes it the control arm Part 11
 # needs: the same compiler with §1 switched off. Every code traces to
 # a panel; machine_locked_path joined by panel 055's test — nothing
-# about the types is wrong, and C would take the program on exactly
-# one machine. spaced_minus_element joined by panel 180 (2026-09-27, the
+# about the types is wrong, and without the rule the tools still read the
+# name where one machine's files decide what it names: clang opens a rooted
+# header as written and `pkg-config` a `.pc` from the directory it runs in
+# (both run 2026-10-09, defect 516), Windows a stream of a file (defect
+# 446). A rooted `link` is not one: ld64, GNU ld and lld-link each read it
+# as another path, never the one written (measured by defect 446), so it is
+# unwritable_name, told before this rule. hole_without_f joined by panel
+# 184's (1b) amended, which panel 185's R7 is (decided 2026-10-02, defect
+# 176): without it a plain literal whose braces name what is bound still
+# means its text, braces and all, which is the silent reading the rule
+# refuses.
+# spaced_minus_element joined by panel 180 (2026-09-27, the
 # coordinator's ruling on a question the sitting did not ask): without it
 # `[a` / `- b]` still has a meaning, two elements, which is the silent
 # reading the rule exists to refuse, so the control arm reads it as a
@@ -109,9 +155,37 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # the author's to overrule): the lexer hands the parser the one line the
 # author broke, so without the rule `y = a +` over `1` means `y = a + 1`,
 # which the control arm reads, a continuation the language never had.
+# unreachable_statement joined by panel 184's R4 (ratified 2026-10-01, landed
+# 2026-10-03): without it a line after a `return` still has a meaning, a
+# statement that never runs, which is the silent program the rule exists to
+# refuse (the sitting's blind reading: a loop that never advances).
+# undefined_header_name, unshowable_name and package_comparison joined by
+# panel 188: clang reads `'`, `"`, `//` or `/*` in a header's name as
+# itself, the tools carry a control character in any name, and `pkg-config`
+# one of `<>=!` inside a package's, so without the rule the program has the
+# tool's meaning. Their siblings are not: unwritable_name (nothing carries
+# it), escape_in_header_name (clangs read a `\` apart, and one of them opens
+# another header) and option_like_name (resting on no `pkg-config`, and on
+# Windows a `link` beginning `-` is lld-link's own option, panel 188 § 22.5).
+#
+# A THIRD CATEGORY, named by panel 192's R4 (ratified 2026-10-05): rules a
+# program with a meaning breaks, kept by --permissive all the same, because
+# they guard what the person READING the source sees rather than adding the
+# thesis. A raw control character, bidirectional control, U+2028 or U+2029
+# in a string or a comment (invisible_character, raw_tab, nul_in_string,
+# `raw_refusal`) prints its bytes and has a meaning, and a terminal acts on
+# it or a screen reorders the line around it; panel 066's
+# raw_carriage_return was the first of them. With them, the one spelling of
+# a character (escape_spelling, and escape_not_needed, which panel 008's
+# escapes kept from the first day and `code_escape` reaches too). None is in
+# the list below, so the control arm keeps refusing them.
 function is_thesis_rule(d: Diagnostic) -> bool
     codes = [
         "unused_binding"
+        "never_rebound"
+        "cell_redeclared"
+        "declared_place"
+        "hole_without_f"
         "shadowed_binding"
         "builtin_name_taken"
         "discarded_value"
@@ -128,6 +202,11 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "machine_locked_path"
         "spaced_minus_element"
         "continuation_outside_brackets"
+        "unreachable_statement"
+        "undefined_header_name"
+        "unshowable_name"
+        "package_comparison"
+        "endless_recursion"
     ]
 
     for one in codes
@@ -138,13 +217,17 @@ function is_thesis_rule(d: Diagnostic) -> bool
 
 # `file:line:col: <kind>[code]: message` — the one-line form the
 # golden tests pin and a terminal scans; the file and line are the
-# ones the reader can open, which is locate's whole job.
+# ones the reader can open, which is locate's whole job. A control
+# character a message quotes is written by its code, as the rich form
+# writes it (`diag_render.render`, defect 244).
 function render_line(d: Diagnostic, s: source.Source) -> str
     found = source.locate(s, d.span.start)
-    return found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + ": " + word(d.kind) + "[" + d.code + "]: " + d.message
+    return shown_char.visible(
+        found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + ": " + word(d.kind) + "[" + d.code + "]: " + d.message
+    )
 
 test "a diagnostic starts empty and grows by mutation"
-    d: Diagnostic @ new_diagnostic(
+    d: Diagnostic @= new_diagnostic(
         code: "tab_in_line",
         message: "a tab is a compile error — use spaces",
         span: token.Span(start: 3, end: 4)
@@ -160,7 +243,9 @@ test "a diagnostic starts empty and grows by mutation"
     assert u.kind == .unsupported_kind
     assert u.notes.len() == 0
     assert is_thesis_rule(new_diagnostic(code: "needs_label", message: "m", span: u.span))
+    assert is_thesis_rule(new_diagnostic(code: "hole_without_f", message: "m", span: u.span))
     assert is_thesis_rule(new_diagnostic(code: "spaced_minus_element", message: "m", span: u.span))
     assert !is_thesis_rule(new_diagnostic(code: "line_end_before_continuation", message: "m", span: u.span))
     assert is_thesis_rule(new_diagnostic(code: "continuation_outside_brackets", message: "m", span: u.span))
+    assert is_thesis_rule(new_diagnostic(code: "unreachable_statement", message: "m", span: u.span))
     assert !is_thesis_rule(u)

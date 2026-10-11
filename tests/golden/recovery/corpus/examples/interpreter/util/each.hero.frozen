@@ -22,7 +22,7 @@
 
 # How many of `xs` satisfy `fits`.
 function counted<A>(xs: [A], fits: (function(A) -> bool)) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for one in xs
         if fits(one)
@@ -46,7 +46,7 @@ function first_of<A>(xs: [A], fits: (function(A) -> bool), fallback: A) -> A
 # `xs`, each rendered by `shown`, joined by `sep`. The one place this program
 # turns a list of anything into a line of text.
 function joined<A>(xs: [A], shown: (function(A) -> str), sep: str) -> str
-    pieces: [str] @ []
+    pieces: [str] @= []
 
     for one in xs
         pieces @ pieces.push(shown(one))

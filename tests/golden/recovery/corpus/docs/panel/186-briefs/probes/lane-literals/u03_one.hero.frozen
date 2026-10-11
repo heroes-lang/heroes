@@ -1,0 +1,8 @@
+extern "u.h"
+    record W1
+        i: i32
+    function make_w1() -> W1
+
+function main()
+    w = make_w1()
+    print(w.i)

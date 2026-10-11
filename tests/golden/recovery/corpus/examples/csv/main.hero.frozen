@@ -21,12 +21,12 @@ record Table
     rows: [[str]]
 
 function parse(text: str) -> Table?
-    rows: [[str]] @ []
-    row: [str] @ []
-    field: str @ ""
-    quoted: bool @ false
-    pending_quote: bool @ false
-    started: bool @ false
+    rows: [[str]] @= []
+    row: [str] @= []
+    field: str @= ""
+    quoted: bool @= false
+    pending_quote: bool @= false
+    started: bool @= false
 
     for ch in text.chars()
         if pending_quote
@@ -98,7 +98,7 @@ function rectangular(t: Table) -> bool
 function column(t: Table, at: i64) -> [str]?
     if at < 0 || at >= width(t)
         return fail(code: "no_such_column", msg: "the table has no column at that index")
-    out: [str] @ []
+    out: [str] @= []
 
     for one in t.rows
         if at < one.len()

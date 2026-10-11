@@ -43,12 +43,12 @@ function is_space(c: u8) -> bool
     return c == ' ' || c == '\t' || c == 13
 
 function trimmed(line: str) -> str
-    from: i64 @ 0
+    from: i64 @= 0
 
     while from < line.len() && is_space(line[from])
         from @ from + 1
 
-    to: i64 @ line.len()
+    to: i64 @= line.len()
 
     while to > from && is_space(line[to - 1])
         to @ to - 1
@@ -56,9 +56,9 @@ function trimmed(line: str) -> str
     return line.slice(from: from, to: to)
 
 function split_lines(text: str) -> [str]
-    out: [str] @ []
-    start: i64 @ 0
-    i: i64 @ 0
+    out: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == '\n'
@@ -76,8 +76,8 @@ function split_lines(text: str) -> [str]
 function cell_of(name: str) -> Cell?
     if name.len() < 2 || !is_letter(name[0])
         return fail(code: ERR_BAD_CELL_NAME, msg: "`" + name + "` is not a cell: one letter then digits")
-    row: i64 @ 0
-    i: i64 @ 1
+    row: i64 @= 0
+    i: i64 @= 1
 
     while i < name.len()
         if !is_digit(name[i])
@@ -109,7 +109,7 @@ function expand(text: str) -> [str]?
         return fail(code: ERR_BAD_RANGE, msg: "`" + text + "` is not a range: two cells joined by `:`")
     from = cell_of(trimmed(text.slice(from: 0, to: at)))?
     to = cell_of(trimmed(text.slice(from: at + 1, to: text.len())))?
-    out: [str] @ []
+    out: [str] @= []
 
     for row in range(from: from.row, to: to.row + 1)
         for column in range(from: from.column, to: to.column + 1)
@@ -118,7 +118,7 @@ function expand(text: str) -> [str]?
     return ok(out)
 
 function index_of(text: str, c: u8) -> i64
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < text.len()
         if text[i] == c
@@ -131,7 +131,7 @@ function index_of(text: str, c: u8) -> i64
 
 # `NAME = formula` per line, `#` a comment, blank lines skipped.
 function read(text: str) -> Sheet?
-    cells: {str: str} @ {}
+    cells: {str: str} @= {}
 
     for line in split_lines(text)
         head = trimmed(line)
@@ -155,7 +155,7 @@ function read(text: str) -> Sheet?
 # is what sorting text does.
 function names(s: Sheet) -> [str]
     known = sort(keys(s.cells))
-    out: [str] @ []
+    out: [str] @= []
 
     for row in range(from: 1, to: highest_row(known) + 1)
         for column in range(from: 0, to: 26)
@@ -167,7 +167,7 @@ function names(s: Sheet) -> [str]
     return out
 
 function highest_row(known: [str]) -> i64
-    best: i64 @ 0
+    best: i64 @= 0
 
     for name in known
         match cell_of(name)

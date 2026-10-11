@@ -22,7 +22,7 @@
 # Bulk regression case.
 
 function typehash(rendered: str) -> i64
-    h: i64 @ 0
+    h: i64 @= 0
 
     for i in range(from: 0, to: len(rendered))
         h @ (h * 131 + to_i64(rendered[i]).must()) % 2147483647

@@ -29,8 +29,8 @@ extern "rel.h"
     function h_value(x: H) -> i64
 
 function main()
-    a: H @ nullptr
-    b: H @ nullptr
+    a: H @= nullptr
+    b: H @= nullptr
 
     if h_open(n: 7, out: @a) != 0
         return

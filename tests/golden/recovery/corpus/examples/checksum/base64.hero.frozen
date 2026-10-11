@@ -54,8 +54,8 @@ constant ERR_PADDING: str
 # only changes the type, so that a caller can hand text to a byte-oriented
 # function without the two ever being confused.
 function bytes_of(text: str) -> [u8]
-    out: [u8] @ []
-    i: i64 @ 0
+    out: [u8] @= []
+    i: i64 @= 0
 
     while i < text.len()
         out @ out.push(text[i])
@@ -69,7 +69,7 @@ function letter(value: i64) -> str
 
 # The six bits a character stands for, or a refusal naming it.
 function value_of(written: str) -> i64?
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < 64
         if ALPHABET.slice(from: i, to: i + 1) == written
@@ -87,15 +87,15 @@ function encoded(text: str) -> str
 # missing sixth-bit groups become `=`, which is what makes the length of the
 # output say how many bytes the last group held.
 function encoded_bytes(data: [u8]) -> str
-    out: [str] @ []
-    i: i64 @ 0
+    out: [str] @= []
+    i: i64 @= 0
     n = data.len()
 
     while i < n
         b0 = data[i].to_i64().must()
-        b1: i64 @ 0
-        b2: i64 @ 0
-        held: i64 @ 1
+        b1: i64 @= 0
+        b2: i64 @= 0
+        held: i64 @= 1
 
         if i + 1 < n
             b1 @ data[i + 1].to_i64().must()
@@ -160,8 +160,8 @@ function decoded(text: str) -> [u8]?
             code: ERR_LENGTH,
             msg: "a base64 text is a multiple of four characters long, and this one is " + text.len().to_str()
         )
-    out: [u8] @ []
-    i: i64 @ 0
+    out: [u8] @= []
+    i: i64 @= 0
 
     while i < text.len()
         group = text.slice(from: i, to: i + 4)
@@ -171,8 +171,8 @@ function decoded(text: str) -> [u8]?
             return fail(code: ERR_PADDING, msg: "`" + group + "` is padded and is not the last group")
         v0 = value_of(group.slice(from: 0, to: 1))?
         v1 = value_of(group.slice(from: 1, to: 2))?
-        v2: i64 @ 0
-        v3: i64 @ 0
+        v2: i64 @= 0
+        v3: i64 @= 0
 
         if pad < 2
             v2 @ value_of(group.slice(from: 2, to: 3))?
@@ -221,7 +221,7 @@ test "every length from nothing to seventeen bytes survives the round trip"
     # The three padded shapes repeat with period three, so seventeen lengths
     # cover each of them five times and the empty case once.
     text = "the quick brown fox"
-    n: i64 @ 0
+    n: i64 @= 0
 
     while n <= 17
         piece = text.slice(from: 0, to: n)
@@ -273,7 +273,7 @@ test "the alphabet is the standard one, in the standard order"
     assert letter(63) == "/"
 
 test "a character and its value are each other's inverse, all sixty-four"
-    i: i64 @ 0
+    i: i64 @= 0
 
     while i < 64
         assert value_of(letter(i)).must() == i

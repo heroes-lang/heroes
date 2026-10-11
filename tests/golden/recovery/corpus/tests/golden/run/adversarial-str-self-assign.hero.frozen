@@ -10,13 +10,13 @@
 # will have, and it is the one that leaked 999 blocks under the rule as first written.
 
 function main()
-    s: str @ "ab"
+    s: str @= "ab"
     s @ s
     print(s)
     s @ s + s
     print(s)
-    out: str @ ""
-    i: i64 @ 0
+    out: str @= ""
+    i: i64 @= 0
 
     while i < 50
         out @ out + to_str(i % 10)

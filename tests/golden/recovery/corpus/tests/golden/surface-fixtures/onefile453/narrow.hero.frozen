@@ -1,0 +1,6 @@
+# Defect 453, lane b18-ffi, 2026-10-10: a module binding `twice` of `int`.
+extern "onefile-int.h"  #~ ffi_one_file
+    function twice(x: i32) -> i32
+
+function doubled(x: i32) -> i32
+    return twice(x: x)

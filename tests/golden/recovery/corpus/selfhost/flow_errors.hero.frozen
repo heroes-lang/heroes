@@ -1,15 +1,20 @@
 # Control flow and fallibility: what `return` owes the signature, where a
-# jump is meaningful, what `?` needs, and the difference between a branch
-# that CANNOT produce a value and one that simply did not.
+# jump is meaningful, what may not follow one, what `?` needs, and the
+# difference between a branch that CANNOT produce a value and one that
+# simply did not.
 # Port of archive/bootstrap-rs/heroes/src/types/errors/flow.rs.
 #
 # That last distinction is the whole of panel 017 A, seen from the message
-# side: `no_value` fires where every branch jumps, `branch_without_value`
-# where a branch falls off the end of a statement. Collapsing them would
-# have let a binding take its value from nothing.
+# side: `no_value` fires where every branch leaves, by a jump or by ending
+# its path (panel 184's R4), `branch_without_value` where a branch falls off
+# the end of a statement. Collapsing them would have let a binding take its
+# value from nothing.
 
 use token
 use diag
+use ast
+use source
+use resolved
 
 # `inner` is the operand's own span, so the fix deletes exactly what lies
 # between the operand's end and the expression's — the `?`, and any space
@@ -18,7 +23,7 @@ use diag
 # because the message already was: a message that says "remove the `?`"
 # while --apply cannot is asking for the same edit twice.
 function not_fallible(got: str, span: token.Span, inner: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "not_fallible",
         message: "`?` propagates an error, and `" + got + "` cannot fail — remove the `?`",
         span: span
@@ -56,9 +61,9 @@ function try_in_infallible(result: str, span: token.Span) -> diag.Diagnostic
 # goldens rule's own bar, that a fix leaving the defect standing is a guess
 # however well it compiles.
 function nested_read(inner: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "nested_read",
-        message: "`.is_err()` reads one level, and this value is fallible twice — its payload is itself a `" + inner + "`, so the failure stored inside would go unread",
+        message: "`.is_err()` reads one level, and this value is fallible twice — its payload is itself fallible, `" + inner + "`, so the failure stored inside would go unread",
         span: span
     )
     d.notes @ d.notes.push(
@@ -84,7 +89,7 @@ function not_indexable(got: str, span: token.Span) -> diag.Diagnostic
 # panel 159's compiler-engineer). The read `s[i]` is untouched and still yields
 # a `u8`.
 function str_element_write(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "str_element_write",
         message: "a `str` is immutable, so `s[i]` is a value and not a place — this writes into one",
         span: span
@@ -108,9 +113,77 @@ function no_value(what: str, span: token.Span) -> diag.Diagnostic
         span: span
     )
 
-# A branch that falls off its end without a value. Distinct from a
-# diverging branch, and the distinction is the point: a jump CANNOT
-# produce a value, a statement simply did not.
+# The same rule where a branch leaves by ending its path rather than by a
+# jump (panel 184's R4, `check/join.Leaves`): `exit(code:)` is no jump, so
+# *every branch jumps* said of such a construct would be false, and the note
+# names what else leaves.
+function no_value_ended(what: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "no_value",
+        message: "this `" + what + "` produces no value — every branch leaves before it gives one, so there is nothing to bind",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a branch leaves by `return`, `break` or `continue`, and by `exit(code:)`, `assert false` or a `while true` with no `break` of its own, which end its path"
+    )
+    return d
+
+# Panel 184's R4: a statement after `return`, `break` or `continue`, in the
+# same block, never runs. Told at the first such statement, naming the jump
+# and its line; no `Fix`, because which repair is meant is the author's: the
+# line an indentation slip moved under the jump belongs one level out, the
+# `print` meant before a `break` belongs above it, and leftover code goes.
+function unreachable_statement(word: str, left_at: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "unreachable_statement",
+        message: "this statement never runs: the `" + word + "` at " + left_at + " leaves its block first",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a statement after `return`, `break` or `continue` in the same block is a compile error: if it should run, move it above the jump, or one level out where it belongs after the block; if not, delete it"
+    )
+    return d
+
+# A constant whose body jumps before it gives a value (§4.2: a constant's
+# body IS its value, its last statement produces it). `return 5` there is a
+# function's habit, and the repair is the value alone. Told once, at the
+# statement through which the body left (until 2026-10-02 at the body's first
+# line, defect 149), and only for a body that jumps: one that ends on a
+# statement was told at its block by `branch_without_value`, and until
+# 2026-10-01 it was told again here, *this `i64` produces no value — every
+# branch jumps*, which no branch had (defect 139's class, an absent value
+# read as a jump). Nor for a body that left by a `break` or a `continue`
+# outside every loop: that jump was told where it stands, and until
+# 2026-10-02 this was its shadow at the same place (defect 148,
+# `check/join.Leaves`).
+function constant_without_value(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "no_value",
+        message: "constant `" + name + "` produces no value — its body jumps before it gives one, and a constant's value is its body's last line",
+        span: span
+    )
+    d.notes @ d.notes.push("a constant has no `return`: write the value itself as the body's last line")
+    return d
+
+# A constant whose body ends its path before it gives a value, by
+# `exit(code:)`, `assert false` or a `while true` nothing breaks (panel 184's
+# R4): told at the statement it ends at, which is not always the last, since
+# a line after one stays legal and still never gives the value.
+function constant_ended(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "no_value",
+        message: "constant `" + name + "` produces no value — its body never goes past this line, and a constant's value is its body's last line",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "`exit(code:)`, `assert false` and a `while true` with no `break` of its own end a path: write the value itself as the body's last line"
+    )
+    return d
+
+# A branch that falls off its end without a value, told at the statement it
+# ends on (`check/path_end.ended_on_a_statement`). Distinct from a diverging
+# branch, and the distinction is the point: a jump CANNOT produce a value, a
+# statement simply did not.
 function branch_without_value(span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "no_value",
@@ -137,7 +210,7 @@ function returns_nothing(span: token.Span) -> diag.Diagnostic
 function not_iterable(got: str, span: token.Span) -> diag.Diagnostic
     return diag.new_diagnostic(
         code: "not_iterable",
-        message: "`for x in …` walks an array, and this is a `" + got + "` — a string's characters come from `s.chars()`, a count from `range(a, b)`",
+        message: "`for x in …` walks an array, and this value's type is `" + got + "` — a string's characters come from `s.chars()`, a count from `range(a, b)`",
         span: span
     )
 
@@ -151,17 +224,84 @@ function if_without_else(span: token.Span) -> diag.Diagnostic
 # A function that can run off its end (§4.7; panel 020). The span is the
 # WRITTEN RESULT TYPE — the promise is what was broken, and the promise is
 # on that line; pointing at the last statement would blame a line that may
-# be perfectly correct. No fix: there are two repairs (add a `return`, or
-# make the last statement the value) and neither is certain — a guess that
-# rewrites control flow is worse than no fix at all.
+# be perfectly correct. No fix: which path runs on, and what it should
+# return, are the author's to say, and a guess that rewrites control flow
+# is worse than no fix at all.
+#
+# **The notes name only what the language accepts** (defect 142). Until
+# 2026-10-01 the one note offered a second repair, *or the last statement
+# must be the value*, from a design in which a body's last line was its
+# value, ported with the Rust compiler; followed, it cost this diagnostic
+# again and `discarded_value`. A function hands its value back through
+# `return` and nowhere else: its body is run for effect (`check/decls.hero`,
+# panel 020's item 8), and design.md §4.7 gives a block its last
+# expression's value in two places only, an `if` used as a value and a
+# `match` arm. So the first note says where a path goes on past the last
+# `return`, and the second answers the habit the old note taught. Every
+# repair they name is a case in
+# `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero`, and the
+# three ends of a path the first has named since panel 184's R4 (2026-10-03:
+# `exit(code:)`, `assert false`, a `while true` with no `break` of its own,
+# where the note had said *`while true` included, since a loop counts as one
+# that can finish*) in `tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero`.
+# The return rule is spec § 8's since the same landing; until then the spec
+# stated none (panel 184's critic, B8).
 function missing_return(name: str, want: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "missing_return",
         message: "`" + name + "` must return `" + want + "`, and one path through it returns nothing",
         span: span
     )
-    d.notes @ d.notes.push("every path must end in a `return`, or the last statement must be the value")
+    d.notes @ d.notes.push(
+        "every path must end in a `return` with a value, or end on `exit(code:)`, `assert false` or a `while true` with no `break` of its own: a path runs on to the end past an `if` with no `else`, out of a `match` arm that ends in none of these, and past any other loop, since it counts as one that can finish"
+    )
+    d.notes @ d.notes.push(
+        "a value at the end of a path is not returned: a function hands its value back only through `return`, so write `return` before it"
+    )
     return d
+
+# A function every path of which calls the function itself before it
+# returns (panel 199's R1, defect 457; `check/self_call.hero`), told at
+# the first such call, naming the function. `spelled` and `receiver` are the
+# call's text and its receiver's where it is written `x.f(y)`, "" otherwise:
+# that spelling is how the author meets the shape (defect 455), and the note
+# says what it means. No fix: which path should return, and what, are the
+# author's to say, and any edit changes what the function does.
+function endless_recursion(name: str, spelled: str, receiver: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "endless_recursion",
+        message: "every path through `" + name + "` calls `" + name + "` again before it returns, so no call to it can return",
+        span: span
+    )
+
+    if spelled != ""
+        d.notes @ d.notes.push(
+            "`" + spelled + "` calls `" + name + "` with `" + receiver + "` first, since `x.f(y)` is `f(x, y)`, and inside `function " + name + "` that is this function"
+        )
+    d.notes @ d.notes.push(
+        "a call to `" + name + "` gives nothing back until the call it makes does, and that one makes another: give `" + name + "` a path that returns before the call, or ends on `exit(code:)`, `assert false` or a `while true` with no `break` of its own; an overflow or an index out of bounds stops the program and is no such path"
+    )
+    return d
+
+# The words the message is built from: the function's name, and for a call
+# written `x.f(y)` its own text and its receiver's, since that spelling is how
+# the author meets the shape (defect 455). A receiver the resolver reads as a
+# module names where `f` lives, `m.f(y)`, and is no first argument.
+function endless_recursion_at(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, site: i64) -> diag.Diagnostic
+    name = source.span_text(s, decls[at].name)
+    spelled: str @= ""
+    receiver: str @= ""
+
+    match a.exprs[site].kind
+        .method m =>
+            if r.uses[m.receiver] != .module
+                spelled @ source.span_text(s, a.exprs[site].span)
+                receiver @ source.span_text(s, a.exprs[m.receiver].span)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => spelled @ spelled
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => spelled @ spelled
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => spelled @ spelled
+
+    return endless_recursion(name: name, spelled: spelled, receiver: receiver, span: a.exprs[site].span)
 
 ## Tests
 
@@ -183,8 +323,39 @@ test "the two empty-handed branches stay two messages under one code"
     assert jumps.message == "this `match` produces no value — every branch jumps, so there is nothing to bind"
     assert fell.message == "this branch ends on a statement, so it produces no value — its last line has to be the value"
 
+    # A constant's body that jumps is the third, and names the constant.
+    left = constant_without_value(name: "MAX", span: span)
+    assert left.code == "no_value"
+    assert left.message == "constant `MAX` produces no value — its body jumps before it gives one, and a constant's value is its body's last line"
+    assert left.notes.len() == 1
+
+    # Panel 184's R4: a branch or a body that ends its path with no jump word
+    # is told in words that do not call it a jump.
+    ended = no_value_ended("match", span)
+    assert ended.code == "no_value"
+    assert ended.message == "this `match` produces no value — every branch leaves before it gives one, so there is nothing to bind"
+    assert ended.message != jumps.message
+    stopped = constant_ended(name: "MAX", span: span)
+    assert stopped.code == "no_value"
+    assert stopped.message == "constant `MAX` produces no value — its body never goes past this line, and a constant's value is its body's last line"
+
+test "a statement after a jump is told naming the jump, with no fix to apply"
+    d = unreachable_statement(word: "break", left_at: "line 7", span: token.Span(start: 40, end: 48))
+    assert d.code == "unreachable_statement"
+    assert d.message == "this statement never runs: the `break` at line 7 leaves its block first"
+    assert d.fixes.len() == 0
+    assert d.notes.len() == 1
+
 test "missing_return points at the promise and offers no fix"
     d = missing_return(name: "dist2", want: "i64", span: token.Span(start: 30, end: 33))
     assert d.fixes.len() == 0
-    assert d.notes.len() == 1
     assert d.message == "`dist2` must return `i64`, and one path through it returns nothing"
+
+    # Defect 142: no note may send the author to a form the checker refuses.
+    # Each repair named here is a case that builds and runs, in
+    # `tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero` and,
+    # for the three ends of a path panel 184's R4 added, in
+    # `tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero`.
+    assert d.notes.len() == 2
+    assert d.notes[0] == "every path must end in a `return` with a value, or end on `exit(code:)`, `assert false` or a `while true` with no `break` of its own: a path runs on to the end past an `if` with no `else`, out of a `match` arm that ends in none of these, and past any other loop, since it counts as one that can finish"
+    assert d.notes[1] == "a value at the end of a path is not returned: a function hands its value back only through `return`, so write `return` before it"

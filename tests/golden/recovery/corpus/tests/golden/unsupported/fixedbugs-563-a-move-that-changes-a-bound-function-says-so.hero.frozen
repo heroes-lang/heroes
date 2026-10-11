@@ -1,0 +1,20 @@
+# fixedbugs, defect 563, lane b18-ffi, 2026-10-10 (panel 204's R3; the
+# completeness critic's correction, *a move that changes what a bound name
+# means says so*).
+#
+# `fixedbugs-563-width.h` spells `Wide`, which `fixedbugs-563-wide.h`
+# defines, so the first group is refused and the move that compiles is the
+# second group above it. Both headers define `FIXEDBUGS_563_WIDTH` only where
+# nothing has, 8 and 16, so moving the second above the first makes `width`
+# add 16 where the groups as written would add 8. Both orders are
+# preprocessed once, and the note names `width`, whose definition reads
+# otherwise.
+extern "fixedbugs-563-width.h"  #~ ffi_header_refused
+    function width(w: Wide) -> i32
+
+extern "fixedbugs-563-wide.h"
+    record Wide
+        v: i32
+
+function main()
+    print(width(w: Wide(v: 1)))

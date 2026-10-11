@@ -42,8 +42,8 @@ function opens_with(s: Scan, word: str) -> bool
 
 # One line of Markdown, as the text a reader would be left with.
 function plain(text: str) -> str
-    s: Scan @ Scan(text: text, pos: 0)
-    out: [str] @ []
+    s: Scan @= Scan(text: text, pos: 0)
+    out: [str] @= []
 
     while !at_end(s)
         if opens_with(s, "**")
@@ -67,7 +67,7 @@ function plain(text: str) -> str
 function link(@s: Scan) -> str
     opened = s.pos
     advance(@s)
-    label: [str] @ []
+    label: [str] @= []
 
     while !at_end(s) && here(s) != ']'
         label @ label.push(one(s))
@@ -80,7 +80,7 @@ function link(@s: Scan) -> str
     if at_end(s) || here(s) != '('
         return give_up(@s, opened)
     advance(@s)
-    target: [str] @ []
+    target: [str] @= []
 
     while !at_end(s) && here(s) != ')'
         target @ target.push(one(s))

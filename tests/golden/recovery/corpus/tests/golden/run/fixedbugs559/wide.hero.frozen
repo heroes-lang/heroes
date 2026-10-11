@@ -1,0 +1,8 @@
+# A module of defect 559's cases (lane b18-ffi, 2026-10-10): its header
+# defines `WIDE`, which another module's header lays a struct out by.
+
+extern "fixedbugs-559-wide.h"
+    function twice(x: i64) -> i64
+
+function doubled(x: i64) -> i64
+    return twice(x: x)

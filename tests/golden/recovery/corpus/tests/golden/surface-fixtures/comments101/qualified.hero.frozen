@@ -18,7 +18,7 @@ function g(n: i64) -> [money.  # in a result
 
 function h(n: i64) -> i64
     xs: [money.  # in a local's type
-        Balance] @ g(n: n)
+        Balance] = g(n: n)
     return xs.len()
 
 function own(b: money.

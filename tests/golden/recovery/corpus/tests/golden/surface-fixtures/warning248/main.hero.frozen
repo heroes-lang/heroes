@@ -1,0 +1,10 @@
+# Defect 248 (panel 189's ffi-pragmatist, 2026-10-04), its surface case (lane
+# b14-harness-b, 2026-10-07, defect 328's remedy): a header clang warns of,
+# bound for one constant. The warning is told once, by the program's own
+# unit, where it was told a second time naming the pointee probe's file under
+# `build/`, which the author never wrote.
+extern "lib.h"
+    constant ANSWER: i64
+
+function main()
+    print(ANSWER)

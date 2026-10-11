@@ -42,7 +42,7 @@ function small(n: i8) -> i64
 
 function main()
     text = "hi you"
-    classes: [str] @ []
+    classes: [str] @= []
 
     for i in range(from: 0, to: text.len())
         classes @ classes.push(byte_class(text[i]))

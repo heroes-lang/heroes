@@ -1,0 +1,17 @@
+# The price panel 199's R2 pays at `-O2` (defect 508, ratified 2026-10-09),
+# pinned where the level can be named: `-fno-optimize-sibling-calls` keeps
+# this call in tail position a call, so it spends a frame a call at `-O2` as
+# at `-O0`. Ten million deep, the sum printed at `-O2` until R2 and aborted at
+# `-O0`; it aborts at both now, which is spec `:280`'s one meaning. A hundred
+# thousand is the depth this row asks at `-O2`, where it printed before the
+# flag and prints after it (this Mac, 2026-10-09); at `-O0` it aborts here,
+# before the flag and after, on an 8 MB stack, and prints on Windows' 64 MB,
+# so no row asks it at `-O0`. `tests/golden/run/fixedbugs-508-a-tail-...`
+# asks twenty thousand at every level.
+function sum_to(n: i64, acc: i64) -> i64
+    if n == 0
+        return acc
+    return sum_to(n: n - 1, acc: acc + n)
+
+function main()
+    print(sum_to(n: 100000, acc: 0))

@@ -36,6 +36,7 @@ use floors
 use shell
 use strings
 use growth
+use stream_writes
 
 constant COMPILER: str
     "selfhost"
@@ -64,8 +65,8 @@ constant CEILING: i64
 # here that grows is red again.
 #
 # The one number that WAS raised, four times on 2026-08-26 and -28:
-# `print_fmt.hero` 843 -> 888 -> 903 -> 996 -> 1005 for defect 003 (docs/work/DONE.md),
-# defect 004 (docs/work/DONE.md), panel 095 stage 3 and WIDTH 88 -> 120. Raised, never
+# `print_fmt.hero` 843 -> 888 -> 903 -> 996 -> 1005 for defect 003,
+# defect 004, panel 095 stage 3 and WIDTH 88 -> 120. Raised, never
 # split, because the language refuses the only cut available — 003's two
 # functions read `power` and `wrapped`, so the seam runs print_bodies ->
 # print_fmt -> print_bodies and `module_cycle` fires on the `use` edge
@@ -432,6 +433,47 @@ constant CEILING: i64
 # the one printer of the words after a parameter or a result, shared by `fmt`
 # and `dump`, which held two copies of five functions until today; `fmt.hero`
 # reads 1141 against its 1175 afterwards.
+#
+# **One moved on 2026-10-02, lane land186, for panel 186's R7.** `ir.hero`
+# 310 -> **315** (measured 313): a record over a C union is built naming
+# exactly one member of each union, so a construction of a group's record
+# may name some of its fields, and `record_shape` carries which, `given`, one
+# field and the two comment lines that say what it holds. The file's types
+# are the IR's one vocabulary and have no seam the lowering and the emitter
+# would not both cross, and the rest of the rule went where it has one:
+# `check/group_fields.hero` holds the labels, `emit/layout_sites.hero` asks
+# C what a construction leaves out, and `emit/ffi_built.hero` tells it once
+# per construction.
+#
+# **One moved on 2026-10-06, lane b13-unit, for panel 194's R7 (defects 092
+# and 395).** `emit/ctype.hero` 395 -> **400** (measured 399): a lend's count
+# is compared in the unit C counts it in, the header's own type for the
+# parameter, which only the pointee check reads, so the emitter is handed it
+# the way it is handed a handle's `struct` tag — on `Names`, the one table every
+# emitter already holds. One field, its comment line, and the empty map the
+# constructor starts it from; the rest is in files with room
+# (`cli/header_types.hero`, `emit/lend_extent.hero`, `emit/lend_count.hero`).
+#
+# **One moved down on 2026-10-07, for defect 259.** `check/table.hero` 389 ->
+# **370**, what it measures in this suite's unit once lane b14-check split
+# defect 259's memo out into `check/type_fit.hero` (`b2be2c9c`): a ceiling
+# left above what its file measures is room for growth nobody sees.
+#
+# **And down again the same night, for defect 502.** `check/table.hero` 370
+# -> **353**, what it measures at lane b14-p409's tip (`0c8df40c`) once
+# defect 409 moved the type table's two runs out into `check/type_runs.hero`
+# and its pushes into `append_node`. Measured in this suite's unit on that
+# tree merged with lane b15-harness's; the trunk before that merge measures
+# 370, so this row reads red on a tree that lacks defect 409's repair, which
+# is the merge order the round carries.
+#
+# **One arrived on 2026-10-07, for defect 333.** `print/brackets.hero` at
+# **315**: an empty call past the width no longer breaks as `.must(` over `)`,
+# which made nothing shorter, and the bracket that holds nothing is printed by
+# `shut`, a new member of the knot the module doc maps (`broken` the entry,
+# `spread`, `opened`, `shut`, `one_line`, `part` and `element` calling
+# `spread` again), which Heroes refuses to cut into two modules (lane
+# b14-text, `f38c25b2`).
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -440,18 +482,63 @@ constant DECIDED: [str]
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 550"
-        "selfhost/check/table.hero 389"
+        "selfhost/check/table.hero 353"
         "selfhost/check/builtins.hero 378"
         "selfhost/ir/mono.hero 380"
-        "selfhost/emit/ctype.hero 395"
+        "selfhost/emit/ctype.hero 400"
         "selfhost/emit/structural.hero 335"
         "selfhost/emit/gate.hero 365"
         "selfhost/resolve/cycles.hero 331"
         "selfhost/resolve/state.hero 330"
         "selfhost/emit/inst.hero 350"
-        "selfhost/ir.hero 310"
+        "selfhost/ir.hero 315"
         "selfhost/modules.hero 320"
         "selfhost/parse/use_line.hero 310"
+        "selfhost/print/brackets.hero 315"
+    ]
+
+# THE PARSER'S MODULES HAVE A BUDGET, and not only each file a ceiling
+# (panel 187's R9, the compiler engineer's route for what a finished recovery
+# is, design.md §1.1: simplicity sets the ceiling). Between defect 130's
+# filing (`0338b598`) and the sitting (`07ccb72a`) the front end the parser
+# reaches went from 8,407 lines to 19,201 and `parse/` from 2,403 to 8,696,
+# every file under its ceiling: a per-file ceiling is met by adding files.
+# A repair here pays for its lines by deleting or moving others; a
+# `blocking` repair that cannot raises its row with the reason written beside
+# it, as a `DECIDED` row is raised. A row is a directory, with its `/`, and
+# its lines in `code_lines`' unit, summed over the modules under it.
+#
+# ITS PREMISE, a falsifiable claim: the parser's recovery is written under
+# `parse/`. It is false in part the day the row is written (the lexer's joins,
+# `open_line.hero`, `sign_above.hero` and `grammar_expr.hero` stand outside),
+# and a module moved out of `parse/` escapes the row: the row holds a
+# directory, where the front end's `use` closure from `parse.hero` would hold
+# the parser, at the cost of a module walk here, unbuilt. So a move pays for
+# lines only along a seam, code that reads no parse: the lane that wrote this
+# row paid defect 203's 21 lines so, `head_lines`' three margin readers to
+# `text_lines`, which reads every line of a text.
+#
+# **Raised 2026-10-07, 8696 -> 8699, for defect 456 (`blocking`).** `heroes
+# check` exited 134 on a parenthesised type broken across lines at a body's
+# end: `parse/brace_habit.hero`'s `a_closer_too_many` and `stray_run` read one
+# token past a body cursor's last (lane b14-text, `428a5cfd`). The bound is
+# five lines in the file that reads past the end, and the row had two lines
+# of room at lane b14-parse's close (8,694): a crash in the parser is repaired
+# where the read is, never moved elsewhere to fit a count.
+#
+# **Raised 2026-10-10, 8699 -> 8735, for panel 209's R1b at M-inferred-cell
+# step 2.** A cell is declared by its own symbol, `@=`, and the parser reads it
+# where the annotation is read: `parse/annotation.hero`'s `cell_symbol`, which
+# also tells the old `@` once, with the certain fix that rewrote the tree
+# through `check --apply` (+15), and `parse/at_prefix.hero`'s `lent_with_eq`,
+# the `@=` written where an argument's `@` was meant, one message with its
+# certain fix instead of a token nobody named (+13); 36 in this row's unit,
+# measured by this suite narrowed to `parse/apart.hero` at the step's gate. A
+# surface form the panel adopted is read beside its neighbours, never moved
+# elsewhere to fit a count.
+constant BUDGETS: [str]
+    [
+        "selfhost/parse/ 8735"
     ]
 
 # The floor is the Rust's own idea —
@@ -474,8 +561,18 @@ constant DECIDED: [str]
 # gate of lanes X3 and X4: tonight's lanes of defects 129 to 133 added
 # their modules, the batch's eleven among them, and 322 is past 257 by more
 # than a quarter.
+#
+# **403 on 2026-10-04**, re-based when `floors.check` said so at batch 8's
+# gate: the trunk stood at 392, the batch's lanes added eleven modules,
+# `head_names.hero`, `head_package.hero` and `head_windows.hero` among them,
+# and 403 is past 322 by more than a quarter.
+#
+# **527 on 2026-10-08**, re-based when `floors.check` said so at batch 15's
+# gate: lane b15-mutate's port of the recovery cut added 24 modules under
+# `selfhost/mutate/`, the other lanes their own, and 527 is past 403 by more
+# than a quarter.
 constant LEAST: i64
-    322
+    527
 
 # THE LEXER'S GROWING ARRAYS ARE APPENDED ONLY THROUGH ITS TWO HELPERS
 # (defect 103, 2026-09-26). `l.tokens @ l.tokens.push(t)` is a field place,
@@ -488,11 +585,43 @@ constant LEAST: i64
 # outside comments, because a list of lexer files is a premise that would
 # expire the day a new one appends. `state.push_break` joined them for the
 # refused breaks (defect 129, 2026-09-28), and so did its slow spelling here.
+# `state.push_bracket` joined them for the brackets open (defect 344,
+# 2026-10-05): 8,000 lines each leaving a bracket open copied the stack of
+# every one open below it, and the lexer cost the square of its openers.
+# And a list of reports grown through a field place, whatever holds it,
+# `r.out.diagnostics @ r.out.diagnostics.push(d)` (defects 146 and 350,
+# 2026-10-05): the parser's, the resolver's, the checker's and the
+# lowering's grow by one per report, and each push copied every one before
+# it (`reports_through_a_field`).
+#
+# **And the twelve pushes defect 409 made grow in place** (defect 502,
+# 2026-10-07), each spelled here as it stood before lane b14-p409 lent its
+# array to a helper: the type table's nodes, their poison and its two runs
+# (`check/table.hero`, `append_node` and `check/type_runs.hero`), the
+# checker's missing returns and its holes (`state.append_diagnostic`,
+# `state.append_hole`), the moved walk's reports, the C writer's chunk and
+# chunks (`emit/writer.hero`'s `add_line`), and a compilation's faults
+# (`module/reading.hero`'s `add_fault`). Each was quadratic in what the
+# program holds, the type table the square of every type it interns, and
+# nothing kept a repair from being undone by the next edit until this list
+# named them. A spelling, as the four above: the holder's name the module
+# gives it, which is what an edit would write back.
 constant SLOW_APPENDS: [str]
     [
         "l.tokens @ l.tokens.push("
         "l.diagnostics @ l.diagnostics.push("
         "l.breaks @ l.breaks.push("
+        "l.open_brackets @ l.open_brackets.push("
+        "t.nodes @ t.nodes.push("
+        "t.poison @ t.poison.push("
+        "t.params @ t.params.push("
+        "t.labels @ t.labels.push("
+        "c.missing_returns @ c.missing_returns.push("
+        "c.out.holes @ c.out.holes.push("
+        "w.found @ w.found.push("
+        "w.chunk @ w.chunk.push("
+        "w.chunks @ w.chunks.push("
+        "out.faults @ out.faults.push("
     ]
 
 # A TEXT IS NEVER GROWN BY `+` WHERE THAT COPIES IT AT EVERY STEP (defect 105,
@@ -516,10 +645,11 @@ constant GROWTH_ALLOWED: [str]
 
 # `only` narrows the walk to the modules whose path holds it, which is how the
 # write-time hook asks about one file with the instrument's own unit
-# (`.claude/rules/verification.md`, the section on the suite as last judge); a narrowed run
-# asks no floor.
+# (`.claude/rules/verification.md`, the section on the suite as last judge); a
+# narrowed run asks no floor, and asks its modules' own appends, growths and
+# budget (defect 215, below).
 function run_all(scratch: str, only: str) -> report.Report?
-    r: report.Report @ report.empty()
+    r: report.Report @= report.empty()
 
     # **`list_tree`, not `list_entries`, and the difference is 133 files.**
     # `list_entries` scans with `recursive: 0`, which was the whole tree until
@@ -539,18 +669,58 @@ function run_all(scratch: str, only: str) -> report.Report?
     # that is three quarters of the compiler going unmeasured in green.
     nothing: [str] = []
     files = shell.list_tree(scratch: scratch, dir: COMPILER, skip: nothing)?
-    modules: [str] @ []
+    modules: [str] @= []
 
     for path in files
         if strings.ends_with(text: path, suffix: ".hero") && (only == "" || strings.contains(text: path, needle: only))
             modules @ modules.push(path)
 
+    # **A narrowed walk that selected no module asked nothing, and records
+    # nothing** (defect 209, 2026-10-04), so the harness's own rule reads it:
+    # zero cases exit 2. The ceiling below is one case for every module the
+    # walk took, so a name no module has read `1 passed, 0 failed`.
+    if only != "" && modules.len() == 0
+        return ok(r)
+
     if only == ""
         floors.check(@r, label: "layout", found: modules.len(), floor: LEAST, what: "modules")
-    over: [str] @ []
-    slow: [str] @ []
-    grown_keys: [str] @ []
-    grown_lines: [str] @ []
+
+    # **A narrowed walk asks its modules' own questions too** (defect 215,
+    # 2026-10-07): the appends they make, the texts they grow against the
+    # allowances that name THEM, and the budget of each directory holding one
+    # of them, summed over every module of that directory. Until that day a
+    # narrowed walk asked the ceiling alone, so lane win214's `b8ad7f9e`, a
+    # text grown by `+` in a loop, was first seen by the whole walk at the
+    # gate, four sites. An allowance for a module the walk did not take is not
+    # asked, since it would read as *no longer grown there*, a false red; nor
+    # is a budget whose directory holds no module the walk took.
+    allowed: [str] @= GROWTH_ALLOWED
+    rows: [str] @= BUDGETS
+
+    if only != ""
+        allowed @ entries_for(entries: GROWTH_ALLOWED, modules: modules)
+        rows @ rows_holding(rows: BUDGETS, modules: modules)
+    over: [str] @= []
+    slow: [str] @= []
+    streams: [str] @= []
+    grown_keys: [str] @= []
+    grown_lines: [str] @= []
+    spent: [i64] @= []
+    held: [i64] @= []
+
+    for _ in rows
+        spent @ spent.push(0)
+        held @ held.push(0)
+
+    # A row is a directory's sum, so a narrowed walk reads every module under
+    # the rows it asks, not only the modules it took.
+    if only != "" && rows.len() > 0
+        for path in files
+            if strings.ends_with(text: path, suffix: ".hero")
+                whole = read_file(path)
+
+                if !whole.is_err()
+                    tally(spent: @spent, held: @held, rows: rows, path: path, lines: code_lines(whole.must()))
 
     for path in modules
         text = read_file(path)
@@ -562,6 +732,9 @@ function run_all(scratch: str, only: str) -> report.Report?
         for found in slow_appends(path: path, text: text.must())
             slow @ slow.push(found)
 
+        for site in stream_writes.sites(path: path, text: text.must())
+            streams @ streams.push("    " + path + ":" + site.line.to_str() + ": " + site.code)
+
         for site in growth.sites(text.must())
             key = path + " " + site.name
             where = "    " + path + ":" + site.line.to_str() + ": " + site.code
@@ -569,6 +742,9 @@ function run_all(scratch: str, only: str) -> report.Report?
             grown_lines @ grown_lines.push(where)
 
         lines = code_lines(text.must())
+
+        if only == ""
+            tally(spent: @spent, held: @held, rows: rows, path: path, lines: lines)
         limit = ceiling_for(path)
 
         if lines > limit
@@ -581,27 +757,44 @@ function run_all(scratch: str, only: str) -> report.Report?
                     "    " + path + ": " + lines.to_str() + " lines of code, past the " + limit.to_str() + " it measured when this check was written — a file already over the ceiling may not grow further"
                 )
 
-    # A narrowed walk (`only`) sees one file, so the two questions about the
-    # whole tree, the lexer's appends and the grown texts against their
-    # allow-lists, are not asked: an allow-list entry for a file that was not
-    # walked would read as *no longer grown there*, which is a false red.
-    if only == ""
-        if slow.len() > 0
+    if slow.len() > 0
+        report.keep_failure(
+            @r,
+            label: "layout/appends",
+            detail: "  the lexer's growing arrays, every list of reports and the arrays defect 409 grew in place (the type table's, the checker's holes, the C writer's chunks, a compilation's faults) are appended through a helper the array is lent to, `state.push_token(@l.tokens, t)`, `state.push_diagnostic(@l.diagnostics, d)`, `cursor.say(@c, d)`, an `append_diagnostic(@r.out.diagnostics, d)`, `append_node(@t.nodes, @t.poison, …)` or `add_line(@w.chunk, …)`, never through the field itself, which copies the whole array at every append (defects 103, 350 and 409, design.md Part 8 wart 8):\n" + slow.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
+    # **A stream's tokens are written only through `relaid`** (defect 483):
+    # `tests/harness/stream_writes.hero` says what a write is and why.
+    if streams.len() > 0
+        report.keep_failure(
+            @r,
+            label: "layout/streams",
+            detail: "  once the parser's token stream is made, a token is written only through `stream_tables.relaid`, which refuses a kind a reader sees: the cursor's kept walk back goes on from where the last walk ended on that premise (defects 258 and 483). The lexer's own state, a `LexState`, is the stream still being made, and is not asked:\n" + streams.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+    grown = unallowed(found: grown_keys, written: grown_lines, allowed: allowed)
+
+    if grown.len() > 0
+        report.keep_failure(
+            @r,
+            label: "layout/concat",
+            detail: "  a text is grown by pushing its pieces onto a `[str]` and joining once, never by `+` at every step, which copies all of it each time (defect 105, design.md Part 8 wart 8):\n" + grown.join("\n")
+        )
+    else
+        report.keep_pass(@r)
+
+    if only == "" || rows.len() > 0
+        past = over_budget(rows: rows, spent: spent, held: held)
+
+        if past.len() > 0
             report.keep_failure(
                 @r,
-                label: "layout/appends",
-                detail: "  the lexer's growing arrays are appended through `state.push_token(@l.tokens, t)` and `state.push_diagnostic(@l.diagnostics, d)`, never through the field itself, which copies the whole array at every append (defect 103, design.md Part 8 wart 8):\n" + slow.join("\n")
-            )
-        else
-            report.keep_pass(@r)
-
-        grown = unallowed(found: grown_keys, written: grown_lines, allowed: GROWTH_ALLOWED)
-
-        if grown.len() > 0
-            report.keep_failure(
-                @r,
-                label: "layout/concat",
-                detail: "  a text is grown by pushing its pieces onto a `[str]` and joining once, never by `+` at every step, which copies all of it each time (defect 105, design.md Part 8 wart 8):\n" + grown.join("\n")
+                label: "layout/budget",
+                detail: "  a directory's modules may not pass the lines its row in `BUDGETS` grants (panel 187's R9): a repair pays for its lines by deleting or moving others, and a `blocking` one that cannot raises the row with its reason:\n" + past.join("\n")
             )
         else
             report.keep_pass(@r)
@@ -616,11 +809,51 @@ function run_all(scratch: str, only: str) -> report.Report?
         report.keep_pass(@r)
     return ok(r)
 
+# A module's lines added to each row of `rows` whose directory holds it, and
+# the module counted there.
+function tally(@spent: [i64], @held: [i64], rows: [str], path: str, lines: i64)
+    index: i64 @= 0
+
+    for entry in rows
+        parts = strings.words(entry)
+
+        if parts.len() > 0 && strings.starts_with(text: path, prefix: parts[0])
+            spent[index] @ spent[index] + lines
+            held[index] @ held[index] + 1
+        index @ index + 1
+
+# Each row of `rows` the tree passes or names wrongly, said with its numbers:
+# a row that is not a directory with its `/` and a number, a directory that
+# holds no module, where the budget would measure nothing and pass, and one
+# whose modules, `spent` lines over `held` of them, pass its number.
+function over_budget(rows: [str], spent: [i64], held: [i64]) -> [str]
+    out: [str] @= []
+    index: i64 @= 0
+
+    for entry in rows
+        parts = strings.words(entry)
+        number: i64? @= fail(code: "row", msg: "no number")
+
+        if parts.len() == 2
+            number @ strings.to_number(parts[1])
+
+        if number.is_err() || !strings.ends_with(text: parts[0], suffix: "/")
+            out @ out.push("    `" + entry + "` is not a directory with its `/` and a number")
+        else if held[index] == 0
+            out @ out.push("    " + parts[0] + " holds no module, so its budget measures nothing")
+        else if spent[index] > number.must()
+            out @ out.push(
+                "    " + parts[0] + ": " + spent[index].to_str() + " lines of code, past its budget of " + number.must().to_str()
+            )
+        index @ index + 1
+
+    return out
+
 # The growths no allowance names, and each allowance no growth matched:
 # `found[i]` is `written[i]`'s module and name, as an allowance spells them.
 function unallowed(found: [str], written: [str], allowed: [str]) -> [str]
-    out: [str] @ []
-    index: i64 @ 0
+    out: [str] @= []
+    index: i64 @= 0
 
     for key in found
         if !listed(allowed, key: key)
@@ -631,6 +864,37 @@ function unallowed(found: [str], written: [str], allowed: [str]) -> [str]
         if !listed(found, key: entry)
             stale = "    " + entry + ": allowed, and no longer grown there: remove the entry"
             out @ out.push(stale)
+
+    return out
+
+# The entries of `entries`, `<module> <name>` each, whose module is one of
+# `modules`.
+function entries_for(entries: [str], modules: [str]) -> [str]
+    out: [str] @= []
+
+    for entry in entries
+        parts = strings.words(entry)
+
+        if parts.len() > 0 && listed(modules, key: parts[0])
+            out @ out.push(entry)
+
+    return out
+
+# The rows of `rows`, `<directory/> <lines>` each, whose directory holds one
+# of `modules`.
+function rows_holding(rows: [str], modules: [str]) -> [str]
+    out: [str] @= []
+
+    for row in rows
+        parts = strings.words(row)
+        holds: bool @= false
+
+        for path in modules
+            if parts.len() > 0 && strings.starts_with(text: path, prefix: parts[0])
+                holds @ true
+
+        if holds
+            out @ out.push(row)
 
     return out
 
@@ -645,8 +909,8 @@ function listed(entries: [str], key: str) -> bool
 # Every line of `text`, outside a comment, that appends to the lexer's state
 # through the field, as `path:line: the line`.
 function slow_appends(path: str, text: str) -> [str]
-    out: [str] @ []
-    at: i64 @ 0
+    out: [str] @= []
+    at: i64 @= 0
 
     for row in strings.split_on(text: text, byte: '\n')
         at @ at + 1
@@ -655,11 +919,27 @@ function slow_appends(path: str, text: str) -> [str]
         if strings.starts_with(text: code, prefix: "#")
             continue
 
+        hit: bool @= reports_through_a_field(code)
+
         for needle in SLOW_APPENDS
             if strings.contains(text: code, needle: needle)
-                out @ out.push("    " + path + ":" + at.to_str() + ": " + code)
+                hit @ true
+
+        if hit
+            out @ out.push("    " + path + ":" + at.to_str() + ": " + code)
 
     return out
+
+# Whether a line of code grows a list of reports through a field place,
+# `x.diagnostics @ x.diagnostics.push(`, whatever holds the list.
+function reports_through_a_field(code: str) -> bool
+    at = strings.index_of(text: code, needle: " @ ")
+
+    if at.is_err()
+        return false
+    place = code.slice(from: 0, to: at.must())
+    rest = code.slice(from: at.must() + 3, to: code.len())
+    return strings.contains(text: place, needle: ".") && strings.ends_with(text: place, suffix: "diagnostics") && strings.starts_with(text: rest, prefix: place + ".push(")
 
 # The lines a reader must hold in their head: everything outside a `test`
 # block, AND NOT A BLANK LINE.
@@ -684,8 +964,8 @@ function slow_appends(path: str, text: str) -> [str]
 # table entirely. That is what says the metric change is not a way to
 # hide growth: it moves numbers in both directions.
 function code_lines(text: str) -> i64
-    count: i64 @ 0
-    inside: bool @ false
+    count: i64 @= 0
+    inside: bool @= false
 
     for row in strings.lines(text)
         if strings.starts_with(text: row, prefix: "test \"")
@@ -852,13 +1132,111 @@ test "the ceiling is per file, and a decided file keeps its own"
     # **18 -> 19 on 2026-09-14**, M-cleanup-verdict step 1: `emit/structural.hero`
     # arrives for defect 032's repair, an ADDITION, which is the direction this
     # assert exists to make somebody type. The reason is above DECIDED.
-    assert DECIDED.len() == 18
+    #
+    # **18 -> 19 on 2026-10-07**, batch 14: `print/brackets.hero` arrives for
+    # defect 333's `shut`, an ADDITION, a knot the module doc maps. The reason
+    # is above DECIDED.
+    assert DECIDED.len() == 19
+
+# DEFECT 209, held as a test (2026-10-04): a narrowed walk that selects no
+# module records nothing, where it read one pass, and one that selects a module
+# asks its ceiling, and since defect 215 its appends and its growths: three;
+# four since defect 483, its writes to a stream's tokens.
+test "fixedbugs: a narrowed layout walk that selects no module records nothing (defect 209)"
+    scratch = shell.own_scratch()
+    none = run_all(scratch: scratch, only: "no-module-is-named-this")
+    assert !none.is_err()
+    assert none.must().passed == 0
+    assert none.must().failed == 0
+    one = run_all(scratch: scratch, only: "selfhost/ast.hero")
+    assert !one.is_err()
+    assert one.must().passed == 4
+    assert one.must().failed == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# DEFECT 215, held as a test (2026-10-07): a narrowed walk asks its module's
+# growths against the allowances that name it, so the one module an allowance
+# names passes, and its directory's budget where a row holds it, four cases;
+# one more each since defect 483, the module's writes to a stream's tokens.
+test "fixedbugs: a narrowed layout walk asks the module's appends, growths and budget (defect 215)"
+    scratch = shell.own_scratch()
+    allowed = run_all(scratch: scratch, only: "selfhost/emit/container.hero")
+    assert !allowed.is_err()
+    assert allowed.must().passed == 4
+    assert allowed.must().failed == 0
+    budgeted = run_all(scratch: scratch, only: "selfhost/parse/apart.hero")
+    assert !budgeted.is_err()
+    assert budgeted.must().passed == 5
+    assert budgeted.must().failed == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+test "an allowance and a budget are asked of the modules a walk took"
+    taken = ["selfhost/a.hero"]
+    assert entries_for(entries: ["selfhost/a.hero x", "selfhost/b.hero y"], modules: taken) == ["selfhost/a.hero x"]
+    none: [str] = []
+    assert entries_for(entries: ["selfhost/a.hero x"], modules: none).len() == 0
+    assert rows_holding(rows: ["selfhost/parse/ 10", "selfhost/print/ 5"], modules: ["selfhost/parse/a.hero"]) == ["selfhost/parse/ 10"]
+    assert rows_holding(rows: ["selfhost/parse/ 10"], modules: ["selfhost/parse.hero"]).len() == 0
 
 test "an append to the lexer's state through the field is found, and one in a comment is not"
     text = "function f(@l: LexState)\n    l.tokens @ l.tokens.push(t)\n    # l.tokens @ l.tokens.push(t) is the slow spelling\n    push_token(@l.tokens, t)\n"
     found = slow_appends(path: "x.hero", text: text)
     assert found.len() == 1
     assert strings.contains(text: found[0], needle: "x.hero:2:")
+    opened = slow_appends(
+        path: "y.hero",
+        text: "    l.open_brackets @ l.open_brackets.push(span)\n    push_bracket(@l.open_brackets, span)\n"
+    )
+    assert opened.len() == 1
+    reports = slow_appends(
+        path: "z.hero",
+        text: "    r.out.diagnostics @ r.out.diagnostics.push(d)\n    append_diagnostic(@r.out.diagnostics, d)\n"
+    )
+    assert reports.len() == 1
+
+# DEFECT 502, held as a test (2026-10-07): each of the twelve pushes defect
+# 409 made grow in place, written back through its field as the trunk held it
+# at `56def9b4` (`check/table.hero`, `decls.hero`, `walk.hero`,
+# `moved_walk.hero`, `emit/writer.hero`, `module/reading.hero`), is found,
+# and the spelling lane b14-p409 wrote in its place is not. Until that day
+# every one read green here.
+test "fixedbugs: defect 409's pushes, spelled through their fields again, are found (defect 502)"
+    slow = [
+        "            t.nodes @ t.nodes.push(ty)"
+        "            t.poison @ t.poison.push(bad)"
+        "            t.params @ t.params.push(p)"
+        "            t.labels @ t.labels.push(name)"
+        "                        c.missing_returns @ c.missing_returns.push("
+        "            c.out.holes @ c.out.holes.push(state.Hole(at: id, span: span, expected: missing))"
+        "        c.out.holes @ c.out.holes.push(state.Hole(at: id, span: span, expected: expected))"
+        "    w.found @ w.found.push("
+        "    w.chunk @ w.chunk.push(text + \"\\n\")"
+        "        w.chunks @ w.chunks.push(join(w.chunk, \"\"))"
+        "            out.faults @ out.faults.push(source.Fault(at: one.at + s.files[index].start, byte: one.byte))"
+        "        out.faults @ out.faults.push(one)"
+    ]
+
+    for line in slow
+        assert slow_appends(path: "x.hero", text: line + "\n").len() == 1
+
+    # Twelve lines, ten spellings: the holes and the faults were each pushed
+    # from two places.
+    assert slow.len() == 12
+    grown = [
+        "    append_node(@t.nodes, @t.poison, ty: ty, bad: bad)"
+        "    start = type_runs.id_run(ids: @t.params, @t.runs, run: params)"
+        "    label_start = type_runs.name_run(names: @t.labels, @t.label_runs, run: labels)"
+        "                        state.append_diagnostic(\n                            @c.missing_returns,"
+        "            state.append_hole(@c.out.holes, state.Hole(at: id, span: span, expected: missing))"
+        "    state.append_diagnostic(\n        @w.found,"
+        "    add_line(@w.chunk, text: text + \"\\n\")"
+        "        add_line(@w.chunks, text: join(w.chunk, \"\"))"
+        "            add_fault(@out.faults, one)"
+        "    nodes @ nodes.push(ty)"
+    ]
+
+    for line in grown
+        assert slow_appends(path: "x.hero", text: line + "\n").len() == 0
 
 # Defect 105's check, both ways: a growth no allowance names fails, one it
 # names passes, and an allowance no growth matches fails as stale.
@@ -877,3 +1255,35 @@ test "a growth the allowance names passes, any other fails, and a stale allowanc
         parts = strings.words(entry)
         assert parts.len() == 2
         assert strings.starts_with(text: parts[0], prefix: "selfhost/")
+
+test "a budget's row is a directory with its slash, so `parse.hero` is not under `parse/`"
+    for entry in BUDGETS
+        parts = strings.words(entry)
+        assert parts.len() == 2
+        assert strings.ends_with(text: parts[0], suffix: "/")
+        assert !strings.to_number(parts[1]).is_err()
+
+    assert !strings.starts_with(text: "selfhost/parse.hero", prefix: "selfhost/parse/")
+    assert strings.starts_with(text: "selfhost/parse/opening.hero", prefix: "selfhost/parse/")
+
+test "a budget is passed, met, empty or malformed, and each but the met is said"
+    rows = ["selfhost/parse/ 10", "selfhost/none/ 5", "selfhost/parse 3"]
+    spent: [i64] @= [0, 0, 0]
+    held: [i64] @= [0, 0, 0]
+    tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/a.hero", lines: 6)
+    tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/b.hero", lines: 4)
+    tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse.hero", lines: 7)
+    assert spent == [10, 0, 17]
+    assert held == [2, 0, 3]
+
+    # Ten lines under a budget of ten meet it; the empty directory and the row
+    # with no `/` are told, a walk that finds nothing never passing in silence.
+    said = over_budget(rows: rows, spent: spent, held: held)
+    assert said.len() == 2
+    assert strings.contains(text: said[0], needle: "selfhost/none/ holds no module")
+    assert strings.contains(text: said[1], needle: "is not a directory")
+
+    # One line more than the row grants is said, with both numbers.
+    tally(spent: @spent, held: @held, rows: rows, path: "selfhost/parse/c.hero", lines: 1)
+    past = over_budget(rows: rows, spent: spent, held: held)
+    assert strings.contains(text: past[0], needle: "selfhost/parse/: 11 lines of code, past its budget of 10")

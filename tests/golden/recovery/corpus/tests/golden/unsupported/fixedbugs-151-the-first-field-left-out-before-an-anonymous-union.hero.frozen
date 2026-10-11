@@ -1,0 +1,20 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R4).
+#
+# SYMPTOM: a record over `SA` leaving out `kind`, its first member, was built
+# at exit 0 and printed 15: `i`, `f` and `x` were three zeros for C's three
+# members.
+#
+# CAUSE and FIX: those of the case beside it, for a field left out ahead of the
+# union rather than after it.
+
+extern "fixedbugs-151-unions.h"
+    record SA  #~ ffi_incomplete_record
+        i: i32
+        f: f32
+        x: i32
+
+function touch(s: SA) -> i32
+    return s.x
+
+function main()
+    print(1)

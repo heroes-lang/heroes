@@ -1,0 +1,15 @@
+# fixedbugs, defect 582, lane b19-pack, 2026-10-10, a shape beside
+# `fixedbugs-582-a-header-s-unclosed-pack-push-leaves-two-modules-one-record-layout`:
+# `#pragma pack(2)` with no push, a value and no stack, laid `Pair` out
+# with one byte of padding in `main`'s unit and printed
+# `-3669026321423400960` for `p.b`. `pack()` gives back the value too.
+
+use fixedbugs582/pair
+
+extern "fixedbugs-582-a-header-s-pack-2-with-no-push-leaves-the-records-their-layout.h"
+    function llabs(x: i64) -> i64
+
+function main()
+    p = pair.make(llabs(-123456789))
+    print(p.b, " ", pair.second(p), " ", pair.second(pair.Pair(a: 2, b: llabs(-987654321))))
+    print(pair.area(pair.shape(llabs(-7))))

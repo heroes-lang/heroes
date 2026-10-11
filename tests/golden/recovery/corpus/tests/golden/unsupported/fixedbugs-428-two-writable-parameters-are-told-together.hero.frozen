@@ -1,0 +1,16 @@
+# FIXED DEFECT 428, found beside defect 411 by lane b13-w411 on 2026-10-06 and
+# repaired there on 2026-10-07.
+#
+# SYMPTOM: a declaration with two `cstr` parameters C may write was told
+# `ffi_writable_parameter` for the first, and for the second only once the
+# first was repaired.
+#
+# CAUSE: the diagnostic spanned the whole declaration, and one diagnostic is
+# kept per span. FIX: it lands on the parameter (`emit/ffi_mutable.hero`s
+# THIS SHAPE: both parameters written, told together.
+
+extern "fixedbugs-428-two-writable.h"
+    function w_two(a: cstr lent, b: cstr lent) -> i32  #~ ffi_writable_parameter ffi_writable_parameter
+
+function main()
+    print(w_two(a: "a".cstr(), b: "b".cstr()))

@@ -32,11 +32,11 @@ use write/source as output
 # The report: how many lines, how long the longest was, and the first line
 # that looked like a heading.
 function report(text: str) -> str
-    r: input.Reader @ input.new_reader(text)
-    s: output.Sink @ output.new_sink()
-    longest: i64 @ 0
-    lines: i64 @ 0
-    heading: str @ ""
+    r: input.Reader @= input.new_reader(text)
+    s: output.Sink @= output.new_sink()
+    longest: i64 @= 0
+    lines: i64 @= 0
+    heading: str @= ""
 
     while true
         one = input.next_line(@r)
@@ -68,7 +68,7 @@ function report(text: str) -> str
 function looks_like_heading(row: str) -> bool
     if row.len() == 0
         return false
-    first: str @ ""
+    first: str @= ""
 
     for ch in row.chars()
         if first.len() == 0
@@ -104,8 +104,8 @@ test "a blank line counts as a line and is not a heading"
 test "the two modules are two modules, and this file calls them by two names"
     # The aliases are not cosmetic: `input.Reader` and `output.Sink` are
     # different types from different files whose paths end in the same word.
-    r: input.Reader @ input.new_reader("x\n")
-    s: output.Sink @ output.new_sink()
+    r: input.Reader @= input.new_reader("x\n")
+    s: output.Sink @= output.new_sink()
     assert input.remaining(r) == 1
     assert output.count(s) == 0
     output.emit(@s, input.next_line(@r).must())

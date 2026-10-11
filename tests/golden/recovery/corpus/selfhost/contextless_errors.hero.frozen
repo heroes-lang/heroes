@@ -15,14 +15,54 @@ use token
 use diag
 use digits
 
-function cannot_infer_empty(what: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+# An empty literal with nothing to type it. The guess shows an annotation of
+# the literal's own kind: until defect 553 one example served both, and an
+# empty map was offered `xs: [i64] = []`, an array's. Where it stands, the
+# guess binds it first under a name with its type and uses the name there:
+# until defect 574 it said *annotate the binding* of `print({})`, where there
+# is none. The binding's own guess is `annotated` below.
+function empty_array_literal(span: token.Span) -> diag.Diagnostic
+    return cannot_infer_empty(what: "array literal", name: "xs", written: "[i64]", literal: "[]", span: span)
+
+function empty_map_literal(span: token.Span) -> diag.Diagnostic
+    return cannot_infer_empty(what: "map literal", name: "m", written: "{str: i64}", literal: "{}", span: span)
+
+function cannot_infer_empty(what: str, name: str, written: str, literal: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cannot_infer",
         message: "the " + what + " is empty, so there is nothing to infer its type from — write the annotation",
         span: span
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "annotate the binding: `xs: [i64] = []`", replacement: "", span: span, certainty: .guess)
+        diag.Fix(title: "bind it first with its type, `" + name + ": " + written + " = " + literal + "`, and use `" + name + "` here", replacement: "", span: span, certainty: .guess)
+    )
+    return d
+
+# The same empty literal where it is the whole value of a binding with no
+# annotation, `counts = {}`, or of a cell's, `counts @= {}`: the guess
+# annotates that binding or cell, under the name the program gave it and
+# with its own symbol (defect 574; panel 209).
+function annotated(d: diag.Diagnostic, name: str, written: str, literal: str, cell: bool) -> diag.Diagnostic
+    out: diag.Diagnostic @= d
+    what: str @= "binding: `" + name + ": " + written + " = " + literal + "`"
+
+    if cell
+        what @ "cell: `" + name + ": " + written + " @= " + literal + "`"
+    out.fixes @ [diag.Fix(title: "annotate the " + what, replacement: "", span: d.span, certainty: .guess)]
+    return out
+
+# A cell born of the bare `nullptr` with no written type, `db @= nullptr`,
+# would be a `ptr` cell, and the handle it was meant to hold refuses it at
+# its first use, lines away and with no word of the declaration (panel 209):
+# told at the birth, and the cell is poisoned so the call below says nothing.
+function cannot_infer_nullptr(name: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "cannot_infer",
+        message: "`nullptr` alone says `ptr`, not which handle `" + name + "` will hold — write the handle's type on the declaration",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "annotate the cell: `" + name + ": <Handle> @= nullptr`", replacement: "", span: span, certainty: .guess)
     )
     return d
 
@@ -73,7 +113,7 @@ function constructor_needs_context(name: str, span: token.Span) -> diag.Diagnost
 # has no such syntax, and a fix that suggests one sends the reader to a
 # form the parser refuses (the historian's Rust `::<_>` fixed point).
 function type_parameter_needs_context(callee: str, letter: str, result: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "cannot_infer",
         message: "nothing here says what `" + letter + "` of `" + callee + "` is: it appears only in the result `" + result + "`, so it takes the type the context asks for, and this position asks for none",
         span: span
@@ -113,7 +153,7 @@ function record_name_alone(name: str, span: token.Span) -> diag.Diagnostic
 # only the message was missing. The fix is a wrapper, named because the
 # reader would otherwise have to invent the shape.
 function builtin_as_value(name: str, span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @ diag.new_diagnostic(
+    d: diag.Diagnostic @= diag.new_diagnostic(
         code: "builtin_as_value",
         message: "`" + name + "` is a built-in of the language, not a function value — several take any number of arguments, or arguments of several types, which no single signature can describe",
         span: span
@@ -148,9 +188,16 @@ function int_out_of_range(text: str, span: token.Span) -> diag.Diagnostic
 
 test "a contextless form says where the missing half should come from"
     span = token.Span(start: 0, end: 4)
-    empty = cannot_infer_empty(what: "array literal", span: span)
+    empty = empty_array_literal(span)
     assert empty.message == "the array literal is empty, so there is nothing to infer its type from — write the annotation"
     assert empty.fixes[0].certainty == .guess
+    assert empty.fixes[0].title == "bind it first with its type, `xs: [i64] = []`, and use `xs` here"
+    no_entry = empty_map_literal(span)
+    assert no_entry.message == "the map literal is empty, so there is nothing to infer its type from — write the annotation"
+    assert no_entry.fixes[0].title == "bind it first with its type, `m: {str: i64} = {}`, and use `m` here"
+    bound = annotated(no_entry, name: "counts", written: "{str: i64}", literal: "{}", cell: false)
+    assert bound.fixes.len() == 1
+    assert bound.fixes[0].title == "annotate the binding: `counts: {str: i64} = {}`"
     case_alone = cannot_infer_case("plus", span)
     assert case_alone.message == "`.plus` does not say which variant it belongs to — the type has to come from the context (a signature, an annotation, or the value being returned)"
     ok_alone = constructor_needs_context("ok", span)

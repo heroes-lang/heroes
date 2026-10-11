@@ -1,0 +1,23 @@
+# Defect 382, 2026-10-06. A constant of `f32` holds C's `float`, each element
+# spelled in hex as a `double` that the static block's initializer narrows,
+# and `f64` and `bool` beside it (panel 195's R1); a negative float is a
+# negation, so `SIGNED` is built at every read, as every constant is under
+# `--sanitize` (R2). Each value prints as it reads back.
+
+constant HALF: [f32]
+    [0.5, 1.25, 0.1, 16777216.0]
+
+constant WIDE: [f64]
+    [0.1, 100000000000000000000.0, 0.00000000025]
+
+constant FLAGS: [bool]
+    [true, false]
+
+constant SIGNED: [f64]
+    [-2.75, 1.5]
+
+function main()
+    print(HALF[0], " ", HALF[1], " ", HALF[2], " ", HALF[3], " ", HALF[0] + HALF[1])
+    print(WIDE[0], " ", WIDE[1], " ", WIDE[2])
+    print(FLAGS[0], " ", FLAGS[1], " ", FLAGS == [true, false])
+    print(SIGNED[0], " ", SIGNED[1], " ", sort(SIGNED)[0])

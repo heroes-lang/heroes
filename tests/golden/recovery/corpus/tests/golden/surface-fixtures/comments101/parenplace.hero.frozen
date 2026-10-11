@@ -6,7 +6,7 @@
 # arm.
 
 function f(a: i64) -> i64
-    x: i64 @ 0
+    x: i64 @= 0
     (x  # after the place
     ) @ a
 

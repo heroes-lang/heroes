@@ -29,6 +29,6 @@ extern "math.h"
     function frexp(x: f64, @e: i64) -> f64  #~ ffi_parameter_type
 
 function main()
-    e: i64 @ 0
+    e: i64 @= 0
     print(frexp(8.0, @e))
     print(e)

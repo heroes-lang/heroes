@@ -1,0 +1,11 @@
+# Defect 355, panel 192's R7, 2026-10-05: `heroes test` prints a failing
+# test's title as its source spells it, so a character a line cannot show
+# reaches the runner's output by its code, `\u{1b}`, and never as itself: a
+# title holding one written raw is refused before any test runs (defects 251
+# and 283).
+
+test "a title holding \u{1b}[2J and \u{202e} here"
+    assert 1 == 2
+
+function main()
+    print(1)

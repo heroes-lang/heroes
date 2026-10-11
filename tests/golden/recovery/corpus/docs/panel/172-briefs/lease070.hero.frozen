@@ -1,8 +1,0 @@
-extern "giveaway.h"
-    function eat(s: cstr)
-
-function main()
-    x = "payload"
-    c: cstr @ x.lease()
-    eat(s: c)
-    end_lease(@c)

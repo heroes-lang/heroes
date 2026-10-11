@@ -16,9 +16,18 @@
 use source
 use diag
 use token
+use shown_char
+use excerpt_window
 
 # One diagnostic, in the rich form. No trailing blank line: the
 # caller joins.
+#
+# **Every control character in it is written by its code** (defect 244),
+# the excerpt's above all: the line as written went to the terminal raw, so a
+# file's ESC sequences coloured or cleared the screen that showed the message,
+# a lone carriage return wrote the rest of the line over its start, and a
+# file in UTF-16 sent hundreds of NULs. `shown_char.visible` writes each as
+# `<U+001B>`, and `caret` pads under it by that width.
 function render(d: diag.Diagnostic, s: source.Source) -> str
     # Two line numbers, and they are not the same thing once a
     # compilation has more than one file: `line` is what the reader is
@@ -27,35 +36,64 @@ function render(d: diag.Diagnostic, s: source.Source) -> str
     # find in it.
     found = source.locate(s, d.span.start)
     absolute = source.line_of(s, d.span.start)
-    rows: [str] @ [
+    rows: [str] @= [
         diag.word(d.kind) + "[" + d.code + "]: " + d.message + "\n  at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + "\n"
     ]
     number = found.line.to_str()
     gutter = " ".repeat(number.chars().len().to_u64().must())
     rows @ rows.push("  " + gutter + " |\n")
-    rows @ rows.push("  " + number + " | " + source_line(s, line: absolute) + "\n")
-    rows @ rows.push("  " + gutter + " | " + caret(s, d, col: found.col) + "\n")
+    shown = excerpt(s, d, line: absolute, col: found.col)
+    rows @ rows.push("  " + number + " | " + shown.line + "\n")
+    rows @ rows.push("  " + gutter + " | " + shown.caret + "\n")
 
     for note in d.notes
         rows @ rows.push("  note: " + note + "\n")
 
     for fix in d.fixes
-        tag: str @ "guess"
+        tag: str @= "guess"
 
         if fix.certainty == .certain
             tag @ "certain"
-        rows @ rows.push("  fix (" + tag + "): " + fix.title + "\n")
+        rows @ rows.push("  fix (" + tag + "): " + fix.title + elsewhere(s, d: d, fix: fix) + "\n")
 
-    return rows.join("")
+    return shown_char.visible(rows.join(""))
+
+# Where a fix applies, when that is not its message's own line: ` (at
+# t.hero:14:10)`, the place in the form the message's own `at` line gives
+# one (defect 271). A run of one mistake told once carries every repair of
+# it (defect 178's commas, `separator_runs`), and each later one stands on a
+# line of its own: an author fixing by hand met the next only after the first.
+# A fix on the message's line says nothing more, since the excerpt shows it.
+function elsewhere(s: source.Source, d: diag.Diagnostic, fix: diag.Fix) -> str
+    if source.line_of(s, fix.span.start) == source.line_of(s, d.span.start)
+        return ""
+    found = source.locate(s, fix.span.start)
+    return " (at " + found.file + ":" + found.line.to_str() + ":" + found.col.to_str() + ")"
 
 # Every diagnostic, in source order, separated by a blank line.
 function render_all(diagnostics: [diag.Diagnostic], s: source.Source) -> str
-    rendered: [str] @ []
+    rendered: [str] @= []
 
     for d in diagnostics
         rendered @ rendered.push(render(d, s))
 
     return rendered.join("\n")
+
+# The line as written and the caret under it: whole where the line, and
+# the stretch of it before the span, are no wider than
+# `excerpt_window.SHOWN` columns, and otherwise a window of it around the
+# span, each side it cuts marked, since a line of 4,000 refused characters
+# was 32 KB under each of its messages (defect 294).
+function excerpt(s: source.Source, d: diag.Diagnostic, line: i64, col: i64) -> excerpt_window.Excerpt
+    text = source_line(s, line: line)
+
+    if line < 1 || line > s.line_starts.len()
+        return excerpt_window.Excerpt(line: text, caret: caret(s, d, col: col))
+    start = s.line_starts[line - 1]
+
+    if !excerpt_window.wider(text, from: 0, to: text.len()) && !excerpt_window.wider(s.text, from: start, to: d.span.start)
+        return excerpt_window.Excerpt(line: text, caret: caret(s, d, col: col))
+    return excerpt_window.window(s, d, start: start, end: start + text.len(), col: col)
 
 # The line as written, in the WHOLE text's numbering, trailing
 # whitespace dropped. Sliced at the source's own line table (defect 105):
@@ -67,7 +105,7 @@ function source_line(s: source.Source, line: i64) -> str
     if line < 1 || line > s.line_starts.len()
         return ""
     start = s.line_starts[line - 1]
-    end: i64 @ s.text.len()
+    end: i64 @= s.text.len()
 
     if line < s.line_starts.len()
         end @ s.line_starts[line] - 1
@@ -90,22 +128,28 @@ function source_line(s: source.Source, line: i64) -> str
 # in the source line and not in a caret padded with spaces. rustc's
 # rule and rustc's reason: reuse the whitespace rather than guess a
 # tab width, and the two lines agree at any setting.
+#
+# A control character is as wide as the code `render` writes for it
+# (defect 244), before the caret and under it alike.
 function caret(s: source.Source, d: diag.Diagnostic, col: i64) -> str
     end_pos = source.line_col(s, d.span.end)
     start_line = source.line_of(s, d.span.start)
-    width: i64 @ 1
+    width: i64 @= 1
 
     if end_pos.line == start_line && end_pos.col > col
-        width @ end_pos.col - col
+        width @ 0
+
+        for ch in s.text.slice(from: d.span.start, to: d.span.end).chars()
+            width @ width + shown_char.width(ch)
     start = source.line_start_of(s, d.span.start)
     before = s.text.slice(from: start, to: d.span.start)
-    padding: [str] @ []
+    padding: [str] @= []
 
     for ch in before.chars()
         if ch == "\t"
             padding @ padding.push("\t")
         else
-            padding @ padding.push(" ")
+            padding @ padding.push(" ".repeat(shown_char.width(ch).to_u64().must()))
 
     return padding.join("") + "^".repeat(width.to_u64().must())
 
@@ -117,7 +161,7 @@ test "the rich form: caret on the span, notes and tagged fixes below"
 
     # The span of "x" including quotes: line 2, after `    return `.
     at = token.Span(start: 40, end: 43)
-    d: diag.Diagnostic @ diag.new_diagnostic(code: "type_mismatch", message: "expected `i64`, found `str`", span: at)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "type_mismatch", message: "expected `i64`, found `str`", span: at)
     d.notes @ d.notes.push("`half` is declared `-> i64` at line 1")
     d.fixes @ d.fixes.push(diag.Fix(title: "rename to `total`", replacement: "total", span: at, certainty: .guess))
     got = render(d, s)
@@ -129,6 +173,22 @@ test "the rich form: caret on the span, notes and tagged fixes below"
     # An unsupported row keeps its own first word.
     u = diag.new_unsupported(code: "map_key", message: "a `{f64: T}` map key is not emitted yet", span: at)
     assert diag.render_line(u, s) == "t.hero:2:12: unsupported[map_key]: a `{f64: T}` map key is not emitted yet"
+
+# Defect 271: a fix away from its message's line names its place, and one
+# on the line names none, as before.
+test "a fix that applies on another line says where, and one on the message's line does not"
+    text = "function main()\n    x = 1,\n    y = 2,\n"
+    s = source.new_source(name: "t.hero", text: text)
+    first = token.Span(start: 25, end: 26)
+    second = token.Span(start: 36, end: 37)
+    d: diag.Diagnostic @= diag.new_diagnostic(code: "expected_end_of_line", message: "m", span: first)
+    d.fixes @ d.fixes.push(diag.Fix(title: "delete the `,`", replacement: "", span: first, certainty: .certain))
+    d.fixes @ d.fixes.push(diag.Fix(title: "delete the `,`", replacement: "", span: second, certainty: .certain))
+    got = render(d, s)
+    assert diag_has(
+        text: got,
+        needle: "  fix (certain): delete the `,`\n  fix (certain): delete the `,` (at t.hero:3:10)\n"
+    )
 
 test "the caret counts characters, and a multi-line span is clamped to one"
     text = "function main()\n    print(\"ààà\")\n"
@@ -144,6 +204,57 @@ test "the caret counts characters, and a multi-line span is clamped to one"
     whole = diag.new_diagnostic(code: "y", message: "m", span: token.Span(start: 0, end: text.len()))
     assert diag_has(text: render(whole, s), needle: "| ^\n")
 
+# Defect 244: a source line's control characters reached the terminal raw
+# through the excerpt, and a message quoting one carried it too. Each is
+# written by its code, the caret padded under it by that width, a tab kept.
+test "the excerpt writes a control character by its code, and the caret stands under what it names"
+    esc = control([27])
+    text = "function main()\n    x = 1 " + esc + "[31mred\n"
+    s = source.new_source(name: "t.hero", text: text)
+    at = token.Span(start: 26, end: 27)
+    d: diag.Diagnostic = diag.new_diagnostic(code: "unexpected_character", message: "m", span: at)
+    got = render(d, s)
+    assert diag_has(text: got, needle: "  2 |     x = 1 <U+001B>[31mred\n")
+    assert diag_has(text: got, needle: "    |           ^^^^^^^^\n")
+    assert !shown_char.holds_control(got)
+
+    # Past it, the caret moves by the code's width, not by one.
+    after = render(diag.new_diagnostic(code: "x", message: "m", span: token.Span(start: 27, end: 28)), s)
+    assert diag_has(text: after, needle: "    |                   ^\n")
+
+    # A lone carriage return, which wrote the rest of the line over its start.
+    cr = render(d, source.new_source(name: "t.hero", text: "function main()\n    x = 1 # one\rFAKE\n"))
+    assert diag_has(text: cr, needle: "# one<U+000D>FAKE")
+
+    # A message, a note and a fix that quote one, and the one-line form.
+    quoted: diag.Diagnostic @= diag.new_diagnostic(
+        code: "unknown_escape",
+        message: "`\\" + esc + "` is not an escape",
+        span: at
+    )
+    quoted.notes @ quoted.notes.push("note " + control([7]))
+    quoted.fixes @ quoted.fixes.push(
+        diag.Fix(title: "escape it: `\\\\" + esc + "`", replacement: "\\\\" + esc, span: at, certainty: .certain)
+    )
+    whole = render(quoted, s)
+    assert diag_has(text: whole, needle: "error[unknown_escape]: `\\<U+001B>` is not an escape\n")
+    assert diag_has(text: whole, needle: "  note: note <U+0007>\n")
+    assert diag_has(text: whole, needle: "  fix (certain): escape it: `\\\\<U+001B>`\n")
+    assert !shown_char.holds_control(whole)
+    assert diag.render_line(quoted, s) == "t.hero:2:11: error[unknown_escape]: `\\<U+001B>` is not an escape"
+
+    # A tab stays, in the line and in the caret's padding.
+    tabbed = render(
+        diag.new_diagnostic(code: "x", message: "m", span: token.Span(start: 17, end: 18)),
+        source.new_source(name: "t.hero", text: "function main()\n\tx = 1\n")
+    )
+    assert diag_has(text: tabbed, needle: "  2 | \tx = 1\n    | \t^\n")
+
+# One character from its UTF-8 bytes, since the language writes none by its
+# code (spec § 2 Literals).
+function control(bytes: [u8]) -> str
+    return bytes.validated_bytes().must()
+
 function diag_has(text: str, needle: str) -> bool
     cs = text.chars()
     needle_cs = needle.chars()
@@ -153,11 +264,11 @@ function diag_has(text: str, needle: str) -> bool
 
     if needle_cs.len() > cs.len()
         return false
-    start: i64 @ 0
+    start: i64 @= 0
 
     while start <= cs.len() - needle_cs.len()
-        matched: bool @ true
-        offset: i64 @ 0
+        matched: bool @= true
+        offset: i64 @= 0
 
         while offset < needle_cs.len()
             if cs[start + offset] != needle_cs[offset]

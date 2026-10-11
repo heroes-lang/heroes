@@ -1,0 +1,9 @@
+function f(n: i64) -> i64
+    if n > 0
+        return 1
+    else
+        return 2
+    print(3)
+
+function main()
+    print(f(n: 1))

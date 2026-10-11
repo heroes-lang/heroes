@@ -40,7 +40,7 @@ function tick()
     print("tick")
 
 function main()
-    points: [Point] @ [Point(x: 1, y: 2), Point(x: 3, y: 4)]
+    points: [Point] = [Point(x: 1, y: 2), Point(x: 3, y: 4)]
     print(points[0].x)
     print(half(4).default(0))
     print(name_of(0).default("?"))

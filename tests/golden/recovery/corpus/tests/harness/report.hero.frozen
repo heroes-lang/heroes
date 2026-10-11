@@ -11,15 +11,33 @@
 # Failures are held and printed at the end rather than as they happen, so
 # the progress line stays one line per suite and the diffs are together
 # at the bottom where a reader looks first.
+#
+# **A skip is a third outcome, and it is NAMED** (defect 246, 2026-10-04). A
+# case this machine cannot judge, a library it lacks, is neither a pass nor a
+# failure, and until that day it was nothing at all: a count the floor read and
+# no line anybody could. The author's answer *A* of 2026-10-03 skips such a case
+# "there by name" (`.claude/rules/platforms.md`), so each skip is kept with its
+# reason and printed beside the failures, and the reader of a green run sees
+# which cases it did not judge.
+#
+# **A floor the tree has outgrown is a fourth, and it is TOLD** (defect 536,
+# 2026-10-09). `floors.check` reads a count from both sides; below its floor is
+# a failure, and past it by more than `floors.SLACK` was one too until that
+# day, gate B's most frequent red over batches 8 to 15 and never a defect of
+# the compiler. Since then the count passes, the floor is kept here with the
+# number to write, printed beside the skips, and counted on the suite's line
+# and the verdict's (`counted`), so it is seen on every run and moves no exit.
 
 record Report
     passed: i64
     failed: i64
     failures: [str]
+    skips: [str]
+    outgrown: [str]
 
 function empty() -> Report
     none: [str] = []
-    return Report(passed: 0, failed: 0, failures: none)
+    return Report(passed: 0, failed: 0, failures: none, skips: none, outgrown: none)
 
 function keep_pass(@r: Report)
     r.passed @ r.passed + 1
@@ -27,6 +45,33 @@ function keep_pass(@r: Report)
 function keep_failure(@r: Report, label: str, detail: str)
     r.failed @ r.failed + 1
     r.failures @ r.failures.push("FAIL " + label + "\n" + detail)
+
+# A case this machine could not judge, and why: printed, never counted as a
+# pass. Whoever skips also floors its skips (`suite_golden.hero`), so a machine
+# that can judge nothing is a failure rather than a list of names.
+function keep_skip(@r: Report, label: str, detail: str)
+    r.skips @ r.skips.push("SKIP " + label + "\n" + detail)
+
+# A floor the tree has outgrown, and the number to write: printed and counted,
+# never a failure. The count it judged is sound, so its caller keeps a pass
+# beside it (`floors.check`).
+function keep_outgrown(@r: Report, label: str, detail: str)
+    r.outgrown @ r.outgrown.push("FLOOR " + label + "\n" + detail)
+
+# The counts as a suite's line and the verdict say them: the passes, the
+# failures, and the floors outgrown where there are any, so a floor told is
+# counted on the line a reader reads, and the two numbers before it keep the
+# shape every reader of these lines parses.
+function counted(r: Report) -> str
+    said = r.passed.to_str() + " passed, " + r.failed.to_str() + " failed"
+
+    if r.outgrown.len() == 0
+        return said
+
+    if r.outgrown.len() == 1
+        return said + ", 1 floor outgrown"
+
+    return said + ", " + r.outgrown.len().to_str() + " floors outgrown"
 
 # Two texts, framed so the eye finds the edges. The frame is
 # golden.rs:145's, because a reader who has seen one of these should
@@ -37,23 +82,46 @@ function mismatch(what: str, expected: str, actual: str) -> str
 function tally(one: Report, two: Report) -> Report
     # `+` joins numbers and strings, never arrays (spec § 7 Operators), so the
     # failures are pushed one at a time.
-    merged: [str] @ one.failures
+    merged: [str] @= one.failures
 
     for failure in two.failures
         merged @ merged.push(failure)
 
-    return Report(passed: one.passed + two.passed, failed: one.failed + two.failed, failures: merged)
+    skipped: [str] @= one.skips
 
-# Prints every failure, then the count. The bool is the exit verdict.
+    for skip in two.skips
+        skipped @ skipped.push(skip)
+
+    told: [str] @= one.outgrown
+
+    for floor in two.outgrown
+        told @ told.push(floor)
+
+    return Report(
+        passed: one.passed + two.passed,
+        failed: one.failed + two.failed,
+        failures: merged,
+        skips: skipped,
+        outgrown: told
+    )
+
+# Prints every skip, every floor outgrown and every failure, then the count.
+# The bool is the exit verdict, and neither a skip nor a floor outgrown moves it.
 function verdict(r: Report, what: str) -> bool
+    for skip in r.skips
+        print(skip)
+
+    for floor in r.outgrown
+        print(floor)
+
     for failure in r.failures
         print(failure)
 
-    print(what + ": " + r.passed.to_str() + " passed, " + r.failed.to_str() + " failed")
+    print(what + ": " + counted(r))
     return r.failed == 0
 
 test "a report counts, keeps its failures and prints its verdict"
-    r: Report @ empty()
+    r: Report @= empty()
     keep_pass(@r)
     keep_pass(@r)
     keep_failure(@r, label: "check/x", detail: "  it said nothing")
@@ -67,11 +135,56 @@ test "a mismatch shows both sides and where each begins"
     assert shown == "  check/x.hero\n--- expected ---\none\n--- actual ---\ntwo\n--- end ---"
 
 test "two reports add up, failures included"
-    one: Report @ empty()
+    one: Report @= empty()
     keep_pass(@one)
-    two: Report @ empty()
+    two: Report @= empty()
     keep_failure(@two, label: "run/y", detail: "  exit 2")
     both = tally(one: one, two: two)
     assert both.passed == 1
     assert both.failed == 1
     assert both.failures.len() == 1
+
+test "a skip is named and kept, and it is neither a pass nor a failure"
+    r: Report @= empty()
+    keep_pass(@r)
+    keep_skip(@r, label: "unsupported/x", detail: "  clang does not find `gone.h` on this machine")
+    assert r.passed == 1
+    assert r.failed == 0
+    assert r.skips == ["SKIP unsupported/x\n  clang does not find `gone.h` on this machine"]
+
+    # A skip alone leaves the verdict green: what makes many skips a failure
+    # is the floor of whoever skips, not this record.
+    assert verdict(r, "self-test")
+
+    # And it travels with the tally, so the harness's last lines name it.
+    other: Report @= empty()
+    keep_skip(@other, label: "unsupported/y", detail: "  no `pkg-config` here")
+    both = tally(one: r, two: other)
+    assert both.skips.len() == 2
+    assert both.skips[1] == "SKIP unsupported/y\n  no `pkg-config` here"
+
+test "a floor outgrown is told and counted, and it moves no verdict"
+    r: Report @= empty()
+    keep_pass(@r)
+    keep_outgrown(@r, label: "canonical", detail: "  files: 1200 against a floor of 900")
+    assert r.passed == 1
+    assert r.failed == 0
+    assert r.outgrown == ["FLOOR canonical\n  files: 1200 against a floor of 900"]
+    assert counted(r) == "1 passed, 0 failed, 1 floor outgrown"
+    assert verdict(r, "self-test")
+
+    # The shape every reader of a count line parses is kept when none is told,
+    # and a second floor is counted in the plural.
+    plain: Report @= empty()
+    keep_pass(@plain)
+    assert counted(plain) == "1 passed, 0 failed"
+    other: Report @= empty()
+    keep_outgrown(@other, label: "layout", detail: "  modules: 700 against a floor of 527")
+    keep_failure(@other, label: "layout", detail: "  over its ceiling")
+    both = tally(one: r, two: other)
+    assert both.outgrown.len() == 2
+    assert both.outgrown[1] == "FLOOR layout\n  modules: 700 against a floor of 527"
+    assert counted(both) == "1 passed, 1 failed, 2 floors outgrown"
+
+    # A failure beside a floor told is still a red verdict.
+    assert !verdict(both, "self-test")

@@ -20,11 +20,11 @@
 # it is the same rule the format strings of four other languages use.
 
 function render(template: str, values: {str: str}) -> str?
-    out: str @ ""
-    key: str @ ""
-    inside: bool @ false
-    pending: bool @ false
-    closing: bool @ false
+    out: str @= ""
+    key: str @= ""
+    inside: bool @= false
+    pending: bool @= false
+    closing: bool @= false
 
     for ch in template.chars()
         if pending
@@ -88,7 +88,7 @@ function render(template: str, values: {str: str}) -> str?
 # function and not a flag: the caller who wants this is making a different
 # decision, and `spec` has no default arguments to hide it in.
 function render_or(template: str, values: {str: str}, missing: str) -> str?
-    filled: {str: str} @ values
+    filled: {str: str} @= values
 
     for key in needed(template)
         if filled[key].is_err()
@@ -104,10 +104,10 @@ function render_or(template: str, values: {str: str}, missing: str) -> str?
 # walk. Stated rather than left out, because a reader who sees a list of keys
 # beside a map is right to ask.
 function needed(template: str) -> [str]
-    out: [str] @ []
-    key: str @ ""
-    inside: bool @ false
-    pending: bool @ false
+    out: [str] @= []
+    key: str @= ""
+    inside: bool @= false
+    pending: bool @= false
 
     for ch in template.chars()
         if pending
@@ -134,7 +134,7 @@ function needed(template: str) -> [str]
     return out
 
 function sample_values() -> {str: str}
-    values: {str: str} @ {}
+    values: {str: str} @= {}
     values["name"] @ "Ada"
     values["role"] @ "engineer"
     return values
@@ -208,7 +208,7 @@ test "the keys can be checked before the values exist"
     # refuse a template before it has anything to fill it with.
     values = sample_values()
     wanted = needed("Hello, {name} the {nobody}")
-    unknown: [str] @ []
+    unknown: [str] @= []
 
     for key in wanted
         if values[key].is_err()

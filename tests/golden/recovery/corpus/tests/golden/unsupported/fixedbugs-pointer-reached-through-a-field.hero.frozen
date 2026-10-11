@@ -35,6 +35,6 @@ record Slot
 
 function main()
     s = Slot(p: malloc(size: 8), n: 1)
-    by_slot: {Slot: i64} @ {}      #~ pointer_element
+    by_slot: {Slot: i64} @= {}      #~ pointer_element
     by_slot[s] @ 5
     print(len(by_slot))

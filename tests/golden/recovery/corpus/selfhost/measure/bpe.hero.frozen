@@ -53,13 +53,13 @@ function size(r: Ranks) -> i64
 # into an array first would be the quadratic shape spec § 10 Strings, arrays, maps warns about, and
 # the map does not need it.
 function from_tiktoken(text: str) -> Ranks
-    r: Ranks @ empty()
-    start: i64 @ 0
-    i: i64 @ 0
+    r: Ranks @= empty()
+    start: i64 @= 0
+    i: i64 @= 0
 
     while i <= text.len()
         if i == text.len() || text[i] == 10
-            cut: i64 @ start
+            cut: i64 @= start
 
             while cut < i && text[cut] != 32
                 cut @ cut + 1
@@ -78,16 +78,16 @@ function from_tiktoken(text: str) -> Ranks
 # in base64, space separated, in rank order, after a two-field header — so
 # the rank is the position, and the first two positions are not tokens.
 function from_claude_json(text: str) -> Ranks
-    r: Ranks @ empty()
+    r: Ranks @= empty()
     field = string_field(text: text, name: "bpe_ranks")
 
     if field.is_err()
         return r
     span = field.must()
-    rank: i64 @ 0
-    seen: i64 @ 0
-    start: i64 @ span.from
-    i: i64 @ span.from
+    rank: i64 @= 0
+    seen: i64 @= 0
+    start: i64 @= span.from
+    i: i64 @= span.from
 
     while i <= span.to
         if i == span.to || text[i] == 32
@@ -122,17 +122,17 @@ function string_field(text: str, name: str) -> Span?
 function count_piece(r: Ranks, piece: str) -> i64
     if piece.len() <= 1
         return piece.len()
-    bounds: [i64] @ []
-    i: i64 @ 0
+    bounds: [i64] @= []
+    i: i64 @= 0
 
     while i <= piece.len()
         bounds @ bounds.push(i)
         i @ i + 1
 
     while bounds.len() > 2
-        best_rank: i64 @ -1
-        best_at: i64 @ -1
-        j: i64 @ 0
+        best_rank: i64 @= -1
+        best_at: i64 @= -1
+        j: i64 @= 0
 
         while j + 2 < bounds.len()
             found = r.of[spelled(r: r, piece: piece, from: bounds[j], to: bounds[j + 2])]
@@ -149,8 +149,8 @@ function count_piece(r: Ranks, piece: str) -> i64
     return bounds.len() - 1
 
 function without(bounds: [i64], at: i64) -> [i64]
-    out: [i64] @ []
-    i: i64 @ 0
+    out: [i64] @= []
+    i: i64 @= 0
 
     while i < bounds.len()
         if i != at
@@ -162,14 +162,14 @@ function without(bounds: [i64], at: i64) -> [i64]
 # One byte range of `piece`, in canonical padded base64 — the spelling the
 # tables use, so the answer is a key.
 function spelled(r: Ranks, piece: str, from: i64, to: i64) -> str
-    out: [str] @ []
-    i: i64 @ from
+    out: [str] @= []
+    i: i64 @= from
 
     while i < to
         first = piece[i].to_i64().must()
-        have: i64 @ 1
-        second: i64 @ 0
-        third: i64 @ 0
+        have: i64 @= 1
+        second: i64 @= 0
+        third: i64 @= 0
 
         if i + 1 < to
             second @ piece[i + 1].to_i64().must()
@@ -199,8 +199,8 @@ function spelled(r: Ranks, piece: str, from: i64, to: i64) -> str
 function number_in(text: str, from: i64, to: i64) -> i64?
     if from >= to
         return fail(code: "not_a_number", msg: "no digits")
-    value: i64 @ 0
-    i: i64 @ from
+    value: i64 @= 0
+    i: i64 @= from
 
     while i < to
         b = text[i]
@@ -216,10 +216,10 @@ function index_of(text: str, needle: str) -> i64?
     if needle.len() == 0 || needle.len() > text.len()
         return fail(code: "absent", msg: "the needle is not there")
     limit = text.len() - needle.len()
-    at: i64 @ 0
+    at: i64 @= 0
 
     while at <= limit
-        k: i64 @ 0
+        k: i64 @= 0
 
         while k < needle.len() && text[at + k] == needle[k]
             k @ k + 1
@@ -231,7 +231,7 @@ function index_of(text: str, needle: str) -> i64?
     return fail(code: "absent", msg: "the needle is not there")
 
 function index_of_byte(text: str, byte: u8, from: i64) -> i64?
-    i: i64 @ from
+    i: i64 @= from
 
     while i < text.len()
         if text[i] == byte
@@ -272,7 +272,7 @@ test "the claude shape skips its two header fields and ranks by position"
 test "the merge loop counts parts, and merges the lowest rank first"
     # A hand-made table over `abcd`: `ab` is cheaper than `bc`, so the
     # first merge is `ab`, then `abc`, then `abcd` — one token.
-    table: {str: i64} @ {}
+    table: {str: i64} @= {}
     table[spelled(r: empty(), piece: "ab", from: 0, to: 2)] @ 0
     table[spelled(r: empty(), piece: "bc", from: 0, to: 2)] @ 5
     table[spelled(r: empty(), piece: "abc", from: 0, to: 3)] @ 1
@@ -291,7 +291,7 @@ test "the merge loop counts parts, and merges the lowest rank first"
     assert count_piece(r: r, piece: "bcd") == 2
 
 test "the merge loop takes the cheapest pair even when a dearer one comes first"
-    table: {str: i64} @ {}
+    table: {str: i64} @= {}
 
     # `xy` at rank 9, `yz` at rank 1: the second merge must happen first.
     table[spelled(r: empty(), piece: "xy", from: 0, to: 2)] @ 9

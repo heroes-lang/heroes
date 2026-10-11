@@ -1,0 +1,8 @@
+# Beside defect 421 (lane b14-harness-b, 2026-10-07): the module named by
+# another name, `use helper as h`, and its generic function used as a value
+# through that name.
+use helper as h
+
+function main()
+    f: (function(i64) -> i64) = h.ident
+    print(f(11))

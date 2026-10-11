@@ -1,0 +1,22 @@
+# fixedbugs, defect 157 widened, lane land186, 2026-10-02, the coordinator's
+# `handle_utag.hero`.
+#
+# SYMPTOM: a handle over a union named only by its tag, `record UH tag utag`
+# with no fields, was told `ffi_unknown_name`, *declares no `utag`*, which
+# the header does, as a union's tag.
+#
+# CAUSE: clang says *must use 'union' tag to refer to type 'utag'* of the
+# handle's `utag *`, which no reader read, and the *undeclared identifier*
+# beside it reached the reader of a name the header lacks.
+#
+# FIX: that line is read as the tag's kind, and the note says what reaches the
+# union: a typedef's name after `tag`, the header's or one of the program's
+# own, or a `ptr`. Whether the handle binds as written is panel 186's R9.
+
+extern "fixedbugs-157-unions.h"
+    record UH tag utag  #~ ffi_tag_is_a_union
+    function new_u() -> UH
+    function read_u(p: UH) -> i32
+
+function main()
+    print(read_u(p: new_u()))

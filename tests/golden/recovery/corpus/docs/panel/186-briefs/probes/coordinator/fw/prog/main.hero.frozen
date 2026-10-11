@@ -1,0 +1,5 @@
+extern "Fake/fake.h" package "fakefw"
+    function seven() -> i32
+
+function main()
+    print(seven())

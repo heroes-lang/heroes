@@ -1,0 +1,92 @@
+# Fixed defect 430, 2026-10-07 (lane b13-gen402; found by lane b13-zero401).
+# Symptom: `function pick() -> (function(x: i64) -> i64)` returning `inc` was
+# `check` 0 and then `run` 2, *the lowered program is not well formed*,
+# *returns a value of the wrong type*, while the unnamed `(function(i64) ->
+# i64)` ran. Cause: a function type's id carries its parameters' names, the
+# checker lets a value whose type names fewer stand where a named one is asked
+# (`table.fits`: a position the value leaves unnamed, or calls `_`), and the
+# verifier compared the returned value's id with the result's. The names are
+# the checker's (spec § 9) and C never sees one, so the IR now asks whether two
+# types are one up to their names (`ir/agree.hero`). The shapes that stopped the
+# build: a function returned by name, through a local, as another function's
+# result, a parameter called `_`, a generic instance (defect 402), `match` arms
+# storing into the merged return slot, and a lone parameter named otherwise,
+# which no type names. Those that already ran, kept: an `if`, two names that
+# agree, a binding, a field and an argument.
+
+record Holder
+    f: (function(x: i64) -> i64)
+
+function inc(x: i64) -> i64
+    return x + 1
+
+function dec(x: i64) -> i64
+    return x - 1
+
+function first(_: i64, b: i64) -> i64
+    return b
+
+function sub(a: i64, b: i64) -> i64
+    return a - b
+
+function ident<A>(x: A) -> A
+    return x
+
+function other(y: i64) -> i64
+    return y * 2
+
+function plain() -> (function(i64) -> i64)
+    return inc
+
+function by_name() -> (function(x: i64) -> i64)
+    return inc
+
+function through_a_local() -> (function(x: i64) -> i64)
+    f = inc
+    return f
+
+function from_a_call() -> (function(x: i64) -> i64)
+    return plain()
+
+function unnamed_position() -> (function(a: i64, b: i64) -> i64)
+    return first
+
+function an_instance() -> (function(x: i64) -> i64)
+    return ident
+
+function by_arm(n: i64) -> (function(x: i64) -> i64)
+    match n
+        0 => return inc
+        _ => return dec
+
+function by_if(up: bool) -> (function(x: i64) -> i64)
+    return if up
+        inc
+    else
+        dec
+
+function agreeing() -> (function(a: i64, b: i64) -> i64)
+    return sub
+
+function a_lone_name_otherwise() -> (function(x: i64) -> i64)
+    return other
+
+function apply(f: (function(x: i64) -> i64), v: i64) -> i64
+    return f(x: v)
+
+function main()
+    print(by_name()(x: 1))
+    print(through_a_local()(x: 2))
+    print(from_a_call()(x: 3))
+    print(unnamed_position()(a: 0, b: 4))
+    print(an_instance()(x: 5))
+    print(by_arm(0)(x: 5))
+    print(by_arm(1)(x: 8))
+    print(by_if(true)(x: 7))
+    print(agreeing()(a: 10, b: 2))
+    print(a_lone_name_otherwise()(x: 6))
+    bound: (function(x: i64) -> i64) = inc
+    print(bound(x: 8))
+    h = Holder(f: inc)
+    print(h.f(x: 9))
+    print(apply(f: inc, v: 10))

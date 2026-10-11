@@ -1,0 +1,19 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R3 and R6), a
+# shape beside the rule found while making § 13's *as wide as the union* true.
+#
+# `AL { kind; union __attribute__((aligned(16))) { int64_t q; }; }`: `q` holds
+# every byte of every member of its union, yet the union is sixteen bytes and
+# `q` eight. Compared by `q`, the record is sound and still not what § 13
+# admits, so the union's width is the one clang gives its own block, beside C's
+# offsets, and the comparison is refused as the spec says.
+
+extern "fixedbugs-151-unions.h"
+    record AL  #~ ffi_union_field
+        kind: i32
+        q: i64
+
+function same(x: AL, y: AL) -> bool
+    return x == y
+
+function main()
+    print(1)

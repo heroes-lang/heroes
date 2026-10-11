@@ -1,0 +1,222 @@
+# A quote left out on a line (design.md §4.17; defect 131's class, the
+# recovery batches' C3, 2026-10-01).
+#
+# A string whose closing quote was left out mid-line, `g("a, "b")`, is closed
+# by the next quote, and the quote after that opens one that runs to the
+# line's end, which the lexer names never closed (`unterminated_string`).
+# What stood between was read outside every string: a `\n` there was a `\`
+# no syntax has, a `)` a string held was taken from its call, and the parser
+# refused the words and found the call open, up to five messages for one
+# quote (the audit's rows BH-019, BH-020 and BH-022; the recovery
+# instrument's `string-open`, 28 EXTRA of 155). So on a line that ends inside
+# a literal that never closes, past the line's first quote, where a lost
+# quote moves every string after it: a `\`, a character outside the syntax
+# or a foreign word its strings held is the lexer's `error` token and no
+# report of its own (`lost_in`); the openers the line
+# opened are closed at its end where each has a closer of its kind past that
+# quote, a string's, and nothing from a line above is open (`ended`); and the
+# parser holds its own reports there (`parse/quote_held`), on the stretches
+# `lost_lines` reads from the lexer's reports. The literal's report is the
+# line's one message.
+#
+# | entry | called by |
+# |---|---|
+# | `lost_in` | `scan.punct`, `scan.ident` |
+# | `ended` | `layout.maybe_terminator`, at a line a literal swallowed |
+# | `lost_lines`, `holds` | `parse/quote_held.held` |
+
+use token
+use diag
+use state
+use stable
+use lost_reading
+use text_outline
+use openers
+
+# The stretches of the lines a literal never closed on, each from its line's
+# first quote to its end, in the order of the text, and where each begins.
+record Lost
+    spans: [token.Span]
+    starts: [i64]
+
+# The lost stretches a text's lexer reports `lexed` name: an
+# `unterminated_string` or `unterminated_char` that runs to its line's end.
+# The code is asked before the line is read, and only a report's own span,
+# so a text of many reports reads only the lines a literal never closed on,
+# where each report read its line to its end (defect 481).
+function lost_lines(lexed: [diag.Diagnostic], text: str) -> Lost
+    spans: [token.Span] @= []
+    starts: [i64] @= []
+
+    for d in lexed
+        if (d.code == "unterminated_string" || d.code == "unterminated_char") && ends_its_line(text, span: d.span)
+            quote = first_quote(text, from: line_start(text, at: d.span.start), to: d.span.start + 1)
+            spans @ spans.push(token.Span(start: quote, end: d.span.end))
+            starts @ starts.push(quote)
+
+    ordered: [token.Span] @= []
+    ascending: [i64] @= []
+
+    for i in stable.order(by: starts)
+        ordered @ ordered.push(spans[i])
+        ascending @ ascending.push(starts[i])
+
+    return Lost(spans: ordered, starts: ascending)
+
+# Whether the offset `at` stands in one of `lost`'s stretches. The two
+# stretches of one line are one, and two lines' never meet, so the last one
+# beginning at or before `at` is the only one it can stand in: a binary
+# search, where a walk over every stretch for every report cost a text of
+# such lines their square (defect 481, 8,000 of them 10.5 billion
+# instructions retired).
+function holds(lost: Lost, at: i64) -> bool
+    k = text_outline.last_at_most(lost.starts, at: at)
+    return k >= 0 && at <= lost.spans[k].end
+
+# Whether `span` ends where its line does and holds no line end before.
+function ends_its_line(text: str, span: token.Span) -> bool
+    if span.end < text.len() && text[span.end] != '\n'
+        return false
+    i: i64 @= span.start
+
+    while i < span.end
+        if text[i] == '\n'
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether the text at `at` stands past a quote on its line, and its line ends
+# inside a literal that never closes, read on from it as the lexer reads:
+# outside a string a `"` opens one, inside one a `\` takes the byte after it
+# and a `"` closes it, and a `#` outside every string begins a comment, which
+# holds no literal. Answered from the lexer's one reading of the text, which
+# its outline holds (`lost_reading.hero`), since a line of refused
+# characters asks it of each (defect 293).
+function lost_in(@l: state.LexState, text: str, at: i64) -> bool
+    return lost_reading.lost(@l.outline.lost[0], text, at: at)
+
+# At the end of a line a literal that never closed ran to: the openers still
+# open, where every one was opened on this line and has a closer of its own
+# kind past the line's first quote, are closed here unnamed, a string having
+# taken each one's closer, and the lexer keeps the offset where it closed
+# them (`LexState.closes`), which the parser's pairing reads.
+function ended(@l: state.LexState, text: str)
+    n = openers.depth(l.open_brackets)
+
+    if n == 0 || l.pos == 0
+        return
+    line = line_start(text, at: l.pos - 1)
+    quote = first_quote(text, from: line, to: l.pos)
+
+    if quote < 0
+        return
+
+    for span in openers.live(l.open_brackets)
+        past: i64 @= quote
+
+        if span.end > past
+            past @ span.end
+
+        if span.start < line || !closer_past(text, from: past, to: l.pos, opener: text[span.start])
+            return
+
+    openers.clear(@l.open_brackets)
+    state.push_offset(@l.closes, at: l.pos)
+
+function line_start(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i > 0 && text[i - 1] != '\n'
+        i @ i - 1
+
+    return i
+
+# The offset of the first quote from `from` up to `to`, or -1.
+function first_quote(text: str, from: i64, to: i64) -> i64
+    i: i64 @= from
+
+    while i < to
+        if text[i] == '"' || text[i] == '\''
+            return i
+        i @ i + 1
+
+    return -1
+
+# Whether a closer of the kind `opener` opens stands from `from` up to `to`.
+function closer_past(text: str, from: i64, to: i64, opener: u8) -> bool
+    want: u8 @= '}'
+
+    if opener == '('
+        want @ ')'
+    else if opener == '['
+        want @ ']'
+    i: i64 @= from
+
+    while i < to
+        if text[i] == want
+            return true
+        i @ i + 1
+
+    return false
+
+## Tests
+
+# The question asked of a text a lexer holds alone.
+function lost_alone(text: str, at: i64) -> bool
+    l: state.LexState @= state.new_state()
+    return lost_in(@l, text, at: at)
+
+test "a backslash past a quote on a line that ends inside a literal is the lost quote's"
+    lost = "x == \"  || x == \"\\t\" || y\n"
+    assert lost_alone(lost, at: 17)
+
+    # No quote before it, a line whose strings all close, or a comment after
+    # it: a `\` of its own.
+    assert !lost_alone("x = a \\ b + \"c\n", at: 6)
+    assert !lost_alone("x == \"a\" \\ \"b\"\n", at: 9)
+    assert !lost_alone("x == \"a\" \\ # \"b\n", at: 9)
+
+test "the openers a line opened are closed at its end where a string took their closers"
+    text = "assert report(\") == \"lines: 0\"\n"
+    l: state.LexState @= state.new_state()
+    l.open_brackets @ openers.of([token.Span(start: 13, end: 14)])
+    l.pos @ text.len() - 1
+    ended(@l, text)
+    assert openers.depth(l.open_brackets) == 0
+    assert l.closes == [text.len() - 1]
+
+    # An opener of a line above, or one whose kind's closer the line does not
+    # hold, is left open, and so is every one beside it.
+    above = "f(\nassert report(\") == \"lines: 0\"\n"
+    kept: state.LexState @= state.new_state()
+    kept.open_brackets @ openers.of([token.Span(start: 1, end: 2), token.Span(start: 16, end: 17)])
+    kept.pos @ above.len() - 1
+    ended(@kept, above)
+    assert openers.depth(kept.open_brackets) == 2
+    assert kept.closes.len() == 0
+
+    alone = "x = [f(\"a \"b\n"
+    open: state.LexState @= state.new_state()
+    open.open_brackets @ openers.of([token.Span(start: 4, end: 5), token.Span(start: 6, end: 7)])
+    open.pos @ alone.len() - 1
+    ended(@open, alone)
+    assert openers.depth(open.open_brackets) == 2
+
+# Defect 481: the lost stretches are read from the reports a literal ran to
+# its line's end with, in the order of the text whatever the reports' order,
+# and an offset is asked of the one it may stand in.
+test "the lines a literal never closed on are found by their reports, and an offset by a search"
+    text = "a(\"x, \"y\")\nb = 'c\nd = \"e\" f\n"
+    told = [
+        diag.new_diagnostic(code: "unterminated_char", message: "m", span: token.Span(start: 15, end: 17))
+        diag.new_diagnostic(code: "unterminated_string", message: "m", span: token.Span(start: 8, end: 10))
+        diag.new_diagnostic(code: "unterminated_string", message: "m", span: token.Span(start: 22, end: 24))
+        diag.new_diagnostic(code: "unknown_escape", message: "m", span: token.Span(start: 8, end: 10))
+    ]
+    lost = lost_lines(told, text: text)
+    assert lost.starts == [2, 15]
+    assert lost.spans[0].end == 10
+    assert !holds(lost, at: 1)
+    assert holds(lost, at: 2) && holds(lost, at: 10) && holds(lost, at: 16)
+    assert !holds(lost, at: 12) && !holds(lost, at: 22)

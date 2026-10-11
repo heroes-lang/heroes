@@ -1,0 +1,9 @@
+# fixedbugs, defect 560: a module binding `twice` of `int`.
+extern "fixedbugs-560-int.h"
+    function twice(x: i32) -> i32
+
+function doubled(x: i32) -> i32
+    return twice(x: x)
+
+test "the int twice doubles"
+    assert doubled(x: 4) == 8

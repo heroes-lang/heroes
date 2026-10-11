@@ -22,6 +22,15 @@ use state
 use diag
 use bytes
 use open_line
+use backslash
+use indent_runs
+use brace_layout
+use map_alone
+use closers
+use bracket_reach
+use lost_quote
+use comment_habit
+use openers
 
 ## The carriage return
 
@@ -45,68 +54,94 @@ constant CR: u8
 # postfix `?`, `)`, `]`, or `}`. `?` is the analogue of Go's `++`/`--`.
 function is_line_ender(kind: token.TokenKind) -> bool
     return match kind
-        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit              => true
-        .kw_true | .kw_false | .kw_nullptr                                              => true
-        .kw_return | .kw_break | .kw_continue                                           => true
-        .hole | .question | .rparen | .rbracket | .rbrace                               => true
-        .kw_constant | .kw_function | .kw_record | .kw_variant                          => false
-        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in                    => false
-        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail                         => false
-        .eq | .at | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
-        .lparen | .lbracket | .lbrace                                                   => false
-        .plus | .minus | .star | .slash | .percent                                      => false
-        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                       => false
-        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr                => false
-        .comment | .terminator | .indent | .dedent | .eof | .error                      => false
+        .ident | .int_lit | .float_lit | .str_lit | .str_piece | .char_lit                       => true
+        .kw_true | .kw_false | .kw_nullptr                                                       => true
+        .kw_return | .kw_break | .kw_continue                                                    => true
+        .hole | .question | .rparen | .rbracket | .rbrace                                        => true
+        .kw_constant | .kw_function | .kw_record | .kw_variant                                   => false
+        .kw_match | .kw_if | .kw_else | .kw_for | .kw_while | .kw_in                             => false
+        .kw_test | .kw_assert | .kw_extern | .kw_use | .kw_fail                                  => false
+        .eq | .at | .at_eq | .colon | .colon_colon | .comma | .dot | .arrow | .fat_arrow | .pipe => false
+        .lparen | .lbracket | .lbrace                                                            => false
+        .plus | .minus | .star | .slash | .percent                                               => false
+        .eq_eq | .bang_eq | .lt | .le | .gt | .ge                                                => false
+        .and_and | .or_or | .bang | .amp | .caret | .tilde | .shl | .shr                         => false
+        .comment | .terminator | .indent | .dedent | .eof | .error                               => false
 
 ## The margin
 
 # Consume the line's leading whitespace and emit Indent/Dedent. Every error
 # path recovers by keeping the current level: the line still lexes, the
-# diagnostic tells the author what the margin meant.
+# diagnostic tells the author what the margin meant. A margin written in an
+# indentation habit, tabs or two spaces a level, is read as its run's fix
+# writes it and told once for the run (`indent_runs.hero`, ruling 5).
 function line_start(@l: state.LexState, text: str)
     ws_start = l.pos
-    spaces: i64 @ 0
-    saw_tab: bool @ false
+    m = indent_runs.margin_at(text, at: l.pos)
+    l.pos @ m.end
 
-    while l.pos < text.len() && (text[l.pos] == ' ' || text[l.pos] == '\t')
-        if text[l.pos] == ' '
-            spaces @ spaces + 1
-        else
-            saw_tab @ true
-        l.pos @ l.pos + 1
+    # A margin with no tab, and no run open, is read as it is written: every
+    # line of a program that compiles takes this path, and asks no more.
+    habit = m.tabs > 0 || l.run[0].kind != .none
+    spaces: i64 @= m.spaces
 
-    if saw_tab
-        open_line.abandon(@l)
-        span = token.Span(start: ws_start, end: l.pos)
-        state.push_diagnostic(
-            @l.diagnostics,
-            diag.new_diagnostic(code: "tab_in_indentation", message: "a tab in indentation is a compile error — indent with spaces, exactly 4 per level", span: span)
-        )
+    if habit
+        spaces @ indent_runs.through(l.run[0], m)
+
+    # Inside brackets the margin is not structural (panel 007), but a line
+    # whose first word no bracket holds, or a name after a kept line end
+    # inside a `(`, is where a mistake left them open (`bracket_reach`): they
+    # are named there, and the line is laid out as what it begins.
+    if openers.depth(l.open_brackets) > 0 && !bracket_reach.ends_at(@l, text, spaces: spaces)
+        if habit
+            indent_runs.quiet(@l, text, m, line: ws_start, blank: blank_at(text, at: l.pos))
         return
 
-    # Inside brackets the margin is not structural (panel 007).
-    if l.open_brackets.len() > 0
-        return
-
-    # Layout-neutral lines: empty, or comment-only.
+    # Layout-neutral lines: empty, or comment-only, another language's comment
+    # included (`comment_habit.hero`).
     if l.pos >= text.len()
+        if habit
+            indent_runs.quiet(@l, text, m, line: ws_start, blank: true)
         return
     b = text[l.pos]
 
-    if b == '\n' || b == CR || b == '#'
+    if b == '\n' || b == CR || b == '#' || b == '/' && comment_habit.holds_the_line(text, at: l.pos)
+        if habit
+            indent_runs.quiet(@l, text, m, line: ws_start, blank: blank_at(text, at: l.pos))
+
         # A stray carriage return with words after it takes no margin, so what
         # it holds follows the terminator its line end owed.
         if b == CR && (l.pos + 1 >= text.len() || text[l.pos + 1] != '\n')
             open_line.settle(@l)
         return
 
-    if l.open_line >= 0 && open_line.goes_on(@l, text, spaces: spaces)
+    # A line that holds only a body's `{`, or the `}` that closes one, is not
+    # in the program their fix writes (`brace_layout.hero`): it takes no
+    # margin and lays out no level, and the `{` follows its head's line end.
+    if l.braced.len() > 0 && brace_layout.closer_alone(braced: l.braced.len(), holes: l.holes.len(), text, at: l.pos)
+        if habit
+            indent_runs.quiet(@l, text, m, line: ws_start, blank: false)
+        brace_layout.ended(@l, text, at: l.pos, level: (spaces + 2) / 4)
         return
+    alone = b == '{' && map_alone.opens_a_body(l.tokens, open: openers.depth(l.open_brackets) + l.holes.len(), text, at: l.pos)
+
+    if alone && habit
+        indent_runs.quiet(@l, text, m, line: ws_start, blank: false)
+    else if !alone && (habit || m.spaces == l.level * 4 + 2)
+        spaces @ indent_runs.with_words(@l, text, m, line: ws_start)
+
+    # The line left open is decided here, and so is a `\` that asked it to go
+    # on, whose fix stands as that decision left it (`backslash.hero`).
+    if l.open_line >= 0
+        joined = open_line.goes_on(@l, text, spaces: spaces)
+        l.backslash @ -1
+
+        if joined
+            return
 
     # Read as bodies, the line below a same-margin break is one level deeper
     # (`LexState.bodies`).
-    if l.deeper
+    if l.deeper && !alone
         spaces @ spaces + 4
         l.deeper @ false
 
@@ -124,6 +159,9 @@ function line_start(@l: state.LexState, text: str)
                 open_line.flush(@l)
         else if open_line.goes_on_below(@l, text, spaces: spaces)
             return
+
+    if alone
+        return
     span = token.Span(start: ws_start, end: l.pos)
 
     # Recovery, and the distinction matters: a wrong margin is always an
@@ -131,7 +169,7 @@ function line_start(@l: state.LexState, text: str)
     # sense §4.15 forbids. What is recovered is only the structure handed
     # downstream: round to the nearest level, and never open more than one
     # level at a time — nothing in the language opens two.
-    new_level: i64 @ (spaces + 2) / 4
+    new_level: i64 @= (spaces + 2) / 4
 
     if spaces % 4 != 0
         state.push_diagnostic(
@@ -146,6 +184,9 @@ function line_start(@l: state.LexState, text: str)
         )
         new_level @ l.level + 1
 
+    if l.braced.len() > 0
+        brace_layout.ended(@l, text, at: l.pos, level: new_level)
+
     if new_level == l.level + 1
         state.push_token(@l.tokens, token.Token(kind: .indent, span: span))
         l.level @ new_level
@@ -158,6 +199,28 @@ function line_start(@l: state.LexState, text: str)
 
         l.level @ new_level
 
+# Whether the line at `at`, past its margin, holds nothing: its end, a
+# carriage return before it, or the text's.
+function blank_at(text: str, at: i64) -> bool
+    return at >= text.len() || text[at] == '\n' || text[at] == CR && at + 1 < text.len() && text[at + 1] == '\n'
+
+## The brackets a mistake left open
+
+# Every opener still open is named never closed, and the stack emptied: at the
+# file's end, where without it one missing `)` would swallow the rest of the
+# file's layout in silence (panel 007), and at the `}` that closes the body in
+# braces the openers stand in (`scan.finish`). At a line whose first word no
+# bracket holds, a declaration's at column 0 since defect 130's class
+# (2026-09-30) and a statement's at its statement's margin since panel 183
+# R1, where a missing closer took the lines below inside its bracket and a
+# stray closer further down closed it, the opener never named and the lines'
+# own mistakes never told, they are named by `bracket_reach`.
+function close_brackets(@l: state.LexState, text: str)
+    for span in openers.live(l.open_brackets)
+        state.push_diagnostic(@l.diagnostics, closers.never_closed(text, span))
+
+    openers.clear(@l.open_brackets)
+
 ## The invisible semicolon
 
 # Plant the terminator — only if the line can be *over*. Appended raw rather
@@ -168,18 +231,55 @@ function line_start(@l: state.LexState, text: str)
 # cannot end is left open, and one that ends with a value owes its
 # terminator until the next line with words shows it is not going on with it
 # (`open_line`); `return`, `break` and `continue` end theirs here.
-function maybe_terminator(@l: state.LexState)
+function maybe_terminator(@l: state.LexState, text: str)
     if l.last_significant.is_err()
         return
     kind = l.last_significant.must()
     ender = is_line_ender(kind)
 
-    if l.open_brackets.len() == 0
+    # A `\` asks its line to go on (`backslash.hero`): at depth zero it is left
+    # open whatever it ends with, and the next line with words decides; inside
+    # brackets it goes on, unless a value ends it and one begins the next line,
+    # where the line end is what separates them.
+    if l.backslash >= 0
+        if openers.depth(l.open_brackets) == 0
+            open_line.left_open(@l)
+            return
+        below = backslash.word_below(l, text)
+        noise = ender && (below < 0 || backslash.begins_a_value(text, at: below))
+        backslash.within_brackets(
+            @l,
+            text,
+            below: below,
+            noise: noise,
+            sure: !ender || below >= 0 && (backslash.closes_or_separates(text, at: below) || open_line.goes_on_at_head(text, at: below) >= 0)
+        )
+
+        if !noise
+            return
+
+    # A literal that never closed ran to this line end and took what the line
+    # held: the line is over at any depth, as a line an `error` token ends is
+    # at depth zero, so the line below is read as its own.
+    if l.swallowed
+        l.swallowed @ false
+        lost_quote.ended(@l, text)
+        state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
+        return
+
+    if openers.depth(l.open_brackets) == 0
         # An `error` token ends a line at depth zero (panel 181): the lexer has
         # spoken there, and a line glued on below it went into the recovery
         # that drops the rest of the statement, so the next line's own mistake
         # was never reported.
         if kind == .error
+            state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
+            return
+
+        # A `{` that ends its line outside every bracket is a body's, read as
+        # its head's line end (`brace_layout.hero`): the lines below are laid
+        # out, never joined to it.
+        if kind == .lbrace
             state.push_token(@l.tokens, token.Token(kind: .terminator, span: token.Span(start: l.pos, end: l.pos)))
             return
 
@@ -199,7 +299,7 @@ function maybe_terminator(@l: state.LexState)
     state.push_token(@l.tokens, token.Token(kind: .terminator, span: span))
 
 test "the margin becomes indent and dedent one level at a time"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_start(@l, "    x")
     assert l.level == 1
     assert l.tokens.len() == 1
@@ -213,53 +313,56 @@ test "the margin becomes indent and dedent one level at a time"
     assert l.tokens[2].kind == .dedent
 
 test "a wrong margin is an error that still recovers a structure"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     line_start(@l, "     x")
     assert l.diagnostics.len() == 1
     assert l.diagnostics[0].code == "indentation_not_multiple_of_4"
     assert l.level == 1
-    j: state.LexState @ state.new_state()
+    j: state.LexState @= state.new_state()
     line_start(@j, "        x")
     assert j.diagnostics.len() == 1
     assert j.diagnostics[0].code == "indentation_jump"
     assert j.level == 1
-    t: state.LexState @ state.new_state()
+
+    # A tab is read as the level its fix writes, four columns, and told
+    # (`indent_runs.hero`): the line is laid out one level in.
+    t: state.LexState @= state.new_state()
     line_start(@t, "\tx")
     assert t.diagnostics[0].code == "tab_in_indentation"
-    assert t.level == 0
+    assert t.level == 1
 
 test "inside brackets and on neutral lines the margin means nothing"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     l.pos @ 1
     state.emit(@l, .lparen, 0)
     l.pos @ 0
     line_start(@l, "        x")
     assert l.level == 0
     assert l.diagnostics.len() == 0
-    n: state.LexState @ state.new_state()
+    n: state.LexState @= state.new_state()
     line_start(@n, "    # a comment-only line")
     line_start(@n, "")
     assert n.level == 0
     assert n.diagnostics.len() == 0
 
 test "the terminator lands only where a line can be over"
-    l: state.LexState @ state.new_state()
+    l: state.LexState @= state.new_state()
     l.pos @ 1
     state.emit(@l, .ident, 0)
-    maybe_terminator(@l)
+    maybe_terminator(@l, "x")
     assert l.tokens.len() == 1
     assert l.owed == 1
     open_line.settle(@l)
     assert l.tokens.len() == 2
     assert l.tokens[1].kind == .terminator
-    p: state.LexState @ state.new_state()
+    p: state.LexState @= state.new_state()
     p.pos @ 1
     state.emit(@p, .plus, 0)
-    maybe_terminator(@p)
+    maybe_terminator(@p, "+")
     assert p.tokens.len() == 1
     assert p.open_line == 0
-    e: state.LexState @ state.new_state()
-    maybe_terminator(@e)
+    e: state.LexState @= state.new_state()
+    maybe_terminator(@e, "")
     assert e.tokens.len() == 0
 
 test "every value keyword ends a line"

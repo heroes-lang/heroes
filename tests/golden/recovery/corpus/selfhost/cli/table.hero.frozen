@@ -89,11 +89,11 @@ function commands() -> [Command]
     parse_flags: [Flag] = [plain(spelling: "--dump-ast", what: "print the syntax tree")]
     check_flags: [Flag] = [
         plain(spelling: "--dump-scopes", what: "print the symbols and every binding")
-        plain(spelling: "--json", what: "print the diagnostics as JSON (schema 1) instead of text")
+        plain(spelling: "--json", what: "write the diagnostics to stderr as JSON, schema 2 (design.md §4.17), instead of text; with --apply, print the program inside a JSON document of the same schema, on stdout")
         plain(spelling: "--brief", what: "one line per diagnostic instead of the full form")
         plain(spelling: "--permissive", what: "drop the diagnostics that exist for the thesis — the control arm of Part 11's measurement")
         plain(spelling: "--apply", what: "print the program with every certain fix applied")
-        plain(spelling: "--in-place", what: "with --apply, rewrite the file instead of printing it")
+        plain(spelling: "--in-place", what: "with --apply, rewrite the file instead of printing it; with --json as well, the document is printed all the same")
     ]
     build_flags: [Flag] = [
         plain(spelling: "--dump-ir", what: "print the lowered three-address IR and stop")
@@ -127,6 +127,11 @@ function commands() -> [Command]
     mutate_flags: [Flag] = [
         plain(spelling: "--survivors", what: "print the mutants the compiler accepted, not only the rates")
         valued(spelling: "--operator", what: "score this operator alone, by its id")
+        plain(spelling: "--recovery", what: "replay the frozen plan of planted mistakes in the folder named (default: tests/golden/recovery) instead of scoring the metric (panel 187's R2)")
+        valued(spelling: "--compiler", what: "with --recovery, the compiler that judges the plan's mistakes")
+        valued(spelling: "-o", what: "with --recovery, the folder a run writes its records to, which must be new, or the run --compare reads")
+        valued(spelling: "--compare", what: "with --recovery, read the run in -o against this earlier one, the base, and name every mutant that moved")
+        valued(spelling: "--cut", what: "with --recovery, cut a new plan from the programs of this folder, an exported commit, lexed and judged by --compiler, into the new folder -o")
     ]
     probe_flags: [Flag] = [
         named(spelling: "--family", what: "make that family's variants alone: single, multi, bracket, paren, ends, columns or texts", placeholder: "name")
@@ -230,8 +235,8 @@ test "the table is the pipeline's order and the flags carry their shapes"
     assert table[3].name == "build"
 
     # -o takes a value; --include repeats and names a directory.
-    o_found: bool @ false
-    inc_found: bool @ false
+    o_found: bool @= false
+    inc_found: bool @= false
 
     for f in table[3].flags
         if f.spelling == "-o"

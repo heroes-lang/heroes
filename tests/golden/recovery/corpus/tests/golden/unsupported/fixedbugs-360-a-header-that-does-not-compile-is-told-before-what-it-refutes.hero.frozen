@@ -1,0 +1,15 @@
+# fixedbugs, defect 360, lane cli12, 2026-10-05.
+#
+# Beside `fixedbugs-360-a-header-that-does-not-compile`: the same header
+# also refutes the extern, `-> i32` over `int64_t`. clang reads on past an
+# error, and what it says after one about a header it could not read whole is
+# no verdict on the declarations checked against it, so the header is told
+# alone, on its string, and the extern is checked once the header compiles.
+# Before this repair the extern's `ffi_return_type` was told and the header's
+# error left unsaid, a second build away.
+
+extern "fixedbugs-360-refuted.h"  #~ ffi_header_refused
+    function six() -> i32
+
+function main()
+    print(six())

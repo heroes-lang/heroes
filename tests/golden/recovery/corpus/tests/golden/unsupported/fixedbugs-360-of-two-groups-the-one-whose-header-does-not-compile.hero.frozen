@@ -1,0 +1,14 @@
+# fixedbugs, defect 360, lane cli12, 2026-10-05.
+#
+# Beside `fixedbugs-360-a-header-that-does-not-compile`: two groups, the
+# first's header compiling and the second's not. The diagnostic is the
+# second group's, on its own string.
+
+extern "fixedbugs-360-fine.h"
+    function seven() -> i64
+
+extern "fixedbugs-360-broken.h"  #~ ffi_header_refused
+    function twice(x: i64) -> i64
+
+function main()
+    print(twice(x: seven()))

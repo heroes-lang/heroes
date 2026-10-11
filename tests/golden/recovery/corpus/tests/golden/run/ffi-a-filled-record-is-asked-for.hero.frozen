@@ -43,6 +43,6 @@ function blank() -> Slot
     return Slot(name: [0, 0, 0, 0, 0, 0, 0, 0])
 
 function main()
-    s: Slot @ blank()
+    s: Slot @= blank()
     _ = slot_fill(@s).to_i64().must()
     print(s.name.validated_bytes().must())

@@ -73,7 +73,7 @@ function cell(board: [[i64]], row: i64, column: i64) -> i64
         DEAD
 
 function living_neighbours(board: [[i64]], row: i64, column: i64) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for dr in [0 - 1, 0, 1]
         for dc in [0 - 1, 0, 1]
@@ -99,12 +99,12 @@ function next_state(here: i64, neighbours: i64) -> i64
         _ => DEAD
 
 function step(board: [[i64]]) -> [[i64]]
-    out: [[i64]] @ []
-    row: i64 @ 0
+    out: [[i64]] @= []
+    row: i64 @= 0
 
     while row < height(board)
-        line: [i64] @ []
-        column: i64 @ 0
+        line: [i64] @= []
+        column: i64 @= 0
 
         while column < width(board)
             line @ line.push(
@@ -118,7 +118,7 @@ function step(board: [[i64]]) -> [[i64]]
     return out
 
 function living(board: [[i64]]) -> i64
-    total: i64 @ 0
+    total: i64 @= 0
 
     for line in board
         for one in line
@@ -137,10 +137,10 @@ function glyph(one: i64) -> str
         "."
 
 function drawn(board: [[i64]]) -> str
-    rows: [str] @ []
+    rows: [str] @= []
 
     for line in board
-        piece: str @ ""
+        piece: str @= ""
 
         for one in line
             piece @ piece + glyph(one)
@@ -158,13 +158,13 @@ function drawn(board: [[i64]]) -> str
 # same sort as the inner one, and a two-digit generation would need padding;
 # five generations is one digit and the limit is stated rather than met.
 function tallied(board: [[i64]], generations: i64) -> {str: {str: i64}}
-    tally: {str: {str: i64}} @ {}
-    current: [[i64]] @ board
-    at: i64 @ 0
+    tally: {str: {str: i64}} @= {}
+    current: [[i64]] @= board
+    at: i64 @= 0
 
     while at < generations
         alive = living(current)
-        inner: {str: i64} @ {}
+        inner: {str: i64} @= {}
         inner["alive"] @ alive
         inner["dead"] @ height(current) * width(current) - alive
         tally[at.to_str()] @ inner
@@ -175,11 +175,11 @@ function tallied(board: [[i64]], generations: i64) -> {str: {str: i64}}
 
 function scoreboard(board: [[i64]], generations: i64) -> str
     tally = tallied(board, generations: generations)
-    rows: [str] @ []
+    rows: [str] @= []
 
     for generation in sort(keys(tally))
         inner = tally[generation].must()
-        piece: str @ "gen " + generation
+        piece: str @= "gen " + generation
 
         for state in sort(keys(inner))
             piece @ piece + " " + state + "=" + inner[state].must().to_str()

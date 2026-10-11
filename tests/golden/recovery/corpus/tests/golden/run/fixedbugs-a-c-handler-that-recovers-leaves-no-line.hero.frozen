@@ -25,6 +25,6 @@ extern "fixedbugs-a-c-handler-that-recovers-leaves-no-line.h"
 
 function main()
     word = repeat("ab", 4)
-    held: cstr @ word.lease()
+    held: cstr @= word.lease()
     print("recovered: ", try_abort() + try_trap())
     end_lease(@held)

@@ -1,0 +1,5 @@
+# fixedbugs, defect 577: a constant of its own module, read by name from
+# another (`../fixedbugs-577-a-constant-another-module-writes-is-read-through-its-body.hero`).
+
+constant TOP: u8
+    200

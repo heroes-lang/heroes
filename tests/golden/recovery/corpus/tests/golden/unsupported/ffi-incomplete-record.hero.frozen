@@ -45,6 +45,11 @@
 # fault. Panel 071 widened that matcher and the case's own error surfaced
 # immediately. `CheckCollisionRecs` really does take two `Rectangle`s, so the
 # control now controls.
+#
+# **The positional mechanism above is gone since 2026-10-02** (panel 186 R4,
+# lane land186): it counted declared fields where C counts the struct's
+# members, so an anonymous union defeated it (defect 151). The verdict here is
+# the same, asked of the header's layout before the unit compiles.
 
 extern "raylib.h" package "raylib"
     record Color            #~ ffi_incomplete_record

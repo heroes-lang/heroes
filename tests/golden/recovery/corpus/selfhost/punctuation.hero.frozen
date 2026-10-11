@@ -68,6 +68,9 @@ function punct_at(text: str, at: i64) -> Punct
     if b0 == ':' && b1 == ':'
         return Punct(kind: .colon_colon, width: 2)
 
+    if b0 == '@' && b1 == '='
+        return Punct(kind: .at_eq, width: 2)
+
     # One byte.
     one = one_byte(b0)
 
@@ -160,5 +163,7 @@ test "the longest match wins, and a byte outside the language takes no width"
     assert punct_at("=>", at: 0).width == 2
     assert punct_at("::x", at: 0).kind == .colon_colon
     assert punct_at(":", at: 0).kind == .colon
+    assert punct_at("@=", at: 0).width == 2
+    assert punct_at("@ =", at: 0).width == 1
     assert punct_at("€", at: 0).width == 0
     assert punct_at("", at: 0).width == 0

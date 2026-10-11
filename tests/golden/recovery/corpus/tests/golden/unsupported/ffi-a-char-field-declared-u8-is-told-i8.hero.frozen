@@ -1,0 +1,17 @@
+# Panel 194 K0 (M-buildable-structs), lane b13-bs, 2026-10-06: C's `char` is
+# `i8` in every build, since the emitter passes `-fsigned-char`, and `u8` is
+# what 22 of panel 178's 50 readers wrote for it first. A `u8` field, or an
+# array of `u8`, that clang refuses is told so in a note, with a `guess` fix
+# writing `i8`: a guess, since the header may as well write a type wider than
+# a byte. Until the sitting the note said only *the header's own width and
+# sign*, naming neither `char` nor `i8`.
+
+extern "ffi-a-char-field-declared-u8-is-told-i8.h"
+    record Named tag named
+        name: u8[8]  #~ ffi_field_type
+        flag: u8  #~ ffi_field_type
+        n: i32
+
+function main()
+    m = Named(name: [104, 105, 0, 0, 0, 0, 0, 0], flag: 1, n: 2)
+    print(m.n)

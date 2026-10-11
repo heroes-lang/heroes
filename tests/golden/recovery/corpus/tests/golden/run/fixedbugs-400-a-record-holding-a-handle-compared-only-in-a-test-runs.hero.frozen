@@ -1,0 +1,27 @@
+# Defect 400, lane run400, 2026-10-06: the shape beside the defect's own, a
+# handle reached by the comparison through a record of the program's own.
+#
+# SYMPTOM: `Holder` compared in a test and nowhere else passed `heroes test`
+# and was refused by `build` and `run`, exit 1, *declares no `opaque`*.
+#
+# CAUSE: `==` on a record reaches every record its fields hold, so the build
+# asked whether `Opaque` is a union, writing `*(opaque * *)0`, an expression,
+# where clang never says *must use 'struct' tag*; and the program build, which
+# emits no test, declared nothing of type `Holder` to spell the word as a type.
+#
+# FIX: the record's own question, asked of the header once the round is
+# refused (`cli/header_ask.hero`), is what teaches `struct opaque`.
+
+extern "fixedbugs-400-a-struct-tag-with-no-typedef.h"
+    record Opaque tag opaque
+
+record Holder
+    h: Opaque
+
+function main()
+    print(1)
+
+test "a record holding a handle compared in a test alone"
+    a = Holder(h: nullptr)
+    b = Holder(h: nullptr)
+    assert a == b

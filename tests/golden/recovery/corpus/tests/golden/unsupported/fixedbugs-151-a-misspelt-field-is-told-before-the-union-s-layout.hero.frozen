@@ -1,0 +1,25 @@
+# fixedbugs, defect 151, lane land186, 2026-10-02 (panel 186 R4).
+#
+# What the layout check owes a misspelling: a record over `SA` with `x`
+# written `xx` both misspells a field and leaves one out, and the misspelling
+# is what the author fixes, on its own line, before anything about the record
+# can be said. The completeness check of the route's first build ran before
+# the program's own unit and said *does not name `x`* instead.
+#
+# FIX: a declared field the dump does not show is a header macro or a
+# misspelling, and only the preprocessor knows which, so the record's every
+# layout question stands under `#if defined(xx)`; a misspelling switches them
+# off, and the field assertion says `ffi_unknown_field` on the line, as lane
+# ffi-macro's `fixedbugs-152-a-field-the-header-lacks-*` cases have it.
+
+extern "fixedbugs-151-unions.h"
+    record SA
+        kind: i32
+        i: i32
+        xx: i32  #~ ffi_unknown_field
+
+function touch(s: SA) -> i32
+    return s.kind
+
+function main()
+    print(1)

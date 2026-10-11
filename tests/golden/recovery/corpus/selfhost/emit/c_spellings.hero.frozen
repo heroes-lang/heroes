@@ -135,7 +135,7 @@ function spelling(c_type: str, word_bits: i64) -> Spelling?
 # the note that says so. The width both ways round, so the sentence is
 # true whichever leg the reader is on.
 function word_width(sign: str, word_bits: i64) -> Spelling
-    other: i64 @ 32
+    other: i64 @= 32
 
     if word_bits == 32
         other @ 64
@@ -150,7 +150,7 @@ function word_width(sign: str, word_bits: i64) -> Spelling
 # where `long` stays 32 there. So the caveat is their own, or the note
 # would say something false on the one platform it exists to warn about.
 function object_width(sign: str, word_bits: i64, c_type: str) -> Spelling
-    other: i64 @ 32
+    other: i64 @= 32
 
     if word_bits == 32
         other @ 64
