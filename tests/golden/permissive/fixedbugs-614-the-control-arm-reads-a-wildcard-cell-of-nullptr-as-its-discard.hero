@@ -1,0 +1,35 @@
+# Fixed 2026-10-11, defect 614, lane b21-misc: the control arm,
+# `check --permissive`, drops the resolver's `never_rebound` on `_ @= e`
+# (defect 608), a thesis rule, and the checker then read the line as a cell
+# born, so `_ @= nullptr` was refused `cannot_infer`, *not which handle `_`
+# will hold*, where `_ = nullptr` is accepted. `_` binds nothing (spec § 5)
+# and the line runs as the discard `_ = e`, which is how the control arm now
+# reads it, at the top of a body, in a loop, an `if`, a `match` arm and a
+# `test`, with its type written and with the old symbol `@`: none is told.
+# The type error below is the witness that the checker walked them.
+
+function wrong() -> i64
+    return "text"  #~ type_mismatch
+
+function main()
+    _ @= nullptr
+
+    for i in [1, 2]
+        _ @= nullptr
+
+        if i > 1
+            _ @= nullptr
+
+    k = match 3
+        3 =>
+            _ @= nullptr
+            1
+        _ => 0
+
+    _: ptr @= nullptr
+    _: ptr @= nullptr
+    print(k + wrong())
+
+test "a wildcard cell of nullptr in a test"
+    _ @= nullptr
+    assert true

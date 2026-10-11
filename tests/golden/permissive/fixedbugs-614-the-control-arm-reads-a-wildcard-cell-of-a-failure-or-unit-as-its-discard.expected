@@ -1,0 +1,1 @@
+tests/golden/permissive/fixedbugs-614-the-control-arm-reads-a-wildcard-cell-of-a-failure-or-unit-as-its-discard.hero:18:12: error[type_mismatch]: expected `i64`, found `str`
