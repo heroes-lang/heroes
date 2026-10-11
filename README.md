@@ -218,14 +218,24 @@ reproduce. Attribution is owed by whoever redistributes Heroes itself.
 
 ## Contributing
 
-**Issues and questions are welcome. Code is not, yet.** This is one person
-learning compilers, on a deliberately unusual set of rules, and every line here
-goes through them: they are in `CLAUDE.md`, and the reason each one exists is in
-`design.md` or in a panel session. Contributions are meant to open later, and
-`CONTRIBUTING.md` names the three conditions that have to be true first, so you
-can check them rather than wait. It also says what the licence lets you do
-meanwhile: Apache-2.0 grants the fork in writing, and a repository that is not
-yet taking patches does not take that back.
+**Issues and questions are welcome from anyone. Code is welcome from
+authorized contributors, through an issue first.** This is one person learning
+compilers, on a deliberately unusual set of rules, and every line here goes
+through them: they are in `CLAUDE.md`, and the reason each one exists is in
+`design.md` or in a panel session. The language is below `1.0.0` and moves
+along a roadmap, so a contributor asks once to be authorized, then each change
+starts as an issue, gets an answer that places it on that roadmap or says why
+not, and only then becomes a pull request. `CONTRIBUTING.md` says how to ask,
+the three steps and what a pull request carries, so you can check them rather
+than wait. It also says what the licence lets you do meanwhile: Apache-2.0
+grants the fork in writing.
+
+Taking part means following the code of conduct,
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md), which is the Contributor Covenant
+3.0. A problem is reported in an issue, except a security one, above all a
+Heroes program that crashes on a bad memory access or corrupts memory: that goes
+through the private report form on the Security tab and never into the text of
+a public issue, and [`SECURITY.md`](SECURITY.md) says how and what counts.
 
 <a href="https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/"><img src="site/public/images/book/cover-en.webp" alt="Heroes of code, front cover" width="120" align="right"></a>
 

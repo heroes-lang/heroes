@@ -1,28 +1,23 @@
 <!--
-  This template exists to be read before the button is pressed, because the
-  answer below cannot be expressed as a repository setting: GitHub has no switch
-  that closes pull requests, and none that prevents a fork. So the policy is
-  stated where it is read in time, and `main` is protected rather than the door
-  locked.
+  Read `CONTRIBUTING.md` first. A pull request here comes from an authorized
+  contributor and follows an issue the maintainer accepted; one from anybody
+  else, or with no issue behind it, is closed with a link to that file, and the
+  defect or the idea inside it is reopened as an issue and answered there, so
+  nothing is lost. The list below is what the maintainer checks before merging,
+  written out so you can check it first.
 -->
 
-**Code is not accepted on this repository yet.** This is not about your patch,
-which nobody has read, and it is not permanent: contributions are meant to open
-later, and `CONTRIBUTING.md` names the three conditions that have to be true
-first, so you can check them yourself instead of waiting to be told.
+**The issue this answers:** Closes #
 
-The short reason: every line here goes through a written contract, a five-judge
-panel and a dated record, and a patch from outside cannot carry those with it
-while the process that produces them still lives inside one working session.
+**What it changes, in one line:**
 
-**What to do instead**
+**Checked before opening**
 
-- If you found a program that compiles and should not, or one that fails and
-  should not, **open an issue**. That is the most valuable thing this project can
-  receive, and it is worth more than the fix would be.
-- If you want the change for yourself, **fork it**. Apache-2.0 grants that in
-  writing and this policy does not take it back.
-
-If you press Create anyway, nothing bad happens and nobody is annoyed. It will
-be closed with a link to this file, and any bug described inside it will be
-reopened as an issue and worked on.
+- [ ] the maintainer has authorized me to send code (`CONTRIBUTING.md` § Who may send code)
+- [ ] the issue above is accepted, and this is the change it agreed, nothing beside it
+- [ ] every `.hero` file touched is formatted: `heroes fmt <file> --in-place`
+- [ ] the cases are in: a golden case per shape, each diagnostic annotated in its source and snapshotted
+- [ ] the three suites are green on my machine, with the commands `README.md` gives
+- [ ] `seed/heroes.c` is untouched
+- [ ] no new binary, script or Makefile; a new capability is a `heroes` subcommand or flag
+- [ ] everything is in English
