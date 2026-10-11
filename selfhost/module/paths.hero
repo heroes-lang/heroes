@@ -85,6 +85,35 @@ function path_at(tokens: [token.Token], text: str, at: i64) -> str?
 
     return ok(text.slice(from: start, to: end))
 
+## The directory a path starts at
+
+# The root's own directory TEXT: everything up to and including the last
+# separator the author wrote, or "" for a bare name. This names sibling
+# files the way the author spelled the root; it never opens one (the
+# premise panel 057 refused everywhere else is kept here, alone, and scope
+# is what makes it survivable). Moved here from `modules.hero` at panel 211,
+# whose ceiling it paid: a path's text, read before any file opens.
+function directory_text(path: str) -> str
+    cs = path.chars()
+    cut: i64 @= -1
+    index: i64 @= 0
+
+    for ch in cs
+        if ch == "/" || ch == "\\"
+            cut @ index
+        index @ index + 1
+
+    if cut == -1
+        return ""
+    kept: [str] @= []
+    index @ 0
+
+    while index <= cut
+        kept @ kept.push(cs[index])
+        index @ index + 1
+
+    return kept.join("")
+
 ## The rule that USED to make a qualifier a program-wide key
 
 # **`last_parts_collide` was here and is deleted** (panel 100 R3, 2026-09-02).

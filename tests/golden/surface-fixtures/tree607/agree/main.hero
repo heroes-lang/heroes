@@ -1,0 +1,10 @@
+# Defect 607 (2026-10-10): `check --apply --in-place` wrote the root module
+# only, so the certain fix in `lib/geom.hero`, a nested module with a `use`
+# line, was written by no invocation. Panel 211's route C: `check
+# <directory> --apply --in-place` writes it, every root under the directory
+# computing the same text of it; this file named alone keeps panel 193's
+# answer, the fix `elsewhere` and nothing written.
+use lib/geom
+
+function main()
+    print(geom.two())

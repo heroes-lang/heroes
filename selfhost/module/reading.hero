@@ -67,6 +67,16 @@ function source_text(path: str) -> Text?
     shown = got.slice(from: marks, to: got.len())
     return ok(Text(text: shown, faults: not_text.faults_of(marks: got.slice(from: 0, to: marks), text: shown)))
 
+# The module `name` as `edited` holds it, where a round of `check --apply`
+# has written it and not yet the disk, or the file at `opened` (defect 607).
+function text_at(opened: str, name: str, edited: [source.InputFile]) -> Text?
+    for one in edited
+        if one.name == name
+            none: [source.Fault] = []
+            return ok(Text(text: one.text, faults: none))
+
+    return source_text(opened)
+
 # A file read for a cache's key: the text a reader of it scans, which is its
 # own where it is UTF-8 and the shown text where it is not, and its key.
 record Keyed

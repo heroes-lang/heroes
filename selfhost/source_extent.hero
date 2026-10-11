@@ -42,11 +42,23 @@ function user_text(s: source.Source) -> str
 # it belongs to no file (`source.from_files`), and nothing is added inside it,
 # an open last line included (defect 141).
 function text_of(s: source.Source, index: i64) -> str
-    start = s.files[index].start
+    return s.text.slice(from: s.files[index].start, to: end_of(s, index: index))
 
+# Where the file at `index` ends: the joiner after it, or the text's end. A
+# fix inside it is one whose span lies between its start and this.
+function end_of(s: source.Source, index: i64) -> i64
     if index + 1 < s.files.len()
-        return s.text.slice(from: start, to: s.files[index + 1].start - 1)
-    return s.text.slice(from: start, to: s.text.len())
+        return s.files[index + 1].start - 1
+    return s.text.len()
+
+# Whether the file at `index` holds a byte that is not UTF-8: never lexed,
+# so it holds no fix and is never written (panel 189).
+function faulted(s: source.Source, index: i64) -> bool
+    for one in s.faults
+        if one.at >= s.files[index].start && one.at <= end_of(s, index: index)
+            return true
+
+    return false
 
 ## Tests
 
