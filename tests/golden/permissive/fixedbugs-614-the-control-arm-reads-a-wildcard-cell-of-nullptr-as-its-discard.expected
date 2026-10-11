@@ -1,0 +1,1 @@
+tests/golden/permissive/fixedbugs-614-the-control-arm-reads-a-wildcard-cell-of-nullptr-as-its-discard.hero:12:12: error[type_mismatch]: expected `i64`, found `str`

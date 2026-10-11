@@ -779,15 +779,8 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
     span = a.stmts[id].span
 
     match a.stmts[id].kind
-        .bind b =>
-            bound = born(@c, a, r, s, decls, ty: b.ty, value: b.value, name: b.name, cell: false)
-            discard.refuse(@c, a, s, decls, name: b.name, value: b.value, ty: bound, span: span)
-            state.bind_local(@c, b.name, ty: bound)
-            return falls_with_nothing()
-        .declare d =>
-            held = born(@c, a, r, s, decls, ty: d.ty, value: d.value, name: d.name, cell: true)
-            state.bind_local(@c, d.name, ty: held)
-            return falls_with_nothing()
+        .bind b    => return birth(@c, a, r, s, decls, ty: b.ty, value: b.value, name: b.name, cell: false, span: span)
+        .declare d => return birth(@c, a, r, s, decls, ty: d.ty, value: d.value, name: d.name, cell: true, span: span)
         .mutate m =>
             target = synth(@c, a, r, s, decls, m.place)
             access.refuse_str_element(@c, a, place: m.place)
@@ -810,6 +803,14 @@ function statement(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
         .expr_stmt v    => return expression_statement(@c, a, r, s, decls, value: v.value, want: want)
         .error          => return falls_with_nothing()
 
+    return falls_with_nothing()
+
+# A binding or a cell born, apart for `statement`'s frame (below): `_ @= e`, past
+# `never_rebound` in the control arm, is the discard `_ = e` (spec § 5; defect 614).
+function birth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], ty: i64?, value: i64, name: token.Span, cell: bool, span: token.Span) -> Outcome
+    held = born(@c, a, r, s, decls, ty: ty, value: value, name: name, cell: cell && source.span_text(s, name) != "_")
+    discard.refuse(@c, a, s, decls, name: name, value: value, ty: held, span: span)
+    state.bind_local(@c, name, ty: held)
     return falls_with_nothing()
 
 # The type a binding or a cell is born with (§4.5; spec § 5, panel 209): the
@@ -2442,3 +2443,24 @@ test "defect 409: forty holes are kept, each once and in the order they stand"
     while k < 40
         assert c.out.holes[k - 1].span.start < c.out.holes[k].span.start
         k @ k + 1
+
+# Defect 614: `_` binds nothing (spec § 5), so `_ @= e` is the discard it runs
+# as, and the checker reads it so where the control arm has dropped the
+# resolver's `never_rebound` (defect 608): a bare `nullptr` is no cell waiting
+# for its handle, and an empty literal's guess annotates the binding.
+test "defect 614: a cell on the wildcard is read as the discard it runs as"
+    for literal in ["nullptr", "5", "[]", "{}", "[[]]"]
+        cell = checked_program("function main()\n    _ @= " + literal + "\n").out.diagnostics
+        bound = checked_program("function main()\n    _ = " + literal + "\n").out.diagnostics
+        assert cell.len() == bound.len()
+        k: i64 @= 0
+
+        while k < cell.len()
+            assert cell[k].code == bound[k].code && cell[k].message == bound[k].message
+            assert cell[k].fixes.len() == bound[k].fixes.len()
+            k @ k + 1
+
+    assert checked_program("function main()\n    _ @= nullptr\n").out.diagnostics.len() == 0
+    empty = checked_program("function main()\n    _ @= []\n").out.diagnostics
+    assert empty.len() == 1
+    assert empty[0].fixes[0].title == "annotate the binding: `_: [i64] = []`"

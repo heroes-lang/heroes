@@ -1,0 +1,13 @@
+# Fixed 2026-10-11, defect 614, lane b21-misc: under `check --permissive`,
+# which drops defect 608's `never_rebound`, `_ @= []` was told `cannot_infer`
+# with the guess *annotate the cell: `_: [i64] @= []`*, a cell `_` cannot be.
+# Read now as the discard `_ = []` it runs as: the same one message at the
+# literal, its guess annotating the binding (`check/walk.hero`'s test of the
+# defect pins the guess, which `--brief` does not print); a literal nested
+# inside the value keeps the general guess, as `_ = [[]]`'s does.
+
+function main()
+    _ @= []  #~ cannot_infer
+    _ @= {}  #~ cannot_infer
+    _ @= [[]]  #~ cannot_infer
+    print(1)
