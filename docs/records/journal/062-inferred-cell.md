@@ -136,3 +136,12 @@ milestone closed); the repository's ruleset for milestone tags was suspended
 for the four seconds of the deletion and read back unchanged. The tag's
 object, `c779a8f8` on `d32c19a1`, is kept to be placed again unchanged. The
 record is `issues/2026-10/11/2026-10-11-0045-the-tag-m-inferred-cell-waits-for-its-seven-blocking-defects.md`.
+
+**Corrected again 2026-10-11**: the tag was placed again on `08a8f8c5`, not
+on `d32c19a1` with its old object: `records/tagged` reads the tag's own
+commit, and at `d32c19a1` the seven defects stand open in its tree whatever
+the trunk says of them later, so a tag there could never pass. The seven
+closed with batches 20 and 21; defect 661 (`systemic`, the recovery plan
+frozen across the symbol) was repaired at `ab32bb42` by cutting the plan again
+from the migrated tree; and `records` read 28 and 0 on the trunk with the tag
+placed, the one step this journal's close had not taken before its push.

@@ -38,3 +38,5 @@ after 16:45 by the clock read before the question, not to tag M-issue-files
 over its open blocking defects. The
 ruleset makes a placed tag immovable; the author chose the list's rule over
 the tag's.
+
+**Placed again 2026-10-11** on `08a8f8c5`, the first commit over a list with no `blocking` and no `systemic` defect (the seven closed by batches 20 and 21, defect 661 repaired at `ab32bb42`), `records` 28 and 0 with the tag placed; a new tag object, not `c779a8f8`, since `records/tagged` reads the tag's own commit and `d32c19a1` holds the seven open. The push that carries it is asked for.
