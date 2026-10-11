@@ -17,7 +17,7 @@
 # **What counts as the function itself** is the resolver's answer, never a
 # name: a plain call whose callee resolves to this declaration, and its UFCS
 # spelling `x.f()` (spec § 9: `x.f(y)` is `f(x, y)`) where the checker itself
-# reads it so, asked of `check/name_types.hero` and `check/walk.hero` as the
+# reads it so, asked of `check/name_types.hero` and `check/markers.hero` as the
 # walk asks them and never read twice (§4.11: a field of the receiver holding
 # a function takes the call first; an `@` first parameter takes no UFCS,
 # `ufcs_on_mutable`). A same-named function of
@@ -36,7 +36,7 @@ use source
 use resolved
 use check/state
 use check/path_end
-use check/walk
+use check/markers
 use check/name_types
 use check/may_end
 use check/self_walk
@@ -235,7 +235,7 @@ function method(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.R
 # parameter takes no UFCS, `ufcs_on_mutable`).
 function names_itself(r: resolved.Resolved, w: self_walk.Walk, at: i64, ufcs: bool, decls: [ast.Decl]) -> bool
     match r.uses[at]
-        .top t => return self_walk.among(w, at: t.at) && (!ufcs || !walk.ufcs_hides_the_marker(decls, decl: t.at))
+        .top t => return self_walk.among(w, at: t.at) && (!ufcs || !markers.ufcs_hides_the_marker(decls, decl: t.at))
         .local | .builtin | .module | .unresolved => return false
 
 # The declaration the name at `at` resolves to, -1 where it is none.
