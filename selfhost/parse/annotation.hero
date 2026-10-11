@@ -21,10 +21,10 @@
 # | `past_a_refused_type`, `no_binding_symbol` | `grammar_expr.annotated` |
 
 use token
-use diag
 use cursor
 use parse/opening
 use lexer
+use cell_errors
 
 # Where the type begun at `typed` refused, the cursor moves to the `@` or `=`
 # its line holds after the type, if one stands there: what it passes is the
@@ -76,25 +76,21 @@ function no_binding_symbol(@c: cursor.Cursor, text: str, typed: opening.Mark)
     )
 
 # The symbol that declares a cell after an annotation, eaten: `@=` (spec
-# § 5, panel 209), or `@`, the symbol until 2026-10-10, told at once with a
-# certain fix writing `@=` (how `check --apply` rewrote the tree's 1671
-# files) and read as the declaration it is, so the rest of the file is
-# judged; quiet at the `wildcard`'s `@`, a cell the resolver tells with the
-# fix writing `=` (defect 608). False where neither stands, cursor unmoved.
+# § 5, panel 209), or `@`, the symbol until 2026-10-10, told at once in
+# `cell_errors.old_symbol`'s words, its certain fix writing `@=`, or `=` on
+# the `wildcard` (defect 608), and read as the declaration it is, so the rest
+# of the file is judged. Told here and not left to the resolver: a line the
+# parser reads with nothing said is one `fmt` prints, and it would print the
+# old `@` as `@=` (defect 608's probe, 2026-10-11). False where neither
+# stands, the cursor unmoved.
 function cell_symbol(@c: cursor.Cursor, text: str, wildcard: bool) -> bool
-    if cursor.eat(@c, .at_eq) || wildcard && cursor.eat(@c, .at)
+    if cursor.eat(@c, .at_eq)
         return true
 
     if !cursor.at(c, .at)
         return false
     at = cursor.bump(@c).span
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: "old_cell_symbol",
-        message: "`@` after a type declared a cell until panel 209; a cell is declared `" + cursor.slice_of(text, at) + "=`, and `@` alone re-binds one — write `@=`",
-        span: at
-    )
-    d.fixes @ d.fixes.push(diag.Fix(title: "write `@=`", replacement: "@=", span: at, certainty: .certain))
-    cursor.say(@c, d)
+    cursor.say(@c, cell_errors.old_symbol(cursor.slice_of(text, at), at: at, wildcard: wildcard))
     return true
 
 ## Tests

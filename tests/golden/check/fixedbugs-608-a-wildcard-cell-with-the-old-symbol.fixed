@@ -5,10 +5,18 @@
 # written a line refused again, two passes of `check --apply` for one line.
 # Now `parse/annotation` leaves the wildcard's old `@` to the resolver, which
 # tells it once, and the certain fix writes `=` where the `@` is.
+#
+# Corrected 2026-10-11, the same day, by batch 20's gate B: a line the
+# parser reads with nothing said is one `fmt` prints, and it printed this
+# `@` as `@=`, so `heroes probe --family multi` saw every comment beside it
+# move (9 of 9 variants). The parser tells it again, `old_cell_symbol` in
+# `cell_errors.old_symbol`'s words for the wildcard, its certain fix writing
+# `=`: still one message and one pass, and `fmt` refuses the line as it
+# refuses every line the parser recovers.
 
 function f(x: i64) -> i64
     return x + 1
 
 function main()
-    _: i64 = f(1)  #~ never_rebound
+    _: i64 = f(1)  #~ old_cell_symbol
     print("done")
