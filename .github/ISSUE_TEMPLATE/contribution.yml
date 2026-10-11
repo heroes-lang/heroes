@@ -1,0 +1,48 @@
+name: An offer to contribute
+description: Something you want to change in the compiler, the runtime, the tools or the documents, before you write it. Your first offer is also your request to be authorized.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Code is welcome from authorized contributors, through an issue first
+        (`CONTRIBUTING.md`, the three steps). Say what you want to change and
+        why; the maintainer answers here with *accepted* and where it sits on
+        the roadmap, *later* and the condition, or *no* and the reason. On a
+        first *yes* you are added as a collaborator, which is what authorizes
+        you; then the pull request names this issue.
+
+        A change to the language itself, the specification, a syntax, a
+        semantics, a class of diagnostic, needs a design sitting first; say so
+        below and the maintainer convenes one.
+  - type: textarea
+    id: change
+    attributes:
+      label: What you want to change
+      description: As the person writing a program would meet it, or as the maintainer would read it in the tree.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why, and what it serves
+      description: A row of `docs/ROADMAP.md` § The chain, an open defect's number, a sentence of the spec or the design, or a program that should compile and does not.
+    validations:
+      required: true
+  - type: dropdown
+    id: language
+    attributes:
+      label: Does it change the language?
+      description: The specification, a syntax, a semantics, what a class of diagnostic says, the architecture. If yes or unsure, a design sitting comes before the code.
+      options:
+        - "No, it is a repair, a tool, a document or a platform"
+        - "Yes"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: how
+    attributes:
+      label: How you would do it
+      description: Optional. The files you expect to touch and the cases you would add.
+    validations:
+      required: false
