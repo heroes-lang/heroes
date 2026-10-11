@@ -627,6 +627,23 @@ class Pathspec(unittest.TestCase):
         self.passed("env FOO=1 ls")
         self.passed("git -C . add CLAUDE.md")
 
+    def test_the_anthropic_key_reaches_the_token_count_and_nothing_else(self):
+        """Defect 670: the endpoint had only to appear somewhere in the
+        segment, so a request to another one carrying its words passed."""
+        count = "https://api.anthropic.com/v1/messages/count_tokens"
+        self.passed("curl -s " + count + " -d @body.json")
+        self.passed("curl -s '" + count + "?beta=true' -d @body.json")
+        self.passed("grep -rn api.anthropic.com .claude/")
+        self.refused("curl -s https://api.anthropic.com/v1/messages -d @body.json")
+        self.refused("curl -s https://api.anthropic.com/v1/messages -d '{\"note\": \"/v1/messages/count_tokens\"}'")
+        self.refused("curl -s https://api.anthropic.com/v1/messages " + count)
+        self.refused("curl -s " + count + " https://api.anthropic.com/v1/organizations")
+        self.refused("curl -s https://api.anthropic.com:443/v1/messages")
+        self.refused("curl -s https://api.anthropic.com.example.org/v1/messages/count_tokens")
+        self.refused("curl -s https://API.ANTHROPIC.COM/v1/messages")
+        self.refused("curl -s " + count + "x")
+        self.refused("python3 -c \"import urllib.request; urllib.request.urlopen('https://api.anthropic.com/v1/messages')\"")
+
 
 def branched(tree, side_file="a.txt"):
     """`tree` holding `a.txt` and `b.txt`, a branch `other` that changes

@@ -42,6 +42,11 @@ HARNESS = "tests/harness/main.hero"
 # The one endpoint the Anthropic key is in `.env` for, and the clients that can
 # actually reach it. A python one-liner is a client; `grep` is a reader.
 COUNT_TOKENS = "/v1/messages/count_tokens"
+# Each mention of the host, and the characters that follow it up to the end of
+# the word; the endpoint, alone or with a query or a fragment, is the only
+# follower allowed (defect 670).
+ANTHROPIC_HOST = re.compile(r"api\.anthropic\.com([^\s'\"]*)", re.IGNORECASE)
+ENDPOINT_ONLY = re.compile(re.escape(COUNT_TOKENS) + r"(?:[?#][^\s'\"]*)?")
 CLIENTS = frozenset({"curl", "wget", "http", "https", "xh", "httpie",
                      "python", "python3", "node", "deno"})
 PRINTERS = frozenset({"echo", "printf", "print", "printenv", "env", "set"})
@@ -732,8 +737,18 @@ def judged(raw, w, here, segment, command, cwd, seen=frozenset()):
     # the request. `grep -rn api.anthropic.com .claude/` is how somebody
     # checks this rule still holds, and a guard that refuses reading is the
     # failure `without_heredocs` above was written for.
-    if w[0] in CLIENTS and "api.anthropic.com" in segment:
-        if COUNT_TOKENS not in segment:
+    #
+    # EVERY mention of the host must be followed by the endpoint itself
+    # (defect 670). Until then the endpoint had only to appear SOMEWHERE in
+    # the segment, so a request to `/v1/messages` carrying the words
+    # `/v1/messages/count_tokens` in its body passed. A mention followed by
+    # anything else, a port, a longer host, another path, is refused: the
+    # guard errs toward refusing. A host assembled from pieces or held in a
+    # variable is not seen, as it was not before; this is a tripwire, not a
+    # sandbox.
+    if w[0] in CLIENTS:
+        followers = ANTHROPIC_HOST.findall(segment)
+        if any(ENDPOINT_ONLY.fullmatch(after) is None for after in followers):
             return (
                 "refused: the Anthropic key is for `" + COUNT_TOKENS + "` "
                 "and nothing else. Inference, agents and the organisation "

@@ -22,6 +22,7 @@
  */
 
 import { readText, walk } from './repo.ts';
+import { withoutTags } from './tags.ts';
 
 /**
  * A nod, in either markup shape: block under an `h1` with a literal `·`, or
@@ -39,7 +40,7 @@ export function nods(lang: 'en' | 'it'): string[] {
     const italian = file.startsWith('site/src/html/it/');
     if (italian !== (lang === 'it')) continue;
     for (const match of readText(file).matchAll(NOD)) {
-      out.push(title(match[1]));
+      out.push(title(match[1], file));
     }
   }
   return out;
@@ -49,9 +50,8 @@ export function nods(lang: 'en' | 'it'): string[] {
  * The title inside a nod's span: the separators and the anchor stripped, the
  * entity spelled as the character it is, the whitespace collapsed.
  */
-function title(inner: string): string {
-  return inner
-    .replace(/<[^>]*>/g, '')
+function title(inner: string, where: string): string {
+  return withoutTags(inner, where)
     .replaceAll('&middot;', '·')
     .replaceAll('·', ' ')
     .replace(/\s+/g, ' ')
@@ -198,7 +198,7 @@ export function checkNods(html: string, pagePath: string): string[] {
   const known = new Set(ROWS.map((row) => row.nod));
 
   for (const match of html.matchAll(NOD)) {
-    const nod = title(match[1]);
+    const nod = title(match[1], pagePath);
     if (!known.has(nod)) {
       problems.push(
         `${pagePath}: the nod "${nod}" has no row in the tracklist. Add it to ROWS in ` +
