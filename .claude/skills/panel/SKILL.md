@@ -293,6 +293,15 @@ is a full panel.
      -p` session, an API call, a cloud run. A seat that finds one worth
      running says so in its report, with its size, and the coordinator
      decides;
+   - **no seat and no critic prints a credential, and the brief says so**
+     (author instruction 2026-10-12, defect 672: panel 212's ffi-pragmatist
+     ran `gh auth token` and the author's GitHub token stood in its transcript
+     until the author revoked it): a seat that must know whether it is
+     authenticated runs `gh auth status`, which masks the token, and never `gh
+     auth token`. `.claude/hooks/guard_bash.py` refuses the second in a seat's
+     shell too, measured 2026-10-12 with a subagent whose `gh auth token
+     --help` was refused before it ran; the brief's line is what a seat reads
+     first, and the hook what holds when it does not;
    - **the sitting runs under `caffeinate -i`** (`.claude/rules/verification.md`
      § A long run holds the machine awake): this Mac sleeps after one minute
      idle, and sitting 177 lost three and a half hours to it;
