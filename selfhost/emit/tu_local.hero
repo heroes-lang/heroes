@@ -1,0 +1,71 @@
+# How a unit past `typeorder`'s depth declares its per-type functions to
+# clang: `HERO_TU_LOCAL`, the attributes each `_retain`, `_release`, `_eq`
+# and `_hash` carries, defined once after the type order and before any body
+# (design.md §3.1). Below the depth the word is empty and every unit's C is
+# what it was, byte for byte. Its own file since defect 622 (2026-10-11),
+# when the definition grew a sanitizer's branch and `typeorder.hero` stood at
+# its ceiling.
+#
+# **`used`, defect 468.** clang emits a `static` function the first time an
+# emitted function names it, and recursively (`CodeGenModule::EmitDeferred`):
+# the top of a chain's `_eq` names the next level's, which names the next, so
+# the emission recurses as deep as the chain. Measured on this Mac with a 1 MiB
+# stack and defect 469's memmove, 10,000 levels with every other one an
+# option: `-fsyntax-only` passes and `-emit-llvm` dies. `used` has clang emit
+# each function at its definition, so none waits on another: the deepest of
+# six samples across a 1,000-level unit held about 2,800 nested emissions,
+# and with `used` three. It costs the binary every per-type function the unit
+# defines, called or not, which is why it is not every unit's: on the
+# compiler's own 500 units it was 55% more of clang's instructions and 131%
+# more object.
+#
+# **`nodebug`, defect 566** (2026-10-10): at `-O2` clang inlines a chain's
+# per-type functions into each other, a thousand inlined frames per release
+# of the thousandth level, each in the line table, and the assembly printer
+# and two debug-value analyses were 54e9 of 143e9 instructions (the CI's
+# Windows leg passed its 120 s watchdog). Inlined, the code takes its
+# caller's line, these functions being the generated file's: 14.6e9, 40.6e9
+# and 143.3e9 at 250, 500 and 1,000 levels became 9.2e9, 19.8e9 and 44.7e9.
+# `noinline` instead left `MemCpyOpt`'s stack-move asking post-dominance
+# across one block, 86.5e9 at 1,000.
+#
+# **Three UBSan checks left out when optimising, defect 622** (2026-10-11):
+# `-fsanitize=undefined` checks each member access through a pointer, its
+# null, alignment and object size, so every level's `&v->f_inner` carries a
+# check of its own, and inlined into each other a chain's functions hold a
+# check per level below them: JumpThreading, the inliner and EarlyCSE took
+# the thousand-deep case (defect 539's) to 28.9 s and 4.2 GB of clang at
+# `-O2` under UBSan on this Mac, against 5.9 s and 0.5 GB without it; with
+# the three checks left out of these functions, 8.0 s and 0.5 GB. They ask
+# of a pointer the compiler derived from a typed C object, a slot, a field
+# or an element, what every such pointer is, and ASan, which `--sanitize`
+# always brings with UBSan, still checks each load and store they make; the
+# other UBSan checks stay. Only when optimising (`__OPTIMIZE__`): at `-O0`
+# nothing is inlined, so each function keeps its checks, and the `run`
+# form's `--sanitize -O0` reads every case under them. Keeping the chain
+# apart instead (`noinline`) measured 6.6 s of clang and kept every check,
+# and was refused on the program's run time, which grew with the square of
+# the depth: two million copies and comparisons of the thousand-deep record
+# under `run --sanitize`, 5.3 s, took 83.4 s.
+
+use emit/writer
+
+# The lines that define the word past the depth, in the order written.
+constant EAGER: [str]
+    [
+        "#undef HERO_TU_LOCAL"
+        "#if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)"
+        "#define HERO_TU_LOCAL __attribute__((unused, used, nodebug, no_sanitize(\"null\", \"alignment\", \"object-size\"))) static"
+        "#else"
+        "#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static"
+        "#endif"
+    ]
+
+# The definition, at the generated file's own lines, and a blank after it.
+function eager(@w: writer.Writer)
+    writer.at_generated(@w)
+
+    for text in EAGER
+        writer.line(@w, text: text)
+
+    writer.blank(@w)

@@ -2216,7 +2216,11 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
 }
 
 #undef HERO_TU_LOCAL
+#if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)
+#define HERO_TU_LOCAL __attribute__((unused, used, nodebug, no_sanitize("null", "alignment", "object-size"))) static
+#else
 #define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static
+#endif
 
 #define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)
 #define HERO_COPY_HELD(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(hero_slot_escape(&(dst)), hero_slot_escape(&(src)), sizeof(dst)); } while (0)
@@ -2235,7 +2239,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 2239 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 2243 "fixedbugs170variantsandoptions100deepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs170variantsandoptions100deepbuild_R0_c_a_eq(const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *a, const h_fixedbugs170variantsandoptions100deepbuild_R0_c_a *b);
@@ -5099,7 +5103,7 @@ bb0:
     hero_print_bool(t6);
 #line 529 "tests/golden/run/fixedbugs-170-variants-and-options-100-deep-build.hero"
     hero_print_end();
-#line 5103 "fixedbugs170variantsandoptions100deepbuild.c"
+#line 5107 "fixedbugs170variantsandoptions100deepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_own1);
     return;

@@ -926,7 +926,11 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
 }
 
 #undef HERO_TU_LOCAL
+#if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)
+#define HERO_TU_LOCAL __attribute__((unused, used, nodebug, no_sanitize("null", "alignment", "object-size"))) static
+#else
 #define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static
+#endif
 
 #define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)
 #define HERO_COPY_HELD(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(hero_slot_escape(&(dst)), hero_slot_escape(&(src)), sizeof(dst)); } while (0)
@@ -945,7 +949,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 949 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 953 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_c_a_eq(const h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_c_a *a, const h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R0_c_a *b);
@@ -6474,7 +6478,7 @@ bb177:
 bb178:
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     t520 = h198_r59;
-#line 6478 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 6482 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_release(hero_slot_escape(&h1_s0));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R38_release(hero_slot_escape(&h2_r0));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R39_c_a_release(hero_slot_escape(&h3_x));
@@ -6749,7 +6753,7 @@ bb180:
     h198_r59 = t519;
 #line 370 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     goto bb178;
-#line 6753 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 6757 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
 }
 
 #line 374 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
@@ -7775,7 +7779,7 @@ bb0:
     hero_print_int(t119);
 #line 419 "tests/golden/run/fixedbugs-522-a-chain-past-32-deep-built-in-one-body-copies-as-bytes.hero"
     hero_print_end();
-#line 7779 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
+#line 7783 "fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes.c"
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R1_release(hero_slot_escape(&h1_r1));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R2_release(hero_slot_escape(&h2_r2));
     h_fixedbugs522achainpast32deepbuiltinonebodycopiesasbytes_R3_release(hero_slot_escape(&h3_r3));
