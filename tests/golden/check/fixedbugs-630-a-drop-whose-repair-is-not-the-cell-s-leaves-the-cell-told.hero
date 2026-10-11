@@ -1,0 +1,28 @@
+# Defect 630's control, lane b21-resolve, 2026-10-11: where a dropped value's
+# message leads with another repair than writing the value back, the cell
+# it computes from is told never re-bound beside it, with the certain `=`,
+# since that repair needs no `@=`: a `T?` whose place is of another type
+# than the value, offered no place; a line that may be the rest of the one
+# above, `-n`, whose reading is the continuation; and the last line of a
+# function that returns a value, whose repair is `return`.
+
+function checked(xs: [i64]) -> [i64]?
+    return ok(xs)
+
+function fallible() -> i64
+    xs @= [1]  #~ never_rebound
+    checked(xs)  #~ discarded_value
+    return xs.len()
+
+function continued() -> i64
+    n @= 3  #~ never_rebound
+    -n  #~ discarded_value
+    return n
+
+#~v missing_return
+function ends_a_function() -> [i64]
+    xs @= [1]  #~ never_rebound
+    xs.push(4)  #~ discarded_value
+
+function main()
+    print(fallible() + continued() + ends_a_function().len())

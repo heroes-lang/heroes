@@ -66,7 +66,7 @@ function build(db: sqlite.Db) -> ()?
     for a in entry.accounts()
         sqlite.bind_text(statement: accounts, at: 1, text: a.name)?
         sqlite.bind_text(statement: accounts, at: 2, text: a.kind)?
-        _ = sqlite.stepped(@accounts)?
+        _ = sqlite.stepped(accounts)?
         sqlite.reset(accounts)?
 
     _ = sqlite.finalized(@accounts)
@@ -77,7 +77,7 @@ function build(db: sqlite.Db) -> ()?
         sqlite.bind_text(statement: rows, at: 2, text: e.account)?
         sqlite.bind_text(statement: rows, at: 3, text: e.memo)?
         sqlite.bind_int(statement: rows, at: 4, value: e.amount.cents)?
-        _ = sqlite.stepped(@rows)?
+        _ = sqlite.stepped(rows)?
         sqlite.reset(rows)?
 
     _ = sqlite.finalized(@rows)
@@ -148,7 +148,7 @@ function queried_balances(db: sqlite.Db) -> [entry.Balance]?
     going: bool @= true
 
     while going
-        match sqlite.stepped(@statement)?
+        match sqlite.stepped(statement)?
             .stepped_row =>
                 name = sqlite.text_of(sqlite.cell(statement: statement, column: 0)?)?
                 count = sqlite.integer_of(sqlite.cell(statement: statement, column: 1)?)?
@@ -166,7 +166,7 @@ function queried_int(db: sqlite.Db, sql: str) -> i64?
     value: i64 @= 0
     found: bool @= false
 
-    match sqlite.stepped(@statement)?
+    match sqlite.stepped(statement)?
         .stepped_row =>
             value @ sqlite.integer_of(sqlite.cell(statement: statement, column: 0)?)?
             found @ true
@@ -183,7 +183,7 @@ function queried_float(db: sqlite.Db, sql: str) -> f64?
     value: f64 @= 0.0
     found: bool @= false
 
-    match sqlite.stepped(@statement)?
+    match sqlite.stepped(statement)?
         .stepped_row =>
             match sqlite.cell(statement: statement, column: 0)?
                 .float_cell f   => value @ f.value
@@ -280,7 +280,7 @@ test "a column read at the wrong type is a refusal and not a zero"
     db: sqlite.Db @= sqlite.opened().must()
     build(db).must()
     statement: sqlite.Statement @= sqlite.prepared(db, "select memo from entry where id = 1").must()
-    _ = sqlite.stepped(@statement).must()
+    _ = sqlite.stepped(statement).must()
     cell = sqlite.cell(statement: statement, column: 0).must()
     assert sqlite.text_of(cell).must() == "september"
     assert sqlite.integer_of(cell).is_err()

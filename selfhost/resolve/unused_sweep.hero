@@ -28,7 +28,10 @@ function report(@r: state.Resolver, s: source.Source)
 
     for local in r.out.locals
         if local.reads > 0
-            if rebound_nowhere(r, s, local)
+            # A cell a value line computes from is the checker's to tell,
+            # which knows whether that line drops a value it was meant to
+            # keep (`resolve/value_lines.hero`, defect 630).
+            if rebound_nowhere(r, s, local) && !local.deferred
                 gathered @ gathered.push(
                     errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
                 )
@@ -68,11 +71,23 @@ function report(@r: state.Resolver, s: source.Source)
 function rebound_nowhere(r: state.Resolver, s: source.Source, local: resolved.Local) -> bool
     if local.kind != .cell || local.writes > 0
         return false
+    return !spared(r, s, local)
+
+# Panel 210's R1, the same rule one level up: an `@` parameter nothing writes
+# or ends (`resolve/written_nowhere.hero`), spared where a cell is.
+function written_nowhere(r: state.Resolver, s: source.Source, local: resolved.Local) -> bool
+    if local.kind != .param || !local.mutable || local.writes > 0
+        return false
+    return !spared(r, s, local)
+
+# Where both rules wait: a hole in the local's module (§4.16), or a name
+# offered as the repair for one that resolved to nothing.
+function spared(r: state.Resolver, s: source.Source, local: resolved.Local) -> bool
     module = source.module_at(s, local.name.start)
 
     if resolved.hole_covers(r.out, module)
-        return false
-    return !state.keyed_has(r.suggested, module: module, name: source.span_text(s, local.name))
+        return true
+    return state.keyed_has(r.suggested, module: module, name: source.span_text(s, local.name))
 
 ## Tests
 

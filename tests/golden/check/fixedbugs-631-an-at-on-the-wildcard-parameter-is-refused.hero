@@ -1,0 +1,27 @@
+# Fixed 2026-10-11, defect 631, lane b21-resolve, with panel 210's R2 and
+# R3. Symptom: `function f(@_: i64)` checked and ran at exit 0, and a
+# caller's cell handed only to it as `f(@k)` escaped panel 209's rule, the
+# `@` argument counting as its write. Cause: `_` declares no local, so no
+# sweep ever saw the `@` on it; and spec § 5 said nothing an `@` parameter
+# owes until D2c. Now an `@` on `_` is told once at the `_`, nothing being
+# able to write it, its removal a guess as R1's is; the caller's `@k` still
+# counts until the `@` goes, so one mistake is one message, and then the
+# call's `@` is refused and then the cell, each in turn. `_` without the
+# `@` stays what it was.
+
+function f(@_: i64) -> i64  #~ never_rebound
+    return 1
+
+function g(_: i64) -> i64
+    return 2
+
+function h(@_: bool, @n: i64)  #~ never_rebound
+    n @ n + 1
+
+function main()
+    k @= 1
+    print(f(@k) + g(k))
+    j @= 2
+    flag @= true
+    h(@flag, @j)
+    print(j)

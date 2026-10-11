@@ -309,17 +309,19 @@ function reset(statement: Statement) -> ()?
 # and a refusal otherwise — a variant rather than the raw code, so a caller
 # cannot compare against the wrong constant.
 #
-# `stepped` takes its statement `@`, since 2026-09-13 (panel 139, defect 030).
-# The marker changes nothing in C — the handle is a copied address either way —
-# but the signature stops PROMISING what it cannot keep: a step advances the
-# cursor every copy of this record reaches, and spec § 3 now says so. This is one
-# of thirteen by-value wrappers in this file; it is the one that ships the
-# counterexample, so it is the one marked.
+# `stepped` took its statement `@` from 2026-09-13 (panel 139, defect 030) to
+# 2026-10-11, to say that a step advances the cursor every copy of this record
+# reaches. The marker changed nothing in C, the handle being a copied address
+# either way, and spec § 3 says it in words: a function taking a `ptr` or a
+# handle without `@` may still change what C holds. Since panel 210 an `@`
+# parameter nothing writes or ends is refused (spec § 5), so the promise lives
+# in that sentence and the signature takes the statement as its twelve
+# by-value siblings do.
 variant Step
     stepped_row
     stepped_done
 
-function stepped(@statement: Statement) -> Step?
+function stepped(statement: Statement) -> Step?
     code = sqlite3_step(statement.handle)
 
     if code == SQLITE_ROW

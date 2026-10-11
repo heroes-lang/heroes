@@ -73,6 +73,15 @@ function refused_as_value(@c: state.Checker, s: source.Source, decls: [ast.Decl]
 
     return false
 
+# §4.8: UFCS does not apply when the first parameter is `@` (spec § 9),
+# because `l.advance()` would hide the mutation the marker exists to show.
+# Out of `check/walk.hero` with defect 629, whose dotted call paid for its
+# line here; `check/self_call.hero` asks it too.
+function ufcs_hides_the_marker(decls: [ast.Decl], decl: i64) -> bool
+    return match decls[decl].kind
+        .function_decl fd => fd.value.params.len() > 0 && fd.value.params[0].mutable
+        .constant_decl | .record_decl | .variant_decl | .test_decl => false
+
 # An `@` before an argument of a call through a function value.
 function through_a_value(@c: state.Checker, a: ast.Ast, arg: ast.Arg)
     if arg.mutable

@@ -66,7 +66,7 @@ function is_jump(a: ast.Ast, at: i64) -> bool
 # 2026-10-04 on `match` tails nested as each arm's last line: `check`
 # survived 3,198 levels before the repair, 3,187 with the field read in
 # `block`, and 3,195 through this call.
-function broke_of(@c: state.Checker) -> bool
+function broke_of(c: state.Checker) -> bool
     return c.broke
 
 # A block's statements after its first jump word, told at the first that

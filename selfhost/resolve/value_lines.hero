@@ -1,0 +1,129 @@
+# A line whose value nothing receives may be the write its cell was meant to
+# have (defect 630; design.md §4.4, §4.17 one mistake one message; spec § 5).
+# `xs @= [1]` over `xs.push(4)` alone: the line computes the array `xs` was
+# to hold and drops it, and the one mistake is the drop, whose repair `xs @
+# xs.push(4)` keeps the cell. Told `never_rebound` first, with its certain
+# `=`, the program lost the `@=` that repair needs and went round three
+# messages to one that prints 1 where 2 was meant (panel 210's critic).
+#
+# The resolver cannot tell that drop: whether the line's value is `()`,
+# whether the line is a value block's last and so drops nothing, and which
+# place holds the value's own type are the checker's answers. So a cell the
+# sweep would tell never re-bound, found at the root of a place a value line
+# computes from, is marked `Local.deferred` here, after the walk and before
+# the sweep, which then leaves it untold; the checker tells it after its
+# walk unless a dropped value's first repair writes it back
+# (`check/kept_cells.hero`), and where this pass refused anything else, the
+# checker does not run and the sweep tells it after all
+# (`unused_sweep.tell_deferred`). Leaving one untold is safe both ways: the
+# checker's answer is exact, and a cell not left is told here as before. A
+# stand-in decided here was measured and refused: counting the line as a
+# write accepted four programs whose cell nothing re-binds, a value block's
+# last line, an arm's, a `()` method and `.must()` on a `()?`.
+#
+# The lines are every expression statement of the tree, `Ast.stmts` read
+# whole, and their parts `value_parts.parts`, the checker's own reading,
+# without the types, down every part that is not a place itself. A line that
+# cannot have a value leaves its cells to the sweep, so `v @= 0` over
+# `print(v)` is still told beside the resolver's other messages: a call of
+# `print`, `end_lease` or `exit`, or of a function declared without `->`.
+
+use ast
+use source
+use inventory
+use value_parts
+use resolve/state
+use resolve/unused_sweep
+
+# Where no cell went unwritten, which is every program the rule accepts, the
+# lines are not read at all, so a correct program pays one pass over its
+# locals.
+function leave_to_the_checker(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    if !any_unwritten_cell(r)
+        return
+
+    for st in a.stmts
+        match st.kind
+            .expr_stmt v =>
+                if !has_no_value(r, a, decls, v.value)
+                    roots(@r, a, s, v.value)
+            .bind | .declare | .mutate | .return_stmt | .assert_stmt | .break_stmt => continue
+            .continue_stmt | .while_stmt | .for_in | .error                        => continue
+
+function any_unwritten_cell(r: state.Resolver) -> bool
+    for local in r.out.locals
+        if local.mutable && local.writes == 0
+            return true
+
+    return false
+
+# Every cell at the root of a place among the parts, and down every part
+# that is not a place: `xs` in `xs.push(4).push(5)`, `b` in
+# `b.items.push(4)`, `total` and `x` in `total + x`.
+function roots(@r: state.Resolver, a: ast.Ast, s: source.Source, id: i64)
+    for part in value_parts.parts(a, id)
+        cell = cell_at(r, a, part)
+
+        if !cell.is_err()
+            one = r.out.locals[cell.must()]
+
+            if unused_sweep.rebound_nowhere(r, s, one) || unused_sweep.written_nowhere(r, s, one)
+                r.out.locals[cell.must()].deferred @ true
+        else if !is_place(a, part)
+            roots(@r, a, s, part)
+
+# The cell or `@` parameter a place stands on: a name the walk resolved to a
+# mutable local, or a field or an element over one (panel 210: an `@`
+# parameter whose only write is a dropped value of its own type is left to
+# the checker as a cell is).
+function cell_at(r: state.Resolver, a: ast.Ast, id: i64) -> i64?
+    match a.exprs[id].kind
+        .name =>
+            match r.out.uses[id]
+                .local l =>
+                    if r.out.locals[l.at].mutable
+                        return ok(l.at)
+                .top | .module | .builtin | .unresolved => return fail(code: "none", msg: "not a local")
+        .field f => return cell_at(r, a, f.base)
+        .index i => return cell_at(r, a, i.base)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return fail(
+            code: "none",
+            msg: "a value"
+        )
+        .hole | .unary | .binary | .field_name | .call | .method | .variant_case => return fail(
+            code: "none",
+            msg: "a value"
+        )
+        .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(code: "none", msg: "a value")
+
+    return fail(code: "none", msg: "no cell")
+
+# A name, a field or an element: a place has no parts of its own to read.
+function is_place(a: ast.Ast, id: i64) -> bool
+    return match a.exprs[id].kind
+        .name | .field | .index                                                        => true
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => false
+        .hole | .unary | .binary | .field_name | .call | .method | .variant_case       => false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                    => false
+
+# A call of a function whose result is `()` by its declaration, or of the
+# three built-ins that give none: the line drops nothing.
+function has_no_value(r: state.Resolver, a: ast.Ast, decls: [ast.Decl], id: i64) -> bool
+    callee: i64 @= id
+
+    match a.exprs[id].kind
+        .call cl                                                                               => callee @ cl.callee
+        .method                                                                                => callee @ id
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr | .name => return false
+        .hole | .unary | .binary | .field | .field_name | .index | .variant_case               => return false
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                            => return false
+
+    return match r.out.uses[callee]
+        .builtin b => inventory.name_of(b.at) == "print" || inventory.name_of(b.at) == "end_lease" || inventory.name_of(b.at) == "exit"
+        .top t                         => declared_unit(a, decls[t.at])
+        .local | .module | .unresolved => false
+
+function declared_unit(a: ast.Ast, decl: ast.Decl) -> bool
+    return match decl.kind
+        .function_decl fd                                          => a.types[fd.value.result].kind == .unit
+        .constant_decl | .record_decl | .variant_decl | .test_decl => false

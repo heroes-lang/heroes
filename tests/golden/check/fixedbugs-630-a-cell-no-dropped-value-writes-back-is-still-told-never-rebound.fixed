@@ -1,0 +1,40 @@
+# Defect 630's control, lane b21-resolve, 2026-10-11: a cell a value line
+# computes from is the checker's to tell, and it is told never re-bound,
+# with the certain `=`, wherever the line is no dropped value whose first
+# repair writes it back. A value block's last line and an arm's are the
+# block's value and drop nothing; `.must()` on a `()?` drops nothing; and a
+# dropped value of another type than the cell's is told beside it, its own
+# certain `_ = ` with it.
+
+variant K
+    a
+    b
+
+function in_a_value_block(c: bool) -> i64
+    xs = [1]  #~ never_rebound
+    ys = if c
+        xs.push(4)
+    else
+        [2]
+    return ys.len()
+
+function in_an_arm(k: K) -> i64
+    xs = [1]  #~ never_rebound
+    ys = match k
+        .a => xs.push(4)
+        .b => [2]
+    return ys.len()
+
+function ended()
+    r = write_file(path: "/dev/null", text: "x")  #~ never_rebound
+    r.must()
+
+function of_another_type()
+    xs = [1]  #~ never_rebound
+    _ = xs.len()  #~ discarded_value
+    print(xs.len())
+
+function main()
+    print(in_a_value_block(true) + in_an_arm(.a))
+    ended()
+    of_another_type()

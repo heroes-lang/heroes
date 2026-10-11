@@ -1,0 +1,67 @@
+# The values a value is computed from, read off the tree alone (design.md
+# §4.4: a line that computes a value must use it). Two passes ask it: the
+# checker, for the place a dropped value may have been meant to keep
+# (`check/discard.own_place`, defect 135), and the resolver, for the cells
+# such a line computes from, whose verdict it leaves to the checker
+# (`resolve/value_lines.hero`, defect 630). One home, so the two cannot
+# disagree about what a line is computed from; out of `check/discard.hero`,
+# where it lived until the resolver needed it, with no type in it to move.
+
+use ast
+use parse
+
+# A call's receiver and its unmarked arguments, an operator's operands. A
+# comparison's value is a decision about its operands rather than a new
+# state of one, so it has none here. An argument marked `@` is passed over:
+# the call writes that one back already.
+function parts(a: ast.Ast, value: i64) -> [i64]
+    out: [i64] @= []
+
+    match a.exprs[value].kind
+        .method m =>
+            out @ out.push(m.receiver)
+            out @ unmarked(out, m.args)
+        .call cl => out @ unmarked(out, cl.args)
+        .binary b =>
+            if !compares(b.op)
+                out @ out.push(b.left).push(b.right)
+        .unary u                                                                       => out @ out.push(u.operand)
+        .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return out
+        .name | .hole | .field | .field_name | .index | .variant_case                  => return out
+        .array | .map | .try_expr | .if_expr | .match_expr | .error                    => return out
+
+    return out
+
+function unmarked(out: [i64], given: [ast.Arg]) -> [i64]
+    kept: [i64] @= out
+
+    for arg in given
+        if !arg.mutable
+            kept @ kept.push(arg.value)
+
+    return kept
+
+function compares(op: ast.BinaryOp) -> bool
+    return match op
+        .eq | .ne | .lt | .le | .gt | .ge             => true
+        .add | .sub | .mul | .div | .rem | .and | .or => false
+        .bit_and | .bit_or | .bit_xor | .shl | .shr   => false
+
+## Tests
+
+test "a line's parts: the receiver and unmarked arguments, an operator's operands, no comparison's"
+    p = parse.parse("function main()\n    xs.push(4)\n    push(xs, 4)\n    f(@k, n)\n    a + b\n    a == b\n")
+    lines: [i64] @= []
+
+    for st in p.tree.stmts
+        match st.kind
+            .expr_stmt v                                                           => lines @ lines.push(v.value)
+            .bind | .declare | .mutate | .return_stmt | .assert_stmt | .break_stmt => continue
+            .continue_stmt | .while_stmt | .for_in | .error                        => continue
+
+    assert lines.len() == 5
+    assert parts(p.tree, lines[0]).len() == 2
+    assert parts(p.tree, lines[1]).len() == 2
+    assert parts(p.tree, lines[2]).len() == 1
+    assert parts(p.tree, lines[3]).len() == 2
+    assert parts(p.tree, lines[4]).len() == 0

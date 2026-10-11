@@ -187,6 +187,7 @@ function expr(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl
             expr(@r, a, s, decls, m.receiver)
             names.method_name(@r, s, decls, at: id, called: m.name)
             meant.lent_for_writing(@r, a, s, name: m.name, receiver: m.receiver)
+            built_marks.receiver_meant(@r, a, s, decls, callee: id, receiver: m.receiver)
             handed = built_marks.of_a_call(@r, a, s, decls, callee: id, receiver: true, given: m.args)
             arguments(@r, a, s, decls, handed)
             rest_zero.at_call(@r, a, s, decls, at: id, rest: m.rest)

@@ -26,6 +26,7 @@ use resolve/types
 use resolve/errors
 use resolve/walk
 use resolve/binding as resolve_binding
+use resolve/written_nowhere
 
 function declaration(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], index: i64)
     r.generics @ r.generics.slice(from: 0, to: 0)
@@ -72,6 +73,7 @@ function function_declaration(@r: state.Resolver, a: ast.Ast, s: source.Source, 
     state.open_scope(@r)
 
     for param in f.params
+        written_nowhere.wildcard(@r, s, param)
         _ = state.declare(
             @r,
             s,

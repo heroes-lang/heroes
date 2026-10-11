@@ -1,0 +1,61 @@
+# Panel 210's R1, ratified 2026-10-11, landed by lane b21-resolve: an `@`
+# parameter nothing writes or ends is refused (spec § 5), code
+# `never_rebound`, at its name. Its copy-out hands every caller back the
+# value it passed, so the `@` here and at every call promises a change
+# nothing makes. Both repairs are offered and both are `guess`: the compiler
+# cannot tell a needless `@` from a write the body forgot, and removing the
+# `@` keeps the forgotten write's bug. Where the body copied the parameter
+# into a cell, the write it forgot comes first, `l @ m`, before a `return`
+# where the body ends with one.
+
+record L
+    pos: i64
+
+# Read only, by a value, a `for`, a generic and a spaced marker.
+function read_only(@n: i64) -> i64  #~ never_rebound
+    return n + 1
+
+function summed(@xs: [i64]) -> i64  #~ never_rebound
+    total @= 0
+
+    for x in xs
+        total @ total + x
+
+    return total
+
+function first<T>(@xs: [T]) -> T  #~ never_rebound
+    return xs[0]
+
+function spaced(@ n: i64) -> i64  #~ never_rebound
+    return n
+
+# Handed `@` to a parameter nothing writes: the callee's is told, and this
+# one's `@` argument counts as its write, as it does for a cell.
+function inner(@m: i64) -> i64  #~ never_rebound
+    return m
+
+function outer(@n: i64) -> i64
+    return inner(@n)
+
+# A copy changed and never handed back: today's silent wrong value, the
+# rule's thesis case (the spec-warden's p12). The write-back is offered first.
+function advanced(@l: L)  #~ never_rebound
+    m @= l
+    m.pos @ m.pos + 1
+
+function advanced_and_told(@l: L) -> i64  #~ never_rebound
+    m @= l
+    m.pos @ m.pos + 1
+    return m.pos
+
+function main()
+    k @= 1
+    print(read_only(@k) + spaced(@k) + outer(@k))
+    ys @= [1, 2]
+    print(summed(@ys) + first(@ys))
+    p @= L(pos: 0)
+    advanced(@p)
+    print(advanced_and_told(@p))
+    k @ 2
+    ys @ ys.push(3)
+    p @ L(pos: 1)

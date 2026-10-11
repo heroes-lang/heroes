@@ -1,0 +1,27 @@
+# Fixed 2026-10-11, defect 629, lane b21-resolve. Symptom: `h.h_into(parent:
+# p)` in a function whose `h` has no `@`, `h_into`'s first parameter
+# marked `transfers`, was accepted where `h_into(child: h, parent: p)` was
+# refused. Cause: the borrowed-handle rule was asked on the named call's
+# path alone. Now the receiver stands at the first position and the written
+# arguments after it, so a transfer is judged at the receiver and at an
+# argument behind one alike.
+extern "fixedbugs-629-a-handle-handed-away-through-the-dot-is-judged-as-the-named-call.h"
+    record H tag hh
+    function h_open() -> H acquires h_close
+    function h_close(x: H consumes)
+    function h_into(child: H transfers h_close, parent: H)
+    function h_adopt(parent: H, child: H transfers h_close)
+
+# The receiver is the transferred handle.
+function attached(h: H, parent: H)
+    h.h_into(parent: parent)  #~ consumed_borrowed_handle
+
+# The receiver is the parent, and the transferred handle stands second.
+function adopted(parent: H, h: H)
+    parent.h_adopt(child: h)  #~ consumed_borrowed_handle
+
+function main()
+    root = h_open()
+    attached(h: h_open(), parent: root)
+    adopted(parent: root, h: h_open())
+    h_close(x: root)

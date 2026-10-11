@@ -45,6 +45,7 @@ use check/counted
 use check/freer_marks
 use check/endless
 use check/const_steps
+use check/kept_cells
 
 # Check one resolved program. The resolver ran first and its answers are
 # inputs, never recomputed.
@@ -132,6 +133,11 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     for d in c.missing_returns
         if held[source.module_at(s, d.span.start)].is_err()
             state.push_diagnostic(@c, d)
+
+    # A cell nothing re-binds that the resolver left to this pass, told unless
+    # a dropped value's repair writes it back (defect 630): after every body,
+    # since the line that keeps it may follow any other.
+    kept_cells.told(@c, a, r, s, decls)
 
     # Within the pass, source order — the same stable sort the resolver
     # uses, called across the module boundary rather than copied: two

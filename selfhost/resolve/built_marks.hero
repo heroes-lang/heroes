@@ -63,6 +63,11 @@ function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
     # neither is told a second time as a cell nothing re-binds.
     meant.meant_by_signature(@r, a, s, takes_at(r, decls, callee), first: first_position(receiver), given: given)
 
+    # A handle handed to `consumes` or `transfers` is ended by the call: an
+    # `@` parameter at its root is written, the one the checker's
+    # `consumed_borrowed_handle` requires (panel 210).
+    meant.ended_by_signature(@r, a, s, callee_params(r, decls, callee), first: first_position(receiver), given: given)
+
     if !any_marked(given)
         return given
 
@@ -112,6 +117,43 @@ function takes_at(r: state.Resolver, decls: [ast.Decl], callee: i64) -> [bool]
                 return END_LEASE_WRITES
             return NO_WRITES
         .local | .unresolved | .module => return NO_WRITES
+
+# The receiver of `n.f()`, which is `f`'s first argument (spec § 9), read as
+# that argument is (panel 210): where `f`'s first parameter is `@`, the dotted
+# form is refused (`ufcs_on_mutable`) and the receiver is the place the author
+# meant the call to write; where it `consumes` or `transfers`, the call ends
+# it, as `n.node_free()` ends `n` (defect 629). Either way its root is
+# written, so it is never told an `@` parameter nothing writes.
+function receiver_meant(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl], callee: i64, receiver: i64)
+    match r.out.uses[callee]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd =>
+                    if fd.value.params.len() > 0 && fd.value.params[0].mutable
+                        meant.meant_write(@r, a, s, receiver)
+                    else if fd.value.params.len() > 0 && meant.ends(fd.value.params[0])
+                        meant.ended_write(@r, a, s, receiver)
+                .record_decl | .constant_decl | .variant_decl | .test_decl => return
+        .builtin b =>
+            if inventory.name_of(b.at) == "end_lease"
+                meant.meant_write(@r, a, s, receiver)
+        .local | .unresolved | .module => return
+
+# The callee's parameters where it is an `extern`: only a group's signature
+# says `consumes` or `transfers`, so every other callee answers none and the
+# call pays no walk of its arguments.
+function callee_params(r: state.Resolver, decls: [ast.Decl], callee: i64) -> [ast.Param]
+    none: [ast.Param] = []
+
+    match r.out.uses[callee]
+        .top t =>
+            match decls[t.at].kind
+                .function_decl fd =>
+                    if fd.value.is_extern
+                        return fd.value.params
+                    return none
+                .record_decl | .constant_decl | .variant_decl | .test_decl => return none
+        .builtin | .local | .unresolved | .module => return none
 
 function param_writes(params: [ast.Param]) -> [bool]
     writes: [bool] @= []
