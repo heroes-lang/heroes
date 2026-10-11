@@ -185,6 +185,10 @@ def main() -> None:
 
     cert, key = ensure_certificate(args.host)
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    # Stated, not inherited (defect 669): the floor a context gets otherwise is
+    # whatever the Python and OpenSSL it runs on default to, and TLS 1.0 and
+    # 1.1 are deprecated by RFC 8996. Every browser this serves speaks 1.2.
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     ctx.load_cert_chain(certfile=cert, keyfile=key)
 
     try:

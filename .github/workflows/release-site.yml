@@ -19,6 +19,11 @@ on:
   push:
     tags: ['site-v*']
 
+# A called workflow gets at most what its caller grants, and `deploy-site.yml`
+# needs a read of the contents to check them out and nothing more (defect 668).
+permissions:
+  contents: read
+
 jobs:
   deploy:
     uses: ./.github/workflows/deploy-site.yml
