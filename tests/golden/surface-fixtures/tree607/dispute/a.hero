@@ -1,0 +1,12 @@
+# Panel 211's `p2`, panel 099 R5's hazard meeting a write: `lib/m.hero`
+# means two things. From this directory its `use util` reads `util.hero`,
+# where `count` is fallible and `.must()` belongs; from `lib/`, where
+# `lib/b.hero` is compiled, it reads `lib/util.hero`, where `count` is not
+# and the `.must()` takes a certain fix. Over this directory the module is
+# not written and both roots are named; over `lib/` alone it is written and
+# this root, above the directory named, breaks: the operand is the set of
+# programs, and the author names it.
+use lib/m
+
+function main()
+    print(m.get())

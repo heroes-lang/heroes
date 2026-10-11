@@ -1,0 +1,7 @@
+# A root stopped at the parse, with no certain fix, reads a module another
+# root would fix: it votes for the module as it stands, so the module waits
+# until every reader reaches the stage that fixes it (panel 211).
+use lib/m
+
+function main()
+    print(m.two())

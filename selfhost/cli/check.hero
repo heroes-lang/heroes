@@ -259,6 +259,19 @@ function said_at(s: source.Source, inv: argv.Invocation, stage: i64) -> [diag.Di
     types = kept_of(checker.check(parsed.tree, out, s, parsed.decls).diagnostics, inv)
     return at_stage(said: types, found: 4, stage: stage)
 
+# What `run` reports for `s`: the diagnostics of the first stage that speaks,
+# with `--permissive`'s filter, or none. Asked of `said_at` stage by stage, so
+# the stages and their order stay `run`'s alone (`cli/consensus.hero`).
+function spoken(s: source.Source, inv: argv.Invocation) -> [diag.Diagnostic]
+    for stage in range(from: 1, to: 5)
+        said = said_at(s, inv, stage: stage)
+
+        if said.len() > 0
+            return said
+
+    none: [diag.Diagnostic] = []
+    return none
+
 function at_stage(said: [diag.Diagnostic], found: i64, stage: i64) -> [diag.Diagnostic]
     if found == stage
         return said

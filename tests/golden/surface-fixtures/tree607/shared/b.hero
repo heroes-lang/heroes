@@ -1,0 +1,5 @@
+# The second root of `shared/`.
+use lib/m
+
+function main()
+    print(m.two() + 1)

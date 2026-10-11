@@ -1,0 +1,8 @@
+# A root and two of its modules holding certain fixes, each file written
+# once, in the order the root reads them (panel 211).
+use lib/geom
+use lib/more
+
+function main()
+    z: i64 @= 2  #~ never_rebound
+    print(geom.two() + more.three() + z)

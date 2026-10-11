@@ -1,0 +1,6 @@
+# Read by `../a.hero` as `lib/m` and by `b.hero` as `m`. The mark is
+# `b.hero`'s: `a.hero` reads a fallible `count` and is told nothing here.
+use util
+
+function get() -> i64
+    return util.count().must()  #~ bad_operand

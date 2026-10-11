@@ -1,0 +1,8 @@
+# A module whose certain fixes take three rounds, each read from the text
+# the round before agreed and never from the disk: `fn` and the old cell
+# symbol at the parse, then the cell nothing re-binds at the checker, which
+# M-inferred-cell's migration met in every module (panel 211).
+use lib/m
+
+function main()
+    print(m.one())
