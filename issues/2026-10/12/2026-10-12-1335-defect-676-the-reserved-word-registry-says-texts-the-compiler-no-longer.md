@@ -46,3 +46,7 @@ refused since `3280ffeaa`.
 
 **Closed 2026-10-12** at the commit that writes this section, judged by `spec`,
 `canonical`, `records`, `unseen` and the net's own tests in the lane.
+
+## The author's answer, 2026-10-12
+
+*The registry without a sitting is fine*, given by the author the same afternoon in conversation: the repair above stands as it landed, and the sentence that left it to the author to overturn is answered.

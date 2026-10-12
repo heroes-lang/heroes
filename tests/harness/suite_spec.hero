@@ -58,6 +58,8 @@
 
 use report
 use floors
+use json_fields
+use json_read
 use shell
 use spec_text
 use strings
@@ -91,7 +93,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    109
+    110
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -105,7 +107,7 @@ constant LEDGER_ROWS: i64
 # check does not enforce that rule: it makes its question unavoidable, and
 # the answer lands in the commit body where a reader can audit it.
 constant SPEC_TOKENS: i64
-    7650
+    7655
 
 # The registry's own size, gated separately — it is NOT part of §1.6's budget
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
@@ -155,13 +157,13 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    10044
+    10050
 
 constant REAL_MODEL: str
     "claude-opus-5"
 
 constant REAL_TAKEN: str
-    "2026-10-11"
+    "2026-10-12"
 
 # The contract's own record, pinned here the way the spec's is, and cross-checked
 # against `selfhost/measure/pinned.hero` by `recorded` below. **It carries a
@@ -202,7 +204,7 @@ constant DELTA_GATE: i64
 # rather than reassuring. `selfhost/cli/digest.hero` computes it and
 # `measure` refuses to give a verdict when it disagrees.
 constant SPEC_DIGEST: str
-    "0e9084b71c2ded1e"
+    "59efcf130b5f15ec"
 
 # The operating contract, weighed on the same scale as the language.
 #
@@ -2763,10 +2765,14 @@ constant VERSION_SOURCE: str
     "selfhost/main.hero"
 
 # The plugin's version is the language's (author decision 2026-10-12), and the
-# package's two manifests say one version, one engine and one description:
-# VS Code reads `package.json`, the Marketplace and `code --install-extension`
-# read the `.vsixmanifest`, and each fact is written in both by hand. The
-# plugin said `0.0.1` beside a language at `0.3.0` until that day.
+# package's two manifests say one version, one engine, one description and one
+# list of categories: VS Code reads `package.json`, the Marketplace and
+# `code --install-extension` read the `.vsixmanifest`, and each fact is written
+# in both by hand. The plugin said `0.0.1` beside a language at `0.3.0` until
+# that day. And since the same day, when the plugin learnt to debug, its
+# manifest is held to its own wiring (`wiring_slips`, `files_named`): a file it
+# names that is not there, or a language that cannot hold a breakpoint, is
+# something VS Code never reports, it only declines.
 function plugin_agrees(@r: report.Report)
     package = read_file(PLUGIN_MANIFEST)
     manifest = read_file(VSIX_MANIFEST)
@@ -2779,7 +2785,26 @@ function plugin_agrees(@r: report.Report)
             detail: "  cannot read " + PLUGIN_MANIFEST + ", " + VSIX_MANIFEST + " or " + VERSION_SOURCE
         )
         return
-    wrong = plugin_disagreements(package: package.must(), manifest: manifest.must(), main_text: main_text.must())
+    wrong: [str] @= plugin_disagreements(
+        package: package.must(),
+        manifest: manifest.must(),
+        main_text: main_text.must()
+    )
+
+    match json_read.read_json(package.must())
+        .err e => wrong @ wrong.push(PLUGIN_MANIFEST + " is not JSON: " + e.msg)
+        .ok read =>
+            for slip in wiring_slips(read)
+                wrong @ wrong.push(slip)
+
+            listed_files = files_named(read)
+
+            if listed_files.len() == 0
+                wrong @ wrong.push(PLUGIN_MANIFEST + " names no file at all, which says the reader read nothing")
+
+            for file in listed_files
+                if !package_holds(file)
+                    wrong @ wrong.push(PLUGIN_MANIFEST + " names `" + file + "`, and there is no such file")
 
     if wrong.len() == 0
         report.keep_pass(@r)
@@ -2787,8 +2812,15 @@ function plugin_agrees(@r: report.Report)
     report.keep_failure(
         @r,
         label: "spec/colouring",
-        detail: "  " + wrong.join("\n  ") + "\n  The plugin's version is the language's, `VERSION` in " + VERSION_SOURCE + "\n  (author decision 2026-10-12), and the two manifests describe one package."
+        detail: "  " + wrong.join("\n  ") + "\n  The plugin's version is the language's, `VERSION` in " + VERSION_SOURCE + "\n  (author decision 2026-10-12), the two manifests describe one package, and\n  the package's manifest names its own files and its own language."
     )
+
+# Whether a file the manifest names is there: read whole, or there but not
+# text, as an icon may be.
+function package_holds(path: str) -> bool
+    return match read_file(path)
+        .ok _  => true
+        .err e => e.code != "file_not_found"
 
 # Where the three files part, one sentence each.
 function plugin_disagreements(package: str, manifest: str, main_text: str) -> [str]
@@ -2820,7 +2852,30 @@ function plugin_disagreements(package: str, manifest: str, main_text: str) -> [s
         wrong @ wrong.push(
             VSIX_MANIFEST + " describes the package as \"" + described + "\", and " + PLUGIN_MANIFEST + " as \"" + description + "\""
         )
+    categories = package_list(package: package, key: "categories").join(",")
+    filed = xml_text(text: manifest, element: "Categories")
+
+    if categories.len() == 0 || filed != categories
+        wrong @ wrong.push(
+            VSIX_MANIFEST + " files the package under \"" + filed + "\", and " + PLUGIN_MANIFEST + " under \"" + categories + "\""
+        )
     return wrong
+
+# The strings of the array the package's JSON holds at its top under `key`,
+# none where it holds none.
+function package_list(package: str, key: str) -> [str]
+    out: [str] @= []
+    whole = textmate.Span(start: textmate.skip_space(text: package, at: 0), stop: package.len())
+    at = textmate.member(text: package, object: whole, key: key)
+
+    if at.is_err()
+        return out
+    none: [textmate.Span] = []
+
+    for one in textmate.elements(text: package, array: at.must()).default(none)
+        out @ out.push(textmate.json_string(text: package, value: one).default(""))
+
+    return out
 
 # The first quoted text on the line after the first line holding `marker`,
 # "" where there is none.
@@ -2894,6 +2949,139 @@ function xml_unescaped(text: str) -> str
         out @ strings.split_text(text: out, separator: pair[0]).join(pair[1])
 
     return out
+
+## The plugin's wiring
+
+# Where the package's own files are, from the repository's root.
+constant PLUGIN_DIR: str
+    "editors/vscode/"
+
+# The keys under which the manifest names a file of its package, whatever the
+# path looks like; any other string that opens with `./`, the way the manifest
+# writes a path, is read as one too.
+constant FILE_KEYS: [str]
+    [
+        "main"
+        "browser"
+        "path"
+        "configuration"
+        "light"
+        "dark"
+    ]
+
+# Every file the manifest names, as a path from the repository's root, in the
+# order it names them.
+function files_named(package: json_read.Json) -> [str]
+    found: [str] @= []
+    files_under(@found, value: package, key: "")
+    return found
+
+# The files named inside `value`, which stands under `key`; an array's
+# elements stand under the array's own key.
+function files_under(@found: [str], value: json_read.Json, key: str)
+    match value
+        .fields object =>
+            at: i64 @= 0
+
+            while at < object.names.len()
+                files_under(@found, value: object.values[at], key: object.names[at])
+                at @ at + 1
+        .items list =>
+            for one in list.all
+                files_under(@found, value: one, key: key)
+        .text t =>
+            if strings.starts_with(text: t.v, prefix: "./")
+                found @ found.push(PLUGIN_DIR + t.v.slice(from: 2, to: t.v.len()))
+            else if among(names: FILE_KEYS, word: key)
+                found @ found.push(PLUGIN_DIR + t.v)
+        .null_value | .truth _ | .number _ => _ = 0
+
+# Where the manifest names a language it does not declare, or declares one
+# whose files could hold no breakpoint or start no debugger.
+function wiring_slips(package: json_read.Json) -> [str]
+    declared = strings_at(package: package, path: ["contributes", "languages"], name: "id")
+    held = strings_at(package: package, path: ["contributes", "breakpoints"], name: "language")
+    debugged = debugger_languages(package)
+    wrong: [str] @= []
+
+    if declared.len() == 0
+        wrong @ wrong.push(PLUGIN_MANIFEST + " declares no language in `contributes.languages`")
+    undeclared(
+        wrong: @wrong,
+        names: strings_at(package: package, path: ["contributes", "grammars"], name: "language"),
+        declared: declared,
+        where: "a grammar"
+    )
+    undeclared(wrong: @wrong, names: held, declared: declared, where: "`contributes.breakpoints`")
+    undeclared(wrong: @wrong, names: debugged, declared: declared, where: "a debugger's `languages`")
+
+    for id in declared
+        if !among(names: held, word: id)
+            wrong @ wrong.push(
+                PLUGIN_MANIFEST + " declares the language `" + id + "` and `contributes.breakpoints` does not name it, so no breakpoint can be set in its files"
+            )
+
+        if !among(names: debugged, word: id)
+            wrong @ wrong.push(
+                PLUGIN_MANIFEST + " declares the language `" + id + "` and no debugger's `languages` names it, so F5 on its files starts no debugger"
+            )
+
+    return wrong
+
+# One sentence for each of `names` the manifest does not declare.
+function undeclared(@wrong: [str], names: [str], declared: [str], where: str)
+    for name in names
+        if !among(names: declared, word: name)
+            wrong @ wrong.push(
+                PLUGIN_MANIFEST + " names the language `" + name + "` in " + where + " and declares no such language"
+            )
+
+# The languages the manifest's debuggers each name as their own.
+function debugger_languages(package: json_read.Json) -> [str]
+    out: [str] @= []
+
+    for debugger in elements_at(package: package, path: ["contributes", "debuggers"])
+        for one in elements_at(package: debugger, path: ["languages"])
+            match one
+                .text t                                                   => out @ out.push(t.v)
+                .null_value | .truth _ | .number _ | .items _ | .fields _ => _ = 0
+
+    return out
+
+# The string each object of the array at `path` holds under `name`, for the
+# objects that hold one.
+function strings_at(package: json_read.Json, path: [str], name: str) -> [str]
+    out: [str] @= []
+
+    for one in elements_at(package: package, path: path)
+        said = json_fields.text_at(of: one, name: name)
+
+        if !said.is_err() && said.must().len() > 0
+            out @ out.push(said.must())
+
+    return out
+
+# The elements of the array at `path`, each step a field of the object before
+# it; none where a step is absent or the value there is no array.
+function elements_at(package: json_read.Json, path: [str]) -> [json_read.Json]
+    none: [json_read.Json] = []
+    at: json_read.Json @= package
+
+    for step in path
+        inner = json_fields.field(of: at, name: step)
+
+        if inner.is_err()
+            return none
+        at @ inner.must()
+
+    return json_fields.items_of(at).default(none)
+
+function among(names: [str], word: str) -> bool
+    for name in names
+        if name == word
+            return true
+
+    return false
 
 ## The registry says what the compiler prints
 
@@ -3260,9 +3448,9 @@ test "a word the grammar leaves out, and one it paints too many, are each red an
     assert same.passed == 1
     assert same.failed == 0
 
-test "the plugin's version, engine and description are each held in both manifests"
-    package = "{\n  \"name\": \"heroes-lang\",\n  \"description\": \"Heroes & more\",\n  \"version\": \"0.3.0\",\n  \"engines\": { \"vscode\": \"^1.71.0\" }\n}\n"
-    manifest = "<PackageManifest>\n  <Metadata>\n    <Identity Language=\"en-US\" Id=\"heroes-lang\" Version=\"0.3.0\" Publisher=\"heroes-lang\" />\n    <Description xml:space=\"preserve\">Heroes &amp; more</Description>\n    <Properties>\n      <Property Id=\"Microsoft.VisualStudio.Code.Engine\" Value=\"^1.71.0\" />\n    </Properties>\n  </Metadata>\n</PackageManifest>\n"
+test "the plugin's version, engine, description and categories are each held in both manifests"
+    package = "{\n  \"name\": \"heroes-lang\",\n  \"description\": \"Heroes & more\",\n  \"version\": \"0.3.0\",\n  \"engines\": { \"vscode\": \"^1.71.0\" },\n  \"categories\": [\"Programming Languages\", \"Debuggers\"]\n}\n"
+    manifest = "<PackageManifest>\n  <Metadata>\n    <Identity Language=\"en-US\" Id=\"heroes-lang\" Version=\"0.3.0\" Publisher=\"heroes-lang\" />\n    <Description xml:space=\"preserve\">Heroes &amp; more</Description>\n    <Categories>Programming Languages,Debuggers</Categories>\n    <Properties>\n      <Property Id=\"Microsoft.VisualStudio.Code.Engine\" Value=\"^1.71.0\" />\n    </Properties>\n  </Metadata>\n</PackageManifest>\n"
     main_text = "# the version\nconstant VERSION: str\n    \"0.3.0\"\n"
     assert plugin_disagreements(package: package, manifest: manifest, main_text: main_text).len() == 0
     behind = plugin_disagreements(
@@ -3299,6 +3487,46 @@ test "the plugin's version, engine and description are each held in both manifes
     assert package_field(package: package, path: ["engines", "absent"]) == ""
     assert xml_attribute(text: manifest, after: "<Identity ", name: "Id") == "heroes-lang"
     assert xml_text(text: manifest, element: "Description") == "Heroes & more"
+    filed = plugin_disagreements(
+        package: package,
+        manifest: strings.split_text(text: manifest, separator: ",Debuggers").join(""),
+        main_text: main_text
+    )
+    assert filed.len() == 1
+    assert strings.contains(
+        text: filed[0],
+        needle: "files the package under \"Programming Languages\", and editors/vscode/package.json under \"Programming Languages,Debuggers\""
+    )
+    assert package_list(package: package, key: "categories") == ["Programming Languages", "Debuggers"]
+    assert package_list(package: package, key: "absent").len() == 0
+
+test "the plugin's manifest names the files it has and the language it declares, for breakpoints and its debugger"
+    package = "{\"main\": \"./extension.js\", \"contributes\": {\"languages\": [{\"id\": \"hero\", \"configuration\": \"./language-configuration.json\", \"icon\": {\"light\": \"icons/a.svg\", \"dark\": \"./icons/a.svg\"}}], \"grammars\": [{\"language\": \"hero\", \"path\": \"./syntaxes/g.json\"}], \"breakpoints\": [{\"language\": \"hero\"}], \"debuggers\": [{\"type\": \"heroes\", \"languages\": [\"hero\"], \"initialConfigurations\": [{\"program\": \"${file}\"}]}]}}"
+    read = json_read.read_json(package).must()
+    assert files_named(read) == ["editors/vscode/extension.js", "editors/vscode/language-configuration.json", "editors/vscode/icons/a.svg", "editors/vscode/icons/a.svg", "editors/vscode/syntaxes/g.json"]
+    assert wiring_slips(read).len() == 0
+    unheld = wiring_slips(
+        json_read.read_json(strings.split_text(text: package, separator: "\"breakpoints\": [{\"language\": \"hero\"}]").join("\"breakpoints\": []")).must()
+    )
+    assert unheld.len() == 1
+    assert strings.contains(
+        text: unheld[0],
+        needle: "declares the language `hero` and `contributes.breakpoints` does not name it"
+    )
+    misnamed = wiring_slips(
+        json_read.read_json(strings.split_text(text: package, separator: "\"languages\": [\"hero\"]").join("\"languages\": [\"heroes\"]")).must()
+    )
+    assert misnamed.len() == 2
+    assert strings.contains(
+        text: misnamed[0],
+        needle: "names the language `heroes` in a debugger's `languages` and declares no such language"
+    )
+    assert strings.contains(text: misnamed[1], needle: "no debugger's `languages` names it")
+    nothing = wiring_slips(json_read.read_json("{}").must())
+    assert nothing.len() == 1
+    assert strings.contains(text: nothing[0], needle: "declares no language")
+    assert package_holds("editors/vscode/package.json")
+    assert !package_holds("editors/vscode/no-such-file.js")
 
 test "a literal the lexer reads painted otherwise, and one it refuses painted as legal, are each a sentence"
     legal = Form(rule: "number", written: "1_000", lexed: "legal")
