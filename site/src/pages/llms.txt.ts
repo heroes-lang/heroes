@@ -13,7 +13,7 @@
  */
 import type { APIRoute } from 'astro';
 import { readText } from '../lib/repo.ts';
-import { ceilingK, specReal, jsonSchema } from '../lib/claims.ts';
+import { ceilingK, specReal, jsonSchema, staleOpenness } from '../lib/claims.ts';
 
 const SOURCE = 'site/src/llms.txt';
 
@@ -31,6 +31,8 @@ function filled(): string {
     return value;
   });
   if (text.includes('{{')) throw new Error(`${SOURCE}: a placeholder survived the fill.`);
+  const stale = staleOpenness(text, SOURCE);
+  if (stale.length > 0) throw new Error(stale.join('\n'));
   return text;
 }
 

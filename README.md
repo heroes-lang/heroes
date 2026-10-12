@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
-    <img src="docs/assets/banner-light.svg" alt="Heroes, a small compiled language.">
+    <img src="docs/assets/banner-light.svg" alt="Heroes, a small compiled language for the LLM age.">
   </picture>
 </p>
 
@@ -25,8 +25,8 @@
   <a href="examples/">The examples</a>
 </p>
 
-A small compiled language designed so that **every plausible mistake an LLM
-makes is a compile error**.
+A small compiled language for the LLM age, designed so that **every plausible
+mistake a model makes is a compile error**.
 
 Not a language that tolerates a machine writing it. Its surface is chosen so
 that the wrong program does not compile, and the diagnostic arrives with the
@@ -175,12 +175,12 @@ let `cargo` build the compiler had an expiry date written into it, and it
 expired the day the compiler could build itself.
 
 > [!NOTE]
-> Developed on macOS arm64. CI runs every push on Linux x86-64 and widens to all
-> three platforms at a tag, macOS and Windows included. Windows cost the most to
-> reach: it arrived only once the last POSIX header left `seed/heroes.c`, and the
-> first tag meant to confirm it was red on all three platforms at three different
-> steps. It is green on all three now. This file said the red out loud rather
-> than letting a partial green imply otherwise.
+> Developed on macOS arm64. CI runs every push on four platforms: Linux x86-64,
+> Linux arm64, macOS arm64 and Windows x86-64. Windows cost the most to reach: it
+> arrived only once the last POSIX header left `seed/heroes.c`, and the first tag
+> meant to confirm it was red on all three platforms of the time, at three
+> different steps. It is green on all four now. This file said the red out loud
+> rather than letting a partial green imply otherwise.
 
 ## The thesis, and how much of it is measured
 
@@ -238,18 +238,10 @@ Heroes program that crashes on a bad memory access or corrupts memory: that goes
 through the private report form on the Security tab and never into the text of
 a public issue, and [`SECURITY.md`](SECURITY.md) says how and what counts.
 
-Taking part means following the code of conduct,
-[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md), which is the Contributor Covenant
-3.0. A problem is reported in an issue, except a security one, above all a
-Heroes program that crashes on a bad memory access or corrupts memory: that goes
-through the private report form on the Security tab and never into the text of
-a public issue, and [`SECURITY.md`](SECURITY.md) says how and what counts.
-
 <a href="https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/"><img src="site/public/images/book/cover-en.webp" alt="Heroes of code, front cover" width="120" align="right"></a>
 
-**What does help is buying the book.** Nobody is asked for money here and no
-patch is taken, so a copy of *Heroes of code* is the one thing that funds the
-time this is built in. Published on Amazon, in
+**What does help is buying the book.** Nobody is asked for money here, so a
+copy of *Heroes of code* is the one thing that funds the time this is built in. Published on Amazon, in
 [English](https://www.amazon.it/Heroes-code-journey-programming-languages/dp/B0HHLBWWZH/)
 and in
 [Italian](https://www.amazon.it/Gli-eroi-del-codice-programmazione/dp/B0HHL2YQ1S/).
