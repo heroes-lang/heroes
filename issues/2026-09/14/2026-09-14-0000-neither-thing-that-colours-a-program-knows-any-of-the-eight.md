@@ -3,11 +3,11 @@ kind: feature
 area: editors
 milestone: M-vscode-extension
 filed: 2026-09-14
-commit: none
+commit: 4c6b3cd9def6db7d70b725486905ba8277b7cafb
 github: none
 ---
 
-- [ ] **M-vscode-extension** | neither thing that COLOURS a program knows any of the eight contextual marks, and no check compares their word lists | `editors/vscode/syntaxes/heroes.tmLanguage.json` · `site/src/lib/highlight.ts` · `.claude/rules/diagnostics-and-goldens.md` § A new surface form
+- [x] **M-vscode-extension** | neither thing that COLOURS a program knows any of the eight contextual marks, and no check compares their word lists | `editors/vscode/syntaxes/heroes.tmLanguage.json` · `site/src/lib/highlight.ts` · `.claude/rules/diagnostics-and-goldens.md` § A new surface form
 
     **Origin:** found at M-marked-acquisition step 4, 2026-09-14, while walking
     CL-036's list for `acquires`, and moved here because this is the milestone
@@ -29,3 +29,18 @@ github: none
     `selfhost/inventory.hero`'s built-ins* — beside `suite_spec.hero`'s reading
     of `spec/reserved-words.md`. **Build the check first; the colouring follows
     from it, and a ninth mark then costs nothing to remember.**
+
+## What was done
+
+The check came first, as this card asked, and both colourings follow from the
+compiler's own list. `contextual()` in `selfhost/keywords.hero` names fourteen
+words today, the eight this card counted and `lent`, `counted_by`, `transfers`,
+`retains`, `when` and `as`. `spec/colouring` holds every word the editor's
+grammar paints `keyword.other.contextual.hero` to that list, and the grammar
+paints them only where the parser reads them (`4c6b3cd9`): `as` on a `use`
+line, `link` or `package` on an `extern` line, the other eleven inside an
+extern group and never before a `:`. The site reads the same list from the same
+function (`site/src/lib/tables.ts`, `contextual()`) and colours the same places
+by the same rule (`site/src/lib/highlight.ts`, `markAt`; `0cb6318b`), so a
+fifteenth word colours itself on the site and turns the grammar's check red
+until the grammar learns it.

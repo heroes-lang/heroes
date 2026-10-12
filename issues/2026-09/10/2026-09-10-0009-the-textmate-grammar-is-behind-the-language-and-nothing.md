@@ -3,11 +3,11 @@ kind: feature
 area: editors
 milestone: M-vscode-extension
 filed: 2026-09-10
-commit: none
+commit: 4c6b3cd9def6db7d70b725486905ba8277b7cafb
 github: none
 ---
 
-- [ ] **M-vscode-extension** | the TextMate grammar is behind the language, and nothing judges either highlighter | `editors/vscode/syntaxes/heroes.tmLanguage.json` · `site/src/lib/highlight.ts` · `.claude/rules/diagnostics-and-goldens.md` § A new surface form
+- [x] **M-vscode-extension** | the TextMate grammar is behind the language, and nothing judges either highlighter | `editors/vscode/syntaxes/heroes.tmLanguage.json` · `site/src/lib/highlight.ts` · `.claude/rules/diagnostics-and-goldens.md` § A new surface form
 
     **Origin:** author instruction 2026-09-10 — a step will be needed at some
     point to improve the syntax colouring, in VS Code and in editors generally
@@ -36,3 +36,24 @@ github: none
     **Not filed as a defect, deliberately** (author decision the same day): the
     list would go from 0 to 1 and block the next tag, and the repair touches no
     compiler line and no spec token, so it can ride any commit.
+
+## What was done
+
+Both highlighters learnt the language, and the grammar is judged now. The
+editor's grammar (`4c6b3cd9`, then `3fe09293`) paints `int` as a foreign word,
+every integer form of spec § 2 and the forms the lexer refuses (a leading zero,
+an exponent, an upper-case base prefix, a misplaced `_`, a digit outside its
+base), `&` `^` `~`, a character literal of one byte or one escape and never
+`'\'` or `'''`, a string that ends at its line, a tab or a control character
+outside a comment, `//` and a backtick, the fourteen contextual words where the
+parser reads them, a declaration's name by its kind, no type word after `.` or
+`::`, and `##` as a comment; the `f"…"` rule and the five escapes this card
+found missing had already landed. The judge is `spec/colouring` in
+`tests/harness/suite_spec.hero`: the grammar's foreign words held to
+`declared_word`, its contextual words to `contextual()`, its keywords to
+`keyword()`, the extension's version to `VERSION`, and the number and character
+rules run through `tests/harness/textmate.hero`, which learnt `\b`, against
+`heroes lex` over 76 forms; red before the grammar moved, `spec: 26 passed, 5
+failed`, green after, `spec: 31 passed, 0 failed`. The site's highlighter
+already read the lexer's keywords and literals; it now colours the contextual
+words too, read from `contextual()` (`0cb6318b`).
