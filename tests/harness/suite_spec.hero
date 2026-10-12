@@ -2566,7 +2566,9 @@ function words_agree(@r: report.Report, want: [str], got: [str]?, scope: str, so
 # `refused` for one it refuses, which the grammar must paint `invalid.illegal`
 # where it opens; and `split` for text the lexer reads as several tokens,
 # `1u8` a number and a name, which the grammar may paint neither as one
-# literal nor as an error, since the lexer refuses nothing there.
+# literal nor as an error, since the lexer refuses nothing there; and `plain`
+# for a character a comment holds, the tab, which the grammar must not paint
+# as an error (2026-10-12: a tab is refused everywhere else).
 record Form
     rule: str
     written: str
@@ -2592,6 +2594,13 @@ function literal_forms() -> [Form]
 
     for rule in ["string", "interpolated"]
         for written in ["\t", "\u{1}", "\u{1b}", "\u{7f}"]
+            out @ out.push(Form(rule: rule, written: written, lexed: "refused"))
+
+    # A comment and a heading hold a tab, and refuse the other controls.
+    for rule in ["comment", "section"]
+        out @ out.push(Form(rule: rule, written: "\t", lexed: "plain"))
+
+        for written in ["\u{1}", "\u{1b}", "\u{7f}"]
             out @ out.push(Form(rule: rule, written: written, lexed: "refused"))
 
     return out
@@ -2657,13 +2666,24 @@ function why_unpainted(got: textmate.Painted?) -> str
 function form_program(form: Form) -> str
     if form.rule == "string" || form.rule == "interpolated"
         return escape_program(literal: form.rule, escape: form.written)
+
+    if form.rule == "comment" || form.rule == "section"
+        return comment_opener(form.rule) + " a" + form.written + "b\nfunction main()\n    print(1)\n"
     return "function main()\n    print(" + form.written + ")\n"
+
+function comment_opener(rule: str) -> str
+    if rule == "section"
+        return "##"
+    return "#"
 
 # What the grammar's rules are run on: the form and what the program writes
 # after it, so a rule that runs past the form's end is seen to.
 function form_subject(form: Form) -> str
     if form.rule == "string" || form.rule == "interpolated"
         return form.written + "z\")"
+
+    if form.rule == "comment" || form.rule == "section"
+        return form.written + "b"
     return form.written + ")"
 
 # Where the grammar and the lexer part on one form, in one sentence; "" where
@@ -2680,6 +2700,14 @@ function form_disagreement(form: Form, code: i64, got: textmate.Painted) -> str
 
         if !as_error
             return shown + ": the lexer refuses it, and the grammar paints " + painted_said(got)
+        return ""
+
+    if form.lexed == "plain"
+        if code != 0
+            return shown + ": the table says the lexer reads it, and the lexer exits " + code.to_str()
+
+        if as_error
+            return shown + ": the lexer reads it, and the grammar paints " + painted_said(got)
         return ""
 
     if code != 0
@@ -2715,6 +2743,10 @@ function shown_form(form: Form) -> str
 
     if form.rule == "char"
         where @ "a character literal"
+    else if form.rule == "comment"
+        where @ "a comment"
+    else if form.rule == "section"
+        where @ "a heading"
     else if form.rule != "number"
         where @ literal_said(form.rule)
     return "`" + shown + "` in " + where
@@ -3305,6 +3337,15 @@ test "a literal the lexer reads painted otherwise, and one it refuses painted as
     assert shown_form(Form(rule: "string", written: "\t\u{1b}é", lexed: "refused")) == "`<U+0009><U+001B>é` in a string"
     assert form_program(Form(rule: "interpolated", written: "\t", lexed: "refused")) == "function main()\n    print(f\"a\tz\")\n"
     assert form_subject(Form(rule: "number", written: "07", lexed: "refused")) == "07)"
+
+    # A comment's tab is the lexer's to hold, and painted as an error it is red.
+    tab = Form(rule: "comment", written: "\t", lexed: "plain")
+    assert form_disagreement(form: tab, code: 0, got: textmate.Painted(scope: "", reach: 0)) == ""
+    assert strings.contains(
+        text: form_disagreement(form: tab, code: 0, got: textmate.Painted(scope: "invalid.illegal.tab.hero", reach: 1)),
+        needle: "`<U+0009>` in a comment: the lexer reads it, and the grammar paints `invalid.illegal.tab.hero`"
+    )
+    assert form_program(Form(rule: "section", written: "\t", lexed: "plain")) == "## a\tb\nfunction main()\n    print(1)\n"
 
     # Every rule a form names is one the grammar holds, run on the real file.
     real = read_file(GRAMMAR)
