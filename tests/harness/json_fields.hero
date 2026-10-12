@@ -1,0 +1,94 @@
+# THE FIELDS OF A JSON VALUE `json_read` READ, by name, for what GitHub
+# answers `issues.hero`'s `plan` and `push`.
+#
+# The compiler keeps its reader and its field readers apart
+# (`selfhost/mutate/json_read.hero` and `json_fields.hero`), and so does the
+# harness. Each reader names what is missing or of another kind, so an answer
+# GitHub changed the shape of fails with its reason rather than reading as an
+# empty value; a `null` reads as no text, which is how GitHub writes a field
+# that holds nothing (`issue_url` while an import is pending, `body` of an
+# issue written with none). A whole number is read without ever overflowing
+# (spec § 7: overflow aborts, so its digits are counted before they are
+# multiplied).
+
+use json_read
+
+# The value an object holds under `name`, or a failure naming what is missing.
+function field(of: json_read.Json, name: str) -> json_read.Json?
+    match of
+        .fields f =>
+            at: i64 @= 0
+
+            while at < f.names.len()
+                if f.names[at] == name
+                    return ok(f.values[at])
+                at @ at + 1
+
+            return fail(code: "missing", msg: "no field `" + name + "`")
+        .null_value | .truth _ | .number _ | .text _ | .items _ => return fail(
+            code: "not_object",
+            msg: "not an object, so no field `" + name + "`"
+        )
+
+# The string an object holds under `name`; "" where it holds `null`.
+function text_at(of: json_read.Json, name: str) -> str?
+    match field(of: of, name: name)?
+        .text t     => return ok(t.v)
+        .null_value => return ok("")
+        .truth _ | .number _ | .items _ | .fields _ => return fail(
+            code: "not_text",
+            msg: "`" + name + "` is not a string"
+        )
+
+# The whole number an object holds under `name`.
+function whole_at(of: json_read.Json, name: str) -> i64?
+    return whole_of(field(of: of, name: name)?)
+
+# The elements of an array, or a failure where `of` is none.
+function items_of(of: json_read.Json) -> [json_read.Json]?
+    match of
+        .items l                                                 => return ok(l.all)
+        .null_value | .truth _ | .number _ | .text _ | .fields _ => return fail(code: "not_array", msg: "not an array")
+
+# A number written as a whole number of at most 18 digits, which fits an `i64`
+# whatever they are; a fraction, an exponent or more digits is refused.
+function whole_of(of: json_read.Json) -> i64?
+    match of
+        .number n =>
+            body: str @= n.written
+            negative = body.len() > 0 && body[0] == '-'
+
+            if negative
+                body @ body.slice(from: 1, to: body.len())
+
+            if body.len() == 0 || body.len() > 18
+                return fail(code: "not_whole", msg: "`" + n.written + "` is not a whole number of at most 18 digits")
+            out: i64 @= 0
+            at: i64 @= 0
+
+            while at < body.len()
+                if body[at] < '0' || body[at] > '9'
+                    return fail(code: "not_whole", msg: "`" + n.written + "` is not a whole number")
+                out @ out * 10 + to_i64(body[at] - '0').must()
+                at @ at + 1
+
+            if negative
+                return ok(0 - out)
+            return ok(out)
+        .null_value | .truth _ | .text _ | .items _ | .fields _ => return fail(code: "not_whole", msg: "not a number")
+
+test "an import's answer is read, its fields by name, a null as no text"
+    got = json_read.read_json(
+        "{\"id\":7,\"status\":\"pending\",\"url\":\"https://api.github.com/repos/o/r/import/issues/7\",\"issue_url\":null,\"labels\":[{\"name\":\"kind:defect\"}]}"
+    ).must()
+    assert whole_at(of: got, name: "id").must() == 7
+    assert text_at(of: got, name: "status").must() == "pending"
+    assert text_at(of: got, name: "issue_url").must() == ""
+    assert field(of: got, name: "errors").is_err()
+    assert text_at(of: got, name: "id").is_err()
+    labels = items_of(field(of: got, name: "labels").must()).must()
+    assert text_at(of: labels[0], name: "name").must() == "kind:defect"
+    assert items_of(.null_value).is_err()
+    assert whole_of(.number(written: "-12")).must() == -12
+    assert whole_of(.number(written: "1.5")).is_err()
+    assert whole_of(.number(written: "1234567890123456789")).is_err()

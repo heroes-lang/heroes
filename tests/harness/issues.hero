@@ -1,33 +1,64 @@
 # THE ISSUE FILES AS GITHUB WILL HOLD THEM, a second root of the harness:
 #
 #     heroes run tests/harness/issues.hero -- render [--pin <hash>] [<issue file>...]
+#     heroes run tests/harness/issues.hero -- plan [--pin <hash>] [<issue file>...]
+#     heroes run tests/harness/issues.hero -- push --yes --pin <hash> [--accept-gaps] [<issue file>...]
+#     heroes run tests/harness/issues.hero -- prepare --yes
+#     heroes run tests/harness/issues.hero -- finish --yes
 #
-# from the repository's root, always. `render` prints what each issue file
-# becomes on GitHub, one JSON object a line: its path, its milestone and its
-# `Defect` field's numbers (null where it has none), and the payload the import
-# takes, its title, body, days, closed state, labels and closing comment. With
-# no file it renders every issue file under `issues/` in name order, which is
-# the order they were born in. It reads files and asks git; it writes nothing,
-# needs no network and no account. The `Record:` link is pinned at `--pin`, the
-# commit `HEAD` names unless one is given.
+# from the repository's root, always. With no file each word takes every issue
+# file under `issues/`; `render` and `plan` take any of them, and `push` only
+# the first ones whose `github:` is `none`, in the cards' order (`filed`, then
+# the name), since each import takes the next number GitHub gives.
+#
+# - `render` prints what each issue file becomes on GitHub, one JSON object a
+#   line: its path, its milestone and its `Defect` field's numbers (null where
+#   it has none), and the payload the import takes. It reads files and asks
+#   git; it writes nothing and needs no network. The `Record:` link is pinned
+#   at `--pin`, `HEAD` where none is given.
+# - `plan` reads GitHub, every request a GET, and writes nothing: what `push`
+#   would do (`issue_plan.hero`), then every request it made. Its pin is
+#   `--pin`, else the one the run's state records, else `HEAD`.
+# - `push` imports the issue files into GitHub (`issue_push.hero`). It is
+#   refused without `--yes`, which is its own guard, since no hook sees a write
+#   made by a program `gh` is spawned from (the last bullet of layer 1 in
+#   `.claude/rules/verification.md` § A suite is the last judge), and
+#   `.claude/settings.json` asks the author before it runs; without a `--pin`
+#   that names a commit already on
+#   `origin/main` (as this clone last fetched it) and is the one the run's
+#   state records, if it records one; and without a `collaborators_only`
+#   interaction limit in force, unless `--accept-gaps` is given.
+# - `prepare` performs panel 212's R6 items 3 and 4 before a transcription
+#   (`issue_prepare.hero`): the chain's milestones GitHub lacks, the label
+#   `kind:learn` deleted, the interaction limit set; `finish` lifts the limit
+#   after it. Both write to GitHub, and so both run only with `--yes`, which
+#   `.claude/settings.json` asks the author for, as it does `push`.
 #
 # Panel 212's R1, ratified 2026-10-11, made this a program of the harness and no
 # verb of `heroes`, the author reading a Heroes program run with `heroes run` as
 # no script (CLAUDE.md § 10); `.claude/rules/records.md` § The issues is the
-# rule it renders, and `records/rendered` holds every card to the same modules.
-# `plan` and `push` are its other two words, owed and not built: either is
-# refused, exit 2, saying so.
+# rule it renders and transcribes, and `records/rendered` holds every card to
+# the same modules. Every request to GitHub goes through `gh`
+# (`issue_wire.hero`), which holds the token; this program never reads it.
 #
-# Exit (R11): 0 every card rendered; 1 a card cannot render, each told on
-# stderr with its path and why, and no line printed for it; 2 the program could
-# not run, an argument it does not take, a file that is no issue file, git that
-# could not answer or a history too short to.
+# Exit (R11): 0 clean; 1 the input has diagnostics: a card that cannot render,
+# a file the pin's tree does not hold, or (for `plan` and `push`) a milestone
+# or a label an issue to import names and GitHub lacks, each told on stderr;
+# 2 the program could not run: an argument it does not take, a refusal of
+# `push`'s guards, git or `gh` that could not answer, or a request GitHub
+# refused that waiting does not answer.
 
-use cards
-use issue_check
+use issue_args
 use issue_git
 use issue_json
-use issue_render
+use issue_load
+use issue_match
+use issue_pace
+use issue_plan
+use issue_prepare
+use issue_push
+use issue_state
+use issue_wire
 use shell
 use strings
 
@@ -37,156 +68,235 @@ extern "hero_os.h"
 constant SCRATCH: str
     "build/issues"
 
-# What the words after `render` asked for, or why they cannot be taken.
-record Asked
-    pin: str
-    paths: [str]
-    wrong: str
+constant TRUNK: str
+    "origin/main"
 
 function main()
     given = args()
 
-    if given.len() == 0 || given[0] != "render"
-        told(refusal(given))
+    if given.len() == 0 || !issue_args.among(word: given[0], words: issue_args.WORDS)
+        told(issue_args.refusal(given))
         exit(code: 2)
-    asked = parsed(given.slice(from: 1, to: given.len()))
+    asked = issue_args.parsed(word: given[0], words: given.slice(from: 1, to: given.len()))
 
     if asked.wrong != ""
         told(asked.wrong)
         exit(code: 2)
     scratch = SCRATCH + "-" + shell.pid().to_str()
-    code = rendered(scratch: scratch, asked: asked)
+    code: i64 @= 0
+
+    if asked.word == "render"
+        code @ rendered(scratch: scratch, asked: asked)
+    else if asked.word == "plan"
+        code @ planned(scratch: scratch, asked: asked)
+    else if asked.word == "push"
+        code @ pushed(scratch: scratch, asked: asked)
+    else
+        code @ prepared_or_finished(scratch: scratch, word: asked.word)
     _ = shell.remove_tree(scratch).is_err()
     exit(code: code)
 
-# Why the first word is not one this program takes.
-function refusal(given: [str]) -> str
-    usage = "heroes run tests/harness/issues.hero -- render [--pin <hash>] [<issue file>...]"
-
-    if given.len() == 0
-        return "no word given: " + usage
-
-    if given[0] == "plan" || given[0] == "push"
-        return "`" + given[0] + "` is owed by panel 212 and not built yet; `render` is: " + usage
-    return "`" + given[0] + "` is no word of this program: " + usage
-
-function parsed(words: [str]) -> Asked
-    pin: str @= ""
-    paths: [str] @= []
-    at: i64 @= 0
-
-    while at < words.len()
-        word = words[at]
-        at @ at + 1
-
-        if word == "--pin"
-            if pin != "" || at == words.len()
-                return Asked(pin: "", paths: paths, wrong: "`--pin` takes one commit, once")
-            pin @ words[at]
-            at @ at + 1
-        else if strings.starts_with(text: word, prefix: "-")
-            return Asked(
-                pin: "",
-                paths: paths,
-                wrong: "`" + word + "` is no flag of `render`, which takes `--pin <hash>` and issue files"
-            )
-        else
-            paths @ paths.push(strings.without_prefix(text: word, prefix: "./"))
+# `render`: each card's line, or why it cannot be rendered.
+function rendered(scratch: str, asked: issue_args.Asked) -> i64
+    pin: str @= asked.pin
 
     if pin == ""
         pin @ "HEAD"
-    return Asked(pin: pin, paths: paths, wrong: "")
+    loaded = issue_load.loaded(scratch: scratch, paths: asked.paths, pin: pin)
 
-# Renders what `asked` names and answers the exit code.
-function rendered(scratch: str, asked: Asked) -> i64
-    walked = shell.project_files(scratch)
-
-    if walked.is_err()
-        told(issue_check.said(walked))
-        return 2
-    every: [cards.Issue] @= []
-    known: {str: bool} @= {}
-
-    for path in walked.must()
-        if strings.starts_with(text: path, prefix: "issues/") && strings.ends_with(text: path, suffix: ".md") && path != "issues/README.md"
-            text = read_file(path)
-
-            if text.is_err()
-                told("cannot read " + path + ": " + issue_check.said(text))
-                return 2
-            every @ every.push(cards.issue_of(path: path, text: text.must()))
-            known[path] @ true
-
-    chosen: [cards.Issue] @= every
-
-    if asked.paths.len() > 0
-        chosen @ []
-
-        for path in asked.paths
-            if known[path].is_err()
-                told(
-                    "`" + path + "` is no issue file of this tree; name one from the repository's root, `issues/<year-month>/<day>/<name>.md`"
-                )
-                return 2
-
-            for issue in every
-                if issue.path == path
-                    chosen @ chosen.push(issue)
-
-    pin = issue_git.pinned(scratch: scratch, pin: asked.pin)
-
-    if pin.is_err()
-        told(issue_check.said(pin))
-        return 2
-    facts = issue_git.gather(scratch: scratch, issues: chosen, pin: pin.must())
-
-    if facts.is_err()
-        told("git could not answer: " + issue_check.said(facts))
+    if loaded.is_err()
+        told(issue_github_failure(loaded))
         return 2
 
-    if !facts.must().history
-        told(
-            "this clone's history is shortened, so the commits the cards name cannot be asked for; render where the history is whole"
-        )
-        return 2
-    twins = issue_render.twins_of(every)
-    none: [str] = []
-    refused: i64 @= 0
+    for one in loaded.must().refused
+        told(one)
 
-    for issue in chosen
-        got = issue_render.render(issue: issue, facts: facts.must(), twins: twins[issue.path].default(none))
-        wrong = issue_check.offences(got)
+    for entry in loaded.must().chosen
+        print(issue_json.line(entry.r))
 
-        if wrong.len() > 0
-            refused @ refused + 1
-
-            for one in wrong
-                told(issue.path + ": " + one)
-
-            continue
-        print(issue_json.line(got))
-
-    if refused > 0
+    if loaded.must().refused.len() > 0
         return 1
     return 0
 
+# `plan`: what `push` would do, read from GitHub, and every request it made.
+function planned(scratch: str, asked: issue_args.Asked) -> i64
+    pin: str @= asked.pin
+
+    if pin == ""
+        state = issue_state.read_state(issue_state.PATH)
+
+        if state.is_err()
+            told(issue_github_failure(state))
+            return 2
+        pin @ state.must().pin
+
+    if pin == ""
+        pin @ "HEAD"
+    got = issue_load.loaded(scratch: scratch, paths: asked.paths, pin: pin)
+    roadmap = read_file("docs/ROADMAP.md")
+
+    if got.is_err() || roadmap.is_err()
+        told(issue_github_failure(got) + issue_github_failure(roadmap))
+        return 2
+    loaded = got.must()
+    refused = judged(scratch: scratch, loaded: loaded)
+
+    if refused < 0
+        return 2
+    missing = refused - loaded.unrendered
+    trunk = issue_load.on_trunk(scratch: scratch, pin: loaded.pin, trunk: TRUNK)
+    chain = issue_plan.chain_of(roadmap.must())
+
+    if chain.is_err()
+        told(issue_github_failure(chain))
+        return 2
+    rows = chain.must()
+    s: issue_pace.Session @= issue_pace.session(
+        transport: issue_wire.gh(),
+        world: issue_wire.world_at(scratch),
+        live: true
+    )
+    gh = issue_plan.gathered(@s, entries: loaded.chosen, ask_listing: true)
+
+    if gh.is_err()
+        told("GitHub could not be read: " + issue_github_failure(gh))
+        return 2
+    survey = issue_match.surveyed(
+        entries: loaded.chosen,
+        chosen: loaded.chosen,
+        rows: rows,
+        gh: gh.must(),
+        pin: loaded.pin
+    )
+    on: str @= "on " + TRUNK + " as this clone last fetched it"
+
+    if trunk.is_err()
+        on @ "whose ancestry git could not say: " + issue_github_failure(trunk)
+    else if !trunk.must()
+        on @ "NOT on " + TRUNK + " as this clone last fetched it, so `push` refuses it"
+    print(
+        "plan: " + (loaded.chosen.len() + loaded.unrendered).to_str() + " issue files, " + loaded.chosen.len().to_str() + " rendered, " + loaded.unrendered.to_str() + " refused by the rule and " + missing.to_str() + " not in the pin's tree; pinned at " + loaded.pin + ", " + on
+    )
+
+    for line in issue_plan.lines_of(survey: survey, chosen: loaded.chosen, rows: rows, gh: gh.must())
+        print(line)
+
+    print("requests: " + s.world.requests.len().to_str() + " to GitHub, every one a read")
+
+    for request in s.world.requests
+        print("  " + request.method + " " + request.path)
+
+    if refused > 0
+        return 1
+    return issue_plan.code_of(survey)
+
+# `push`: the guards, then the imports.
+function pushed(scratch: str, asked: issue_args.Asked) -> i64
+    pin = issue_git.pinned(scratch: scratch, pin: asked.pin)
+
+    if pin.is_err()
+        told(issue_github_failure(pin))
+        return 2
+    trunk = issue_load.on_trunk(scratch: scratch, pin: pin.must(), trunk: TRUNK)
+
+    if trunk.is_err() || !trunk.must()
+        told(
+            "the pin " + pin.must() + " is not on " + TRUNK + " as this clone last fetched it, and the `Record:` links name a commit already there (R5)" + issue_github_failure(trunk)
+        )
+        return 2
+    got = issue_load.loaded(scratch: scratch, paths: asked.paths, pin: pin.must())
+
+    if got.is_err()
+        told(issue_github_failure(got))
+        return 2
+    loaded = got.must()
+    order = issue_load.out_of_order(every: loaded.every, named: asked.paths)
+
+    if order != ""
+        told(order)
+        return 2
+    refused = judged(scratch: scratch, loaded: loaded)
+
+    if refused != 0
+        if refused > 0
+            told("push imports nothing while a file cannot be rendered or linked, since every later number would move")
+            return 1
+        return 2
+
+    if shell.mkdir_all("build").is_err()
+        told("cannot make build/ for the run's state")
+        return 2
+    s: issue_pace.Session @= issue_pace.session(
+        transport: issue_wire.gh(),
+        world: issue_wire.world_at(scratch),
+        live: true
+    )
+    setup = issue_push.Setup(root: ".", state_path: issue_state.PATH, pin: pin.must(), accept_gaps: asked.gaps)
+    return issue_push.pushed(@s, chosen: loaded.chosen, setup: setup)
+
+# `prepare` or `finish`, on the real transport: the chain read from the tree,
+# the milestone pages the tree holds, and a word where a run's imports are
+# still unsettled, since lifting the limit then lets a stranger's issue in.
+function prepared_or_finished(scratch: str, word: str) -> i64
+    s: issue_pace.Session @= issue_pace.session(
+        transport: issue_wire.gh(),
+        world: issue_wire.world_at(scratch),
+        live: true
+    )
+
+    if word == "finish"
+        state = issue_state.read_state(issue_state.PATH)
+
+        if !state.is_err() && state.must().flights.len() > 0
+            told(
+                issue_state.PATH + " still holds " + state.must().flights.len().to_str() + " imports a run did not settle; the limit is lifted all the same"
+            )
+        return issue_prepare.finished(@s)
+    roadmap = read_file("docs/ROADMAP.md")
+    files = shell.project_files(scratch)
+
+    if roadmap.is_err() || files.is_err()
+        told(issue_github_failure(roadmap) + issue_github_failure(files))
+        return 2
+    pages: {str: bool} @= {}
+
+    for path in files.must()
+        if strings.starts_with(text: path, prefix: issue_prepare.PAGES) && strings.ends_with(text: path, suffix: ".md")
+            pages[path] @ true
+
+    chain = issue_plan.chain_of(roadmap.must())
+
+    if chain.is_err()
+        told(issue_github_failure(chain))
+        return 2
+    return issue_prepare.prepared(@s, rows: chain.must(), pages: pages)
+
+# The cards `loaded` refused, and those whose file the pin's tree does not
+# hold, each told; how many cards, or -1 where git could not say.
+function judged(scratch: str, loaded: issue_load.Loaded) -> i64
+    for one in loaded.refused
+        told(one)
+
+    paths: [str] @= []
+
+    for entry in loaded.chosen
+        paths @ paths.push(entry.r.path)
+
+    missing = issue_load.missing_at(scratch: scratch, pin: loaded.pin, paths: paths)
+
+    if missing.is_err()
+        told("git could not say which files the pin holds: " + issue_github_failure(missing))
+        return -1
+
+    for path in missing.must()
+        told(path + ": the pin " + loaded.pin + " does not hold this file, so its `Record:` link would name nothing")
+
+    return loaded.unrendered + missing.must().len()
+
+function issue_github_failure<T>(result: T?) -> str
+    return match result
+        .ok _  => ""
+        .err e => e.msg
+
 function told(text: str)
     hero_write_err(text: "issues: " + text + "\n")
-
-test "render takes a pin once and issue files, and refuses any other flag"
-    plain = parsed([])
-    assert plain.pin == "HEAD"
-    assert plain.paths.len() == 0
-    assert plain.wrong == ""
-    pinned = parsed(["--pin", "cd2798043", "./issues/a.md", "issues/b.md"])
-    assert pinned.pin == "cd2798043"
-    assert pinned.paths == ["issues/a.md", "issues/b.md"]
-    assert parsed(["--pin"]).wrong != ""
-    assert parsed(["--pin", "a", "--pin", "b"]).wrong != ""
-    assert strings.contains(text: parsed(["--plan"]).wrong, needle: "no flag")
-
-test "plan and push are owed and refused by name, and so is a word nobody gave"
-    assert strings.contains(text: refusal(["plan"]), needle: "not built yet")
-    assert strings.contains(text: refusal(["push", "--yes"]), needle: "not built yet")
-    assert strings.contains(text: refusal(["sync"]), needle: "no word")
-    assert strings.contains(text: refusal([]), needle: "no word given")

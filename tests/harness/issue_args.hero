@@ -1,0 +1,118 @@
+# THE WORDS `issues.hero` IS RUN WITH, read: its first word, one of `render`,
+# `plan`, `push`, `prepare` and `finish`, and the flags and files after it.
+#
+# Each word takes its own flags and no other, so a flag given to the wrong
+# word is refused by name rather than ignored: `--pin` is `render`'s, `plan`'s
+# and `push`'s; `--accept-gaps` is `push`'s; and `--yes` is the guard of the
+# three words that write to GitHub, `push`, `prepare` and `finish`, none of
+# which runs without it (panel 212's R11; `issues.hero` says why the guard is
+# the program's own). `push` takes `--pin` too, always (R5); `prepare` and
+# `finish` take no file.
+
+use strings
+
+constant USAGE: str
+    "heroes run tests/harness/issues.hero -- render|plan [--pin <hash>] [<issue file>...], push --yes --pin <hash> [--accept-gaps] [<issue file>...], prepare --yes or finish --yes"
+
+# The words of this program, and those of them that write to GitHub.
+constant WORDS: [str]
+    ["render", "plan", "push", "prepare", "finish"]
+
+constant WRITING: [str]
+    ["push", "prepare", "finish"]
+
+# What the words after the first asked for, or why they cannot be taken.
+record Asked
+    word: str
+    pin: str
+    paths: [str]
+    yes: bool
+    gaps: bool
+    wrong: str
+
+# Why the first word is not one this program takes.
+function refusal(given: [str]) -> str
+    if given.len() == 0
+        return "no word given: " + USAGE
+    return "`" + given[0] + "` is no word of this program: " + USAGE
+
+function parsed(word: str, words: [str]) -> Asked
+    pin: str @= ""
+    paths: [str] @= []
+    yes: bool @= false
+    gaps: bool @= false
+    at: i64 @= 0
+
+    while at < words.len()
+        one = words[at]
+        at @ at + 1
+
+        if one == "--pin" && (word == "render" || word == "plan" || word == "push")
+            if pin != "" || at == words.len()
+                return wrong(word: word, why: "`--pin` takes one commit, once")
+            pin @ words[at]
+            at @ at + 1
+        else if one == "--yes" && among(word: word, words: WRITING)
+            yes @ true
+        else if one == "--accept-gaps" && word == "push"
+            gaps @ true
+        else if strings.starts_with(text: one, prefix: "-")
+            return wrong(word: word, why: "`" + one + "` is no flag of `" + word + "`: " + USAGE)
+        else if word == "prepare" || word == "finish"
+            return wrong(word: word, why: "`" + word + "` takes no file: " + USAGE)
+        else
+            paths @ paths.push(strings.without_prefix(text: one, prefix: "./"))
+
+    if among(word: word, words: WRITING) && !yes
+        return wrong(word: word, why: "`" + word + "` writes to GitHub and runs only with `--yes`: " + USAGE)
+
+    if word == "push" && pin == ""
+        return wrong(
+            word: word,
+            why: "`push` takes `--pin <hash>`, a commit already on origin/main and the same on every rerun (R5): " + USAGE
+        )
+    return Asked(word: word, pin: pin, paths: paths, yes: yes, gaps: gaps, wrong: "")
+
+function among(word: str, words: [str]) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+function wrong(word: str, why: str) -> Asked
+    none: [str] = []
+    return Asked(word: word, pin: "", paths: none, yes: false, gaps: false, wrong: why)
+
+test "each word takes its own flags, push its guards, and a word nobody gave is refused"
+    plain = parsed(word: "render", words: [])
+    assert plain.pin == ""
+    assert plain.paths.len() == 0
+    assert plain.wrong == ""
+    pinned = parsed(word: "plan", words: ["--pin", "cd2798043", "./issues/a.md", "issues/b.md"])
+    assert pinned.pin == "cd2798043"
+    assert pinned.paths == ["issues/a.md", "issues/b.md"]
+    assert parsed(word: "render", words: ["--pin"]).wrong != ""
+    assert parsed(word: "render", words: ["--pin", "a", "--pin", "b"]).wrong != ""
+    assert strings.contains(text: parsed(word: "render", words: ["--plan"]).wrong, needle: "no flag")
+    assert strings.contains(text: parsed(word: "plan", words: ["--yes"]).wrong, needle: "no flag")
+    assert strings.contains(text: parsed(word: "push", words: ["--pin", "a"]).wrong, needle: "only with `--yes`")
+    assert strings.contains(text: parsed(word: "push", words: ["--yes"]).wrong, needle: "takes `--pin <hash>`")
+    full = parsed(word: "push", words: ["--yes", "--pin", "a", "--accept-gaps", "issues/a.md"])
+    assert full.wrong == ""
+    assert full.yes && full.gaps
+    assert strings.contains(
+        text: parsed(word: "prepare", words: []).wrong,
+        needle: "`prepare` writes to GitHub and runs only with `--yes`"
+    )
+    assert strings.contains(text: parsed(word: "finish", words: []).wrong, needle: "`finish` writes to GitHub")
+    assert parsed(word: "prepare", words: ["--yes"]).wrong == ""
+    assert parsed(word: "finish", words: ["--yes"]).wrong == ""
+    assert strings.contains(
+        text: parsed(word: "prepare", words: ["--yes", "issues/a.md"]).wrong,
+        needle: "takes no file"
+    )
+    assert strings.contains(text: parsed(word: "finish", words: ["--yes", "--pin", "a"]).wrong, needle: "no flag")
+    assert strings.contains(text: parsed(word: "prepare", words: ["--yes", "--accept-gaps"]).wrong, needle: "no flag")
+    assert strings.contains(text: refusal(["sync"]), needle: "no word")
+    assert strings.contains(text: refusal([]), needle: "no word given")

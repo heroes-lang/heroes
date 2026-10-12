@@ -44,7 +44,19 @@
       "Bash(git push --force*)"
     ],
     "ask": [
-      "Bash(git push*)"
+      "Bash(git push*)",
+      "Bash(./heroes run tests/harness/issues.hero -- push*)",
+      "Bash(heroes run tests/harness/issues.hero -- push*)",
+      "Bash(caffeinate -i ./heroes run tests/harness/issues.hero -- push*)",
+      "Bash(caffeinate -i heroes run tests/harness/issues.hero -- push*)",
+      "Bash(./heroes run tests/harness/issues.hero -- prepare*)",
+      "Bash(heroes run tests/harness/issues.hero -- prepare*)",
+      "Bash(caffeinate -i ./heroes run tests/harness/issues.hero -- prepare*)",
+      "Bash(caffeinate -i heroes run tests/harness/issues.hero -- prepare*)",
+      "Bash(./heroes run tests/harness/issues.hero -- finish*)",
+      "Bash(heroes run tests/harness/issues.hero -- finish*)",
+      "Bash(caffeinate -i ./heroes run tests/harness/issues.hero -- finish*)",
+      "Bash(caffeinate -i heroes run tests/harness/issues.hero -- finish*)"
     ]
   },
   "hooks": {

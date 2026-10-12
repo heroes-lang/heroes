@@ -1,0 +1,583 @@
+# `push`: THE ISSUE FILES IMPORTED INTO GITHUB, ONE AT A TIME, IN THE CARDS'
+# ORDER, EACH CARD GIVEN ITS ADDRESS BEFORE THE NEXT REQUEST.
+#
+# `.claude/rules/records.md` § The issues, *the route* and *a run stopped*
+# (panel 212's R5, R6 and R11, ratified 2026-10-11, R5 amended by the import
+# experiment of measurement 041 the same evening). `pushed` takes the files the
+# caller has already judged (rendered, pinned at a commit on `origin/main`,
+# named in order, the flags given) and does, in this order:
+#
+# 1. **reads what GitHub holds** (`issue_plan.gathered`) and refuses before any
+#    write where an issue to import names a milestone or a label GitHub lacks
+#    (exit 1), where no `collaborators_only` interaction limit is in force and
+#    `--accept-gaps` was not given (R6 item 4), or where one file is held by
+#    two issues already, a fault only the author settles (exit 2);
+# 2. **reads first the imports the last run left `pending`** (the state file,
+#    `issue_state`), writing each card whose import reads `imported`;
+# 3. **writes the address of every card whose issue GitHub holds already**, a
+#    run killed between an import and the card's write (`issue_match`'s
+#    reconciliation, a list and never a search); a card whose import was asked
+#    and never answered (`sent`) and whose issue the list does not show is
+#    settled by the list of imports since its day, each one still `pending`
+#    awaited, before it is imported again;
+# 4. **imports each remaining card**: one request carrying the issue whole,
+#    its milestone by GitHub's number, `sent` written to the state before it,
+#    the import's `url` after it, then that `url` read until `imported`, the
+#    card's `github:` line written, the state cleared, and only then the next.
+#
+# **The run's first import is the endpoint's question again**: refused on the
+# route itself (404, 410, 415 or 422), the run stops with exit 2 and says the
+# REST route, which dates every issue the day it runs, is the author's to
+# choose; it is never taken here. A write that may have reached GitHub and
+# whose answer never came is never asked again by this run: it stops, exit 2,
+# and the next run asks GitHub first. Every other refusal stops the run too,
+# exit 2, and the cards written so far keep their addresses, so a rerun takes
+# up where it stopped.
+
+use cards
+use issue_github
+use issue_json
+use issue_match
+use issue_pace
+use issue_plan
+use issue_render
+use issue_scripts
+use issue_state
+use issue_wire
+use json_fields
+use json_read
+use shell
+use strings
+
+# What the caller settled: where the issue files are (`.` in a run), the state
+# file, the pin, and whether `--accept-gaps` was given.
+record Setup
+    root: str
+    state_path: str
+    pin: str
+    accept_gaps: bool
+
+# The longest one import is awaited before the run stops, the next run reading
+# it first.
+constant AWAIT: i64
+    900
+
+# The waits between two reads of one import, the last one repeated.
+constant STEPS: [i64]
+    [1, 1, 2, 2, 4, 4, 8, 8, 15, 15, 30]
+
+constant LIMIT: str
+    "collaborators_only"
+
+constant ROUTE_REFUSED: [i64]
+    [404, 410, 415, 422]
+
+# `chosen` pushed: the rendered files the run takes, of which those whose
+# `github:` is `none` are imported. The exit code (R11).
+function pushed(@s: issue_pace.Session, chosen: [issue_match.Entry], setup: Setup) -> i64
+    read = issue_state.read_state(setup.state_path)
+
+    if read.is_err()
+        issue_pace.warn(@s, text: issue_github.failure(read))
+        return 2
+    state: issue_state.State @= read.must()
+
+    if state.pin != "" && state.pin != setup.pin
+        issue_pace.warn(
+            @s,
+            text: "the run's state at " + setup.state_path + " records the pin " + state.pin + ", and every rerun gives the same (R5); this one gave " + setup.pin
+        )
+        return 2
+    waiting: [issue_match.Entry] @= []
+
+    for entry in issue_match.ordered(chosen)
+        if entry.github == "none"
+            waiting @ waiting.push(entry)
+
+    gathered = issue_plan.gathered(@s, entries: waiting, ask_listing: false)
+
+    if gathered.is_err()
+        issue_pace.warn(@s, text: "GitHub could not be read: " + issue_github.failure(gathered))
+        return 2
+    gh = gathered.must()
+    none: [issue_match.Row] = []
+    survey = issue_match.surveyed(entries: chosen, chosen: waiting, rows: none, gh: gh, pin: setup.pin)
+    refused = refusals(survey: survey, gh: gh, accept_gaps: setup.accept_gaps)
+
+    if refused.len() > 0
+        for one in refused
+            issue_pace.warn(@s, text: one)
+
+        if survey.missing_milestones.len() > 0 || survey.missing_labels.len() > 0
+            return 1
+        return 2
+    state.pin @ setup.pin
+
+    if !saved(@s, path: setup.state_path, state: state)
+        return 2
+    done: {str: bool} @= {}
+
+    for flight in state.flights
+        if flight.url != ""
+            code = landed(@s, setup: setup, state: @state, path: flight.path, url: flight.url)
+
+            if code != 0
+                return code
+            done[flight.path] @ true
+
+    found: {str: i64} @= {}
+
+    for one in survey.found
+        found[one.path] @ one.number
+
+    for flight in state.flights
+        if flight.url == "" && found[flight.path].is_err()
+            for entry in waiting
+                if entry.r.path == flight.path
+                    settled = settled_sent(@s, entry: entry, day: flight.day)
+
+                    if settled.is_err()
+                        issue_pace.warn(@s, text: issue_github.failure(settled))
+                        return 2
+
+                    if settled.must() > 0
+                        found[flight.path] @ settled.must()
+
+    for entry in waiting
+        if done[entry.r.path].is_err() && !found[entry.r.path].is_err()
+            url = issue_github.web_address(found[entry.r.path].must())
+
+            match issue_state.addressed(root: setup.root, path: entry.r.path, url: url)
+                .ok _ => issue_pace.say(@s, text: "found " + entry.r.path + " " + url)
+                .err e =>
+                    issue_pace.warn(@s, text: e.msg)
+                    return 2
+
+            done[entry.r.path] @ true
+
+    kept: [issue_state.Flight] @= []
+    taken: {str: bool} @= {}
+
+    for entry in waiting
+        taken[entry.r.path] @ true
+
+    # A flight of a file this run does not take stays for the run that does.
+    for flight in state.flights
+        if taken[flight.path].is_err() && done[flight.path].is_err()
+            kept @ kept.push(flight)
+
+    state @ issue_state.State(pin: state.pin, flights: kept)
+
+    if !saved(@s, path: setup.state_path, state: state)
+        return 2
+    numbers = issue_match.numbers(gh)
+    count: i64 @= 0
+
+    for entry in waiting
+        if !done[entry.r.path].is_err()
+            continue
+        code = imported(
+            @s,
+            entry: entry,
+            milestone: numbers[entry.r.milestone].default(0),
+            setup: setup,
+            state: @state,
+            first: count == 0
+        )
+
+        if code != 0
+            return code
+        count @ count + 1
+
+    issue_pace.say(
+        @s,
+        text: "push: " + count.to_str() + " imported, " + keys(done).len().to_str() + " found or read from the last run; every file of the run holds its address"
+    )
+    return 0
+
+# Why the run may not write at all, one sentence each.
+function refusals(survey: issue_match.Survey, gh: issue_match.Github, accept_gaps: bool) -> [str]
+    out: [str] @= []
+
+    for name in survey.missing_milestones
+        out @ out.push(
+            "GitHub has no milestone `" + name + "`, which an issue to import names; it is made by the author (R6 item 3), and `plan` lists every one"
+        )
+
+    for name in survey.missing_labels
+        out @ out.push("GitHub has no label `" + name + "`, which an issue to import takes; `plan` lists every one")
+
+    if gh.limit.limit != LIMIT && !accept_gaps
+        out @ out.push(
+            "no `" + LIMIT + "` interaction limit is in force, so a stranger's issue could take a number between two of ours (R6 item 4); the author sets one, or the run is given `--accept-gaps`"
+        )
+
+    for one in survey.doubled
+        out @ out.push(one + ": two issues of one file are the author's to settle before a run")
+
+    return out
+
+function saved(@s: issue_pace.Session, path: str, state: issue_state.State) -> bool
+    match issue_state.write_state(path: path, state: state)
+        .ok _ => return true
+        .err e =>
+            issue_pace.warn(@s, text: e.msg)
+            return false
+
+# One card imported, its address written, the state cleared; 0, or the exit.
+function imported(@s: issue_pace.Session, entry: issue_match.Entry, milestone: i64, setup: Setup, @state: issue_state.State, first: bool) -> i64
+    path = entry.r.path
+    state @ issue_state.flown(state: state, flight: issue_state.Flight(path: path, url: "", day: s.day))
+
+    if !saved(@s, path: setup.state_path, state: state)
+        return 2
+    request = issue_github.import_request(issue_json.numbered(r: entry.r, milestone: milestone))
+    asked = issue_pace.exchange(@s, request: request)
+
+    if asked.is_err()
+        if issue_github.code_of(asked) != "uncertain"
+            state @ issue_state.landed(state: state, path: path)
+            _ = saved(@s, path: setup.state_path, state: state)
+        issue_pace.warn(@s, text: "the import of " + path + ": " + issue_github.failure(asked) + uncertain_said(asked))
+        return 2
+    reply = asked.must()
+
+    if reply.status >= 500
+        issue_pace.warn(
+            @s,
+            text: "the import of " + path + " answered " + issue_github.said(reply) + ", so whether GitHub took it is unknown; the next run asks GitHub first"
+        )
+        return 2
+
+    if reply.status < 200 || reply.status > 299
+        state @ issue_state.landed(state: state, path: path)
+        _ = saved(@s, path: setup.state_path, state: state)
+        issue_pace.warn(
+            @s,
+            text: "GitHub refused the import of " + path + ": " + issue_github.said(reply) + endpoint_said(status: reply.status, first: first)
+        )
+        return 2
+    answer = issue_github.import_of(reply.body)
+
+    if answer.is_err()
+        issue_pace.warn(
+            @s,
+            text: "the import of " + path + " answered " + reply.status.to_str() + " and its answer cannot be read (" + issue_github.failure(answer) + "), so whether GitHub took it is unknown; the next run asks GitHub first"
+        )
+        return 2
+    state @ issue_state.flown(state: state, flight: issue_state.Flight(path: path, url: answer.must().url, day: ""))
+
+    if !saved(@s, path: setup.state_path, state: state)
+        return 2
+    return landed(@s, setup: setup, state: @state, path: path, url: answer.must().url)
+
+# The import at `url` awaited, its card written and its flight cleared; 0, or
+# the exit.
+function landed(@s: issue_pace.Session, setup: Setup, @state: issue_state.State, path: str, url: str) -> i64
+    awaited = issue_github.awaited(@s, url: url, longest: AWAIT, steps: STEPS)
+
+    if awaited.is_err()
+        issue_pace.warn(
+            @s,
+            text: "the import of " + path + " at " + url + ": " + issue_github.failure(awaited) + "; the next run reads it first"
+        )
+        return 2
+    one = awaited.must()
+
+    if one.status == "failed"
+        state @ issue_state.landed(state: state, path: path)
+        _ = saved(@s, path: setup.state_path, state: state)
+        issue_pace.warn(@s, text: "the import of " + path + " failed, and GitHub says: " + one.errors)
+        return 2
+    address = issue_github.web_address(one.issue)
+
+    match issue_state.addressed(root: setup.root, path: path, url: address)
+        .ok _ => issue_pace.say(@s, text: "imported " + path + " " + address)
+        .err e =>
+            issue_pace.warn(@s, text: e.msg + "; its issue is " + address + ", and the next run reads the import again")
+            return 2
+
+    state @ issue_state.landed(state: state, path: path)
+
+    if !saved(@s, path: setup.state_path, state: state)
+        return 2
+    return 0
+
+# The issue a `sent` import of `entry`, asked on `day`, became, 0 for none:
+# every import since the day before still `pending` is awaited, and the issues
+# are listed again down to the card's day.
+function settled_sent(@s: issue_pace.Session, entry: issue_match.Entry, day: str) -> i64?
+    since = day_before(day)
+    path = issue_github.REPO + "/import/issues?since=" + since
+    reply = issue_pace.exchange(@s, request: issue_github.preview_get(path))?
+
+    if reply.status != 200
+        return fail(
+            code: "unsettled",
+            msg: "the import of " + entry.r.path + " was asked and its answer never came; GitHub holds no issue of it in the list, and " + path + " answered " + issue_github.said(reply) + ", so whether one is still pending is unknown; rerun once GitHub has finished, and if it still holds none, remove its `sent` line from the run's state to import it again"
+        )
+
+    for one in json_fields.items_of(json_read.read_json(reply.body)?)?
+        listed = issue_github.import_from(j: one, body: reply.body)?
+
+        if listed.status == "pending"
+            _ = issue_github.awaited(@s, url: listed.url, longest: AWAIT, steps: STEPS)?
+
+    for held in issue_github.issues_since(@s, bound: issue_render.instant(entry.r.filed))?
+        if issue_match.is_import_of(held: held, entry: entry)
+            return ok(held.number)
+
+    return ok(0)
+
+# The day before `day`, written `YYYY-MM-DD`; `day` itself where it is none.
+function day_before(day: str) -> str
+    digits = cards.day_of(day)
+
+    if digits.is_err() || day.len() != 10
+        return day
+    d = digits.must()
+    days = issue_pace.days_from_civil(year: d / 10000, month: d / 100 % 100, day: d % 100)
+    return issue_pace.day_of_epoch((days - 1) * 86400)
+
+function endpoint_said(status: i64, first: bool) -> str
+    for refused in ROUTE_REFUSED
+        if first && status == refused
+            return ". This was the run's first import, and the import route refused it: the REST route, which dates every issue the day it runs, is the author's to choose (`.claude/rules/records.md` § The issues), and this run takes no other; nothing was imported"
+
+    return ""
+
+function uncertain_said(asked: issue_wire.Reply?) -> str
+    if issue_github.code_of(asked) == "uncertain"
+        return "; whether GitHub took it is unknown, and the next run asks GitHub first"
+    return ""
+
+function setup_at(root: str, gaps: bool) -> Setup
+    return Setup(root: root, state_path: root + "/state", pin: issue_scripts.PIN, accept_gaps: gaps)
+
+test "two files are imported in the cards' order, a second apart, each card given its address"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    b = issue_scripts.card(filed: "2026-10-02", name: "b", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([b, a])
+    replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(issue_scripts.pending(1)).push(issue_scripts.imported(id: 1, issue: 7)).push(issue_scripts.pending(2)).push(
+        issue_scripts.imported(id: 2, issue: 8)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@s, chosen: [issue_scripts.entry(b), issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 0
+    assert issue_scripts.github_of(root: root, path: a.path) == "https://github.com/heroes-lang/heroes/issues/7"
+    assert issue_scripts.github_of(root: root, path: b.path) == "https://github.com/heroes-lang/heroes/issues/8"
+    asked = s.world.requests
+    assert asked.len() == 8
+    assert asked[4].method == "POST"
+    assert asked[4].path == "/repos/heroes-lang/heroes/import/issues"
+    assert asked[4].accept == "application/vnd.github.golden-comet-preview+json"
+    assert strings.contains(text: asked[4].body, needle: "\"title\":\"a is owed\"")
+    assert strings.contains(text: asked[4].body, needle: "\"milestone\":1}")
+    assert asked[5].path == "/repos/heroes-lang/heroes/import/issues/1"
+    assert strings.contains(text: asked[6].body, needle: "\"title\":\"b is owed\"")
+    assert s.world.waits == [1, 1, 1]
+    assert s.out[0] == "imported " + a.path + " https://github.com/heroes-lang/heroes/issues/7"
+    assert read_file(root + "/state").must() == "pin " + issue_scripts.PIN + "\n"
+    _ = shell.remove_tree(root).is_err()
+
+test "the run's first import refused on the route stops it, names the REST route the author's, and writes nothing"
+    for status in [404, 415, 422]
+        a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+        root = issue_scripts.tree_of([a])
+        replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(
+            issue_scripts.answer(status: status, body: "{\"message\":\"Not Found\"}")
+        )
+        s: issue_pace.Session @= issue_pace.scripted(replies)
+        assert pushed(@s, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 2
+        assert strings.contains(
+            text: s.err[0],
+            needle: "the REST route, which dates every issue the day it runs, is the author's to choose"
+        )
+        assert issue_scripts.github_of(root: root, path: a.path) == "none"
+        assert read_file(root + "/state").must() == "pin " + issue_scripts.PIN + "\n"
+        assert issue_scripts.posts(s) == 1
+        _ = shell.remove_tree(root).is_err()
+
+test "an import that failed stops the run with GitHub's own words and leaves the card as it was"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a])
+    replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(issue_scripts.pending(1)).push(issue_scripts.still(1)).push(
+        issue_scripts.failed(1)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@s, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 2
+    assert strings.contains(
+        text: s.err[0],
+        needle: "failed, and GitHub says: location /issue/labels, resource Label, field name, value kind:task, code missing"
+    )
+    assert issue_scripts.github_of(root: root, path: a.path) == "none"
+    assert s.world.waits == [1, 1]
+    assert read_file(root + "/state").must() == "pin " + issue_scripts.PIN + "\n"
+    _ = shell.remove_tree(root).is_err()
+
+test "a run stopped between an import and the card's write is taken up by the next, which reads the import first and imports it no second time"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    b = issue_scripts.card(filed: "2026-10-02", name: "b", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a, b])
+    first: issue_pace.Session @= issue_pace.scripted(
+        issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(issue_scripts.pending(1))
+    )
+    chosen = [issue_scripts.entry(a), issue_scripts.entry(b)]
+    assert pushed(@first, chosen: chosen, setup: setup_at(root: root, gaps: false)) == 2
+    assert strings.contains(text: first.err[0], needle: "the next run reads it first")
+    assert issue_scripts.github_of(root: root, path: a.path) == "none"
+    assert read_file(root + "/state").must() == "pin " + issue_scripts.PIN + "\npending " + a.path + " " + issue_scripts.IMPORTS + "1\n"
+    replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: [issue_scripts.held(e: chosen[0], number: 7)]).push(issue_scripts.imported(id: 1, issue: 7)).push(issue_scripts.pending(2)).push(
+        issue_scripts.imported(id: 2, issue: 8)
+    )
+    again: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@again, chosen: chosen, setup: setup_at(root: root, gaps: false)) == 0
+    assert again.world.requests[4].path == "/repos/heroes-lang/heroes/import/issues/1"
+    assert issue_scripts.posts(again) == 1
+    assert strings.contains(text: again.world.requests[5].body, needle: "\"title\":\"b is owed\"")
+    assert issue_scripts.github_of(root: root, path: a.path) == "https://github.com/heroes-lang/heroes/issues/7"
+    assert issue_scripts.github_of(root: root, path: b.path) == "https://github.com/heroes-lang/heroes/issues/8"
+    _ = shell.remove_tree(root).is_err()
+
+test "an import asked and never answered is found in the list by its Record link and its day, and imported no second time"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    b = issue_scripts.card(filed: "2026-10-02", name: "b", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a, b])
+    write_file(path: root + "/state", text: "pin " + issue_scripts.PIN + "\nsent " + a.path + " 2026-10-12\n").must()
+    chosen = [issue_scripts.entry(a), issue_scripts.entry(b)]
+    replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: [issue_scripts.held(e: chosen[0], number: 7)]).push(issue_scripts.pending(2)).push(
+        issue_scripts.imported(id: 2, issue: 8)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@s, chosen: chosen, setup: setup_at(root: root, gaps: false)) == 0
+    assert s.out[0] == "found " + a.path + " https://github.com/heroes-lang/heroes/issues/7"
+    assert issue_scripts.posts(s) == 1
+    assert issue_scripts.github_of(root: root, path: b.path) == "https://github.com/heroes-lang/heroes/issues/8"
+    _ = shell.remove_tree(root).is_err()
+
+test "a sent import the list does not show waits for the imports since its day, and an unanswerable list stops the run"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a])
+    write_file(path: root + "/state", text: "pin " + issue_scripts.PIN + "\nsent " + a.path + " 2026-10-12\n").must()
+    chosen = [issue_scripts.entry(a)]
+    listing = issue_scripts.answer(
+        status: 200,
+        body: "[{\"id\":1,\"status\":\"pending\",\"url\":\"" + issue_scripts.IMPORTS + "1\"}]"
+    )
+    replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(listing).push(issue_scripts.imported(id: 1, issue: 7)).push(
+        issue_scripts.issues([issue_scripts.held(e: chosen[0], number: 7)])
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@s, chosen: chosen, setup: setup_at(root: root, gaps: false)) == 0
+    assert s.world.requests[4].path == "/repos/heroes-lang/heroes/import/issues?since=2026-10-11"
+    assert issue_scripts.posts(s) == 0
+    assert issue_scripts.github_of(root: root, path: a.path) == "https://github.com/heroes-lang/heroes/issues/7"
+    _ = shell.remove_tree(root).is_err()
+    other = issue_scripts.tree_of([a])
+    write_file(path: other + "/state", text: "pin " + issue_scripts.PIN + "\nsent " + a.path + " 2026-10-12\n").must()
+    gone = issue_scripts.answer(status: 404, body: "{\"message\":\"Not Found\"}")
+    t: issue_pace.Session @= issue_pace.scripted(
+        issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(gone)
+    )
+    assert pushed(@t, chosen: chosen, setup: setup_at(root: other, gaps: false)) == 2
+    assert strings.contains(text: t.err[0], needle: "remove its `sent` line from the run's state to import it again")
+    assert issue_scripts.posts(t) == 0
+    assert strings.contains(text: read_file(other + "/state").must(), needle: "sent " + a.path)
+    _ = shell.remove_tree(other).is_err()
+
+test "a milestone or a label GitHub lacks refuses the run before any write, and so does a missing interaction limit"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a])
+    lacking = [
+        issue_scripts.milestones([])
+        issue_scripts.labels([])
+        issue_scripts.limited()
+        issue_scripts.issues([])
+    ]
+    s: issue_pace.Session @= issue_pace.scripted(lacking)
+    assert pushed(@s, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 1
+    assert strings.contains(text: s.err[0], needle: "no milestone `M-issue-files`")
+    assert strings.contains(text: s.err[1], needle: "no label `kind:task`")
+    assert issue_scripts.posts(s) == 0
+    assert read_file(root + "/state").is_err()
+    t: issue_pace.Session @= issue_pace.scripted(
+        issue_scripts.opening(limit: issue_scripts.unlimited(), held_issues: [])
+    )
+    assert pushed(@t, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 2
+    assert strings.contains(text: t.err[0], needle: "interaction limit is in force")
+    assert issue_scripts.posts(t) == 0
+    replies = issue_scripts.opening(limit: issue_scripts.unlimited(), held_issues: []).push(issue_scripts.pending(1)).push(
+        issue_scripts.imported(id: 1, issue: 7)
+    )
+    u: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@u, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: true)) == 0
+    assert issue_scripts.github_of(root: root, path: a.path) == "https://github.com/heroes-lang/heroes/issues/7"
+    _ = shell.remove_tree(root).is_err()
+
+test "a rerun at another pin than the state records is refused before any request"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a])
+    write_file(path: root + "/state", text: "pin " + "2".repeat(40) + "\n").must()
+    s: issue_pace.Session @= issue_pace.scripted([])
+    assert pushed(@s, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 2
+    assert strings.contains(text: s.err[0], needle: "records the pin " + "2".repeat(40))
+    assert s.world.requests.len() == 0
+    _ = shell.remove_tree(root).is_err()
+
+test "a rate-limited import waits what GitHub asks and is taken, and one whose answer never came stops the run keeping its sent line"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a])
+    limited = issue_wire.answer(
+        status: 403,
+        headers: [issue_scripts.DATE, "Retry-After: 5"],
+        body: "{\"message\":\"You have exceeded a secondary rate limit\"}"
+    )
+    replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(limited).push(issue_scripts.pending(1)).push(
+        issue_scripts.imported(id: 1, issue: 7)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@s, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 0
+    assert s.world.waits == [5, 1, 1]
+    assert issue_scripts.posts(s) == 2
+    _ = shell.remove_tree(root).is_err()
+    other = issue_scripts.tree_of([a])
+    t: issue_pace.Session @= issue_pace.scripted(issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []))
+    assert pushed(@t, chosen: [issue_scripts.entry(a)], setup: setup_at(root: other, gaps: false)) == 2
+    assert strings.contains(text: t.err[0], needle: "the next run asks GitHub first")
+    assert read_file(other + "/state").must() == "pin " + issue_scripts.PIN + "\nsent " + a.path + " 2026-10-12\n"
+    _ = shell.remove_tree(other).is_err()
+
+test "a file whose card names no milestone is imported with no milestone field, beside one that names one"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "none", github: "none")
+    b = issue_scripts.card(filed: "2026-10-02", name: "b", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a, b])
+    replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(issue_scripts.pending(1)).push(issue_scripts.imported(id: 1, issue: 7)).push(issue_scripts.pending(2)).push(
+        issue_scripts.imported(id: 2, issue: 8)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert issue_scripts.entry(a).r.milestone == ""
+    assert pushed(@s, chosen: [issue_scripts.entry(a), issue_scripts.entry(b)], setup: setup_at(root: root, gaps: false)) == 0
+    assert s.world.requests[4].method == "POST"
+    assert !strings.contains(text: s.world.requests[4].body, needle: "\"milestone\"")
+    assert strings.contains(text: s.world.requests[4].body, needle: "\"labels\":[\"kind:task\"]},\"comments\"")
+    assert strings.contains(text: s.world.requests[6].body, needle: "\"labels\":[\"kind:task\"],\"milestone\":1}")
+    assert issue_scripts.github_of(root: root, path: a.path) == "https://github.com/heroes-lang/heroes/issues/7"
+    _ = shell.remove_tree(root).is_err()
+
+test "a file whose card holds an address already is not imported, and the day before a day is read across a month"
+    a = issue_scripts.card(
+        filed: "2026-10-01",
+        name: "a",
+        milestone: "M-issue-files",
+        github: "https://github.com/heroes-lang/heroes/issues/3"
+    )
+    root = issue_scripts.tree_of([a])
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_scripts.milestones(["M-issue-files"]), issue_scripts.labels(["kind:task"]), issue_scripts.limited()]
+    )
+    assert pushed(@s, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 0
+    assert issue_scripts.posts(s) == 0
+    assert s.world.requests.len() == 3
+    assert day_before("2026-10-01") == "2026-09-30"
+    assert day_before("2028-03-01") == "2028-02-29"
+    assert day_before("") == ""
+    _ = shell.remove_tree(root).is_err()

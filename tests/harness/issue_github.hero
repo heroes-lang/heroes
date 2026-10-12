@@ -1,0 +1,416 @@
+# WHAT GITHUB HOLDS, READ: the milestones, the labels, the interaction limit,
+# the issues, and an import's answer.
+#
+# `.claude/rules/records.md` § The issues names what a run asks before it
+# writes (panel 212's R5, R6 and R10, ratified 2026-10-11), and
+# `docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`
+# the import's shape: `POST /repos/{owner}/{repo}/import/issues` with the
+# preview media type `PREVIEW`, answered 202 and `"status":"pending"`, then the
+# import's `url` read until `imported`, which names `issue_url`, or `failed`,
+# which names `errors`; a milestone is named by its NUMBER and a label by its
+# name, and both must exist.
+#
+# Every list is read a page of `PAGE` at a time, `page=1, 2, ...`, until a page
+# holds fewer, so nothing depends on the `link` header's shape. **The issues
+# are listed and never searched** (R5: the search index lags and its
+# reliability is unverified), newest `created_at` first, down to `bound`: an
+# imported issue's `created_at` is its card's `filed` at noon (the rule's
+# *days*), so the issues an import of a card filed at or after `bound` could
+# have made all stand before the first one created earlier, and the list stops
+# there. A pull request, which the same list returns, is kept and marked.
+#
+# An address is checked whole before anything uses it: an issue's
+# `issue_url` must name an issue of `heroes-lang/heroes` on `api.github.com`,
+# and an import's `url` an import of the same, so no answer can send a later
+# request, or a card's `github:` line, anywhere else.
+
+use issue_pace
+use issue_wire
+use json_fields
+use json_read
+use strings
+
+constant REPO: str
+    "/repos/heroes-lang/heroes"
+
+constant PREVIEW: str
+    "application/vnd.github.golden-comet-preview+json"
+
+constant PAGE: i64
+    100
+
+# Past this many pages of one list the read stops: 100,000 entries, fifty times
+# the issue files, so only an answer that never ends reaches it.
+constant PAGES: i64
+    1000
+
+constant API: str
+    "https://api.github.com"
+
+constant WEB_ISSUE: str
+    "https://github.com/heroes-lang/heroes/issues/"
+
+record Milestone
+    title: str
+    number: i64
+    open: bool
+
+# An issue as GitHub lists it; `labels` sorted, `milestone` its title or "",
+# `closed` "" while open.
+record Held
+    number: i64
+    title: str
+    body: str
+    state: str
+    labels: [str]
+    milestone: str
+    created: str
+    closed: str
+    comments: i64
+    pull: bool
+
+# The interaction limit in force, `limit` "" where none is; `origin` is whose
+# it is, `repository` or the owner's (`organization`, `user`), which only the
+# owner can change.
+record Limit
+    limit: str
+    expires: str
+    origin: str
+
+# An import's answer: `pending`, `imported` with its issue's number, or
+# `failed` with GitHub's own words.
+record Import
+    status: str
+    url: str
+    issue: i64
+    errors: str
+
+# `path` read, its answer 200 and its body JSON.
+function got(@s: issue_pace.Session, path: str, accept: str) -> json_read.Json?
+    reply = issue_pace.exchange(@s, request: issue_wire.Request(method: "GET", path: path, accept: accept, body: ""))?
+
+    if reply.status != 200
+        return fail(code: "refused", msg: "GET " + path + " answered " + said(reply))
+    return json_read.read_json(reply.body)
+
+# Every element of the list at `path`, a page at a time.
+function listed(@s: issue_pace.Session, path: str) -> [json_read.Json]?
+    out: [json_read.Json] @= []
+    page: i64 @= 1
+
+    while page <= PAGES
+        joiner = if strings.contains(text: path, needle: "?")
+            "&"
+        else
+            "?"
+        some = json_fields.items_of(got(@s, path: path + joiner + "per_page=100&page=" + page.to_str(), accept: "")?)?
+
+        for one in some
+            out @ out.push(one)
+
+        if some.len() < PAGE
+            return ok(out)
+        page @ page + 1
+
+    return fail(code: "endless", msg: "GET " + path + " gave " + PAGES.to_str() + " full pages and no end")
+
+function milestones(@s: issue_pace.Session) -> [Milestone]?
+    out: [Milestone] @= []
+
+    for one in listed(@s, path: REPO + "/milestones?state=all")?
+        out @ out.push(
+            Milestone(title: json_fields.text_at(of: one, name: "title")?, number: json_fields.whole_at(of: one, name: "number")?, open: json_fields.text_at(of: one, name: "state")? == "open")
+        )
+
+    return ok(out)
+
+function labels(@s: issue_pace.Session) -> [str]?
+    out: [str] @= []
+
+    for one in listed(@s, path: REPO + "/labels")?
+        out @ out.push(json_fields.text_at(of: one, name: "name")?)
+
+    return ok(out)
+
+# The limit in force; an empty object, or no content, is none.
+function limit(@s: issue_pace.Session) -> Limit?
+    path = REPO + "/interaction-limits"
+    reply = issue_pace.exchange(@s, request: issue_wire.Request(method: "GET", path: path, accept: "", body: ""))?
+
+    if reply.status == 204
+        return ok(Limit(limit: "", expires: "", origin: ""))
+
+    if reply.status != 200
+        return fail(code: "refused", msg: "GET " + path + " answered " + said(reply))
+    j = json_read.read_json(reply.body)?
+    named = json_fields.text_at(of: j, name: "limit")
+
+    if named.is_err()
+        return ok(Limit(limit: "", expires: "", origin: ""))
+    return ok(
+        Limit(limit: named.must(), expires: json_fields.text_at(of: j, name: "expires_at").default(""), origin: json_fields.text_at(of: j, name: "origin").default(""))
+    )
+
+# The issues created at or after `bound`, newest first, every one where `bound`
+# is "".
+function issues_since(@s: issue_pace.Session, bound: str) -> [Held]?
+    out: [Held] @= []
+    page: i64 @= 1
+
+    while page <= PAGES
+        path = REPO + "/issues?state=all&sort=created&direction=desc&per_page=100&page=" + page.to_str()
+        some = json_fields.items_of(got(@s, path: path, accept: "")?)?
+
+        for one in some
+            held = held_of(one)?
+
+            if bound != "" && before(a: held.created, b: bound)
+                return ok(out)
+            out @ out.push(held)
+
+        if some.len() < PAGE
+            return ok(out)
+        page @ page + 1
+
+    return fail(code: "endless", msg: "the issues gave " + PAGES.to_str() + " full pages and no end")
+
+function held_of(j: json_read.Json) -> Held?
+    names: [str] @= []
+
+    for label in json_fields.items_of(json_fields.field(of: j, name: "labels")?)?
+        names @ names.push(json_fields.text_at(of: label, name: "name")?)
+
+    milestone: str @= ""
+
+    match json_fields.field(of: j, name: "milestone")?
+        .fields _                                               => milestone @ json_fields.text_at(of: json_fields.field(of: j, name: "milestone")?, name: "title")?
+        .null_value | .truth _ | .number _ | .text _ | .items _ => milestone @ ""
+
+    return ok(
+        Held(number: json_fields.whole_at(of: j, name: "number")?, title: json_fields.text_at(of: j, name: "title")?, body: json_fields.text_at(of: j, name: "body")?, state: json_fields.text_at(of: j, name: "state")?, labels: names.sort(), milestone: milestone, created: json_fields.text_at(of: j, name: "created_at")?, closed: json_fields.text_at(of: j, name: "closed_at")?, comments: json_fields.whole_at(of: j, name: "comments")?, pull: !json_fields.field(of: j, name: "pull_request").is_err())
+    )
+
+# An import's answer, read from the body GitHub gave.
+function import_of(body: str) -> Import?
+    return import_from(j: json_read.read_json(body)?, body: body)
+
+# An import's answer, read from one value of what GitHub gave, `body` being the
+# whole answer, which a failure with no errors of its own is told by.
+function import_from(j: json_read.Json, body: str) -> Import?
+    status = json_fields.text_at(of: j, name: "status")?
+    url = json_fields.text_at(of: j, name: "url")?
+    _ = import_path(url)?
+
+    if status == "imported"
+        issue_url = json_fields.text_at(of: j, name: "issue_url")?
+        return ok(Import(status: status, url: url, issue: issue_number(issue_url)?, errors: ""))
+
+    if status == "failed"
+        return ok(Import(status: status, url: url, issue: 0, errors: errors_of(j: j, body: body)))
+
+    if status == "pending"
+        return ok(Import(status: status, url: url, issue: 0, errors: ""))
+    return fail(
+        code: "unknown_status",
+        msg: "the import answered the status `" + status + "`, which is none of pending, imported and failed"
+    )
+
+# The request that imports one issue whole (measurement 041).
+function import_request(body: str) -> issue_wire.Request
+    return issue_wire.Request(method: "POST", path: REPO + "/import/issues", accept: PREVIEW, body: body)
+
+# A read of the import route, which answers only its own media type.
+function preview_get(path: str) -> issue_wire.Request
+    return issue_wire.Request(method: "GET", path: path, accept: PREVIEW, body: "")
+
+# The import at `url` read until it is no longer `pending`, `steps` the waits
+# before each read, the last repeated, for at most `longest` seconds.
+function awaited(@s: issue_pace.Session, url: str, longest: i64, steps: [i64]) -> Import?
+    path = import_path(url)?
+    waited: i64 @= 0
+    at: i64 @= 0
+
+    while waited < longest
+        step: i64 @= 1
+
+        if steps.len() > 0
+            step @ steps[steps.len() - 1]
+
+        if at < steps.len()
+            step @ steps[at]
+        issue_pace.pause(@s, seconds: step)?
+        waited @ waited + step
+        at @ at + 1
+        reply = issue_pace.exchange(@s, request: preview_get(path))?
+
+        if reply.status != 200
+            return fail(code: "refused", msg: "GET " + path + " answered " + said(reply))
+        one = import_of(reply.body)?
+
+        if one.status != "pending"
+            return ok(one)
+
+    return fail(code: "still_pending", msg: "still `pending` after " + waited.to_str() + " seconds")
+
+# Why `result` failed, "" where it did not.
+function failure<T>(result: T?) -> str
+    return match result
+        .ok _  => ""
+        .err e => e.msg
+
+# The code `result` failed with, "" where it did not.
+function code_of<T>(result: T?) -> str
+    return match result
+        .ok _  => ""
+        .err e => e.code
+
+# What a failed import says went wrong: each error's fields as GitHub wrote
+# them, or the whole answer where it wrote none.
+function errors_of(j: json_read.Json, body: str) -> str
+    listed_errors = json_fields.field(of: j, name: "errors")
+
+    if listed_errors.is_err()
+        return body
+    every = json_fields.items_of(listed_errors.must())
+
+    if every.is_err() || every.must().len() == 0
+        return body
+    out: [str] @= []
+
+    for one in every.must()
+        parts: [str] @= []
+
+        for name in ["location", "resource", "field", "value", "code"]
+            value = json_fields.text_at(of: one, name: name)
+
+            if !value.is_err() && value.must() != ""
+                parts @ parts.push(name + " " + value.must())
+
+        out @ out.push(parts.join(", "))
+
+    return out.join("; ")
+
+# The number an API issue address names, refused unless it is one of ours.
+function issue_number(url: str) -> i64?
+    prefix = API + REPO + "/issues/"
+    return number_after(text: url, prefix: prefix)
+
+# The path under `api.github.com` an import's `url` names, refused unless it
+# is an import of ours.
+function import_path(url: str) -> str?
+    _ = number_after(text: url, prefix: API + REPO + "/import/issues/")?
+    return ok(strings.without_prefix(text: url, prefix: API))
+
+function number_after(text: str, prefix: str) -> i64?
+    rest = strings.without_prefix(text: text, prefix: prefix)
+
+    if !strings.starts_with(text: text, prefix: prefix) || rest.len() == 0 || rest.len() > 12 || rest[0] == '0'
+        return fail(code: "foreign", msg: "`" + text + "` is not " + prefix + "<number>")
+    n = strings.to_number(rest)
+
+    if n.is_err() || n.must() < 1
+        return fail(code: "foreign", msg: "`" + text + "` is not " + prefix + "<number>")
+    return n
+
+# Whether `a` sorts before `b`, byte for byte: two instants written alike,
+# `YYYY-MM-DDTHH:MM:SSZ`, sort as the times they name.
+function before(a: str, b: str) -> bool
+    at: i64 @= 0
+
+    while at < a.len() && at < b.len()
+        if a[at] != b[at]
+            return a[at] < b[at]
+        at @ at + 1
+
+    return a.len() < b.len()
+
+# The address a card's `github:` line holds for issue `number`.
+function web_address(number: i64) -> str
+    return WEB_ISSUE + number.to_str()
+
+# A refusal as a person reads it: the status and GitHub's own message.
+function said(reply: issue_wire.Reply) -> str
+    message = json_fields.text_at(of: json_read.read_json(reply.body).default(.null_value), name: "message").default("")
+
+    if message == ""
+        return reply.status.to_str()
+    return reply.status.to_str() + ": " + message
+
+constant ISSUE: str
+    "{\"number\":3,\"title\":\"Defect 235: t\",\"body\":\"Filed 2026-10-03 · closed 2026-10-04\\n\\nRecord: x\",\"state\":\"closed\",\"labels\":[{\"name\":\"kind:defect\"},{\"name\":\"area:cli\"}],\"milestone\":{\"title\":\"M-issue-files\",\"number\":84},\"created_at\":\"2026-10-03T12:00:00Z\",\"closed_at\":\"2026-10-04T12:00:00Z\",\"comments\":1}"
+
+test "an issue is read with its labels sorted, its milestone's title, and a pull request marked"
+    held = held_of(json_read.read_json(ISSUE).must()).must()
+    assert held.number == 3
+    assert held.labels == ["area:cli", "kind:defect"]
+    assert held.milestone == "M-issue-files"
+    assert held.closed == "2026-10-04T12:00:00Z"
+    assert held.body == "Filed 2026-10-03 · closed 2026-10-04\n\nRecord: x"
+    assert !held.pull
+    bare = held_of(
+        json_read.read_json("{\"number\":4,\"title\":\"t\",\"body\":null,\"state\":\"open\",\"labels\":[],\"milestone\":null,\"created_at\":\"2026-10-12T09:00:00Z\",\"closed_at\":null,\"comments\":0,\"pull_request\":{}}").must()
+    ).must()
+    assert bare.milestone == ""
+    assert bare.body == ""
+    assert bare.closed == ""
+    assert bare.pull
+
+test "an import's answers are read as measurement 041 recorded them, and a foreign address is refused"
+    pending = import_of(
+        "{\"id\":1,\"status\":\"pending\",\"url\":\"https://api.github.com/repos/heroes-lang/heroes/import/issues/1\",\"created_at\":\"2026-10-11T19:12:20Z\"}"
+    ).must()
+    assert pending.status == "pending"
+    assert import_path(pending.url).must() == "/repos/heroes-lang/heroes/import/issues/1"
+    done = import_of(
+        "{\"id\":1,\"status\":\"imported\",\"url\":\"https://api.github.com/repos/heroes-lang/heroes/import/issues/1\",\"issue_url\":\"https://api.github.com/repos/heroes-lang/heroes/issues/12\"}"
+    ).must()
+    assert done.issue == 12
+    assert web_address(done.issue) == "https://github.com/heroes-lang/heroes/issues/12"
+    failed = import_of(
+        "{\"id\":2,\"status\":\"failed\",\"url\":\"https://api.github.com/repos/heroes-lang/heroes/import/issues/2\",\"errors\":[{\"location\":\"/issue/milestone\",\"resource\":\"Issue\",\"field\":\"milestone\",\"value\":\"99\",\"code\":\"invalid\"}]}"
+    ).must()
+    assert failed.errors == "location /issue/milestone, resource Issue, field milestone, value 99, code invalid"
+    assert import_of(
+        "{\"status\":\"pending\",\"url\":\"https://api.github.com/repos/someone/else/import/issues/1\"}"
+    ).is_err()
+    assert import_of(
+        "{\"status\":\"imported\",\"url\":\"https://api.github.com/repos/heroes-lang/heroes/import/issues/1\",\"issue_url\":\"https://evil.example/repos/heroes-lang/heroes/issues/1\"}"
+    ).is_err()
+    assert import_of(
+        "{\"status\":\"lost\",\"url\":\"https://api.github.com/repos/heroes-lang/heroes/import/issues/1\"}"
+    ).is_err()
+    assert issue_number("https://api.github.com/repos/heroes-lang/heroes/issues/012").is_err()
+
+test "a list is read a page at a time until a short page, and the issues stop at the bound"
+    full: [str] @= []
+
+    for n in range(from: 1, to: 101)
+        full @ full.push("{\"name\":\"l" + n.to_str() + "\"}")
+
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [], body: "[" + full.join(",") + "]"), issue_wire.answer(status: 200, headers: [], body: "[{\"name\":\"last\"}]")]
+    )
+    got_labels = labels(@s).must()
+    assert got_labels.len() == 101
+    assert s.world.requests[1].path == "/repos/heroes-lang/heroes/labels?per_page=100&page=2"
+    newer = "{\"number\":2,\"title\":\"b\",\"body\":\"\",\"state\":\"open\",\"labels\":[],\"milestone\":null,\"created_at\":\"2026-10-05T12:00:00Z\",\"closed_at\":null,\"comments\":0}"
+    older = "{\"number\":1,\"title\":\"a\",\"body\":\"\",\"state\":\"open\",\"labels\":[],\"milestone\":null,\"created_at\":\"2026-10-03T12:00:00Z\",\"closed_at\":null,\"comments\":0}"
+    t: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [], body: "[" + newer + "," + older + "]")]
+    )
+    since = issues_since(@t, bound: "2026-10-04T12:00:00Z").must()
+    assert since.len() == 1
+    assert since[0].number == 2
+    u: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 404, headers: [], body: "{\"message\":\"Not Found\"}")]
+    )
+
+    match limit(@u)
+        .ok _  => assert false
+        .err e => assert strings.contains(text: e.msg, needle: "answered 404: Not Found")
+
+    v: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [], body: "{}"), issue_wire.answer(status: 200, headers: [], body: "{\"limit\":\"collaborators_only\",\"origin\":\"repository\",\"expires_at\":\"2026-10-13T10:00:00Z\"}")]
+    )
+    assert limit(@v).must().limit == ""
+    assert limit(@v).must().limit == "collaborators_only"

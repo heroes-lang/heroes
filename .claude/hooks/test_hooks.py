@@ -2205,5 +2205,50 @@ class Credit(unittest.TestCase):
         self.assertIn("`records` suite", said)
 
 
+class TrackedAsks(unittest.TestCase):
+    """Panel 212's R7, the guard's other half: the transcription program's
+    `push`, `prepare` and `finish` write to GitHub from a `gh` they spawn,
+    which no rule of the shell guard can see, so the tracked settings ask the
+    author before every run of each, however it is spelled, and ask nothing of
+    `render` and `plan`, which write nothing. A rule is read as the harness
+    reads one, `*` standing for any text; that an `ask` outranks an `allow` is
+    the harness's order."""
+
+    def setUp(self):
+        with open(os.path.join(os.path.dirname(HOOKS), "settings.json"), encoding="utf-8") as f:
+            self.permissions = json.load(f)["permissions"]
+
+    def matched(self, kind, command):
+        import fnmatch
+
+        return [rule for rule in self.permissions.get(kind, [])
+                if rule.startswith("Bash(") and rule.endswith(")")
+                and fnmatch.fnmatchcase(command, rule[len("Bash("):-1])]
+
+    def test_every_spelling_of_a_push_is_asked_and_none_is_denied(self):
+        for command in ("./heroes run tests/harness/issues.hero -- push --yes --pin cd2798043",
+                        "./heroes run tests/harness/issues.hero -- push",
+                        "heroes run tests/harness/issues.hero -- push --yes --pin cd2798043 --accept-gaps",
+                        "caffeinate -i ./heroes run tests/harness/issues.hero -- push --yes --pin cd2798043",
+                        "caffeinate -i heroes run tests/harness/issues.hero -- push --yes --pin x issues/a.md"):
+            self.assertTrue(self.matched("ask", command), command)
+            self.assertFalse(self.matched("deny", command), command)
+
+    def test_every_spelling_of_prepare_and_finish_is_asked_and_none_is_denied(self):
+        for word in ("prepare --yes", "finish --yes", "prepare", "finish"):
+            for start in ("./heroes", "heroes", "caffeinate -i ./heroes", "caffeinate -i heroes"):
+                command = start + " run tests/harness/issues.hero -- " + word
+                self.assertTrue(self.matched("ask", command), command)
+                self.assertFalse(self.matched("deny", command), command)
+
+    def test_render_and_plan_ask_nothing(self):
+        for command in ("./heroes run tests/harness/issues.hero -- plan",
+                        "./heroes run tests/harness/issues.hero -- plan --pin cd2798043",
+                        "./heroes run tests/harness/issues.hero -- render issues/2026-10/11/a.md",
+                        "./heroes run tests/harness/main.hero -- ./heroes records"):
+            self.assertFalse(self.matched("ask", command), command)
+            self.assertTrue(self.matched("allow", command), command)
+
+
 if __name__ == "__main__":
     unittest.main()

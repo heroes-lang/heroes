@@ -1,0 +1,364 @@
+# THE PACE OF A RUN: every request `plan` and `push` make goes through
+# `exchange`, which waits where GitHub asks and nowhere else.
+#
+# `.claude/rules/records.md` § The issues, *the route* (panel 212's R5,
+# ratified 2026-10-11, on GitHub's documented limits the historian read): the
+# requests are serial; **at least one second stands between two writes**; on a
+# 403 or a 429 that is a rate limit the run waits the `retry-after` seconds,
+# else until `x-ratelimit-reset` where `x-ratelimit-remaining` is 0, else one
+# minute, growing, and gives up after `LIMITED_TRIES` such answers to one
+# request; and an answer whose `x-ratelimit-remaining` is 0 is waited out
+# before the next request, so the limit is met by a wait rather than a refusal.
+#
+# A 403 IS A RATE LIMIT ONLY WHERE IT SAYS SO: a `retry-after`, a remaining of
+# 0, or *rate limit* in its message. Any other 403 is a refusal (a token
+# without a scope, a repository it may not write) and is handed back at once,
+# where a minute's growing wait would spend an hour on an answer that does not
+# change.
+#
+# A READ THAT GITHUB FAILED (a 5xx) is asked again after a growing wait, up to
+# `SERVER_TRIES`; **a write that GitHub failed is never asked again here**, nor
+# one whose answer never came: either may have been taken, and `push` asks
+# GitHub what it holds before it writes again (R5, *creates no second issue*).
+#
+# THE CLOCK IS GITHUB'S: the tree has none, and `x-ratelimit-reset` is an
+# instant on GitHub's clock, so the seconds until it are read against the
+# `date` header of the same answer (`epoch_of`), never against this machine's.
+
+use issue_wire
+use strings
+
+extern "hero_os.h"
+    function hero_write_err(text: str)
+
+# A run's line to GitHub and to the person running it: the transport, its
+# world, how many writes it has sent, the day of the newest answer's `date`
+# header ("" before the first), and what the run said on each stream, printed
+# as it is said where `live` and kept for a test to read where not.
+record Session
+    transport: issue_wire.Transport
+    world: issue_wire.World
+    writes: i64
+    day: str
+    live: bool
+    out: [str]
+    err: [str]
+
+constant LIMITED_TRIES: i64
+    6
+
+constant SERVER_TRIES: i64
+    4
+
+constant BACKOFF: i64
+    60
+
+# The longest single wait: an hour, which is the longest `x-ratelimit-reset`
+# names, and a margin.
+constant LONGEST: i64
+    3900
+
+constant MONTHS: [str]
+    ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+function session(transport: issue_wire.Transport, world: issue_wire.World, live: bool) -> Session
+    none: [str] = []
+    return Session(transport: transport, world: world, writes: 0, day: "", live: live, out: none, err: none)
+
+# A line of the run's artifact, on standard output.
+function say(@s: Session, text: str)
+    if s.live
+        print(text)
+    else
+        s.out @ s.out.push(text)
+
+# A line for the person running it, on standard error.
+function warn(@s: Session, text: str)
+    if s.live
+        hero_write_err(text: "issues: " + text + "\n")
+    else
+        s.err @ s.err.push(text)
+
+# `request` asked, waited for where GitHub says to wait, and its answer; or why
+# there is none: `uncertain` where a write may have been taken, `limited` where
+# the rate limit outlasted the tries, `transport` or `pause` otherwise.
+function exchange(@s: Session, request: issue_wire.Request) -> issue_wire.Reply?
+    writing = request.method != "GET"
+    limited: i64 @= 0
+    failing: i64 @= 0
+
+    while true
+        if writing && s.writes > 0
+            pause(@s, seconds: 1)?
+        send = s.transport.send
+        got = send(world: s.world, request: request)
+        s.world @ got.world
+        reply = got.reply
+
+        if writing && reply.sent
+            s.writes @ s.writes + 1
+
+        if reply.failure != ""
+            if writing && reply.sent
+                return fail(
+                    code: "uncertain",
+                    msg: request.method + " " + request.path + " may have reached GitHub and no answer came back: " + reply.failure
+                )
+            return fail(code: "transport", msg: request.method + " " + request.path + ": " + reply.failure)
+        stamped = epoch_of(issue_wire.header(reply: reply, name: "date"))
+
+        if !stamped.is_err()
+            s.day @ day_of_epoch(stamped.must())
+
+        if is_limited(reply)
+            limited @ limited + 1
+
+            if limited > LIMITED_TRIES
+                return fail(
+                    code: "limited",
+                    msg: request.method + " " + request.path + " met the rate limit " + limited.to_str() + " times in a row; the run stops here and a rerun takes it up"
+                )
+            pause(@s, seconds: limit_wait(reply: reply, tries: limited))?
+            continue
+
+        if reply.status >= 500 && !writing && failing < SERVER_TRIES
+            failing @ failing + 1
+            pause(@s, seconds: 5 << failing)?
+            continue
+
+        if issue_wire.header(reply: reply, name: "x-ratelimit-remaining") == "0"
+            pause(@s, seconds: reset_wait(reply))?
+        return ok(reply)
+
+    return fail(code: "transport", msg: "unreachable")
+
+# A wait of `seconds` through the session's transport.
+function pause(@s: Session, seconds: i64) -> ()?
+    act = s.transport.pause
+    done = act(world: s.world, seconds: seconds)
+    s.world @ done.world
+
+    if done.failure != ""
+        return fail(code: "pause", msg: "the run cannot wait as GitHub asks: " + done.failure)
+    return ok()
+
+# Whether `reply` is GitHub's rate limit rather than a refusal.
+function is_limited(reply: issue_wire.Reply) -> bool
+    if reply.status == 429
+        return true
+
+    if reply.status != 403
+        return false
+
+    if issue_wire.header(reply: reply, name: "retry-after") != ""
+        return true
+
+    if issue_wire.header(reply: reply, name: "x-ratelimit-remaining") == "0"
+        return true
+    return strings.contains(text: issue_wire.lowered(reply.body), needle: "rate limit")
+
+# How long the `tries`-th rate limit in a row asks to wait, in seconds.
+function limit_wait(reply: issue_wire.Reply, tries: i64) -> i64
+    after = strings.to_number(issue_wire.header(reply: reply, name: "retry-after"))
+
+    if !after.is_err() && after.must() >= 0
+        return bounded(after.must())
+
+    if issue_wire.header(reply: reply, name: "x-ratelimit-remaining") == "0"
+        return reset_wait(reply)
+    return bounded(BACKOFF << tries - 1)
+
+# The seconds until `x-ratelimit-reset` by the answer's own clock, one more so
+# the instant itself has passed; a minute where either cannot be read.
+function reset_wait(reply: issue_wire.Reply) -> i64
+    reset = strings.to_number(issue_wire.header(reply: reply, name: "x-ratelimit-reset"))
+    now = epoch_of(issue_wire.header(reply: reply, name: "date"))
+
+    if reset.is_err() || now.is_err()
+        return BACKOFF
+    return bounded(reset.must() - now.must() + 1)
+
+# At least a second, at most `LONGEST`.
+function bounded(seconds: i64) -> i64
+    if seconds < 1
+        return 1
+
+    if seconds > LONGEST
+        return LONGEST
+    return seconds
+
+# The seconds since 1970-01-01 00:00 UTC of an HTTP date as GitHub writes one,
+# `Mon, 12 Oct 2026 10:00:00 GMT` (RFC 9110's IMF-fixdate), or a failure.
+function epoch_of(date: str) -> i64?
+    parts = strings.words(date)
+
+    if parts.len() != 6 || parts[5] != "GMT"
+        return fail(code: "not_a_date", msg: "`" + date + "` is not an HTTP date")
+    month = month_number(parts[2])
+    clock = strings.split_on(text: parts[4], byte: ':')
+    day = strings.to_number(parts[1])
+    year = strings.to_number(parts[3])
+
+    if month == 0 || clock.len() != 3 || day.is_err() || year.is_err() || parts[3].len() != 4 || parts[1].len() != 2
+        return fail(code: "not_a_date", msg: "`" + date + "` is not an HTTP date")
+    seconds: i64 @= 0
+
+    for piece in clock
+        n = strings.to_number(piece)
+
+        if n.is_err() || piece.len() != 2
+            return fail(code: "not_a_date", msg: "`" + date + "` is not an HTTP date")
+        seconds @ seconds * 60 + n.must()
+
+    return ok(days_from_civil(year: year.must(), month: month, day: day.must()) * 86400 + seconds)
+
+# A month's number from its three letters as an HTTP date writes them, 0 for
+# none.
+function month_number(name: str) -> i64
+    at: i64 @= 0
+
+    while at < MONTHS.len()
+        if MONTHS[at] == name
+            return at + 1
+        at @ at + 1
+
+    return 0
+
+# Days since 1970-01-01 of a day of the proleptic Gregorian calendar, the
+# algorithm Howard Hinnant published as `days_from_civil`, for years from 1.
+function days_from_civil(year: i64, month: i64, day: i64) -> i64
+    y: i64 @= year
+
+    if month <= 2
+        y @ y - 1
+    era = y / 400
+    of_era = y - era * 400
+    shifted: i64 @= month - 3
+
+    if month <= 2
+        shifted @ month + 9
+    of_year = (153 * shifted + 2) / 5 + day - 1
+    of_cycle = of_era * 365 + of_era / 4 - of_era / 100 + of_year
+    return era * 146097 + of_cycle - 719468
+
+# `YYYY-MM-DD` of an instant in seconds since 1970, the inverse walked a year
+# and a month at a time, which a run asks once an answer.
+function day_of_epoch(seconds: i64) -> str
+    days = seconds / 86400
+    year: i64 @= 1970
+
+    while days_from_civil(year: year + 1, month: 1, day: 1) <= days
+        year @ year + 1
+
+    month: i64 @= 1
+
+    while month < 12 && days_from_civil(year: year, month: month + 1, day: 1) <= days
+        month @ month + 1
+
+    day = days - days_from_civil(year: year, month: month, day: 1) + 1
+    return year.to_str() + "-" + two(month) + "-" + two(day)
+
+function two(n: i64) -> str
+    if n < 10
+        return "0" + n.to_str()
+    return n.to_str()
+
+function get(path: str) -> issue_wire.Request
+    return issue_wire.Request(method: "GET", path: path, accept: "", body: "")
+
+function post(path: str, body: str) -> issue_wire.Request
+    return issue_wire.Request(method: "POST", path: path, accept: "", body: body)
+
+function scripted(replies: [issue_wire.Reply]) -> Session
+    return session(
+        transport: issue_wire.scripted(),
+        world: issue_wire.world_of(scratch: "unused", script: replies),
+        live: false
+    )
+
+constant DATE: str
+    "Date: Mon, 12 Oct 2026 10:00:00 GMT"
+
+test "an HTTP date is read on GitHub's clock, and a day is written back from it"
+    assert epoch_of("Thu, 01 Jan 1970 00:00:00 GMT").must() == 0
+    assert epoch_of("Mon, 12 Oct 2026 10:00:00 GMT").must() == 1791799200
+    assert epoch_of("Sun, 29 Feb 2032 23:59:59 GMT").must() == 1961711999
+    assert day_of_epoch(1791799200) == "2026-10-12"
+    assert day_of_epoch(1961711999) == "2032-02-29"
+
+    for bad in ["", "Mon, 12 Oct 2026 10:00:00 UTC", "Mon, 12 Okt 2026 10:00:00 GMT", "Mon, 1 Oct 2026 10:00:00 GMT", "Mon, 12 Oct 2026 10:00 GMT"]
+        assert epoch_of(bad).is_err()
+
+test "two writes stand a second apart, and a read waits for nothing"
+    s: Session @= scripted(
+        [issue_wire.answer(status: 202, headers: [DATE], body: ""), issue_wire.answer(status: 200, headers: [DATE], body: ""), issue_wire.answer(status: 202, headers: [DATE], body: "")]
+    )
+    assert exchange(@s, request: post(path: "/w", body: "{}")).must().status == 202
+    assert exchange(@s, request: get("/r")).must().status == 200
+    assert exchange(@s, request: post(path: "/w", body: "{}")).must().status == 202
+    assert s.world.waits == [1]
+    assert s.writes == 2
+    assert s.day == "2026-10-12"
+
+test "a rate limit waits retry-after, else the reset by GitHub's clock, else a growing minute"
+    retry = issue_wire.answer(status: 403, headers: [DATE, "Retry-After: 30"], body: "{\"message\":\"secondary\"}")
+    reset = issue_wire.answer(
+        status: 429,
+        headers: [DATE, "X-Ratelimit-Remaining: 0", "X-Ratelimit-Reset: 1791799500"],
+        body: ""
+    )
+    bare = issue_wire.answer(
+        status: 403,
+        headers: [DATE],
+        body: "{\"message\":\"You have exceeded a secondary rate limit\"}"
+    )
+    done = issue_wire.answer(status: 202, headers: [DATE], body: "")
+    s: Session @= scripted([retry, reset, bare, bare, done])
+    assert exchange(@s, request: post(path: "/w", body: "{}")).must().status == 202
+    assert s.world.waits == [30, 1, 301, 1, 240, 1, 480, 1]
+    assert s.world.requests.len() == 5
+
+test "a 403 that is no rate limit is a refusal handed back at once, and a remaining of 0 is waited out after"
+    refused = issue_wire.answer(
+        status: 403,
+        headers: [DATE],
+        body: "{\"message\":\"Resource not accessible by integration\"}"
+    )
+    s: Session @= scripted([refused])
+    assert exchange(@s, request: post(path: "/w", body: "{}")).must().status == 403
+    assert s.world.waits.len() == 0
+    spent = issue_wire.answer(
+        status: 200,
+        headers: [DATE, "X-Ratelimit-Remaining: 0", "X-Ratelimit-Reset: 1791799260"],
+        body: "[]"
+    )
+    t: Session @= scripted([spent])
+    assert exchange(@t, request: get("/r")).must().status == 200
+    assert t.world.waits == [61]
+
+test "the rate limit outlasting its tries stops the run, a read GitHub failed is asked again, and a write never is"
+    limited = issue_wire.answer(status: 429, headers: [DATE], body: "")
+    s: Session @= scripted([limited, limited, limited, limited, limited, limited, limited])
+
+    match exchange(@s, request: get("/r"))
+        .ok _  => assert false
+        .err e => assert e.code == "limited"
+
+    assert s.world.waits == [60, 120, 240, 480, 960, 1920]
+    broken = issue_wire.answer(status: 502, headers: [DATE], body: "")
+    t: Session @= scripted([broken, issue_wire.answer(status: 200, headers: [DATE], body: "[]")])
+    assert exchange(@t, request: get("/r")).must().status == 200
+    assert t.world.waits == [10]
+    u: Session @= scripted([broken])
+    assert exchange(@u, request: post(path: "/w", body: "{}")).must().status == 502
+
+test "a write whose answer never came is uncertain, and a read that could not be made is not"
+    s: Session @= scripted([])
+
+    match exchange(@s, request: post(path: "/w", body: "{}"))
+        .ok _  => assert false
+        .err e => assert e.code == "uncertain"
+
+    match exchange(@s, request: get("/r"))
+        .ok _  => assert false
+        .err e => assert e.code == "transport"
