@@ -106,7 +106,7 @@ constant CONTRACT_TOKENS: i64
 function run_refresh(path: str, text: str, spec: str, contract: str, vendored: i64) -> cli_table.Exit
     if path != spec && path != contract
         io.eprint(
-            text: "error: `--refresh` refreshes the record for `" + spec + "` and `" + contract + "`, and `" + path + "` has none — no ceiling judges it and no check keeps it honest (panel 123 R5)"
+            text: "error: `--refresh` refreshes the record for `" + spec + "` and `" + contract + "`, and `" + path + "` has none — no ceiling judges it (panel 123 R5)"
         )
         return .failed_exit
     lines = refresh.refreshed(text: text, spec: path == spec, vendored: vendored)

@@ -173,10 +173,14 @@ function reported(path: str, here: str, readings: [vendored.Reading]) -> cli_tab
     # number a later session could quote as permission to spend it.
     #
     # The sentence printed instead is the one `run_refresh` below already gives
-    # for the same reason, and the two now agree.
+    # for the same reason, and the two now agree. **It also said *and no check
+    # keeps it honest* until 2026-10-12** (defect 677): false of
+    # `spec/reserved-words.md`, whose count `suite_spec`'s `REGISTRY_TOKENS`
+    # pinned and whose rows its `registered` check holds to the compiler's own
+    # messages. What stays is true of every file this branch takes.
     if path != budgets.SPEC && path != budgets.CONTRACT
-        print("No ceiling judges `" + path + "` and no check keeps it honest")
-        print("(panel 123 R5), so this is a count and not a verdict.")
+        print("No ceiling judges `" + path + "` (panel 123 R5), so this is a count")
+        print("and not a verdict.")
         print("The two documents that are judged are `" + budgets.SPEC + "` and `" + budgets.CONTRACT + "`.")
         return .ok_exit
 

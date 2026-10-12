@@ -737,8 +737,8 @@ HERO_STR_STATIC(hero_str_465c03ab, "moved into .claude/rules/, into the case law
 HERO_STR_STATIC(hero_str_5fceed16, "The ceiling watches the LEVEL and this watches the MOVEMENT: it bounds");
 HERO_STR_STATIC(hero_str_231376e9, "attribution rather than size, so every increase carries a name (panel 134).");
 HERO_STR_STATIC(hero_str_52230a47, "No ceiling judges `");
-HERO_STR_STATIC(hero_str_41489909, "` and no check keeps it honest");
-HERO_STR_STATIC(hero_str_2a18082d, "(panel 123 R5), so this is a count and not a verdict.");
+HERO_STR_STATIC(hero_str_56a83100, "` (panel 123 R5), so this is a count");
+HERO_STR_STATIC(hero_str_583c5f76, "and not a verdict.");
 HERO_STR_STATIC(hero_str_62e135a1, "The two documents that are judged are `");
 HERO_STR_STATIC(hero_str_69110222, "` and `");
 HERO_STR_STATIC(hero_str_314e, "`.");
@@ -6377,7 +6377,7 @@ HERO_STR_STATIC(hero_str_278143e1, "2026-10-11");
 HERO_STR_STATIC(hero_str_35b7e6f8, "0e9084b71c2ded1e");
 HERO_STR_STATIC(hero_str_1728488e, "2026-09-29");
 HERO_STR_STATIC(hero_str_267c61a2, "error: `--refresh` refreshes the record for `");
-HERO_STR_STATIC(hero_str_7d7fb3fd, "` has none \342\200\224 no ceiling judges it and no check keeps it honest (panel 123 R5)");
+HERO_STR_STATIC(hero_str_7f402d41, "` has none \342\200\224 no ceiling judges it (panel 123 R5)");
 HERO_STR_STATIC(hero_str_4f4ec0ca, "note: paste these into `tests/harness/suite_spec.hero` AND `selfhost/measure/pinned.hero`, in ONE commit \342\200\224 the two copies are what the harness cross-checks against what this tool prints. The names carry the document, so a paste cannot land in the other one's record");
 HERO_STR_STATIC(hero_str_3ba1717a, "CLAUDE.md");
 HERO_STR_STATIC(hero_str_2c04ec8a, "vendor/tokenizers");
@@ -59168,23 +59168,23 @@ bb25:
     hero_print_str(t214);
 #line 161 "selfhost/cli/measure.hero"
     hero_print_end();
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t215 = h0_path;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t216 = h_measurejudged_SPEC();
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t318 = h64_own64;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     h64_own64 = t216;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     hero_str_decref(t318);
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t217 = !hero_str_eq(t215, t216);
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     h14_b1 = t217;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     if (t217) goto bb35; else goto bb36;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
 bb26:
 #line 139 "selfhost/cli/measure.hero"
     t148 = h3_highest;
@@ -59540,296 +59540,296 @@ bb33:
     goto bb31;
 #line 157 "selfhost/cli/measure.hero"
 bb34:
-#line 190 "selfhost/cli/measure.hero"
+#line 194 "selfhost/cli/measure.hero"
     t238 = h_measurejudged_CEILING();
-#line 190 "selfhost/cli/measure.hero"
+#line 194 "selfhost/cli/measure.hero"
     h15_ceiling = t238;
     t239 = h_measurepinned_SPEC_REAL_TOKENS();
-#line 191 "selfhost/cli/measure.hero"
+#line 195 "selfhost/cli/measure.hero"
     h16_weighed = t239;
-#line 193 "selfhost/cli/measure.hero"
+#line 197 "selfhost/cli/measure.hero"
     t240 = h0_path;
-#line 193 "selfhost/cli/measure.hero"
+#line 197 "selfhost/cli/measure.hero"
     t241 = h_measurejudged_CONTRACT();
-#line 193 "selfhost/cli/measure.hero"
+#line 197 "selfhost/cli/measure.hero"
     t344 = h90_own90;
-#line 193 "selfhost/cli/measure.hero"
+#line 197 "selfhost/cli/measure.hero"
     h90_own90 = t241;
-#line 193 "selfhost/cli/measure.hero"
+#line 197 "selfhost/cli/measure.hero"
     hero_str_decref(t344);
-#line 193 "selfhost/cli/measure.hero"
+#line 197 "selfhost/cli/measure.hero"
     t242 = hero_str_eq(t240, t241);
-#line 193 "selfhost/cli/measure.hero"
+#line 197 "selfhost/cli/measure.hero"
     if (t242) goto bb40; else goto bb41;
-#line 193 "selfhost/cli/measure.hero"
+#line 197 "selfhost/cli/measure.hero"
 bb35:
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t218 = h0_path;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t219 = h_measurejudged_CONTRACT();
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t345 = h91_own91;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     h91_own91 = t219;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     hero_str_decref(t345);
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t220 = !hero_str_eq(t218, t219);
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     h14_b1 = t220;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     goto bb36;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
 bb36:
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     t221 = h14_b1;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
     if (t221) goto bb37; else goto bb38;
-#line 177 "selfhost/cli/measure.hero"
+#line 181 "selfhost/cli/measure.hero"
 bb37:
     t222 = HERO_STR_LIT(hero_str_52230a47);
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     t223 = h0_path;
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     t224 = hero_str_concat(t222, t223);
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     t346 = h92_own92;
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     h92_own92 = t224;
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     hero_str_decref(t346);
-#line 178 "selfhost/cli/measure.hero"
-    t225 = HERO_STR_LIT(hero_str_41489909);
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
+    t225 = HERO_STR_LIT(hero_str_56a83100);
+#line 182 "selfhost/cli/measure.hero"
     t226 = hero_str_concat(t224, t225);
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     t347 = h93_own93;
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     h93_own93 = t226;
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     hero_str_decref(t347);
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     hero_print_str(t226);
-#line 178 "selfhost/cli/measure.hero"
+#line 182 "selfhost/cli/measure.hero"
     hero_print_end();
-    t227 = HERO_STR_LIT(hero_str_2a18082d);
-#line 179 "selfhost/cli/measure.hero"
+    t227 = HERO_STR_LIT(hero_str_583c5f76);
+#line 183 "selfhost/cli/measure.hero"
     hero_print_str(t227);
-#line 179 "selfhost/cli/measure.hero"
+#line 183 "selfhost/cli/measure.hero"
     hero_print_end();
     t228 = HERO_STR_LIT(hero_str_62e135a1);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t229 = h_measurejudged_SPEC();
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t348 = h94_own94;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     h94_own94 = t229;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     hero_str_decref(t348);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t230 = hero_str_concat(t228, t229);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t349 = h95_own95;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     h95_own95 = t230;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     hero_str_decref(t349);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t231 = HERO_STR_LIT(hero_str_69110222);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t232 = hero_str_concat(t230, t231);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t350 = h96_own96;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     h96_own96 = t232;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     hero_str_decref(t350);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t233 = h_measurejudged_CONTRACT();
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t351 = h97_own97;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     h97_own97 = t233;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     hero_str_decref(t351);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t234 = hero_str_concat(t232, t233);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t352 = h98_own98;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     h98_own98 = t234;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     hero_str_decref(t352);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t235 = HERO_STR_LIT(hero_str_314e);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t236 = hero_str_concat(t234, t235);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     t353 = h99_own99;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     h99_own99 = t236;
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     hero_str_decref(t353);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     hero_print_str(t236);
-#line 180 "selfhost/cli/measure.hero"
+#line 184 "selfhost/cli/measure.hero"
     hero_print_end();
     t237 = (h_clitable_Exit){.tag = h_clitable_Exit_tag_ok_exit};
-#line 181 "selfhost/cli/measure.hero"
+#line 185 "selfhost/cli/measure.hero"
     h17_ret0 = t237;
-#line 181 "selfhost/cli/measure.hero"
+#line 185 "selfhost/cli/measure.hero"
     goto bb45;
-#line 181 "selfhost/cli/measure.hero"
+#line 185 "selfhost/cli/measure.hero"
 bb38:
-#line 181 "selfhost/cli/measure.hero"
+#line 185 "selfhost/cli/measure.hero"
     goto bb34;
-#line 181 "selfhost/cli/measure.hero"
+#line 185 "selfhost/cli/measure.hero"
 bb39:
-#line 197 "selfhost/cli/measure.hero"
+#line 201 "selfhost/cli/measure.hero"
     t245 = h16_weighed;
-#line 197 "selfhost/cli/measure.hero"
+#line 201 "selfhost/cli/measure.hero"
     t246 = h15_ceiling;
-#line 197 "selfhost/cli/measure.hero"
+#line 201 "selfhost/cli/measure.hero"
     t247 = t245 > t246;
-#line 197 "selfhost/cli/measure.hero"
+#line 201 "selfhost/cli/measure.hero"
     if (t247) goto bb43; else goto bb44;
-#line 197 "selfhost/cli/measure.hero"
+#line 201 "selfhost/cli/measure.hero"
 bb40:
-#line 194 "selfhost/cli/measure.hero"
+#line 198 "selfhost/cli/measure.hero"
     t243 = h_measurejudged_CONTRACT_CEILING();
-#line 194 "selfhost/cli/measure.hero"
+#line 198 "selfhost/cli/measure.hero"
     h15_ceiling = t243;
     t244 = h_measurepinned_CONTRACT_REAL_TOKENS();
-#line 195 "selfhost/cli/measure.hero"
+#line 199 "selfhost/cli/measure.hero"
     h16_weighed = t244;
-#line 195 "selfhost/cli/measure.hero"
+#line 199 "selfhost/cli/measure.hero"
     goto bb39;
-#line 195 "selfhost/cli/measure.hero"
+#line 199 "selfhost/cli/measure.hero"
 bb41:
-#line 195 "selfhost/cli/measure.hero"
+#line 199 "selfhost/cli/measure.hero"
     goto bb39;
-#line 195 "selfhost/cli/measure.hero"
+#line 199 "selfhost/cli/measure.hero"
 bb42:
-#line 203 "selfhost/cli/measure.hero"
+#line 207 "selfhost/cli/measure.hero"
     t262 = HERO_STR_LIT(hero_str_647a5e1d);
-#line 203 "selfhost/cli/measure.hero"
+#line 207 "selfhost/cli/measure.hero"
     hero_print_str(t262);
-#line 203 "selfhost/cli/measure.hero"
+#line 207 "selfhost/cli/measure.hero"
     hero_print_end();
     t263 = HERO_STR_LIT(hero_str_22980fc9);
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     t264 = h0_path;
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     t265 = h16_weighed;
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     t266 = h_measurejudged_room(t264, t265);
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     t354 = h100_own100;
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     h100_own100 = t266;
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     hero_str_decref(t354);
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     t267 = hero_str_concat(t263, t266);
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     t355 = h101_own101;
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     h101_own101 = t267;
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     hero_str_decref(t355);
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     hero_print_str(t267);
-#line 204 "selfhost/cli/measure.hero"
+#line 208 "selfhost/cli/measure.hero"
     hero_print_end();
     t268 = (h_clitable_Exit){.tag = h_clitable_Exit_tag_ok_exit};
-#line 205 "selfhost/cli/measure.hero"
+#line 209 "selfhost/cli/measure.hero"
     h17_ret0 = t268;
-#line 205 "selfhost/cli/measure.hero"
+#line 209 "selfhost/cli/measure.hero"
     goto bb45;
-#line 205 "selfhost/cli/measure.hero"
+#line 209 "selfhost/cli/measure.hero"
 bb43:
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t248 = HERO_STR_LIT(hero_str_735bc850);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t249 = h16_weighed;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t250 = hero_int_to_str(t249);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t356 = h102_own102;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     h102_own102 = t250;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     hero_str_decref(t356);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t251 = hero_str_concat(t248, t250);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t357 = h103_own103;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     h103_own103 = t251;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     hero_str_decref(t357);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t252 = HERO_STR_LIT(hero_str_678712f1);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t253 = hero_str_concat(t251, t252);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t358 = h104_own104;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     h104_own104 = t253;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     hero_str_decref(t358);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t254 = h15_ceiling;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t255 = hero_int_to_str(t254);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t359 = h105_own105;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     h105_own105 = t255;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     hero_str_decref(t359);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t256 = hero_str_concat(t253, t255);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t360 = h106_own106;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     h106_own106 = t256;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     hero_str_decref(t360);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t257 = HERO_STR_LIT(hero_str_6444bec9);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t258 = hero_str_concat(t256, t257);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     t361 = h107_own107;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     h107_own107 = t258;
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     hero_str_decref(t361);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     hero_print_str(t258);
-#line 198 "selfhost/cli/measure.hero"
+#line 202 "selfhost/cli/measure.hero"
     hero_print_end();
     t259 = HERO_STR_LIT(hero_str_2a59cd61);
-#line 199 "selfhost/cli/measure.hero"
+#line 203 "selfhost/cli/measure.hero"
     hero_print_str(t259);
-#line 199 "selfhost/cli/measure.hero"
+#line 203 "selfhost/cli/measure.hero"
     hero_print_end();
     t260 = HERO_STR_LIT(hero_str_3607815c);
-#line 200 "selfhost/cli/measure.hero"
+#line 204 "selfhost/cli/measure.hero"
     hero_print_str(t260);
-#line 200 "selfhost/cli/measure.hero"
+#line 204 "selfhost/cli/measure.hero"
     hero_print_end();
     t261 = (h_clitable_Exit){.tag = h_clitable_Exit_tag_diagnostics_exit};
-#line 201 "selfhost/cli/measure.hero"
+#line 205 "selfhost/cli/measure.hero"
     h17_ret0 = t261;
-#line 201 "selfhost/cli/measure.hero"
+#line 205 "selfhost/cli/measure.hero"
     goto bb45;
-#line 201 "selfhost/cli/measure.hero"
+#line 205 "selfhost/cli/measure.hero"
 bb44:
-#line 201 "selfhost/cli/measure.hero"
+#line 205 "selfhost/cli/measure.hero"
     goto bb42;
-#line 201 "selfhost/cli/measure.hero"
+#line 205 "selfhost/cli/measure.hero"
 bb45:
 #line 59835 "main.c"
     t269 = h17_ret0;
@@ -59928,121 +59928,121 @@ bb45:
     return t269;
 }
 
-#line 208 "selfhost/cli/measure.hero"
+#line 212 "selfhost/cli/measure.hero"
 HeroStr h_climeasure_padded(HeroStr h0_text, int64_t h1_width) {
-#line 208 "selfhost/cli/measure.hero"
+#line 212 "selfhost/cli/measure.hero"
     int64_t h2_count; h_0opt_fbbb698 h3_f0 = {0}; HeroStr h4_ret0 = {0}; HeroArrayHeader * h5_own5 = {0}; h_0opt_fbbb698 h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; HeroStr t8; HeroStr t9; int64_t t10; int64_t t11; int64_t t12; h_0opt_fbbb698 t13; h_0opt_fbbb698 t14; int64_t t15; int64_t t16; bool t17; h_0opt_fbbb698 t18; HeroFailure t19; h_0opt_fbbb698 t20; uint64_t t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroArrayHeader * t25; h_0opt_fbbb698 t26; h_0opt_fbbb698 t27; HeroStr t28; HeroStr t29; goto bb0;
-#line 208 "selfhost/cli/measure.hero"
+#line 212 "selfhost/cli/measure.hero"
 bb0:
     t1 = h0_text;
-#line 209 "selfhost/cli/measure.hero"
+#line 213 "selfhost/cli/measure.hero"
     t2 = hero_str_chars(t1);
-#line 209 "selfhost/cli/measure.hero"
+#line 213 "selfhost/cli/measure.hero"
     t25 = h5_own5;
-#line 209 "selfhost/cli/measure.hero"
+#line 213 "selfhost/cli/measure.hero"
     h5_own5 = t2;
-#line 209 "selfhost/cli/measure.hero"
+#line 213 "selfhost/cli/measure.hero"
     hero_array_decref(t25);
-#line 209 "selfhost/cli/measure.hero"
+#line 213 "selfhost/cli/measure.hero"
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
-#line 209 "selfhost/cli/measure.hero"
+#line 213 "selfhost/cli/measure.hero"
     h2_count = t3;
-#line 211 "selfhost/cli/measure.hero"
+#line 215 "selfhost/cli/measure.hero"
     t4 = h2_count;
-#line 211 "selfhost/cli/measure.hero"
+#line 215 "selfhost/cli/measure.hero"
     t5 = h1_width;
-#line 211 "selfhost/cli/measure.hero"
+#line 215 "selfhost/cli/measure.hero"
     t6 = t4 >= t5;
-#line 211 "selfhost/cli/measure.hero"
+#line 215 "selfhost/cli/measure.hero"
     if (t6) goto bb2; else goto bb3;
-#line 211 "selfhost/cli/measure.hero"
+#line 215 "selfhost/cli/measure.hero"
 bb1:
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t8 = h0_text;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t9 = HERO_STR_LIT(hero_str_20);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t10 = h1_width;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t11 = h2_count;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     if (__builtin_sub_overflow(t10, t11, &t12)) hero_panic_overflow();
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     if (t12 >= 0LL) {
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
         t13 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t12};
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     } else {
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
         t13 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     }
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t26 = h6_own6;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     h6_own6 = t13;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     h_0opt_fbbb698_release(&t26);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t27 = h3_f0;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     h_0opt_fbbb698_retain(&t13);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     h3_f0 = t13;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     h_0opt_fbbb698_release(&t27);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t14 = h3_f0;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t15 = t14.tag;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t16 = INT64_C(0);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t17 = t15 == t16;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     if (t17) goto bb4; else goto bb5;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
 bb2:
-#line 212 "selfhost/cli/measure.hero"
+#line 216 "selfhost/cli/measure.hero"
     t7 = h0_text;
-#line 212 "selfhost/cli/measure.hero"
+#line 216 "selfhost/cli/measure.hero"
     h4_ret0 = t7;
-#line 212 "selfhost/cli/measure.hero"
+#line 216 "selfhost/cli/measure.hero"
     goto bb6;
-#line 212 "selfhost/cli/measure.hero"
+#line 216 "selfhost/cli/measure.hero"
 bb3:
-#line 212 "selfhost/cli/measure.hero"
+#line 216 "selfhost/cli/measure.hero"
     goto bb1;
-#line 212 "selfhost/cli/measure.hero"
+#line 216 "selfhost/cli/measure.hero"
 bb4:
     t20 = h3_f0;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t21 = t20.as.ok;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t22 = hero_str_repeat(t9, t21);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t28 = h7_own7;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     h7_own7 = t22;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     hero_str_decref(t28);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t23 = hero_str_concat(t8, t22);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t29 = h8_own8;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     h8_own8 = t23;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     hero_str_decref(t29);
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     h4_ret0 = t23;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     goto bb6;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
 bb5:
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t18 = h3_f0;
-#line 213 "selfhost/cli/measure.hero"
+#line 217 "selfhost/cli/measure.hero"
     t19 = t18.as.err;
 #line 60048 "main.c"
     hero_panic_must(t19);
@@ -60058,138 +60058,138 @@ bb6:
     return t24;
 }
 
-#line 216 "selfhost/cli/measure.hero"
+#line 220 "selfhost/cli/measure.hero"
 HeroStr h_climeasure_aligned(int64_t h0_number, int64_t h1_width) {
-#line 216 "selfhost/cli/measure.hero"
+#line 220 "selfhost/cli/measure.hero"
     HeroStr h2_shown = {0}; int64_t h3_count; h_0opt_fbbb698 h4_f0 = {0}; HeroStr h5_ret0 = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_0opt_fbbb698 h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; int64_t t1; HeroStr t2; HeroStr t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; int64_t t7; bool t8; HeroStr t9; HeroStr t10; int64_t t11; int64_t t12; int64_t t13; h_0opt_fbbb698 t14; h_0opt_fbbb698 t15; int64_t t16; int64_t t17; bool t18; h_0opt_fbbb698 t19; HeroFailure t20; h_0opt_fbbb698 t21; uint64_t t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroArrayHeader * t29; h_0opt_fbbb698 t30; h_0opt_fbbb698 t31; HeroStr t32; HeroStr t33; goto bb0;
-#line 216 "selfhost/cli/measure.hero"
+#line 220 "selfhost/cli/measure.hero"
 bb0:
     t1 = h0_number;
-#line 217 "selfhost/cli/measure.hero"
+#line 221 "selfhost/cli/measure.hero"
     t2 = hero_int_to_str(t1);
-#line 217 "selfhost/cli/measure.hero"
+#line 221 "selfhost/cli/measure.hero"
     t27 = h6_own6;
-#line 217 "selfhost/cli/measure.hero"
+#line 221 "selfhost/cli/measure.hero"
     h6_own6 = t2;
-#line 217 "selfhost/cli/measure.hero"
+#line 221 "selfhost/cli/measure.hero"
     hero_str_decref(t27);
-#line 217 "selfhost/cli/measure.hero"
+#line 221 "selfhost/cli/measure.hero"
     t28 = h2_shown;
-#line 217 "selfhost/cli/measure.hero"
+#line 221 "selfhost/cli/measure.hero"
     hero_str_incref(t2);
-#line 217 "selfhost/cli/measure.hero"
+#line 221 "selfhost/cli/measure.hero"
     h2_shown = t2;
-#line 217 "selfhost/cli/measure.hero"
+#line 221 "selfhost/cli/measure.hero"
     hero_str_decref(t28);
     t3 = h2_shown;
-#line 218 "selfhost/cli/measure.hero"
+#line 222 "selfhost/cli/measure.hero"
     t4 = hero_str_chars(t3);
-#line 218 "selfhost/cli/measure.hero"
+#line 222 "selfhost/cli/measure.hero"
     t29 = h7_own7;
-#line 218 "selfhost/cli/measure.hero"
+#line 222 "selfhost/cli/measure.hero"
     h7_own7 = t4;
-#line 218 "selfhost/cli/measure.hero"
+#line 222 "selfhost/cli/measure.hero"
     hero_array_decref(t29);
-#line 218 "selfhost/cli/measure.hero"
+#line 222 "selfhost/cli/measure.hero"
     t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 218 "selfhost/cli/measure.hero"
+#line 222 "selfhost/cli/measure.hero"
     h3_count = t5;
-#line 220 "selfhost/cli/measure.hero"
+#line 224 "selfhost/cli/measure.hero"
     t6 = h3_count;
-#line 220 "selfhost/cli/measure.hero"
+#line 224 "selfhost/cli/measure.hero"
     t7 = h1_width;
-#line 220 "selfhost/cli/measure.hero"
+#line 224 "selfhost/cli/measure.hero"
     t8 = t6 >= t7;
-#line 220 "selfhost/cli/measure.hero"
+#line 224 "selfhost/cli/measure.hero"
     if (t8) goto bb2; else goto bb3;
-#line 220 "selfhost/cli/measure.hero"
+#line 224 "selfhost/cli/measure.hero"
 bb1:
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t10 = HERO_STR_LIT(hero_str_20);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t11 = h1_width;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t12 = h3_count;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     if (t13 >= 0LL) {
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
         t14 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t13};
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     } else {
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
         t14 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()};
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     }
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t30 = h8_own8;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     h8_own8 = t14;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     h_0opt_fbbb698_release(&t30);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t31 = h4_f0;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     h_0opt_fbbb698_retain(&t14);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     h4_f0 = t14;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     h_0opt_fbbb698_release(&t31);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t15 = h4_f0;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t16 = t15.tag;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t17 = INT64_C(0);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t18 = t16 == t17;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     if (t18) goto bb4; else goto bb5;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
 bb2:
-#line 221 "selfhost/cli/measure.hero"
+#line 225 "selfhost/cli/measure.hero"
     t9 = h2_shown;
-#line 221 "selfhost/cli/measure.hero"
+#line 225 "selfhost/cli/measure.hero"
     h5_ret0 = t9;
-#line 221 "selfhost/cli/measure.hero"
+#line 225 "selfhost/cli/measure.hero"
     goto bb6;
-#line 221 "selfhost/cli/measure.hero"
+#line 225 "selfhost/cli/measure.hero"
 bb3:
-#line 221 "selfhost/cli/measure.hero"
+#line 225 "selfhost/cli/measure.hero"
     goto bb1;
-#line 221 "selfhost/cli/measure.hero"
+#line 225 "selfhost/cli/measure.hero"
 bb4:
     t21 = h4_f0;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t22 = t21.as.ok;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t23 = hero_str_repeat(t10, t22);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t32 = h9_own9;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     h9_own9 = t23;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     hero_str_decref(t32);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t24 = h2_shown;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t25 = hero_str_concat(t23, t24);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t33 = h10_own10;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     h10_own10 = t25;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     hero_str_decref(t33);
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     h5_ret0 = t25;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     goto bb6;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
 bb5:
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t19 = h4_f0;
-#line 222 "selfhost/cli/measure.hero"
+#line 226 "selfhost/cli/measure.hero"
     t20 = t19.as.err;
 #line 60195 "main.c"
     hero_panic_must(t20);
@@ -60207,44 +60207,44 @@ bb6:
     return t26;
 }
 
-#line 341 "selfhost/cli/measure.hero"
+#line 345 "selfhost/cli/measure.hero"
 h_cliargv_Invocation h_climeasure_asked(h_0opt_f87774a h0_file) {
-#line 341 "selfhost/cli/measure.hero"
+#line 345 "selfhost/cli/measure.hero"
     HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; h_cliargv_Invocation h3_own3 = {0}; h_clitable_Tag t1; h_0opt_f87774a t2; HeroArrayHeader * t3; HeroArrayHeader * t4; h_cliargv_Invocation t5; HeroArrayHeader * t6; HeroArrayHeader * t7; h_cliargv_Invocation t8; goto bb0;
-#line 341 "selfhost/cli/measure.hero"
+#line 345 "selfhost/cli/measure.hero"
 bb0:
     t1 = (h_clitable_Tag){.tag = h_clitable_Tag_tag_measure_cmd};
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     t2 = h0_file;
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     t3 = hero_array_new(&hero_desc_str, 1);
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     t6 = h1_own1;
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     h1_own1 = t3;
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     hero_array_decref(t6);
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     t4 = hero_array_new(&h_cliargv_FlagHit_desc, 1);
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     t7 = h2_own2;
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     h2_own2 = t4;
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     hero_array_decref(t7);
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     h_0opt_f87774a_retain(&t2);
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     hero_array_incref(t3);
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     hero_array_incref(t4);
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     t5 = (h_cliargv_Invocation){.f_tag = t1, .f_file = t2, .f_program_args = t3, .f_flags = t4};
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     t8 = h3_own3;
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     h3_own3 = t5;
-#line 342 "selfhost/cli/measure.hero"
+#line 346 "selfhost/cli/measure.hero"
     h_cliargv_Invocation_release(&t8);
 #line 60250 "main.c"
     h_cliargv_Invocation_retain(&t5);
@@ -1140511,7 +1140511,7 @@ bb4:
 #line 109 "selfhost/measure/pinned.hero"
     hero_str_decref(t69);
 #line 109 "selfhost/measure/pinned.hero"
-    t19 = HERO_STR_LIT(hero_str_7d7fb3fd);
+    t19 = HERO_STR_LIT(hero_str_7f402d41);
 #line 109 "selfhost/measure/pinned.hero"
     t20 = hero_str_concat(t18, t19);
 #line 109 "selfhost/measure/pinned.hero"
