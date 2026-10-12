@@ -27,10 +27,10 @@ $ cmp out.c seed/heroes.c
     If the files are identical, <code>cmp</code> prints nothing. The comparison verifies that the compiler reproduces the C it was built from. The middle command takes under a minute on a MacBook Air. Anyone can repeat the test: the repository is open and the three commands are the whole of it.
   </p>
   <ul class="stats">
-    <li><span class="n">200+</span><span class="what">modules of Heroes</span></li>
-    <li><span class="n">60k</span><span class="what">lines, and growing</span></li>
+    <li><span class="n">{{modules}}+</span><span class="what">modules of Heroes</span></li>
+    <li><span class="n">{{linesK}}k</span><span class="what">lines, and growing</span></li>
     <li><span class="n">0</span><span class="what">TODO, FIXME or HACK in the compiler</span></li>
-    <li><span class="n">150+</span><span class="what">design sittings on the record</span></li>
+    <li><span class="n">{{sittings}}+</span><span class="what">design sittings on the record</span></li>
   </ul>
   <p>
     Heroes implements every part of the compiler: reading the words and structure of the code, connecting names to declarations, checking types, creating and checking an intermediate representation of the program, managing memory, generating C, checking external libraries, reporting errors, formatting code and handling commands.

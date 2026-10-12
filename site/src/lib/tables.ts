@@ -165,6 +165,58 @@ export function typeWords(): Set<string> {
   return words;
 }
 
+/**
+ * The contextual words, from `contextual()` in the lexer's own table.
+ *
+ * They are not keywords: `owned`, `tag` or `as` stays an ordinary name
+ * everywhere except the one place the parser reads it as a mark, which is what
+ * lets `owned` be an identifier at twenty-odd sites of the compiler. So the
+ * highlighter needs them as a separate set and colours them only in those
+ * places (`highlight.ts`, `markAt`). Neither this site nor the editor's grammar
+ * coloured any of them until 2026-10-12, which two issues of September had
+ * filed as a class: the table names fourteen and both colourings knew none.
+ *
+ * `contextual()` lists `WORD_*` constants rather than strings, so each name is
+ * resolved through its own `constant WORD_X: str` and the string on the next
+ * line. Both halves failing loudly is the same guard as `keywords()`'s.
+ */
+let cachedContextual: Set<string> | null = null;
+const CONTEXTUAL_FLOOR = 10;
+
+export function contextual(): Set<string> {
+  if (cachedContextual !== null) return cachedContextual;
+
+  const text = readText(KEYWORDS_FILE);
+  const head = text.indexOf('function contextual() -> [str]');
+  if (head < 0) {
+    throw new Error(
+      `${KEYWORDS_FILE}: no \`function contextual() -> [str]\` to read the contextual words from.\n` +
+        `  the site colours them by that list; if the function was renamed, this parse follows it.`
+    );
+  }
+  const close = text.indexOf(']', head + 'function contextual() -> [str]'.length);
+  const names = [...text.slice(head, close).matchAll(/^\s+(WORD_[A-Z_]+)\s*$/gm)].map((m) => m[1]);
+
+  const words = new Set<string>();
+  for (const name of names) {
+    const found = new RegExp(`^constant ${name}: str\\n\\s+"([a-z_]+)"`, 'm').exec(text);
+    if (found === null) {
+      throw new Error(`${KEYWORDS_FILE}: \`contextual()\` names ${name}, and no \`constant ${name}: str\` holds a word.`);
+    }
+    words.add(found[1]);
+  }
+
+  if (words.size < CONTEXTUAL_FLOOR) {
+    throw new Error(
+      `${KEYWORDS_FILE}: read only ${words.size} contextual words, and the floor is ${CONTEXTUAL_FLOOR}.\n` +
+        `  a parse that falls apart colours none of them, which is why there is a floor instead of trust.`
+    );
+  }
+
+  cachedContextual = words;
+  return words;
+}
+
 /** What the two parses found, for the build's own report and for a test. */
 export function tableSummary(): string {
   return `${keywords().size} keywords from ${KEYWORDS_FILE}, ${typeWords().size} type words from ${SPEC_FILE}`;
