@@ -1,0 +1,19 @@
+# fixedbugs, defect 2036, 2026-10-13, a shape beside defect 2034's repair.
+#
+# SYMPTOM: on Linux arm64 (Debian clang 22.1.8, glibc's headers), a header of
+# the program's own whose `snprintf(b, sizeof b, "hello")` writes into four
+# bytes was refused `ffi_header_refused` at exit 1, `'snprintf' will always
+# be truncated; specified size is 4, but format string expands to at least 6
+# [-Werror,-Wformat-truncation]`, since defect 2034 kept `-Wformat` an error
+# in the region as a group; C11 7.21.6.5p2 defines the cut. This Mac's clang
+# does not judge its own headers' `snprintf`, and the case built here before.
+#
+# FIX: `-Wformat-truncation` is passed over after the group is raised
+# (`emit/header_region.hero`'s `FORMAT_DEFINED`), so the header builds and
+# the call returns 5 with `hel` written, read back as 53.
+
+extern "fixedbugs-2036-a-header-s-own-snprintf-cut-at-its-size-builds.h"
+    function fmt_cut() -> i32
+
+function main()
+    print(fmt_cut())

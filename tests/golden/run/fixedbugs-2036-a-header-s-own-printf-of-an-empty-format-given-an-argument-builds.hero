@@ -1,0 +1,17 @@
+# fixedbugs, defect 2036, 2026-10-13, a shape beside defect 2034's repair.
+#
+# SYMPTOM: a header of the program's own whose `printf("", 5)` hands an
+# empty format an argument was refused `ffi_header_refused` at exit 1,
+# `format string is empty [-Werror,-Wformat-zero-length]`, since defect 2034
+# kept `-Wformat` an error in the region as a group; C11 7.21.6.1p2 defines
+# it, the argument an excess one, evaluated and otherwise ignored.
+#
+# FIX: `-Wformat-zero-length` is passed over after the group is raised
+# (`emit/header_region.hero`'s `FORMAT_DEFINED`), so the header builds and
+# the call prints nothing and returns 0.
+
+extern "fixedbugs-2036-a-header-s-own-printf-of-an-empty-format-given-an-argument-builds.h"
+    function fmt_empty() -> i32
+
+function main()
+    print(fmt_empty())

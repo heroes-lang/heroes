@@ -1,0 +1,18 @@
+# fixedbugs, defect 2036, 2026-10-13, a shape beside defect 2034's repair.
+#
+# SYMPTOM: a header of the program's own whose `printf(m)` takes its format
+# from a variable was refused `ffi_header_refused` at exit 1, `format string
+# is not a string literal (potentially insecure)
+# [-Werror,-Wformat-security]`, since defect 2034 kept `-Wformat` an error in
+# the region as a group; nothing in C makes the call undefined for the
+# string `m` holds, which clang cannot see.
+#
+# FIX: `-Wformat-security` is passed over after the group is raised
+# (`emit/header_region.hero`'s `FORMAT_DEFINED`), so the header builds and
+# the call prints `hi` and returns 3.
+
+extern "fixedbugs-2036-a-header-s-own-printf-of-a-format-held-in-a-variable-builds.h"
+    function fmt_plain() -> i32
+
+function main()
+    print(fmt_plain())
