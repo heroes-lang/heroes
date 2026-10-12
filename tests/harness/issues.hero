@@ -7,11 +7,12 @@
 #     heroes run tests/harness/issues.hero -- comment <number> <text.md>
 #     heroes run tests/harness/issues.hero -- edit <number> <draft.md>
 #     heroes run tests/harness/issues.hero -- open [--kind <k>] [--milestone M-<name>] [--class <c>] [--json]
+#     heroes run tests/harness/issues.hero -- link [--dry-run]
 #
 # from the repository's root, always. **Since the author's seven answers of
 # 2026-10-12 the issues live on GitHub alone** (the decision
 # https://github.com/heroes-lang/heroes/issues/2027,
-# filed after the transcription), and these six words are how a session
+# filed after the transcription), and these seven words are how a session
 # writes and reads them; opening, commenting on, closing and correcting an
 # issue through them is asked once, by that answer (CLAUDE.md § Hard stops),
 # so they take no `--yes`, and no hook sees a write a program `gh` is spawned
@@ -44,6 +45,10 @@
 #   address it wrote.
 # - `open` prints the open issues, one line each or JSON (`issue_open.hero`),
 #   and writes nothing: the skills' reader of the lists.
+# - `link` is the transcription's second pass (panel 212's R9 item 6,
+#   `issue_links.hero`): every `defect NNN` and `panel NNN` a body names made a
+#   link to the one issue that answers it, each body written by one `PATCH`
+#   and read back; `--dry-run` prints what it would write and writes nothing.
 #
 # **The transcription's six words left with the folder** on 2026-10-12:
 # `render`, `plan`, `push`, `repair`, `prepare` and `finish` imported issues 1
@@ -71,6 +76,7 @@ use issue_args
 use issue_draft
 use issue_git
 use issue_github
+use issue_links
 use issue_open
 use issue_pace
 use issue_safe
@@ -106,6 +112,8 @@ function main()
         code @ drafting(scratch: scratch, asked: asked)
     else if asked.word == "close" || asked.word == "comment"
         code @ answering(scratch: scratch, asked: asked)
+    else if asked.word == "link"
+        code @ linked_all(scratch: scratch, asked: asked)
     else
         code @ listing(scratch: scratch, asked: asked)
     _ = shell.remove_tree(scratch).is_err()
@@ -176,6 +184,28 @@ function previewed(scratch: str, asked: issue_args.Asked) -> i64
     if draft.must().refused.len() > 0
         return 1
     return 0
+
+# `link`: the second pass (`issue_links.hero`), the sittings read from the
+# tree's paths and each one's file linked at the commit `origin/main` names, as
+# this clone last fetched it, so every link points at a file GitHub holds.
+function linked_all(scratch: str, asked: issue_args.Asked) -> i64
+    walked = shell.project_files(scratch)
+
+    if walked.is_err()
+        told("git could not say which files the tree holds: " + issue_github_failure(walked))
+        return 2
+    pin = issue_git.pinned(scratch: scratch, pin: "origin/main")
+
+    if pin.is_err()
+        told("origin/main names no commit this clone holds: " + issue_github_failure(pin))
+        return 2
+    s: issue_pace.Session @= live(scratch)
+    return issue_links.linking(
+        @s,
+        write: !asked.dry,
+        sittings: issue_links.sittings_of(walked.must()),
+        pin: pin.must()
+    )
 
 # `file` and `edit`: the draft read, checked and rendered (`issue_draft`), and
 # its issue opened or made to match it (`issue_write`). An old defect `edit`
