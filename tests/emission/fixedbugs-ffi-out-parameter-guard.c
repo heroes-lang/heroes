@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -86,7 +87,7 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_353a8d65, "no database");
 HERO_STR_STATIC(hero_str_5689c81, "select 1");
 
-#line 90 "ffioutparameterguard.c"
+#line 91 "ffioutparameterguard.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -131,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "ffioutparameterguard.c"
+#line 136 "ffioutparameterguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -148,7 +149,7 @@ void h_ffioutparameterguard_main(void);
 
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 int64_t h_ffioutparameterguard_SQLITE_OK(void) {
-#line 152 "ffioutparameterguard.c"
+#line 153 "ffioutparameterguard.c"
     return SQLITE_OK;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -252,7 +253,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return;
-#line 256 "ffioutparameterguard.c"
+#line 257 "ffioutparameterguard.c"
 }
 #undef h0_db
 #undef h1_stmt

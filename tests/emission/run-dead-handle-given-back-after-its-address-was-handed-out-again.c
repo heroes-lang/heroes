@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -85,7 +86,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_6ff69f68, "the new node reads ");
 HERO_STR_STATIC(hero_str_360321cf, "the stale one was given back, and nothing said");
 
-#line 89 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 90 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -130,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 134 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 135 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlegivenbackafteritsaddresswashandedoutagain_Node_eq(node * const *a, node * const *b);
@@ -168,7 +169,7 @@ bb0:
     }
 #line 21 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     return;
-#line 172 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 173 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 }
 
 #line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
@@ -234,7 +235,7 @@ bb0:
     }
 #line 30 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
     return;
-#line 238 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
+#line 239 "deadhandlegivenbackafteritsaddresswashandedoutagain.c"
 }
 HERO_TU_LOCAL bool h_deadhandlegivenbackafteritsaddresswashandedoutagain_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -80,7 +81,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 84 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+#line 85 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -126,7 +127,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+#line 131 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -163,7 +164,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
     return;
-#line 167 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+#line 168 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 }
 
 #line 7 "tests/golden/run/fixedbugs643/other.hero"
@@ -177,7 +178,7 @@ bb0:
     t2 = abs(t1);
 #line 8 "tests/golden/run/fixedbugs643/other.hero"
     return t2;
-#line 181 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
+#line 182 "fixedbugs643aninlinebuiltintwomodulesbindisnodefinition.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -46,7 +47,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 30 "tests/golden/fixedbugs/ffi-const-pointer.hero"
 _Static_assert(__builtin_classify_type(((Handle *)0)->pMethods) == 5 && _Generic(((Handle *)0)->pMethods, __typeof__(((Handle *)0)->pMethods): 1, default: 0) && sizeof(((Handle *)0)->pMethods) == sizeof(void *), "heroes-ffi-field Handle pMethods");
 _Static_assert(__builtin_classify_type(((Handle *)0)->id) == 1 && sizeof(((Handle *)0)->id) == sizeof(int32_t) && (_Generic(((Handle *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Handle id");
-#line 50 "fficonstpointer.c"
+#line 51 "fficonstpointer.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -143,7 +144,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "fficonstpointer.c"
+#line 148 "fficonstpointer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fficonstpointer_Handle_eq(const Handle *a, const Handle *b);
@@ -275,7 +276,7 @@ bb2:
     t15 = h2_f0;
 #line 40 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t16 = t15.as.err;
-#line 279 "fficonstpointer.c"
+#line 280 "fficonstpointer.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb3:
@@ -320,7 +321,7 @@ bb4:
     t29 = h4_f1;
 #line 43 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t30 = t29.as.err;
-#line 324 "fficonstpointer.c"
+#line 325 "fficonstpointer.c"
     hero_panic_must(t30);
     hero_unreachable();
 bb5:
@@ -332,7 +333,7 @@ bb5:
     hero_print_str(t42);
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     hero_print_end();
-#line 336 "fficonstpointer.c"
+#line 337 "fficonstpointer.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h5_f2));
@@ -345,14 +346,14 @@ bb6:
     t39 = h5_f2;
 #line 44 "tests/golden/fixedbugs/ffi-const-pointer.hero"
     t40 = t39.as.err;
-#line 349 "fficonstpointer.c"
+#line 350 "fficonstpointer.c"
     hero_panic_must(t40);
     hero_unreachable();
 }
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 356 "fficonstpointer.c"
+#line 357 "fficonstpointer.c"
     return HERO_STR_OK;
 }
 
@@ -475,7 +476,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 479 "fficonstpointer.c"
+#line 480 "fficonstpointer.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

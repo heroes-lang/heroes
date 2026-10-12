@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -98,7 +99,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 102 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 103 "fixedbugs245asliceacrosscarriesthenul.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -154,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 159 "fixedbugs245asliceacrosscarriesthenul.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -186,7 +187,7 @@ HeroStr h_fixedbugs245asliceacrosscarriesthenul_HELD(void) {
 #line 16 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_76a716a3);
-#line 190 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 191 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -261,7 +262,7 @@ bb1:
     goto bb3;
 #line 23 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
 bb2:
-#line 265 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 266 "fixedbugs245asliceacrosscarriesthenul.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -391,7 +392,7 @@ bb8:
     t28 = h4_f0;
 #line 24 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t29 = t28.as.err;
-#line 395 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 396 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -399,7 +400,7 @@ bb9:
     t47 = h5_f1;
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t48 = t47.as.ok;
-#line 403 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 404 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -415,7 +416,7 @@ bb10:
     t45 = h5_f1;
 #line 27 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     t46 = t45.as.err;
-#line 419 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 420 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
@@ -490,7 +491,7 @@ bb0:
     hero_print_uint(t13);
 #line 33 "tests/golden/run/fixedbugs-245-a-slice-across-carries-the-nul.hero"
     hero_print_end();
-#line 494 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 495 "fixedbugs245asliceacrosscarriesthenul.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_made);
     hero_str_release_at(&h2_own2);
@@ -500,25 +501,25 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 504 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 505 "fixedbugs245asliceacrosscarriesthenul.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 510 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 511 "fixedbugs245asliceacrosscarriesthenul.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 516 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 517 "fixedbugs245asliceacrosscarriesthenul.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 522 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 523 "fixedbugs245asliceacrosscarriesthenul.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -753,7 +754,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 757 "fixedbugs245asliceacrosscarriesthenul.c"
+#line 758 "fixedbugs245asliceacrosscarriesthenul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -48,7 +49,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 22 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 _Static_assert(__builtin_classify_type(((struct pair *)0)->a) == 1 && sizeof(((struct pair *)0)->a) == sizeof(int32_t) && (_Generic(((struct pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((struct pair *)0)->b) == sizeof(int32_t) && (_Generic(((struct pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
-#line 52 "fixedbugs396abuffercfills.c"
+#line 53 "fixedbugs396abuffercfills.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -154,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugs396abuffercfills.c"
+#line 159 "fixedbugs396abuffercfills.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396abuffercfills_Pair_eq(const struct pair *a, const struct pair *b);
@@ -202,7 +203,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
-#line 206 "fixedbugs396abuffercfills.c"
+#line 207 "fixedbugs396abuffercfills.c"
     return DIGEST_LEN;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -275,7 +276,7 @@ bb0:
     hero_print_int(t9);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 279 "fixedbugs396abuffercfills.c"
+#line 280 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_other);
     hero_array_release_at(&h1_own1);
     return;
@@ -1156,7 +1157,7 @@ bb0:
     hero_print_int(t186);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 1160 "fixedbugs396abuffercfills.c"
+#line 1161 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_before);
     hero_array_release_at(&h2_named);

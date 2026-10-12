@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -45,7 +46,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
 _Static_assert(__builtin_classify_type(((struct SHA256state_st *)0)->num) == 1 && sizeof(((struct SHA256state_st *)0)->num) == sizeof(uint32_t) && (_Generic(((struct SHA256state_st *)0)->num, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Sha256Ctx num");
-#line 49 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 50 "fixedbugs396sha256finalintoonecellaborts.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -134,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 139 "fixedbugs396sha256finalintoonecellaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396sha256finalintoonecellaborts_Sha256Ctx_eq(const struct SHA256state_st *a, const struct SHA256state_st *b);
@@ -215,7 +216,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_c);
 #line 21 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
     return;
-#line 219 "fixedbugs396sha256finalintoonecellaborts.c"
+#line 220 "fixedbugs396sha256finalintoonecellaborts.c"
 }
 #undef h0_c
 #undef h1_m

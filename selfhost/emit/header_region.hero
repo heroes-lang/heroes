@@ -17,8 +17,9 @@
 # the diagnostic state is pushed, `-Wall` and `-Wsign-conversion` are
 # ignored, the two families a library's own style trips, and the warnings
 # that say the header's code the program RUNS has no defined behaviour, a
-# missing return, a read of an uninitialised value, stay errors (`KEPT`, which
-# `-Wall`'s ignore would otherwise take); `-Wshorten-64-to-32`, the pointer
+# missing return, a read of an uninitialised value, a `printf` whose
+# arguments its format does not match, stay errors (`KEPT`, which `-Wall`'s
+# ignore would otherwise take); `-Wshorten-64-to-32`, the pointer
 # types and clang's default errors are not in `-Wall` and stay as the build's
 # flags set them. The region is popped at the guard's close, and every check
 # of a binding is raised again after it (`emit/checks_raised.hero`, defect
@@ -31,6 +32,15 @@
 # Linux arm64 headers copied to a directory of the user's 2 where they read
 # 3, `gmp.h` moving; and of the 1,456 tracked files with an `extern`, no
 # program moved but the defect's own cases.
+#
+# **`-Wformat` is kept since 2026-10-10, after the landing** (the lane's
+# question, the coordinator's ruling by the batch's standing default): the
+# ratified region ignored it with the rest of `-Wall`, so a header's
+# `printf("%d\n", "seven")` built and printed a pointer's low bits at exit 0.
+# Kept, panel 204's 182 Mac headers read the same 10 refusals and 0 raw
+# warnings header by header, measured that morning beside the landing. The
+# repair was written at 2067ec87 on a branch never merged and landed with
+# defect 2034, 2026-10-12, which found it unmerged.
 
 use emit/checks_raised
 
@@ -47,6 +57,7 @@ constant KEPT: [str]
     [
         "-Wreturn-type"
         "-Wuninitialized"
+        "-Wformat"
         "-Wconditional-uninitialized"
     ]
 
@@ -70,12 +81,13 @@ constant CLOSING: str
 
 ## Tests
 
-test "a header's own code is quiet of -Wall and sign conversion alone, a missing return and an uninitialised read kept"
+test "a header's own code is quiet of -Wall and sign conversion alone, a missing return, an uninitialised read and a mismatched format kept"
     got = opening()
     assert got[0] == "#pragma clang diagnostic push"
     assert got[1] == "#pragma clang diagnostic ignored \"-Wall\""
     assert got[2] == "#pragma clang diagnostic ignored \"-Wsign-conversion\""
     assert got[3] == "#pragma clang diagnostic error \"-Wreturn-type\""
+    assert got[5] == "#pragma clang diagnostic error \"-Wformat\""
     assert got.len() == 1 + QUIETED.len() + KEPT.len()
 
     # Each kept warning is a check the build raises after the region too.

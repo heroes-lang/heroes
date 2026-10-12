@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -88,7 +89,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 HERO_STR_STATIC(hero_str_7a, "z");
 
-#line 92 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 93 "fixedbugs411readonlypointerstakeeverylend.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -138,7 +139,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 142 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 143 "fixedbugs411readonlypointerstakeeverylend.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -276,7 +277,7 @@ bb0:
     hero_print_str(t33);
 #line 37 "tests/golden/run/fixedbugs-411-read-only-pointers-take-every-lend.hero"
     hero_print_end();
-#line 280 "fixedbugs411readonlypointerstakeeverylend.c"
+#line 281 "fixedbugs411readonlypointerstakeeverylend.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_t);
     hero_str_release_at(&h3_own3);

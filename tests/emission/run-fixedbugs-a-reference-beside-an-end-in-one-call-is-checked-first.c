@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -86,7 +87,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_18a116ec, "one handle, two positions");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 90 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
+#line 91 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -132,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
+#line 137 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsareferencebesideanendinonecallischeckedfirst_Ob_eq(ob * const *a, ob * const *b);
@@ -215,7 +216,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
     return;
-#line 219 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
+#line 220 "fixedbugsareferencebesideanendinonecallischeckedfirst.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareferencebesideanendinonecallischeckedfirst_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

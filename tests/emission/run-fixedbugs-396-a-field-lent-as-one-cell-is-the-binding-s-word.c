@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -50,11 +51,11 @@ _Static_assert(sizeof(struct cell) - __builtin_offsetof(struct cell, rest) != 0,
 #line 15 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 _Static_assert(_Generic(&((struct cell *)0)->rest, _Bool (*)[7]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[7]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[7]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[7]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[7]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[7]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[7]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[7]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[7]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[7]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[7]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[7]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Cell rest");
 _Static_assert(__builtin_classify_type(((struct cell *)0)->after) == 1 && sizeof(((struct cell *)0)->after) == sizeof(int64_t) && (_Generic(((struct cell *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Cell after");
-#line 54 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 55 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 
 #line 13 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 _Static_assert(__builtin_classify_type(*(struct cell *)0) != 13, "heroes-ffi-union Cell m rest after");
-#line 58 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 59 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -139,7 +140,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 144 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b);
@@ -221,7 +222,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
     return;
-#line 225 "fixedbugs396afieldlentasonecellisthebindingsword.c"
+#line 226 "fixedbugs396afieldlentasonecellisthebindingsword.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs396afieldlentasonecellisthebindingsword_Cell_eq(const struct cell *a, const struct cell *b) {
     if (!(a->m == b->m)) return false;

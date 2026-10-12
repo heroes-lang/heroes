@@ -1,0 +1,23 @@
+# fixedbugs, defect 2034, 2026-10-12; written as defect 569's follow-up on
+# lane b18-guard, 2026-10-10 (after panel 205's R2), at 2067ec87.
+#
+# The name keeps 569 because the case was written under that number, on a
+# branch never merged, and the 569 issue's follow-up record names it so;
+# defect 2034 is that repair found unmerged and landed, and its new cases
+# beside this one carry 2034.
+#
+# SYMPTOM: a header of the program's own whose `printf` takes a `char *`
+# for `%d` built under the ratified region, which ignored `-Wformat` with
+# the rest of `-Wall`, and printed a pointer's low bits (48670265 on
+# 2026-10-10, 34551295 on 2026-10-12) at exit 0: undefined behaviour in
+# code the program runs, told by nothing.
+#
+# FIX: `-Wformat` stays an error in the region (`emit/header_region.hero`'s
+# `KEPT`), beside a missing return and an uninitialised read, on the
+# coordinator's ruling of the lane's question.
+
+extern "fixedbugs-569-a-header-of-the-program-s-own-with-a-mismatched-format-is-refused.h"  #~ ffi_header_refused
+    function fmt_shout() -> i32
+
+function main()
+    print(fmt_shout())

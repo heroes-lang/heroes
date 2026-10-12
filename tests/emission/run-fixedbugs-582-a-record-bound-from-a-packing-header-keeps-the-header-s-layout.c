@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -48,11 +49,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 12 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
 _Static_assert(__builtin_classify_type(((Packed582 *)0)->a) == 1 && sizeof(((Packed582 *)0)->a) == sizeof(uint8_t) && (_Generic(((Packed582 *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Packed582 a");
 _Static_assert(__builtin_classify_type(((Packed582 *)0)->b) == 1 && sizeof(((Packed582 *)0)->b) == sizeof(int64_t) && (_Generic(((Packed582 *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Packed582 b");
-#line 52 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 53 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 
 #line 11 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
 _Static_assert(__builtin_classify_type(*(Packed582 *)0) != 13, "heroes-ffi-union Packed582 a b");
-#line 56 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 57 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -177,7 +178,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 181 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 182 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout_Packed582_eq(const Packed582 *a, const Packed582 *b);
@@ -285,7 +286,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
     return;
-#line 289 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 290 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
@@ -301,7 +302,7 @@ bb0:
     t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2};
 #line 18 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 305 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 306 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
@@ -315,7 +316,7 @@ bb0:
     t2 = t1.f_b;
 #line 21 "tests/golden/run/fixedbugs582/pair.hero"
     return t2;
-#line 319 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 320 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
@@ -331,7 +332,7 @@ bb0:
     t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}};
 #line 24 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 335 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 336 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
@@ -440,7 +441,7 @@ bb6:
     t14 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     t15 = t14.as.err;
-#line 444 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 445 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
     hero_panic_must(t15);
     hero_unreachable();
 bb7:

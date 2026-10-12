@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -85,7 +86,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_11c935bc, "ends after the target: ");
 HERO_STR_STATIC(hero_str_eb0c0ab, "the target reads: ");
 
-#line 89 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 90 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -130,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 134 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 135 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitacopyreadafteramillionlaterendsisnotcaught_Big_eq(big * const *a, big * const *b);
@@ -244,7 +245,7 @@ bb3:
     hero_print_end();
 #line 31 "tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero"
     return;
-#line 248 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 249 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitacopyreadafteramillionlaterendsisnotcaught_Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);
