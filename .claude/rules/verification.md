@@ -892,6 +892,32 @@ longer than a minute holds its own assertion: `caffeinate -i <command>`, or
 `caffeinate -i -w <pid>` beside a run already started. It costs nothing and
 depends on no application.
 
+**Amended 2026-10-12 by author instruction**, meant as: *Amphetamine is on
+here anyway and does what caffeinate does, so you need not use it; check that
+one or the other is active, or the equivalent things on Mac, Linux and
+Windows.* So before such a run **the session asks the machine whether
+something already holds it awake**, and takes an assertion of its own only
+where nothing does:
+
+- **macOS**: `pmset -g assertions`, whose line `PreventUserIdleSystemSleep`
+  reads `1` with the process holding it named beneath (0.01 s, measured
+  2026-10-12, Amphetamine's `Single-Use - System` assertion holding it for
+  6 h 45 min); at `0`, `caffeinate -i` as above;
+- **Linux**: both machines are containers on this Mac
+  (`docs/platforms/linux/LINUX-MACHINE.md`), so the Mac's answer is theirs; a
+  Linux machine of its own with systemd would ask `systemd-inhibit --list` and
+  run under `systemd-inhibit --what=idle:sleep <command>` where nothing holds
+  it (the manual page, read 2026-10-12; unrun, no such machine being one of
+  this project's that day);
+- **Windows**: `powercfg /requests` enumerates the application and driver
+  power requests that keep the machine from sleeping (Microsoft's
+  documentation of `powercfg`, read 2026-10-12); unrun on the box, which was
+  off that day, so the first long run there reads it and this line says what
+  it found.
+
+An answer the session cannot read counts as nothing holding the machine, and
+the run takes its own assertion, since a second one costs nothing.
+
 ## A run that may not end is bounded in time and in bytes
 
 Measured 2026-10-06 to 07. Panel 196's completeness critic probed libuv with

@@ -302,9 +302,12 @@ is a full panel.
      shell too, measured 2026-10-12 with a subagent whose `gh auth token
      --help` was refused before it ran; the brief's line is what a seat reads
      first, and the hook what holds when it does not;
-   - **the sitting runs under `caffeinate -i`** (`.claude/rules/verification.md`
-     § A long run holds the machine awake): this Mac sleeps after one minute
-     idle, and sitting 177 lost three and a half hours to it;
+   - **the machine is held awake before the sitting starts**
+     (`.claude/rules/verification.md` § A long run holds the machine awake):
+     this Mac sleeps after one minute idle, and sitting 177 lost three and a
+     half hours to it; `pmset -g assertions` says whether Amphetamine or
+     another process already holds it, and `caffeinate -i` is taken only where
+     none does;
    - the seats' working copies stay in the scratchpad, which a reboot empties;
      what must survive is in the sitting's own briefs and reports directories
      under `docs/panel/`, in the tree.
