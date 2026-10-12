@@ -20,8 +20,8 @@
 # suite runs only that one.
 #
 # The third word narrows a suite that walks cases: to the cases whose name
-# holds it (and `records` to one path, the two checks that can judge a file
-# alone, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run` or a golden
+# holds it (and `records` to one path, the one check that can judge a file
+# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run` or a golden
 # form, its cases dealt round by their sorted index so that `n` processes
 # started with `1/n` to `n/n` run each case exactly once (defect 537,
 # `cases.selected`). A shard asks none of the whole suite's questions, its

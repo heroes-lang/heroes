@@ -1,37 +1,25 @@
-# `records/rendered`: EVERY CARD RENDERS TO AN ISSUE GITHUB TAKES.
+# WHETHER GITHUB WOULD TAKE AN ISSUE AS IT RENDERS: the one list of reasons a
+# rendering is refused.
 #
-# `.claude/rules/records.md` § The issues names this check the holder of the
-# rendering (panel 212's R2, ratified 2026-10-11): every card the suite read is
-# rendered as `tests/harness/issues.hero -- render` renders it, and a card is
-# refused, by its path, where the rule cannot render it or GitHub would not take
-# what it renders. `offences` is the one list of those, which the program asks
-# too: no title; a title over 250 characters; a body over 65,535 bytes; a
-# payload over 1,048,576; a body that would link our own issue, mention an
-# account or leave a backlink on another project's issue (`issue_safe.live`);
-# and a closed day before the filed one, the one D3's source gave as much as
-# the one rendered, which D3 raises to `filed`. What it rendered is counted and
-# printed once, the sources of the closed days with it, so a reading that moves
-# between two runs is seen.
-#
-# **A `self` card whose file git holds no commit of yet is told, not failed**:
-# its commit is the one about to write it, which nothing can name before it
-# exists, so a failure would refuse every new card of a decision taken at the
-# write hook and at every gate before its commit; it is judged once committed.
-# A clone whose history is shortened is told the same way, and what needs no
-# history is judged there all the same.
+# `offences` is it: no title; a title over 250 characters; a body over 65,535
+# bytes; a payload over 1,048,576; a body that would link our own issue,
+# mention an account or leave a backlink on another project's issue
+# (`issue_safe.live`); a control character's escape GitHub stores otherwise
+# (`issue_controls.raw`, defect 675); and a closed day before the filed one,
+# the one D3's source gave as much as the one rendered, which D3 raises to
+# `filed`. `records/rendered` held every card of `issues/` to it from panel
+# 212's R2 (ratified 2026-10-11) until the issues left the tree (the author's
+# seven answers of 2026-10-12); since then the transcription program asks it of
+# every draft before an issue is opened from it (`issue_draft.hero`), and of
+# every issue file it renders while the folder stands (`issue_load.hero`).
 
 use cards
 use issue_controls
-use issue_git
 use issue_json
 use issue_render
 use issue_safe
 use issue_title
-use report
 use strings
-
-constant LABEL: str
-    "records/rendered"
 
 constant BODY_LIMIT: i64
     65535
@@ -82,177 +70,6 @@ function offences(r: issue_render.Rendered) -> [str]
             "the day its " + r.closed_from + " gives stands before the day it was filed, " + r.filed + ", which D3 renders it closed at; one of the two is wrong"
         )
     return out
-
-# What a run rendered, counted.
-record Tally
-    cards: i64
-    rendered: i64
-    prefixed: i64
-    panels: i64
-    slugged: i64
-    path_kept: i64
-    by_pickaxe: i64
-    by_follow: i64
-    by_addition: i64
-    defect_three: i64
-    defect_other: i64
-    other_three: i64
-    other_other: i64
-    cut: i64
-    from_body: i64
-    from_commit: i64
-    from_filed: i64
-    raised: i64
-    uncommented: i64
-
-function counted(tally: Tally) -> str
-    titles = tally.prefixed.to_str() + " defect titles and " + tally.panels.to_str() + " sittings' prefixed, " + tally.cut.to_str() + " titles cut, " + tally.slugged.to_str() + " titles of a path alone in slug words and " + tally.path_kept.to_str() + " opening with one kept"
-    closed = "closed by a `Closed` line " + tally.from_body.to_str() + ", by the commit's day " + tally.from_commit.to_str() + ", at `filed` " + tally.from_filed.to_str() + ", raised to `filed` " + tally.raised.to_str() + ", with no commit to name " + tally.uncommented.to_str()
-    made = "`self` by `-S` " + tally.by_pickaxe.to_str() + ", by `-S --follow` " + tally.by_follow.to_str() + " and by the first-parent addition " + tally.by_addition.to_str()
-    shapes = "items of three fields " + tally.defect_three.to_str() + " defects and " + tally.other_three.to_str() + " others, of another count " + tally.defect_other.to_str() + " defects and " + tally.other_other.to_str() + " others"
-    return LABEL + ": " + tally.cards.to_str() + " cards, " + tally.rendered.to_str() + " rendered; " + titles + "; " + closed + "; " + made + "; " + shapes
-
-function kept(@tally: Tally, r: issue_render.Rendered)
-    tally.rendered @ tally.rendered + 1
-
-    if r.prefix == "defect"
-        tally.prefixed @ tally.prefixed + 1
-
-    if r.prefix == "panel"
-        tally.panels @ tally.panels + 1
-
-    if r.pathed == "slug"
-        tally.slugged @ tally.slugged + 1
-
-    if r.pathed == "kept"
-        tally.path_kept @ tally.path_kept + 1
-
-    if r.self_from == "pickaxe"
-        tally.by_pickaxe @ tally.by_pickaxe + 1
-
-    if r.self_from == "follow"
-        tally.by_follow @ tally.by_follow + 1
-
-    if r.self_from == "addition"
-        tally.by_addition @ tally.by_addition + 1
-
-    if r.cut
-        tally.cut @ tally.cut + 1
-
-    if r.closed_from == "body"
-        tally.from_body @ tally.from_body + 1
-
-    if r.closed_from == "commit"
-        tally.from_commit @ tally.from_commit + 1
-
-    if r.closed_from == "filed"
-        tally.from_filed @ tally.from_filed + 1
-
-    if r.raised
-        tally.raised @ tally.raised + 1
-
-    if r.closed && r.comment == ""
-        tally.uncommented @ tally.uncommented + 1
-    defect = r.labels.len() > 0 && r.labels[0] == "kind:defect"
-
-    if r.fields == 3 && defect
-        tally.defect_three @ tally.defect_three + 1
-
-    if r.fields > 0 && r.fields != 3 && defect
-        tally.defect_other @ tally.defect_other + 1
-
-    if r.fields == 3 && !defect
-        tally.other_three @ tally.other_three + 1
-
-    if r.fields > 0 && r.fields != 3 && !defect
-        tally.other_other @ tally.other_other + 1
-
-# Every card of `issues`, those whose path holds `only` where it is not "",
-# rendered and judged.
-function rendered(@r: report.Report, scratch: str, issues: [cards.Issue], only: str)
-    chosen: [cards.Issue] @= []
-
-    for issue in issues
-        if only == "" || strings.contains(text: issue.path, needle: only)
-            chosen @ chosen.push(issue)
-
-    head = issue_git.pinned(scratch: scratch, pin: "HEAD")
-    facts: issue_git.Facts? @= fail(code: "unasked", msg: "")
-
-    if !head.is_err()
-        facts @ issue_git.gather(scratch: scratch, issues: chosen, pin: head.must())
-
-    if head.is_err() || facts.is_err()
-        report.keep_failure(
-            @r,
-            label: LABEL,
-            detail: "  git could not be asked what the cards need: " + said(head) + said(facts)
-        )
-        return
-    twins = issue_render.twins_of(issues)
-    none: [str] = []
-    tally: Tally @= Tally(
-        cards: chosen.len(),
-        rendered: 0,
-        prefixed: 0,
-        panels: 0,
-        slugged: 0,
-        path_kept: 0,
-        by_pickaxe: 0,
-        by_follow: 0,
-        by_addition: 0,
-        defect_three: 0,
-        defect_other: 0,
-        other_three: 0,
-        other_other: 0,
-        cut: 0,
-        from_body: 0,
-        from_commit: 0,
-        from_filed: 0,
-        raised: 0,
-        uncommented: 0
-    )
-    failures: [str] @= []
-    unborn: [str] @= []
-
-    for issue in chosen
-        got = issue_render.render(issue: issue, facts: facts.must(), twins: twins[issue.path].default(none))
-
-        if got.unborn
-            unborn @ unborn.push("    " + issue.path)
-            continue
-        wrong = offences(got)
-
-        for one in wrong
-            failures @ failures.push("    " + issue.path + ": " + one)
-
-        if wrong.len() == 0
-            kept(@tally, r: got)
-
-    print("  " + counted(tally))
-
-    if !facts.must().history
-        report.keep_skip(
-            @r,
-            label: LABEL,
-            detail: "  this clone's history is shortened, so no `self` card's commit, no commit's day and no backticked hash was asked of git; they are judged where the history is whole"
-        )
-
-    if unborn.len() > 0
-        report.keep_skip(
-            @r,
-            label: LABEL,
-            detail: "  " + unborn.len().to_str() + " `self` cards whose file git holds no commit of yet, judged once committed:\n" + unborn.join("\n")
-        )
-
-    if failures.len() > 0
-        report.keep_failure(
-            @r,
-            label: LABEL,
-            detail: "  a card the rule cannot render, or whose rendering GitHub would not take or would read as a link:\n" + failures.join("\n") + "\n  `.claude/rules/records.md` § The issues, *What an issue becomes on GitHub*; render one with\n  `heroes run tests/harness/issues.hero -- render <path>`."
-        )
-    else
-        report.keep_pass(@r)
 
 function said<T>(got: T?) -> str
     return match got
@@ -372,59 +189,3 @@ test "a rendering is refused for its title, its sizes, a live reference and a cl
     )
     assert strings.contains(text: offences(raised)[0], needle: "the day its commit gives stands before")
     assert offences(issue_render.refused(path: "p", why: "no title: x", unborn: false)) == ["no title: x"]
-
-test "the tally counts what rendered, and says each source of a closed day"
-    none: [str] = []
-    tally: Tally @= Tally(
-        cards: 2,
-        rendered: 0,
-        prefixed: 0,
-        panels: 0,
-        slugged: 0,
-        path_kept: 0,
-        by_pickaxe: 0,
-        by_follow: 0,
-        by_addition: 0,
-        defect_three: 0,
-        defect_other: 0,
-        other_three: 0,
-        other_other: 0,
-        cut: 0,
-        from_body: 0,
-        from_commit: 0,
-        from_filed: 0,
-        raised: 0,
-        uncommented: 0
-    )
-    one = issue_render.Rendered(
-        path: "p",
-        refusal: "",
-        unborn: false,
-        title: "t",
-        cut: true,
-        prefix: "defect",
-        pathed: "",
-        self_from: "",
-        fields: 0,
-        body: "",
-        labels: none,
-        milestone: "",
-        defect: "",
-        closed: true,
-        filed: "2026-10-03",
-        closed_day: "2026-10-03",
-        closed_from: "filed",
-        raised: true,
-        comment: ""
-    )
-    kept(@tally, r: one)
-    assert tally.rendered == 1
-    assert tally.prefixed == 1
-    assert tally.cut == 1
-    assert tally.from_filed == 1
-    assert tally.raised == 1
-    assert tally.uncommented == 1
-    assert strings.contains(
-        text: counted(tally),
-        needle: "2 cards, 1 rendered; 1 defect titles and 0 sittings' prefixed, 1 titles cut"
-    )

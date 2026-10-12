@@ -1,12 +1,15 @@
-# THE CARD AN ISSUE FILE OPENS WITH, AND THE READINGS IT IS HELD TO.
+# THE CARD AN ISSUE'S DRAFT OPENS WITH, AND THE READINGS IT IS HELD TO.
 #
-# Since 2026-10-04 every item this project tracks is one file under `issues/`,
-# one file for one GitHub issue (the author's instruction of that day, meant as:
-# *everything goes into a top-level issues folder, it is more orderly; change
-# the rules, toward a final definition*). The rules are
-# `.claude/rules/records.md` § The issues, their one home; this module is what
-# reads them, and `suite_records.hero`'s `records/cards` is what judges a tree
-# with it.
+# From 2026-10-04 every item this project tracked was one file under
+# `issues/`, one file for one GitHub issue (the author's instruction of that
+# day, meant as: *everything goes into a top-level issues folder, it is more
+# orderly; change the rules, toward a final definition*), and
+# `suite_records.hero`'s `records/cards` held every file to this module. Since
+# the author's seven answers of 2026-10-12 the issues live on GitHub alone, and
+# an issue is born as a draft in the same card's shape, written outside the
+# tree: the transcription program's `file` reads it with this module and holds
+# it to these readings before it opens the issue (`issue_draft.hero`). The
+# rules are `.claude/rules/records.md` § The issues, their one home.
 #
 # **A card is eight lines and a blank one**, so the item a file always held
 # starts on line 10:
@@ -71,7 +74,7 @@ constant KINDS: [str]
 # WHERE IN THE TREE AN ISSUE IS ABOUT, enumerated from the tree on 2026-10-04:
 # the eleven directories of `selfhost/`, `compiler` for a module at its top,
 # and the project's other top-level directories, `tests/` split in two. It is a
-# premise about the world, so `records/cards` holds it to the tree each run:
+# premise about the world, so `records/areas` holds it to the tree each run:
 # a directory of `selfhost/` this list does not name is a failure, not a file
 # filed under nothing.
 constant AREAS: [str]
@@ -385,7 +388,8 @@ function is_issue_url(text: str) -> bool
 # WHAT THE BODY SAYS THAT THE CARD ALSO SAYS. Three of the card's values state
 # in a structured line a fact the item states in prose, and records.md makes
 # the card that fact's structured home and the prose its account; these are
-# the readings `records/cards` holds the two to agree with.
+# the readings a draft is held to agree with (`issue_draft.hero`), as
+# `records/cards` held every file of `issues/` until 2026-10-12.
 
 # The first day written YYYY-MM-DD in the paragraph that opens with
 # `**Origin:**`, a body line that STARTS with it, or the empty string where the
@@ -556,7 +560,7 @@ function padded_two(n: i64) -> str
 
 # THE AREA A PATH IS IN, the vocabulary above read off a path: a directory of
 # `selfhost/` is its own area and a module at its top is `compiler`; the empty
-# string for a path no area names, which `records/cards` reports where the path
+# string for a path no area names, which `records/areas` reports where the path
 # is under `selfhost/`, so a new directory there cannot stay unnamed.
 function area_of_path(path: str) -> str
     if strings.starts_with(text: path, prefix: "selfhost/")
@@ -634,6 +638,98 @@ function failure_of<T>(got: T?) -> str
     return match got
         .ok _  => ""
         .err e => e.msg
+
+# THE CHAIN'S ROWS, the one place a card's milestone is held to: `milestone`
+# names a row of `docs/ROADMAP.md` § The chain, and an open feature or task an
+# open one (`.claude/rules/records.md` § The issues). Moved here from
+# `suite_records.hero` on 2026-10-12, so that a draft (`issue_draft.hero`) and
+# `records/homes` read one chain.
+# The milestones of § The chain, each to whether its row is still open, or the
+# row whose state cell is none of the chain's own shapes. The summary rows above
+# the chain carry no row number and are not read (`chain_row_name`).
+#
+# **A state cell is one of three shapes, and any other is refused by its row**
+# (defect 673): `done YYYY-MM-DD` closes a row, `**OPEN**` and `scheduled` leave
+# it open, the three the table held on 2026-10-12 (62 rows, 1 and 20 once row
+# 84 was mended) and the three `site/src/lib/chain.ts`, the chain's other
+# reader, names. Until that day a row was open unless it held `| done `, so a
+# word nobody wrote here before read as an open milestone in silence: row 84
+# said `closed 2026-10-10` from `d32c19a1`, the close of M-inferred-cell, and
+# `records/homes` would have taken an open task of that closed milestone.
+function chain_states(text: str) -> {str: bool}?
+    is_open: {str: bool} @= {}
+
+    for row in strings.lines(text)
+        found = chain_row_name(row)
+
+        if !found.is_err()
+            is_open[found.must()] @ row_open(name: found.must(), row: row)?
+
+    return ok(is_open)
+
+# Whether the chain row `row`, of milestone `name`, is open, read off its third
+# cell, or why that cell is none of the three shapes.
+function row_open(name: str, row: str) -> bool?
+    cells = strings.split_text(text: row, separator: " | ")
+    state: str @= ""
+
+    if cells.len() >= 3
+        state @ strings.trimmed(cells[2])
+
+    if state == "**OPEN**" || state == "scheduled"
+        return ok(true)
+    day = strings.without_prefix(text: state, prefix: "done ")
+
+    if strings.starts_with(text: state, prefix: "done ") && day.len() == 10 && !day_of(day).is_err()
+        return ok(false)
+    return fail(
+        code: "chain_state",
+        msg: "docs/ROADMAP.md § The chain: the row of " + name + " holds the state `" + state + "`, and a row's state is `done YYYY-MM-DD`, `**OPEN**` or `scheduled` (defect 673)"
+    )
+
+# `| 35 | **M-declared-freer** | scheduled | …` — the milestone of a CHAIN row.
+#
+# **The first cell must be a row number**, and that is not pedantry: § Where we
+# are opens with `| **Current milestone** | **M-isolated-threads** …` and
+# `| **Last closed** | **M-corpus-depth**, 2026-09-04 …`, and neither carries a
+# `done` cell — so a looser reader would have learned that the milestone which
+# closed this morning is open, and this check would have passed the very item it
+# was written for.
+function chain_row_name(row: str) -> str?
+    if !strings.starts_with(text: row, prefix: "| ")
+        return fail(code: "shape", msg: "not a table row")
+    rest = strings.without_prefix(text: row, prefix: "| ")
+    bar = strings.index_of(text: rest, needle: " | ")
+
+    if bar.is_err()
+        return fail(code: "shape", msg: "a row of one cell")
+
+    if !digits_only(rest.slice(from: 0, to: bar.must()))
+        return fail(code: "shape", msg: "the first cell is not a row number")
+    after = strings.without_prefix(
+        text: rest.slice(from: bar.must(), to: rest.len()),
+        prefix: " | "
+    )
+
+    if !strings.starts_with(text: after, prefix: "**M-")
+        return fail(code: "shape", msg: "the second cell is not a milestone")
+    name = strings.without_prefix(text: after, prefix: "**")
+    end = strings.index_of(text: name, needle: "**")
+
+    if end.is_err()
+        return fail(code: "shape", msg: "the name is not closed")
+    return ok(name.slice(from: 0, to: end.must()))
+
+# Whether `text` is a run of ASCII digits and nothing else.
+function digits_only(text: str) -> bool
+    if text.len() == 0
+        return false
+
+    for b in text.chars()
+        if b[0] < '0' || b[0] > '9'
+            return false
+
+    return true
 
 test "a whole card is read into its six values, and the item under it is what was there before"
     item = "- [ ] **231 — a title** | what | where · **class: blocking**\n\n    **Origin:** lane x, 2026-10-03.\n"
@@ -761,3 +857,31 @@ test "a path is in the area its head names, and a directory of selfhost/ nobody 
     assert area_of_path("docs/panel/190-x.md") == "records"
     assert area_of_path("CLAUDE.md") == "process"
     assert area_of_path("README.md") == ""
+
+test "a chain row gives up its milestone, and the summary rows do not"
+    row = "| 35 | **M-declared-freer** | scheduled | — | — | the freer by name |"
+    assert chain_row_name(row).must() == "M-declared-freer"
+    assert chain_row_name("| 33 | **M-corpus-depth** | done 2026-09-04 | x | y | z |").must() == "M-corpus-depth"
+
+    # The two § Where we are rows, which is the case that makes the row-number
+    # test load-bearing: neither says `done`, and one of them names a milestone
+    # that closed.
+    assert chain_row_name("| **Last closed** | **M-corpus-depth**, 2026-09-04 |").is_err()
+    assert chain_row_name("| **Current milestone** | **M-isolated-threads** — OPEN |").is_err()
+
+    # The alias table, whose rows open with a backtick rather than two stars.
+    assert chain_row_name("| `M-day-zero` | M" + "0 | `m0` | git, the workspace |").is_err()
+    assert chain_row_name("prose about M-guide-book").is_err()
+
+test "fixedbugs: a chain row whose state is none of the chain's three shapes is refused by its row, never read as open (defect 673)"
+    for state in ["closed 2026-10-10", "done", "done 2026-10-1", "done 2026-13-01", "OPEN", "Scheduled", ""]
+        refused = chain_states(
+            "| 1 | **M-day-zero** | done 2026-08-03 | `m0` |\n| 84 | **M-inferred-cell** | " + state + " | `m-inferred-cell` |\n"
+        )
+        assert refused.is_err()
+        assert strings.contains(
+            text: failure_of(refused),
+            needle: "the row of M-inferred-cell holds the state `" + state + "`"
+        )
+
+    assert !chain_states("| 84 | **M-inferred-cell** | done 2026-10-10 | `m-inferred-cell` |\n").must()["M-inferred-cell"].must()

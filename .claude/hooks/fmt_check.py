@@ -37,13 +37,19 @@ hook now says, on the one file written and nothing else:
   cold, 6.82 and 7.02 s warm. The suite decides which directories it sweeps: a
   case it does not select (exit 2, *no case ... matches*) gets no opinion, nor
   does a case whose `.hero` or `.expected` is not written yet;
-- for an issue file, `issues/**/*.md`, its `## Prior art` and a closed
-  feature's or task's `## What was done`, asked of the `records` suite narrowed
-  to it (`tests/harness/credit.hero`); and for a file under `selfhost/`,
-  `runtime/`, `seed/` or `tests/` whose text cites a `defect NNN`, whether the
-  number names a defect of `issues/` (`records/defects-cited`): the author's
-  instructions of 2026-10-07, CL-082 and CL-083, since 2026-10-11. A file that
-  is neither a program nor one of these has no question here.
+- for a file under `selfhost/`, `runtime/`, `seed/` or `tests/` whose text
+  cites a `defect NNN`, whether the number names a defect
+  (`records/defects-cited`, the author's instructions of 2026-10-07, CL-083,
+  since 2026-10-11), asked of the `records` suite narrowed to it. **Since the
+  issues left the tree** (the author's seven answers of 2026-10-12) the names
+  are GitHub's, and the narrowed run reads them from the copy the last full
+  `records` run kept, `build/defect-register`, asking GitHub nothing; with no
+  copy it skips, and the hook says nothing. A file that is neither a program
+  nor one of these has no question here. An issue file of `issues/` was asked
+  of `records` too, for its `## Prior art` and a closed feature's or task's
+  `## What was done`, until that day: the folder is an archive now, a draft is
+  held to both by the transcription program's `file` before its issue is
+  opened, and GitHub's issues by `records/prior-art`.
 
 It NOTICES and does not rewrite. A suite reading the tree owns the tree until it
 exits (CL-025), and a hook that edited a file under a running suite would be the
@@ -115,7 +121,7 @@ FLOOR = 5.0
 LAYER ="(layer 0, `.claude/rules/verification.md` § A suite is the last judge, CL-079)"
 
 # The roots whose files are asked whether a `defect NNN` they cite names a
-# defect of `issues/` (`credit.hero`'s `CITED_ROOTS`), and the shape of one.
+# defect (`credit.hero`'s `CITED_ROOTS`), and the shape of one.
 CITED_ROOTS = ("selfhost/", "runtime/", "seed/", "tests/")
 CITES = re.compile(rb"(?i)defects?[ -][0-9]")
 
@@ -209,14 +215,11 @@ def ask(compiler, args, root):
 
 
 def asks_records(place, text):
-    """Whether the `records` suite has a question about `place` alone: an
-    issue file, held to its `## Prior art` and a closed feature's or task's
-    `## What was done` (`credit.prior_art`), or a file under the cited roots
-    whose `text` cites a defect (`credit.defects_cited`)."""
+    """Whether the `records` suite has a question about `place` alone: a file
+    under the cited roots whose `text` cites a defect
+    (`credit.defects_cited`)."""
     if place.rel is None:
         return False
-    if place.rel.startswith("issues/") and place.rel.endswith(".md"):
-        return True
     return place.rel.startswith(CITED_ROOTS) and CITES.search(text) is not None
 
 
@@ -268,8 +271,8 @@ def main():
         return 0
     place = Place(path, session)
     if not program:
-        # An issue file, or a file the code cites a defect in, has one question
-        # here, the `records` suite's narrowed to it; any other file has none.
+        # A file the code cites a defect in has one question here, the
+        # `records` suite's narrowed to it; any other file has none.
         try:
             with open(path, "rb") as handle:
                 text = handle.read()

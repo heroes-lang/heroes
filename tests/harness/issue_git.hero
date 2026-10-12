@@ -1,5 +1,9 @@
 # WHAT ONLY GIT KNOWS ABOUT AN ISSUE FILE, asked in as few processes as it takes.
 #
+# Asked by the transcription's words while `issues/` stands, and by `file` of
+# a draft (`issue_draft.hero`: the day a commit was authored, and which
+# backticked words name a commit), which outlives the folder.
+#
 # `.claude/rules/records.md` § The issues (panel 212's D3, D4 and D6, ratified
 # 2026-10-11, D4 amended by the coordinator the same day): the day a commit was
 # authored, which closes an issue whose body names no day; the commit a `self`
@@ -19,8 +23,8 @@
 #
 # A clone whose history is shortened answers none of these truly: there
 # `history` is false and nothing is asked, `issues.hero` refuses to render, and
-# `records/rendered` says what it did not ask (the CI's checkout is one commit
-# deep, as `records/cards` found first).
+# `file` refuses to read a draft (the CI's checkout is one commit deep, as
+# `records/cards` found first, a check of the files until 2026-10-12).
 
 use cards
 use issue_safe
@@ -90,7 +94,8 @@ function held(scratch: str, path: str) -> bool?
     return ok(strings.trimmed(said) != "")
 
 # The author day of each of `hashes` git knows, by hash; one it does not know
-# is left out (`--ignore-missing`), and `records/cards` names it.
+# is left out (`--ignore-missing`), and a draft naming it is refused
+# (`issue_draft.hero`).
 function days_of(scratch: str, hashes: [str]) -> {str: str}?
     out: {str: str} @= {}
 
@@ -258,8 +263,16 @@ test "a self card's commit is the one that wrote `commit: self`, else the trunk'
     carried = "issues/2026-10/04/2026-10-04-0007-defect-279-eleven-living-files-cite-a-closed-defect-as-an-item-of-docs.md"
     read: [cards.Issue] @= []
 
+    # The cards are read from the tree while `issues/` stands; once the folder
+    # leaves it, with the transcription's words that use this module, there is
+    # nothing to read and nothing these readings serve.
     for path in [moved, merged, extracted, reopened, carried]
-        read @ read.push(cards.issue_of(path: path, text: read_file(path).must()))
+        text = read_file(path)
+
+        if text.is_err()
+            _ = shell.remove_tree(scratch).is_err()
+            return
+        read @ read.push(cards.issue_of(path: path, text: text.must()))
 
     facts = gather(scratch: scratch, issues: read, pin: "HEAD").must()
     assert facts.made[moved].must() == "3088caa793819b38caa1ff492253789f94be26a9"
