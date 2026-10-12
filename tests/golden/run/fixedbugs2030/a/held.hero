@@ -1,0 +1,8 @@
+# Defect 2030: one of two modules named `held`, in two directories, each
+# declaring a `Held`; the main program binds the other by `as`.
+
+record Held
+    a: i64
+
+function made() -> Held
+    return Held(a: 1)

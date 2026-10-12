@@ -250,7 +250,7 @@ int64_t h_fixedbugs382aconstantofvariantcasesislaidout_weight(h_fixedbugs382acon
 int64_t h_fixedbugs382aconstantofvariantcasesislaidout_sum(h_fixedbugs382aconstantofvariantcasesislaidout_Tree h0_t);
 int64_t h_fixedbugs382aconstantofvariantcasesislaidout_add(int64_t h0_acc, h_fixedbugs382aconstantofvariantcasesislaidout_Tree h1_item);
 void h_fixedbugs382aconstantofvariantcasesislaidout_main(void);
-HERO_TU_LOCAL int64_t h_library_fold_3fb5a198(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_61a5ba7e h2_f);
+HERO_TU_LOCAL int64_t h_library_fold_39cf6d95(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_61a5ba7e h2_f);
 
 #if HERO_STATIC_CONSTANTS
 #line 33 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -850,7 +850,7 @@ bb3:
 #line 61 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     t13 = h_fixedbugs382aconstantofvariantcasesislaidout_add;
 #line 61 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
-    t14 = h_library_fold_3fb5a198(t11, t12, t13);
+    t14 = h_library_fold_39cf6d95(t11, t12, t13);
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
     h2_r0 = t14;
 #line 59 "tests/golden/run/fixedbugs-382-a-constant-of-variant-cases-is-laid-out.hero"
@@ -1142,7 +1142,7 @@ bb3:
 #line 58 "<heroes library>"
 /* fold<Tree, i64> */
 #line 58 "<heroes library>"
-HERO_TU_LOCAL int64_t h_library_fold_3fb5a198(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_61a5ba7e h2_f) {
+HERO_TU_LOCAL int64_t h_library_fold_39cf6d95(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_61a5ba7e h2_f) {
 #line 58 "<heroes library>"
     int64_t h3_total; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; h_fixedbugs382aconstantofvariantcasesislaidout_Tree h6_x = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_fixedbugs382aconstantofvariantcasesislaidout_Tree t10; h_0fn_61a5ba7e t11; int64_t t12; h_fixedbugs382aconstantofvariantcasesislaidout_Tree t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; h_fixedbugs382aconstantofvariantcasesislaidout_Tree t20; goto bb0;
 #line 58 "<heroes library>"

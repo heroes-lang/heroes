@@ -1,0 +1,28 @@
+# Defect 2030's first module: a `Held` of its own, and the generic functions
+# the main program instantiates at it and at the main program's `Held`.
+
+record Held
+    a: i64
+
+function failure<T>(result: T?) -> str
+    return match result
+        .ok _  => ""
+        .err e => e.msg
+
+function count<T>(xs: [T]) -> i64
+    return xs.len()
+
+function keys_of<T>(m: {str: T}) -> i64
+    return m.len()
+
+function both<A, B>(a: [A], b: [B]) -> i64
+    return a.len() + b.len()
+
+function apply<T>(f: (function(T) -> i64), x: T) -> i64
+    return f(x)
+
+function made() -> Held?
+    return ok(Held(a: 1))
+
+function weigh(h: Held) -> i64
+    return h.a

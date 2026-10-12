@@ -11,6 +11,13 @@
 # `redefinition of 'h_0opt_1c40b693'`, loud exactly as the collision
 # comment promises, on the compiler's own tree the hour the content
 # names landed.
+#
+# **A monomorphised instance's name takes the same key since 2026-10-12**
+# (defect 2030): `emit/signature.hero` hashed the rendering of its type
+# arguments alone, panel 029 R5's reading, so `failure<T>` called at two
+# modules' `Held` was two C definitions of `h_one_failure_9c07dcd`, and
+# clang refused a correct program at exit 2. What panel 093 learned for the
+# types had never been asked of the functions instantiated at them.
 
 use ast
 use source
@@ -22,13 +29,38 @@ use emit/worklist
 function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
     no_generics: [str] = []
     rendered = render.render_ty(c.types, s, decls, ty, no_generics)
+    return keyed(rendered: rendered, named: declared_in(c, s, decls, roots: [ty]))
+
+# What a monomorphised instance's name is hashed from: the rendering of its
+# type arguments, `signature.render_instance`'s, plus every declared type
+# they contain, as `content_key` is for one type.
+function instance_key(c: state.Checked, s: source.Source, decls: [ast.Decl], bound: [i64], rendered: str) -> str
+    return keyed(rendered: rendered, named: declared_in(c, s, decls, roots: bound))
+
+# A key with no declared parts is the rendering itself, already canonical,
+# which keeps `i64?`'s hash, and an instance's at `i64`, what every pinned
+# test spells.
+function keyed(rendered: str, named: [str]) -> str
+    if named.len() == 0
+        return rendered
+    return rendered + "|" + named.join(",")
+
+# Every declared type reachable from `roots`, each `<component>.<Name>`, in
+# ascending order: the key must not depend on the walk, and sorting is what
+# makes two mentions of one type spell one name. A component is one module's
+# among a program's (`module_names_collide` refuses two paths that reduce to
+# one), so two declarations never spell one entry.
+function declared_in(c: state.Checked, s: source.Source, decls: [ast.Decl], roots: [i64]) -> [str]
     named: {str: bool} @= {}
     seen: {i64: bool} @= {}
 
     # Drained from its top without copying it (`emit/worklist.hero`, defect
     # 498).
-    frontier: [i64] @= [ty]
-    size: i64 @= 1
+    frontier: [i64] @= []
+    size: i64 @= 0
+
+    for root in roots
+        worklist.put(@frontier, size: @size, value: root)
 
     while size > 0
         id = worklist.take(frontier, size: @size)
@@ -46,16 +78,7 @@ function content_key(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: 
         for inner in table.contained(c.types, id)
             worklist.put(@frontier, size: @size, value: inner)
 
-    # A type with no declared parts is already canonical, and keeping
-    # its key equal to its rendering keeps `i64?`'s hash what every
-    # pinned test spells.
-    if len(named) == 0
-        return rendered
-
-    # ORDER: ascending qualified name — the key must not depend on the
-    # walk, and sort(keys(…)) is what makes two mentions of one type
-    # spell one name.
-    return rendered + "|" + sort(keys(named)).join(",")
+    return sort(keys(named))
 
 # Every function type reachable from ty, including ty itself. Closed
 # under nesting, because [(function(A) -> B)] names the function type
