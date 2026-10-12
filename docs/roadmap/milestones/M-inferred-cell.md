@@ -5,7 +5,7 @@ conversation, recorded as a reading in
 https://github.com/heroes-lang/heroes/issues/1962),
 with the order *push, then wait for batch 19*: the lane opened at 19:01, after
 session heroes-lang-98 reported `lane-round-b19:main` on origin and its four
-lanes quiet. Row 84 of the chain. The sitting is
+lanes quiet. Row 84 of the chain (63 since the re-ordering of 2026-10-12). The sitting is
 `docs/panel/209-a-cell-is-declared-by-its-own-symbol-and-typed-by-its-value.md`;
 its § The resolution and § The landing are this page's reasoning, not
 restated here. The name is the coordinator's default, two words for the
