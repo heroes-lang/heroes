@@ -227,6 +227,11 @@ from the repository's root: a program of the harness and no verb of `heroes`
 (panel 212's R1, ratified 2026-10-11), every request to GitHub made through
 `gh`, which holds the token:
 
+- **`draft <draft.md>`** checks the draft as `file` does before its first
+  request and prints the issue `file` would open, its title, labels,
+  milestone, state and body, asking GitHub nothing: an issue is public the
+  moment it exists, so its writer reads it here first (the coordinator's
+  addition of 2026-10-12, on the first defect filed this way);
 - **`file <draft.md>`** checks the draft, renders it by the rule below, opens
   the issue with its labels and milestone, removes the draft and prints the
   issue's URL; a defect's title opens `Defect <n>:`, `<n>` its issue number;

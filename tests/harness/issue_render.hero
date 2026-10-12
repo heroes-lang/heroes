@@ -10,7 +10,7 @@
 #
 # **A draft renders by the same rule** (the author's seventh answer of
 # 2026-10-12: a lane drafts an issue in the card's shape and the program
-# renders it by the rule that rendered issues 1 to 2,021), given `Facts` whose
+# renders it by the rule that rendered issues 1 to 2,029), given `Facts` whose
 # `pin` is "", and so takes no `Record:` line.
 #
 # The days (D3): `filed` is the card's; a closed issue's day is the one a body

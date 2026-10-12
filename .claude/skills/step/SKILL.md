@@ -36,8 +36,10 @@ closed after the commit that finishes it**: `heroes run tests/harness/issues.her
 `## The repair` for a defect and `## What was done` for every other kind, one
 line or a few, ending with that commit's hash; that section is what the issue
 says it delivered. **An item the step finds** is drafted in the lane's scratch
-folder under `.claude/worktrees/`, never in a tracked path, and opened with
-`heroes run tests/harness/issues.hero -- file <draft.md>`, which prints its URL; its kind is the one that
+folder under `.claude/worktrees/`, never in a tracked path, read first as its
+issue will stand with `heroes run tests/harness/issues.hero -- draft <draft.md>`,
+and opened with `heroes run tests/harness/issues.hero -- file <draft.md>`, which
+prints its URL; its kind is the one that
 matches what it asks: a `feature` or `task` naming the milestone that owes it,
 a `decision` if it names a default the compiler is running on, **a `defect` if
 it is BROKEN** (a crash, a wrong answer at exit 0, a silence where a message is

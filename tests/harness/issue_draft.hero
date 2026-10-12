@@ -5,7 +5,7 @@
 # https://github.com/heroes-lang/heroes/issues/2027,
 # filed after the transcription): the issues live on GitHub alone, and **a
 # lane writes a draft in the shape of today's card**, which the transcription
-# program checks, renders by the rule that rendered issues 1 to 2,021, and
+# program checks, renders by the rule that rendered issues 1 to 2,029, and
 # opens. So a draft is held, before any request, to every rule a file of
 # `issues/` was held to by `records` until that day, and refused by each with
 # its reason:
@@ -152,6 +152,37 @@ function drafted(scratch: str, path: str, known: {str: bool}, chain: {str: bool}
         )
     return ok(Draft(issue: issue, r: r, refused: refused))
 
+# What `draft` prints of a draft that `drafted` read: the issue `file` would
+# open, its title, labels, milestone and state, then its body as GitHub will
+# hold it, so a lane reads its issue before anybody else can. A new defect's
+# title shows the prefix its own issue number takes. GitHub is asked nothing,
+# so a milestone or a label it lacks, and the day it dates the issue, stay
+# `file`'s to tell.
+function preview(d: Draft) -> str
+    title: str @= d.r.title
+
+    if d.issue.card.kind == "defect"
+        title @ "Defect <number>: " + title
+    milestone: str @= d.r.milestone
+
+    if milestone == ""
+        milestone @ "none"
+    state: str @= "open"
+
+    if d.r.closed
+        state @ "closed"
+
+        if d.r.comment != ""
+            state @ state + ", with the comment `" + d.r.comment + "`"
+    head = [
+        "title: " + title
+        "labels: " + d.r.labels.join(", ")
+        "milestone: " + milestone
+        "state: " + state
+        "---"
+    ]
+    return head.join("\n") + "\n" + d.r.body
+
 # What the text below a draft's card departs from: its one item, open or
 # ticked, a defect's line and class, and the number a defect may not name.
 function shape_offences(issue: cards.Issue, numbered: str) -> [str]
@@ -278,6 +309,12 @@ test "a defect's draft in today's card shape renders with no number and no Recor
     assert got.r.defect == ""
     assert !strings.contains(text: got.r.body, needle: "Record: ")
     assert strings.starts_with(text: got.r.body, prefix: "Filed 2026-10-12\n\n### What happens\n\nwhat happens\n")
+    shown = preview(got)
+    assert strings.starts_with(
+        text: shown,
+        prefix: "title: Def" + "ect <number>: a header name is refused\nlabels: kind:defect, class:blocking, area:compiler\nmilestone: none\nstate: open\n---\nFiled 2026-10-12\n"
+    )
+    assert strings.ends_with(text: shown, suffix: got.r.body)
     _ = shell.remove_tree(scratch).is_err()
 
 test "a draft is refused for its card, its address, `self`, an old number, its item, its class and its prior art"
@@ -349,6 +386,10 @@ test "a decision taken renders closed with its settling comment, and a commit gi
     assert taken.r.closed
     assert taken.r.comment == "Settled by " + head
     assert taken.r.title == "A decision taken"
+    assert strings.contains(
+        text: preview(taken),
+        needle: "title: A decision taken\nlabels: kind:decision, area:records\nmilestone: none\nstate: closed, with the comment `Settled by " + head + "`\n---\n"
+    )
     unknown = test_draft(
         scratch: scratch,
         name: "2026-10-12-1800-b.md",

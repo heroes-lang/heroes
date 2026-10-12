@@ -15,19 +15,20 @@
 # <number> <text.md>` and `edit <number> <draft.md>` write to GitHub and take no
 # `--yes`, opening, commenting on, closing and correcting an issue through this
 # program being asked once, by that answer (CLAUDE.md § Hard stops); `open`
-# reads.
+# reads, and `draft <draft.md>` asks nothing of GitHub: it checks a draft as
+# `file` does before its first request and prints the issue `file` would open.
 
 use cards
 use issue_title
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/issues.hero -- file <draft.md>, close <number> <closing.md>, comment <number> <text.md>, edit <number> <draft.md>, open [--kind <kind>] [--milestone M-<name>] [--class <class>] [--json]; and, while issues/ stands, render|plan [--pin <hash>] [<issue file>...], push --yes --pin <hash> [--accept-gaps] [<issue file>...], repair --yes [--pin <hash>] [<issue file>...], prepare --yes or finish --yes"
+    "heroes run tests/harness/issues.hero -- draft <draft.md>, file <draft.md>, close <number> <closing.md>, comment <number> <text.md>, edit <number> <draft.md>, open [--kind <kind>] [--milestone M-<name>] [--class <class>] [--json]; and, while issues/ stands, render|plan [--pin <hash>] [<issue file>...], push --yes --pin <hash> [--accept-gaps] [<issue file>...], repair --yes [--pin <hash>] [<issue file>...], prepare --yes or finish --yes"
 
 # The words of this program, and those of them that write to GitHub through
 # the issue files and so run only with `--yes`.
 constant WORDS: [str]
-    ["render", "plan", "push", "repair", "prepare", "finish", "file", "close", "comment", "edit", "open"]
+    ["render", "plan", "push", "repair", "prepare", "finish", "draft", "file", "close", "comment", "edit", "open"]
 
 constant WRITING: [str]
     ["push", "repair", "prepare", "finish"]
@@ -121,8 +122,8 @@ function parsed(word: str, words: [str]) -> Asked
         )
     number: i64 @= 0
 
-    if word == "file" && paths.len() != 1
-        return wrong(word: word, why: "`file` takes one draft, a file written outside the tree: " + USAGE)
+    if (word == "file" || word == "draft") && paths.len() != 1
+        return wrong(word: word, why: "`" + word + "` takes one draft, a file written outside the tree: " + USAGE)
 
     if among(word: word, words: NUMBERED)
         if paths.len() != 2 || paths[0].len() == 0 || paths[0][0] == '0' || strings.to_number(paths[0]).default(0) < 1
@@ -216,6 +217,11 @@ test "the words of the issues on GitHub take a number and a file, or a draft, or
     assert strings.contains(text: parsed(word: "file", words: []).wrong, needle: "`file` takes one draft")
     assert strings.contains(text: parsed(word: "file", words: ["a.md", "b.md"]).wrong, needle: "`file` takes one draft")
     assert strings.contains(text: parsed(word: "file", words: ["--yes", "a.md"]).wrong, needle: "no flag of `file`")
+    shown = parsed(word: "draft", words: ["/tmp/x/2026-10-12-1800-a.md"])
+    assert shown.wrong == ""
+    assert shown.paths == ["/tmp/x/2026-10-12-1800-a.md"]
+    assert strings.contains(text: parsed(word: "draft", words: []).wrong, needle: "`draft` takes one draft")
+    assert strings.contains(text: parsed(word: "draft", words: ["--json", "a.md"]).wrong, needle: "no flag of `draft`")
     closing = parsed(word: "close", words: ["2031", "/tmp/x/closing.md"])
     assert closing.wrong == ""
     assert closing.number == 2031
