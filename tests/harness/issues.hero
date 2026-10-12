@@ -3,13 +3,15 @@
 #     heroes run tests/harness/issues.hero -- render [--pin <hash>] [<issue file>...]
 #     heroes run tests/harness/issues.hero -- plan [--pin <hash>] [<issue file>...]
 #     heroes run tests/harness/issues.hero -- push --yes --pin <hash> [--accept-gaps] [<issue file>...]
+#     heroes run tests/harness/issues.hero -- repair --yes [--pin <hash>] [<issue file>...]
 #     heroes run tests/harness/issues.hero -- prepare --yes
 #     heroes run tests/harness/issues.hero -- finish --yes
 #
 # from the repository's root, always. With no file each word takes every issue
-# file under `issues/`; `render` and `plan` take any of them, and `push` only
-# the first ones whose `github:` is `none`, in the cards' order (`filed`, then
-# the name), since each import takes the next number GitHub gives.
+# file under `issues/`; `render` and `plan` take any of them, `push` only the
+# first ones whose `github:` is `none`, in the cards' order (`filed`, then the
+# name), since each import takes the next number GitHub gives, and `repair`
+# those whose `github:` holds an address.
 #
 # - `render` prints what each issue file becomes on GitHub, one JSON object a
 #   line: its path, its milestone and its `Defect` field's numbers (null where
@@ -27,7 +29,14 @@
 #   that names a commit already on
 #   `origin/main` (as this clone last fetched it) and is the one the run's
 #   state records, if it records one; and without a `collaborators_only`
-#   interaction limit in force, unless `--accept-gaps` is given.
+#   interaction limit in force, unless `--accept-gaps` is given. Every import
+#   is read back, and a body GitHub stored otherwise is told and counted.
+# - `repair` makes each issue that differs from its file match it, the file
+#   being the truth (`issue_repair.hero`, R10 as the author amended it on
+#   2026-10-12): it reads every issue in one list, renders each card at the pin
+#   its issue's `Record:` line names (`--pin`, else `HEAD`, where it names
+#   none), and writes what differs through the REST route, each issue read
+#   back; it runs only with `--yes`, asked for as `push` is.
 # - `prepare` performs panel 212's R6 items 3 and 4 before a transcription
 #   (`issue_prepare.hero`): the chain's milestones GitHub lacks, the label
 #   `kind:learn` deleted, the interaction limit set; `finish` lifts the limit
@@ -42,14 +51,18 @@
 # (`issue_wire.hero`), which holds the token; this program never reads it.
 #
 # Exit (R11): 0 clean; 1 the input has diagnostics: a card that cannot render,
-# a file the pin's tree does not hold, or (for `plan` and `push`) a milestone
-# or a label an issue to import names and GitHub lacks, each told on stderr;
+# a file the pin's tree does not hold, (for `plan` and `push`) a milestone or
+# a label an issue to import names and GitHub lacks, or (for `repair`) one the
+# repair would write, or an issue GitHub still holds otherwise after it, each
+# told on stderr;
 # 2 the program could not run: an argument it does not take, a refusal of
 # `push`'s guards, git or `gh` that could not answer, or a request GitHub
 # refused that waiting does not answer.
 
+use cards
 use issue_args
 use issue_git
+use issue_import
 use issue_json
 use issue_load
 use issue_match
@@ -57,10 +70,10 @@ use issue_pace
 use issue_plan
 use issue_prepare
 use issue_push
+use issue_repair
 use issue_state
 use issue_wire
 use shell
-use strings
 
 extern "hero_os.h"
     function hero_write_err(text: str)
@@ -91,6 +104,8 @@ function main()
         code @ planned(scratch: scratch, asked: asked)
     else if asked.word == "push"
         code @ pushed(scratch: scratch, asked: asked)
+    else if asked.word == "repair"
+        code @ repairing(scratch: scratch, asked: asked)
     else
         code @ prepared_or_finished(scratch: scratch, word: asked.word)
     _ = shell.remove_tree(scratch).is_err()
@@ -231,45 +246,75 @@ function pushed(scratch: str, asked: issue_args.Asked) -> i64
         world: issue_wire.world_at(scratch),
         live: true
     )
-    setup = issue_push.Setup(root: ".", state_path: issue_state.PATH, pin: pin.must(), accept_gaps: asked.gaps)
+    setup = issue_import.Setup(root: ".", state_path: issue_state.PATH, pin: pin.must(), accept_gaps: asked.gaps)
     return issue_push.pushed(@s, chosen: loaded.chosen, setup: setup)
 
-# `prepare` or `finish`, on the real transport: the chain read from the tree,
-# the milestone pages the tree holds, and a word where a run's imports are
-# still unsettled, since lifting the limit then lets a stranger's issue in.
+# `prepare` or `finish`, on the real transport (`issue_prepare.run_word`).
 function prepared_or_finished(scratch: str, word: str) -> i64
     s: issue_pace.Session @= issue_pace.session(
         transport: issue_wire.gh(),
         world: issue_wire.world_at(scratch),
         live: true
     )
+    return issue_prepare.run_word(@s, scratch: scratch, word: word)
 
-    if word == "finish"
-        state = issue_state.read_state(issue_state.PATH)
+# `repair`: every card holding an address, or those named, each rendered at
+# the pin its issue's `Record:` line names (`HEAD`, or `--pin`, where it names
+# none), and its issue made to match it (`issue_repair.hero`).
+function repairing(scratch: str, asked: issue_args.Asked) -> i64
+    pin: str @= asked.pin
 
-        if !state.is_err() && state.must().flights.len() > 0
-            told(
-                issue_state.PATH + " still holds " + state.must().flights.len().to_str() + " imports a run did not settle; the limit is lifted all the same"
-            )
-        return issue_prepare.finished(@s)
-    roadmap = read_file("docs/ROADMAP.md")
-    files = shell.project_files(scratch)
+    if pin == ""
+        pin @ "HEAD"
+    fallback = issue_git.pinned(scratch: scratch, pin: pin)
+    every = issue_load.issue_files(scratch)
 
-    if roadmap.is_err() || files.is_err()
-        told(issue_github_failure(roadmap) + issue_github_failure(files))
+    if fallback.is_err() || every.is_err()
+        told(issue_github_failure(fallback) + issue_github_failure(every))
         return 2
-    pages: {str: bool} @= {}
+    named = issue_load.chosen_of(every: every.must(), paths: asked.paths)
 
-    for path in files.must()
-        if strings.starts_with(text: path, prefix: issue_prepare.PAGES) && strings.ends_with(text: path, suffix: ".md")
-            pages[path] @ true
-
-    chain = issue_plan.chain_of(roadmap.must())
-
-    if chain.is_err()
-        told(issue_github_failure(chain))
+    if named.is_err()
+        told(issue_github_failure(named))
         return 2
-    return issue_prepare.prepared(@s, rows: chain.must(), pages: pages)
+    chosen: [cards.Issue] @= []
+
+    for issue in named.must()
+        if issue.card.github != "none"
+            chosen @ chosen.push(issue)
+        else if asked.paths.len() > 0
+            told(issue.path + " holds no `github:` address, so it has no issue to repair")
+            return 2
+
+    s: issue_pace.Session @= issue_pace.session(
+        transport: issue_wire.gh(),
+        world: issue_wire.world_at(scratch),
+        live: true
+    )
+    gh = issue_repair.read_all(@s)
+
+    if gh.is_err()
+        told("GitHub could not be read: " + issue_github_failure(gh))
+        return 2
+    pins = issue_repair.pins_of(chosen: chosen, held: gh.must().held, fallback: fallback.must())
+    loaded = issue_load.rendered_by_pin(
+        scratch: scratch,
+        every: every.must(),
+        chosen: chosen,
+        pins: pins,
+        fallback: fallback.must()
+    )
+
+    if loaded.is_err()
+        told(issue_github_failure(loaded))
+        return 2
+
+    for one in loaded.must().refused
+        told(one)
+
+    if loaded.must().unrendered > 0
+        return 1
+    return issue_repair.repaired(@s, entries: loaded.must().chosen, gh: gh.must())
 
 # The cards `loaded` refused, and those whose file the pin's tree does not
 # hold, each told; how many cards, or -1 where git could not say.

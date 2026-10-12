@@ -1,25 +1,26 @@
 # THE WORDS `issues.hero` IS RUN WITH, read: its first word, one of `render`,
-# `plan`, `push`, `prepare` and `finish`, and the flags and files after it.
+# `plan`, `push`, `repair`, `prepare` and `finish`, and the flags and files
+# after it.
 #
 # Each word takes its own flags and no other, so a flag given to the wrong
-# word is refused by name rather than ignored: `--pin` is `render`'s, `plan`'s
-# and `push`'s; `--accept-gaps` is `push`'s; and `--yes` is the guard of the
-# three words that write to GitHub, `push`, `prepare` and `finish`, none of
-# which runs without it (panel 212's R11; `issues.hero` says why the guard is
-# the program's own). `push` takes `--pin` too, always (R5); `prepare` and
-# `finish` take no file.
+# word is refused by name rather than ignored: `--pin` is `render`'s, `plan`'s,
+# `push`'s and `repair`'s; `--accept-gaps` is `push`'s; and `--yes` is the
+# guard of the four words that write to GitHub, `push`, `repair`, `prepare` and
+# `finish`, none of which runs without it (panel 212's R11; `issues.hero` says
+# why the guard is the program's own). `push` takes `--pin` too, always (R5);
+# `prepare` and `finish` take no file.
 
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/issues.hero -- render|plan [--pin <hash>] [<issue file>...], push --yes --pin <hash> [--accept-gaps] [<issue file>...], prepare --yes or finish --yes"
+    "heroes run tests/harness/issues.hero -- render|plan [--pin <hash>] [<issue file>...], push --yes --pin <hash> [--accept-gaps] [<issue file>...], repair --yes [--pin <hash>] [<issue file>...], prepare --yes or finish --yes"
 
 # The words of this program, and those of them that write to GitHub.
 constant WORDS: [str]
-    ["render", "plan", "push", "prepare", "finish"]
+    ["render", "plan", "push", "repair", "prepare", "finish"]
 
 constant WRITING: [str]
-    ["push", "prepare", "finish"]
+    ["push", "repair", "prepare", "finish"]
 
 # What the words after the first asked for, or why they cannot be taken.
 record Asked
@@ -47,7 +48,7 @@ function parsed(word: str, words: [str]) -> Asked
         one = words[at]
         at @ at + 1
 
-        if one == "--pin" && (word == "render" || word == "plan" || word == "push")
+        if one == "--pin" && word != "prepare" && word != "finish"
             if pin != "" || at == words.len()
                 return wrong(word: word, why: "`--pin` takes one commit, once")
             pin @ words[at]
@@ -114,5 +115,15 @@ test "each word takes its own flags, push its guards, and a word nobody gave is 
     )
     assert strings.contains(text: parsed(word: "finish", words: ["--yes", "--pin", "a"]).wrong, needle: "no flag")
     assert strings.contains(text: parsed(word: "prepare", words: ["--yes", "--accept-gaps"]).wrong, needle: "no flag")
+    assert strings.contains(
+        text: parsed(word: "repair", words: ["--pin", "a"]).wrong,
+        needle: "`repair` writes to GitHub and runs only with `--yes`"
+    )
+    fixing = parsed(word: "repair", words: ["--yes", "--pin", "a", "issues/a.md"])
+    assert fixing.wrong == ""
+    assert fixing.pin == "a"
+    assert fixing.paths == ["issues/a.md"]
+    assert parsed(word: "repair", words: ["--yes"]).wrong == ""
+    assert strings.contains(text: parsed(word: "repair", words: ["--yes", "--accept-gaps"]).wrong, needle: "no flag")
     assert strings.contains(text: refusal(["sync"]), needle: "no word")
     assert strings.contains(text: refusal([]), needle: "no word given")

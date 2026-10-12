@@ -35,10 +35,13 @@ use issue_github
 use issue_json
 use issue_match
 use issue_pace
+use issue_plan
 use issue_scripts
+use issue_state
 use issue_wire
 use json_fields
 use json_read
+use shell
 use strings
 
 constant LEARN: str
@@ -187,6 +190,38 @@ function prepared(@s: issue_pace.Session, rows: [issue_match.Row], pages: {str: 
         text: "prepare: " + created.to_str() + " milestones created, " + (rows.len() - created).to_str() + " there already, " + differing.to_str() + " of them open or closed otherwise than their row"
     )
     return 0
+
+# `prepare` or `finish` as the program runs it: the chain read from the tree,
+# the milestone pages the tree holds, and a word where a run's imports are still
+# unsettled, since lifting the limit then lets a stranger's issue in.
+function run_word(@s: issue_pace.Session, scratch: str, word: str) -> i64
+    if word == "finish"
+        state = issue_state.read_state(issue_state.PATH)
+
+        if !state.is_err() && state.must().flights.len() > 0
+            issue_pace.warn(
+                @s,
+                text: issue_state.PATH + " still holds " + state.must().flights.len().to_str() + " imports a run did not settle; the limit is lifted all the same"
+            )
+        return finished(@s)
+    roadmap = read_file("docs/ROADMAP.md")
+    files = shell.project_files(scratch)
+
+    if roadmap.is_err() || files.is_err()
+        issue_pace.warn(@s, text: issue_github.failure(roadmap) + issue_github.failure(files))
+        return 2
+    pages: {str: bool} @= {}
+
+    for path in files.must()
+        if strings.starts_with(text: path, prefix: PAGES) && strings.ends_with(text: path, suffix: ".md")
+            pages[path] @ true
+
+    chain = issue_plan.chain_of(roadmap.must())
+
+    if chain.is_err()
+        issue_pace.warn(@s, text: issue_github.failure(chain))
+        return 2
+    return prepared(@s, rows: chain.must(), pages: pages)
 
 # The interaction limit lifted; the exit code.
 function finished(@s: issue_pace.Session) -> i64

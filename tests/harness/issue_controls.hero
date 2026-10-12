@@ -1,0 +1,213 @@
+# A LITERAL `\u` ESCAPE OF A CONTROL CHARACTER, WRITTEN SO GITHUB KEEPS IT.
+#
+# `.claude/rules/records.md` § The issues, *what a body must not do*, as the
+# coordinator wrote it on 2026-10-12 (defect 675): a literal backslash and `u`
+# followed by the four hexadecimal digits of a C0 or C1 control character,
+# `0000` to `001f` or `0080` to `009f` in either case, is stored by GitHub in
+# caret notation on the import route and on the REST route alike (issues 1354
+# and 1643 held `\^A` and `\^[` for `\u0001` and `\u009b`, after their import
+# and again after a `PATCH`), while `\u007f` and `\u200b` stood as written. So
+# its backslash is written `&#92;`, which GitHub's markdown reads back as a
+# backslash and stores as the five characters it is:
+#
+# - **outside code** the backslash alone becomes `&#92;`; where a backslash
+#   before it makes the pair one escaped backslash (markdown reads `\\` as `\`),
+#   the pair becomes the one entity, so the text reads as it did;
+# - **a code span holding one** becomes an HTML `<code>` element, since an
+#   entity in a code span is shown as written. Its text is the span's as
+#   CommonMark reads it (a line ending a space, one space stripped from each end
+#   where both have one), and every ASCII punctuation character of it is written
+#   as a character reference, `&amp;`, `&lt;` and `&gt;` for the three HTML
+#   names and `&#NN;` for the rest, the backslash `&#92;` among them: the text
+#   between an inline `<code>` and its `</code>` is still read as markdown, so a
+#   `*`, a `_`, a backtick or a backslash left bare would be read as emphasis, a
+#   span or an escape where the code span showed it as written; the oracle
+#   showed `<code>&#92;u0001</code>` displayed as the code span is;
+# - **a fenced block is left as it is**: an entity there is shown as written, so
+#   no spelling of the block keeps the sequence and shows it the same, and no
+#   card holds one in a fence (counted 2026-10-12 over the 2,023 issue files:
+#   the three that hold such a sequence hold it in a code span). `raw` reads
+#   every sequence still written bare, a fence's included, and
+#   `records/rendered` refuses a card whose body holds one, so the first card
+#   to write one in a fence is told rather than mangled.
+
+use issue_spans
+use strings
+
+# Whether `text` holds at `at` a backslash, `u` and the four hexadecimal digits
+# of a C0 or C1 control character.
+function control_at(text: str, at: i64) -> bool
+    if at + 6 > text.len() || text[at] != '\\' || text[at + 1] != 'u'
+        return false
+    value: i64 @= 0
+
+    for i in range(from: at + 2, to: at + 6)
+        d = hex_value(text[i])
+
+        if d < 0
+            return false
+        value @ value * 16 + d
+
+    return value <= 31 || value >= 128 && value <= 159
+
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b - 'a').must() + 10
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b - 'A').must() + 10
+    return -1
+
+function holds_control(text: str) -> bool
+    at: i64 @= 0
+
+    while at < text.len()
+        if control_at(text: text, at: at)
+            return true
+        at @ at + 1
+
+    return false
+
+# `text`, a body already made inert by `issue_safe.protect`, with every such
+# sequence outside a fence written as GitHub keeps it.
+function entities(text: str) -> str
+    out: [str] @= []
+
+    for piece in issue_spans.pieces(text)
+        if piece.code || !holds_control(piece.text)
+            out @ out.push(piece.text)
+            continue
+        parts: [str] @= []
+        at: i64 @= 0
+
+        for span in issue_spans.spans(piece.text)
+            parts @ parts.push(plain(piece.text.slice(from: at, to: span.open)))
+            held = issue_spans.inner(text: piece.text, span: span)
+
+            if holds_control(held)
+                parts @ parts.push("<code>" + escaped(spanned(held)) + "</code>")
+            else
+                parts @ parts.push(piece.text.slice(from: span.open, to: span.close))
+            at @ span.close
+
+        parts @ parts.push(plain(piece.text.slice(from: at, to: piece.text.len())))
+        out @ out.push(parts.join(""))
+
+    return out.join("\n")
+
+# A run of text outside code, each such sequence's backslash written `&#92;`;
+# where an odd run of backslashes stands before it, the last of them and its
+# own are one escaped backslash, and the two become the one entity.
+function plain(region: str) -> str
+    if !holds_control(region)
+        return region
+    parts: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < region.len()
+        if !control_at(text: region, at: at)
+            at @ at + 1
+            continue
+        run: i64 @= 1
+
+        while at - run >= 0 && region[at - run] == '\\'
+            run @ run + 1
+
+        # `run` counts this backslash and those before it; the cuts stand
+        # beside backslashes, which are ASCII.
+        if run % 2 == 0
+            parts @ parts.push(region.slice(from: from, to: at - 1))
+        else
+            parts @ parts.push(region.slice(from: from, to: at))
+        parts @ parts.push("&#92;")
+        from @ at + 1
+        at @ at + 1
+
+    parts @ parts.push(region.slice(from: from, to: region.len()))
+    return parts.join("")
+
+# What a code span shows, as CommonMark reads it: a line ending a space, and one
+# space taken from each end where both have one and it is not spaces alone.
+function spanned(held: str) -> str
+    one = strings.split_on(text: held, byte: 10).join(" ")
+
+    if one.len() >= 2 && one[0] == ' ' && one[one.len() - 1] == ' ' && strings.trimmed(one) != ""
+        return one.slice(from: 1, to: one.len() - 1)
+    return one
+
+# `text` as the content of an HTML element GitHub's markdown still reads:
+# every ASCII punctuation character a character reference.
+function escaped(text: str) -> str
+    parts: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+        named: str @= ""
+
+        if b == '&'
+            named @ "&amp;"
+        else if b == '<'
+            named @ "&lt;"
+        else if b == '>'
+            named @ "&gt;"
+        else if b >= 33 && b <= 47 || b >= 58 && b <= 64 || b >= 91 && b <= 96 || b >= 123 && b <= 126
+            named @ "&#" + to_i64(b).must().to_str() + ";"
+
+        if named != ""
+            # The byte is ASCII, so both cuts stand between characters.
+            parts @ parts.push(text.slice(from: from, to: at))
+            parts @ parts.push(named)
+            from @ at + 1
+        at @ at + 1
+
+    parts @ parts.push(text.slice(from: from, to: text.len()))
+    return parts.join("")
+
+# Every such sequence still written bare in `text`, a fence's included, each
+# as written: none in a body this module has written.
+function raw(text: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        if control_at(text: text, at: at)
+            out @ out.push(text.slice(from: at, to: at + 6))
+            at @ at + 6
+        else
+            at @ at + 1
+
+    return out
+
+test "the two real cases: a code span holding one alone, and two spans side by side of which one holds one"
+    assert entities("from `\\u0001` and") == "from <code>&#92;u0001</code> and"
+    assert entities("writes DEL and C1's CSI as `\\u007f` and `\\u009b`.") == "writes DEL and C1's CSI as `\\u007f` and <code>&#92;u009b</code>."
+    assert raw(entities("as `\\u007f` and `\\u009b` and `\\u0001`")).len() == 0
+
+test "outside a code span the backslash alone becomes the entity, and an escaped backslash with it"
+    assert entities("a \\u001F here") == "a &#92;u001F here"
+    assert entities("two \\\\u0001 here") == "two &#92;u0001 here"
+    assert entities("three \\\\\\u0085 here") == "three \\\\&#92;u0085 here"
+    assert entities("é \\u0090 é") == "é &#92;u0090 é"
+
+test "a code span's text is escaped as HTML and as markdown, and read as CommonMark reads a span"
+    assert entities("`a<b & \\u0085`") == "<code>a&lt;b &amp; &#92;u0085</code>"
+    assert entities("`*\\u0001_[x]`") == "<code>&#42;&#92;u0001&#95;&#91;x&#93;</code>"
+    assert entities("`` \\u0001 ` ``") == "<code>&#92;u0001 &#96;</code>"
+    assert entities("`a\n\\u0001`") == "<code>a &#92;u0001</code>"
+    assert entities("`naïve \\u0001`") == "<code>naïve &#92;u0001</code>"
+
+test "every other backslash-u stays as written, and so does a fence, which raw tells"
+    for kept in ["`\\u007f`", "`\\u200b`", "\\u200b", "`\\u00a0`", "`\\u0100`", "`\\u009G`", "\\u7f", "`\\U0001`", "`\\u{1b}`"]
+        assert entities(kept) == kept
+
+    assert entities("`\\u009B`") == "<code>&#92;u009B</code>"
+    fenced = "```\nprint(\"\\u0001\")\n```\nafter `\\u0001`"
+    assert entities(fenced) == "```\nprint(\"\\u0001\")\n```\nafter <code>&#92;u0001</code>"
+    assert raw(entities(fenced)) == ["\\u0001"]
+    assert raw("none \\u007f") == []

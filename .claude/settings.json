@@ -56,7 +56,11 @@
       "Bash(./heroes run tests/harness/issues.hero -- finish*)",
       "Bash(heroes run tests/harness/issues.hero -- finish*)",
       "Bash(caffeinate -i ./heroes run tests/harness/issues.hero -- finish*)",
-      "Bash(caffeinate -i heroes run tests/harness/issues.hero -- finish*)"
+      "Bash(caffeinate -i heroes run tests/harness/issues.hero -- finish*)",
+      "Bash(./heroes run tests/harness/issues.hero -- repair*)",
+      "Bash(heroes run tests/harness/issues.hero -- repair*)",
+      "Bash(caffeinate -i ./heroes run tests/harness/issues.hero -- repair*)",
+      "Bash(caffeinate -i heroes run tests/harness/issues.hero -- repair*)"
     ]
   },
   "hooks": {

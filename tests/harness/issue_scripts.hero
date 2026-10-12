@@ -10,11 +10,13 @@
 
 use cards
 use issue_git
+use issue_github
 use issue_json
 use issue_match
 use issue_pace
 use issue_render
 use issue_wire
+use json_read
 use shell
 
 constant DATE: str
@@ -38,6 +40,16 @@ function card(filed: str, name: str, milestone: str, github: str) -> cards.Issue
         milestone
     text = cards.card_text(kind: "task", area: "none", milestone: milestone, filed: filed, commit: "none", github: github) + "- [ ] **" + first + "** | " + name + " is owed | x\n"
     return cards.issue_of(path: path, text: text)
+
+# A closed task's issue file, settled by `SETTLED`, its card's `github:` being
+# `github`: what `repair` closes an issue for, and comments.
+function done_card(filed: str, name: str, github: str) -> cards.Issue
+    path = "issues/x/" + filed + "-0000-" + name + ".md"
+    text = cards.card_text(kind: "task", area: "none", milestone: "M-issue-files", filed: filed, commit: SETTLED, github: github) + "- [x] **M-issue-files** | " + name + " is done | x\n"
+    return cards.issue_of(path: path, text: text)
+
+constant SETTLED: str
+    "0123456789abcdef0123456789abcdef01234567"
 
 # `issue` rendered at `PIN`, as `issue_load` renders it.
 function entry(issue: cards.Issue) -> issue_match.Entry
@@ -119,6 +131,16 @@ function held(e: issue_match.Entry, number: i64) -> str
         state @ "closed"
         closed @ issue_json.quoted(issue_render.instant(e.r.closed_day))
     return "{\"number\":" + number.to_str() + ",\"title\":" + issue_json.quoted(e.r.title) + ",\"body\":" + issue_json.quoted(e.r.body) + ",\"state\":\"" + state + "\",\"labels\":[" + names.join(",") + "],\"milestone\":" + milestone + ",\"created_at\":" + issue_json.quoted(issue_render.instant(e.r.filed)) + ",\"closed_at\":" + closed + ",\"comments\":0}"
+
+# The issue an import of `e` made, read back alone after it, as GitHub answers
+# one `GET` of it.
+function back(e: issue_match.Entry, number: i64) -> issue_wire.Reply
+    return answer(status: 200, body: held(e: e, number: number))
+
+# The issue an import of `e` made, numbered `number`, as `issue_github` reads
+# it, for a test to change a field of.
+function held_issue(e: issue_match.Entry, number: i64) -> issue_github.Held
+    return issue_github.held_of(json_read.read_json(held(e: e, number: number)).must()).must()
 
 function issues(held_issues: [str]) -> issue_wire.Reply
     return answer(status: 200, body: "[" + held_issues.join(",") + "]")
