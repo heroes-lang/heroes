@@ -4,7 +4,7 @@ area: site
 milestone: none
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2022
 ---
 
 # The subtitle names the LLM age, and the home says the author studied the history first

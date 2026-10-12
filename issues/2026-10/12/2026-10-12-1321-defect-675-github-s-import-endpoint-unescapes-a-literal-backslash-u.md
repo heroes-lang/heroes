@@ -4,7 +4,7 @@ area: harness
 milestone: M-issue-files
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2024
 ---
 
 - [x] **675 — GitHub's import endpoint unescapes a literal backslash-u sequence of a control character a second time** | issues 1354 and 1643 hold `\^A` and `\^[` where their cards say `\u0001` and `\u009b`: the payload sent the backslash escaped, as JSON asks, and the import stored the text as though the escape were read twice and the control character then written in caret notation; `\u007f` in the second card and `\u200b` in a third (issue 1709) stayed as written, and the bodies of the other 2,018 issues match their cards beyond the `Record:` pin | `tests/harness/issue_push.hero`, which reads no body back after an import · `issues/2026-09/26/2026-09-26-0114-defect-102-closed-every-json-goes-through-one-escape.md` · `issues/2026-10/04/2026-10-04-1734-defect-290-lex-dump-tokens-and-parse-dump-ast-write-a-string-s-control.md` · **class: blocking**

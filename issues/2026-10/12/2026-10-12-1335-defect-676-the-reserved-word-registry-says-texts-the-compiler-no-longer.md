@@ -4,7 +4,7 @@ area: spec
 milestone: none
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2025
 ---
 
 - [x] **676 — The reserved-word registry says texts the compiler no longer prints, and has no row for `int`** | `spec/reserved-words.md` gave `fn`'s example as `function f(x: int) -> int`, `var`'s as `v: int @ 0`, `const`'s as `constant MAX: int` and `null`'s answer as `int?` with no word of `nullptr`, where `declared_word` prints `i64`, `v @= 0` and the `nullptr` clause; it had no row for `int`, which the language has refused since 2026-08-12; its `return;` row said a text the compiler does not print; its `@name` paragraph gave `v: int @ 0` as the declaration; its keywords' paragraph left out `nullptr`; and no check compared a row to the compiler | `spec/reserved-words.md` · `selfhost/keywords.hero` (`declared_word`) · `tests/harness/suite_spec.hero` (`registered`) · **class: blocking**
