@@ -245,11 +245,16 @@ from the repository's root: a program of the harness and no verb of `heroes`
   milestone those of a corrected draft;
 - **`open [--kind <kind>] [--milestone M-<name>] [--class <class>] [--json]`**
   lists the open issues, the one reader of the lists (§ The lists) and of the
-  skills.
+  skills;
+- **`link [--dry-run]`** makes every `defect NNN` and `panel NNN` a body names
+  a link (below, and `tests/harness/issue_links.hero`), each body that changes
+  written by one `PATCH` and read back, a rerun writing nothing.
 
 **A closed issue is a record** (§ A record is never rewritten): a sentence of
 it since falsified is corrected underneath, by `comment` and with its date,
-and never by `edit`, which corrects an open issue.
+and never by `edit`, which corrects an open issue. **`link` is the one write
+into a closed body**, panel 212's R9 item 6, ratified before this rule: it
+makes words already there a link and changes no word.
 
 **The numbers** (the author's fifth answer of 2026-10-12, CL-083): defects 001
 to 677, filed while the issues were files, keep theirs, which their titles open
@@ -322,9 +327,18 @@ renders one set of bytes:
   an `issue-link` or a `user-mention` anchor;
 - **every `defect NNN` and every `panel NNN` a body names is a link**, to that
   defect's issue and to that sitting's ratification, where the prior art stands
-  once, so no field is invented to say which sitting ruled a repair; the
-  transcription made them in a second pass after its last file, since a closing
-  text may name an issue born after it (R9 item 6);
+  once, so no field is invented to say which sitting ruled a repair; a second
+  pass after the last file, since a closing text may name an issue born after
+  it (R9 item 6). **It ran on 2026-10-12, after the folder had left the tree**
+  (the transcription's words never ran it, which the coordinator found that
+  evening reading 1,594 bodies that named one and linked none), by the word
+  `link`, on the author's yes the same evening. **A sitting no single
+  ratification issue answers links its own file**, `docs/panel/<NNN>-<slug>.md`
+  at a commit on `origin/main`: 71 of 210 sittings had one titled
+  `Panel NNN:`, and R9 was silent on the rest (the coordinator's reading,
+  where the alternative was to leave them text). A defect two issues answer
+  (014), a number nobody holds, a day after the word, code, and what a body
+  already links stay as they are;
 - **the route** of the transcription (R5): each file imported whole, its days,
   labels, milestone, closed state and closing comment in one request, read
   `imported` before the next so that the numbers keep the files' order, serial
