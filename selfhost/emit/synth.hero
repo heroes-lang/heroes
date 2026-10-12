@@ -78,6 +78,9 @@ function declared_in(c: state.Checked, s: source.Source, decls: [ast.Decl], root
         for inner in table.contained(c.types, id)
             worklist.put(@frontier, size: @size, value: inner)
 
+    # ORDER: ascending qualified name — the key must not depend on the
+    # walk, and sort(keys(…)) is what makes two mentions of one type
+    # spell one name.
     return sort(keys(named))
 
 # Every function type reachable from ty, including ty itself. Closed
