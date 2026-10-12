@@ -1,7 +1,7 @@
 {
   "name": "heroes-lang",
   "displayName": "Heroes",
-  "description": "Syntax highlighting, editor configuration and a file icon theme for the Heroes language (.hero)",
+  "description": "Syntax highlighting, editor configuration, a file icon theme, the compiler's diagnostics and debugging for the Heroes language (.hero)",
   "version": "0.3.0",
   "publisher": "heroes-lang",
   "private": true,
@@ -19,8 +19,23 @@
     "vscode": "^1.64.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Debuggers"
   ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onDebugResolve:heroes",
+    "onTaskType:heroes"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Highlighting works everywhere. Building and debugging run the heroes compiler, which VS Code allows only in a trusted workspace, and a workspace's own heroes.path is ignored until it is trusted.",
+      "restrictedConfigurations": [
+        "heroes.path"
+      ]
+    }
+  },
   "contributes": {
     "languages": [
       {
@@ -58,6 +73,207 @@
         "id": "heroes-bolt",
         "label": "Heroes (bolt on .hero)",
         "path": "./icons/heroes-icon-theme.json"
+      }
+    ],
+    "configuration": {
+      "title": "Heroes",
+      "properties": {
+        "heroes.path": {
+          "type": "string",
+          "default": "",
+          "scope": "resource",
+          "markdownDescription": "The `heroes` compiler that builds a program for debugging and runs the `heroes` tasks: an absolute path, a path from the workspace folder, or a name looked up on `PATH`. Empty: the workspace folder's own `heroes`, then `heroes` on `PATH`."
+        }
+      }
+    },
+    "breakpoints": [
+      {
+        "language": "hero"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "heroes",
+        "label": "Heroes (lldb-dap)",
+        "languages": [
+          "hero"
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "The .hero file that holds `function main()`. It is built with `heroes build -O0` into build/debug under the workspace folder, and lldb-dap debugs that binary.",
+                "default": "${file}"
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "The arguments the program receives, what `args()` returns.",
+                "default": []
+              },
+              "cwd": {
+                "type": "string",
+                "description": "The program's working directory. Default: the workspace folder, else the file's own.",
+                "default": "${workspaceFolder}"
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "More environment variables for the program, as lldb-dap takes them.",
+                "default": {}
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Stop before the program's first instruction.",
+                "default": false
+              },
+              "buildArgs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "More words for `heroes build`, after the file: `--include <dir>`, `--library <dir>`, `--sanitize`. The level and the output are the launch's own.",
+                "default": []
+              },
+              "enableAutoVariableSummaries": {
+                "type": "boolean",
+                "description": "lldb-dap's own: a record's fields and a str's text on its collapsed row in the Variables view. On unless this says otherwise or the lldb-dap setting of the same name is set.",
+                "default": true
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "heroes",
+            "request": "launch",
+            "name": "Debug the active Heroes file",
+            "program": "${file}"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Heroes: Launch",
+            "description": "Build a Heroes program at -O0 and debug it with lldb-dap",
+            "body": {
+              "type": "heroes",
+              "request": "launch",
+              "name": "${1:Debug a Heroes program}",
+              "program": "^\"\\${workspaceFolder}/${2:main.hero}\"",
+              "args": []
+            }
+          }
+        ]
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "heroes",
+        "required": [
+          "command",
+          "file"
+        ],
+        "properties": {
+          "command": {
+            "type": "string",
+            "enum": [
+              "check",
+              "build",
+              "run",
+              "test"
+            ],
+            "description": "The heroes verb to run on the file."
+          },
+          "file": {
+            "type": "string",
+            "description": "The .hero file, such as ${file}."
+          },
+          "args": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "More words after the file, such as -O0 or -- and the program's own arguments."
+          }
+        }
+      }
+    ],
+    "problemMatchers": [
+      {
+        "name": "heroes",
+        "label": "Heroes diagnostics",
+        "owner": "heroes",
+        "source": "heroes",
+        "fileLocation": [
+          "autoDetect",
+          "${workspaceFolder}"
+        ],
+        "severity": "error",
+        "pattern": [
+          {
+            "regexp": "^(error|unsupported)\\[([^\\]]+)\\]: (.*)$",
+            "severity": 1,
+            "code": 2,
+            "message": 3
+          },
+          {
+            "regexp": "^  at (.+):(\\d+):(\\d+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          }
+        ]
+      },
+      {
+        "name": "heroes-brief",
+        "label": "Heroes diagnostics, one line each (check --brief)",
+        "owner": "heroes",
+        "source": "heroes",
+        "fileLocation": [
+          "autoDetect",
+          "${workspaceFolder}"
+        ],
+        "severity": "error",
+        "pattern": {
+          "regexp": "^(.+):(\\d+):(\\d+): (error|unsupported)\\[([^\\]]+)\\]: (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "code": 5,
+          "message": 6
+        }
+      },
+      {
+        "name": "heroes-hole",
+        "label": "Heroes holes",
+        "owner": "heroes",
+        "source": "heroes",
+        "fileLocation": [
+          "autoDetect",
+          "${workspaceFolder}"
+        ],
+        "severity": "info",
+        "pattern": [
+          {
+            "regexp": "^hole at (.+):(\\d+):(\\d+)$",
+            "file": 1,
+            "line": 2,
+            "column": 3
+          },
+          {
+            "regexp": "^  ((?:expected type|position): .*)$",
+            "message": 1
+          }
+        ]
       }
     ]
   }
