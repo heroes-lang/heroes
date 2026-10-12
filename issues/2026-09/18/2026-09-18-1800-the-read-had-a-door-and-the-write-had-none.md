@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-18
 commit: ef7b013bcd42debc4924ef787b2e5dd44138b6c0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1265
 ---
 
 # The read had a door, and the write had none

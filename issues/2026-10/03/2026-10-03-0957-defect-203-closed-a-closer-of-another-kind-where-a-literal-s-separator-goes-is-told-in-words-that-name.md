@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-09-30
 commit: 3d704b03777c2359dc9cf746a33b9e9d4561ed25
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1416
 ---
 
 # Defect 203 closed: a closer of another kind where a literal's separator goes is told in words that name neither the opener nor its closer

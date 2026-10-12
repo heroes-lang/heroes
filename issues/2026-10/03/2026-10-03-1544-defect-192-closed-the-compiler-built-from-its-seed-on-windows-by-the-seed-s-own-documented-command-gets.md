@@ -4,7 +4,7 @@ area: seed
 milestone: none
 filed: 2026-10-02
 commit: dc23c4a869fba8be97dbe94a7438e13c892ed46b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1466
 ---
 
 # Defect 192 closed: the compiler built from its seed on Windows, by the seed's own documented command, gets three clang warnings: `getenv` deprecated by the C library's headers

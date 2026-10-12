@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-08-26
 commit: 1945659f34e230570fe3796cf1da08f20917d148
-github: none
+github: https://github.com/heroes-lang/heroes/issues/739
 ---
 
 - [x] panel 089, the brief | **THE BRIEF, kept because it is the shape `/decide` hands a panel question over in.** Eleven rows through one door, the lane argued rather than defaulted, and every row priced against one measured number. The brief verbatim:

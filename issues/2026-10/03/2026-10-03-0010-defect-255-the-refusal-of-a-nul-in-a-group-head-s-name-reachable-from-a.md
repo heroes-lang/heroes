@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-03
 commit: 5215222f6a5e8af628d445af3729681b6d41543d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1496
 ---
 
 - [x] **255 — the refusal of a NUL in a group head's name, reachable from a program, has no golden case** | `extern "a<NUL>b.h"`, a raw NUL in the string: `check` exit 1, `unwritable_name` *this header's name holds a NUL byte, and C reads a name only up to its first NUL* (batch 8's round compiler at `1eb854c3`, 2026-10-04, `<scratchpad>/filings-b8/probe/nul.hero`); `grep -rl 'NUL byte' tests/golden` finds none, the rule's witnesses being unit tests in `selfhost/head_names.hero` and `selfhost/cli/units.hero` | `tests/golden/check/` (a `fixedbugs-216-` case holding the raw byte, annotated) · `selfhost/head_names.hero:121` to `:144` · **class: improvement**

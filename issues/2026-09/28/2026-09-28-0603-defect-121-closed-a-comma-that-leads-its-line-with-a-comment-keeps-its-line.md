@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-09-28
 commit: 3f4ac02c316be882d8d5b7f66e5c9518eb9a370d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1377
 ---
 
 # Defect 121 closed: a comma at the start of its own line with a comment after it keeps its line, and `fmt` formats the file

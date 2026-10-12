@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-02
 commit: 885fad916908fe0eba3665970deadf75209ae3b8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1429
 ---
 
 - [x] **187 — four parser diagnostics are still appended through a field place, against defect 146's rule and `cursor.hero`'s own comment** | `git grep -n 'c.diagnostics @ c.diagnostics.push' -- selfhost/parse/` prints `loop_habit.hero:62`, `line_end.hero:251`, `type.hero:257`, `type.hero:320`, while `selfhost/cursor.hero:272` says *Every parser module appends through this* | the four lines · `cursor.push_diagnostic` (`selfhost/cursor.hero:273`) · **class: improvement**

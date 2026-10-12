@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1947
 ---
 
 # Panel 207 sat: a constant's body refuses at least the integer steps whose operands are known, and the spec says exactly that

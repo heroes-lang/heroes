@@ -4,7 +4,7 @@ area: golden
 milestone: none
 filed: 2026-09-05
 commit: 16b541d5ed4e94750479b73acac8dc2f9735541b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/923
 ---
 
 - [x] **A false RED in the net, chased to its cause, and the frightening half does NOT reproduce** | found 2026-09-05 at M-c-callbacks' close, by killing two net runs mid-flight | **What happened.** An intermediate net run reported **1518 passed, 3 failed**: `cache/an untouched build still hits` (`build/4c3a3f7a1f9799bc/main.c.o` rebuilt), `cache/only the module that read it is rebuilt` (`main.c.o` moved with `bind.o`), and `annotations/tests/golden/fixedbugs` **missing `ffi-not-constant.hero:34:ffi_not_constant`** — a diagnostic that simply did not fire. **The cause was the session's own**: two earlier runs of the net had been killed with `pkill` so that the tree could be re-verified after later edits, and the run that followed inherited their half-written per-module cache. Measured, not inferred: the same tree, the same compiler and one **uninterrupted** run is **1521 passed, 0 failed**, with `annotations` 120/0, `cache` 5/0, `records` 11/0 and `determinism` 127/0. The first run of the day, also uninterrupted, was 1521/0 as well.

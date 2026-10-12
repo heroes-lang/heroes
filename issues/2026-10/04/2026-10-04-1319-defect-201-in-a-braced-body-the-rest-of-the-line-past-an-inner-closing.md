@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-02
 commit: 3d70c67428fcfaa8ac44bc4d77a97bd5ceb70b94
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1484
 ---
 
 - [x] **201 — in a braced body, the rest of the line past an inner closing brace is not read** | `function main() {` over `do {`, a body and `} while (1 == 1)`: `missing_body` at the `{`, `expected_end_of_line` at the `do {` and in the body, and `while (1 == 1)` untold until the braces are gone | `selfhost/parse/braced_lines.hero:154` (`brace_habit.pass`, which passes the function's braces after its lines are read, the inner `}`'s line with them) · pinned by `tests/golden/check/panel-187-a-line-past-an-inner-closing-brace-is-dropped.hero` · **class: adjacent**

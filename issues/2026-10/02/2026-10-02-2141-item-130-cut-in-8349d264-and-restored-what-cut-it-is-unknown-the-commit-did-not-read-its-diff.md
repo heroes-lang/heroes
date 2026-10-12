@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-02
 commit: 0bc28e2d1410c0638ebe2c406f9e2624874ab5a4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1443
 ---
 
 # Item 130 cut in `8349d264` and restored: what cut it is unknown, the commit did not read its diff

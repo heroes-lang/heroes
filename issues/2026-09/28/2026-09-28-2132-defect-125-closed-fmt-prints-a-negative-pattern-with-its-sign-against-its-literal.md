@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-09-28
 commit: 687c54f34fea0c8393828dd444279ec43b61fc59
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1386
 ---
 
 # Defect 125 closed: fmt prints a negative pattern with its sign against its literal

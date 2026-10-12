@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: 7a4090f2f1286c66462196a2954268c23773386f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1768
 ---
 
 - [x] **427 — a correct `cstr` binding to a `const unsigned char *` prints clang warnings** | every `cstr` lent to `const unsigned char *`, `const signed char *` or `const uint8_t *` builds and runs and prints `-Wpointer-sign` warnings, 14 for the w411 run case's first draft, on the base too | the cast the emitter writes at a `cstr` lend, `selfhost/emit/` · **class: blocking**

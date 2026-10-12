@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-27
 commit: b02855a922d08319f4be4097d49505d24b6c3eb8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1368
 ---
 
 # Defect 108 closed: a comment inside a releaser set is part of no name

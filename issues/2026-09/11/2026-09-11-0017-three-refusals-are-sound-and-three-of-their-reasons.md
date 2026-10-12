@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 19157f4a2745cf7e05afdf4718eed9811d4888fc
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1122
 ---
 
 2026-09-11 · **Three refusals are sound and three of their reasons are false, and

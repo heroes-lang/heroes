@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1962
 ---
 
 - [x] **panel 209** | ratify, amend or overturn the provisional resolution (R1b with every condition the seats built: `@=` declares a mutable cell and `@` re-binds it, the type optional on both `=` and `@=` and demanded by `cannot_infer` where the value cannot say it, a bare `nullptr` included; a cell nothing re-binds refused with a certain fix to `=`, an `@` argument counting as a re-binding; the mutation's `unknown_name` gaining a fix that writes the declaration; the width class told with a note and a fix; `(@=x` and `v @= v + 1` one message each with a certain fix; the spec's text W1b-min at 9850 real; landed as R9, then R10, then R1, in the commits the synthesis names; R8 vetoed; R0, R2 to R7, R11 refused; what conservative would have been: R0 with R9 and the never-re-bound rule) | `docs/panel/209-a-cell-is-declared-by-its-own-symbol-and-typed-by-its-value.md`

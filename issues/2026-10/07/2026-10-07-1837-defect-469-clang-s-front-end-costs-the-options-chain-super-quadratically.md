@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: 758f4ab288bd08de7df907c8f46db9f7bfe9a585
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1814
 ---
 
 - [x] **469 — clang's front end costs the options chain super-quadratically** | the options shape grows ×7.59 per doubling (exponent 2.92) while its C grows linearly; o5000 costs 27 times v5000; debug information is 1.0% of it (panel 197's critic, second pass, `o5000-E-unit.c`) | the emitted C of a chain through options · panel 197's R7 · **class: improvement**

@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 7757fb1bff71828ee8b5258c12966ab70166f434
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1124
 ---
 
 2026-09-11 · **The brief gave the walls instead of the drafts, and two seats

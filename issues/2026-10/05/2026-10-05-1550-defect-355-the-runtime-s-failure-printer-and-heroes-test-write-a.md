@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-05
 commit: ae56c2f518c85d910cbb20a9fa500cd194ed1419
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1677
 ---
 
 - [x] **355 — the runtime's failure printer and `heroes test` write a message's control characters raw, and cut it at a NUL** | a `.must()` panic or an `assert` whose message holds ESC writes `1b 5b 32 4a`, a clear screen, raw to stderr; `heroes test` prints a failing title's ESC raw; a message holding a NUL is cut there (panel 192's critic, 2026-10-04, F11; the ffi-pragmatist, F4) | `runtime/parts/failure.c:116`, `:135`, `:145` (`%s`) · the test runner's output · panel 192's R7 (one printer for both causes) · **class: adjacent**

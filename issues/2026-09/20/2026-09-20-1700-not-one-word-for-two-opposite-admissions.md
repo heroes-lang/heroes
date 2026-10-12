@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-20
 commit: 2dc2b2f878e84d3268c217f136762ff87922d28f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1286
 ---
 
 # Not one word for two opposite admissions

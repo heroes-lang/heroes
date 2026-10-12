@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-06
 commit: 2c5f1a868b728e0e9443c08767513d076166a695
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1730
 ---
 
 - [x] **394 — lowering an array literal grows faster than its length** | one `constant BIG: [i64]` of N elements: `--dump-ir` retires 2.6, 6.3 and 18.3 billion instructions at N of 5,000, 10,000 and 20,000 while `check` stays linear; building 70,000 elements retires about 190 billion, its per-read route 350,593 lines of C (lane b13-c382's measurement, 2026-10-06; not re-run by the coordinator) | `selfhost/ir/lower.hero` and the lowering of a container literal · panel 195 · **class: improvement**

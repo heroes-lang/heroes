@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-16
 commit: 50bb2214d31db4291f21884fd07f469749ec73a9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1237
 ---
 
 # The sitting blamed the generic, and the hole was somewhere else

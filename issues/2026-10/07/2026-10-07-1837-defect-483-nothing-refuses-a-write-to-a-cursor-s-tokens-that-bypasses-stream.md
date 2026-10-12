@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-07
 commit: 0e3bdd7758748f4622ad4739f8e52705fe4cead6
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1828
 ---
 
 - [x] **483 — nothing refuses a write to a cursor's tokens that bypasses `stream_tables.relaid`** | defect 258's kept walk rests on every token rewrite going through `relaid`, which asserts the new kind is invisible; a `layout` rule refusing other writes to `c.tokens[...]` would hold the premise (lane b14-parse) | `tests/harness/suite_layout.hero` · defect 258 · **class: improvement**

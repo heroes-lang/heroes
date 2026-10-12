@@ -4,7 +4,7 @@ area: cli
 milestone: M-core-packages
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1077
 ---
 
 - [ ] **M-core-packages** | `heroes build --help` is an error at exit 2, which is a stranger's first minute | `selfhost/cli/table.hero:139-176` · `selfhost/cli/argv.hero:78-81` · `selfhost/cli/help.hero:22-46`

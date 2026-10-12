@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-09
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1889
 ---
 
 # Panel 200 sat: a counted slot is released by its address, and the emitted program's other routes are ruled

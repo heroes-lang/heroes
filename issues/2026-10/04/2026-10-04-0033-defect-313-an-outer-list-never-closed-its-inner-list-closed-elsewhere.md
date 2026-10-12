@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-04
 commit: 3c8ca6668eea5fa733bf5ba109955804818958eb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1600
 ---
 
 - [x] **313 — an outer list never closed, its inner list closed elsewhere, may give a spurious message, unrun** | defect 204's shape nested: an outer `[` never closed around an inner list the lexer closes elsewhere; the lane suspected a spurious message and did not run it (2026-10-04): a question until the shape is run | `selfhost/parse/unclosed.hero`, `selfhost/closers.hero` · defect 204 · **class: improvement**

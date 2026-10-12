@@ -4,7 +4,7 @@ area: harness
 milestone: M-generated-programs
 filed: 2026-09-07
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/972
 ---
 
 - [ ] **M-generated-programs** | `--sanitize` runs at `-O2`, where clang deletes the leaks LeakSanitizer exists to find | `tests/harness/suite_corpus.hero` § configurations · `CLAUDE.md` §8

@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-05
 commit: 8ee8d53c874d9464088e9a5099727ca836fba0f1
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1667
 ---
 
 - [x] **345 — `remove_tree` follows a link to a directory into its target and deletes the files there, answering success** | a tree `T` holding `link -> ../A`: removing `T` deleted `A/keep.txt`, outside the tree asked for, and answered success (lane b11-windows, this Mac, 2026-10-05, `<scratchpad>/batch11/windows/shapes/beside/rt1/probe.hero`); no caller's tree holds a link today | `runtime/parts/` (`hero_dir_remove_tree`, its walk) · `selfhost/cli/process.hero` (`remove_tree`, the compiler's callers) · **class: blocking**

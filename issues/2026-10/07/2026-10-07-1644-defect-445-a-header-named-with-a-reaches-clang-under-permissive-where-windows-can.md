@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-07
 commit: 47c96f539fd01c9d2170321750380564d994da78
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1788
 ---
 
 - [x] **445 — a header named with a `"` reaches clang under `--permissive`, where Windows can hold no such file** | `undefined_header_name` is a thesis rule, so `check --permissive` and a permissive build let a header name holding `"` through to clang (lane b14-box, 2026-10-07) | `selfhost/head_names.hero`, `selfhost/head_windows.hero` · defect 252 · **class: improvement**

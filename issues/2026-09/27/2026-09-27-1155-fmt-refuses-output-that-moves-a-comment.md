@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-27
 commit: 29ed560108e1511efcf304e7432d30e911279818
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1358
 ---
 
 # `fmt` refuses output that moves a comment, as it refuses output that changes the tree

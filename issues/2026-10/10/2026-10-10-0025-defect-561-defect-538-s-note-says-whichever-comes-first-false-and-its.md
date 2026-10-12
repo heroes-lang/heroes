@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: cac4fc0b607b583f04653138d5bf6e86a8710600
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1915
 ---
 
 - [x] **561 — defect 538's note says *whichever comes first*, false, and its remedy led two readers to edit a correct program** | `rlmath1` (raymath.h bound first, raylib.h second) fails `test` with the note *whichever comes first*, and `rlmath2`, the same two swapped, passes `test`, and so `tasn1a` and `tasn1b` (libtasn1 and OpenSSL); the blind seat's two readers given the message on `fp` both edited a correct program, one writing `use left` and `left.twice(...)`, which `check` refuses `extern_across_modules`, and both argued its second remedy, *a header of your own*, cannot work where the other header defines the name | `selfhost/cli/headers_together.hero` and `header_refused.hero` · panel 202 R2 · **class: blocking**

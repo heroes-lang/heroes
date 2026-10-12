@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-06
 commit: 5d5a2943aeda36ff8cbf4566e44f21e7f9fcfc78
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1749
 ---
 
 - [x] **410 — a line of ten thousand openers is told ten thousand `unclosed_bracket`** | a line of 10,000 opening brackets gets one `unclosed_bracket` per bracket, on the base and on lane front alike | `selfhost/parse/`, the pairing of brackets · **class: improvement**

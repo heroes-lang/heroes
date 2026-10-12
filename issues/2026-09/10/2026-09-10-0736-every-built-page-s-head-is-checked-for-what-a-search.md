@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-10
 commit: 44177d3c4394c8f33a5f2ebfc8bae810693e35fa
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1088
 ---
 
 - [x] **Every built page's head is checked for what a search result uses**,

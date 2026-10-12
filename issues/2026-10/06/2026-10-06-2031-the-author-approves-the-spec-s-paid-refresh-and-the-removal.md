@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1743
 ---
 
 # The author approves the spec's paid refresh and the removal of two Windows folders

@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-09
 commit: 74e3d457befd161819214c5fadeae970a32fbe1f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1894
 ---
 
 - [x] **540 — a release inside a line stops the debugger under the generated file** | with the prologue carrying the function's line, `step`, `next`, `next` stops at `dbg.hero:1`, `dbg.hero:2:10`, then `dbg.c:70:5`, a release inside line 2 mapped to the generated file (panel 200's compiler-engineer, lldb on this Mac) | the release's `#line` in `selfhost/emit/` · panel 200 R4 · defect 472 · **class: improvement**

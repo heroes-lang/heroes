@@ -4,7 +4,7 @@ area: spec
 milestone: none
 filed: 2026-09-26
 commit: 23bf73edbb1e1d86bf94f228ed0d1b96cbc470a9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1356
 ---
 
 # Defect 104 closed: a line inside brackets breaks by how it ends, the compiler breaks it one way everywhere, and the spec says so

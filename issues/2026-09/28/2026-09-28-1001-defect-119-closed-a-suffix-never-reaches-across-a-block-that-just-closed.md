@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-28
 commit: aee8b01ed0a4f427fcaf31b0aadf55ba4962fa4d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1380
 ---
 
 # Defect 119 closed: a suffix never reaches across a block that just closed

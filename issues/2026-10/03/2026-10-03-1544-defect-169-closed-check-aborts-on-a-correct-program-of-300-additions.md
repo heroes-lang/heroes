@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-02
 commit: ffaf9f4dc40f97c82379b5e16a0f84506c5e359c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1462
 ---
 
 # Defect 169 closed: `check` aborts on a correct program of 300 additions

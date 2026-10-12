@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: dca963a1cea1acf14a8237aab0d8e09c1e27b127
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1895
 ---
 
 - [x] **541 — an argument that needs its type from the context gets none from a generic function's parameter** | panel 105's rule refuses fourteen shapes, a generic function value, `ok(...)`, `[]`, a literal at a narrower width, a result-only call, a concrete parameter of a generic function among them; an inference giving context to every argument that needs it would make spec § 9 true without panel 201's sentence N1f; route I's prototype (`.claude/worktrees/scratch-b15/201-compiler-engineer/tree/`, ignored by git) is its first step, a sitting's | `selfhost/check/` · spec § 9 · design.md §4.12 · panel 201 R1 · defect 488 · **class: improvement**

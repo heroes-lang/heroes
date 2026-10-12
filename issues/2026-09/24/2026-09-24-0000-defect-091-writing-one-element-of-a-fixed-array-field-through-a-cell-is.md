@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-24
 commit: d64da8ff33379d7252eaea24ef7db2a9511f9358
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1324
 ---
 
 - [x] **091 — writing one element of a fixed-array field through a cell is `check` 0 and dies at run time saying it is a compiler bug** | a store whose place ends in an index is always sent to the copy-on-write element writer, which serves `[T]` and fails for `T[N]`, and the emitter writes `hero_unreachable()` where the store should be | `selfhost/emit/inst.hero:133` · `selfhost/emit/container.hero:234` · `spec § 5` · **class: blocking**

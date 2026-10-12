@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-09
 commit: 4b956b613499f5e75bb269f6f22228dcea5479a5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1875
 ---
 
 - [x] **527 — a package's admitted word can carry a response file, and clang or the linker reads options out of it** | the value of an admitted word is checked for a leading `-` and a comma and never for `@`: a `.pc` answering `-Wl,-framework,@rsp`, with `rsp` holding `X --ld-path=<program>`, runs that program as the linker during `heroes build` at exit 0 (macOS); `-Wl,-rpath,@rsp` and `-framework @rsp` make clang read `rsp` as options (a `-map` file written, macOS and Debian 13); `-I@rsp` joined is not expanded. The same list admits `-l:<file>` through the `-l` prefix (`libuv-static`'s `-l:libuv.a`), a word that names a file. This falsifies `docs/design.md`'s sentence that panel 050's allow-list holds against a `.pc` answering `@…`; the frozen compiler of panel 198 and its route K alike | `selfhost/cli/libraries.hero` (`clean_tail`, `valued`, `allowed_prefixed`, the `-framework` next word) · panel 050 · panel 055 · panel 198 · **class: blocking**

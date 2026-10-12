@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-25
 commit: 7dc739251188afc0670eb51771b8350e376b1cfd
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1346
 ---
 
 # A transfer that was made ends the program's own name for the value

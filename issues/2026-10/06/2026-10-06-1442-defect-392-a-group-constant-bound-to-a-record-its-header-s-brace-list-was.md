@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1728
 ---
 
 - [x] **392 — a group constant bound to a record its header's brace list was not written for builds at exit 0** | `docs/panel/178-reports/completeness-critic-work/w/c094/wrongtype.hero` binds Darwin's `PTHREAD_COND_INITIALIZER` as a `Mutex`: the trunk's compiler stopped it at exit 2 only by the internal error every brace-list constant hit, and since defect 094's repair (`41c5d1b4`) the round emits it at exit 0 and it runs (batch 12's census, its attribution written at 14:39:25 on 2026-10-06; lane b12-ffi13 measured the same program printing 1018212795) | `selfhost/emit/record_constant.hero:39`, which records the limit · panel 178's resolution 3, sat again as panel 194 · **class: systemic**

@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-04
 commit: 743bfaabce9788268477c36a98c8f7453ff5a4a4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1573
 ---
 
 - [x] **278 — the `/decide`, `/learn` and `/step` skills still send items to `LEARN.md` and `SCHEDULED.md`, lists retired on 2026-09-12** | `git grep -n -E 'SCHEDULED\.md|LEARN\.md' -- .claude/skills/`: `decide/SKILL.md:25`, `:27` and `:84`, `learn/SKILL.md:69`, `:82` and `:86`, `step/SKILL.md:39` and `:57`, each naming a file that has not existed since `8715133c` (M-rotated-records step 5); `where/SKILL.md:81` is the one that says *retired 2026-09-12* (read by the coordinator, 2026-10-04) | the three skills' routing sentences · `docs/learn/` and `docs/work/milestones/`, the homes since that day · **class: improvement**

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1704
 ---
 
 # Panel 193 sat: a fix says where it applies and what `--apply` does with it, and every answer says what it is

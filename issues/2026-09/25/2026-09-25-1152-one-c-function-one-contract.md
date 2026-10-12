@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-25
 commit: 0a8fd34640b2582bd0768d2ba85e3e982a61bdce
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1343
 ---
 
 # One C function, one contract

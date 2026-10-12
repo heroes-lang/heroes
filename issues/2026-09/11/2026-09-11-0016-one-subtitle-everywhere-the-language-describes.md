@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: b96dafcd15ffe87261a8976704658e0efc40ab9c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1121
 ---
 
 2026-09-11 · **One subtitle, everywhere the language describes itself: *A small

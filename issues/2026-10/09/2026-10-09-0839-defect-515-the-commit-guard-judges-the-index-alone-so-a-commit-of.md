@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-09
 commit: 5d6820b2d5af666e86da953737ebb527950631f9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1863
 ---
 
 - [x] **515 — the commit guard judges the index alone, so a commit of unstaged paths passes unjudged** | `.claude/hooks/staged.py` reads `git diff --cached`, so `git commit -F <msg> -- <paths>` of files never staged commits content no hook judged; at about 04:15 on 2026-10-09 a module over its ceiling and unstaged gave `staged.offences()` nothing while `ceiling.verdict()` refused it (lane b15-emit) | `.claude/hooks/staged.py` · defects 287 and 403 · **class: adjacent**

@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: 8df5f335ac5f52ef8ac0250cbbbc9f994df0c573
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1581
 ---
 
 - [x] **291 — invisible and bidirectional characters stay raw in an excerpt and a message, so U+202E reorders what the terminal shows of the line** | `x: i64 @ "<U+202E>abc"`, a type error on the line: its excerpt carries U+202E (`e2 80 ae`), which reorders what a terminal shows; U+FEFF and U+00A0 stay raw too, where 244's repair writes control characters by their code (lane b9-notext's compiler, 2026-10-04) | `selfhost/shown_char.hero` (`visible`) · `selfhost/diag_render.hero` · defect 283, whether such characters are accepted at all · **class: adjacent**

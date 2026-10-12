@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: ac79639f6e0065139b9cd9b61aab8f9ec51b0a85
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1815
 ---
 
 - [x] **470 — clang's memory on a function of many returns still grows fourfold per doubling** | under `-g` and under line tables alike, 3.7 to 4.0 times per doubling of the returns at `-O2` (panel 197's compiler-engineer, 400 and 800 returns); panel 197's (C) lowers the constant only, so defect 322 closing does not record the growth | the emitted C of a function of many returns · defect 322 · panel 197's R7 · **class: improvement**

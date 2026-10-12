@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-04
 commit: 73ff6c965e560960369ff7963bf2be5fa56ab732
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1611
 ---
 
 - [x] **331 — a bare compiler name, `HEROES_COMPILER=heroes` or `-- heroes`, is checked in the working directory and started through the PATH, so the net can judge another compiler** | a compiler named without a `/` is checked for a file in the working directory and then started through `execvp`, which searches the PATH; where the PATH holds another `heroes`, the net judges that one; on the lane's machine none was on the PATH, so it failed loudly (unrun in the shape that misleads) | `tests/harness/shell.hero` (`some_compiler` and the start of a named program) · defect 316 · **class: adjacent**

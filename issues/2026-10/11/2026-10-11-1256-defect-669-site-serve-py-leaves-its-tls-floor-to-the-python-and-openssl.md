@@ -4,7 +4,7 @@ area: site
 milestone: none
 filed: 2026-10-11
 commit: a1ec2eb995098507b4d60523e82acfb367befccb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2009
 ---
 
 - [x] **669 — site/serve.py leaves its TLS floor to the Python and OpenSSL it runs on** | CodeQL alert 3 (`py/insecure-protocol`, high): `ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)` states no `minimum_version`, so TLS 1.0 and 1.1, deprecated by RFC 8996, are allowed wherever the library's default allows them. On this Mac the default floor already reads 771, TLS 1.2 (`python3 -I`, OpenSSL 4.0.3), so nothing older was offered here; the floor rested on the machine | `site/serve.py:195` · **class: improvement**

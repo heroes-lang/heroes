@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: 8b151864380455e5b280467fff56b30e41ed6b2d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1775
 ---
 
 - [x] **434 — a comment in `cli/artifact.hero` is false for program builds** | *`emit_maybe` with the learned tags is exactly what `assemble.fused` compiles* holds for `--emit-c`, whose artifact is the fused text, and not for a program build, whose rounds compile the per-module units | `selfhost/cli/artifact.hero` · **class: improvement**

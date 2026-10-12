@@ -4,7 +4,7 @@ area: design
 milestone: none
 filed: 2026-10-01
 commit: 606700e262e9d18483ee44ba7e05cdec2dbafd35
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1419
 ---
 
 # A value block that leaves on every path: the question goes to panel 185

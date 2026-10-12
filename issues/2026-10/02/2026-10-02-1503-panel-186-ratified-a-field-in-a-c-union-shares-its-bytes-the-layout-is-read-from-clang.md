@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-02
 commit: 4d0f27a1d630ff8b5ea95fb609ef734c6494e9cc
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1438
 ---
 
 # Panel 186 ratified: a field in a C union shares its bytes, the layout is read from clang, a bit-field is refused

@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-01
 commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1426
 ---
 
 # Defect 150 closed: a correct program that reads a C union naming two members gets clang's warning on the author's line

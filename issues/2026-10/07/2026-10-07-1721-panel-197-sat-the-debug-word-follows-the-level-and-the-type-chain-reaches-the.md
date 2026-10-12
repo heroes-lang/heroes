@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1801
 ---
 
 # Panel 197 sat: the debug word follows the level, and the type chain reaches the debug writer from its bottom

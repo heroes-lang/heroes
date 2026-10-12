@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 15cb45e717724f21e6f5af928c03666947f9d6ad
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1125
 ---
 
 2026-09-11 · **Panel 132 ratified, and the surface goes to the seat that could not

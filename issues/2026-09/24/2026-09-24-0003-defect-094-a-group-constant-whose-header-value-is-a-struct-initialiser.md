@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-24
 commit: 41c5d1b49c6dbde2177bdd1ca40f1f6b163af1ef
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1327
 ---
 
 - [x] **094 — a group `constant` whose header value is a struct initialiser passes `check` and stops the build with `internal error`** | the emitter writes `return PT_INIT;` and a file-scope `__typeof__(PT_INIT)` probe, and `{1, 2}` is neither an expression nor a type, so clang fails and the compiler reports itself broken | `selfhost/emit/` constant emission · `.claude/rules/c-boundary.md` · `spec § 13` · **class: blocking**

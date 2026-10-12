@@ -4,7 +4,7 @@ area: print
 milestone: M-guide-book
 filed: 2026-09-04
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/862
 ---
 
 - [ ] **M-guide-book** | a long signature has no continuation, and a printed page cannot hold one | `selfhost/print/fmt.hero:77`, `:524-550` · `selfhost/parse/members.hero:60-104` · `docs/panel/110`

@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-06
 commit: 9d884765c8e13bfa0eb3b65d9e628e7455f6c6d3
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1760
 ---
 
 - [x] **421 — a qualified generic function value has no surface row** | `helper.ident`, a generic function of another module used as a value, checks and runs after defect 402's repair (prints `q1` and `31`, the lane's run by hand) and no golden or surface row pins it, the shape needing two modules | `tests/harness/suite_surface.hero` · **class: improvement**

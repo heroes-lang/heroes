@@ -4,7 +4,7 @@ area: records
 milestone: M-guide-book
 filed: 2026-08-24
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/653
 ---
 
 - [ ] **M-guide-book** | metric 2's held-out tasks, written by the author | `docs/metrics/tasks.md` · `docs/panel/011`

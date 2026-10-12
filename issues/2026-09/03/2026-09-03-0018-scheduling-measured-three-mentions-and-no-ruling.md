@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-03
 commit: 19157f4a2745cf7e05afdf4718eed9811d4888fc
-github: none
+github: https://github.com/heroes-lang/heroes/issues/828
 ---
 
 2026-09-03 scheduling measured *"three mentions and no ruling"* over a wider set;

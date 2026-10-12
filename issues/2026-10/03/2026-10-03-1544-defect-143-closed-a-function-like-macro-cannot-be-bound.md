@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-30
 commit: 826ddc2f06a582675137e6cdf427e97eddb4df68
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1417
 ---
 
 # Defect 143 closed: a function-like macro cannot be bound

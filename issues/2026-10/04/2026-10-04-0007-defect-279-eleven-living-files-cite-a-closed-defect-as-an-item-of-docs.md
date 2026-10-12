@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1574
 ---
 
 - [x] **279 — eleven living files cite a closed defect as an item of `docs/work/DEFECTS.md`, which since 2026-10-04 holds no item** | `git grep -n 'DEFECTS\.md' -- selfhost docs/learn`: four `selfhost/` comments (`check/decls.hero:423` for 042, `check/reaches.hero:1`, `handles.hero:1` and `mutate/handles.hero:2` for 029) and seven `docs/learn/` notes (029, 030, 031, 129 among them), each closed and its record in `docs/records/done/` (read by the coordinator, 2026-10-04) | those eleven files · the closing records they should name · **class: improvement**

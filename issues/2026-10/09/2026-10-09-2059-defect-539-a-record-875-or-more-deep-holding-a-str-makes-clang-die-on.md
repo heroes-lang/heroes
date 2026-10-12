@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-09
 commit: e7861f2f5aaf679305874c417aaf68af6394915f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1893
 ---
 
 - [x] **539 — a record 875 or more deep holding a `str` makes clang die on the emitter's `= {0}`** | `heroes build` exits 2, *clang died (Segmentation fault: 11)*, with a note blaming the C compiler's limit; depths 33 to 750 build, 875 and 1,000 die; an `i64` at the bottom builds at 7,000; the same C zeroed with `__builtin_memset` builds, links and prints at 1,000 (panel 200's compiler-engineer and critic) | the zeroing of a slot in `selfhost/emit/` · panel 200 R5 · panel 182 · defects 140 and 170 · **class: blocking**

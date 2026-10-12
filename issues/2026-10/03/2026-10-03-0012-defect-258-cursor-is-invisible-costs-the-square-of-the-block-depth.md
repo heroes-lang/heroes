@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-03
 commit: 2a2047748c95a9103f03e76736bb51d97afe6c1b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1498
 ---
 
 - [x] **258 — `cursor.is_invisible` costs the square of the block depth** | 4,014,367 calls on `match-nested-1000` (batch 8's emit lane, counted in an instrumented copy of its compiler's C (`build --emit-c`, the lane's tip `96473596`), 2026-10-03, its report's *Found beside*, `<scratchpad>/batch8/emit/shapes/` and `<scratchpad>/round1003d/shapes2000/`) | `selfhost/cursor.hero:194` (`is_invisible`) · **class: improvement**

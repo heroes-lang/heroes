@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-07
 commit: 428a5cfd480123649703197394c3dca9d94cc01e
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1799
 ---
 
 - [x] **456 — `heroes probe` panics on two comments fixtures in the `paren` family** | `heroes probe tests/golden/surface-fixtures/comments101/ascending.hero --family paren` and the same of `closeparen.hero` each stop with *panic: array index out of range*, exit 134; every other family passes on them (lane b14-harness-b's reading on `dad2da47`'s compiler; the two runs reproduced by the coordinator before 16:52 on the trunk's compiler at `00e2eda6`, `<scratchpad>/batch14/probe456/`) | `selfhost/probe/`, the `paren` family's mutation of a line that holds a comment · **class: blocking**

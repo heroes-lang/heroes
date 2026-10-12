@@ -4,7 +4,7 @@ area: examples
 milestone: M-corpus-coverage
 filed: 2026-08-13
 commit: 56bd476b4b36ec7fec2acdbcae3a94ae33da86a8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/416
 ---
 
 - [x] **M-corpus-coverage** (a new milestone id, not an area annexed: `M-program-corpus` closed 2026-08-13 and delivered *many whole programs, all of them run* — this one delivers *every language form has a program*) | author instruction 2026-09-02, *"aggiungere altri esempi (almeno altri 20) che facciano uso di tutte le feature del linguaggio compresa quest'ultima"* | **Twenty-plus programs for `examples/`, ordered by a MEASURED coverage gap rather than by invention** — the milestone's own scheduling item, which stood in `docs/work/SCHEDULED.md:44` as `- [ ]` until 2026-09-03, a day after the milestone closed. Its full brief (the 46-form measurement, the six library functions at zero uses, `tag`, `args_checked`, the two rules that bind corpus material) is the text that stood there and is not repeated; what this row adds is the closure the record was missing under the right name | docs/journal/029-corpus-coverage.md · docs/work/DONE.md:924 (the item that carried this milestone's closure paragraph by mistake) | a milestone closed in one list and open in another is the shape CLAUDE.md §3 names — a rule with no executor

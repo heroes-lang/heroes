@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-23
 commit: 3692af263d72a0f02492eea6bc93488ce4927201
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1314
 ---
 
 

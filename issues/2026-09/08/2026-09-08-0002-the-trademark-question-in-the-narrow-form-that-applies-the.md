@@ -4,7 +4,7 @@ area: site
 milestone: M-publication-gate
 filed: 2026-09-08
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1004
 ---
 
 - [ ] **M-publication-gate** | the trademark question, in the narrow form that applies: the Aladdin Sane bolt | `site/README.md` § Style guide · `docs/assets/`

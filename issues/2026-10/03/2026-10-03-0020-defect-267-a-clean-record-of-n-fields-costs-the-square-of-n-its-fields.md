@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-03
 commit: 7419b76fe2817b751d271487b47b18b1e1df3cf2
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1507
 ---
 
 - [x] **267 — a clean record of N fields costs the square of N, its fields pushed through a growing array** | 2,000 to 8,000 fields: 13.5 times, 30.2 billion instructions at 8,000 (batch 8's recovery lane, instructions retired, 2026-10-03, its report's *Found beside*, `<scratchpad>/batch8/recovery/r178/clean_fields_*`), defect 146's pattern | `selfhost/parse/member_lines.hero:82` (`fields.push`) · **class: adjacent**

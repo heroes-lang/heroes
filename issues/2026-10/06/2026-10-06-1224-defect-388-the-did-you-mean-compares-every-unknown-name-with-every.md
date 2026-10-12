@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-06
 commit: 7fbf2a43b2afe2cb3f64a09a6cea2453bb9b341a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1721
 ---
 
 - [x] **388 — the did-you-mean compares every unknown name with every candidate near it in length** | after defect 385's repair the scope reproducer, N locals and N unknown names none near enough to offer, still grows about 3.35 times for each doubling of N, 7.89 billion instructions at 800, about 12 thousand instructions a comparison by division (an inference); a sample at 1,600 names puts 1,590 of the name stage's 1,711 in `nearest_in` (lane fit12's measurement, not re-run by the coordinator) | `selfhost/resolve/near_names.hero`, `nearest_in` and `within` · an index keyed by every deletion of up to two letters, unbuilt · defects 372 and 385 · **class: improvement**

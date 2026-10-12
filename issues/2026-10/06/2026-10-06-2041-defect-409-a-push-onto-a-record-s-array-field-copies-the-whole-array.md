@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-06
 commit: f90ee44e19ef804dd4b3d1871d93266f3b078607
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1748
 ---
 
 - [x] **409 — a push onto a record's array field copies the whole array** | `r.f @ r.f.push(x)` copies the array at every push (by design, panel 037: only a plain name grows in place): 3.0, 12.1 and 48.1 billion instructions at 10,000, 20,000 and 40,000 pushes, against 21.6, 27.3 and 38.6 million for a local; 368 such lines in `selfhost/`, of which defect 393's three in `print/elements.hero` were quadratic | `grep` of `@ .*\.push(` on a field in `selfhost/` · **class: improvement**

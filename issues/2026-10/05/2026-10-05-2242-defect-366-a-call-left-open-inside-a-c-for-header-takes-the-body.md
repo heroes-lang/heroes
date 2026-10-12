@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-05
 commit: 12fca9eaca3ffc6f625e46b5944aa4d6c8c709cb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1695
 ---
 
 - [x] **366 — a call left open inside a C `for (` header takes the body** | `for (i = 0; i < f(3; i++` over a body: four messages on lane b12-parse12's compiler (`unexpected_character`, `unclosed_bracket`, `for_missing_in`, `missing_body`), five on the base (measured by the coordinator, 2026-10-05, `<scratchpad>/batch12/filing/` `302-f-call-inside.hero`) | `selfhost/parse/loop_habit.hero`, `parse/unclosed.hero` · defect 302's sibling · **class: adjacent**

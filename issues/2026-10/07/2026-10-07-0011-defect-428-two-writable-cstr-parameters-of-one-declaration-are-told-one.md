@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: 868c26c23b80055c8c57caddafa4896e2a7394fe
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1769
 ---
 
 - [x] **428 — two writable `cstr` parameters of one declaration are told one at a time** | a declaration with two `cstr` parameters C writes is told `ffi_writable_parameter` for the first, the second only once the first is repaired, the diagnostic spanning the whole declaration and kept once per span; the same on the base | `selfhost/emit/ffi_mutable.hero` · **class: adjacent**

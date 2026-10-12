@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-24
 commit: ed3432db14582652d265e132392e0af23fbbb1ee
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1328
 ---
 
 # A dead handle is poisoned where it lay and remembered where it was

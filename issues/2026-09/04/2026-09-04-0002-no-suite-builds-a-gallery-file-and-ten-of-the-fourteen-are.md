@@ -4,7 +4,7 @@ area: examples
 milestone: M-publication-gate
 filed: 2026-09-04
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/864
 ---
 
 - [ ] **M-publication-gate** | no suite builds a gallery file, and ten of the fourteen are named by no test | `examples/gallery/` · `tests/harness/suite_corpus.hero:44` · `examples/README.md`

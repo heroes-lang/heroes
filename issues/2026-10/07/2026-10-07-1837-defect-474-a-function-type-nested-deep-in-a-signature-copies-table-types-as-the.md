@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: 368dafda8553a2715967be21bd1d241ad699fab9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1819
 ---
 
 - [x] **474 — a function type nested deep in a signature copies table types as the square of its depth** | `table.Ty` copies 41,050 at 250 and 143,925 at 500, no walk function growing; likely a whole-table copy, not located (lane b14-check) | `selfhost/check/` · **class: improvement**

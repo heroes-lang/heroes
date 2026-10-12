@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-30
 commit: 04e90077ab8f0ebcc06e7141a1b35f1fa8243b29
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1406
 ---
 
 # Defect 137 closed: check --apply writes each certain fix into the text it was made for, and asks the stage again until it has none left

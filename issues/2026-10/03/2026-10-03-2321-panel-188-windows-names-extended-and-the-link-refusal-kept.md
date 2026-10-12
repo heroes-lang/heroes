@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-03
 commit: 334cb3a1b00bc06ebac751f4d193dcfa7ddf9eb0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1535
 ---
 
 # Panel 188's Windows names: R2 and R6 extended in batch 8, the `link` refusal kept

@@ -4,7 +4,7 @@ area: cli
 milestone: M-deployable-binary
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1080
 ---
 
 - [ ] **M-deployable-binary** | what a built program needs at run time on each platform, and which `-O` it ships with | `selfhost/cli/table.hero` · `selfhost/cli/verbs.hero:105` · `design.md:708-710` · `docs/platforms/`

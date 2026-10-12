@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-19
 commit: 28df0084bab41fc12ef0eed89a604873dacc6d64
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1276
 ---
 
 # The number C keeps, and the one it throws away

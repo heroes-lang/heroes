@@ -4,7 +4,7 @@ area: check
 milestone: M-core-packages
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1067
 ---
 
 - [ ] **M-core-packages** step 1 | `strconv`, because six programs write the same digit loop by hand | `selfhost/check/builtins.hero:73-95` · `examples/json/`, `calculator/`, `ini/`, `spreadsheet/`, `csv/`, `interpreter/` · `docs/ROADMAP.md` § M-core-packages

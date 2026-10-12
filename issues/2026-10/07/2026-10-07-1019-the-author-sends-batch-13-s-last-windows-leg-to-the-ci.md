@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-07
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1783
 ---
 
 # The author sends batch 13's last Windows leg to the CI

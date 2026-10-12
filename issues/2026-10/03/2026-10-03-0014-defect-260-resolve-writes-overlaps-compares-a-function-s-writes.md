@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-03
 commit: adf443f3349296397467501de8003704a469ac4c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1500
 ---
 
 - [x] **260 — `resolve/writes.overlaps` compares a function's writes pairwise** | 319,600 calls on `many-params-800` (batch 8's emit lane, counted in an instrumented copy of its compiler's C (`build --emit-c`, the lane's tip `96473596`), 2026-10-03, its report's *Found beside*, `<scratchpad>/batch8/emit/shapes/` and `<scratchpad>/round1003d/shapes2000/`) | `selfhost/resolve/writes.hero:237` (`overlaps`) · **class: improvement**

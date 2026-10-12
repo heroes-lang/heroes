@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-10
 commit: aeed52ecfa152d6d8424974b968be92883db75f3
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1931
 ---
 
 - [x] **571 — a header's `deprecated` attribute fires clang's raw warning at the compiler's own probe line on a correct program** | panel 205's critic, both passes: `<ucontext.h>` bound through a header of the program's own defining `_XOPEN_SOURCE 600` (`hole/uc.hero`) builds at exit 0 and prints clang's `-Wdeprecated-declarations` at the emitted `_Static_assert(HERO_RET_I32(getcontext((void *)0)), ...)`, a line of the compiler's own, under today's compiler and every arm the sitting built | the emitted probe lines, `selfhost/emit/extern_probe.hero`; panel 205 R5 · **class: blocking**

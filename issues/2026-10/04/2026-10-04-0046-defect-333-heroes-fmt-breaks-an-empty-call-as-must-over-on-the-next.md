@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-10-04
 commit: f38c25b25650ad0af550cf725115c4443b6a5864
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1613
 ---
 
 - [x] **333 — `heroes fmt` breaks an empty call as `.must(` over `)` on the next line, and the first line stays past the width** | a line past the width ending in an empty call, `x.must()`: `fmt` writes `.must(` and `)` on the line below, which makes nothing shorter; the result is stable under a second `fmt` and legal | `selfhost/print/fmt.hero` (the break inside a call's parentheses) · **class: improvement**

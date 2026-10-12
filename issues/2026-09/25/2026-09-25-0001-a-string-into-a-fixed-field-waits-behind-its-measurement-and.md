@@ -4,7 +4,7 @@ area: records
 milestone: M-buildable-structs
 filed: 2026-09-25
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1333
 ---
 
 - [ ] **M-buildable-structs** | a string into a fixed field waits behind its measurement, and the landing is where it is taken | `docs/panel/178-the-rest-is-zero-where-it-is-written-and-c-says-which-value-is-valid.md` item 6

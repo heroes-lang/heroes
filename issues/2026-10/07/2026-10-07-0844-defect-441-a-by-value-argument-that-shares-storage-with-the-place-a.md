@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-07
 commit: c1f87af5c071a6d6bd52d893c02b1a6812f450a8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1782
 ---
 
 - [x] **441 — a by-value argument that shares storage with the place a call writes reads the write** | a call writing a root through `@` while a by-value argument borrows the same one-reference array: the base printed `7 7` where copy in, copy out gives `1 7`, and one row ended in a heap use-after-free under `--sanitize` with a false message naming a null pointer (lane b13-land-addr's case `run/fixedbugs-413-*`'s by-value rows, red on the base) | ownership of an argument beside an `@` write, `selfhost/ir/held.hero` · **class: blocking**

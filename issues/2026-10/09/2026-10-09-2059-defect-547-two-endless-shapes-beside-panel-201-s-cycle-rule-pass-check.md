@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 0411ec8feafe2543ecdc319e8d8d3439d31ea8b7
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1901
 ---
 
 - [x] **547 — two endless shapes beside panel 201's cycle rule pass `check`** | a function calling itself or another that calls it back, found by following first calls (`selfloop_first`), and a self-call through a parameter (`go(n: n, f: step)` inside `step`) pass the rule panel 201 R3 lands; each aborts at run time (panel 201's compiler-engineer) | `selfhost/check/`, the cycle rule panel 201 R3 lands · defect 520 · **class: improvement**

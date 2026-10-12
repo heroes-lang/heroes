@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: c3cd421361be5364621b85d88909de40d024f7f9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1530
 ---
 
 # The author amends the batch: sixteen to thirty-two defects, gated once

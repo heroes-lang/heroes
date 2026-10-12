@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: d6be48972d0d67871f0e3bc67ac0daa834aa30e6
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1773
 ---
 
 - [x] **432 — a use of a binding whose fixed array was refused is judged against the fixed type** | `x: i64[2][3]` outside a group, refused `fixed_outside_a_group`, then `len(x)`: told `bad_operand`, though `len` works on the `[[i64]]` the refusal offers | defect 423's withdrawal, `fixed_judged.hero` on lane b13-fixed405 (unmerged on 2026-10-07), and the uses of the binding · **class: adjacent**

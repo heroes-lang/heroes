@@ -4,7 +4,7 @@ area: module
 milestone: M-robustness-guards
 filed: 2026-09-03
 commit: c8eba69bd480526e252ecf3346ec5fee7fc6b797
-github: none
+github: https://github.com/heroes-lang/heroes/issues/831
 ---
 
 - [x] **`M-robustness-guards`, step 2** | `/decide` 2026-09-03 (author instruction as above); panel 102's ffi-pragmatist, unasked; panel 101 R4 | **`needs_qualifying`'s `certain` fix reproduces itself, and `.fixed` cannot see any module diagnostic.** Two halves, both. (1) `selfhost/module/diagnostics.hero:110` `.certain` → `.guess`, its test at `:281` flipped, its doc comment rewritten (it argues the fix is certain; measured 2026-09-03 on the live seed, `use window` beside `window: ptr` gives `shadowed_binding` AND `needs_qualifying`, and `heroes check --apply` is exit 0 writing `window.window.destroy()`). (2) `tests/harness/suite_fixes.hero` learns `tests/golden/surface-fixtures/`: one `X.fixed` beside each `X.hero` that carries a certain fix; the suite copies the fixture directory to scratch, swaps the file, and requires `heroes check` exit 0 on the entry file; a floor like `LEAST` on the count; the first fixture is the `window` program above, which must then pass with a `guess` and no `.fixed`. Golden cases naming `needs_qualifying` today: 0 | tests/harness/suite_fixes.hero (`CHECK_DIR`, `LEAST`) · tests/golden/surface-fixtures/ · selfhost/module/diagnostics.hero:110,:281 | CLAUDE.md §8 promises CI checks an applied certain fix, and the promise has never once run on the module class

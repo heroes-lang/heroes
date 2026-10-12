@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-05
 commit: 35ff902445ea96a7b9567267a14d8b8e5efde753
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1669
 ---
 
 - [x] **347 — `heroes check ''` says *cannot read ``*, naming an empty path as a file** | `heroes check ''`: *cannot read ``*, where an empty argument names no file at all (lane b11-windows, this Mac, 2026-10-05, the lane's report) | `selfhost/cli/input.hero` (the file read) · defect 295, which told a missing file from an unreadable one · **class: improvement**

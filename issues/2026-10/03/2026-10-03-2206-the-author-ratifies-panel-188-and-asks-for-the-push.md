@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: 9818ef8868a3414cb23ed3bc2c371eeb134ba82b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1532
 ---
 
 # The author ratifies panel 188 and asks for the push

@@ -4,7 +4,7 @@ area: compiler
 milestone: M-core-packages
 filed: 2026-09-13
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1154
 ---
 
 - [ ] **M-core-packages** | `sort_by` joins the library's six generic higher-order functions, and four hand-written sorts come out | `selfhost/library_source.hero:74-125` · `selfhost/modules.hero:167-190`, `selfhost/resolve.hero:82-101`, `selfhost/resolve/cycles.hero:77-98`, `selfhost/ir/verify.hero:150-168` · `docs/panel/137-the-hole-was-two-operations-wide-and-the-answer-was-a-library-function.md`

@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-02
 commit: 744cdc085fd84a79f50400838aa4c3bfe70e15b2
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1457
 ---
 
 # Defect 158 closed: a group's header that includes a header this machine lacks stops `build` with an internal error and clang's text

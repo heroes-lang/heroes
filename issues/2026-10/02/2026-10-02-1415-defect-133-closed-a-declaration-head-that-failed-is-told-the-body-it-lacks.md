@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-29
 commit: 435201935c2adf4afdd5610b10335b213e8c1239
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1398
 ---
 
 # Defect 133 closed: a declaration head that failed, or ends in a refused word, is told the body it lacks in the first run

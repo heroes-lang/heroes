@@ -4,7 +4,7 @@ area: design
 milestone: M-thesis-harness
 filed: 2026-09-03
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/816
 ---
 
 - [ ] **M-thesis-harness** | what it depends on, and the author's decision on the seed tasks | `design.md` Part 11 · `docs/measurements/007` · `docs/panel/011`

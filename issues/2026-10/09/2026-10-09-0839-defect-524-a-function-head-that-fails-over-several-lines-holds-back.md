@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-09
 commit: 608715260c645afd8dacc15479247bb3396170f1
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1872
 ---
 
 - [x] **524 — a function head that fails over several lines holds back its missing-body message** | a failing head on one line is told 2 messages, the same head broken over several lines 1 (lane b15-parse) | `selfhost/parse/`, the head's recovery · **class: adjacent**

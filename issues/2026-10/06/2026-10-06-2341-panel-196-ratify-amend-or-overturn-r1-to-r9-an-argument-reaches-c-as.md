@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1764
 ---
 
 - [x] **panel 196** | ratify, amend or overturn R1 to R9 (an `@` argument reaches C as its own place, never a copy, through an element and a Heroes function's own `@` parameter; one element unless an extent is stated; `lent` legal on `@`, and a temporary only for `lent`; the buffer C fills owned by the emitter in a per-thread guarded region, with a constant, a literal or a sibling as its extent; the header's own extent read; a local lent in place inside the guard; the fixes that drop an extent repaired; S1, S3, S4 as a copy, S5′, S6, S0 and nothing refused) | `docs/panel/196-an-argument-reaches-c-as-its-own-place-one-element-unless-an-extent-is-stated-and-a-buffer-c-fills-is-lent-and-guarded.md`

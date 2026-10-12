@@ -4,7 +4,7 @@ area: spec
 milestone: M-c-callbacks
 filed: 2026-09-05
 commit: aab44f9b70a2bf9c9f0311553c6cfac220b090e8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/917
 ---
 
 - [x] **M-c-callbacks** (OPEN) — the two spec sentences R4 owes, and the budget they must fit | panel 111 R4, quoting the spec-warden's and the ergonomist's wordings | **The permission is in the compiler and not in the document.** `spec/heroes-spec.md` § FFI says what a parameter and a field may be and says nothing about a function type, so a reader of the spec alone cannot write `atexit`. R4 adopted the **spec-warden's shorter wording** over the proposal's: it states the **parameter-only** restriction, which the proposal's never mentioned, at **+16** tokens against +26, and a measured **−8** removal of `Neither may be an absolute path.` brings it to **+8 net**. Owed with it, or the restriction is under-specified: **the ergonomist's second sentence**, on the callback's own parameter widths and `(function() -> ())`, without which `atexit` is unwritable from the document alone. **Measured 2026-09-05, before this work**: `heroes measure spec/heroes-spec.md` reads **3799** of a hard 4096, headroom **297**, so +8 net is affordable and the pair must still be re-measured after it is written, never predicted. The spec-warden's own prediction, scored at M-isolated-threads close, is that the total stays **≤ 3830** | spec/heroes-spec.md § FFI · docs/panel/111 R4 · docs/measurements/010-spec-budget-ledger.md | the compiler accepts a form the language document does not describe, which is the one direction CLAUDE.md §12 says is always the compiler's bug

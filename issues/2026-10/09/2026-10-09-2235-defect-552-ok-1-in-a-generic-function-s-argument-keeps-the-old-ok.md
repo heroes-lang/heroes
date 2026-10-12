@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: f4e883af6a39d4a0877f8f9186e93fab8644eac4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1906
 ---
 
 - [x] **552 — `[ok(1)]` in a generic function's argument keeps the old `ok` message** | defect 544's repair tells `ok(...)` at a generic function's parameter by its rule, and the same `ok(1)` one level down, inside an array literal argument, keeps the message before it (lane b17-check) | `selfhost/check/generic_argument.hero` · defect 544 · **class: adjacent**

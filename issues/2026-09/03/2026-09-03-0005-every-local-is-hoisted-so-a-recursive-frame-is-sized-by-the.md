@@ -4,7 +4,7 @@ area: examples
 milestone: M-qbe-backend
 filed: 2026-09-03
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/813
 ---
 
 - [ ] **M-qbe-backend** | every local is hoisted, so a recursive frame is sized by the whole body | `CLAUDE.md` §7 · `examples/interpreter/syn/expr.hero` · `selfhost/emit/`

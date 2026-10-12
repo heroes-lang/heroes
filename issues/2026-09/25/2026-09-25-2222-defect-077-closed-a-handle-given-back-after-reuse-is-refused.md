@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-09-23
 commit: 7dc739251188afc0670eb51771b8350e376b1cfd
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1321
 ---
 
 # Defect 077 closed: a handle given back after C handed its address out again is refused at check through its name, and stopped before C through a copy that was not reused

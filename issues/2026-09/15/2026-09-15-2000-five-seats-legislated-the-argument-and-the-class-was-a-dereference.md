@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-15
 commit: 115c4dd177727f02a6c0e13b2e73172c3bac4a96
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1230
 ---
 
 # Five seats legislated the argument, and the class was a dereference

@@ -4,7 +4,7 @@ area: design
 milestone: none
 filed: 2026-09-30
 commit: fd523aad7f4f63cdcb639cc0e93181bed639cb6d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1402
 ---
 
 # Panel 183 ratified: the reach of an unclosed opener ends at a line no bracket can hold

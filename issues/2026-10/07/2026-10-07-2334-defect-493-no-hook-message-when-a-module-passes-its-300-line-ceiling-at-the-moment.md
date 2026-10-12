@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-07
 commit: e608659ee0d945e3e5632bafddb64d649cec1aac
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1839
 ---
 
 - [x] **493 — no hook message when a module passes its 300-line ceiling at the moment of writing** | `verify.hero`, `typeorder.hero`, `container.hero` and `ops.hero` passed 300 in lane b14-emit's work with no word from the write hook; `layout` whole found them later (lane b14-emit) | `.claude/hooks/fmt_check.py`, `.claude/hooks/ceiling.py` · **class: improvement**

@@ -4,7 +4,7 @@ area: check
 milestone: M-agreed-retention
 filed: 2026-09-20
 commit: 0a8fd34640b2582bd0768d2ba85e3e982a61bdce
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1296
 ---
 
 # One C function, one contract: two modules declaring one C name must agree

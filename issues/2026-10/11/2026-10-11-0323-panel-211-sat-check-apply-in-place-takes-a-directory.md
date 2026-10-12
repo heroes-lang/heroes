@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-11
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1991
 ---
 
 # Panel 211 sat: `check --apply --in-place` takes a directory and writes a module only where every root agrees

@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-04
 commit: 038a90fcd3b78be585a6c4b265eeca558b054e80
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1602
 ---
 
 - [x] **315 — a member written on its head's line over nothing, `variant T: a`, is told twice: the head's junk and the empty block, where moving the member below cures both** | `variant T: a` over nothing: *expected the end of the line after `variant T`, found `:` — its cases go on the lines below it*, at the `:`, and `empty_variant` at the head; `record R: x` the same with `empty_record`; the trunk's compiler at `703af779` told the empty block alone, and with a member below either compiler tells the junk alone (batch 9's round compiler, built from the seed beginning `26ccaa9d`, 2026-10-04, `<scratchpad>/p315/`); the census at batch 9's gate moved `check/fixedbugs-131-a-colon-in-mid-line-left-to-its-head` from 5 messages to 6 by it | `selfhost/parse/members_below.hero` (`no_members_below`, the junk told over no members with the empty block beside it) · defect 198's repair, `a6eeb4e6` · **class: adjacent**

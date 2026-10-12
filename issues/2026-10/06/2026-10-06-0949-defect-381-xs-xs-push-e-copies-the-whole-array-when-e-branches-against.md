@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-06
 commit: 805a6974f55ce1c24cda9c2e5cfb133530d734e6
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1712
 ---
 
 - [x] **381 — `xs @ xs.push(e)` copies the whole array when `e` branches, against spec § 10's in-place growth** | 40,000 pushes onto a plain name: `bytes @ bytes.push(text[at].to_i64().must())` retires 48,118,251,823 instructions, the same value bound to a name on the line above 44,782,121; `--dump-ir` shows a `load` of the array before the `must:` branch and `call builtin push` after it, where the named form has `push_owned`. In the pushed value `.must()`, `.default(0)`, `?`, `&&` and `||` each lose `push_owned`; `/` and `%`, which abort without a branch, keep it (the round's compiler at `ca7cf585`, measured by the coordinator at 07:33 and 09:48 on 2026-10-06) | `selfhost/ir/place_store.hero`, `pattern`: the rewrite asks for `load p` and `store p` in ONE block, and a branching value puts them in two · spec § 10 · **class: blocking**

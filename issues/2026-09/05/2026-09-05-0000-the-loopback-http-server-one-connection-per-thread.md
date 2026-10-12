@@ -4,7 +4,7 @@ area: runtime
 milestone: M-core-packages
 filed: 2026-09-05
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/893
 ---
 
 - [ ] **M-core-packages** | the loopback HTTP server, one connection per thread | `design.md` Part 7 item 13 · `runtime/parts/thread.c` · `docs/panel/111`

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-06
 commit: de2e9770dea52393fa9cf4d1b0bcb3f0284b7fb0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1711
 ---
 
 - [x] **380 — check --apply said nothing of a certain fix in a module only a later round reads** | `check main.hero --apply` over a `main.hero` that quotes its `use` (`use "geom"`) and a `geom.hero` holding `fn` writes `use geom` at exit 0 and says nothing on stderr; `check` of the program it wrote exits 1 on `geom.hero`'s `fn`, its fix `certain` (the trunk's compiler at `0f48f9f9`, run by the coordinator at 09:49 on 2026-10-06 over `tests/golden/surface-fixtures/applylater/`) | `selfhost/cli/check.hero`, `settle` reading the program again each round and `elsewhere` gathered from the first round alone · panel 193's R4, `not_applied` · **class: adjacent**

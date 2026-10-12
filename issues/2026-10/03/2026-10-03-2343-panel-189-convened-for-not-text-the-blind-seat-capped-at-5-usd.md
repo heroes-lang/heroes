@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: fa7ec490856271473fe60e90ccf1f95af29b1d35
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1537
 ---
 
 # Panel 189 convened for defect 227's code, `not_text`; the blind seat capped at 5 USD

@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-06
 commit: c1f87af5c071a6d6bd52d893c02b1a6812f450a8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1752
 ---
 
 - [x] **413 — a record lent to C as an array's element is handed a copy, and a library that knows it by its address refuses it** | zlib's `z_stream` bound `record ZStream tag z_stream_s partial` and lent `@zs[0]`, `zs: [ZStream]`, to `deflateInit_`, `deflateReset` and `deflateEnd`: `check` 0, `run` 0, printing `0 -2 -2`, `Z_STREAM_ERROR` from the second call on, where the same calls on a local `@zs` print `0 0 0`; each call hands C a temporary copied in and out, and zlib keeps its stream's address (the coordinator's re-run of panel 196's ffi-pragmatist's `z_elem.hero` and `z_local.hero` on round b13's compiler at `3710c5a4`, 22:53) | the lowering of an `@` element argument, `selfhost/ir/inout.hero`; the ruling is panel 196's · **class: blocking**

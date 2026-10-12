@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-09
 commit: 61624d0f2cf948cbc865148a5bd08d822a55b659
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1892
 ---
 
 - [x] **538 — `heroes test` tells two groups binding one C name with different types that one header does not compile** | two modules binding `a.h` and `b.h`, each defining a `static inline twice` of another type: `check` and `build` exit 0 and the program prints 6 and 8, while `heroes test` exits 1 with *`b.h`, the header this group names, does not compile*, and with the `use` lines swapped blames `a.h`; each header compiles alone; panel 200's route B for defect 453 would make `--emit-c` say the same; what `check`, `build` and `test` should say of such a program is a diagnostic class | `selfhost/emit/` and `selfhost/cli/whose.hero` (`ffi_header_refused`) · panel 200 R1 · defect 453 · **class: blocking**

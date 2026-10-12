@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-30
 commit: 47d8c9d1b99d3164360d098f444d78b39fd17314
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1401
 ---
 
 # Panel 183: the reach of an unclosed opener ends at a line no bracket can hold

@@ -4,7 +4,7 @@ area: runtime
 milestone: M-robustness-guards
 filed: 2026-09-03
 commit: 4848d0f15369a65a042123a88040a15bc9378244
-github: none
+github: https://github.com/heroes-lang/heroes/issues/835
 ---
 
 - [x] **`M-robustness-guards`, step 4 — the soundness lane first (compiler-engineer + ffi-pragmatist), then the runtime** | `/decide` 2026-09-03 (author instruction as above, choosing (a) in its complete form) | **Deep recursion is exit 139 with no word; the runtime gets a guard-page handler that names the function.** Alternate signal stack + `SIGSEGV` handler on POSIX, a vectored exception handler on Windows; the handler checks the fault address against the stack bounds, prints `panic: stack exhausted` on the abort path every other runtime failure uses, exit 134, and symbolises the faulting frame (`backtrace`/`dladdr`; `CaptureStackBackTrace`/`SymFromAddr`) so the message reads `in d.down` without `--sanitize` — the mangler is deterministic, so `h_d_down` reads back. The lane prices the emitted depth counter as the fallback where symbolisation cannot name the frame, and measures the handler on the three platforms before the commit (CLAUDE.md § Commands). Measured 2026-09-03: Mac 50,000 frames exit 0 / 100,000 exit 139; Linux image 100,000 and 500,000 exit 139; `runtime/` has no signal handling at all | runtime/runtime.c (`hero_panic`) · runtime/hero_os.h · site/src/html/why.html:197 (the declared hole, to be un-declared when this lands) · design.md §1.12 | a language whose goal is that programs do not crash, crashing without a word on a five-line program

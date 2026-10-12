@@ -4,7 +4,7 @@ area: emit
 milestone: M-typed-inspection
 filed: 2026-09-06
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/942
 ---
 
 - [ ] **M-typed-inspection** | what a stopped program shows today, so the "before" is on the record | `selfhost/emit/mangle.hero` · `selfhost/emit/body.hero` § prologue · `runtime/heroes_runtime.h`

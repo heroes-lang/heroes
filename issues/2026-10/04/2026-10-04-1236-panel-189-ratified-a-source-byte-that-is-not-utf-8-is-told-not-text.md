@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-04
 commit: f6a3122e818f9f622f7f264bdff5a47a8472a746
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1624
 ---
 
 # Panel 189 ratified: a source byte that is not UTF-8 is told `not_text`, on each line it stands on, and nothing writes the file back

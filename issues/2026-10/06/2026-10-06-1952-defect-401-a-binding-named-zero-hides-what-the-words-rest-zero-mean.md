@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-06
 commit: 03123b3141162fdaf42c8b262a5fe05657483d34
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1739
 ---
 
 - [x] **401 — a binding named `zero` hides what the words `rest: zero` mean** | with `zero = 0` bound, `add(a: 1, rest: zero)` is told only `unused_binding` for `zero`, and `rest_not_a_construction` appears only once the binding is removed; `.circle(r: 2, rest: zero)` on a variant case is told only `unknown_name: zero`, never naming the words (lane b13-bs's measurement on its branch, which lands panel 194's R1; not re-run by the coordinator) | the resolver's reading of the stripped `zero`, `selfhost/resolve/` · panel 194 R1 · **class: adjacent**

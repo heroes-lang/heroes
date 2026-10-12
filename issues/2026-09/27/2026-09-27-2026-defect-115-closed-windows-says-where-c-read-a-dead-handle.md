@@ -4,7 +4,7 @@ area: golden
 milestone: none
 filed: 2026-09-27
 commit: 23bf73edbb1e1d86bf94f228ed0d1b96cbc470a9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1366
 ---
 
 # Defect 115 closed: on Windows the runtime says where in the dead region C read, as it does on Linux and the Mac

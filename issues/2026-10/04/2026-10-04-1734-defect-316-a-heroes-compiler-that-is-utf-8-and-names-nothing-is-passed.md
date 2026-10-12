@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-04
 commit: 31aaf512118d05df261306f4a828e285db082789
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1647
 ---
 
 - [x] **316 — a `HEROES_COMPILER` that is UTF-8 and names nothing is passed over in silence for `./heroes`, so the net judges a compiler nobody named** | `HEROES_COMPILER=/nonexistent/heroes` and no compiler named after `--`: the harness's probe, built from lane b9-annot's committed code, printed `compiler ok ./heroes`; since defect 243's harness half (`c539f58d`) a value that is not UTF-8 is refused, and one that names nothing is not | `tests/harness/shell.hero` (`some_compiler`, its candidates after `HEROES_COMPILER`) · defect 276, the runtime's twin of this cause · **class: adjacent**

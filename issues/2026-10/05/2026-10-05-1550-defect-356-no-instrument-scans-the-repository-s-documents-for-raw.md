@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-05
 commit: fe3f788e4404b724d879a5e3d50d7e93a26ce3fd
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1678
 ---
 
 - [x] **356 — no instrument scans the repository's documents for raw invisible characters, and the tool that writes them has put three there** | the file-writing tool turned a written backslash escape into a raw ZERO WIDTH SPACE twice in `docs/panel/192-reports/historian.md` and once in `completeness-critic.md`, each found only by a scan by hand (panel 192's historian and critic, 2026-10-05) | `tests/harness/suite_records.hero` (no check reads a document's characters) · panel 192's R2, the same characters refused in a program's source · **class: improvement**

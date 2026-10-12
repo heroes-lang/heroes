@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-10-06
 commit: 5438d3d60863b71961214f9acdf5aaa1c55dcbc9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1729
 ---
 
 - [x] **393 — `heroes fmt` costs the square of an array literal's length** | one `constant BIG: [i64]` of N elements: `fmt` retires 10.4, 37.3 and 141.0 billion instructions at N of 5,000, 10,000 and 20,000, about four times for each doubling, and 1.65 trillion at 70,000; `heroes probe --family multi` 141 billion at 5,000 and 515 billion at 10,000 (lane b13-c382's measurement, 2026-10-06, `<scratchpad>/batch13/c382/scale/`; not re-run by the coordinator) | `selfhost/print/fmt.hero` and the probe's reader, a literal's elements laid out · panel 195 R3, whose 70,000-element case waits on this · **class: adjacent**

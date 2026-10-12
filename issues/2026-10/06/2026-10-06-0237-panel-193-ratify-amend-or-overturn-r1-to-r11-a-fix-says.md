@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1703
 ---
 
 - [x] **panel 193** | ratify, amend or overturn R1 to R11 (every fix in `check --json` carries its place, per-file byte offsets and character line and column, and the bytes it replaces; every certain fix says what `--apply`'s first round does with it, and a tool writes only a `written` one and asks again; every answer opens `{"schema": 2, "kind": ...}` and a clean program gets one; `check --apply --json` answers the applied program; the files read and their digests; one forward walk for the places; the terms in design.md §4.17; the promises held to the writer; the blind seat not run; defects 372 and 373 filed) | `docs/panel/193-a-fix-says-where-it-applies-and-what-apply-does-with-it-and-every-answer-says-what-it-is.md` § The resolution

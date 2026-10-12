@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-02
 commit: e45fc34bdee7a3ad5b1913430cd4d3ea81bd50e5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1430
 ---
 
 - [x] **188 — two texts still state the arm rule panel 185's R3 replaced** | `selfhost/check/lending.hero:108-109` quotes the spec as *An arm that does nothing is a block holding `_ = 0`*, where the spec now reads *An arm that does nothing holds `_ = 0`*; `tests/golden/check/fixedbugs-135-a-discard-that-is-the-line-s-one-reading.hero:8` reasons *`_ = ` on the arm's own line is `declaration_in_arm`*, false since R3 | the two lines · **class: improvement**

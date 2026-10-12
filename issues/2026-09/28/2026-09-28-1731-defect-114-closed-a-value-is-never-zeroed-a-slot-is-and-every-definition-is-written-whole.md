@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-27
 commit: 464320c810fc9f1f8a567c2b33498351696a3942
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1374
 ---
 
 # Defect 114 closed: a value is never zeroed, a slot is, and every definition is written whole

@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-30
 commit: ec1fd0a9a294978037339b10116720a255856d5e
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1400
 ---
 
 # Four answers: the blind seat runs as a fresh session, and one sitting takes three questions

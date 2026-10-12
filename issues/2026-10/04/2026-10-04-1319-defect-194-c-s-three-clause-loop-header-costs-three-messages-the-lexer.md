@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-02
 commit: fc36a4bcd637ddebedcd2481e9fa0b411beb5241
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1477
 ---
 
 - [x] **194 — C's three-clause loop header costs three messages: the lexer tells each `;` and the loop habit the `for (`** | `for (i = 0; i < 3; i++)` over its body: `unexpected_character` at each `;` and `for_missing_in` at the `(`, three messages for one habit; `for (;;)` the same; a `{` after the header adds `missing_body`, ruling 4's | `selfhost/scan.hero:299` (the lexer's `;`) · `selfhost/parse/loop_habit.hero:58` (`for_missing_in`) · pinned by `tests/golden/check/panel-187-a-c-style-for-header-is-told-by-the-lexer-and-by-the-loop.hero` · **class: adjacent**

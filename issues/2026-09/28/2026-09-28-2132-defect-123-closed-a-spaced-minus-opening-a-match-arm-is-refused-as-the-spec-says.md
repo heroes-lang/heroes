@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-09-28
 commit: 687c54f34fea0c8393828dd444279ec43b61fc59
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1384
 ---
 
 # Defect 123 closed: a spaced minus opening a match arm is refused, as the spec says

@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-05
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1679
 ---
 
 - [x] **panel 192** | ratify, amend or overturn R1 to R13 (a `str` holds any UTF-8 and the C boundary refuses a NUL by one bit a `str` carries; a string refuses raw controls, the twelve bidirectional controls and U+2028/U+2029, a comment the same but the tab, as robustness for the reader; `\u{hex}` only for what a string refuses raw, in one spelling; `args()` on Windows by WTF-8), and fund or not a fifth blind arm | `docs/panel/192-a-str-holds-any-utf-8-the-c-boundary-refuses-a-nul-and-a-string-refuses-what-its-reader-cannot-see.md` § The resolution

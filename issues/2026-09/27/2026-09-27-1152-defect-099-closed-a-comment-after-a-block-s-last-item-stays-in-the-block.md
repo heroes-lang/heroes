@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-09-25
 commit: 29ed560108e1511efcf304e7432d30e911279818
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1349
 ---
 
 # Defect 099 closed: a comment after a block's last item stays in that block

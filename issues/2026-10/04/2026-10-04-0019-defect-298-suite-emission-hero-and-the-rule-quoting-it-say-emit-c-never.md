@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-04
 commit: 01e7934faaf10366e822de42301860bb734aade8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1586
 ---
 
 - [x] **298 — `suite_emission.hero` and the rule quoting it say `--emit-c` never calls clang, and it does** | `tests/harness/suite_emission.hero:71` and `:244` and `.claude/rules/verification.md:166` say *`--emit-c` never calls clang*; `heroes build --emit-c` compiles every unit before it writes the C (`selfhost/cli/produce.hero:243` to `:272`, panel 190's critic, 2026-10-04), and lane b9-harness measured `build --emit-c` telling `ffi_missing_header` and `ffi_package` at exit 1 (2026-10-04) | the two comments and the rule's sentence · **class: adjacent**

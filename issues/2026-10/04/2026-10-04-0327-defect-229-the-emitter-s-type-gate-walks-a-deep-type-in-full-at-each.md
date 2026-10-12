@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-03
 commit: a387bee9af6880c00f213f0711375cdf7617b028
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1541
 ---
 
 - [x] **229 — the emitter's type gate walks a deep type in full at each use** | lane irverify's profile: `emit/gate.check_type` → `check_element`, about 60% of `index-chain-2000`'s build after defect 218's repair (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/emit/gate.hero` · **class: improvement**

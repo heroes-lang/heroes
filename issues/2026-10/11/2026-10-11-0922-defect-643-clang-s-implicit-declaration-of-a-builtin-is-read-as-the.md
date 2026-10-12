@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-11
 commit: 9694ba6ef88b109d118c65cd72c919b972e40131
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1995
 ---
 
 - [x] **643 — clang's implicit declaration of a builtin is read as the program's, so an `inline` definition of a library name reads external and two modules are refused `ffi_defined_twice`** | `cli/defined_twice.hero` reads clang's `-ast-dump` at its top level, and clang puts its own `implicit` declaration of a library builtin, marked `extern`, before the header's first declaration of the name; C11 6.7.4p7 counts the program's file-scope declarations, and clang's own `RedeclForcesDefC99` skips an implicit one, but the reader did not, so a C99 inline definition of `printf` (the Windows C library's `stdio.h`, sixteen names) or of `abs` (a header of the program's own) read as an external definition, and a correct program binding the header from two modules was refused, on every platform | `selfhost/cli/defined_twice.hero` (`top_of`, `merged`); `tests/golden/surface-fixtures/twoarity/`, the twin `tests/golden/run/fixedbugs-643-*` · **class: blocking**

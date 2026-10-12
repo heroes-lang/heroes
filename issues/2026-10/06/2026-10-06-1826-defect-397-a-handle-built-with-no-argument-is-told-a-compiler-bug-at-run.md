@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-06
 commit: 395fe45e7dc5dba11d44c9382af96f28bdc48fc7
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1733
 ---
 
 - [x] **397 — a handle built with no argument is told a compiler bug at run time** | `record Opaque tag opaque` (a handle) and `h = Opaque()`: `check` 0, then `run` 134 with *panic: entered unreachable code — this is a compiler bug, please report it* (the coordinator's re-run on the frozen tree, `docs/panel/194-evidence/new-defects/handle-empty/`) | the construction of a handle record, `selfhost/check/` and `selfhost/emit/aggregate.hero` · spec § 13 (a handle) · **class: blocking**

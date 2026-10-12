@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-19
 commit: 28df0084bab41fc12ef0eed89a604873dacc6d64
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1275
 ---
 
 # Defect 063 closes, and the number is C's three ways

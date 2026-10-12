@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-30
 commit: 93375d63594c5e734addefafdd2c6668cabbfa07
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1404
 ---
 
 # Panel 184: a brace written both ways, a statement after a jump refused, and a floor for depth

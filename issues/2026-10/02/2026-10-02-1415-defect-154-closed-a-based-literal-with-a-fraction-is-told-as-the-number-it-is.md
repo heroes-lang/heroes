@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-02
 commit: 435201935c2adf4afdd5610b10335b213e8c1239
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1437
 ---
 
 # Defect 154 closed: a based literal with a fraction is told as the number it is

@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-11
 commit: 14e53aabd05afcf6055f6d7ef2939f5ac93b18a7
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1993
 ---
 
 - [x] **641 — the Windows leg's sanitized run of six recursion cases does not say `stack-overflow`** | `run/fixedbugs-508-*`, `fixedbugs-520-*` (2) and `fixedbugs-547-*` (3) at `--sanitize` on Windows x86-64: *must be caught by the sanitiser saying `stack-overflow`, and it said:* nothing; the same cases pass at -O0 and -O2 there and on the three other legs; AddressSanitizer on Windows reports a stack overflow differently or not at all, a question for the box | `tests/harness/suite_run.hero`'s sanitizer expectation and the runtime's stack guard under ASan on Windows; the Windows box · **class: blocking**

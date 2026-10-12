@@ -4,7 +4,7 @@ area: spec
 milestone: M-interpolation-verdict
 filed: 2026-09-08
 commit: ba68ee81468d5aef4209d5bf668d5d389f56104c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1038
 ---
 
 - [x] **M-interpolation-verdict** | a hole rule below `any expression` makes the spec's *"valid anywhere"* false for `???`, and the sitting either excepts it or pays for it | `spec/heroes-spec.md` § Tests and holes · `examples/gallery/09-holes.hero:28` · `docs/measurements/021-what-would-stand-inside-a-hole.md`

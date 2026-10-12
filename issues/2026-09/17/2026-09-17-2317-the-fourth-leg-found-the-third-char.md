@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-17
 commit: 205bb72f3de33ec75c68e6db0a05fee4f3d24cce
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1258
 ---
 
 # The fourth leg found C's third `char`, and the prediction that sent it looking was wrong about why

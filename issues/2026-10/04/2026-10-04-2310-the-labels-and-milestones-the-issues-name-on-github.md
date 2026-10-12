@@ -4,7 +4,7 @@ area: ci
 milestone: M-issue-files
 filed: 2026-10-04
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1656
 ---
 
 - [ ] **M-issue-files** | the labels the issue files name, `kind:` five, `class:` four and `area:` twenty-seven, and one GitHub milestone per row of § The chain, created on the repository | `tests/harness/cards.hero` (`KINDS`, `AREAS`) · `.claude/rules/verification.md` § Bounded discovery (the classes) · `docs/ROADMAP.md` § The chain

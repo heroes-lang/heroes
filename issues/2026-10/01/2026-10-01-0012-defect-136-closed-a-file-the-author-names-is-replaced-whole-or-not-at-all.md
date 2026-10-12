@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-30
 commit: 04e90077ab8f0ebcc06e7141a1b35f1fa8243b29
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1405
 ---
 
 # Defect 136 closed: a file the author names is replaced whole or not at all, and a write that fails or is killed leaves it as it was

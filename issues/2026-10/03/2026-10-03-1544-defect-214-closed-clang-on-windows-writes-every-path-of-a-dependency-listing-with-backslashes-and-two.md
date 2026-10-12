@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-03
 commit: 826ddc2f06a582675137e6cdf427e97eddb4df68
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1525
 ---
 
 # Defect 214 closed: clang on Windows writes every path of a dependency listing with backslashes, and two readers compare it with forward slashes: defect 168's own test fails there, and no `skip` prefix matches

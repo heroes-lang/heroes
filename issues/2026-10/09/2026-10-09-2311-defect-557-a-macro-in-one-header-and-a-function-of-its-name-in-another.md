@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-09
 commit: cac4fc0b607b583f04653138d5bf6e86a8710600
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1911
 ---
 
 - [x] **557 — a macro in one header and a function of its name in another are told that one header does not compile** | the critic's `macro`: `a.h` `#define twice(x)`, `b.h` `static inline int twice`; `test` exits 1 with the old false message *`b.h` ... does not compile: expected identifier or '('*, and with the `use` lines swapped the program passes every tool: a false message, and a verdict that depends on `use` order | `selfhost/cli/headers_together.hero` · defects 538 and 550 · panel 202 · **class: blocking**

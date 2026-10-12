@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-07
 commit: b1bbe22910ba8bfd4c2bb57d49c2146e03db9767
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1795
 ---
 
 - [x] **452 — a search that slices a text at every byte survives in eight test helpers and in `emit/structural`'s `mentions_v`** | defect 296 replaced its three helpers with one byte-safe `strings.holds`; the same shape stands in test helpers of `emit/body`, `callback_thunk`, `extern_field`, `perfn`, `record_constant`, `ir/print`, `word_neighbours` and `word_place`, and in one production function, `emit/structural`'s `mentions_v`, safe today only because the text it reads is ASCII (lane b14-cli's reading) | the nine places · defect 296 · **class: improvement**

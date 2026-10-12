@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1765
 ---
 
 # Panel 196 sat: an `@` argument reaches C as its own place, one element unless an extent is stated, and a buffer C fills is lent and guarded

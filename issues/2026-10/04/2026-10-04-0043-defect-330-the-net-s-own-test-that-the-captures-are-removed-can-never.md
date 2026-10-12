@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-04
 commit: d11f4d84c5fc1e8998170dd1cd14094c114fe6f0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1610
 ---
 
 - [x] **330 — the net's own test that the captures are removed can never fail: it looks for whole paths with the prefix `stdout-`** | `shell.hero`'s test *the captures are removed ...* compares each listed path, whole, with the prefix `stdout-`; with two capture files planted it counts 0 and passes; the `captures_left` helper lane b10-harness added reads them right | `tests/harness/shell.hero` (the test) · defect 320's capture names · **class: improvement**

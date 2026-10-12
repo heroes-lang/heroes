@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: 7101a5e65d55bf37c81448c1979637f6c978d89b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1599
 ---
 
 - [x] **312 — a `;` inside a string's hole in a `for (` header folds into the C-header message, which then names a header the line does not hold** | `for (f"{a; b}")`: the `;` inside the `f"..."` hole is folded into defect 194's one C-header message, which names a three-clause header the line does not hold (lane b9-recovery's compiler, 2026-10-04) | `selfhost/scan.hero` (the `;` inside a hole), `selfhost/parse/loop_habit.hero` · defect 194's repair · **class: adjacent**

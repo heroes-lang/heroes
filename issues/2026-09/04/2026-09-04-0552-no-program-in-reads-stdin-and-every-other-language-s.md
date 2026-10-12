@@ -4,7 +4,7 @@ area: examples
 milestone: M-corpus-depth
 filed: 2026-09-03
 commit: 7aa84a5f88fbe785c5cb364eced911dcdf3a1f90
-github: none
+github: https://github.com/heroes-lang/heroes/issues/849
 ---
 
 - [x] **M-corpus-depth**, priced there and built only if the price is a file handle | measured 2026-09-03 while planning the milestone | **No program in `examples/` reads stdin, and every other language's example suite carries one** (Wren's `// stdin:` directive in `util/test.py`, verified 2026-09-03). The corpus suite has `main.args` and nothing for input: `tests/harness/shell.hero:74-92` opens stdout and stderr as files for the child and says nothing of stdin, and the spawn is the runtime's `hero_spawn` in `runtime/hero_os.h`. The shape is `main.stdin` beside `main.args`, fed to the child, and one program — a `wc`-like counter over `getchar` from `stdio.h`, which is also the commonest shape of a small C-bound program. If the redirect needs more than a handle in `hero_spawn`, this leaves the list for `DECIDE.md` with its measured price rather than being built at any cost | tests/harness/suite_corpus.hero:238-260 (`main.args`) · tests/harness/shell.hero:74-92 · runtime/hero_os.h | the commonest shape of a small program is the one the corpus cannot run

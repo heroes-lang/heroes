@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-09
 commit: dae7ca34114ef9292cb48157831181eb086d20b4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1883
 ---
 
 - [x] **533 — a package answering `-framework` on Linux makes `build` exit 2** | GNU ld reads `-framework` as its own `-f` option and stops, *-f may not be used without -shared*, so a package whose answer carries `-framework X` (admitted for macOS) ends the build at exit 2 on Debian 13, GNU ld 2.44; reproducer `clang m.c -framework HeroesAbsent528` (lane b16-land198). The lane recommends reading that linker line on a refused link that carried a package's `-framework`, never a platform question, which `selfhost/cli/flags.hero:162-167` refuses | the refused link's reading, `selfhost/cli/package_missing.hero`, `selfhost/cli/whose.hero` · defect 528 · panel 198 · **class: blocking**

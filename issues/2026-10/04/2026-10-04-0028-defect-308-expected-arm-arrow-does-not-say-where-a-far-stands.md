@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: 35b67762974796762524f09ae4ab37e23f0ce935
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1595
 ---
 
 - [x] **308 — `expected_arm_arrow` does not say where a far `=>` stands** | an arm whose `=>` stands further along the line than the reader looked: `expected_arm_arrow` is told without naming where the `=>` is (lane b9-recovery's compiler, 2026-10-04) | `selfhost/grammar_expr.hero` (the arm reader) · defect 195 · **class: adjacent**

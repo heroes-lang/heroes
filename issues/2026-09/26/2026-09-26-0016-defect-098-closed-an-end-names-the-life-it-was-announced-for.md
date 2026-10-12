@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-09-25
 commit: 4f52c3039855f319a85f6746d055e6694a9d9041
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1347
 ---
 
 # Defect 098 closed: an end names the life it was announced for, so two threads over one allocator give back their own handles

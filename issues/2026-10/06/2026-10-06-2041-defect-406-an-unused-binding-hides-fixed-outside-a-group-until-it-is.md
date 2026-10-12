@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1745
 ---
 
 - [x] **406 — an unused binding hides `fixed_outside_a_group` until it is fixed** | a program with an unused binding and fixed arrays outside a group was told 2 messages, then 8 once the binding was removed (the lane's `shapes.hero`) | `selfhost/check/`, the order the checker stops in · **class: adjacent**

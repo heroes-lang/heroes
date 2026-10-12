@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: 88528669c22d5397f7d2d94262c0866e9ac58a80
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1835
 ---
 
 - [x] **489 — `check` costs a deep record chain more than linearly** | 16.5 billion instructions at 5,000 records, 60.7 billion at 10,000, about the square (lane b14-emit, while witnessing defect 189) | `selfhost/check/`, `selfhost/resolve/` · **class: improvement**

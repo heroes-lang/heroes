@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-11
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2013
 ---
 
 # The author asks that the issues credit who got there first, and that a defect's number survive the move to GitHub

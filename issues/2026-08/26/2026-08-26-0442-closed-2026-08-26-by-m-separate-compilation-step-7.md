@@ -4,7 +4,7 @@ area: none
 milestone: M-separate-compilation
 filed: 2026-08-26
 commit: 42a616031291edfc1416e4bdaab9068ff60e333d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/741
 ---
 
 - [x] **M-separate-compilation** | **CLOSED 2026-08-26 by M-separate-compilation step 7, and the closure is MEASURED rather than read off panel 091's own page.** What closed it is the milestone's architecture landing, exactly as resolution A said it would at +0 compiler lines: the library is one module, so one `.c` per module (step 6, `c2ae7b1`) plus acceptance row 1 (step 5, `e804467`) puts every `extern` group in exactly one translation unit. **The measurement, taken in this session over the 1,026 translation units on disk**: the group's `_Static_assert`s land in **`library.c` and nowhere else** — 34 of 34, plus one `librarysource.c`, which is a program compiled FROM that module rather than a copy of it — and every `hero_ffi_probe_*` function appears only in the TU that DECLARES its group (`cliio.c`, `clishell.c`, `bind.c`, and the FFI corpus's own modules). The 138-of-155 multiplier the item was opened for is dead. **What did not close, and it is a ruling rather than a leftover**: the `#include <hero_os.h>` line itself is still in every TU — one line, not thirteen — because panel 091's ffi-pragmatist vetoed pruning the include with compiled evidence (it deletes a group record's C type, and an uncalled group holds up a used one). **And the item outlived its own closure by four days**, because the rule that moves a ticked item into the record had no executor until 2026-08-26; `/step` reads `SCHEDULED.md` on opening a milestone, which is how this was found. The original text follows, unedited.

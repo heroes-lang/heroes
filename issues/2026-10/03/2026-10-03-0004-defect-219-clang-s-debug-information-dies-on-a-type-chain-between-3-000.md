@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-03
 commit: 7ab0a4ee06bd3769d09af057d58e8adb977b7fb5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1490
 ---
 
 - [x] **219 — clang's debug information dies on a type chain between 3,000 and 5,000 nested variants on this Mac, by 10,000 in the Linux container** | past panel 184's R6 floor of 2,000: since `6c95f44a` (defect 170) the build says so in the compiler's words at exit 2 and leaves no crash files; clang's own stack raised to 64 MB compiled 10,000 in the lane's measurement, about eight times further, not built | `selfhost/cli/clang_died.hero` (lane depth's, at `6c95f44a`, 2026-10-03), `selfhost/emit/typeorder.hero` · **class: improvement**

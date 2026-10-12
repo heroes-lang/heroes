@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-04
 commit: 8eb70d0bca8deb2c2ad23d9af1e2d3850241e132
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1601
 ---
 
 - [x] **314 — on the Windows box a `str` released twice runs on in silence unless ASan is on: the runtime's mark reads a freed block intact there, and the second release writes into it** | panel 190's ffi-pragmatist's control `ctl.doubled.c` (the trunk's C of a two-return function, one `hero_str_decref(h4_s1)` written twice): exit 134 with the runtime's *a str's block has lost its mark* at `-O0` and `-O2` on this Mac (Apple clang 21) and on Linux arm64 (clang 22.1.8 and 18.1.8), exit 0 with the right output on the Windows box (clang 23.1.1), where only ASan names it, `heap-use-after-free ... runtime\parts\str.c:77 in hero_str_hdr_checked` (`docs/panel/190-reports/ffi-pragmatist.md` § 5, 2026-10-04) | `runtime/parts/str.c` (`hero_str_hdr_checked` and `hero_str_decref`: the mark is read in a block already freed, and a count found at 0 is taken to -1 in it) · **class: improvement**

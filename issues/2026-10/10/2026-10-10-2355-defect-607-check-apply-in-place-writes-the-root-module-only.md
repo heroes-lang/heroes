@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: 123a1d1372f0519fbaad2ea951b29f118502427a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1976
 ---
 
 - [x] **607 — `check --apply --in-place` writes the root module only, so a migration over a tree is one command per root** | `heroes check <root> --apply --in-place` applies the certain fixes of the root module and prints *N certain fix(es) are in another module and were not applied*; a nested module cannot be checked alone, its `use` lines resolving from its own directory (`selfhost/cli/apply_answer.hero`'s note). M-inferred-cell's two migrations, 391 cells to `=` and 1,181 files to `@=`, ran the verb over every root one at a time with a census by the compiler afterwards; the next whole-tree fix, a language change with a certain repair, pays the same. The walk is the verb's: the fixes of every module the root reaches, each written in its own file once, the root's `use` closure being what `check` already resolves | `selfhost/cli/apply_answer.hero` (the note and the root-only write), `selfhost/cli/flags.hero` (`--in-place`), `tests/harness/suite_fixes.hero` (what `--apply` owes a case) · **class: improvement**

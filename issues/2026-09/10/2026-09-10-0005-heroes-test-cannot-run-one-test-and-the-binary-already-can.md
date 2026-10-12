@@ -4,7 +4,7 @@ area: cli
 milestone: M-core-packages
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1075
 ---
 
 - [ ] **M-core-packages** | `heroes test` cannot run one test, and the binary already can | `selfhost/cli/verbs.hero:104-163` · `selfhost/cli/table.hero` · `CLAUDE.md` §10

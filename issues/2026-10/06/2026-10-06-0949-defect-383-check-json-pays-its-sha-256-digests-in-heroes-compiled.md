@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-06
 commit: c41525aec367702a815ee4b69cc9ce7e97db2d26
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1714
 ---
 
 - [x] **383 — `check --json` pays its SHA-256 digests in Heroes compiled without optimisation** | `check --json` on the compiler's own source retires 101.6 billion instructions against 86.4 billion before panel 193's R5 put a digest of every file read into the document, +17.5%, all of it the SHA-256 written in Heroes (lane cli12's measurement, its final report; not re-run by the coordinator) | `selfhost/cli/sha256.hero` · panel 193's R5 · **class: improvement**

@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-05
 commit: 2078ceb18ec03e572120266a53e153046cc26b95
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1673
 ---
 
 - [x] **351 — two stray `-` lines in a row under an integer arm are still told three messages** | a `match` whose integer arm is followed by two lines holding a `-` alone, each deeper: `check` tells three messages for them where defect 268's repair tells one for a single such line (lane b11-parse, 2026-10-05, the lane's report) | `selfhost/sign_above.hero` · defect 268 · **class: adjacent**

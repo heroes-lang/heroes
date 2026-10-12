@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-23
 commit: 6d4ae3e8371af4c553e0aa8c124b945a322eeff7
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1315
 ---
 
 

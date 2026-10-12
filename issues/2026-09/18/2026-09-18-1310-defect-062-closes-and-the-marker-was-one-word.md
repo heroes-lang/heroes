@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-18
 commit: 915c490ded6629bf9d4f1f36029843e45ddea83b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1263
 ---
 
 - [x] **062 — a WRONG FIELD TYPE is reported as a missing field, and the name is wrong too** | declaring `sysname: cstr` against `char[256]` gave `ffi_incomplete_record: does not name nodename` with `nodename` declared on the line below, and no type error at all | `selfhost/emit/extern_field.hero` · `selfhost/emit/ffi.hero` · `tests/golden/unsupported/ffi-a-cstr-field-blames-the-field.hero`

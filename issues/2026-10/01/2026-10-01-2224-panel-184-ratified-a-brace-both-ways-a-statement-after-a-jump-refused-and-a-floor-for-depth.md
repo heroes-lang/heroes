@@ -4,7 +4,7 @@ area: design
 milestone: none
 filed: 2026-10-01
 commit: 606700e262e9d18483ee44ba7e05cdec2dbafd35
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1421
 ---
 
 # Panel 184 ratified: a brace both ways, a statement after a jump refused, and a floor for depth

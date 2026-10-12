@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1800
 ---
 
 - [x] **panel 197** | ratify, amend or overturn R1 to R8 (the touch for a chain past 32 deep written as a cast, so the DWARF writer meets the chain from its bottom, with a mechanism test; `-g` at `-O0` and `-gline-tables-only` at `-O2`, the word out of `flags()` and in every key and the link line, with a location test and a variable test; (B), (J), (A), (F), (G), (H), (I), (D) and (L) refused; design.md Part 2 and Part 8, two milestone pages, a golden's header, a rule sentence and a comment amended in their own commit; the landing rebuilt on its own trunk after batch 14's lanes cli and emit; four CI legs and single cases on the box and in Docker; 219 closed on rows and 322's growth filed apart; 335 owed nothing) | `docs/panel/197-the-debug-word-follows-the-level-and-the-type-chain-reaches-the-debug-writer-from-its-bottom.md`

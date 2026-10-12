@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-17
 commit: e98b60de850ef7ad23b9953a8eaf6196283b0084
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1256
 ---
 
 # The pages Google had not indexed were the pages it had not yet visited

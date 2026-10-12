@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-06
 commit: 27980034581ae2829aed9f484d3600fd9bad8e05
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1702
 ---
 
 - [x] **373 — a CRLF file moves a diagnostic's column at a line's end by one** | 12 of 137 check cases converted to `\r\n` give a diagnostic at a line's end one column more than the same case with `\n`, `expected_expression` at 13:36 becoming 13:37 in `continuation-outside-brackets-in-other-words`, `expected_extern_header` at 17:34 becoming 17:35 in `fixedbugs-130-an-extern-group-whose-header-failed` (the base's compiler at `00217c39`, measured by the coordinator at 02:35 on 2026-10-06, over the critic's converted copies) | `selfhost/source.hero`, the column counted past the `\r` a line end holds · panel 193's R1, whose lines split at `\n` only · **class: adjacent**

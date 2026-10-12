@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: 502170c35ec9e1823905f24575647db3d8fe718a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1756
 ---
 
 - [x] **417 — an unnamed function value reaches the emitter's run-time fallback instead of a build-time refusal** | the emitter's fallback for a function value it cannot name is `hero_unreachable`, which aborts at run time; a check in the IR verifier would refuse the program at build time | `selfhost/emit/func_ref.hero`, the IR verifier · **class: improvement**

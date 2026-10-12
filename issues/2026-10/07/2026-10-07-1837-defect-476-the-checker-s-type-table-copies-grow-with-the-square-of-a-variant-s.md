@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: 09fc600b525df5df94aa78f217c02c970c25009f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1821
 ---
 
 - [x] **476 — the checker's type table copies grow with the square of a variant's case count** | match-arms 400 to 800: 96,589 to 352,389 copies (lane b14-ir) | `selfhost/check/table.hero` · **class: improvement**

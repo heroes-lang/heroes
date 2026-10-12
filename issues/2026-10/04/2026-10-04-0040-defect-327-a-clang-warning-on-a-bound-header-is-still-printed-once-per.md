@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-04
 commit: 2697b8f9578fc6ba5f47d9138b5220ddf65b1b6c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1607
 ---
 
 - [x] **327 — a clang warning on a bound header is still printed once per program unit, `library.c` including the header where a group record is used** | since defect 248's repair (`50aaac0b`) the pointee and layout probes no longer print their own copy, and a header warning still reaches the author twice where the program uses a group record: once from the program's unit and once from `library.c`, which includes the header for it | how `selfhost/cli/` hands clang's output of each unit to the author · defect 248 · **class: adjacent**

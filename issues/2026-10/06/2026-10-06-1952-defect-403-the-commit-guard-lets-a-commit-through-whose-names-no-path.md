@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-06
 commit: 2232f469beedc4040b41c1d42d2b92106dff402f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1741
 ---
 
 - [x] **403 — the commit guard lets a commit through whose `--` names no path** | lane b13-unit's path array came out empty under macOS's bash 3.2, which has no `mapfile`, so `git commit -F <file> --` took the whole index, 35 files, and missed 22 the commit meant; the lane amended it within a minute (its orphan `5550601e` is referenced nowhere). `.claude/hooks/guard_bash.py` refuses a commit with no `--` and passes one with an empty pathspec after it (the lane's report; not re-run by the coordinator) | `.claude/hooks/guard_bash.py` · CLAUDE.md § Hard stops (CL-070) · **class: improvement**

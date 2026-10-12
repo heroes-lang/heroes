@@ -4,7 +4,7 @@ area: compiler
 milestone: M-interpolated-strings
 filed: 2026-09-08
 commit: 7bd3b8c55e1e9f667a34a823d88a118614f9ce46
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1039
 ---
 
 - [x] **M-interpolated-strings** | `.must()` says "abort" and the spec never says what an abort does — panel 121 R6 lands one definition of *abort* WITH the interpolation clause, at +12, covering all eight sites | `spec:156` · `spec:197-198` · `selfhost/value_errors.hero:145` · `docs/measurements/010-spec-budget-ledger.md`

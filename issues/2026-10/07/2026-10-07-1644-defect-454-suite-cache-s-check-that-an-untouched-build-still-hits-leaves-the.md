@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-07
 commit: 2e03165d105f59d24d005f4eed38e7f6576974df
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1797
 ---
 
 - [x] **454 — `suite_cache`'s check that an untouched build still hits leaves the runtime object out** | the check excludes `runtime-` objects, so nothing at the filesystem witnesses defect 435's reading that a warm build compiles no runtime (lane b14-cli, 2026-10-07) | `tests/harness/suite_cache.hero` · defect 435 · **class: improvement**

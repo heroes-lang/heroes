@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-07
 commit: 241b773a1904d7bb807d6981c0b6eacf41364c2c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1841
 ---
 
 - [x] **495 — `loop_headers.begun_by` walks the line's tokens for every `;`** | `x; ` 1,333 times on one line: 0.21, 0.61, 2.16 and 8.30 billion instructions at 500, 1,000, 2,000 and 4,000 characters; `opened_by` does the same inside a `for (` header, 4.31 billion at 4,000; a cache over the stream must survive the lexer replacing and truncating `l.tokens` (lane b14-text) | `selfhost/loop_headers.hero` · **class: improvement**

@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-19
 commit: 8fb0e943e88b2c477b654f5c1f704af4b61cdfb0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1267
 ---
 
 # The check it would add was not one

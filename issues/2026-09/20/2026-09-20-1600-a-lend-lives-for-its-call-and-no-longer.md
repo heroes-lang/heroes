@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-20
 commit: 6f45b2d81781041f67b7c483ae707eaa27083c82
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1285
 ---
 
 # A lend lives for its call and no longer

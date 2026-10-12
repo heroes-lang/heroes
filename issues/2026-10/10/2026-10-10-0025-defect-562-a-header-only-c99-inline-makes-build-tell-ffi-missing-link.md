@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: 7799b74678bf7c45b9a53b913221aa783867cd24
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1916
 ---
 
 - [x] **562 — a header-only C99 `inline` makes `build` tell `ffi_missing_link` falsely while `run` exits 0** | the ffi-pragmatist's `c99`: a header defining a plain C99 `inline` function (neither `static` nor `extern`) builds at exit 1, `ffi_missing_link`, *no group says which library has it*, which is false, since at `-O0` C wants the one external definition the header does not give; `run`, at `-O2`, links and prints `6`; 264 such definitions in this Mac's installed headers, 146 of them raymath.h's | the reading of an undefined symbol at link, `selfhost/cli/` and `selfhost/emit/ffi*` · panel 202 · **class: blocking**

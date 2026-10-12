@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-25
 commit: ce018b1cdd4f42db599c485b7aa8f104d3ae189b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1345
 ---
 
 # Defect 097 closed: one element of a fixed array inside a group record is written in place, through the read's own bound check

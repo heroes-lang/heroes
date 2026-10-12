@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-04
 commit: 5663f4dd00ac0608c8f4f4a7a2687353e8b8670c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1591
 ---
 
 - [x] **304 — in a map literal whose `{` the lexer paired with a closer further down, a statement line is read as a key, told twice without the `{`** | the shape of defect 204 in a map literal: a binding line below a map left open is read as a key, two messages that name no `{` (lane b9-recovery's compiler, 2026-10-04) | `selfhost/parse/unclosed.hero`, `selfhost/closers.hero` · defect 204, the list's twin repaired · **class: adjacent**

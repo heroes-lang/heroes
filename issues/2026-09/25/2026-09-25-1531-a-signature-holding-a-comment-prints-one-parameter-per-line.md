@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-25
 commit: f1e2132f06d03c40b808bf2fe98cc50799ad1f4f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1344
 ---
 
 # A signature holding a comment prints one parameter per line

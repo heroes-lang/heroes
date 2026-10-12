@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-14
 commit: 547383aa6f375754063cd1da0fece97e24686ece
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1214
 ---
 
 # The sitting convened on one defect produced three more, and the walk it needed already existed

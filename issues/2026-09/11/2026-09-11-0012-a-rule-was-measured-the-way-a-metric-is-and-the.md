@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 28915417c2d73197253dfeb3a51fb4a71ae5f54f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1117
 ---
 
 2026-09-11 · **A rule was measured the way a metric is, and the number changed

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-05
 commit: 7c20be8f880d646160d9a08617de025657e34f57
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1690
 ---
 
 - [x] **361 — a group header's macro that renames a runtime function the generated C calls is told `internal error` at exit 2** | `extern "mac2.h"` over a header holding `#define hero_print_int(x) nothing`, with `print(twice(x: 21))`, answers *internal error: compiling the generated C failed:* with clang's *c4.hero:5:5: error: use of undeclared identifier 'nothing'* and its note *./mac2.h:3:27: note: expanded from macro 'hero_print_int'*, at exit 2 (this Mac, lane b12-cli12's compiler, which holds defect 360's repair, 2026-10-05, `<scratchpad>/r361/`) | `selfhost/cli/whose.hero` and `cli/header_refused.hero` (defect 360's reader takes clang's first error, which lies in the generated C, so its note into the header is not read) · `.claude/rules/c-boundary.md` (the generated C's names against a header's macros) · **class: blocking**

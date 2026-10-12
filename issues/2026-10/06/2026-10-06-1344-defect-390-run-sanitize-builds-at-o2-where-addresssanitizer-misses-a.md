@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-06
 commit: f0404dac3c88eea570712ad45ded866cf7876ea5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1726
 ---
 
 - [x] **390 — `run --sanitize` builds at `-O2`, where AddressSanitizer misses a stack overwrite that `-O0` catches** | a 4096-byte overwrite of the stack through `memset` in a header's `static inline`: `heroes run --sanitize` exits 0, `heroes build --sanitize` at `-O0` aborts with exit 134 (lane b12-ffi13's measurement, 2026-10-06, while gathering defect 092's evidence; not re-run by the coordinator); plain C at `-O2` misses it too, so it is the toolchain's, and the `run` suite's sanitizer leg can be blind to this shape | `selfhost/cli/` (the optimisation `--sanitize` builds at) · `tests/harness/suite_run.hero` (its sanitizer leg) · defect 092 · **class: improvement**

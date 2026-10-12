@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-05
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1658
 ---
 
 # The author answers 1c 2a 3a 4a 5a 6b 7a: M-issue-files is pushed, its labels made, and three questions of the transcription settled

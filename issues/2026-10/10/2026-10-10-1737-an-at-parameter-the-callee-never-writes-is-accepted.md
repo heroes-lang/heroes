@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1963
 ---
 
 - [x] **an `@` parameter the callee never writes** | should a Heroes function's `@` parameter that the body never writes (by `@` to the name, a field or an element, or through an `@` argument) be a compile error with a certain fix removing the `@` at the parameter and at every call site, as panel 209's never-re-bound rule refuses a cell nothing re-binds one level down? | `docs/panel/209-reports/completeness-critic-pass2.md` § 3, its probe `at_param_never_written.hero` (accepted today and under `heroes-r1b`, prints 2); spec § 5 `:138` (*a write is not a use, except through an `@` parameter*); spec § 9 (`@` parameters)

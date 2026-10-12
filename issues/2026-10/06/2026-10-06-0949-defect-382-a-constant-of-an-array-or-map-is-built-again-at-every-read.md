@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-06
 commit: 2aa00658d3aaf6a823149e2ce8d7f86982c37639
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1713
 ---
 
 - [x] **382 — a constant of an array or map is built again at every read** | a `constant K: [i64]` of 32 elements read 1,000,000 times in a loop, `K[at % 32]`, retires 56,768,740,722 instructions; the same loop reading a name bound once to `K` above it, 116,805,017, 486 times fewer. `--dump-ir` shows `call heroes K()` inside the loop's body, and the emitted `h_k_K(void)` builds the array from its literal at each call (the trunk's compiler at `0f48f9f9`, measured by the coordinator at 09:46 on 2026-10-06). 66 constants of an array or map type stand in `selfhost/` and `tests/harness/` (`grep -E '^constant [A-Z_0-9]+: (\[|\{)'`), among them `shown_char.hero`'s `UNSEEN`, `DEFAULT_IGNORABLE` and `BIDI_CONTROL` and `rename_fit.hero`'s `RENAMES`; how many of them are read in a loop is unrun | `selfhost/ir/lower.hero:77`, a constant lowered as a function of no arguments, and every read of it a call · the emitter's constant function · **class: adjacent**

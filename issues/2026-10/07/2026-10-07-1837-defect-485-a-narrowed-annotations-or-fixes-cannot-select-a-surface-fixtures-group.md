@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-07
 commit: 525ad9d785b78d298b6fdc7ea30c192713f0e7c8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1830
 ---
 
 - [x] **485 — a narrowed `annotations` or `fixes` cannot select a surface-fixtures group** | it exits 2, so a fixture's marks are judged only by the whole suite (lane b14-harness-b) | `tests/harness/suite_annotations.hero`, `suite_fixes.hero` · **class: improvement**

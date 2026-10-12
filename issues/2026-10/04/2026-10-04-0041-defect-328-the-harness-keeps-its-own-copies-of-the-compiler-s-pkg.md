@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-04
 commit: 6e01041809acc7e37972293f71f6180eaa3da806
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1608
 ---
 
 - [x] **328 — the harness keeps its own copies of the compiler's pkg-config spellings, and three of them now lag the compiler** | `absence.notes_of` joins pkg-config's notes in the compiler's old order, trim then split, which defect 285 changed to split then trim; `suite_golden.hero:702` and `absence.hero:849` plant defect 249's old bare sentence; and defect 292's new headline, *is installed, and pkg-config cannot give its flags*, is no spelling the harness reads, so a case whose package is installed and broken would read red rather than be stepped aside by name (no leg is known to hold one) | `tests/harness/absence.hero` (`notes_of`, `:849`) · `tests/harness/suite_golden.hero:702` · defects 249, 285 and 292 · **class: improvement**

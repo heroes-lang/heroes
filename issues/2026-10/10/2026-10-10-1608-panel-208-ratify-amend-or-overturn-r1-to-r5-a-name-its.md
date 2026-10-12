@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1960
 ---
 
 - [x] **panel 208** | ratify, amend or overturn R1 to R5 (a name its header marks deprecated binds and builds silent, the program's lines as the compiler's, both clang groups and the warning attribute quiet after the groups' close and nothing else widened, closing 584, 587 and 584's record-temporary shape; a name its header marks `unavailable` refused at exit 1 on its `extern` line, the seventh member of the C boundary's class, closing 588; glibc's link warning silent by the narrowest linker word or 589 left open to the author; one design.md §4.19 sentence, no spec sentence; a refusal at the call, at the binding, a new form, a flag, a note at exit 0, Go's split and a split by whose header refused) | `docs/panel/208-a-name-its-header-marks-deprecated-builds-silent-and-one-it-marks-unavailable-is-refused-on-its-extern-line.md`

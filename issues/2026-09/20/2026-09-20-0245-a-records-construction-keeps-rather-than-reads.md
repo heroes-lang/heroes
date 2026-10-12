@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-20
 commit: 69853b5863d4fb20b65d093a09d6a990f5e9c077
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1279
 ---
 
 # A record's construction keeps rather than reads

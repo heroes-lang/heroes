@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-09-20
 commit: 62a7ed6a16b80c377f8cafd47ecc3f0b1e6a8653
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1290
 ---
 
 - [x] **panel 167** | the lend's lifetime: a field lease that copies is adopted, two type rules are widened from `cstr` to `ptr`, and routes B, C and D are refused | **RATIFIED 2026-09-20**, and **overtaken in three clauses before the ratification reached it**: clause 1's allocation half is struck on panel 168's veto, clause 2 is suspended, and clause 8 is false — route A closes **zero** of two, which this sitting's own spec-warden predicted and panel 168 scored. **So the field lease is not built.** The yes settles the form and buys nothing the item said it would, and the author was told so before answering | `docs/panel/167-nobody-checks-the-callee-and-the-lease-we-would-copy-is-open.md` | 167

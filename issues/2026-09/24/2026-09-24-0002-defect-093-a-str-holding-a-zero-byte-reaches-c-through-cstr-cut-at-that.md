@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-24
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1326
 ---
 
 - [x] **093 — a `str` holding a zero byte reaches C through `.cstr()` cut at that byte, at exit 0** | `read_file` makes a `str` from any bytes, a zero among them, and `.cstr()` hands C the same bytes zero-copy, so C reads a shorter string than the program holds and nothing says so | `selfhost/emit/` `.cstr()` · `runtime/` `hero_str_cstr` · `spec § 13` · `docs/records/log/2026-08-04-0001-escape-sequences-five-split-by-context-go-s-rule.md` · **class: blocking**

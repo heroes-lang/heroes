@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-07
 commit: 7561d0b97efaaf61f07b23a6c92a76bf258ea429
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1791
 ---
 
 - [x] **448 — the recovery plan's generator still lives only in the scratchpad, so a plan replays from the tree and cannot be cut again** | defect 210 brought the replay, the comparison and a frozen plan into `heroes mutate --recovery`; the plan's generator (`ops.py`, `model.py` and the rest under `<scratchpad>/instrument/tool/`, about 4,200 lines by the lane's count) did not move | `selfhost/mutate/` · defect 210 · panel 187's R2 · **class: improvement**

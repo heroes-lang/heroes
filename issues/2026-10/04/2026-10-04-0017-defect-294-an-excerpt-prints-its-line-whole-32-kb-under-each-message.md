@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: 5a019922a881fa6b569fc5504117cb82de7eeff9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1584
 ---
 
 - [x] **294 — an excerpt prints its line whole, 32 KB under each message for a line of 4,000 refused characters** | a line of 4,000 refused characters is printed whole under each message, eight of them since defect 282, about 32 KB each (lane b9-notext, 2026-10-04) | `selfhost/diag_render.hero` (the excerpt) · **class: improvement**

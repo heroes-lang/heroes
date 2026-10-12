@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1742
 ---
 
 - [x] **404 — three names Windows reserves reached the trunk, and the CI's Windows leg failed at its checkout** | batch 12's push, `6a03c488`, carried `docs/panel/178-reports/completeness-critic-work/w/ffi/nul.hero`, `docs/panel/178-reports/ffi-pragmatist-work/nul.hero` and `tests/golden/surface-fixtures/notext357/nul.txt`; Windows reserves `NUL` as a device's name with any extension, so the CI's `git checkout` refused the first of them (`error: invalid path`, exit 128) fourteen seconds into the job and no test ran there | `tests/harness/portable.hero`; `records/portable` in `tests/harness/suite_records.hero` · **class: blocking**

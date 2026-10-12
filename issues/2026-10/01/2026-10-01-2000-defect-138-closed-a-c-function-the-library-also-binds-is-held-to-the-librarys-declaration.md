@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-30
 commit: 6708ba0521af542def2be41ff0798db7b2e3d518
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1407
 ---
 
 # Defect 138 closed: a C function the library also binds is held to the library's declaration, and the caret is the author's

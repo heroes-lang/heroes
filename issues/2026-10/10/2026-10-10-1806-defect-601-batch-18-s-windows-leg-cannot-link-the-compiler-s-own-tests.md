@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: bf1eb16bc7f0d456689864bf7f7954c5cb585dff
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1965
 ---
 
 - [x] **601 — batch 18's Windows leg cannot link the compiler's own tests, OS error 87** | batch 18's push (`03bb5cb0`), run 38064729342: the Windows x86-64 leg's step *The compiler's own tests* exits 2 with *error: clang could not be started, so linking did not run; the operating system's own reason is 87.* (read through `gh run view --log-failed` at 18:05); every step before it green, the other three legs cancelled by the next push's run; defect 583's shape (the link's command line past Windows' limit), reached now by `heroes test selfhost/main.hero`, which builds by module since defect 560's repair | `selfhost/cli/link.hero`; defect 583's repair in batch 19 (`bf1eb16b`, the link's words through a response file) · **class: blocking**

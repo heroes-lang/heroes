@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-02
 commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1450
 ---
 
 # Defect 163 closed: the pointee check judges a plain `char` without `-fsigned-char`, so on Linux arm64 it refuses the binding the program's own compile agrees with

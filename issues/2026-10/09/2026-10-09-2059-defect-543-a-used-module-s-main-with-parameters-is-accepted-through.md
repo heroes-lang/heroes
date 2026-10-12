@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: bc189f941d4df59daa84148a3ddb3744cbf6b500
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1897
 ---
 
 - [x] **543 — a used module's `main` with parameters is accepted through `use` and refused checked alone** | `main(n: i64) -> i64` in a module another file uses passes `check` of the program, and `check` of that file alone refuses it `main_parameters` and `main_returns`: one file, two verdicts (`selfhost/check/decls.hero:89` applies the rules to the file compiled only; panel 201's compiler-engineer) | `selfhost/check/decls.hero` · panel 201 R2 · **class: adjacent**

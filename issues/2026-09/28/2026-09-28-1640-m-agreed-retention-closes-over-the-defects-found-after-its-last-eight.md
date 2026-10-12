@@ -4,7 +4,7 @@ area: none
 milestone: M-agreed-retention
 filed: 2026-09-28
 commit: b244372e63b87c33209ab67ff6ccfbd8b208fc87
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1382
 ---
 
 # M-agreed-retention closes over the defects found after its last eight

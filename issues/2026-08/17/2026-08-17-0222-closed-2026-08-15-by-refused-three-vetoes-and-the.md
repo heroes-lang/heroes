@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-08-15
 commit: dbe77e2a3d849819354efb588aee05a5b664f0bf
-github: none
+github: https://github.com/heroes-lang/heroes/issues/488
 ---
 
 - [x] Owed a panel — the path pair | **CLOSED 2026-08-15 by `docs/panel/057` — refused, three vetoes, and the

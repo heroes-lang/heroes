@@ -4,7 +4,7 @@ area: site
 milestone: M-issue-files
 filed: 2026-10-11
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2014
 ---
 
 - [ ] **M-issue-files** | the thanks page gains a group of its own, in both editions, for what Heroes reached on its own and the backlog's `Reached first by` lines found reached before, and every `Taken from` the page lacks joins the language's entry; the rule in `site/README.md` § The thanks page beside the borrowing rule of 2026-09-27; the push that publishes it asked for | `site/src/html/about/thanks.html` · `site/src/html/it/about/thanks.html` · `site/README.md`

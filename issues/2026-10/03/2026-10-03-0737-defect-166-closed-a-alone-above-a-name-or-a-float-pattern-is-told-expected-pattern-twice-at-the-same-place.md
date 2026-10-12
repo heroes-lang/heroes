@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-02
 commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1452
 ---
 
 # Defect 166 closed: a `-` alone above a name or a float pattern is told `expected_pattern` twice at the same place

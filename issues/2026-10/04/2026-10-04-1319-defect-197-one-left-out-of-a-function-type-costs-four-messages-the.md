@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-02
 commit: 7dbbd8112e1d9fd586db5ea830b3460820747ea3
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1480
 ---
 
 - [x] **197 — one `)` left out of a function type costs four messages: the lexer names two openers, and the type reader asks for the `)` and the `->` it was owed** | `function f(g: (function(i64 -> i64)` over its body: `unclosed_bracket` at each `(`, *never closed* at the file's end and *still open at line N* where a declaration below ends the reach, then `expected_function_type_params_close` at the `->` and `expected_function_type_arrow` at the line's end | `selfhost/closers.hero` (`never_closed` at `:151`, `still_open` at `:169`) · `selfhost/parse/type.hero:307` and `:229` · pinned by `tests/golden/check/panel-187-a-closer-the-lexer-pairs-with-another-opener.hero` · **class: adjacent**

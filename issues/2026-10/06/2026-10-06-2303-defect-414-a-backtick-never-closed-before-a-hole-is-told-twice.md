@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-06
 commit: 2d4cbe09d09448c332196285f2b275b00a008ad4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1753
 ---
 
 - [x] **414 — a backtick never closed before a hole is told twice** | `s = `never closed ${x}` with no closing backtick is told twice, at the backtick and at the `$`, on the base and after defect 407's repair alike; the cause is not 407's, there being no close at all | `selfhost/backtick_strings.hero`, `selfhost/refused_stretch.hero` · **class: adjacent**

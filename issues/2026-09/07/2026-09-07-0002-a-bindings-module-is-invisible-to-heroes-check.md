@@ -4,7 +4,7 @@ area: cli
 milestone: M-package-manager
 filed: 2026-09-07
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/974
 ---
 
 - [ ] **M-package-manager** | a bindings module is invisible to `heroes check` | `selfhost/cli/check.hero` · `docs/panel/091` · `docs/panel/082` R3

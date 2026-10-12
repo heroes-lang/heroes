@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-03
 commit: 9b31cd6444a1d2519de537d59913a0d1d3cf930c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1523
 ---
 
 # Defect 206 closed: on Linux, a package whose `.pc` gives `-F <dir>` builds with clang's *argument unused during compilation* warning, the link very likely handed the compile's `-F`

@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-04
 commit: df4531082f22b0ccda68f5d6261e92fe5c5bd4da
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1620
 ---
 
 - [x] **273 — `read_file` sizes a file by seeking to its end, so on Linux a directory dies *out of memory* where `.err` is owed and a file under `/proc` reads as empty** | `read_file("adir")` over a directory, in a program built on Linux arm64 (Debian clang 22.1.8): `panic: out of memory`, exit 134, where this Mac answers `.err` `read_failed`; `read_file("/proc/self/status")` there: `.ok` and 0 bytes at exit 0; and defect 236's own test, a module that is a directory, read the compiler's tests 1,156 passed and 1 failed (batch 8's tree `2ac8105f`, its Linux arm64 leg and a container run beside it, 2026-10-04, `<scratchpad>/filings-b8/probe/rd/`) | `runtime/parts/os.c` (`hero_file_read`: `fseek(SEEK_END)`, `ftell`, then one allocation of that size) · defect 236's test, `selfhost/cli/input.hero:80` · **class: blocking**

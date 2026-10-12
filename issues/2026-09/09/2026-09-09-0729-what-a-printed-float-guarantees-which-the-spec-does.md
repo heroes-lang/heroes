@@ -4,7 +4,7 @@ area: runtime
 milestone: M-interpolated-strings
 filed: 2026-09-03
 commit: 7bd3b8c55e1e9f667a34a823d88a118614f9ce46
-github: none
+github: https://github.com/heroes-lang/heroes/issues/858
 ---
 
 - [x] **M-interpolated-strings** | what a printed float guarantees, which the spec does not say — panel 121 R6 lands it WITH the interpolation clause, at +9 | `spec:184-185` · `runtime/parts/f64.c:26-37` · `docs/panel/021`, `027`

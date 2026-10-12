@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-02
 commit: 435201935c2adf4afdd5610b10335b213e8c1239
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1436
 ---
 
 # Defect 153 closed: declaration_in_arm is said only of a name it refuses, and a discard stands on an arm's line

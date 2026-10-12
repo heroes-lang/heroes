@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-26
 commit: bdf430f154abcb177e62939151fec71adfc0ff60
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1354
 ---
 
 # Defect 102 closed: every JSON the compiler writes goes through one escape, and a character the reader cannot see is named by its code

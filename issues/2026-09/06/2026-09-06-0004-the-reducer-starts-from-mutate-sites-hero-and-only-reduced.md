@@ -4,7 +4,7 @@ area: mutate
 milestone: M-generated-programs
 filed: 2026-09-06
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/934
 ---
 
 - [ ] **M-generated-programs** | the reducer starts from `mutate/sites.hero`, and only reduced witnesses enter the net | `selfhost/mutate/sites.hero` · `tests/harness/main.hero` · `CLAUDE.md` §10

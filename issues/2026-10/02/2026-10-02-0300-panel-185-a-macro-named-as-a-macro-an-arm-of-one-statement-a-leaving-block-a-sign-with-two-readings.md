@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-02
 commit: b391c774f894d6c3e98311df477ec549130ea749
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1432
 ---
 
 # Panel 185: a macro named as a macro, an arm of one statement, a block that leaves, a sign with two readings

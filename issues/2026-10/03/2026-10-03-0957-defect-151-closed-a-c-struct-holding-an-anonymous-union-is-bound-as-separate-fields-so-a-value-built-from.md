@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-02
 commit: 3d704b03777c2359dc9cf746a33b9e9d4561ed25
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1455
 ---
 
 # Defect 151 closed: a C struct holding an anonymous union is bound as separate fields, so a value built from Heroes reads back wrong

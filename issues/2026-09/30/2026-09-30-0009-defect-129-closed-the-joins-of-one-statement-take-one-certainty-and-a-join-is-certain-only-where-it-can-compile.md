@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-28
 commit: 38950461cdd66cbab114393c299d6f0851f33aa2
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1393
 ---
 
 # Defect 129 closed: the joins of one statement take one certainty, and a join is certain only where what it writes can compile

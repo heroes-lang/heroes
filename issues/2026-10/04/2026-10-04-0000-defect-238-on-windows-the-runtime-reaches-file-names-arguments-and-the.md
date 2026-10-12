@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-04
 commit: 4d409818492dbf298e799c9e102e9515cc9931c0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1566
 ---
 
 - [x] **238 — on Windows the runtime reaches file names, arguments and the environment through the narrow API, so a name above ASCII is refused, read as another file's, or written under another name** | a correct program saved as `café.hero` through the wide API, as Explorer and every .NET program name it: `heroes check café.hero` exit 2, *argument 2 is not UTF-8, and a Heroes `str` cannot hold it*; `heroes check ŝ.hero` reads `s.hero` (the C runtime's best fit), judges an `s.hero` beside it (`type_mismatch` at `s.hero:2:14`), and `heroes fmt ŝ.hero --in-place` rewrites `s.hero`; a built program's `args_checked()` gives `ŝ` as the one-byte `s`, `read_file("café.txt")` fails `file_not_found` for a file that is there, and `write_file` names its file `cafÃ©-out.txt` (the trunk's compiler at `7d9f2e8f` on the Windows box, clang 23.1.1, ANSI code page 1252, 2026-10-04, `<scratchpad>/189-ffi-pragmatist-cases/win/names.ps1` and `names.sh`) | the runtime's four narrow doors, `main`'s `argv`, `fopen`, `FindFirstFileA` and `getenv` (`runtime/`, where `grep` finds no `CP_UTF8`, `_wfopen`, `FindFirstFileW`, `GetCommandLineW` or `activeCodePage`) · a route compiled and run on the box, an application manifest declaring `<activeCodePage>UTF-8</activeCodePage>` linked as a `.res`, under which every row above reads right (`<scratchpad>/189-ffi-pragmatist-cases/win/route/`), and which `selfhost/cli/flags.hero`'s `link_flags()` would carry to every Windows link · panel 189's Q6 · panel 191's R1 to R9 · **class: blocking**

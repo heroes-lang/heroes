@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-05
 commit: e703a84308526fadf15b7ef92b1a5c866705a549
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1660
 ---
 
 - [x] **338 — for `00x` and `00xg` the `leading_zero` advice writes `0x` and `0xg`, two literals the compiler refuses** | `x = 00x` and `x = 00xg`: `leading_zero`'s guess fix `0` applied writes `0x` and `0xg`, each refused at `check` (lane b11-misc's compiler, after `3f032bc7`, 2026-10-05, the lane's report) | `selfhost/leading_zeros.hero` (the advice) · defect 324, whose repair made every piece of the advice a literal the compiler accepts · defect 329 · **class: blocking**

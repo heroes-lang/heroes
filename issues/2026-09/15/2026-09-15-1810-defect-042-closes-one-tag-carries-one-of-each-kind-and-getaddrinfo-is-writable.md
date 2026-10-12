@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-15
 commit: 76bcd43ae585462d9aef5b13919e2d197d92a0c3
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1227
 ---
 
 - [x] **042 — spec § 13 cannot bind a struct that is both READ and POINTED AT, which is the shape C uses most** | the fielded record and the handle record would both need `tag addrinfo`, and two records may not name one tag, so `getaddrinfo` had no writable binding at all | **repaired 2026-09-15**, panel 153 R1, ratification pending | `selfhost/check/decls.hero`'s `one_tag_one_type` · `selfhost/emit/ffi_tag.hero`'s `record_by_tag` · `selfhost/handles.hero`

@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: 02bea033eef8fe4f878c9fda35497becdd7060dc
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1781
 ---
 
 - [x] **440 — an `@` argument naming a `str`'s byte passes `check` and stops the build** | `f(@s[0])`, `s` a `str`: `check` 0, then `build` exit 2 with clang refusing the generated C, where `s[0] @ 65` is refused by the checker (lane b13-land-addr's measurement on its branch, not re-run by the coordinator) | the checker's reading of an `@` argument that is an index into a `str`, `selfhost/check/` · **class: blocking**

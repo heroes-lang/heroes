@@ -4,7 +4,7 @@ area: process
 milestone: M-compatibility-promise
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1066
 ---
 
 - [ ] **M-compatibility-promise** | the paragraph, the suite that makes a broken promise red, and the sentence §10 forces | `README.md:117` · `.claude/rules/records.md` § Release tags · `docs/ROADMAP.md` § M-publication-gate

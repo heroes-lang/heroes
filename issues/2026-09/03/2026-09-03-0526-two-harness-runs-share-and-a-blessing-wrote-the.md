@@ -4,7 +4,7 @@ area: runtime
 milestone: M-robustness-guards
 filed: 2026-08-28
 commit: 5320c2f377f2b5c5eaeb66f0b82723550012a140
-github: none
+github: https://github.com/heroes-lang/heroes/issues/773
 ---
 
 - [x] **`M-robustness-guards`, step 5** | `/decide` 2026-09-03 (author instruction as above, choosing (a)+(c)); found by doing it 2026-08-28 | **Two harness runs share `build/harness` and a blessing wrote the collision to disk.** `hero_os_pid()` joins `runtime/hero_os.h` (`getpid` / `GetCurrentProcessId`; `HERO_RUNTIME_ABI` 18 → 19, ratified in advance), `tests/harness/main.hero`'s `SCRATCH` becomes `build/harness-<pid>` and is removed at exit (it is never removed today, measured), AND `UPDATE_EMISSION=1` in `suite_emission.hero` validates a captured trace before writing it — first line the emitter's header comment — refusing and naming the case otherwise. Test: two harness runs started together, both clean; a doctored capture refused | tests/harness/main.hero:88 · tests/harness/shell.hero:38-53 · tests/harness/suite_emission.hero · runtime/hero_os.h · runtime/heroes_runtime.h:37 | the emission traces are the one instrument whose source of truth no longer exists, and a race could overwrite them while reporting success

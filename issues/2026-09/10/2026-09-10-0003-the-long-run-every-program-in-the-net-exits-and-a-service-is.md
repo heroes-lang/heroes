@@ -4,7 +4,7 @@ area: harness
 milestone: M-core-packages
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1072
 ---
 
 - [ ] **M-core-packages** step 6 | the long run: every program in the net exits, and a service is the one that stays up | `tests/harness/suite_corpus.hero` § configurations · `runtime/parts/alloc.c` § `hero_runtime_check_leaks` · `docs/ROADMAP.md` § M-core-packages

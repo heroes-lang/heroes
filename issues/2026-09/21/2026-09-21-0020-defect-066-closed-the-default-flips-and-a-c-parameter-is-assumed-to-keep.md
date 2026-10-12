@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-19
 commit: abf9a17e8f9aded03150ff2850c9b3dcd68c8672
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1277
 ---
 
 - [x] **066 — a `ptr` lend has no lifetime rule, so C may keep the address past the frame** | **closed 2026-09-21**, M-declared-extents step 24 | **The default flipped: a C parameter is assumed to KEEP what it is handed unless declared `lent`, and a lend reaches only one so declared** — the author's ruling of 2026-09-20, priced by panel 171, landed in two commits | `selfhost/check/lend_landing.hero` · `selfhost/lend_errors.hero` · `tests/golden/check/fixedbugs-a-lend-c-keeps-past-the-frame.hero` | 171

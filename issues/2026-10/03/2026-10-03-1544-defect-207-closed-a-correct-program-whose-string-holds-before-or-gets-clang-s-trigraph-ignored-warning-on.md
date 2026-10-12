@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: ed776fb2c5b94574e1277187f34e114bddbcad8f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1524
 ---
 
 # Defect 207 closed: a correct program whose string holds `??` before `)`, `(`, `<`, `>`, `=`, `/`, `'`, `!` or `-` gets clang's *trigraph ignored* warning on the emitted C

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-30
 commit: b9fdb0a3d777829b2e0e62396944bd59283132cf
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1413
 ---
 
 # Defect 141 closed: check --apply hands back the author's bytes with its fixes, a last line left open included

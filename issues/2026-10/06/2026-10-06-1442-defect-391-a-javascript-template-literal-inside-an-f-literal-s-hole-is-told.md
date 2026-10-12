@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-06
 commit: 7092f6667ae42b15737b6c25eb101f9fbb511657
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1727
 ---
 
 - [x] **391 — a JavaScript template literal inside an f-literal's hole is told one message per character** | panel 187's R2 mutant `1980e403a92d6cb3` (`interp-js`) writes `` m[`ключ${x}`] `` inside a hole of `print(f"...")` in `tests/golden/run/fixedbugs-an-interpolated-string-holds-characters-above-ascii.hero`: the trunk's compiler at `0f48f9f9` told one message, `hole_not_renderable`, about the hole's type; batch 12's round at `43e6be50` tells seven `unexpected_character`, the opening backtick, each of the four Cyrillic letters, the `$` and the closing backtick, under `check` and under `check --permissive` alike (R2's differential at batch 12's gate, the round arm run by the coordinator from 13:54:11, the differential written at 14:26:36 on 2026-10-06, `FINDINGS: 2`, the two arms of this one mutant) | the lexer's reading of a hole's text, `selfhost/lex_interp.hero`, and its `unexpected_character` told per character where a run is one mistake · panel 187 R2 · **class: adjacent**

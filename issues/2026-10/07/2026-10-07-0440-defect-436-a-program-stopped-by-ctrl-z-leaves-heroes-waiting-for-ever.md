@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-07
 commit: e38dd76590525149f504cd1a0631ba661fe5a345
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1777
 ---
 
 - [x] **436 — a program stopped by Ctrl-Z leaves `heroes` waiting for ever** | a child of `heroes run` stopped by Ctrl-Z (SIGTSTP) leaves `heroes` waiting, since `hero_run_go` waits for exits only; already so before defect 425's repair (the lane's reading) | `runtime/parts/run.c`, `hero_run_go`'s wait · **class: adjacent**

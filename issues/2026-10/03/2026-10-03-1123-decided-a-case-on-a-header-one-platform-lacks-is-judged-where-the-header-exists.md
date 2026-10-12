@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-03
 commit: d9f5ddb8be6a819680f28490d2aa7ef6237a9772
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1519
 ---
 
 # Decided: a case on a header one platform lacks is judged where the header exists, with a twin on the program's own header running everywhere

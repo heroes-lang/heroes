@@ -4,7 +4,7 @@ area: cli
 milestone: M-issue-files
 filed: 2026-10-11
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2015
 ---
 
 - [x] **panel 212** | ratify, amend or overturn R1 to R11 (no fourteenth verb: `render` is modules of `tests/harness/` held by a `records/rendered` check, and `plan` and `push` are a second root of the harness run with `heroes run`, spawning `gh api -i --input -` serially at 500 content requests an hour; the rendering rule's seven gaps closed first; the author's acts of R6 before the first issue; a guard against GitHub writes from the assistant's shell in the same commit) | `docs/panel/212-the-issue-files-reach-github-through-a-program-beside-the-net-and-no-verb-and-the-rendering-rule-is-closed-first.md`

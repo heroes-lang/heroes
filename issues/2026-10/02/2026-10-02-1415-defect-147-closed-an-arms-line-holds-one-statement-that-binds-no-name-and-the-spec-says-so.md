@@ -4,7 +4,7 @@ area: spec
 milestone: none
 filed: 2026-10-01
 commit: 435201935c2adf4afdd5610b10335b213e8c1239
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1425
 ---
 
 # Defect 147 closed: an arm's line holds one statement that binds no name, and the spec says so

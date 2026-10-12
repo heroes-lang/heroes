@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1934
 ---
 
 # Panel 205 sat: a library's own header code is judged as clang judges a system header, the checks raised again after it, and a switch goes in the first group

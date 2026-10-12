@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-28
 commit: 3d704b03777c2359dc9cf746a33b9e9d4561ed25
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1394
 ---
 
 # Defect 130 closed: after a `match` whose arm fails to parse, the next statement is skipped whole, and every mistake in it goes unreported

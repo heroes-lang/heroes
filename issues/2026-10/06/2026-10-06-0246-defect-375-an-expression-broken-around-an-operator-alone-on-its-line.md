@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-06
 commit: 2cd107a7499f59866e9ea956b219960fdeda20eb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1706
 ---
 
 - [x] **375 — an expression broken around an operator alone on its line costs two messages** | `k = n` over a deeper `-` over a deeper `1`: `continuation_outside_brackets` and `unexpected_block`, on the base and on lane b12-parse12's compiler alike (measured by the coordinator at 02:46 on 2026-10-06, `<scratchpad>/batch12/filing/` `n4.hero`); defect 370 leaves the operand-below shape alone on purpose | `selfhost/open_line.hero`, `selfhost/sign_above.hero` · defect 370's sibling · **class: adjacent**

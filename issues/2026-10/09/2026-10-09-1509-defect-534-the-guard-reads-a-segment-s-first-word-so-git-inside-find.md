@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-09
 commit: 4070b5eb5768ac68eb3fe560bae7a5e88e5f4422
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1884
 ---
 
 - [x] **534 — the guard reads a segment's first word, so git inside `find -exec` or an alias goes unjudged** | every rule of `.claude/hooks/guard_bash.py` reads a command segment by its first word, so a git command run by `find ... -exec git ...` and a git alias that expands to a refused command are never judged, whatever they discard or commit (lane b16-misc) | `.claude/hooks/guard_bash.py`, `.claude/hooks/discards.py` · defects 514 and 529 · **class: adjacent**

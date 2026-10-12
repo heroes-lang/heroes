@@ -4,7 +4,7 @@ area: cli
 milestone: M-core-packages
 filed: 2026-09-06
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/927
 ---
 
 - [ ] **M-core-packages** | `compile "gfx.c"` waits for a witness, not for an argument | `docs/panel/114` § R6, R7 · `selfhost/cli/libraries.hero` · `examples/sdl/main.hero`

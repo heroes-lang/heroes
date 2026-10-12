@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-05
 commit: 805bae193f20f37e40b5f6f27ef80a3f0187d76d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1668
 ---
 
 - [x] **346 — `fmt --in-place` through a link whose target name is not UTF-8 says *the operating system's own reason is 84*, a number the runtime set** | on Linux, `heroes fmt` over a link whose target's name holds a byte that is not UTF-8: the message gives *the operating system's own reason is 84*, and 84, `EILSEQ`, is set by the runtime itself (`runtime/parts/replace.c:94`), not by the system (lane b11-windows, Linux arm64, 2026-10-05, the lane's report) | `runtime/parts/replace.c:94` (the `errno` it sets) · the compiler's wording of a refusal's reason · **class: blocking**

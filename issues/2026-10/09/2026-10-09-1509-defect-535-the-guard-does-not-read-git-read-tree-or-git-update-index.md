@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-09
 commit: 59e6ca86a326534180974b7b12814f41864ffc0d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1885
 ---
 
 - [x] **535 — the guard does not read `git read-tree` or `git update-index --force-remove`** | `git read-tree HEAD` loses the staged version of a path changed again after staging, and `git update-index --force-remove` acts as `git rm --cached -f`; defect 529's repair reads neither, both plumbing nobody here types by hand (lane b16-misc) | `.claude/hooks/overwrites.py` · defect 529 · **class: improvement**

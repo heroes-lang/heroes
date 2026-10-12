@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-09-23
 commit: cea6e9d0dabe7f36776d30ee877cda6742017b64
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1323
 ---
 
 # Seven sittings ratified in one act, and the blind seat reads a copy

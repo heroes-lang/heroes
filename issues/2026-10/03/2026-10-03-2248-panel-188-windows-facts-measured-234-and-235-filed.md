@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: 33b72e65a0b5f02858639054a477336792fc3f10
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1533
 ---
 
 # Panel 188's Windows facts measured after its ratification; defects 234 and 235 filed, one decision put to the author

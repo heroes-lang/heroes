@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-05
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1680
 ---
 
 # Panel 192 sat: a str holds any UTF-8, the C boundary refuses a NUL, and a string refuses what its reader cannot see

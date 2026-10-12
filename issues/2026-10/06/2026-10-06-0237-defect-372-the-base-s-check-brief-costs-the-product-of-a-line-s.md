@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-06
 commit: 16af01c36d27854f8f77520c244d5d557fc3a66b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1701
 ---
 
 - [x] **372 — the base's check --brief costs the product of a line's diagnostics and its length** | one line of 14,039 bytes holding 2,000 refused shapes: `check --brief` retires 148.5 billion instructions; 500 on a line of 3,508 bytes, 25.1 billion, five point nine times as much for four times the input (the base's compiler at `00217c39`, measured by the coordinator at 02:35 on 2026-10-06, `<scratchpad>/batch12/filing/` `longline*.hero`, the critic's files) | `selfhost/source.hero`, `locate` counting a column from its line's start for each place · defect 256's one-walk technique · panel 193's R6 · **class: adjacent**

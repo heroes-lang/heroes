@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: 0fa162168893ef5c2bf1d81cbb8599b22dae1425
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1823
 ---
 
 - [x] **478 — the emitter's prologue walks every parameter for every slot** | `emit/body.hero`'s prologue, the shape defect 230 removed from `own.hero`: 88 of 995 samples at many-params-3200 (lane b14-ir, read and sampled, not counted) | `selfhost/emit/body.hero` · defect 230 · **class: improvement**

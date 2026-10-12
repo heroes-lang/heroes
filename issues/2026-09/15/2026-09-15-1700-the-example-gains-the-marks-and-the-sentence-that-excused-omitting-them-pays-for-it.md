@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-15
 commit: 559af72530561b60f7e1d8e521de885269073951
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1225
 ---
 
 # The example gains the marks, and the sentence that excused omitting them pays for it

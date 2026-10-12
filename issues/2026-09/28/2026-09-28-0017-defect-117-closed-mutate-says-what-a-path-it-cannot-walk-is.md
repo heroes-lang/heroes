@@ -4,7 +4,7 @@ area: examples
 milestone: none
 filed: 2026-09-27
 commit: dfc1e221bf2103d247dc82278e9e9e14ff852a41
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1371
 ---
 
 # Defect 117 closed: `heroes mutate` says what a path it cannot walk is

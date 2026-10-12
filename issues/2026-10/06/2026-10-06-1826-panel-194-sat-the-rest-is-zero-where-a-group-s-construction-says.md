@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1737
 ---
 
 # Panel 194 sat: the rest is zero where a group's construction says so, and a lend's count is in C's own unit

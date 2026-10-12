@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-06
 commit: c58bee417bc007466a21707be6a09785adaf6caa
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1717
 ---
 
 - [x] **385 — the did-you-mean costs the product of the names in scope and the names it cannot find** | a function holding N locals and N unknown names, none near enough to offer: `check --brief` retires 3.74, 12.94 and 47.94 billion instructions at N of 200, 400 and 800, three and a half to three point seven times for each doubling (the round's compiler at `bead6e45`, measured by the coordinator from 11:23, its last count written at 11:23:37 on 2026-10-06); N functions each with a parameter of an unknown type, 0.92, 2.46 and 7.79 billion at 200, 400 and 800 (lane fit12's measurement, not re-run) | `selfhost/resolve/near_names.hero`, the candidates of a scope gathered again for each unknown name; `selfhost/resolve/types.hero`, `type_candidates` walking every declaration and copying its kind for each unknown type · defect 372 · **class: adjacent**

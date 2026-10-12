@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-05
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1685
 ---
 
 - [x] **M-issue-files** | the 461 `kind: learn` files leave `issues/` for `docs/learn/<year-month>/<day>/`, each keeping its name, and the rules, skills and records checks follow: a `learn` question is not an issue | CLAUDE.md § 3 (*Five lists, one folder*) · `.claude/rules/records.md` § The issues · `.claude/skills/learn/`, `decide`, `step`, `where` · `tests/harness/cards.hero`, `tests/harness/suite_records.hero` · the two files outside `issues/` that cite one by name

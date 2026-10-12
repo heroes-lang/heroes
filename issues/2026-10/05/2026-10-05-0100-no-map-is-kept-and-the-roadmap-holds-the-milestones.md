@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-05
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1659
 ---
 
 # No map is kept, and `docs/roadmap/` holds the milestones' pages

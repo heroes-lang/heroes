@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-02
 commit: e2f98e174ad84adc0ecd66b1f75569f8001bdc43
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1473
 ---
 
 - [x] **183 — a `.pc` whose `prefix` holds an unescaped space is refused naming `space/include` as the flag, and not the package file's line that splits it** | `prefix=/opt/with space`, `Cflags: -I${prefix}/include`: `pkg-config --cflags s7` prints `-I/opt/with space/include`; `build` exit 1, `ffi_package`, *the package `s7` answered with `space/include`, which this compiler does not pass on* | `selfhost/cli/shell_split.hero` (the word splitter, defect 162's `b37bfce1`) before `filter_words` (`selfhost/cli/libraries.hero:83`) · **class: adjacent**

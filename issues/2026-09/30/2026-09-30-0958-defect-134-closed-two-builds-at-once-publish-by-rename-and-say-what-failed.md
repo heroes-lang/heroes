@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-30
 commit: 6d781be1b34e97d18deb2b80b2d666d9f9d3fbb4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1399
 ---
 
 # Defect 134 closed: two builds at once in one tree write private names, publish by rename, and say what failed

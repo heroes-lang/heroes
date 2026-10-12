@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-09-03
 commit: 739465699ca1213a240adab1d5217a8a1b6286c9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/846
 ---
 
 - [x] **The six repaired defects, re-read the evening the last two were repaired for what each still owed (2026-09-03)** | author instruction, *"cerca di risolverli nella maniera migliore … quei difetti li deve risolvere"*, over 007 → 001 in that order | every "still owed" sentence in the six entries above checked against the tree by running or grepping, not by recalling | this record; the instruments named below | a repaired defect with an unpaid promise in its own text is the shape CLAUDE.md §1 calls *reading a record without reading forward*

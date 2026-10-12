@@ -4,7 +4,7 @@ area: examples
 milestone: M-agreed-retention
 filed: 2026-09-20
 commit: 0a8fd34640b2582bd0768d2ba85e3e982a61bdce
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1297
 ---
 
 # One declaration cannot reach all three of `sqlite3_bind_text`'s retention modes, and the record says which one it reaches

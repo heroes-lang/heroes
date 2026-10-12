@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-09
 commit: 640810c38f19911fdb71d3d8d7e89930095fd7ec
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1902
 ---
 
 - [x] **548 — a call's argument list left open over a list never closed is told twice for one edit** | `x = g(1, [2, 3` over `print(x)` over `y = 3 )` gets the lexer's *`[` never closed* and `expected_args_close` at `print`, two messages for one `])` edit; it goes through the call-argument reader, not the binding path defect 459's repair carries its openers through (lane b17-fix) | the call-argument reader of `selfhost/parse/` · defect 459 · **class: adjacent**

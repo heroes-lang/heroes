@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-04
 commit: c0f4f52136e5c5402a0944fffcb0198b6a3662b9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1651
 ---
 
 - [x] **320 — two runs of the net's own tests in one tree collide on the fixed scratch `build/harness-selftest`** | two `heroes test tests/harness/main.hero` at once in one tree: 10 and 8 failures, every one a collision on the same scratch folder, where either alone reads 240 passed and 0 failed (the lane's run, discarded) | `tests/harness/absence.hero` (`scratch = "build/harness-selftest"`, six tests), `tests/harness/probe.hero:287`, and the net's other tests that name the folder · **class: improvement**

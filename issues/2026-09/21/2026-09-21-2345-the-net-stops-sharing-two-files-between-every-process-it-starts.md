@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-21
 commit: eb53a58f7b627c94c9ad3b5d4be7a7ce8e744da2
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1304
 ---
 
 # The net stops sharing two files between every process it starts

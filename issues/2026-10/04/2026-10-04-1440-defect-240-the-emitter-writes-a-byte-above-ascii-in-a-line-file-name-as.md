@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-04
 commit: 59e17a1426daa8537365275b0b764bd56466a3b4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1633
 ---
 
 - [x] **240 — the emitter writes a byte above ASCII in a `#line` file name as an octal escape, which clang 23 refuses, so a program whose path holds one does not build there** | `build café.hero` with the trunk's compiler linked with defect 238's UTF-8 manifest, the Windows box, clang 23.1.1: exit 2, *internal error: compiling the generated C failed*, `error: invalid escape sequence '\303' in an unevaluated string literal` at `#line 1 "caf\303\251.hero"`; clang 23.1.1 refuses the octal escape in a `#line` name under `-std=gnu11` and `-std=c11` and accepts the raw UTF-8 bytes, `\\` and `\?`, where Apple clang 21, clang 18.1.8 and 22.1.8 accept both (2026-10-04, `<scratchpad>/189-ffi-pragmatist-cases/win/line.sh`, `c18.sh`); this Mac builds the same program today, Apple clang 21 reading the same line | `selfhost/emit/c_text.hero` (the `#line` name's escaping, defect 207's repair of 2026-10-03, measured then on Apple clang 21, Debian clang 22.1.8 and 18.1.8) · every platform whose clang is 23 · **class: blocking**

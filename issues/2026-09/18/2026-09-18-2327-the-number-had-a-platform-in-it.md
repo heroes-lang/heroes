@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-18
 commit: 843daff3fa32f707274d867cc4c7552deb2b781c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1266
 ---
 
 # The number had a platform in it

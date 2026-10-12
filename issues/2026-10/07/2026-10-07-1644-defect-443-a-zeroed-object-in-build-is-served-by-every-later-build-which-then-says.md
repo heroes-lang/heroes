@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: 667d9039f962b54ee4b0ed0661e9ea43b7b3a9e6
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1786
 ---
 
 - [x] **443 — a zeroed object in `build/` is served by every later build, which then says clang refused the generated C** | zero `build/runtime-*.o` or a `build/tu-*/x-*.o` at its length and build again: every later build exits 2 with `ld: unknown file type` and then *error: clang refused the generated C*, which is false, until `build/` is deleted by hand; the recovery half of defect 357's object row, which was repaired only by flushing before the rename (lane b14-cli's measurement, reproducer in `<scratchpad>/batch14/cli/p435/shapes`, not re-run by the coordinator) | `selfhost/cli/`, the build cache's reuse of an object · defect 357 · **class: blocking**

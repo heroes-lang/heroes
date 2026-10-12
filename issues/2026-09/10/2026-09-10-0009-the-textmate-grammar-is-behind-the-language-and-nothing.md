@@ -4,7 +4,7 @@ area: editors
 milestone: M-vscode-extension
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1084
 ---
 
 - [ ] **M-vscode-extension** | the TextMate grammar is behind the language, and nothing judges either highlighter | `editors/vscode/syntaxes/heroes.tmLanguage.json` · `site/src/lib/highlight.ts` · `.claude/rules/diagnostics-and-goldens.md` § A new surface form

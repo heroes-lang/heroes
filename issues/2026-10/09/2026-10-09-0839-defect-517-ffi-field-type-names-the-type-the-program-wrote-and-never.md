@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-09
 commit: ce2bf93181fcfcdd873b4f23fe422b4ac6efc0e9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1865
 ---
 
 - [x] **517 — `ffi_field_type` names the type the program wrote and never the header's width or sign** | *is not `u32`* and nothing of what the header has: the gap an author met when SDL's `type` and `scancode` were `int` on Windows and `unsigned int` on macOS and Debian (lane b15-box) | the field-type diagnostic of `selfhost/emit/` · defect 447 · **class: adjacent**

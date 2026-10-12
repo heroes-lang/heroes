@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-09-24
 commit: f1e2132f06d03c40b808bf2fe98cc50799ad1f4f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1331
 ---
 
 # Defect 095 closed: a comment inside a parameter list stays where the author put it

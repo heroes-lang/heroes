@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-19
 commit: 1d4b31178aa332aabc125d210b559eec1af430c9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1274
 ---
 
 # The temporary takes the lend's spelling

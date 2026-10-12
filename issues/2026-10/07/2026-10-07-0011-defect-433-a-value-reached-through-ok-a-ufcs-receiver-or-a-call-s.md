@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: d6be48972d0d67871f0e3bc67ac0daa834aa30e6
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1774
 ---
 
 - [x] **433 — a value reached through `ok`, a UFCS receiver or a call's result keeps its second message beside a refused fixed array** | defect 423's withdrawal follows a binding's value, a store, a constant, a `return`, an argument, literals' elements and `if`/`match` branches, and not a value inside `ok(...)`, a UFCS call's receiver, or a call's result, which keep the walk's `type_mismatch` beside `fixed_outside_a_group` | defect 423's withdrawal, `fixed_judged.hero` on lane b13-fixed405 (unmerged on 2026-10-07) · **class: adjacent**

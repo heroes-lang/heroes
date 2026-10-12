@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-10
 commit: 5c2880e6f49b94d358a8eaa9e47fd55081ce7f15
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1945
 ---
 
 - [x] **581 — the commit guard refuses a golden case that is non-canonical on purpose even when its annotations are green** | `.claude/hooks/staged.py` refuses any commit carrying a `tests/golden/` case that parses but is not canonical, even where its `#~` marks hold and a narrowed `annotations` run is green; defect 576's two cases are non-canonical on purpose (`heroes fmt` writes `-(-128)` as `--128` and drops the parentheses the case tests), so a lane's merge of them was refused and lane b18-close merged lane b18-infer at an older commit to get past it; the marks exemption covers only cases `fmt` refuses | `.claude/hooks/staged.py` and `.claude/hooks/marks.py`: a marked golden case is judged by its marks through `annotations`, whatever `fmt` returns · **class: blocking**

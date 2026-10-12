@@ -4,7 +4,7 @@ area: examples
 milestone: none
 filed: 2026-10-07
 commit: 16f27d696a827b82c8e04b22e7b9ee68288a00f1
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1811
 ---
 
 - [x] **466 — `examples/calculator/whole.hero`'s `apply` doc comment sits cut off from `apply`** | lines 27 to 31: the doc comment and its `## Generic library` heading above `## Error codes`; two of four blind sessions moved it unasked (lane b14-m212's measurement 040) | `examples/calculator/whole.hero` · **class: improvement**

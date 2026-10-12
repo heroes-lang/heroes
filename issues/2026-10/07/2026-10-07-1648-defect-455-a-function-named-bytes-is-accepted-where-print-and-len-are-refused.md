@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-07
 commit: b8edf1b748c4123871ad6520a5b718bb343d5928
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1798
 ---
 
 - [x] **455 — a function named `bytes` is accepted where `print` and `len` are refused, and its own `s.bytes()` calls itself for ever** | `function bytes(s: str) -> [u8]` returning `s.bytes()`, called once from `main`: `check` exit 0; `build` exit 0 printing clang's *warning: all paths through this function will call itself [-Winfinite-recursion]* over the generated C (`HeroArrayHeader * h_shadow_bytes(HeroStr h0_s) {`); the program aborts *panic: stack exhausted in shadow.bytes*, exit 134; the same file with a function named `print` or `len` is refused `builtin_name_taken` (run by the coordinator between 16:44 and 16:48 on the trunk's compiler, `<scratchpad>/batch14/shadow/`; first seen by lane b14-runtime) | the resolver's built-in name check (`builtin_name_taken`, `selfhost/resolve/`) against the table of built-ins (`selfhost/inventory.hero`) · design.md §4.4, *Shadowing is forbidden* · **class: blocking**

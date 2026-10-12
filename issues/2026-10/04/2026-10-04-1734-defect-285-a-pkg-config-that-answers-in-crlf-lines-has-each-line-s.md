@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-04
 commit: ba8e6f67f3d30d31034a922d5e5ead07a16d6555
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1641
 ---
 
 - [x] **285 — a `pkg-config` that answers in CRLF lines has each line's carriage return shown as `<U+000D>` in the package's notes** | a stand-in `pkg-config` answering *Package zz9 not found* in CRLF lines: the package's message carries `note: Package zz9 not found<U+000D>`, the answer trimmed once before its lines are split (lane b9-harness, measured on this Mac, 2026-10-04, `<scratchpad>/batch9/harness/`) | `selfhost/cli/libraries.hero:318` (`strings.trimmed` of the whole answer, then `shell_split.shown` by line) · **class: adjacent**

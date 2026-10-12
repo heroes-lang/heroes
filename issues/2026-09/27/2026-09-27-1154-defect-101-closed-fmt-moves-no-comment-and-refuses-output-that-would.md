@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-09-25
 commit: 29ed560108e1511efcf304e7432d30e911279818
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1351
 ---
 
 # Defect 101 closed: `fmt` moves no comment the generators can reach, and refuses output that would

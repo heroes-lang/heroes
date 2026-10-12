@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-20
 commit: 49be170ace22c4e4114013e0b035987bed91c324
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1278
 ---
 
 # Nobody checks the callee

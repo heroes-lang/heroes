@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-11
 commit: 71f0820684c9da5e20dcaf3b3d4e42147e42b6e8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1981
 ---
 
 - [x] **613 — the wildcard re-bound is told with a note that declares it a cell** | `_ @ f(1)`, `_ @ n + 1` and `_.x @ 2` are refused `unknown_name`, *nothing named `_` is in scope*, with panel 209's R9 note *`_ @ …` changes a cell that already exists; a new cell is declared `_ @= <value>`, and a value bound once with `_ = <value>`*: the second clause writes the wildcard cell, which declared nothing on the trunk and is refused `never_rebound` since defect 608's repair, so the note sends the reader to a refused line; beside it a rename to the nearest one-letter name in scope (`f`, `n`) is offered as a guess | `selfhost/resolve/errors.hero` `unknown_place` (the note, written for every name, the wildcard included), reached from `selfhost/resolve/writes.hero` `write_root` · **class: blocking**

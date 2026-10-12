@@ -4,7 +4,7 @@ area: spec
 milestone: M-core-packages
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1069
 ---
 
 - [ ] **M-core-packages** step 6 | a service that stops cleanly is not writable, and the server step is where that stops being theoretical | `spec/heroes-spec.md:47` · `selfhost/check/ffi.hero:262-268` · `runtime/parts/thread.c:10-68`

@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-06
 commit: a2d349b67181b0828dafd0495d2687990e1d1d47
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1719
 ---
 
 - [x] **387 — a value read before a branch and a write through `@` in the same expression reads freed memory and prints a wrong value** | `print(total(out, half(4).must() + bump(@out)))`, where `bump` pushes onto `out` through `@` and `total` reads the length of the `out` it was given: prints 3004 where the program means 1004, and `--sanitize` reports `heap-use-after-free` (the trunk's compiler at `0f48f9f9` and the round's at `bead6e45` alike, run by the coordinator between 11:32 and 11:36 on 2026-10-06, the clock read before and after); the same line without `.must()` prints 1004 and is clean, and `out @ out.push(half(4).must() + bump(@out))` fails the same way (lane ir12's report) | `selfhost/ir/survival.hero`, `survivors` asking only within one block whether a loaded value is read after a write to its root; a `.must()` puts the load and the write in two blocks · defect 381's `ir/between.hero` · **class: blocking**

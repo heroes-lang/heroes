@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-15
 commit: 19ee8adb72b4c22f1e36e6f2117c7c6a72b2737c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1232
 ---
 
 # Two sittings ratified, and both were decided against their own seats

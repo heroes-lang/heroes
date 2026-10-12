@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1115
 ---
 
 2026-09-11 · **The author answered panel 129's second question with neither of the

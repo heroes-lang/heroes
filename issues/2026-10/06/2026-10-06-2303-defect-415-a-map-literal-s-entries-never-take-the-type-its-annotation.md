@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-06
 commit: 23d00fbe0cc3777821c7850142cf805d48ce73b2
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1754
 ---
 
 - [x] **415 — a map literal's entries never take the type its annotation asks for** | `m: {str: u8} = {"a": 1}` is refused `type_mismatch`, *expected `{str: u8}`, found `{str: i64}`*, where `xs: [u8] = [1, 2]` checks clean; spec § 2 says a literal takes the type its context asks for (the coordinator's re-run on round b13's compiler at `5fc393e3`, 23:03); measured by the lane, not re-run: `{"a": .plus}` is `cannot_infer`, and a generic function value inside a map literal is refused for the same reason | the checker's typing of a map literal against an expected type, `selfhost/check/` · **class: blocking**

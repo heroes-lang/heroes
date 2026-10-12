@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-04
 commit: 3416238a14755718d1b992a0c42fe338d0943b90
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1596
 ---
 
 - [x] **309 — `function( -> i64)` is told `expected_type` without naming the move it needs** | a function type with its parameters' `)` moved past the arrow and no parameter, `function( -> i64)`: `expected_type`, which says nothing of the `)` (lane b9-recovery's compiler, 2026-10-04) | `selfhost/parse/type.hero` · defect 197 · **class: adjacent**

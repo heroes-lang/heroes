@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 912b2df39d5f814da4a12ee56d10404ed62f571d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1868
 ---
 
 - [x] **520 — mutual recursion and a self-call through a function value pass `check`** | panel 199's R4 refuses a function every path of which calls itself, and lets through `ping` calling `pong` calling `ping` and `f = go` then `f(n)`; since defect 508's repair both abort 134 at every level (panel 199's R7, route (I)) | `selfhost/check/self_call.hero` · panel 199 · **class: improvement**

@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-06
 commit: 3c687c3aff0a548d2a69b79db00015085ed57776
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1708
 ---
 
 - [x] **377 — suite_spec's colouring check cannot see a `\u{...}` escape** | lane b12-str192, landing panel 192's R5, tested the editor grammar's pattern for `\u{...}` with Python's `re` alone, since `tests/harness/suite_spec.hero`'s colouring check reads no escape (its report, 2026-10-06) | `tests/harness/suite_spec.hero` (the colouring check) · `editors/vscode/syntaxes/heroes.tmLanguage.json` · **class: improvement**

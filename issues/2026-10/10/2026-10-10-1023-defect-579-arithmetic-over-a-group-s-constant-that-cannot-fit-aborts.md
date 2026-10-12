@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-10
 commit: bd22100525794c8ee2e4977e6432b8248b8a6bbf
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1941
 ---
 
 - [x] **579 — arithmetic over a group's constant that cannot fit aborts at run time, its value known only to clang and the platform** | panel 206's ffi-pragmatist: `x: i32 = PATH_MAX * 600000` builds and prints `614400000` on this Mac (`PATH_MAX` 1024) and aborts 134 on Linux arm64 (4096); `RAND_MAX + 1` and `INT64_MAX + 1` abort 134 everywhere; a build probe of one `__int128` `_Static_assert` per step built only from constants refuses at the `.hero` line on exactly the platform where the run aborts (inserted by hand into two units, Windows unrun) | the emitted probes of a group's constants, `selfhost/emit/`; panel 206 R4, for a sitting of its own · **class: improvement**

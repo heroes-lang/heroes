@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1946
 ---
 
 - [x] **panel 207** | ratify, amend or overturn R1 to R5 (spec § 4's sentence states exactly the class a constant's body refuses, open above: an integer operator that would abort, run or not, is a compile error at least where its operands are known, G3 under route W if it builds clean, G1 otherwise, one `--refresh` at the landing; the diagnostic note says the same; what the class leaves aborts where it runs, one `run` witness per kind; panel 206's R1 and R5 corrected beneath; an exact evaluator with a bound, route A, route C, D1r, N3, G2, G4 and C4a refused) | `docs/panel/207-a-constant-s-body-refuses-at-least-the-integer-steps-whose-operands-are-known-and-the-spec-says-exactly-that.md`

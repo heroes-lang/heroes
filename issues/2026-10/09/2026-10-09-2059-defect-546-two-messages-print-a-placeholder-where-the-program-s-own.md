@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: c8b94d8589653055285d2cbefcc7fc43acd11f6d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1900
 ---
 
 - [x] **546 — two messages print a placeholder where the program's own text belongs** | `needs_parameter_names` on `(function(A, A) -> ())` prints *a type parameter* for `A`, and `first(a: ident, b: double)` prints *expected `?`, found ...* (panel 201's compiler-engineer and critic) | `selfhost/check/` · panel 201 · **class: adjacent**

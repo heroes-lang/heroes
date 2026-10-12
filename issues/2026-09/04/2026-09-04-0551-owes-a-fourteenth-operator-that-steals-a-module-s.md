@@ -4,7 +4,7 @@ area: mutate
 milestone: M-corpus-depth
 filed: 2026-09-03
 commit: 7aa84a5f88fbe785c5cb364eced911dcdf3a1f90
-github: none
+github: https://github.com/heroes-lang/heroes/issues/848
 ---
 
 - [x] **M-corpus-depth** (re-opened here 2026-09-03 from `docs/work/DONE.md:924`, where it stands ticked with the twenty-programs closure under it — the record keeps its words, and the correction is its own item there) | panel 102's landing, and the payment §1.6 would have preferred; journal 029:160-165 says *filed rather than done* | **`heroes mutate` owes a fourteenth operator that steals a MODULE's name, and it lands once, against a corpus scored before and after.** `selfhost/mutate/ops.hero` ships **13 operators**, one of them `shadow` (*"an inner-scope habit"*, `ops.hero:39`), which through `edits.shadow` duplicates a `bind` statement's line; the fourteenth rewrites a `bind`'s name to one a `use` bound, which panel 102's refusal must kill in the strict arm and `--permissive` must let live. Adding an operator moves the **denominator** of the thesis's own score, so the discontinuity is spent once, against the widened corpus, with both numbers on the record: measurement 014 is the thirteen-operator baseline over 35 programs, and the fourteenth is added when M-corpus-depth's programs are in, scored beside it. The full original wording, with panel 102's argument, is at `DONE.md:924` | selfhost/mutate/ops.hero · selfhost/mutate/edits.hero · docs/panel/102 · docs/measurements/014-mutate-over-thirty-five.md | the score stays readable across the seam only if the seam is in one place

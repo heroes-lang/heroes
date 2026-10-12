@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-04
 commit: 7f4c0cc531e546f6880bc95cc4f569146d437afd
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1631
 ---
 
 # Panel 190 sat: one exit where a function has two or more ways out, its return slot borrowing

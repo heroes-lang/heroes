@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1114
 ---
 
 2026-09-11 · **Three of panel 129's five seats sent the work back, and the record

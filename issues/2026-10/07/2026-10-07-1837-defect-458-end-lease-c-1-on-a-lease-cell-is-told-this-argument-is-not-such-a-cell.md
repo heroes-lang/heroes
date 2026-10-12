@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: 9e9af1ad54ec9a094fc3008fc086853a553e42d1
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1803
 ---
 
 - [x] **458 — `end_lease(@c, 1)` on a lease cell is told *this argument is not such a cell*, which is false of `@c`** | `end_lease(@c, 1)` where `c` is a lease cell gets `builtin_shape` and `end_lease_of_no_lease`, the second saying the argument is not such a cell, false of `@c`; the mistake is the extra argument (lane b14-resolve, read on the base) | `selfhost/check/leasing.hero` · **class: blocking**

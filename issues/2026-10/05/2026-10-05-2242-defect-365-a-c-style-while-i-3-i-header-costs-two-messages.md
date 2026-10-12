@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-05
 commit: f8c75ff50ad3685110d621265ec144a3adc4ec53
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1694
 ---
 
 - [x] **365 — a C-style `while i < 3; i++` header costs two messages** | `while i < 3; i++` over a body: `unexpected_character` and `continuation_outside_brackets`, two messages for one habit, on the base and on lane b12-parse12's compiler alike (measured by the coordinator, 2026-10-05, `<scratchpad>/batch12/filing/` `301-k-while.hero`) | the parser's C-habit readers, `selfhost/parse/loop_habit.hero` · defect 301's sibling · **class: adjacent**

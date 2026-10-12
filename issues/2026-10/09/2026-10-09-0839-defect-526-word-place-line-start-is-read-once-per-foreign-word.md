@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-09
 commit: 1fb7a3c06eaf53793c4b016383b6533d54ce7736
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1874
 ---
 
 - [x] **526 — `word_place.line_start` is read once per foreign word** | the cost left on the `fn ` shape after defect 494's repair (lane b15-parse) | `selfhost/word_place.hero` · defect 494 · **class: improvement**

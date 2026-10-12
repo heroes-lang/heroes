@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: de7ed3273286d93e7643671645713c30ebad1497
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1767
 ---
 
 - [x] **426 — a `cstr` lent to a C function declared with no prototype is written by C at exit 0** | `int x_kr();` with a K&R definition taking `unsigned char *p`, bound `x_kr(p: cstr lent)` and lent a shared `str`: C writes it (`Zbc`) at exit 0, on the base and after defect 411's repair, on this Mac and Linux arm64; there is no prototype to ask, and the pointee check's call checks nothing | `selfhost/cli/pointee_wants.hero`, the question asked of a function with no prototype · **class: blocking**

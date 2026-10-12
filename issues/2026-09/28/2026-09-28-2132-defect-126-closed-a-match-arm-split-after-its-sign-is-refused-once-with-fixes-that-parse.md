@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-28
 commit: 687c54f34fea0c8393828dd444279ec43b61fc59
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1387
 ---
 
 # Defect 126 closed: a match arm split after its sign is refused once, with fixes that parse

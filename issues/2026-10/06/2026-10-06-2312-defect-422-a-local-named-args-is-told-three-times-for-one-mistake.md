@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-06
 commit: 33d48dd81c15a903e967a1a4b85d24048a4071bc
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1761
 ---
 
 - [x] **422 — a local named `args` is told three times for one mistake** | `args: i64 @ 1` then two writes `args @ 2`, `args @ 3`: `check --brief` tells `builtin_name_taken` at the binding and `no_mutable_globals` at each later write, three messages for the one name (the coordinator's re-run on round b13's source at `3bc3b2a5` with lane fixed405 merged, 23:12) | `selfhost/resolve/`, the reading of a binding whose name a built-in holds · **class: adjacent**

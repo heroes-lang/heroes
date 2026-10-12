@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-11
 commit: 19fa3d898452bcf5421900f927ab45ede87cee26
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1985
 ---
 
 - [x] **630 — panel 209's certain fix for a cell nothing re-binds leads away from the repair when the cell's method result is dropped** | `xs @= [1]` then `xs.push(4)` as a statement: `never_rebound` offers a `certain` `=`; once applied, the next message's first `guess` is refused `not_mutable` and its second compiles and prints 1 where the intended repair, `xs @ xs.push(4)`, prints 2; no wrong program compiles from the `certain` fix alone (the critic's class); the critic's unlisted route, a value line rooted at the local counted as a meant write, closes it | `selfhost/resolve/` (`never_rebound`'s fix) and the discarded-value message; panel 210 R4 · **class: adjacent**

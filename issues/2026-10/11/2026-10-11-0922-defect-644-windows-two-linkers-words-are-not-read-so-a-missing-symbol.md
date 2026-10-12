@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-11
 commit: 01370cf14ca33b2cfbf70d2f51708e07e57174ac
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1996
 ---
 
 - [x] **644 — Windows' two linkers' words are not read, so a missing symbol is *internal error: linking failed* at exit 2 there** | `emit/ffi_build.undefined_symbol` reads GNU's `undefined reference to `x'` and ld64's `"_x", referenced from:`; lld-link writes `lld-link: error: undefined symbol: x`, MSVC's link.exe (the CI's) `error LNK2019: unresolved external symbol x referenced in function main`, **on stdout**, which `toolchain.asked_through` discards, and a program left with no `main` is `LNK1561: entry point must be defined` or lld-link's `subsystem must be defined`, naming no symbol; so `ffi_missing_link` (a missing `link`, a header's label) and `ffi_header_refused` (a runtime name or `main` renamed) were exit 2 on Windows: defect 591's `__asm__` case in the CI | `selfhost/emit/ffi_build.hero` (`undefined_symbol`), `selfhost/cli/renamed.hero` (`missing_symbols`), `selfhost/cli/toolchain.hero` (`asked_through`), `selfhost/cli/link_warning.hero` (`run_link`); the Windows box · **class: blocking**

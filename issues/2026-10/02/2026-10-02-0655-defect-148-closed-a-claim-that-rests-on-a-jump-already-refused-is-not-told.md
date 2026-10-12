@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-01
 commit: 9f87fe17b93dc88be3a230da029aeb25731c9b2c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1423
 ---
 
 # Defect 148 closed: a claim that rests on a jump already refused is the jump's shadow, and is not told

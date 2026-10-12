@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: 960fcda70774cfdbbc75533e690805ce7ddca756
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1914
 ---
 
 - [x] **560 — `heroes test` compiles a program as one C unit, and so computes or refuses another program than `build`** | panel 202's cases: `fp` (two modules, each header defining a `static inline twice` of another type) builds and prints `6 8`, and `test` exits 1; `macro3` builds to 8 and `test` computes 400; `cfg` builds and runs to `3 10`, and `test` fails a correct test with `left: 50 right: 10`; `shim2` (two modules each holding the identical `static inline` shim design.md `:568` prescribes) builds and prints `3 2`, and `test` refuses it, *redefinition of 'hero_WEXITSTATUS'* | `selfhost/cli/assemble.hero:99` (`site.is_tests`), and `emit/unit.hero`'s root shim, which must carry the test runner so the program's `main` does not run before the tests · panel 202 R3 · **class: blocking**

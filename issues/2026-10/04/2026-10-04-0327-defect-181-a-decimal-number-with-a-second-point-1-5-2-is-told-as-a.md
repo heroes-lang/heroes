@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-02
 commit: 098c76f8fdc25ba60489ef5aeb349287ec804023
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1471
 ---
 
 - [x] **181 — a decimal number with a second point, `1.5.2`, is told as a field access** | `x = 1.5.2`: `expected_field_name` at 3:13, *expected a field or function name after `.`, found a number (`2`)* | `selfhost/grammar_expr.hero:343` · `selfhost/number.hero` · defect 154's closed record (*Left, queued*) · **class: adjacent**

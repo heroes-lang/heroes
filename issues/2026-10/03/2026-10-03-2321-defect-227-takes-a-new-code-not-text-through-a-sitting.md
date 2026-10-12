@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-03
 commit: 334cb3a1b00bc06ebac751f4d193dcfa7ddf9eb0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1534
 ---
 
 # Defect 227 takes a new code, `not_text`, through a sitting

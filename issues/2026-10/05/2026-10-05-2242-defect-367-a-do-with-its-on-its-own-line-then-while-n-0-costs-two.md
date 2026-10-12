@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-05
 commit: f1344c53563cd5666d35bb6d02ebf7dbba46ca99
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1696
 ---
 
 - [x] **367 — a `do` with its `{` on its own line, then `while (n > 0)`, costs two messages that name neither** | `do` over `{`, `print(n)`, `}`, `while (n > 0)`: `expected_expression` and `missing_body`, on the base and on lane b12-parse12's compiler alike (measured by the coordinator, 2026-10-05, `<scratchpad>/batch12/filing/` `303-h-allman.hero`) | `selfhost/parse/braced_lines.hero`, `parse/loop_habit.hero` · defect 303's sibling · **class: adjacent**

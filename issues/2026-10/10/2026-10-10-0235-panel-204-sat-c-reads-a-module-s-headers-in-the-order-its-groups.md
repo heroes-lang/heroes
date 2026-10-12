@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1929
 ---
 
 # Panel 204 sat: C reads a module's headers in the order its groups are written, and the spec says so

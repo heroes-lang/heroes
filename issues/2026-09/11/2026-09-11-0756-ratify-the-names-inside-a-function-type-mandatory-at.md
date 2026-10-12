@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-09-11
 commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1131
 ---
 
 - [x] **panel 129** | ratify the names inside a function type: mandatory at the positions that share a type, refused elsewhere, part of the type's identity — and the 432 lines it cost | `docs/panel/129-the-names-inside-the-type.md` · `docs/measurements/010-spec-budget-ledger.md` row 66
