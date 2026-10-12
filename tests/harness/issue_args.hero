@@ -3,7 +3,10 @@
 #
 # Each word takes its own flags and no other, so a flag given to the wrong
 # word is refused by name rather than ignored: `--kind`, `--milestone`,
-# `--class` and `--json` are `open`'s, and no other word takes one.
+# `--class` and `--json` are `open`'s, `--dry-run` is `link`'s, and no other
+# word takes one. `link` is the second pass of panel 212's R9 item 6
+# (`issue_links.hero`), every `defect NNN` and `panel NNN` a body names made a
+# link; it takes no file.
 #
 # **The words of the issues on GitHub alone** (the author's seven answers of
 # 2026-10-12): `file <draft.md>`, `close <number> <closing.md>`, `comment
@@ -21,11 +24,11 @@ use issue_title
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/issues.hero -- draft <draft.md>, file <draft.md>, close <number> <closing.md>, comment <number> <text.md>, edit <number> <draft.md>, or open [--kind <kind>] [--milestone M-<name>] [--class <class>] [--json]"
+    "heroes run tests/harness/issues.hero -- draft <draft.md>, file <draft.md>, close <number> <closing.md>, comment <number> <text.md>, edit <number> <draft.md>, open [--kind <kind>] [--milestone M-<name>] [--class <class>] [--json], or link [--dry-run]"
 
 # The words of this program.
 constant WORDS: [str]
-    ["draft", "file", "close", "comment", "edit", "open"]
+    ["draft", "file", "close", "comment", "edit", "open", "link"]
 
 # The words that name one issue by its number, then a file.
 constant NUMBERED: [str]
@@ -42,6 +45,7 @@ record Asked
     milestone: str
     grade: str
     json: bool
+    dry: bool
     wrong: str
 
 # Why the first word is not one this program takes.
@@ -56,6 +60,7 @@ function parsed(word: str, words: [str]) -> Asked
     milestone: str @= ""
     grade: str @= ""
     json: bool @= false
+    dry: bool @= false
     at: i64 @= 0
 
     while at < words.len()
@@ -64,6 +69,8 @@ function parsed(word: str, words: [str]) -> Asked
 
         if one == "--json" && word == "open"
             json @ true
+        else if one == "--dry-run" && word == "link"
+            dry @ true
         else if (one == "--kind" || one == "--milestone" || one == "--class") && word == "open"
             if at == words.len()
                 return wrong(word: word, why: "`" + one + "` takes a value")
@@ -84,8 +91,8 @@ function parsed(word: str, words: [str]) -> Asked
                 grade @ value
         else if strings.starts_with(text: one, prefix: "-")
             return wrong(word: word, why: "`" + one + "` is no flag of `" + word + "`: " + USAGE)
-        else if word == "open"
-            return wrong(word: word, why: "`open` takes no file: " + USAGE)
+        else if word == "open" || word == "link"
+            return wrong(word: word, why: "`" + word + "` takes no file: " + USAGE)
         else
             paths @ paths.push(strings.without_prefix(text: one, prefix: "./"))
 
@@ -107,6 +114,7 @@ function parsed(word: str, words: [str]) -> Asked
         milestone: milestone,
         grade: grade,
         json: json,
+        dry: dry,
         wrong: ""
     )
 
@@ -127,6 +135,7 @@ function wrong(word: str, why: str) -> Asked
         milestone: "",
         grade: "",
         json: false,
+        dry: false,
         wrong: why
     )
 
@@ -139,6 +148,12 @@ test "the transcription's words and flags are refused by name, and a word nobody
         assert strings.contains(text: parsed(word: "file", words: [flag, "a.md"]).wrong, needle: "no flag of `file`")
         assert strings.contains(text: parsed(word: "open", words: [flag]).wrong, needle: "no flag of `open`")
 
+    linking = parsed(word: "link", words: ["--dry-run"])
+    assert linking.wrong == ""
+    assert linking.dry
+    assert !parsed(word: "link", words: []).dry
+    assert strings.contains(text: parsed(word: "link", words: ["a.md"]).wrong, needle: "`link` takes no file")
+    assert strings.contains(text: parsed(word: "open", words: ["--dry-run"]).wrong, needle: "no flag of `open`")
     assert strings.contains(text: refusal(["sync"]), needle: "no word")
     assert strings.contains(text: refusal([]), needle: "no word given")
 
