@@ -120,5 +120,12 @@ the push, as the optimistic chain says: the formatter's probe, a comment of
 `selfhost/print/fmt.hero` having moved (step 20); no census and no R2, since
 nothing the compiler refuses and no recovery file moved.
 
+**Corrected 2026-10-12**, the same evening: the formatter's probe carried above is
+not owed for this push, by the author's word, meant as *is it really essential?
+are we wasting three hours on a comment?*, then *skip it and write it into the
+rule*. The comment's emitted C is byte-identical, 52,126,543 bytes either way with
+`cmp` silent, and `.claude/rules/verification.md` § The formatter's probe carries
+the exception; the probe M-inferred-cell's changes owed stays owed.
+
 **The chain entry**: row 83, `m-issue-files`, closed 2026-10-12, this
 journal.

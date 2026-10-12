@@ -306,6 +306,20 @@ and every bracket broken after every token, over every file. So:
 > name as an open defect's. A failure is a finding filed as a `defect` issue
 > or a repair in the same lane, never a reason to skip the run.
 
+**Amended 2026-10-12 by author instruction**, given to the issue-transcription
+session and relayed, meant as: *is it really essential? are we wasting three
+hours on a comment?*, then *skip it and write it into the rule*. **The probe is
+not owed where the change to `selfhost/print/` leaves the compiler's emitted C
+byte-identical**, which `cmp` of `heroes build selfhost/main.hero --emit-c` with
+the change and without it settles, the rest of the tree held at one commit: a
+comment that moves no line gives it; a comment that adds or removes a line moves
+the `#line` directives and does not. Measured the day it was given: the one
+change under `selfhost/print/` from `6461f3e6` to `a9be36dc`, a comment line of
+`fmt.hero` whose path became its issue's URL, emitted 52,126,543 bytes either
+way and `cmp` printed nothing. The probe M-inferred-cell's changes to
+`selfhost/print/` owed (three of its six runs unfinished on 2026-10-11, none
+refused) is not this exception's, and stays owed.
+
 Its cost, measured 2026-09-28 on one module and carried to the tree by
 arithmetic, so an inference: 25 µs per line of the seed for each variant with
 a compiler built at `-O2`, 8.6 variants per line in the two families, and
