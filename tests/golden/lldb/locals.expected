@@ -1,0 +1,15 @@
+> breakpoint set --file locals.hero --line 12
+!resolved: locals.hero:12
+> run
+!stop: breakpoint at locals.hero:12
+> frame variable
+!shows: (h_locals_Point) h0_p = (f_x = 3, f_y = 4)
+!shows: (HeroStr) h1_label = (ptr = "ada", len = 3)
+!shows: (int64_t) h2_width = 6
+> up
+!at: locals.hero:18
+> frame variable
+!shows: (int64_t) h0_count = 7
+!shows: (HeroStr) h1_name = (ptr = "ada", len = 3)
+!shows: (h_locals_Point) h2_p = (f_x = 3, f_y = 4)
+> continue

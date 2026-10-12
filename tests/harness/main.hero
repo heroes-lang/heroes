@@ -21,8 +21,8 @@
 #
 # The third word narrows a suite that walks cases: to the cases whose name
 # holds it (and `records` to one path, the one check that can judge a file
-# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run` or a golden
-# form, its cases dealt round by their sorted index so that `n` processes
+# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run`, `lldb` or a
+# golden form, its cases dealt round by their sorted index so that `n` processes
 # started with `1/n` to `n/n` run each case exactly once (defect 537,
 # `cases.selected`). A shard asks none of the whole suite's questions, its
 # floor and its skip ratio, and its line says so; whoever split the suite
@@ -53,6 +53,8 @@
 #                 `.applied`, what `--apply` writes where it cannot; neither,
 #                 and `--apply` leaves the case as it is
 #   lines         every `#line` lands on a line the author wrote
+#   lldb          lldb/: a program built at -O0, stopped on a `.hero` line,
+#                 stepped and asked its locals; SKIP where lldb cannot run
 #   corpus        examples/ — real programs, tests and output, three ways
 #   warnings      the generated C compiles without a single warning
 #   records       §14's identifiers, the alias table, stray C, the goldens
@@ -104,6 +106,7 @@ use suite_fixes
 use suite_golden
 use suite_layout
 use suite_lines
+use suite_lldb
 use suite_order
 use suite_probe
 use suite_records
@@ -361,6 +364,22 @@ function main()
         total @ report.tally(one: total, two: got.must())
         ran @ ran + 1
 
+    # What `lines` reads in the emitted C, asked of a debugger reading the
+    # binary: a breakpoint on a `.hero` line is hit, stepping walks the
+    # author's lines, the frame shows its locals (issue 944). A machine where
+    # lldb cannot run says SKIP for each case, with the reason.
+    if only == "" || only == "lldb"
+        got = suite_lldb.run_all(scratch: scratch, compiler: compiler, only: pick)
+
+        if got.is_err()
+            print("harness: the lldb suite could not run" + why(got))
+            exit(2)
+        print(
+            "  " + shown(name: "lldb", pick: pick) + ": " + report.counted(got.must())
+        )
+        total @ report.tally(one: total, two: got.must())
+        ran @ ran + 1
+
     if only == "" || only == "corpus"
         got = suite_corpus.run_all(scratch: scratch, compiler: compiler)
 
@@ -542,22 +561,22 @@ function main()
         exit(1)
 
 # The suites the third word may narrow: the ones that walk cases (the six
-# golden forms, `run`, `fixes`, `annotations`), `layout`, which walks
+# golden forms, `run`, `fixes`, `annotations`, `lldb`), `layout`, which walks
 # modules and is asked about one file by the write-time hook, and `records`,
 # asked by the same hook about one issue file or one file the code cites a
 # defect in (`credit.hero`).
 function takes_cases(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "fixes", "annotations", "layout", "records"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "fixes", "annotations", "lldb", "layout", "records"]
         if name == suite
             return true
 
     return false
 
 # The suites a shard binds: the ones whose cases are one sorted list, the six
-# golden forms and `run` (defect 537). `annotations`, `fixes` and `layout`
+# golden forms, `run` (defect 537) and `lldb`. `annotations`, `fixes` and `layout`
 # take a filter and no shard, `main` says why.
 function takes_shards(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "lldb"]
         if name == suite
             return true
 
@@ -604,6 +623,7 @@ test "the third word binds the suites that walk cases, records narrowed to a pat
     assert takes_cases("run")
     assert takes_cases("fixes")
     assert takes_cases("layout")
+    assert takes_cases("lldb")
 
     # `records` takes a path since 2026-10-11, the write hook's question of
     # one issue file or one file citing a defect (`credit.hero`); it walks no
@@ -620,7 +640,7 @@ test "a narrowed suite says so on its line"
     assert shown(name: "run", pick: "2/6") == "run (shard 2 of 6, its floor and skip ratio left to the whole suite)"
 
 test "a shard binds the suites whose cases are one list, and says why a word names none"
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "run", "lldb"]
         assert takes_shards(name)
         assert takes_cases(name)
 

@@ -1,0 +1,22 @@
+> breakpoint set --file stepping.hero --line 13
+!resolved: stepping.hero:13
+> run
+!stop: breakpoint at stepping.hero:13
+> step
+!stop: step in at stepping.hero:6
+> next
+!stop: step over at stepping.hero:7
+> next
+!stop: step over at stepping.hero:8
+> bt
+!frame: h_stepping_total at stepping.hero:8
+!frame: h_stepping_main at stepping.hero:13
+> up
+!at: stepping.hero:13
+> down
+!at: stepping.hero:8
+> finish
+!stop: step out at stepping.hero:13
+> next
+!stop: step over at stepping.hero:14
+> continue

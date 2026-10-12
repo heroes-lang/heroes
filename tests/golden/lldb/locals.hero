@@ -1,0 +1,19 @@
+# At `-O0` the frame shows each parameter and local with its value, and the
+# names are the emitted C's, today: `h0_count = 7` for `count`, and a record's
+# fields as `f_x` and `f_y`. The day the frame shows the author's own names
+# this case is changed on purpose, its `.expected` with it, never in passing.
+
+record Point
+    x: i64
+    y: i64
+
+function describe(p: Point, label: str) -> str
+    width = p.x * 2
+    return label + width.to_str()
+
+function main()
+    count = 7
+    name = "ada"
+    p = Point(x: 3, y: 4)
+    print(describe(p: p, label: name))
+    print(count)

@@ -1,0 +1,14 @@
+# Stepping walks the author's lines: `step` enters a function on its own
+# `function` line (defect 472), `next` goes to the line after, `bt` names
+# both Heroes frames at `.hero:line`, `up` and `finish` return to the
+# caller's line, and `next` there goes on to the line below it.
+
+function total(base: i64, step: i64) -> i64
+    doubled = step * 2
+    sum = base + doubled
+    return sum
+
+function main()
+    base = 7
+    got = total(base: base, step: 3)
+    print(got)
