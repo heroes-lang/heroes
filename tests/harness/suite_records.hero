@@ -3321,7 +3321,7 @@ function ignored_by_git(scratch: str, tokens: [str]) -> {str: bool}
 # read, and once the folder is gone an empty value fails `records/citations`
 # loudly rather than leaving every such citation dead or unjudged.
 constant ISSUES_ARCHIVED_AT: str
-    ""
+    "92e08d824de230ccb0f95eb74bbe19a2f4faff0d"
 
 # What the archive answers a run: `tree` while the folder stands, so nothing
 # is added; `read`, every path under `ISSUES` at `ISSUES_ARCHIVED_AT`;

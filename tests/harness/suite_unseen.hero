@@ -53,9 +53,12 @@ constant EXEMPT: [str]
 # a walk that stops reaching the tree is red (`floors`). **5,072 on
 # 2026-10-05**, lane b12-str192's tree, measured by this suite. **6,381 at
 # batch 14's gate, 2026-10-07**, the merged round: the issues filed since,
-# panel 197's sitting and the batch's new modules and cases.
+# panel 197's sitting and the batch's new modules and cases. **5,252 on
+# 2026-10-12**, lowered on purpose in the commit that removed `issues/`, its
+# 2,030 files having left the tree for GitHub (the author's answers of that
+# day); measured by this suite on that commit's tree.
 constant LEAST_DOCUMENTS: i64
-    6381
+    5252
 
 # One character found, by its file, its line and its code.
 record Found
