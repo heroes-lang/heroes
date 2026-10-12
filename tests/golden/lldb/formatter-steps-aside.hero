@@ -1,0 +1,41 @@
+# Where a value cannot be read soundly, the formatter
+# `editors/lldb/heroes_lldb.py` steps aside to lldb's own display of the C
+# members rather than guess (panel 213): each rule is made to fire here by a
+# write through `expression`, then undone. An array whose `len` passes its
+# `cap`; one whose descriptor pointer stops at no descriptor's start, the
+# element type then named by nothing; a map whose `len` is not its live
+# buckets; a `str` whose length runs past its block, and one whose byte at its
+# length is not the NUL; a `T?` whose tag is neither 0 nor 1, and a variant's
+# that names no case. And `f_` comes off only in a type the emitter made: a C
+# struct's `f_bsize` keeps its name inside a Heroes record.
+
+extern "sys/statvfs.h"
+    record Vfs tag statvfs partial
+        f_bsize: u64
+
+record Holder
+    vfs: Vfs
+    label: str
+
+variant Token
+    num
+        v: i64
+    plus
+
+function half(n: i64) -> i64?
+    if n % 2 != 0
+        return fail(code: "odd", msg: "not even")
+    return ok(n / 2)
+
+function main()
+    names = ["ada", "grace"]
+    ages = {"ada": 36, "grace": 85}
+    name = "ada"
+    good = half(8)
+    t: Token = .num(v: 42)
+    holder = Holder(vfs: Vfs(f_bsize: 7, rest: zero), label: "disk")
+    print(names.len() + ages.len() + name.len() + good.default(0) + holder.label.len())
+
+    match t
+        .num n => print(n.v + holder.vfs.f_bsize.to_i64().must())
+        .plus  => print(0)

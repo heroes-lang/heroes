@@ -1,0 +1,15 @@
+> command script import editors/lldb/heroes_lldb.py
+> breakpoint set --file formatter-unwritten.hero --line 16
+!resolved: formatter-unwritten.hero:16
+> run
+!stop: breakpoint at formatter-unwritten.hero:16
+> frame variable
+!shows: (HeroStr) h0_name = <unassigned>
+!shows: (HeroArrayHeader *) h1_names = NULL
+!shows: (HeroMapHeader *) h2_ages = NULL
+!shows: (h_formatterunwritten_Room) h3_room = Room(name: <unassigned>, size: 0)
+> next
+!stop: step over at formatter-unwritten.hero:17
+> frame variable h0_name
+!shows: (HeroStr) h0_name = "ada"
+> continue

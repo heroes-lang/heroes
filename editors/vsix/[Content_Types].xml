@@ -6,5 +6,6 @@
   <Default Extension="vsixmanifest" ContentType="text/xml"/>
   <Default Extension="xml" ContentType="text/xml"/>
   <Default Extension="md" ContentType="text/markdown"/>
+  <Default Extension="py" ContentType="text/x-python"/>
   <Default Extension="txt" ContentType="text/plain"/>
 </Types>

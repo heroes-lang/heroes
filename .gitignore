@@ -34,11 +34,13 @@ stage[0-9]
 # Scratch git worktrees created by panel judges (never project content).
 .claude/worktrees/
 
-# Python's bytecode cache. The only Python here is `.claude/hooks/`, and it
-# leaves no cache when the harness runs it as a script; a cache appears the
-# moment somebody IMPORTS a hook to test it, which is how the guard's
-# seventeen shapes were checked on 2026-09-08. Nothing here should ever be
-# committed and nothing reads it.
+# Python's bytecode cache. The Python here is `.claude/hooks/`, which leaves
+# no cache when the harness runs it as a script; a cache appears the moment
+# somebody IMPORTS a hook to test it, which is how the guard's seventeen
+# shapes were checked on 2026-09-08. And since 2026-10-13
+# `editors/lldb/heroes_lldb.py`, which lldb imports, so every run of the
+# `lldb` suite leaves `editors/lldb/__pycache__/` beside it. Nothing here
+# should ever be committed and nothing reads it.
 __pycache__/
 *.pyc
 
