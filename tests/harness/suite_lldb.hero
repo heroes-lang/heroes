@@ -1,0 +1,227 @@
+# tests/golden/lldb/: a program built at `-O0`, run under lldb in batch mode,
+# and asked what a person debugging it would ask (issue 944).
+#
+# WHY IT EXISTS. design.md §2 says lldb breaks on and steps through `.hero`
+# lines, and the one test that executed the sentence was
+# `lldb_breaks_on_a_hero_line`, `archive/bootstrap-rs/heroes-cli/tests/golden.rs`,
+# which nothing has built since M-bootstrap-archive on 2026-08-19. From then
+# until this suite the claim had no instrument, while `.github/workflows/ci.yml`
+# installed lldb on the Linux legs for a test it never ran. The `#line` mapping
+# itself kept one, `lines`, which reads the emitted C and needs no debugger;
+# what went unjudged was whether a debugger reading the binary agrees.
+#
+# WHAT A CASE IS. `x.hero`, a program, and `x.expected`, the session:
+# the lldb commands sent and, under each, what lldb must have answered it
+# (`lldb_session.hero` holds the shape and every reading of it). Each case is
+# built with the compiler under test, `build x.hero -O0`, which since panel 197
+# is the build that carries the variables' debug info as well as the lines;
+# `run`'s `-O2` carries the line tables alone. Then
+# `lldb --no-lldbinit --batch -o <command> … <binary>` runs from the
+# repository root, so no `.lldbinit` of the machine's moves what lldb prints.
+#
+# WHAT GOES RED. Three guards the archived test bought with failures, each a
+# failure of its own: lldb wrote nothing on either stream; a breakpoint is
+# pending with no locations; and the stop the session claims, by the `.hero`
+# file, the line and the `stop reason`. Then what never had a test: `next`
+# and `step` reach the line claimed, `finish` and `up` return to the caller's
+# line, `bt` names the Heroes frames at `.hero:line`, and at `-O0` the frame
+# shows a named local with its value.
+#
+# **The names are today's on purpose.** A local shows as `h0_count = 7` and a
+# function as `h_locals_describe`: the emitted C's names, which is what a stopped
+# frame shows until the frame learns the author's. A case pins them as they are,
+# so the day the frame shows `count = 7` the case moves in the same change,
+# deliberately, and never passes in silence over a name nobody chose.
+#
+# WHERE IT CANNOT RUN, it says SKIP for each case, with the reason: never a pass
+# and never a failure. lldb is asked whether it runs here, `lldb --version`, and a
+# machine where it is absent, or starts and answers nothing, skips. On Windows
+# LLVM's `lldb.exe` exits 0xC0000135 before running a command, which the skip
+# says by name. The Linux and Darwin legs of the CI ask `lldb --version` in a
+# step of their own, so a leg that should run this suite and would skip it is a
+# red step rather than a quiet line (`.github/workflows/ci.yml`).
+#
+# ITS FALSIFIER, run by hand once and quoted in the commit that brought it: the
+# `-O0` build's `-g` taken out of `selfhost/cli/flags.hero`'s `debug_words`, a
+# compiler built from that source, and this suite run with it goes red on the
+# guards; restored, green. A debugger suite that passes without DWARF is a
+# decoration.
+
+use cases
+use floors
+use lldb_session
+use report
+use shell
+use strings
+
+constant LLDB_DIR: str
+    "tests/golden/lldb"
+
+# The debugger, by the name the machine finds it under (a `PATH` search, as
+# `shell.started_as` says of a name with no separator).
+constant LLDB: str
+    "lldb"
+
+# Three cases on 2026-10-12, the day the suite landed: the hit, the stepping
+# and the locals.
+constant LEAST: i64
+    3
+
+# What the skip says on Windows, where the machine can be asked and answers
+# nothing: the reason recorded on the CI's leg, and where the mapping is judged
+# instead.
+constant WINDOWS_LLDB: str
+    "on Windows LLVM's `lldb.exe` exits 0xC0000135 (STATUS_DLL_NOT_FOUND, the Python DLL it links) before running a command, measured on the CI's leg on 2026-08-16 and recorded in `.github/workflows/ci.yml`; the `#line` mapping is judged there by `lines`, which reads the emitted C and needs no debugger"
+
+# `only` narrows the suite to the cases whose name holds it, its floor then
+# left to the whole suite.
+function run_all(scratch: str, compiler: str, only: str) -> report.Report?
+    found = cases.selected(found: cases.collect(scratch: scratch, dir: LLDB_DIR)?, only: only)
+    r: report.Report @= report.empty()
+
+    if only == ""
+        floors.check(@r, label: "lldb", found: found.len(), floor: LEAST, what: "cases in " + LLDB_DIR)
+    absent = absence(
+        said: shell.attempted(scratch: scratch, program: LLDB, words: [LLDB, "--version"]),
+        windows: shell.exe_suffix() == ".exe"
+    )
+
+    if absent.len() > 0
+        for item in found
+            report.keep_skip(@r, label: "lldb/" + item.name, detail: "  " + absent)
+
+        return ok(r)
+    binaries = scratch + "/lldb"
+    shell.mkdir_all(binaries)?
+
+    for item in found
+        one_case(@r, scratch: scratch, compiler: compiler, binaries: binaries, item: item)
+
+    return ok(r)
+
+# Why lldb cannot be asked anything here, "" where it can: not started, or
+# started and answering `--version` with nothing, or with a failure.
+function absence(said: shell.Run?, windows: bool) -> str
+    why: str @= ""
+
+    match said
+        .err e => why @ "lldb could not be asked whether it runs here: " + e.msg
+        .ok ran =>
+            if !ran.started
+                why @ "lldb is not on this machine, the operating system's own reason being " + ran.why.to_str()
+            else if ran.code != 0 || strings.trimmed(ran.out + ran.err).len() == 0
+                why @ "lldb started and did not answer `--version`: " + shell.ending(said)
+
+    if why.len() == 0
+        return ""
+
+    if windows
+        return why + "; " + WINDOWS_LLDB
+    return why + ", so no breakpoint can be asked of a `.hero` line on this machine"
+
+# One case: its session read, its program built at `-O0`, lldb run over the
+# binary, and the transcript held to the session.
+function one_case(@r: report.Report, scratch: str, compiler: str, binaries: str, item: cases.Case)
+    label = "lldb/" + item.name
+    written = read_file(item.expected)
+    source = read_file(item.source)
+
+    if written.is_err() || source.is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot read " + item.expected + " or " + item.source)
+        return
+    steps = lldb_session.session(written.must())
+
+    if steps.is_err()
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  " + item.expected + " is not a session this suite reads: " + unread(steps)
+        )
+        return
+    misplaced = lldb_session.misplaced(
+        steps: steps.must(),
+        file: strings.base_name(path: item.source),
+        text: source.must()
+    )
+
+    if misplaced.len() > 0
+        report.keep_failure(@r, label: label, detail: "  " + item.expected + ":\n    " + misplaced.join("\n    "))
+        return
+    binary = binaries + "/" + item.name + shell.exe_suffix()
+    built = shell.run(scratch: scratch, program: compiler, words: [compiler, "build", item.source, "-O0", "-o", binary])
+
+    if built.is_err() || built.must().code != 0
+        report.keep_failure(
+            @r,
+            label: label,
+            detail: "  `build " + item.source + " -O0` did not build it: " + shell.ending(built)
+        )
+        return
+    said = shell.run(scratch: scratch, program: LLDB, words: words(steps: steps.must(), binary: binary))
+
+    if said.is_err()
+        report.keep_failure(@r, label: label, detail: "  lldb over " + binary + ": " + shell.refusal(said))
+        return
+    wrong = lldb_session.unmet(steps: steps.must(), out: said.must().out, err: said.must().err, code: said.must().code)
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: label,
+        detail: "  lldb over " + item.source + ", built at -O0, does not answer as " + item.expected + " says:\n    " + wrong.join("\n    ")
+    )
+
+# The words lldb is started with: no `.lldbinit` read, so no setting of this
+# machine's moves what it prints; no colour; batch mode, each command one `-o`,
+# then the binary.
+function words(steps: [lldb_session.Step], binary: str) -> [str]
+    out: [str] @= [LLDB, "--no-lldbinit", "--no-use-colors", "--batch"]
+
+    for step in steps
+        out @ out.push("-o")
+        out @ out.push(step.command)
+
+    return out.push(binary)
+
+function unread(got: [lldb_session.Step]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+## Tests
+
+test "lldb is started with no lldbinit and no colour, one -o for each command, the binary last"
+    steps = lldb_session.session(
+        "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n!stop: breakpoint at s.hero:6\n"
+    ).must()
+    assert words(steps: steps, binary: "b/s") == ["lldb", "--no-lldbinit", "--no-use-colors", "--batch", "-o", "breakpoint set --file s.hero --line 6", "-o", "run", "b/s"]
+
+test "a machine that cannot run lldb is told why, and Windows by the code its lldb exits with"
+    gone: shell.Run? = ok(shell.Run(code: -1, out: "", err: "", started: false, why: 2))
+    assert absence(said: gone, windows: false) == "lldb is not on this machine, the operating system's own reason being 2, so no breakpoint can be asked of a `.hero` line on this machine"
+    mute: shell.Run? = ok(shell.Run(code: -1073741515, out: "", err: "", started: true, why: 0))
+    told = absence(said: mute, windows: true)
+    assert strings.starts_with(
+        text: told,
+        prefix: "lldb started and did not answer `--version`: it exited -1073741515, with nothing on stderr; "
+    )
+    assert strings.contains(text: told, needle: "0xC0000135")
+    here: shell.Run? = ok(shell.Run(code: 0, out: "lldb-2103.0.34.103\n", err: "", started: true, why: 0))
+    assert absence(said: here, windows: false) == ""
+    assert absence(said: here, windows: true) == ""
+
+# Every session of the tree reads, and claims only lines its program holds:
+# asked here without lldb, so a slip in a case is found on any machine, the
+# Windows leg's included, and not only where the suite runs.
+test "every case of the group is a pair whose session reads, and the floor is under the count"
+    scratch = shell.own_scratch()
+    found = cases.collect(scratch: scratch, dir: LLDB_DIR).must()
+    assert found.len() >= LEAST
+
+    for item in found
+        steps = lldb_session.session(read_file(item.expected).must()).must()
+        assert lldb_session.misplaced(steps: steps, file: strings.base_name(path: item.source), text: read_file(item.source).must()).len() == 0
+
+    assert !shell.remove_tree(scratch).is_err()

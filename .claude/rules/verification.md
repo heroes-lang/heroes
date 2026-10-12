@@ -89,7 +89,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | touched | the suites that judge it |
 |---|---|
 | `selfhost/**` | `canonical` `layout` `order` `probe` `records` `spec`, **plus the compiler's own tests** |
-| `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**`, `tests/golden/emit/**` and `seed/heroes.c`) | **`emission`** **`emit`** `determinism` **`wholes`** `descriptors`, plus everything `selfhost/**` already gets |
+| `selfhost/emit/**`, `selfhost/ir/**` (they move `tests/emission/**`, `tests/golden/emit/**` and `seed/heroes.c`) | **`emission`** **`emit`** `determinism` **`wholes`** `descriptors`, `lldb` (its sessions pin the `#line`s and the C names a stopped frame shows; issue 944, 2026-10-12), plus everything `selfhost/**` already gets |
 | `selfhost/print/**`, `selfhost/lexer.hero`, `selfhost/parse/**` | **`probe`** `surface`, `grammar` for `selfhost/parse/**` (it reads the contextual words there), plus everything `selfhost/**` already gets, and the run by hand below before a push |
 | `tests/golden/check/**` | **`check`** `annotations` `fixes` |
 | `tests/golden/fixedbugs/**` | `annotations` `canonical` **`emission`** |
@@ -100,11 +100,12 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `tests/golden/emit/**` | **`emit`** `canonical` `determinism` **`emission`** `warnings` |
 | `tests/golden/ir/**` | **`ir`** `canonical` `determinism` **`emission`** |
 | `tests/golden/surface-fixtures/**` | `annotations` `fixes` **`probe`** `surface` |
+| `tests/golden/lldb/**` | **`lldb`** `canonical` (the group and the suite since 2026-10-12, issue 944) |
 | `tests/**`, every `.hero` under it | `probe` (its `multi` family walks the tree) `spec` (every `spec §` citation names a section), plus the row of its directory |
 | `examples/**` | `canonical` `corpus` `emission` `probe` `special` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** `fixes` `unseen` |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, `spec` for `selfhost/keywords.hero`, plus everything `selfhost/**` already gets |
-| `selfhost/cli/flags.hero` (the words a compile and a link take, `debug_words`, `level_words`) | **`run`** whole and **`cache` alone** (every unit's and the runtime's key moves, so every build directory goes cold once; lane land197, panel 197), plus everything `selfhost/**` already gets, and `emission` where emitted C moved |
+| `selfhost/cli/flags.hero` (the words a compile and a link take, `debug_words`, `level_words`) | **`run`** whole and **`cache` alone** (every unit's and the runtime's key moves, so every build directory goes cold once; lane land197, panel 197), **`lldb`** for `debug_words` (the debug info it reads is that word's, and its falsifier is that word taken out; 2026-10-12), plus everything `selfhost/**` already gets, and `emission` where emitted C moved |
 | `selfhost/inventory.hero`, `selfhost/escape.hero` | **`spec`** (its built-ins' and escapes' tables), plus everything `selfhost/**` already gets |
 | `selfhost/diag.hero` | **`annotations`** (every thesis rule it lists has a witness), plus everything `selfhost/**` already gets |
 | `selfhost/emit/ffi_build.hero`, `ffi_lookup.hero`, `header_reach.hero`, `selfhost/cli/package_answer.hero`, `selfhost/diag_render.hero` | **the net's own tests** (`absence.hero`'s `spellings()`), plus everything `selfhost/**` already gets |

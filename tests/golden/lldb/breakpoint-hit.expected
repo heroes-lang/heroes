@@ -1,0 +1,5 @@
+> breakpoint set --file breakpoint-hit.hero --line 8
+!resolved: breakpoint-hit.hero:8
+> run
+!stop: breakpoint at breakpoint-hit.hero:8
+> continue

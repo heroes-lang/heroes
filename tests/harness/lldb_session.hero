@@ -1,0 +1,702 @@
+# An lldb session written down, and lldb's transcript read against it: the
+# reading half of the `lldb` suite (`suite_lldb.hero`, issue 944), kept apart
+# from the half that builds and starts programs so that every reading here is
+# tested on a transcript, with no debugger on the machine.
+#
+# A case of `tests/golden/lldb/` is a program and its `.expected`, and the
+# `.expected` is the session. A line `> <command>` is one lldb command, sent as
+# it is written (`lldb --batch -o <command>`); the lines under it, up to the
+# next command, are claims about what lldb answered THAT command:
+#
+#   !resolved: f.hero:6     the breakpoint just set has its one location at
+#                           that file and line
+#   !stop: <why> at f.hero:6
+#                           the process stopped saying `stop reason = <why>`
+#                           (`breakpoint` reads `breakpoint 1.1` too), and its
+#                           first frame is at that file and line
+#   !at: f.hero:12          the first frame lldb names is at that file and
+#                           line, which is what `up` and `down` answer
+#   !frame: <function> at f.hero:7
+#                           read in order, the frames of a backtrace that sit
+#                           in a `.hero` file: exactly these, and no more
+#   !shows: <line>          lldb wrote this line, its spaces at both ends aside
+#
+# Blank lines are free; any other line is a broken case, told by its number.
+#
+# **A place is a file and a line, never a column.** `#line` names the author's
+# line, and the column lldb prints beside it is the generated C's, a fact about
+# the emitter that a case about the author's program must not pin. The file is
+# compared as lldb prints it, its base name.
+#
+# **What a transcript is.** `--batch` echoes each command as `(lldb) <command>`
+# on stdout before what it answers, so the answer to a command is the lines
+# between its echo and the next one. lldb stops at the first command that
+# fails, so a command with no echo is one lldb never reached. And the program's
+# own writes land wherever they land among lldb's lines, which is why a claim
+# asks whether a line is THERE and never where.
+
+use strings
+
+# What lldb writes before each command it runs in batch mode.
+constant ECHO: str
+    "(lldb) "
+
+# What lldb answers when a breakpoint resolves to no address: the debug info
+# does not reach the line asked for, and a `run` after it goes on to the
+# program's end without stopping (the archived test's second guard).
+constant PENDING: str
+    "no locations (pending)"
+
+# How many of an answer's lines a failure quotes: enough to see the stop and
+# its frame, few enough that a `frame variable` of a hundred locals does not
+# bury the sentence above it.
+constant QUOTED: i64
+    12
+
+record Place
+    file: str
+    line: i64
+
+variant Claim
+    resolved
+        place: Place
+    stop
+        why: str
+        place: Place
+    at
+        place: Place
+    frame
+        named: str
+        place: Place
+    shows
+        text: str
+
+record Step
+    command: str
+    claims: [Claim]
+
+# The session an `.expected` writes down, or why it is none.
+#
+# **A session claims one breakpoint resolved and one stop at least**: one that
+# claims neither asserts nothing a debugger owes, and would pass over a program
+# with no debug info at all.
+function session(text: str) -> [Step]?
+    steps: [Step] @= []
+    number: i64 @= 0
+
+    for row in strings.lines(text)
+        number @ number + 1
+        line = strings.trimmed(row)
+
+        if line.len() == 0
+            continue
+
+        if strings.starts_with(text: line, prefix: ">")
+            command = strings.trimmed(strings.without_prefix(text: line, prefix: ">"))
+
+            if command.len() == 0
+                return fail(code: "session", msg: "line " + number.to_str() + " is a `>` with no command after it")
+            none: [Claim] = []
+            steps @ steps.push(Step(command: command, claims: none))
+            continue
+
+        if steps.len() == 0
+            return fail(
+                code: "session",
+                msg: "line " + number.to_str() + " claims `" + line + "` before any command, `> <command>`, was sent"
+            )
+        said = claim(line)
+
+        if said.is_err()
+            return fail(code: "session", msg: "line " + number.to_str() + ": " + unread_claim(said))
+        last = steps.len() - 1
+        steps[last].claims @ steps[last].claims.push(said.must())
+
+    resolved: i64 @= 0
+    stops: i64 @= 0
+
+    for step in steps
+        for one in step.claims
+            match one
+                .resolved _ => resolved @ resolved + 1
+                .stop _     => stops @ stops + 1
+                .at _       => _ = 0
+                .frame _    => _ = 0
+                .shows _    => _ = 0
+
+    if resolved == 0 || stops == 0
+        return fail(
+            code: "session",
+            msg: "it claims " + resolved.to_str() + " `!resolved:` and " + stops.to_str() + " `!stop:`, and a session of this suite claims one of each at least: one that asserts no breakpoint resolved and hit asserts nothing a debugger owes"
+        )
+    return ok(steps)
+
+# One claim line, `!<word>: <what>`, or why it is none.
+function claim(line: str) -> Claim?
+    if strings.starts_with(text: line, prefix: "!resolved: ")
+        return ok(.resolved(place: placed(strings.without_prefix(text: line, prefix: "!resolved: "))?))
+
+    if strings.starts_with(text: line, prefix: "!stop: ")
+        halves = around_at(strings.without_prefix(text: line, prefix: "!stop: "))?
+        return ok(.stop(why: halves[0], place: placed(halves[1])?))
+
+    if strings.starts_with(text: line, prefix: "!at: ")
+        return ok(.at(place: placed(strings.without_prefix(text: line, prefix: "!at: "))?))
+
+    if strings.starts_with(text: line, prefix: "!frame: ")
+        halves = around_at(strings.without_prefix(text: line, prefix: "!frame: "))?
+        return ok(.frame(named: halves[0], place: placed(halves[1])?))
+
+    if strings.starts_with(text: line, prefix: "!shows: ")
+        return ok(.shows(text: strings.trimmed(strings.without_prefix(text: line, prefix: "!shows: "))))
+    return fail(
+        code: "claim",
+        msg: "`" + line + "` is neither a command, `> <command>`, nor a claim, one of `!resolved:`, `!stop:`, `!at:`, `!frame:` and `!shows:`"
+    )
+
+function unread_claim(got: Claim?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# `f.hero:6` as a claim writes it: a file and a line, and never a column, which
+# would be the generated C's (the module doc says why).
+function placed(text: str) -> Place?
+    parts = strings.split_on(text: strings.trimmed(text), byte: 58)
+
+    if parts.len() != 2 || parts[0].len() == 0
+        return fail(
+            code: "place",
+            msg: "`" + text + "` is not a place, `<file>:<line>`: a claim names the author's line and never a column, which is the generated C's"
+        )
+    line = strings.to_number(parts[1])
+
+    if line.is_err() || line.must() < 1
+        return fail(code: "place", msg: "`" + text + "` names no line, a number from 1")
+    return ok(Place(file: parts[0], line: line.must()))
+
+# `text` cut at its last ` at `, what comes before it and what comes after: the
+# place is always last, and the words before it may hold ` at ` themselves.
+function around_at(text: str) -> [str]?
+    pieces = strings.split_text(text: text, separator: " at ")
+
+    if pieces.len() < 2
+        return fail(code: "place", msg: "`" + text + "` has no ` at <file>:<line>` after it")
+    before = strings.trimmed(pieces.slice(from: 0, to: pieces.len() - 1).join(" at "))
+
+    if before.len() == 0
+        return fail(code: "place", msg: "`" + text + "` names nothing before its ` at `")
+    return ok([before, strings.trimmed(pieces[pieces.len() - 1])])
+
+## The transcript
+
+# What lldb answered one command: the lines after its echo up to the next one,
+# and whether lldb reached the command at all.
+record Answer
+    reached: bool
+    rows: [str]
+
+# The answer to each step, in order. A step whose echo is not found after the
+# last one's is unreached, and so is every step after it: lldb stops at the
+# first command that fails.
+function answers(out: str, steps: [Step]) -> [Answer]
+    rows = strings.lines(out)
+    found: [Answer] @= []
+    from: i64 @= 0
+
+    for step in steps
+        echo = ECHO + step.command
+        hit: i64 @= -1
+        k: i64 @= from
+
+        while k < rows.len() && hit < 0
+            if strings.trimmed(rows[k]) == echo
+                hit @ k
+            k @ k + 1
+
+        if hit < 0
+            none: [str] = []
+            found @ found.push(Answer(reached: false, rows: none))
+            from @ rows.len()
+            continue
+        end: i64 @= hit + 1
+
+        while end < rows.len() && !strings.starts_with(text: rows[end], prefix: ECHO)
+            end @ end + 1
+
+        found @ found.push(Answer(reached: true, rows: rows.slice(from: hit + 1, to: end)))
+        from @ end
+
+    return found
+
+# One frame as lldb prints it: the function after the module's backtick, up to
+# its arguments, and the place after the last ` at `.
+record Frame
+    named: str
+    file: str
+    line: i64
+
+# `frame #1: 0x… prog`h_m_main at m.hero:12:10`, read: "" and 0 where lldb
+# names no place, which is a frame with no line table, `dyld`start + 6688`.
+function frame_of(row: str) -> Frame
+    named: str @= ""
+    tick = strings.index_of(text: row, needle: "`")
+
+    if !tick.is_err()
+        start = tick.must() + 1
+        end: i64 @= start
+
+        while end < row.len() && row[end] != 40 && row[end] != 32
+            end @ end + 1
+
+        named @ row.slice(from: start, to: end)
+    place = location(row)
+
+    if place.is_err()
+        return Frame(named: named, file: "", line: 0)
+    return Frame(named: named, file: place.must().file, line: place.must().line)
+
+# The place a line of lldb's names after its last ` at `: `m.hero:12:10` or
+# `m.hero:6:10, address = 0x…`, the column and what follows a comma left out.
+function location(row: str) -> Place?
+    halves = around_at(row)?
+    text: str @= halves[1]
+    comma = strings.index_of(text: text, needle: ",")
+
+    if !comma.is_err()
+        text @ text.slice(from: 0, to: comma.must())
+    parts = strings.split_on(text: strings.trimmed(text), byte: 58)
+
+    if parts.len() < 2 || parts.len() > 3 || parts[0].len() == 0
+        return fail(code: "place", msg: "`" + text + "` is no place")
+    line = strings.to_number(parts[1])?
+    return ok(Place(file: parts[0], line: line))
+
+# The frames an answer names, in the order lldb printed them.
+function frames(rows: [str]) -> [Frame]
+    out: [Frame] @= []
+
+    for row in rows
+        if strings.contains(text: row, needle: "frame #")
+            out @ out.push(frame_of(row))
+
+    return out
+
+# Why the process stopped, as lldb says it after `stop reason = `.
+function stop_reason(rows: [str]) -> str?
+    for row in rows
+        at = strings.index_of(text: row, needle: "stop reason = ")
+
+        if !at.is_err()
+            return ok(strings.trimmed(row.slice(from: at.must() + 14, to: row.len())))
+
+    return fail(code: "no_stop", msg: "no `stop reason = ` in lldb's answer")
+
+# A reason reads as the one claimed when it is that reason, or that reason and
+# lldb's numbering after a space: `breakpoint` reads `breakpoint 1.1`.
+function reads_as(reason: str, want: str) -> bool
+    return reason == want || strings.starts_with(text: reason, prefix: want + " ")
+
+## The judgement
+
+# Every way a transcript fails its session, each a sentence; none where it
+# holds. `out` and `err` are lldb's two streams, `code` its exit status.
+#
+# Two guards come before any claim, because each one makes every claim under it
+# unbelievable, and each was bought with a failure the archived test met:
+#
+# - **lldb wrote nothing on either stream**: it never ran a command. On the
+#   Windows leg on 2026-08-16 `lldb.exe` started, exited `0xC0000135` before
+#   its first command, and the assertion under it read an empty string and
+#   blamed the debug info for a debugger that had never started;
+# - **a breakpoint is pending with no locations**: the debug info does not reach
+#   the `.hero` line, and `run` goes on to the program's end, which is what the
+#   build looked like when `-g` reached clang only under `--sanitize` and when
+#   Darwin's DWARF died with a temporary object (M-selfhost-port).
+#
+# The third, the stop itself, is the session's own `!stop:`: the file, the line
+# and the `stop reason`.
+function unmet(steps: [Step], out: str, err: str, code: i64) -> [str]
+    wrong: [str] @= []
+
+    if strings.trimmed(out).len() == 0 && strings.trimmed(err).len() == 0
+        return wrong.push(
+            "lldb wrote nothing on either stream and exited " + code.to_str() + ": it never ran a command, so nothing a claim could say would be a fact about the debug info"
+        )
+
+    for row in strings.lines(out + "\n" + err)
+        if strings.contains(text: row, needle: PENDING)
+            wrong @ wrong.push(
+                "a breakpoint is pending with no locations, `" + strings.trimmed(row) + "`: the program's debug info does not reach the `.hero` line asked for, and `run` goes on without stopping there"
+            )
+
+    found = answers(out: out, steps: steps)
+    i: i64 @= 0
+
+    for step in steps
+        answer = found[i]
+        i @ i + 1
+
+        if !answer.reached
+            return wrong.push(
+                "lldb never reached `> " + step.command + "`: it stops at the first command that fails, so this one and every one after it went unasked" + on_stderr(err)
+            )
+
+        for why in step_unmet(step: step, rows: answer.rows)
+            wrong @ wrong.push(why)
+
+    if code != 0
+        wrong @ wrong.push("lldb exited " + code.to_str() + " after its last command" + on_stderr(err))
+    return wrong
+
+# Every claim of one step that its answer does not meet.
+function step_unmet(step: Step, rows: [str]) -> [str]
+    wrong: [str] @= []
+    claimed: [Frame] @= []
+
+    for one in step.claims
+        why: str @= ""
+
+        match one
+            .resolved r => why @ resolved_unmet(place: r.place, rows: rows)
+            .stop s     => why @ stop_unmet(why: s.why, place: s.place, rows: rows)
+            .at a       => why @ at_unmet(place: a.place, rows: rows)
+            .frame f    => claimed @ claimed.push(Frame(named: f.named, file: f.place.file, line: f.place.line))
+            .shows s    => why @ shows_unmet(text: s.text, rows: rows)
+
+        if why.len() > 0
+            wrong @ wrong.push(told(command: step.command, claimed: written(one), why: why, rows: rows))
+
+    if claimed.len() > 0
+        why = frames_unmet(claimed: claimed, rows: rows)
+
+        if why.len() > 0
+            wrong @ wrong.push(told(command: step.command, claimed: "its `!frame:` lines", why: why, rows: rows))
+    return wrong
+
+function resolved_unmet(place: Place, rows: [str]) -> str
+    for row in rows
+        line = strings.trimmed(row)
+
+        if strings.starts_with(text: line, prefix: "Breakpoint ") && strings.contains(text: line, needle: "where = ")
+            got = location(line)
+
+            if got.is_err()
+                return "the breakpoint's location names no file and line"
+
+            if got.must().file == place.file && got.must().line == place.line
+                return ""
+            return "the breakpoint resolved at " + shown(got.must()) + ", not at " + shown(place)
+
+    for row in rows
+        if strings.contains(text: row, needle: PENDING)
+            return "the breakpoint is pending with no locations"
+
+    return "lldb named no one location for the breakpoint"
+
+function stop_unmet(why: str, place: Place, rows: [str]) -> str
+    reason = stop_reason(rows)
+
+    if reason.is_err()
+        return "the process did not stop: lldb's answer has no `stop reason = `"
+
+    if !reads_as(reason: reason.must(), want: why)
+        return "the process stopped for `" + reason.must() + "`, not `" + why + "`"
+    return at_unmet(place: place, rows: rows)
+
+function at_unmet(place: Place, rows: [str]) -> str
+    named = frames(rows)
+
+    if named.len() == 0
+        return "lldb named no frame"
+    top = named[0]
+
+    if top.file == place.file && top.line == place.line
+        return ""
+
+    if top.file.len() == 0
+        return "the frame is `" + top.named + "` with no file and line, what a frame with no line table shows, not " + shown(place)
+    return "the frame is at " + top.file + ":" + top.line.to_str() + ", not " + shown(place)
+
+function shows_unmet(text: str, rows: [str]) -> str
+    for row in rows
+        if strings.trimmed(row) == text
+            return ""
+
+    return "no line of lldb's answer is `" + text + "`"
+
+# The backtrace's frames in a `.hero` file against the claimed ones, in order
+# and all of them: a frame the case does not name is as much a change as one it
+# names wrongly.
+function frames_unmet(claimed: [Frame], rows: [str]) -> str
+    heroes: [Frame] @= []
+
+    for one in frames(rows)
+        if strings.ends_with(text: one.file, suffix: ".hero")
+            heroes @ heroes.push(one)
+
+    if heroes.len() != claimed.len()
+        return "the backtrace has " + heroes.len().to_str() + " frames in a `.hero` file, " + listed(heroes) + ", and the case claims " + claimed.len().to_str() + ", " + listed(claimed)
+    k: i64 @= 0
+
+    while k < heroes.len()
+        got = heroes[k]
+        want = claimed[k]
+
+        if got.named != want.named || got.file != want.file || got.line != want.line
+            return "frame " + k.to_str() + " of those is " + one_frame(got) + ", not " + one_frame(want)
+        k @ k + 1
+
+    return ""
+
+function one_frame(f: Frame) -> str
+    return "`" + f.named + "` at " + f.file + ":" + f.line.to_str()
+
+function listed(found: [Frame]) -> str
+    if found.len() == 0
+        return "none"
+    out: [str] @= []
+
+    for f in found
+        out @ out.push(one_frame(f))
+
+    return out.join(", ")
+
+function shown(place: Place) -> str
+    return place.file + ":" + place.line.to_str()
+
+# A claim as its `.expected` writes it, for a failure to quote.
+function written(one: Claim) -> str
+    return match one
+        .resolved r => "!resolved: " + shown(r.place)
+        .stop s     => "!stop: " + s.why + " at " + shown(s.place)
+        .at a       => "!at: " + shown(a.place)
+        .frame f    => "!frame: " + f.named + " at " + shown(f.place)
+        .shows s    => "!shows: " + s.text
+
+# One failed claim: the command, the claim, why, and what lldb answered, or
+# that it answered nothing, a command it refused saying why on stderr alone.
+function told(command: str, claimed: str, why: str, rows: [str]) -> str
+    said = "`> " + command + "`, " + claimed + ": " + why
+
+    if rows.len() == 0
+        return said + "; lldb answered nothing on stdout"
+    quoted: [str] @= []
+
+    for row in rows
+        if quoted.len() < QUOTED
+            quoted @ quoted.push("      " + row)
+
+    more: str @= ""
+
+    if rows.len() > QUOTED
+        more @ "\n      … and " + (rows.len() - QUOTED).to_str() + " more lines"
+    return said + "; lldb answered:\n" + quoted.join("\n") + more
+
+function on_stderr(err: str) -> str
+    said = strings.trimmed(err)
+
+    if said.len() == 0
+        return ", and it wrote nothing on stderr"
+    return ", and on stderr it said:\n      " + said
+
+# The places a session claims that are not a line the author wrote in the
+# case's own file: another file, past the end, or blank. A claim there could
+# never be met, and its failure would blame the debugger for a slip in the
+# case; this suite asks about the program it builds and no other file.
+function misplaced(steps: [Step], file: str, text: str) -> [str]
+    rows = strings.lines(text)
+    wrong: [str] @= []
+
+    for step in steps
+        for one in step.claims
+            place = place_of(one)
+
+            if place.is_err()
+                continue
+            p = place.must()
+
+            if p.file != file
+                wrong @ wrong.push(
+                    "`" + written(one) + "` names " + p.file + ", and the program this case builds is " + file
+                )
+            else if p.line > rows.len()
+                wrong @ wrong.push(
+                    "`" + written(one) + "` names a line past the end of " + file + ", which has " + rows.len().to_str()
+                )
+            else if strings.trimmed(rows[p.line - 1]).len() == 0
+                wrong @ wrong.push("`" + written(one) + "` names a blank line of " + file + ", where no statement sits")
+
+    return wrong
+
+function place_of(one: Claim) -> Place?
+    return match one
+        .resolved r => ok(r.place)
+        .stop s     => ok(s.place)
+        .at a       => ok(a.place)
+        .frame f    => ok(f.place)
+        .shows _    => fail(code: "no_place", msg: "a `!shows:` names no place")
+
+## Tests
+
+test "a session is its commands, each with the claims under it"
+    text = "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n\n> run\n!stop: breakpoint at s.hero:6\n> bt\n!frame: h_s_total at s.hero:6\n!frame: h_s_main at s.hero:12\n> up\n!at: s.hero:12\n> frame variable\n!shows: (int64_t) h1_base = 7\n> continue\n"
+    got = session(text).must()
+    assert got.len() == 6
+    assert got[0].command == "breakpoint set --file s.hero --line 6"
+    assert got[1].command == "run"
+    assert got[2].claims.len() == 2
+    assert got[5].command == "continue"
+    assert got[5].claims.len() == 0
+    assert written(got[1].claims[0]) == "!stop: breakpoint at s.hero:6"
+    assert written(got[2].claims[1]) == "!frame: h_s_main at s.hero:12"
+    assert written(got[4].claims[0]) == "!shows: (int64_t) h1_base = 7"
+
+test "a broken session is told by its line, and one that claims no hit is no session"
+    assert unread_claim(claim("!stop: breakpoint s.hero:6")) == "`breakpoint s.hero:6` has no ` at <file>:<line>` after it"
+    assert strings.contains(text: unread_claim(claim("!at: s.hero:6:10")), needle: "never a column")
+    assert strings.contains(text: unread_claim(claim("!at: s.hero:0")), needle: "names no line")
+    assert strings.contains(text: unread_claim(claim("stop at s.hero:6")), needle: "is neither a command")
+    early = session("!resolved: s.hero:6\n> run\n")
+    assert early.is_err()
+    assert strings.contains(text: code_and_msg(early), needle: "line 1 claims")
+    bare = session("> run\n> \n")
+    assert strings.contains(text: code_and_msg(bare), needle: "line 2 is a `>` with no command")
+    hitless = session("> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n")
+    assert strings.contains(text: code_and_msg(hitless), needle: "claims 1 `!resolved:` and 0 `!stop:`")
+
+function code_and_msg(got: [Step]?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.code + ": " + e.msg
+
+test "a frame is read for its function and its place, the column left out"
+    one = frame_of(
+        "   * frame #0: 0x0000000100015b3c stepping`h_stepping_total(h0_base=7, h1_step=3) at stepping.hero:7:10"
+    )
+    assert one.named == "h_stepping_total"
+    assert one.file == "stepping.hero"
+    assert one.line == 7
+    main = frame_of("     frame #1: 0x0000000100015bc8 stepping`h_stepping_main at stepping.hero:12:10")
+    assert main.named == "h_stepping_main"
+    assert main.line == 12
+    loader = frame_of("     frame #3: 0x0000000195bdbe80 dyld`start + 6688")
+    assert loader.named == "start"
+    assert loader.file == ""
+    assert loader.line == 0
+    where = location(
+        "Breakpoint 1: where = stepping`h_stepping_main + 32 at stepping.hero:12:10, address = 0x0000000100015bac"
+    ).must()
+    assert where.file == "stepping.hero"
+    assert where.line == 12
+
+    # A value whose text holds ` at ` is read before the place, never as it.
+    said = frame_of("frame #0: 0x1 p`h_p_f(h0_s=(ptr = \"say at home\", len = 11)) at p.hero:4:3")
+    assert said.named == "h_p_f"
+    assert said.line == 4
+
+test "the answers are cut at each echo, and a command lldb never echoed is unreached"
+    steps = session(
+        "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n!stop: breakpoint at s.hero:6\n> next\n"
+    ).must()
+    out = "(lldb) target create \"b\"\nCurrent executable set to 'b' (arm64).\n(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n42\nProcess 1 stopped\n"
+    got = answers(out: out, steps: steps)
+    assert got.len() == 3
+    assert got[0].reached
+    assert got[0].rows == ["Breakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1"]
+    assert got[1].rows == ["42", "Process 1 stopped"]
+    assert !got[2].reached
+
+# The transcripts below are lldb's own, measured on this Mac 2026-10-12 with
+# lldb-2103.0.34.103 over a program built at `-O0`: each guard is asked of the
+# shape lldb really writes, and the verdict it owes is the contract's.
+test "a transcript that meets its session is no failure"
+    steps = session(STEPPING_SESSION).must()
+    assert unmet(steps: steps, out: STEPPING_TRANSCRIPT, err: "", code: 0).len() == 0
+
+test "silence is told first and alone, whatever the session claims"
+    steps = session(STEPPING_SESSION).must()
+    got = unmet(steps: steps, out: "", err: "  \n", code: -1073741515)
+    assert got.len() == 1
+    assert strings.starts_with(text: got[0], prefix: "lldb wrote nothing on either stream and exited -1073741515")
+
+test "a pending breakpoint is told as such, and so is the stop it never made"
+    steps = session(STEPPING_SESSION).must()
+    out = "(lldb) target create \"b\"\n(lldb) breakpoint set --file stepping.hero --line 12\nBreakpoint 1: no locations (pending).\nWARNING:  Unable to resolve breakpoint to any actual locations.\n(lldb) run\n13\nProcess 18930 launched: 'b' (arm64)\nProcess 18930 exited with status = 0 (0x00000000)\n(lldb) step\n"
+    got = unmet(steps: steps, out: out, err: "error: Command requires a current process.\n", code: 1)
+    assert strings.starts_with(
+        text: got[0],
+        prefix: "a breakpoint is pending with no locations, `Breakpoint 1: no locations (pending).`"
+    )
+    assert strings.contains(
+        text: got[1],
+        needle: "!resolved: stepping.hero:12: the breakpoint is pending with no locations"
+    )
+    assert strings.contains(text: got[2], needle: "!stop: breakpoint at stepping.hero:12: the process did not stop")
+    assert strings.contains(text: got[got.len() - 1], needle: "lldb never reached `> next`")
+    assert strings.contains(text: got[got.len() - 1], needle: "Command requires a current process")
+
+test "a stop on another line, or for another reason, is told with what lldb said"
+    steps = session(
+        "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n!stop: breakpoint at s.hero:6\n> next\n!stop: step over at s.hero:7\n"
+    ).must()
+    out = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_total(h0_base=7) at s.hero:6:10\n(lldb) next\n* thread #1, name = 'b', stop reason = step in\n    frame #0: 0x2 b`h_s_total(h0_base=7) at s.hero:8:10\n"
+    got = unmet(steps: steps, out: out, err: "", code: 0)
+    assert got.len() == 1
+    assert strings.starts_with(
+        text: got[0],
+        prefix: "`> next`, !stop: step over at s.hero:7: the process stopped for `step in`, not `step over`"
+    )
+    moved = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_total(h0_base=7) at s.hero:6:10\n(lldb) next\n* thread #1, stop reason = step over\n    frame #0: 0x2 b`h_s_total + 40\n"
+    lost = unmet(steps: steps, out: moved, err: "", code: 0)
+    assert lost.len() == 1
+    assert strings.contains(text: lost[0], needle: "the frame is `h_s_total` with no file and line")
+
+test "a backtrace is held to every frame in a .hero file, in order"
+    steps = session(
+        "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n!stop: breakpoint at s.hero:6\n> bt\n!frame: h_s_total at s.hero:6\n"
+    ).must()
+    out = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_total at s.hero:6:10\n(lldb) bt\n* thread #1, stop reason = breakpoint 1.1\n  * frame #0: 0x1 b`h_s_total at s.hero:6:10\n    frame #1: 0x2 b`h_s_main at s.hero:12:10\n    frame #2: 0x3 b`main(argc=1) at s.c:69:5\n"
+    got = unmet(steps: steps, out: out, err: "", code: 0)
+    assert got.len() == 1
+    assert strings.contains(
+        text: got[0],
+        needle: "the backtrace has 2 frames in a `.hero` file, `h_s_total` at s.hero:6, `h_s_main` at s.hero:12, and the case claims 1"
+    )
+
+test "a line lldb did not write is told, and a nonzero exit after the last command is too"
+    steps = session(
+        "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n!stop: breakpoint at s.hero:6\n> frame variable\n!shows: (int64_t) h0_base = 7\n"
+    ).must()
+    out = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_total + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_total at s.hero:6:10\n(lldb) frame variable\nno variable information is available in debug info for this compile unit\n"
+    got = unmet(steps: steps, out: out, err: "", code: 1)
+    assert got.len() == 2
+    assert strings.contains(
+        text: got[0],
+        needle: "no line of lldb's answer is `(int64_t) h0_base = 7`; lldb answered:\n      no variable information"
+    )
+    assert strings.starts_with(
+        text: got[1],
+        prefix: "lldb exited 1 after its last command, and it wrote nothing on stderr"
+    )
+
+    # A command lldb refused answers on stderr alone, and the failure says so
+    # rather than quoting an empty answer.
+    none: [str] = []
+    assert told(command: "frame variable", claimed: "!shows: x", why: "w", rows: none) == "`> frame variable`, !shows: x: w; lldb answered nothing on stdout"
+
+test "a place a session claims must be a line the author wrote in the case's own file"
+    steps = session(
+        "> breakpoint set --file s.hero --line 2\n!resolved: s.hero:2\n> run\n!stop: breakpoint at s.hero:9\n> up\n!at: t.hero:1\n> frame variable\n!shows: x\n"
+    ).must()
+    got = misplaced(steps: steps, file: "s.hero", text: "function main()\n\n    print(1)\n")
+    assert got.len() == 3
+    assert got[0] == "`!resolved: s.hero:2` names a blank line of s.hero, where no statement sits"
+    assert got[1] == "`!stop: breakpoint at s.hero:9` names a line past the end of s.hero, which has 3"
+    assert got[2] == "`!at: t.hero:1` names t.hero, and the program this case builds is s.hero"
+
+constant STEPPING_SESSION: str
+    "> breakpoint set --file stepping.hero --line 12\n!resolved: stepping.hero:12\n> run\n!stop: breakpoint at stepping.hero:12\n> step\n!stop: step in at stepping.hero:5\n> next\n!stop: step over at stepping.hero:6\n> bt\n!frame: h_stepping_total at stepping.hero:6\n!frame: h_stepping_main at stepping.hero:12\n> up\n!at: stepping.hero:12\n> finish\n!stop: step out at stepping.hero:12\n"
+
+constant STEPPING_TRANSCRIPT: str
+    "(lldb) target create \"build/lldb-probe/stepping\"\nCurrent executable set to '/x/build/lldb-probe/stepping' (arm64).\n(lldb) breakpoint set --file stepping.hero --line 12\nBreakpoint 1: where = stepping`h_stepping_main + 32 at stepping.hero:12:10, address = 0x0000000100015bac\n(lldb) run\nProcess 19257 launched: '/x/build/lldb-probe/stepping' (arm64)\nProcess 19257 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1\n       frame #0: 0x0000000100015bac stepping`h_stepping_main at stepping.hero:12:10\n-> 12  \t    got = total(base: base, step: 3)\nTarget 0: (stepping) stopped.\n(lldb) step\nProcess 19257 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = step in\n       frame #0: 0x0000000100015af8 stepping`h_stepping_total(h0_base=7, h1_step=3) at stepping.hero:5:125\nTarget 0: (stepping) stopped.\n(lldb) next\nProcess 19257 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = step over\n       frame #0: 0x0000000100015afc stepping`h_stepping_total(h0_base=7, h1_step=3) at stepping.hero:6:10\nTarget 0: (stepping) stopped.\n(lldb) bt\n* thread #1, queue = 'com.apple.main-thread', stop reason = step over\n   * frame #0: 0x0000000100015afc stepping`h_stepping_total(h0_base=7, h1_step=3) at stepping.hero:6:10\n     frame #1: 0x0000000100015bc8 stepping`h_stepping_main at stepping.hero:12:10\n     frame #2: 0x0000000100015c24 stepping`main(argc=1, argv=0x000000016fdfe890) at stepping.c:69:5\n     frame #3: 0x0000000195bdbe80 dyld`start + 6688\n(lldb) up\nframe #1: 0x0000000100015bc8 stepping`h_stepping_main at stepping.hero:12:10\n(lldb) finish\nProcess 19257 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = step out\nReturn value: (int64_t) $0 = 13\n\n       frame #0: 0x0000000100015bc8 stepping`h_stepping_main at stepping.hero:12:8\nTarget 0: (stepping) stopped.\n"

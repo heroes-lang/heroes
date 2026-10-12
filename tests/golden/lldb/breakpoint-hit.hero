@@ -1,0 +1,12 @@
+# A breakpoint on a `.hero` line resolves to a location, is hit, and lldb
+# says the file, the line and why the program stopped: the three guards the
+# archived test bought with failures (`tests/harness/lldb_session.hero` says
+# what each one cost). Built at `-O0`, which carries the debug info for the
+# line and for the variables since panel 197.
+
+function area(width: i64, height: i64) -> i64
+    product = width * height
+    return product
+
+function main()
+    print(area(width: 6, height: 7))
