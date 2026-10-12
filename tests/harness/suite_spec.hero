@@ -44,7 +44,10 @@
 #               reads in one place (`words_painted`), its number and character
 #               rules paint what the lexer reads and refuses, run
 #               (`literals_painted`), and the plugin's two manifests say the
-#               language's version (`plugin_agrees`).
+#               language's version (`plugin_agrees`);
+#   registry    each row of the reserved-word registry says what the compiler
+#               prints, the foreign words read out of `declared_word`'s arms
+#               and the other rows run (`registered`, 2026-10-12).
 #
 # WHERE THE COMPILER'S SIDE COMES FROM. The two lists — what it reserves and
 # what it refuses — are read out of `selfhost/`'s own source, not copied
@@ -110,7 +113,7 @@ constant SPEC_TOKENS: i64
 # with no commit ever naming a delta, for the plain reason that `measure`
 # defaults to the other file.
 constant REGISTRY_TOKENS: i64
-    916
+    1139
 
 # **The ceiling, 10240 by author decision 2026-09-14**, taken while
 # M-marked-acquisition was landing `acquires <releaser>` and the document stood
@@ -372,6 +375,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     named(@r, spec: text.must(), reserved: reserved)
     offered(@r, spec: text.must(), reserved: reserved)
     rejected(@r, spec: text.must(), refused: refused)
+    registered(@r, scratch: scratch, compiler: compiler)
     inventory(@r, spec: text.must())
     shape(@r, spec: text.must())
     anchors(@r)
@@ -2859,6 +2863,323 @@ function xml_unescaped(text: str) -> str
 
     return out
 
+## The registry says what the compiler prints
+
+# `spec/reserved-words.md` is the registry of the prescribed errors, and it
+# said texts the compiler had stopped printing: `fn`'s `x: int -> int`,
+# `var`'s `v: int @ 0`, `const`'s `MAX: int` and `null`'s `int?`, written for
+# a language whose integer was `int`, which the language deleted and refused
+# on 2026-08-12 (3280ffeaa); and it had no row for `int` (defect 676,
+# 2026-10-12). Nothing
+# compared a row to the compiler, so each drifted with nobody told.
+#
+# **A row naming foreign words is held to `declared_word`'s arm, read from the
+# source**: the same words, and its text the arm's message after `error: `,
+# whitespace aside. The table's own line breaks and doubled spaces are the
+# notation, not the claim. **A row naming no foreign word is a parser's
+# prescription, and it is RUN**: `registry_probes()` gives each one the program
+# that provokes it, and the row says what `check --brief` prints first. A row
+# with no probe is red, so no row is left that nothing holds. **And the
+# keywords' paragraph names `keyword()`'s words**, the closed list.
+record Arm
+    words: [str]
+    message: str
+
+record Row
+    head: str
+    text: str
+
+record Probe
+    head: str
+    program: str
+
+function registry_probes() -> [Probe]
+    return [
+        Probe(head: "`return` used as `return;`", program: "function f() -> i64\n    return;\n\nfunction main()\n    print(f())\n")
+        Probe(head: "`return` with no value, in a function with `-> i64`", program: "function f() -> i64\n    return\n\nfunction main()\n    print(f())\n")
+    ]
+
+function registered(@r: report.Report, scratch: str, compiler: str)
+    text = read_file(REGISTRY)
+    source = read_file(KEYWORD_SOURCE)
+
+    if text.is_err() || source.is_err()
+        report.keep_failure(@r, label: "spec/registry", detail: "  cannot read " + REGISTRY + " or " + KEYWORD_SOURCE)
+        return
+    arms = foreign_arms(source.must())
+    words: [str] @= []
+
+    for arm in arms
+        for word in arm.words
+            words @ words.push(word)
+
+    if !floors.sound(@r, label: "spec/registry", found: words.len(), floor: LEAST_FOREIGN, what: "foreign words read with their messages out of " + KEYWORD_SOURCE)
+        return
+    rows = registry_rows(text.must())
+    wrong: [str] @= registry_disagreements(rows: rows, arms: arms)
+
+    for one in keyword_paragraph_disagreements(registry: text.must(), keywords: compiler_keywords(KEYWORD_SOURCE))
+        wrong @ wrong.push(one)
+
+    for one in unprobed_rows(rows: rows, probes: registry_probes())
+        wrong @ wrong.push(one)
+
+    for probe in registry_probes()
+        said = probe_said(scratch: scratch, compiler: compiler, probe: probe)
+
+        if said.is_err()
+            wrong @ wrong.push("the row `" + probe.head + "` could not be run: " + why_said(said))
+            continue
+
+        for one in probe_disagreements(rows: rows, probe: probe, said: said.must())
+            wrong @ wrong.push(one)
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/registry",
+        detail: "  " + wrong.join("\n  ") + "\n  " + REGISTRY + " is the registry of the prescribed errors, and a row\n  saying a text the compiler does not print is a false briefing: the rows for\n  `fn`, `var`, `const` and `null` said `int` from 2026-08-12, when the language deleted\n  and refused it (3280ffeaa), to 2026-10-12 (defect 676)."
+    )
+
+function why_said(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# What `check --brief` prints first of the probe's program, the message after
+# its `error[code]: `.
+function probe_said(scratch: str, compiler: str, probe: Probe) -> str?
+    path = scratch + "/spec-registry.hero"
+    write_file(path: path, text: probe.program)?
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", path, "--brief"])?
+
+    for line in strings.lines(ran.err + ran.out)
+        at = strings.index_of(text: line, needle: "]: ")
+
+        if strings.contains(text: line, needle: "error[") && !at.is_err()
+            return ok(line.slice(from: at.must() + 3, to: line.len()))
+
+    return fail(code: "no_diagnostic", msg: "`check --brief` printed no error, exit " + ran.code.to_str())
+
+# Every foreign arm of `declared_word`: the words before its `=>`, on the
+# message's line or the line above it as `words_in_arms` reads them, and the
+# message's text.
+function foreign_arms(source: str) -> [Arm]
+    out: [Arm] @= []
+    previous: str @= ""
+    marker = "ForeignWord(message: \""
+
+    for row in strings.lines(source)
+        at = strings.index_of(text: row, needle: marker)
+        head_row: str @= previous
+        previous @ row
+
+        if at.is_err()
+            continue
+        arrow_here = strings.index_of(text: row.slice(from: 0, to: at.must()), needle: "=>")
+
+        if !arrow_here.is_err()
+            head_row @ row
+        arrow = strings.index_of(text: head_row, needle: "=>")
+
+        if arrow.is_err()
+            continue
+        head = head_row.slice(from: 0, to: arrow.must())
+        words: [str] @= []
+        cursor: i64 @= 0
+
+        while cursor < head.len()
+            quoted = first_quoted(text: head, from: cursor)
+
+            if quoted.is_err()
+                cursor @ head.len()
+            else
+                words @ words.push(quoted.must())
+                cursor @ cursor + advance_past(text: head, from: cursor)
+
+        if words.len() > 0
+            out @ out.push(Arm(words: words, message: string_at(text: row, from: at.must() + marker.len())))
+
+    return out
+
+# The text of a Heroes string literal whose opening quote is just before
+# `from`, its two escapes a message can hold undone.
+function string_at(text: str, from: i64) -> str
+    cs = text.slice(from: from, to: text.len()).chars()
+    out: str @= ""
+    i: i64 @= 0
+
+    while i < cs.len() && cs[i] != "\""
+        if cs[i] == "\\" && i + 1 < cs.len()
+            out @ out + cs[i + 1]
+            i @ i + 2
+            continue
+        out @ out + cs[i]
+        i @ i + 1
+
+    return out
+
+# The table's rows, each its first cell and its second, the header and the
+# separator left out because their first cell holds no backtick.
+function registry_rows(text: str) -> [Row]
+    out: [Row] @= []
+
+    for line in strings.lines(text)
+        if !strings.starts_with(text: line, prefix: "| `") || !strings.ends_with(text: line, suffix: " |")
+            continue
+        inner = line.slice(from: 2, to: line.len() - 2)
+        cut = strings.index_of(text: inner, needle: " | ")
+
+        if cut.is_err()
+            continue
+        out @ out.push(
+            Row(head: inner.slice(from: 0, to: cut.must()), text: inner.slice(from: cut.must() + 3, to: inner.len()))
+        )
+
+    return out
+
+# The foreign words a row's first cell names, `` `null` / `nil` ``; none where
+# the cell holds anything else, a parser's prescription such as `` `return`
+# used as `return;` ``.
+function row_words(head: str) -> [str]
+    out: [str] @= []
+    none: [str] = []
+
+    for piece in strings.split_text(text: head, separator: " / ")
+        if piece.len() < 3 || !strings.starts_with(text: piece, prefix: "`") || !strings.ends_with(text: piece, suffix: "`")
+            return none
+        word = piece.slice(from: 1, to: piece.len() - 1)
+
+        for c in word.chars()
+            if c.len() != 1 || !(c[0] >= 'a' && c[0] <= 'z' || c[0] >= 'A' && c[0] <= 'Z')
+                return none
+
+        out @ out.push(word)
+
+    return out
+
+# Where the rows and the arms part, one sentence each.
+function registry_disagreements(rows: [Row], arms: [Arm]) -> [str]
+    wrong: [str] @= []
+    listed: [str] @= []
+
+    for row in rows
+        words = row_words(row.head)
+
+        if words.len() == 0
+            continue
+
+        for word in words
+            listed @ listed.push(word)
+
+        arm = arm_of(arms: arms, word: words[0])
+
+        if arm.is_err()
+            wrong @ wrong.push("the row for " + row.head + " names words the lexer does not refuse")
+            continue
+
+        if absent_from(want: words, got: arm.must().words).len() > 0 || absent_from(want: arm.must().words, got: words).len() > 0
+            wrong @ wrong.push(
+                "the row for " + row.head + " groups other words than the compiler's arm, `" + arm.must().words.join("` `") + "`"
+            )
+        want = "error: " + arm.must().message
+
+        if normalised(row.text) != normalised(want)
+            wrong @ wrong.push(
+                "the row for " + row.head + " says\n      " + row.text + "\n    and the compiler prints\n      " + want
+            )
+
+    for arm in arms
+        for word in arm.words
+            if absent_from(want: [word], got: listed).len() > 0
+                wrong @ wrong.push("`" + word + "` is refused by the lexer, and the registry has no row for it")
+
+    return wrong
+
+function arm_of(arms: [Arm], word: str) -> Arm?
+    for arm in arms
+        if absent_from(want: [word], got: arm.words).len() == 0
+            return ok(arm)
+
+    return fail(code: "no_arm", msg: word)
+
+# Where a probe's row and what the compiler printed part.
+function probe_disagreements(rows: [Row], probe: Probe, said: str) -> [str]
+    for row in rows
+        if row.head == probe.head
+            want = "error: " + said
+
+            if normalised(row.text) != normalised(want)
+                return [
+                    "the row for " + row.head + " says\n      " + row.text + "\n    and the compiler prints\n      " + want
+                ]
+            none: [str] = []
+            return none
+
+    return ["no row of the registry is headed " + probe.head + ", which a probe here runs"]
+
+# The registry's rows that name no foreign word and that no probe runs.
+function unprobed_rows(rows: [Row], probes: [Probe]) -> [str]
+    out: [str] @= []
+
+    for row in rows
+        if row_words(row.head).len() > 0
+            continue
+        held: bool @= false
+
+        for probe in probes
+            if probe.head == row.head
+                held @ true
+
+        if !held
+            out @ out.push(
+                "the row " + row.head + " names no foreign word and no probe here runs it, so nothing holds its text"
+            )
+
+    return out
+
+# The keywords' paragraph against `keyword()`: the backticked words from
+# `Keywords of Heroes itself` to the `— plus` after them.
+function keyword_paragraph_disagreements(registry: str, keywords: [str]) -> [str]
+    at = strings.index_of(text: registry, needle: "Keywords of Heroes itself")
+
+    if at.is_err()
+        return ["the registry has no paragraph opening `Keywords of Heroes itself`"]
+    rest = registry.slice(from: at.must(), to: registry.len())
+    stop = strings.index_of(text: rest, needle: "— plus")
+    paragraph: str @= rest
+
+    if !stop.is_err()
+        paragraph @ rest.slice(from: 0, to: stop.must())
+    spans: [str] @= []
+    pieces = strings.split_text(text: paragraph, separator: "`")
+    i: i64 @= 1
+
+    while i < pieces.len()
+        if row_words("`" + pieces[i] + "`").len() == 1
+            spans @ spans.push(pieces[i])
+        i @ i + 2
+
+    wrong: [str] @= []
+    absent = absent_from(want: keywords, got: spans)
+    extra = absent_from(want: spans, got: keywords)
+
+    if absent.len() > 0
+        wrong @ wrong.push(
+            "the keywords' paragraph leaves out `" + absent.join("` `") + "`, which `keyword()` reserves"
+        )
+
+    if extra.len() > 0
+        wrong @ wrong.push(
+            "the keywords' paragraph names `" + extra.join("` `") + "`, which `keyword()` does not reserve"
+        )
+    return wrong
+
+function normalised(text: str) -> str
+    return strings.words(text).join(" ")
+
 test "a word the grammar leaves out, and one it paints too many, are each red and named"
     missing: report.Report @= report.empty()
     words_agree(
@@ -2991,3 +3312,85 @@ test "a literal the lexer reads painted otherwise, and one it refuses painted as
 
     for form in literal_forms()
         assert !form_painted(grammar: real.must(), form: form).is_err()
+
+test "each registry row is held to the compiler's arm, and a word, a grouping or a text apart is a sentence"
+    source = "        \"fn\" => ok(\n            ForeignWord(message: \"`fn` is not a word — use `function`\", repair: .swap(word: \"function\"))\n        )\n        \"null\" | \"nil\" => ok(\n            ForeignWord(message: \"there is no \\\"null\\\" here\", repair: .guidance)\n        )\n        \"let\" => ok(ForeignWord(message: \"`let` is not a word\", repair: .guidance))\n        return ok(\n            ForeignWord(message: \"a call's own words\", repair: .guidance)\n        )\n"
+    arms = foreign_arms(source)
+    assert arms.len() == 3
+    assert arms[0].words == ["fn"]
+    assert arms[1].words == ["null", "nil"]
+    assert arms[1].message == "there is no \"null\" here"
+    assert arms[2].words == ["let"]
+    registry = "| Foreign word | Error text |\n|---|---|\n| `fn` | error: `fn` is not a word —  use `function` |\n| `null` / `nil` | error: there is no \"null\" here |\n| `let` | error: `let` is not a word |\n| `return` used as `return;` | error: something |\n"
+    rows = registry_rows(registry)
+    assert rows.len() == 4
+    assert row_words(rows[1].head) == ["null", "nil"]
+    assert row_words(rows[3].head).len() == 0
+
+    # Whitespace is the table's notation, not the claim.
+    assert registry_disagreements(rows: rows, arms: arms).len() == 0
+    wrong_text = registry_rows(strings.split_text(text: registry, separator: "use `function`").join("use `fun`"))
+    assert strings.contains(
+        text: registry_disagreements(rows: wrong_text, arms: arms).join("\n"),
+        needle: "the row for `fn` says"
+    )
+    no_row = registry_rows(
+        strings.split_text(text: registry, separator: "| `let` | error: `let` is not a word |\n").join("")
+    )
+    assert strings.contains(
+        text: registry_disagreements(rows: no_row, arms: arms).join("\n"),
+        needle: "`let` is refused by the lexer, and the registry has no row for it"
+    )
+    regrouped = registry_rows(strings.split_text(text: registry, separator: "`null` / `nil`").join("`null`"))
+    assert strings.contains(
+        text: registry_disagreements(rows: regrouped, arms: arms).join("\n"),
+        needle: "groups other words than the compiler's arm"
+    )
+    stranger = registry_rows(registry + "| `goto` | error: no |\n")
+    assert strings.contains(
+        text: registry_disagreements(rows: stranger, arms: arms).join("\n"),
+        needle: "names words the lexer does not refuse"
+    )
+
+    # A row naming no foreign word is run, and one no probe runs is red.
+    probe = Probe(head: "`return` used as `return;`", program: "")
+    assert probe_disagreements(rows: rows, probe: probe, said: "something").len() == 0
+    assert strings.contains(
+        text: probe_disagreements(rows: rows, probe: probe, said: "other").join("\n"),
+        needle: "and the compiler prints"
+    )
+    assert strings.contains(
+        text: probe_disagreements(rows: rows, probe: Probe(head: "`x`", program: ""), said: "s").join("\n"),
+        needle: "no row of the registry is headed"
+    )
+    assert unprobed_rows(rows: rows, probes: [probe]).len() == 0
+    assert unprobed_rows(rows: rows, probes: [Probe(head: "`x`", program: "")]).len() == 1
+    assert unprobed_rows(rows: rows, probes: registry_probes()).len() == 0
+
+    # The keywords' paragraph names `keyword()`'s words, no fewer and no more.
+    paragraph = "Keywords of Heroes itself (cannot be identifiers): `if` `else` — plus the forms `=>`.\n"
+    assert keyword_paragraph_disagreements(registry: paragraph, keywords: ["if", "else"]).len() == 0
+    assert strings.contains(
+        text: keyword_paragraph_disagreements(registry: paragraph, keywords: ["if", "else", "nullptr"]).join("\n"),
+        needle: "leaves out `nullptr`"
+    )
+    assert strings.contains(
+        text: keyword_paragraph_disagreements(registry: paragraph, keywords: ["if"]).join("\n"),
+        needle: "names `else`"
+    )
+
+    # And the real table: every word `declared_word` refuses, each with its
+    # message, the two-line arm and the three-word arm included.
+    real = read_file(KEYWORD_SOURCE)
+    assert !real.is_err()
+    found = foreign_arms(real.must())
+    words: [str] @= []
+
+    for arm in found
+        for word in arm.words
+            words @ words.push(word)
+
+    assert words.len() >= LEAST_FOREIGN
+    assert absent_from(want: words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord("), got: words).len() == 0
+    assert arm_of(arms: found, word: "int").must().message == "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`"
+    assert arm_of(arms: found, word: "None").must().words == ["null", "nil", "None"]
