@@ -5,4 +5,5 @@
   <Default Extension="vsixmanifest" ContentType="text/xml"/>
   <Default Extension="xml" ContentType="text/xml"/>
   <Default Extension="md" ContentType="text/markdown"/>
+  <Default Extension="txt" ContentType="text/plain"/>
 </Types>
