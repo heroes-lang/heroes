@@ -604,6 +604,7 @@ export function checkClaims(html: string, pagePath: string): void {
   problems.push(...checkNoWrongTwin(html, pagePath));
   problems.push(...checkFixpointLeg(html, pagePath));
   problems.push(...checkRepositoryIsOpen(html, pagePath));
+  problems.push(...checkContributionsOpen(html, pagePath));
   if (NAME_EVERY_VERB.includes(pagePath)) {
     markVisited(pagePath);
     for (const verb of verbs()) {
@@ -674,6 +675,57 @@ function checkRepositoryIsOpen(html: string, pagePath: string): string[] {
     }
   }
   return out;
+}
+
+/**
+ * The second promise that expired the same way. Code contributions opened to
+ * authorized contributors, through an issue first, on 2026-10-11 (b6accb55,
+ * `CONTRIBUTING.md`), and that commit's own decision issue said no page of the
+ * site stated the policy. Six passages in two editions did, and `llms.txt`
+ * a seventh: *"Code is not accepted here yet, so there is no patch to send"*,
+ * *"code contributions are not open yet"*, *"takes no code contributions
+ * yet"*. They were found the next day by reading, which is the failure this
+ * list exists so that nobody has to repeat.
+ *
+ * The phrases are exactly the sentences removed, and narrow on purpose: the
+ * build log's entry for the repository opening says that changes sent in were
+ * not accepted, which was true at its date, and a log entry is a record.
+ *
+ * A phrase leaves this list only when code contributions close again.
+ */
+const CLOSED_CONTRIBUTIONS: { phrase: RegExp; lang: 'en' | 'it' }[] = [
+  { phrase: /code is not accepted here yet/i, lang: 'en' },
+  { phrase: /no patch to send/i, lang: 'en' },
+  { phrase: /no patch is taken/i, lang: 'en' },
+  { phrase: /takes no code\s+contributions yet/i, lang: 'en' },
+  { phrase: /code contributions are not open yet/i, lang: 'en' },
+  { phrase: /il codice non si accetta ancora/i, lang: 'it' },
+  { phrase: /una\s+patch da mandare/i, lang: 'it' },
+  { phrase: /non accetta\s+ancora contributi di codice/i, lang: 'it' },
+  { phrase: /contributi di codice non sono ancora aperti/i, lang: 'it' },
+];
+
+function checkContributionsOpen(html: string, pagePath: string): string[] {
+  const out: string[] = [];
+  const flat = html.replace(/\s+/g, ' ');
+  for (const { phrase } of CLOSED_CONTRIBUTIONS) {
+    const m = flat.match(phrase);
+    if (m) {
+      out.push(
+        `${pagePath}: says "${m[0]}". Code is welcome from authorized contributors, through an issue first ` +
+          `(CONTRIBUTING.md), so this is a false claim. Say what a reader can do now.`
+      );
+    }
+  }
+  return out;
+}
+
+/**
+ * Both promises asked of a text no page wrapper passes through, `llms.txt`
+ * first: the file a model reads was the one place neither list looked.
+ */
+export function staleOpenness(text: string, path: string): string[] {
+  return [...checkRepositoryIsOpen(text, path), ...checkContributionsOpen(text, path)];
 }
 
 /**

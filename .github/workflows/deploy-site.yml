@@ -38,10 +38,16 @@ on:
     # selfhost/keywords.hero for the keyword table it colours by, and
     # spec/heroes-spec.md for the type words. A change to any of those changes a
     # page, so a deploy that watched only site/ would serve yesterday's corpus.
+    # selfhost/main.hero holds VERSION, which the home and start pages print:
+    # a release whose spec did not move changes that file alone, and until
+    # 2026-10-12 it deployed nothing, so the pages kept the old number. The
+    # project page's sizes (modules, lines, sittings) are read from the tree
+    # too, floored, so they stay true between deploys and need no trigger.
     paths:
       - 'site/**'
       - 'examples/**'
       - 'selfhost/keywords.hero'
+      - 'selfhost/main.hero'
       - 'spec/heroes-spec.md'
       - '.github/workflows/deploy-site.yml'
   workflow_dispatch:

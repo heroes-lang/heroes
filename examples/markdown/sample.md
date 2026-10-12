@@ -1,8 +1,8 @@
 # Heroes
 
-A small compiled language, designed so that **every plausible mistake** is a
-compile error. The whole language is one document: see
-[the spec](spec/heroes-spec.md).
+A small compiled language for the LLM age, designed so that
+**every plausible mistake** is a compile error. The whole language is one
+document: see [the spec](spec/heroes-spec.md).
 
 ## Why it exists
 
