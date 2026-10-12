@@ -51,7 +51,7 @@ whether its own warrant has grown.
 
 **All three items closed 2026-09-14 at this milestone's own close**, and their
 record is
-`docs/records/done/2026-09-14-1900-the-form-is-closed-at-three-words-and-two-of-the-three-items-were-decisions.md`.
+https://github.com/heroes-lang/heroes/issues/1209.
 The highlighter class was not closed but MOVED, to
 `docs/roadmap/milestones/M-vscode-extension.md`, which is the milestone whose
 subject it is; closing it here would have been ticking somebody else's work.

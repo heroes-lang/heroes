@@ -25,26 +25,27 @@ appears — no exceptions, take nothing for granted.**
 ```
 git log --oneline -15
 git tag --list --sort=creatordate
-find issues -name '20*.md' | sort | tail -8      # the newest issues, decisions among them
+gh issue list --repo heroes-lang/heroes --state all --limit 8   # the newest issues, decisions among them
 sed -n '/^## Where we are/,/^## Verify/p' docs/ROADMAP.md        # where we are
 sed -n '/^## The chain/,/^## The milestones/p' docs/ROADMAP.md   # what is next, in order
                                   # (this said `head -40 … § Status + § The order` until
                                   #  2026-08-26: two headings renamed on 2026-08-25 and a
                                   #  line count that stopped reaching the table it named.
                                   #  A pattern range cannot rot the same way.)
-grep -rl "^kind: decision" issues/ | xargs grep -l "^- \[ \] "   # open decisions = what the compiler is waiting on
-grep -rl "^kind: defect" issues/ | xargs grep -l "^- \[ \] "     # what is BROKEN right now, one file per defect
-                                  # (docs/work/DEFECTS.md until 2026-10-04 and the
-                                  #  files of docs/work/defects/ that day; issues since)
+./heroes run tests/harness/issues.hero -- open --kind decision    # open decisions = what the compiler is waiting on
+./heroes run tests/harness/issues.hero -- open --kind defect      # what is BROKEN right now, one issue per defect
+                                  # (docs/work/DEFECTS.md until 2026-10-04, files of
+                                  #  issues/ until 2026-10-12, GitHub's issues since)
                                   # (missing from this block until 2026-09-07, four days
                                   #  after the author instituted the list: no skill read
                                   #  it, so an open defect was invisible in exactly the
                                   #  report the author asks for. CL-044.)
-cat docs/roadmap/milestones/*.md          # open work, each item inside its own milestone's file
+./heroes run tests/harness/issues.hero -- open --milestone <the open milestone>   # its open features and tasks
                                   # (this said `QUEUE.md` until 2026-08-26 — the RECORD,
                                   #  which holds only closed items and had held zero open
                                   #  ones since the 2026-08-12 split. The skill reported a
                                   #  finished archive as the author's outstanding work.)
+cat docs/roadmap/milestones/<the open milestone>.md   # the reasoning the open work carries
 ./heroes run tests/harness/main.hero -- ./heroes 2>&1 | tail -2   # green or red, one line
                                   # (`cargo test` until M-bootstrap-archive; the
                                   #  Rust it ran is archive/bootstrap-rs/ now)
@@ -78,7 +79,7 @@ has never heard the word *compiler*. Rules:
 ### 4. Your turn — the author's pending items (never blocking)
 Summarize the **open** issues: the `decision`s (what the compiler is waiting
 on), the `defect`s (what is broken) and the `feature`s and `task`s of the open
-milestone (work with a milestone), each with the file path and
+milestone (work with a milestone), each with its issue's URL and
 why it is worth their time — the vocabulary file keeps the sentence for the
 commonest reason, that guessing a cause before reading the fix is where the
 value is. Make clear nothing is waiting on them to proceed.

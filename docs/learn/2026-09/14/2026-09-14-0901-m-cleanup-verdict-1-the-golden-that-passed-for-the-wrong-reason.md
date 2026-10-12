@@ -5,7 +5,7 @@
     `.expected`; then
     `tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero`, which is
     the case that separates the two answers;
-    `docs/records/done/2026-09-14-0859-defect-032-closed-two-handles-compared-equal-whatever-their-addresses.md`.
+    https://github.com/heroes-lang/heroes/issues/1198.
 
     **Why it matters:** the header that case ships sets `s.handle = 0`, so the
     handle it compares against `nullptr` **is** null. The right answer is `true`

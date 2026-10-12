@@ -330,32 +330,35 @@ is a full panel.
      conservative resolution* until 2026-09-07, four days after the author
      struck that word mid-sitting, and the two are not the same thing
      (`docs/records/contract/case-law.md` CL-040). It is marked `provisional — author
-     ratification pending`, records what a veto would compel, and appends an
-     **open** `decision` issue naming the sitting as `panel NNN`, a new file of
-     today's folder of `issues/` (`.claude/rules/records.md` § The issues).
-     Work proceeds on the provisional
+     ratification pending`, records what a veto would compel, and opens an
+     **open** `decision` issue naming the sitting as `panel NNN`: a draft in the
+     sitting's scratch folder under `.claude/worktrees/`, its `## Prior art`
+     in it where step 4 found one, opened with `heroes run tests/harness/issues.hero -- file
+     <draft.md>` (`.claude/rules/records.md` § The issues), whose URL the
+     synthesis then names. Work proceeds on the provisional
      default; the author's verdict is appended to this file when given (in
      `/decide` or whenever), with follow-up work if they overturn it.
 
-     **The sitting is the item's FIRST FIELD, since 2026-09-07** —
+     **The sitting is the item's FIRST FIELD, since 2026-09-07**:
      `- [ ] **panel 091** | <the question> | <where to look>`, with any
-     reasoning in the body indented under it. That is not layout: the check
-     below scans the item LINE, so a sitting cited only in a body is a sitting
-     no check can see.
+     reasoning in the body indented under it, which titles the issue
+     `Panel 091: <the question>`. That is not layout: a sitting cited only in a
+     body is a sitting no check can see.
 
-     **The file and the spelling are both load-bearing, and this line named the
-     wrong file until 2026-08-26.** `tests/harness/suite_records.hero`'s
-     `verdicts` check reads the open decision issues and scans their `- [ ]` lines
-     for `panel NNN`: a `Pending` verdict is allowed to stand for as long as the
-     author likes *provided an open item names it*, and that pair is the whole
-     invariant. This line said `QUEUE.md` — the record — so a sitting that
-     obeyed the skill was invisible to the check built to catch it, which is how
-     panels 069-079 sat unratified for eight days. Write `panel 091`, not
+     **The spelling is load-bearing.** A `Pending` verdict may stand for as
+     long as the author likes *provided an open decision issue names it*, and
+     that pair is the whole invariant: a sitting whose ratification nobody can
+     find is how panels 069-079 sat unratified for eight days, when this line
+     named the record rather than the open list. Write `panel 091`, not
      `panel 91`; both parse, but the padded form is what the repository uses.
    - every judge's `prediction` is copied into a "Predictions to score"
      section with the milestone at which each becomes checkable. When the
      harness next runs, score them and append the results — judges accrue
      track records.
 
-5. File the sitting as a `decision` issue, closed the day it is filed, ending with its `## Prior art` where step 4 found one. Commit the panel file (and, separately, any
-   resulting `spec/` or `design.md` amendment, citing the sitting's own file).
+5. Commit the panel file (and, separately, any resulting `spec/` or `design.md`
+   amendment, citing the sitting's own file). The sitting's `decision` issue is
+   step 4's, its `## Prior art` in its draft where step 4 found one, so the
+   prior art stands once; a `retro-record` sitting, the author's call already
+   taken, is drafted with its item ticked and that commit, and `file` closes it
+   as it opens it.

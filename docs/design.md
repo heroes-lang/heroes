@@ -58,7 +58,7 @@ shape how you work:
    are queued so the author can hypothesise before reading the fix — diagnosis is still where the
    density of learning is highest; it just no longer blocks the pipeline.
 
-Also record every decision as a `decision` file of `issues/`, with its reason. In three months
+Also record every decision as a `decision` issue on GitHub, with its reason. In three months
 this is the only thing that distinguishes reasoning from improvisation.
 
 A declared end-goal of the journey itself: a **mini-book about how this language came to be** — the
@@ -2464,7 +2464,7 @@ program, not a mistake in it, and this language has no warning level (panel 208)
 
 **A module's headers are included in the order its groups are written, and the order is
 load-bearing** (panel 204, ratified 2026-10-10; the sentence panel 091 found owed, carried by
-`issues/2026-09/07/2026-09-07-0000-four-repairs-to-design-md-that-ride-its-opening-sitting-4-19.md`).
+https://github.com/heroes-lang/heroes/issues/970).
 A module's unit opens with the compiler's own headers, its prefix: `heroes_unit.h`, which reads
 `heroes_runtime.h`, whose integer types are spelled from clang's builtins and which brings only
 clang's own `stdbool.h` and `stddef.h`, then `hero_os.h` (`SEEDS` in `emit/externs.hero`); no
@@ -2788,7 +2788,7 @@ the first is the one that proves the project's premise:
    measured live, because `Command` inherits the environment.
 
    **`LIBRARY_PATH` measured false on Windows, 2026-10-03; corrected here 2026-10-04** (the
-   author's *2a*, `docs/records/log/2026-10-04-0150-the-author-answers-1a-2a-3a-4a-5a.md`).
+   author's *2a*, https://github.com/heroes-lang/heroes/issues/1618).
    On the Windows box, clang 23.1.1 driving `lld-link`, a library only in a side directory,
    built with `LIBRARY_PATH` naming that directory, stops at *could not open 'lp188.lib'*,
    exit 2, and `LIB` did no better; the compiler's own `--library <dir>` builds and prints 7,
@@ -3264,7 +3264,7 @@ are *on* the closure list.
 2. **File I/O** — `read_file(path) -> str?`, `write_file(path, s) -> ()?`. Two functions via FFI to
    `fopen`/`fread`. **Required for self-hosting.**
    **ENTERED 2026-08-12, and this line never said so** (author decision at panel 036,
-   `docs/records/log/2026-08-12-0020-file-i-o-and-are-named-by-the-spec-and-delivered-as.md`; landed
+   https://github.com/heroes-lang/heroes/issues/239; landed
    at M-ffi-ladder step 2, `6a58d47c`). Both names are in spec § 11 today, with `exit(code)` beside
    them, and the route is the half the sitting decided against this item's own text: **not** two
    functions via the FFI, because file I/O through the FFI as specified is impossible rather than
@@ -3789,7 +3789,7 @@ visible rather than patched with a second form.
    `selfhost/ir/place_store.hero:27-31` says why — *"the path is empty … a path step would put a
    container between the slot and the header, which is the exact corruption panel 037 measured"* —
    and `@w.parts` resolves the path **at the call**, leaving the place bare inside the callee. **This
-   repository had already found the route and forgotten it**: `docs/records/log/2026-08-26-0001-…`
+   repository had already found the route and forgotten it**: https://github.com/heroes-lang/heroes/issues/716
    reached the compiler's own arena by changing the call shape to `push_expr(@exprs: [Expr], node)`,
    and `heroes check` went **191 s to 88 s**. The reachability count nobody had taken:
    `grep -rn quadratic selfhost/` returns **6 hits, all comments** — `text_lines.hero:14`,

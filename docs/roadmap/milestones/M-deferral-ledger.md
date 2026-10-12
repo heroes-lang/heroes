@@ -37,7 +37,7 @@ package is written.
 
 **Nine of nine on the first item, one on the second, and every one of them dated
 2026-09-13 or earlier.** The item record is
-`docs/records/done/2026-09-13-0910-m-deferral-ledger-two-items-closed-by-their-own-milestone.md`
+https://github.com/heroes-lang/heroes/issues/1170
 and the milestone's own is [journal 053](../../records/journal/053-deferral-ledger.md).
 
 **The reasoning a later milestone has to honour**, and it is one sentence: **an

@@ -29,7 +29,7 @@ all three legs before today were signed. The divergence belongs to the
 PLATFORM's ABI, not to the architecture, and a fourth leg that had been chosen
 for its architecture alone could have been an arm64 Darwin and shown nothing.
 The record is
-`docs/records/log/2026-09-17-2317-the-fourth-leg-found-the-third-char.md`.
+https://github.com/heroes-lang/heroes/issues/1258.
 
 **What it cost is defects 058 and 059**, and the corpus was not where it showed.
 The full net on the new machine reads **1825 passed, 3 failed**, with `corpus`
@@ -41,7 +41,7 @@ suites:
 M-complete-structs whose own comment carries the premise *"`char` is signed
 here"* — measured on one machine, true on three legs, false on the fourth.
 
-**It is not the cross-compilation `issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md` refused.** That refusal's
+**It is not the cross-compilation https://github.com/heroes-lang/heroes/issues/820 refused.** That refusal's
 own ground — *"the three platforms are measured on real machines by rule"* —
 argues for a fourth real machine and against a `--target` flag. And it is cheap:
 the existing image runs x86-64 **under Rosetta** on an arm64 Mac, so the new one
