@@ -4,7 +4,7 @@ The status and the chain. Why the table looks the way it does is
 `docs/roadmap/shape.md`; who scheduled each row and what ratified it is
 `docs/roadmap/scheduling.md`.
 
-**Open: 0 defects · 0 decisions.** The defects are the open issues whose card
+**Open: 1 defects · 0 decisions.** The defects are the open issues whose card
 says `kind: defect` and the decisions the open ones that say `kind: decision`,
 files of `issues/` since 2026-10-04 (their rules `issues/README.md`); this line
 must equal both.
@@ -27,7 +27,7 @@ against a banner reading 3.
 | The spec | **7650** on the vendored ranks and **10,044** on the reader's own, against a ceiling of **10240** (`heroes measure spec/heroes-spec.md`, 2026-10-11). Panel 210's landing in batch 21 spent the 20 above M-inferred-cell's 10,024: an `@` parameter nothing writes or ends refused, and `@_` refused |
 | The contract | **8167** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-29 |
 | Records | sittings **209** · journals **63**, numbered files only · milestone pages **54** in `docs/roadmap/milestones/` · measurements **39** · issues **2,010** in `issues/`, 61 open, since 2026-10-04 · questions **466** in `docs/learn/`, 441 open, not issues since 2026-10-05 · `docs/records/book/beats/` **130** |
-| Waiting on the author | nothing open: 0 defects and 0 decisions after batch 22's close; the transcription of `issues/` into GitHub issues waits by the author's instruction of 2026-10-06 |
+| Waiting on the author | defect 674, filed 2026-10-12: CodeQL's default setup never finished its first run and code scanning stopped, and its repair waits on switching that setup off in the repository's settings, the author's act; 0 decisions; the transcription of `issues/` into GitHub issues waits by the author's instruction of 2026-10-06 |
 
 **Re-measured 2026-10-11 at batch 22's close, for release v0.3.0, the full net on a
 compiler built from the regenerated seed, which is CI's own configuration:
