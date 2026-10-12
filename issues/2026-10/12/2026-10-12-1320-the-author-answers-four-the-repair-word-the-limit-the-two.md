@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2023
 ---
 
 # The author answers four: the repair word, the limit, the two features, the push

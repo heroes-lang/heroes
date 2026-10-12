@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2027
 ---
 
 # The author answers seven: the issues on GitHub alone, their writes asked once, and how the move is made

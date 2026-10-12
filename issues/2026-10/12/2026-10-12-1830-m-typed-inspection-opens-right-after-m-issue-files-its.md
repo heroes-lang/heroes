@@ -4,7 +4,7 @@ area: process
 milestone: M-typed-inspection
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2029
 ---
 
 # M-typed-inspection opens right after M-issue-files, its sitting asked for once, and the chain is re-ordered closed rows first

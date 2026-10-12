@@ -4,7 +4,7 @@ area: editors
 milestone: M-vscode-extension
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2028
 ---
 
 - [x] **M-vscode-extension** | F5 on a `.hero` file builds it at `-O0` and debugs it with `lldb-dap`, and the compiler's diagnostics land in the Problems view | `editors/vscode/extension.js` · `editors/vscode/package.json` · `editors/README.md` § Debugging · `tests/harness/suite_spec.hero` § The plugin's wiring

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2026
 ---
 
 - [x] **677 — `heroes measure` says no check keeps the registry honest, and two checks do** | `heroes measure spec/reserved-words.md` printed *No ceiling judges `spec/reserved-words.md` and no check keeps it honest (panel 123 R5)*, and `--refresh` on it refused with the same clause, where `suite_spec`'s `REGISTRY_TOKENS` pins the file's count and, since defect 676, its `registered` check holds every row to the compiler's own message | `selfhost/cli/measure.hero` (the branch for a file no ceiling judges) · `selfhost/measure/pinned.hero` (`run_refresh`) · **class: blocking**
