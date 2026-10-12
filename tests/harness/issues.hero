@@ -1,6 +1,7 @@
 # THE ISSUES OF `heroes-lang/heroes`, WRITTEN AND READ, a second root of the
 # harness:
 #
+#     heroes run tests/harness/issues.hero -- draft <draft.md>
 #     heroes run tests/harness/issues.hero -- file <draft.md>
 #     heroes run tests/harness/issues.hero -- close <number> <closing.md>
 #     heroes run tests/harness/issues.hero -- comment <number> <text.md>
@@ -10,13 +11,16 @@
 # from the repository's root, always. **Since the author's seven answers of
 # 2026-10-12 the issues live on GitHub alone** (the decision
 # https://github.com/heroes-lang/heroes/issues/2027,
-# filed after the transcription), and these five words are how a session
+# filed after the transcription), and these six words are how a session
 # writes and reads them; opening, commenting on, closing and correcting an
 # issue through them is asked once, by that answer (CLAUDE.md § Hard stops),
 # so they take no `--yes`, and no hook sees a write a program `gh` is spawned
 # from makes (the last bullet of layer 1 in `.claude/rules/verification.md` §
 # A suite is the last judge): the guard is what each refuses before any write.
 #
+# - `draft` checks a draft as `file` does before its first request and prints
+#   the issue `file` would open, asking GitHub nothing, so a lane reads its
+#   issue before it is public.
 # - `file` opens the issue of a draft a lane wrote outside the tree in the
 #   card's shape (`issue_draft.hero`, `issue_write.filed`): refused, with every
 #   reason, where the card reader or the rendering rule refuses it, where
@@ -88,7 +92,7 @@
 # use, `issue_load.hero`, `issue_plan.hero`, `issue_push.hero`,
 # `issue_import.hero`, `issue_state.hero` and `issue_prepare.hero`, with
 # `repaired`, `read_all` and `pins_of` of `issue_repair.hero` (whose `owed`
-# `edit` keeps). The five words above use none of them.
+# `edit` keeps). The six words above use none of them.
 #
 # Panel 212's R1, ratified 2026-10-11, made this a program of the harness and no
 # verb of `heroes`, the author reading a Heroes program run with `heroes run` as
@@ -158,6 +162,8 @@ function main()
         code @ pushed(scratch: scratch, asked: asked)
     else if asked.word == "repair"
         code @ repairing(scratch: scratch, asked: asked)
+    else if asked.word == "draft"
+        code @ previewed(scratch: scratch, asked: asked)
     else if asked.word == "file" || asked.word == "edit"
         code @ drafting(scratch: scratch, asked: asked)
     else if asked.word == "close" || asked.word == "comment"
@@ -378,15 +384,18 @@ function repairing(scratch: str, asked: issue_args.Asked) -> i64
 function live(scratch: str) -> issue_pace.Session
     return issue_pace.session(transport: issue_wire.gh(), world: issue_wire.world_at(scratch), live: true)
 
-# `file` and `edit`: the draft read, checked and rendered (`issue_draft`), and
-# its issue opened or made to match it (`issue_write`). An old defect `edit`
-# corrects keeps the number its title holds.
-function drafting(scratch: str, asked: issue_args.Asked) -> i64
+# What a draft is held to in the tree: every path git tracks, which a sitting's
+# file is asked of, and each milestone of § The chain to whether its row is
+# open.
+record Tree
+    known: {str: bool}
+    chain: {str: bool}
+
+function tree_of(scratch: str) -> Tree?
     walked = shell.project_files(scratch)
 
     if walked.is_err()
-        told("git could not say which files the tree holds: " + issue_github_failure(walked))
-        return 2
+        return fail(code: "git", msg: "git could not say which files the tree holds: " + issue_github_failure(walked))
     known: {str: bool} @= {}
 
     for path in walked.must()
@@ -399,7 +408,52 @@ function drafting(scratch: str, asked: issue_args.Asked) -> i64
         chain @ cards.chain_states(roadmap.must())
 
     if chain.is_err()
-        told("the chain a draft's milestone is held to cannot be read: " + issue_github_failure(chain))
+        return fail(
+            code: "chain",
+            msg: "the chain a draft's milestone is held to cannot be read: " + issue_github_failure(chain)
+        )
+    return ok(Tree(known: known, chain: chain.must()))
+
+# `draft`: the draft read and checked as `file` checks it before its first
+# request, and the issue it would open printed (`issue_draft.preview`), so a
+# lane reads its issue before it is public; GitHub is asked nothing and
+# nothing is written. Exit 1 where the draft is refused, each reason told.
+function previewed(scratch: str, asked: issue_args.Asked) -> i64
+    tree = tree_of(scratch)
+
+    if tree.is_err()
+        told(issue_github_failure(tree))
+        return 2
+    path = asked.paths[0]
+    draft = issue_draft.drafted(
+        scratch: scratch,
+        path: path,
+        known: tree.must().known,
+        chain: tree.must().chain,
+        numbered: ""
+    )
+
+    if draft.is_err()
+        told(issue_github_failure(draft))
+        return 2
+
+    for one in draft.must().refused
+        told(path + ": " + one)
+
+    print(issue_draft.preview(draft.must()))
+
+    if draft.must().refused.len() > 0
+        return 1
+    return 0
+
+# `file` and `edit`: the draft read, checked and rendered (`issue_draft`), and
+# its issue opened or made to match it (`issue_write`). An old defect `edit`
+# corrects keeps the number its title holds.
+function drafting(scratch: str, asked: issue_args.Asked) -> i64
+    tree = tree_of(scratch)
+
+    if tree.is_err()
+        told(issue_github_failure(tree))
         return 2
     s: issue_pace.Session @= live(scratch)
     numbered: str @= ""
@@ -418,7 +472,13 @@ function drafting(scratch: str, asked: issue_args.Asked) -> i64
 
         numbered @ old.join(" ")
     path = asked.paths[0]
-    draft = issue_draft.drafted(scratch: scratch, path: path, known: known, chain: chain.must(), numbered: numbered)
+    draft = issue_draft.drafted(
+        scratch: scratch,
+        path: path,
+        known: tree.must().known,
+        chain: tree.must().chain,
+        numbered: numbered
+    )
 
     if draft.is_err()
         told(issue_github_failure(draft))

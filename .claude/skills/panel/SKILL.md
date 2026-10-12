@@ -333,7 +333,8 @@ is a full panel.
      ratification pending`, records what a veto would compel, and opens an
      **open** `decision` issue naming the sitting as `panel NNN`: a draft in the
      sitting's scratch folder under `.claude/worktrees/`, its `## Prior art`
-     in it where step 4 found one, opened with `heroes run tests/harness/issues.hero -- file
+     in it where step 4 found one, read first with `heroes run
+     tests/harness/issues.hero -- draft <draft.md>` and opened with `-- file
      <draft.md>` (`.claude/rules/records.md` § The issues), whose URL the
      synthesis then names. Work proceeds on the provisional
      default; the author's verdict is appended to this file when given (in
