@@ -1,0 +1,16 @@
+record Player
+    name: str
+    score: i64
+
+function best(players: [Player]) -> str
+    top @= 0
+    winner @= ""
+    for p in players
+        if p.score > top
+            top @ p.score
+        winner @ p.name
+    return winner
+
+function main()
+    team = [Player(name: "ada", score: 7), Player(name: "grace", score: 9), Player(name: "alan", score: 4)]
+    print(best(team))

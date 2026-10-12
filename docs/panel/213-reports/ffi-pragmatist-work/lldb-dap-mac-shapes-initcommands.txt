@@ -1,0 +1,232 @@
+frame: h_shapes_main 30
+[output] Traceback (most recent call last):
+[output] IndexError: list index out of range
+[output] Traceback (most recent call last):
+[output] TypeError: invalid null reference in method 'SBValue_CreateValueFromAddress', argument 4 of type 'lldb::SBType'
+[output] Traceback (most recent call last):
+[output] TypeError: invalid null reference in method 'SBValue_CreateValueFromAddress', argument 4 of type 'lldb::SBType'
+[output] Traceback (most recent call last):
+[output] IndexError: list index out of range
+[output] Traceback (most recent call last):
+[output] IndexError: list index out of range
+[output] Traceback (most recent call last):
+[output] IndexError: list index out of range
+[output] Traceback (most recent call last):
+[output] AttributeError: 'ArrayProvider' object has no attribute 'base'
+[output] Traceback (most recent call last):
+[output] AttributeError: 'ArrayProvider' object has no attribute 'base'
+[output] Traceback (most recent call last):
+[output] AttributeError: 'ArrayProvider' object has no attribute 'base'
+[output] Traceback (most recent call last):
+[output] AttributeError: 'ArrayProvider' object has no attribute 'base'
+[output] Traceback (most recent call last):
+[output] IndexError: list index out of range
+[output] Traceback (most recent call last):
+[output] IndexError: list index out of range
+h0_count = 7   [int64_t]
+h1_name = "ada"   [HeroStr]
+    ptr = 0x000000010001a7d0 "ada"
+    len = 3
+h2_p = Point(x: 3, y: 4)   [h_shapes_Point]
+    x = 3
+    y = 4
+h3_t = .num   [h_shapes_Token]
+    v = 42
+h4_names = 0x00000001006058a0 ["ada", "grace"]   [HeroArrayHeader *]
+    [0] = "ada"
+    [1] = "grace"
+h5_points = 0x00000001006058e0 [Point(x: 1, y: 2), Point(x: 5, y: 6)]   [HeroArrayHeader *]
+    [0] = Point(x: 1, y: 2)
+    [1] = Point(x: 5, y: 6)
+h6_ages = 0x0000000100605920 {"ada": 36, "grace": 85}   [HeroMapHeader *]
+    ["ada"] = 36
+    ["grace"] = 85
+h7_good = ok(4)   [h_0opt_e201354]
+    ok = 4
+h8_bad = fail(code: "odd", msg: "not even")   [h_0opt_e201354]
+    err = HeroFailure
+h9_room = Room(name: "lab", corner: Point(x: 9, y: 10))   [h_shapes_Room]
+    name = "lab"
+    corner = Point(x: 9, y: 10)
+h10_f0 = ok(0)   [h_0opt_e201354]
+    ok = 0
+h11_r0 = 4296245248   [int64_t]
+h12_f1 = ok(0)   [h_0opt_e201354]
+    ok = 0
+h13_r1 = 30064771078   [int64_t]
+h14_s0 = .0x3f8000   [h_shapes_Token]
+h15_n = h_shapes_Token_c_num @ 0x16fdfe028   [h_shapes_Token_c_num]
+    f_v = 6809745884
+h16_own16 = 0x00000001006058a0 ["ada", "grace"]   [HeroArrayHeader *]
+    [0] = "ada"
+    [1] = "grace"
+h17_own17 = 0x00000001006058e0 [Point(x: 1, y: 2), Point(x: 5, y: 6)]   [HeroArrayHeader *]
+    [0] = Point(x: 1, y: 2)
+    [1] = Point(x: 5, y: 6)
+h18_own18 = 0x0000000100605920 {"ada": 36, "grace": 85}   [HeroMapHeader *]
+    ["ada"] = 36
+    ["grace"] = 85
+h19_own19 = ok(4)   [h_0opt_e201354]
+    ok = 4
+h20_own20 = fail(code: "odd", msg: "not even")   [h_0opt_e201354]
+    err = HeroFailure
+h21_own21 = Room(name: "lab", corner: Point(x: 9, y: 10))   [h_shapes_Room]
+    name = "lab"
+    corner = Point(x: 9, y: 10)
+t1 = 7   [int64_t]
+t2 = "ada"   [HeroStr]
+    ptr = 0x000000010001a7d0 "ada"
+    len = 3
+t3 = 3   [int64_t]
+t4 = 4   [int64_t]
+t5 = Point(x: 3, y: 4)   [h_shapes_Point]
+    x = 3
+    y = 4
+t6 = 42   [int64_t]
+t7 = .num   [h_shapes_Token]
+    v = 42
+t8 = "ada"   [HeroStr]
+    ptr = 0x000000010001a7d0 "ada"
+    len = 3
+t9 = "grace"   [HeroStr]
+    ptr = 0x000000010001a7e8 "grace"
+    len = 5
+t10 = 0x00000001006058a0 ["ada", "grace"]   [HeroArrayHeader *]
+    [0] = "ada"
+    [1] = "grace"
+t11 = 1   [int64_t]
+t12 = 2   [int64_t]
+t13 = Point(x: 1, y: 2)   [h_shapes_Point]
+    x = 1
+    y = 2
+t14 = 5   [int64_t]
+t15 = 6   [int64_t]
+t16 = Point(x: 5, y: 6)   [h_shapes_Point]
+    x = 5
+    y = 6
+t17 = 0x00000001006058e0 [Point(x: 1, y: 2), Point(x: 5, y: 6)]   [HeroArrayHeader *]
+    [0] = Point(x: 1, y: 2)
+    [1] = Point(x: 5, y: 6)
+t18 = "ada"   [HeroStr]
+    ptr = 0x000000010001a7d0 "ada"
+    len = 3
+t19 = 36   [int64_t]
+t20 = "grace"   [HeroStr]
+    ptr = 0x000000010001a7e8 "grace"
+    len = 5
+t21 = 85   [int64_t]
+t22 = 0x0000000100605920 {"ada": 36, "grace": 85}   [HeroMapHeader *]
+    ["ada"] = 36
+    ["grace"] = 85
+t23 = 8   [int64_t]
+t24 = ok(4)   [h_0opt_e201354]
+    ok = 4
+t25 = 7   [int64_t]
+t26 = fail(code: "odd", msg: "not even")   [h_0opt_e201354]
+    err = HeroFailure
+t27 = "lab"   [HeroStr]
+    ptr = 0x000000010001a800 "lab"
+    len = 3
+t28 = 9   [int64_t]
+t29 = 10   [int64_t]
+t30 = Point(x: 9, y: 10)   [h_shapes_Point]
+    x = 9
+    y = 10
+t31 = Room(name: "lab", corner: Point(x: 9, y: 10))   [h_shapes_Room]
+    name = "lab"
+    corner = Point(x: 9, y: 10)
+t32 = 8517441648   [int64_t]
+t33 = <unreadable>   [HeroStr]
+    ptr = 0x0000000000000001 ""
+    len = 6171911112
+t34 = Point(x: 4296245248, y: 65535)   [h_shapes_Point]
+    x = 4296245248
+    y = 65535
+t35 = 6807470440   [int64_t]
+t36 = 0x000000016fdfddb0 []   [HeroArrayHeader *]
+t37 = 6171910144   [int64_t]
+t38 = 6171910272   [int64_t]
+t39 = 0x000000016fdfeaf8 []   [HeroArrayHeader *]
+t40 = 16   [int64_t]
+t41 = 6809110828   [int64_t]
+t42 = 0x000000016fdfddf0 {}   [HeroMapHeader *]
+t43 = 8517435488   [int64_t]
+t44 = 3   [int64_t]
+t45 = fail(code: <unassigned>, msg: <unreadable>)   [h_0opt_e201354]
+    err = HeroFailure
+t46 = fail(code: "", msg: <unassigned>)   [h_0opt_e201354]
+    err = HeroFailure
+t47 = 3   [int64_t]
+t48 = 4299256008   [int64_t]
+t49 = false   [bool]
+t50 = ok(4299255992)   [h_0opt_e201354]
+    ok = 4299255992
+t51 = 3   [int64_t]
+t52 = 16   [int64_t]
+t53 = 3   [int64_t]
+t54 = ok(252)   [h_0opt_e201354]
+    ok = 252
+t55 = fail(code: "   [h_0opt_e201354]
+    err = HeroFailure
+t56 = 8514456976   [int64_t]
+t57 = 6171909736   [int64_t]
+t58 = false   [bool]
+t59 = fail(code: <unassigned>, msg: <unreadable>)   [h_0opt_e201354]
+    err = HeroFailure
+t60 = 281474976776192   [int64_t]
+t61 = 7599824372957184   [int64_t]
+t62 = 0   [int64_t]
+t63 = 8547179736   [int64_t]
+t64 = Room(name: "", corner: Point(x: 0, y: 0))   [h_shapes_Room]
+    name = ""
+    corner = Point(x: 0, y: 0)
+t65 = Point(x: 6807219132, y: 6171909176)   [h_shapes_Point]
+    x = 6807219132
+    y = 6171909176
+t66 = 6807219076   [int64_t]
+t67 = .num   [h_shapes_Token]
+    v = 6171909024
+t68 = .0xfb805220   [h_shapes_Token]
+t69 = 6171909024   [int64_t]
+t70 = .0x42000000   [h_shapes_Token]
+t71 = h_shapes_Token_c_num @ 0x16fdfdb68   [h_shapes_Token_c_num]
+    f_v = 8484113824
+t72 = h_shapes_Token_c_num @ 0x16fdfdb60   [h_shapes_Token_c_num]
+    f_v = 0
+t73 = 0   [int64_t]
+t74 = 0   [int64_t]
+t75 = <unassigned>   [HeroStr]
+    ptr = 0x0000000000000000
+    len = 0
+t76 = 0x0000000000000000 <unassigned>   [HeroArrayHeader *]
+[output] Traceback (most recent call last):
+t77 = 0x0000000000000000 <unassigned>   [HeroArrayHeader *]
+[output] AttributeError: 'ArrayProvider' object has no attribute 'size'
+[output] Traceback (most recent call last):
+t78 = 0x0000000000000000 <unassigned>   [HeroArrayHeader *]
+[output] AttributeError: 'ArrayProvider' object has no attribute 'size'
+[output] Traceback (most recent call last):
+t79 = 0x0000000000000000 <unassigned>   [HeroArrayHeader *]
+[output] AttributeError: 'ArrayProvider' object has no attribute 'size'
+[output] Traceback (most recent call last):
+t80 = 0x0000000000000000 <unassigned>   [HeroMapHeader *]
+[output] AttributeError: 'ArrayProvider' object has no attribute 'size'
+t81 = 0x0000000000000000 <unassigned>   [HeroMapHeader *]
+t82 = ok(0)   [h_0opt_e201354]
+    ok = 0
+t83 = ok(0)   [h_0opt_e201354]
+    ok = 0
+t84 = ok(0)   [h_0opt_e201354]
+    ok = 0
+t85 = ok(0)   [h_0opt_e201354]
+    ok = 0
+t86 = Room(name: <unassigned>, corner: Point(x: 0, y: 0))   [h_shapes_Room]
+    name = <unassigned>
+    corner = Point(x: 0, y: 0)
+t87 = Room(name: <unassigned>, corner: Point(x: 0, y: 0))   [h_shapes_Room]
+    name = <unassigned>
+    corner = Point(x: 0, y: 0)
+t88 = fail(code: "   [h_0opt_e201354]
+    err = HeroFailure
+t89 = ok(0)   [h_0opt_e201354]
+    ok = 0
