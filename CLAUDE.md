@@ -38,7 +38,8 @@ ones (CL-041).
   nothing, because a bare `git commit` takes the whole index, another session's
   staged work included (CL-070). Read `git status` first; a dirty path nobody
   here touched stays out and is reported. Other sessions share this checkout
-  (CL-041).
+  (CL-041), and an open one is told what this one will touch, file or push
+  before it does (author, 2026-10-12; `.claude/rules/records.md` § Two habits).
 - **Pushing `main`, publishing the site, anything outward-facing: asked for,
   every time.** A push touching `site/`, `examples/` or `spec/` publishes the
   site: `.github/workflows/deploy-site.yml`. Say how many site commits would
@@ -71,7 +72,7 @@ question until somebody runs it (CL-061). Four shapes:
   *so*, *therefore*, *which means*. A negative claim rests on the searcher's
   vocabulary rather than the world, so *"X cannot be done"* goes out as a
   question naming what was searched for. A silence in the spec is often a
-  ruling: grep `issues/` and `docs/panel/` for what is not there.
+  ruling: search the issues and grep `docs/panel/` for what is not there.
 - **The list is a measurement too** (CL-057). Enumerate from the world, and say
   where the enumeration came from wherever it is handed on. A recommendation is
   a claim about the option **set**: ask what would have to be true for a route
@@ -117,7 +118,7 @@ at their cost too.
 ## 1. Re-read protocol: what never to trust from memory
 - Read `spec/heroes-spec.md` in full at the start of every session; its budget
   is design.md §1.6's and `heroes measure` settles it. Then
-  `git log --oneline -10`, the newest decisions in `issues/`, `docs/ROADMAP.md` status.
+  `git log --oneline -10`, the newest decision issues, `docs/ROADMAP.md` status.
 - Re-read a shared record immediately before writing a scheduling fact into it,
   never from the session-start copy (CL-047).
 - Any asserted design rule cites its design.md section; an uncitable rule is a
@@ -133,14 +134,15 @@ Neither, and it waits, regardless of elegance.
 ## 3. Process: implement first, understand on the author's clock
 The assistant implements autonomously and **never stops mid-step to ask**, with
 three exceptions and no others: a **push or any outward-facing act**, a **panel
-gate** once per milestone, and the **open decisions in `issues/` while a long
+gate** once per milestone, and the **open decision issues while a long
 build runs**, each with a recommendation (CL-046). A whole milestone may be
 asked for in one `/step`: chain the steps, decide the delegated questions with
 the recommended resolution as the default, say which way it went once (CL-002).
 
-**The issues**: a `decision`, a `feature`, a `task` or a `defect`, one file of
-`issues/` until the move to GitHub alone the author decided on 2026-10-12; their
-rules are `.claude/rules/records.md` § The issues (CL-032, CL-066, CL-080).
+**The issues live on GitHub alone** (author, 2026-10-12): a `decision`, a
+`feature`, a `task` or a `defect`, drafted outside the tree and opened, closed
+and read through `tests/harness/issues.hero`; their rules are
+`.claude/rules/records.md` § The issues (CL-032, CL-066, CL-080).
 
 **Telling the author where you are.** Never let three minutes pass, in any
 session and not only a loop: what is running, what is being waited on, what was
@@ -185,8 +187,8 @@ author READS the sittings** — their instruction, 2026-09-19, in those words:
 the author's second word, `.claude/rules/records.md` § And the record says
 whose idea it was). **Ask once
 per milestone, then convene without asking again**, choosing only the seats whose
-input differs (CL-023). Briefs keep every command short and grep design.md,
-`docs/panel/` and `issues/` first (CL-027). No design change lands without
+input differs (CL-023). Briefs keep every command short, grep design.md and
+`docs/panel/` and search the issues first (CL-027). No design change lands without
 its `docs/panel/` file, a decision issue and its own commit.
 
 ## 5. The Heroes subset of Rust, the Cyclone rule
@@ -277,7 +279,8 @@ that would carry that tag is asked for** (CL-042). The close checklist lives in
 
 Naming, release tags, the record vocabulary, **whose idea it was** and **who
 got there first** are in `.claude/rules/records.md` (CL-003, CL-058, CL-067,
-CL-082); a defect's number is its name for ever, GitHub's an address (CL-083).
+CL-082); a defect's number is its name for ever, 001 to 677 their own and each
+later one its issue's (CL-083).
 Records are append-only: a falsified sentence is corrected underneath, with its
 date, never deleted.
 
@@ -305,7 +308,7 @@ CL-060.
   § A suite is the last judge).
 - **Run the suite you did not expect to move, after the last edit rather than
   after the last interesting one.** *My change cannot have touched that* is an
-  inference. A ticked item is a question, not a task (CL-054).
+  inference. A closed issue is a question, not a task (CL-054).
 - **Format at the moment of writing**, `heroes fmt <file> --in-place`, not at
   the moment of verifying (CL-063).
 - **Never slow the compiler down.** Time before and after with
@@ -318,14 +321,14 @@ CL-060.
   **A lane lives under `.claude/worktrees/`, never beside the project**
   (author instruction 2026-09-28; `.claude/rules/records.md` § Working in lanes).
 - **A milestone is tagged only over a clean list** (author instruction
-  2026-09-08, amended 2026-10-02): zero open `blocking` or `systemic` defects
-  in `issues/` (`.claude/rules/verification.md` § Bounded discovery), and no
+  2026-09-08, amended 2026-10-02): zero open `blocking` or `systemic` defect
+  issues (`.claude/rules/verification.md` § Bounded discovery), and no
   open decision that is not a `panel NNN` ratification. The author asked
   for zero of both; a pending sitting is **waiting on the author rather than
-  broken**, and § 4's queue catches an unratified one only while that item
-  exists, so the exception is named rather than the rule weakened. The executor
-  is `records/tagged` and it reads the newest `m-*` tag's own commit, so an open
-  defect mid-milestone stays legal and a tag over one does not.
+  broken**, and § 4's queue catches an unratified one only while that issue
+  is open, so the exception is named rather than the rule weakened. The executor
+  is `records/tagged`, asking GitHub what stood open at the newest `m-*` tag, so
+  an open defect mid-milestone stays legal and a tag over one does not.
 - **A platform fact is run on a platform or it is an inference**; the
   platforms are the CI's legs after the push, a red one filing a defect
   (author instruction 2026-10-09, the optimistic chain):
@@ -361,11 +364,12 @@ these rules reach the sessions that need them and cost nothing in the others.
 | the three platforms and the Windows box | `.claude/rules/platforms.md` |
 | file length and what a narrowing rests on | `.claude/rules/module-shape.md` |
 | which suites judge a change, and what may run beside a gate | `.claude/rules/verification.md` |
-| the records, names, releases and lists | `.claude/rules/records.md` |
+| the records, names, releases and issues | `.claude/rules/records.md` |
 | the shape of the specification and its instruments | `.claude/rules/spec-shape.md` |
 | the site's copy and every outward-facing text | `site/CLAUDE.md` |
 
 The skills are the process: `/step` (its protocol and the milestone-close
 checklist), `/decide`, `/learn`, `/panel`, `/where`, `/stats` (the issues
-counted), and `/p` (how far this chat's own work is). The seats are `.claude/agents/`. **Section numbers `§ 1` to `§ 15` never change** (CL-069
+counted), `/batch` (the next batch, composed from the open defects), and `/p`
+(how far this chat's own work is). The seats are `.claude/agents/`. **Section numbers `§ 1` to `§ 15` never change** (CL-069
 carries the count of citations that would break in silence).

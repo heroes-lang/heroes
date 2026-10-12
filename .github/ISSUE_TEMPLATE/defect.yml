@@ -12,9 +12,9 @@ body:
         Everything below is asked for because a defect nobody can reproduce is a
         rumour. If you have only some of it, send it anyway.
 
-        The project files every defect, its own and yours, as one file of
-        `issues/` with these sections, and adds the day it was found, its class
-        and, when it closes, the repair and the commit that made it.
+        The project files every defect, its own and yours, as one issue of
+        this repository with these sections, and adds the day it was found, its
+        class and, when it closes, the repair and the commit that made it.
         `.claude/rules/records.md` § The issues is the shape.
   - type: textarea
     id: program

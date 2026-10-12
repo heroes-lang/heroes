@@ -26,9 +26,10 @@ binding written before the wall moves is a binding rewritten after it.
 construction, zero admitted as bytes and never as a claim, the header's own
 initialiser as the way C says which value is valid, C's `char` spelled once,
 and defects 091 to 094 filed. What the landing owes and what the sitting left
-open are the open `feature` and `task` issues naming M-buildable-structs.
+open are the open `feature` and `task` issues of its GitHub milestone.
 
 **This page moved 2026-10-06** from `docs/work/milestones/`, where panel 178's
 branch wrote it on 2026-09-25, when that branch was merged: the page keeps its
-reasoning, and its six items became issue files of `issues/2026-09/25/` on
-2026-10-06 (`.claude/rules/records.md` § A live list), each as the page held it.
+reasoning, and on 2026-10-06 its six items became files of `issues/2026-09/25/`
+(`.claude/rules/records.md` § A live list), each as the page held it, and on
+2026-10-12 GitHub issues.
