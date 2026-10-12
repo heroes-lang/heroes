@@ -383,6 +383,21 @@ where every other milestone's work is filed: a milestone opened before it would
 file its items into a shape that was being retired. No row moved; § The chain
 holds 83 rows with no gap.
 
+**2026-10-12, M-typed-inspection opened at row 65, ahead of M-panic-location, and
+the table re-ordered closed rows first, by the author's answers**
+(https://github.com/heroes-lang/heroes/issues/2029). Asked whether the editor
+extension's new debugging showed the variables and the stack, and told it did,
+under the emitted C's names, the author took this row next, once M-issue-files
+closed, over taking it at once or only its first two steps; its page had placed
+it after M-panic-location as the expensive half of one sentence, and the order
+is the author's now. And, meant as: *when you open the step, re-order the steps
+with every closed one first; it does not matter if their numbers change*. So
+rows 1–62 stand, M-inferred-cell (84, closed 2026-10-10) and M-issue-files (83,
+closed 2026-10-12) take 63 and 64 in the order they closed, this row 65, and the
+nineteen scheduled rows 66–84 in the order they stood; a record citing an old
+number reads it at its date. § The chain holds 84 rows with no gap, by a count
+over the table and by `site/src/lib/chain.ts`, which refuses a gap at build time.
+
 ---
 
 **What used to stand under the ROADMAP lives in `docs/roadmap/`** since

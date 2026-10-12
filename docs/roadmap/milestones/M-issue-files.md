@@ -1,6 +1,7 @@
 # M-issue-files: every item one GitHub issue, transcribed from one file each
 
-**Opened 2026-10-04 by author instruction**, at row 83 of the chain and ahead of
+**Opened 2026-10-04 by author instruction**, at row 83 of the chain (64 since the
+re-ordering of 2026-10-12) and ahead of
 every scheduled row (`docs/roadmap/scheduling.md`). The decision and how every
 value was derived are
 https://github.com/heroes-lang/heroes/issues/1654; the rules
