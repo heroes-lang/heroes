@@ -1,0 +1,639 @@
+# THE SECOND PASS: EVERY `defect NNN` AND `panel NNN` A BODY NAMES, LINKED.
+#
+# Panel 212's R9 item 6, ratified 2026-10-11, run before M-issue-files' tag by
+# the author's yes of 2026-10-12: every `defect NNN` and every `panel NNN` an
+# issue's body names becomes a link, to that defect's issue and to that
+# sitting's ratification issue, where the prior art stands once; a run of its
+# own after the last file was transcribed, since a closing text may name an
+# issue born after it. The transcription's words never ran it, and the folder
+# of issue files left the tree with none of the 1,594 bodies that name one
+# linked (measured on GitHub the same evening).
+#
+# What a body names is read in its prose alone (`issue_spans`: no code span
+# and no fenced block), outside every link, bare address and HTML tag it
+# already holds:
+#
+# - `defect 235`, in any case, becomes `[defect 235](<its issue>)`, and so does
+#   `panel 212`, to the decision whose title opens `Panel 212:`; **a sitting
+#   that no single such decision answers is linked to its own file**,
+#   `docs/panel/<NNN>-<slug>.md` at a commit already on `origin/main`, which
+#   every sitting has and no rename can break: measured the evening this ran,
+#   71 of 210 sittings had one ratification issue so titled, and 2,379 of the
+#   2,712 names the first reading left as text were sittings with none. R9
+#   named the ratification and was silent on a sitting without one; this is
+#   the coordinator's reading, where the alternative was to leave them text;
+# - a list after `defects` or `panels`, `058 and 059`, `018 to 021`,
+#   `590, 591, 592`, links each number it writes, `defects [058](…) and
+#   [059](…)`: the numbers between the ends of `018 to 021` are written by no
+#   word, so nothing of them is linked;
+# - a defect is linked only where exactly one issue answers it and that issue
+#   is not the body's own, so the two issues of defect 014, a number nobody
+#   holds and a day written after the word stay text; a ratification naming
+#   its own sitting links the sitting's file.
+#
+# A link's words are the words that were there, so a closed issue, a record,
+# gains a link and loses nothing (`.claude/rules/records.md` § The issues);
+# and a body already linked is protected by its own links, so a rerun finds
+# nothing left and writes nothing. `link --dry-run` reads and prints what it
+# would write; `link` writes each body that changes by one `PATCH`, paced as
+# every write of this program (`issue_pace`), and reads it back. Writing an
+# issue through this program is asked once (CLAUDE.md § Hard stops).
+
+use cards
+use credit
+use issue_github
+use issue_json
+use issue_pace
+use issue_scripts
+use issue_spans
+use issue_title
+use issue_wire
+use records_github
+use strings
+
+# GitHub's limit on an issue's body, in characters.
+constant BODY_LIMIT: i64
+    65536
+
+# Who answers each name: a defect's number to its one issue, a sitting's to
+# its one ratification, and each sitting to its file's name under
+# `docs/panel/`, linked at `pin`; a name two issues answer is in neither map
+# of issues.
+record Targets
+    defects: {i64: i64}
+    panels: {i64: i64}
+    sittings: {i64: str}
+    pin: str
+
+# A body with its names linked: the text, how many links it gained, and how
+# many names it left as text because nothing answers them.
+record Linked
+    text: str
+    made: i64
+    left: i64
+
+# The word at `at`, `defect` or `panel`, in any case and plural or not,
+# standing at a word's start and followed by one space and a digit: its kind,
+# "" for none, whether it is plural, and where its first number begins.
+record Named
+    kind: str
+    plural: bool
+    digits_at: i64
+
+# Each name to the issues that answer it, then those with exactly one.
+function targets(held: [issue_github.Held], sittings: {i64: str}, pin: str) -> Targets
+    defects: {i64: [i64]} @= {}
+    panels: {i64: [i64]} @= {}
+    none: [i64] = []
+
+    for h in held
+        if h.pull
+            continue
+
+        if labelled(h: h, name: "kind:defect")
+            for n in records_github.title_numbers(h.title)
+                if !records_github.holds(numbers: defects[n].default(none), number: h.number)
+                    defects[n] @ defects[n].default(none).push(h.number)
+
+            for n in records_github.body_numbers(h.body)
+                if !records_github.holds(numbers: defects[n].default(none), number: h.number)
+                    defects[n] @ defects[n].default(none).push(h.number)
+        else if labelled(h: h, name: "kind:decision")
+            sitting = sitting_of(h.title)
+
+            if sitting > 0
+                panels[sitting] @ panels[sitting].default(none).push(h.number)
+
+    return Targets(defects: single(defects), panels: single(panels), sittings: sittings, pin: pin)
+
+function labelled(h: issue_github.Held, name: str) -> bool
+    for one in h.labels
+        if one == name
+            return true
+
+    return false
+
+# The sitting a ratification's title opens with, `Panel 212: …`, or 0.
+function sitting_of(title: str) -> i64
+    if !strings.starts_with(text: title, prefix: "Panel ")
+        return 0
+    digits = credit.digit_run(text: title, at: 6)
+
+    if digits == 0 || digits > 4 || !credit.has_at(text: title, at: 6 + digits, piece: ":")
+        return 0
+
+    # Digits are ASCII, so the cut stands between characters.
+    return strings.to_number(title.slice(from: 6, to: 6 + digits)).must()
+
+# ORDER: none — each key is written once into a map, which no walk observes.
+function single(holders: {i64: [i64]}) -> {i64: i64}
+    out: {i64: i64} @= {}
+
+    for n in keys(holders)
+        if holders[n].must().len() == 1
+            out[n] @ holders[n].must()[0]
+
+    return out
+
+# `body` with every name it can link linked, `own` being its issue's number.
+function linked(body: str, own: i64, t: Targets) -> Linked
+    texts: [str] @= []
+    made: i64 @= 0
+    left: i64 @= 0
+
+    for piece in issue_spans.pieces(body)
+        if piece.code
+            texts @ texts.push(piece.text)
+            continue
+        one = linked_prose(text: piece.text, own: own, t: t)
+        texts @ texts.push(one.text)
+        made @ made + one.made
+        left @ left + one.left
+
+    return Linked(text: texts.join("\n"), made: made, left: left)
+
+# One block of prose, read byte by byte: a code span, a link, an address or a
+# tag is passed over whole, and a name is linked where it can be.
+function linked_prose(text: str, own: i64, t: Targets) -> Linked
+    found = issue_spans.spans(text)
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+    made: i64 @= 0
+    left: i64 @= 0
+
+    while at < text.len()
+        if issue_spans.inside(found: found, at: at)
+            at @ at + 1
+            continue
+        past = guarded_end(text: text, at: at)
+
+        if past > at
+            at @ past
+            continue
+        named = named_at(text: text, at: at)
+
+        if named.kind == ""
+            at @ at + 1
+            continue
+        i: i64 @= named.digits_at
+        reading: bool @= true
+        first: bool @= true
+
+        while reading
+            digits = credit.digit_run(text: text, at: i)
+
+            if digits == 0 || digits > 6 || credit.dated(text: text, at: i + digits) || issue_spans.inside(found: found, at: i)
+                reading @ false
+                continue
+
+            # Digits are ASCII, so the cut stands between characters.
+            n = strings.to_number(text.slice(from: i, to: i + digits)).must()
+            url = url_of(t: t, kind: named.kind, number: n, own: own)
+
+            if url != ""
+                start = if named.plural
+                    i
+                else
+                    at
+                out @ out.push(text.slice(from: from, to: start))
+                out @ out.push(
+                    "[" + text.slice(from: start, to: i + digits) + "](" + url + ")"
+                )
+                from @ i + digits
+                made @ made + 1
+            else
+                left @ left + 1
+            i @ i + digits
+            first @ false
+
+            if !named.plural
+                reading @ false
+            else
+                gap = separator_at(text: text, at: i)
+
+                if gap == 0 || credit.digit_run(text: text, at: i + gap) == 0
+                    reading @ false
+                else
+                    i @ i + gap
+
+        if first
+            at @ at + 1
+        else
+            at @ i
+
+    out @ out.push(text.slice(from: from, to: text.len()))
+    return Linked(text: out.join(""), made: made, left: left)
+
+# Where a name links, "" where nothing answers it: a defect's one issue other
+# than the body's own; a sitting's one ratification other than the body's own,
+# else the sitting's file at the pin.
+function url_of(t: Targets, kind: str, number: i64, own: i64) -> str
+    if kind == "defect"
+        target = t.defects[number].default(0)
+
+        if target > 0 && target != own
+            return issue_github.web_address(target)
+        return ""
+    target = t.panels[number].default(0)
+
+    if target > 0 && target != own
+        return issue_github.web_address(target)
+    file = t.sittings[number].default("")
+
+    if file != "" && t.pin != ""
+        return records_github.BLOB + t.pin + "/docs/panel/" + file
+    return ""
+
+# Each sitting's number to its file's name, read from the tree's paths: the
+# files of `docs/panel/` itself whose name opens with the number and `-`, its
+# reports' folders apart; a number two files open with answers none.
+function sittings_of(paths: [str]) -> {i64: str}
+    found: {i64: [str]} @= {}
+    none: [str] = []
+
+    for path in paths
+        if !strings.starts_with(text: path, prefix: "docs/panel/") || !strings.ends_with(text: path, suffix: ".md")
+            continue
+        name = strings.without_prefix(text: path, prefix: "docs/panel/")
+
+        if strings.contains(text: name, needle: "/")
+            continue
+        digits = credit.digit_run(text: name, at: 0)
+
+        if digits == 0 || !credit.has_at(text: name, at: digits, piece: "-")
+            continue
+
+        # Digits are ASCII, so the cut stands between characters.
+        n = strings.to_number(name.slice(from: 0, to: digits)).must()
+        found[n] @ found[n].default(none).push(name)
+
+    out: {i64: str} @= {}
+
+    # ORDER: none — each key is written once into a map, which no walk
+    # observes.
+    for n in keys(found)
+        if found[n].must().len() == 1
+            out[n] @ found[n].must()[0]
+
+    return out
+
+# What joins two numbers of a list, its length, or 0.
+function separator_at(text: str, at: i64) -> i64
+    for piece in [", and ", ", or ", ", ", " and ", " to ", " or "]
+        if credit.has_at(text: text, at: at, piece: piece)
+            return piece.len()
+
+    return 0
+
+function named_at(text: str, at: i64) -> Named
+    none = Named(kind: "", plural: false, digits_at: 0)
+
+    if at > 0 && joins(text[at - 1])
+        return none
+
+    for word in ["defect", "panel"]
+        if spells(text: text, at: at, word: word)
+            after: i64 @= at + word.len()
+            plural: bool @= false
+
+            if after < text.len() && (text[after] == 's' || text[after] == 'S')
+                plural @ true
+                after @ after + 1
+
+            if after + 1 < text.len() && text[after] == ' ' && cards.is_digit_byte(text[after + 1])
+                return Named(kind: word, plural: plural, digits_at: after + 1)
+            return none
+
+    return none
+
+# Whether a byte before a word makes it part of a longer one: a letter, a
+# digit, or a mark of a name, a path or an address.
+function joins(byte: u8) -> bool
+    lower = byte >= 'a' && byte <= 'z'
+    upper = byte >= 'A' && byte <= 'Z'
+    return lower || upper || cards.is_digit_byte(byte) || byte == '_' || byte == '-' || byte == '/' || byte == '.' || byte == '#' || byte == '@'
+
+# Whether `word`, lowercase, stands at `at` in any case.
+function spells(text: str, at: i64, word: str) -> bool
+    if at + word.len() > text.len()
+        return false
+    j: i64 @= 0
+
+    while j < word.len()
+        byte = text[at + j]
+        lower: u8 @= byte
+
+        if byte >= 'A' && byte <= 'Z'
+            lower @ byte + 32
+
+        if lower != word[j]
+            return false
+        j @ j + 1
+
+    return true
+
+# Where a link, a bare address or an HTML tag beginning at `at` ends, or `at`
+# where none begins there: what a body already links is never linked again.
+function guarded_end(text: str, at: i64) -> i64
+    byte = text[at]
+
+    if byte == '['
+        close = next_byte(text: text, from: at + 1, byte: ']')
+
+        if close > 0 && close + 1 < text.len() && text[close + 1] == '('
+            end = next_byte(text: text, from: close + 2, byte: ')')
+
+            if end > 0
+                return end + 1
+        return at
+
+    if byte == '<' && at + 1 < text.len() && (text[at + 1] == '/' || text[at + 1] == '!' || text[at + 1] >= 'a' && text[at + 1] <= 'z')
+        # An element whose words are code or a link already is passed over
+        # whole, its closing tag with it.
+        for element in [["<code", "</code>"], ["<a ", "</a>"], ["<a>", "</a>"]]
+            if credit.has_at(text: text, at: at, piece: element[0])
+                end = next_piece(text: text, from: at, piece: element[1])
+
+                if end > 0
+                    return end + element[1].len()
+
+        end = next_byte(text: text, from: at + 1, byte: '>')
+
+        if end > 0
+            return end + 1
+        return at
+
+    if credit.has_at(text: text, at: at, piece: "http://") || credit.has_at(text: text, at: at, piece: "https://")
+        end: i64 @= at
+
+        while end < text.len() && text[end] != ' ' && text[end] != '\n'
+            end @ end + 1
+
+        return end
+    return at
+
+# The first `byte` at or after `from`, or -1.
+function next_byte(text: str, from: i64, byte: u8) -> i64
+    at: i64 @= from
+
+    while at < text.len()
+        if text[at] == byte
+            return at
+        at @ at + 1
+
+    return -1
+
+# The first `piece` at or after `from`, or -1.
+function next_piece(text: str, from: i64, piece: str) -> i64
+    at: i64 @= from
+
+    while at < text.len()
+        if credit.has_at(text: text, at: at, piece: piece)
+            return at
+        at @ at + 1
+
+    return -1
+
+# `link`: every issue read in one listing, each body that names what it can
+# link written with its links and read back; with `write` false, only told.
+# The exit code (R11): 0, 1 where a body is too long or reads back otherwise,
+# 2 where GitHub could not be read or refused a write.
+function linking(@s: issue_pace.Session, write: bool, sittings: {i64: str}, pin: str) -> i64
+    listed = issue_github.issues_since(@s, bound: "")
+
+    if listed.is_err()
+        issue_pace.warn(@s, text: "GitHub could not be read: " + issue_github.failure(listed))
+        return 2
+    held = listed.must()
+    t = targets(held: held, sittings: sittings, pin: pin)
+
+    if keys(t.defects).len() == 0
+        issue_pace.warn(
+            @s,
+            text: "the listing named no defect any one issue answers, so a pass would link nothing whatever the bodies said: the listing is not the repository's, or the titles' shape moved"
+        )
+        return 2
+    code: i64 @= 0
+    read: i64 @= 0
+    changed: i64 @= 0
+    links: i64 @= 0
+    left: i64 @= 0
+    k: i64 @= held.len() - 1
+
+    # Oldest first, the listing being newest first.
+    while k >= 0
+        h = held[k]
+        k @ k - 1
+
+        if h.pull
+            continue
+        read @ read + 1
+        l = linked(body: h.body, own: h.number, t: t)
+        left @ left + l.left
+
+        if l.text == h.body
+            continue
+        address = issue_github.web_address(h.number)
+
+        if issue_title.characters(l.text) > BODY_LIMIT
+            issue_pace.warn(
+                @s,
+                text: address + " would hold " + issue_title.characters(l.text).to_str() + " characters with its links, over GitHub's " + BODY_LIMIT.to_str() + ": left as it is"
+            )
+            code @ 1
+            continue
+        changed @ changed + 1
+        links @ links + l.made
+
+        if !write
+            issue_pace.say(@s, text: address + ": " + l.made.to_str() + " links")
+            continue
+        path = issue_github.REPO + "/issues/" + h.number.to_str()
+        patch = issue_pace.exchange(
+            @s,
+            request: issue_wire.Request(method: "PATCH", path: path, accept: "", body: "{" + issue_json.member(key: "body", value: l.text) + "}")
+        )
+
+        if patch.is_err() || patch.must().status != 200
+            issue_pace.warn(@s, text: address + " was not linked: " + said(patch))
+            return 2
+        again = issue_github.issue(@s, number: h.number)
+
+        if again.is_err()
+            issue_pace.warn(
+                @s,
+                text: address + " was linked and could not be read back: " + issue_github.failure(again)
+            )
+            code @ 1
+        else if again.must().body != l.text
+            issue_pace.warn(@s, text: "still differs " + address + ": its body reads back otherwise than it was sent")
+            code @ 1
+        else
+            issue_pace.say(@s, text: address + " linked: " + l.made.to_str())
+
+    done = if write
+        "changed"
+    else
+        "would change"
+    issue_pace.say(
+        @s,
+        text: "link: " + read.to_str() + " issues read, " + changed.to_str() + " bodies " + done + " with " + links.to_str() + " links, " + left.to_str() + " names left as text (nothing answers them)"
+    )
+    return code
+
+function said(reply: issue_wire.Reply?) -> str
+    match reply
+        .ok r  => return issue_github.said(r)
+        .err e => return e.msg
+
+## Tests
+
+function held_of(number: i64, title: str, kind: str, body: str) -> issue_github.Held
+    return issue_github.Held(
+        number: number,
+        title: title,
+        body: body,
+        state: "closed",
+        labels: ["kind:" + kind],
+        milestone: "",
+        created: "2026-10-01T12:00:00Z",
+        closed: "2026-10-02T12:00:00Z",
+        comments: 0,
+        pull: false
+    )
+
+function some_sittings() -> {i64: str}
+    return sittings_of(
+        ["docs/panel/212-a.md", "docs/panel/178-b.md", "docs/panel/178-b-reports/seat.md", "docs/panel/099-c.md", "docs/panel/099-d.md", "docs/panel/README.md", "docs/x.md"]
+    )
+
+function some_targets() -> Targets
+    return targets(
+        held: [held_of(number: 300, title: "Defect 235: a header name", kind: "defect", body: "b"), held_of(number: 301, title: "Defects 018 to 021: four", kind: "defect", body: "- **034 — a later item**"), held_of(number: 302, title: "Defect 014: one", kind: "defect", body: "b"), held_of(number: 303, title: "Defect 014: the other", kind: "defect", body: "b"), held_of(number: 2030, title: "Def" + "ect 2030: new", kind: "defect", body: "b"), held_of(number: 400, title: "Panel 212: ratify", kind: "decision", body: "b"), held_of(number: 401, title: "Panel 178: ratify", kind: "decision", body: "b"), held_of(number: 402, title: "Panel 178: ratify again", kind: "decision", body: "b"), held_of(number: 403, title: "Panel 099: ratify", kind: "task", body: "b")],
+        sittings: some_sittings(),
+        pin: "p1n"
+    )
+
+constant WEB: str
+    "https://github.com/heroes-lang/heroes/issues/"
+
+constant BLOB_PIN: str
+    "https://github.com/heroes-lang/heroes/blob/p1n/docs/panel/"
+
+test "each name is answered by its one issue, and a name two issues answer by none"
+    t = some_targets()
+    assert t.defects[235].must() == 300
+    assert t.defects[18].must() == 301
+    assert t.defects[21].must() == 301
+    assert t.defects[34].must() == 301
+    assert t.defects[2030].must() == 2030
+    assert t.defects[14].is_err()
+    assert t.panels[212].must() == 400
+    assert t.panels[178].is_err()
+    assert t.panels[99].is_err()
+    assert sitting_of("Panel 212: x") == 212
+    assert sitting_of("panel 212 x") == 0
+    assert sitting_of("Panels 212: x") == 0
+    sittings = some_sittings()
+    assert sittings[212].must() == "212-a.md"
+    assert sittings[178].must() == "178-b.md"
+    assert sittings[99].is_err()
+    assert keys(sittings).len() == 2
+
+test "a defect and a panel named in prose become links, and nothing else moves"
+    t = some_targets()
+    got = linked(body: "Filed 2026-10-01\n\nThe repair of defect 235, as Panel 212's R1 says.", own: 999, t: t)
+    assert got.text == "Filed 2026-10-01\n\nThe repair of [defect 235](" + WEB + "300), as [Panel 212](" + WEB + "400)'s R1 says."
+    assert got.made == 2
+    assert got.left == 0
+    plural = linked(body: "defects 018 to 021, Defects 235 and 014, panels 212, 178 or 999", own: 999, t: t)
+    assert plural.text == "defects [018](" + WEB + "301) to [021](" + WEB + "301), Defects [235](" + WEB + "300) and 014, panels [212](" + WEB + "400), [178](" + BLOB_PIN + "178-b.md) or 999"
+    assert plural.made == 5
+    assert plural.left == 2
+    own = linked(body: "as panel 212 ruled", own: 400, t: t)
+    assert own.text == "as [panel 212](" + BLOB_PIN + "212-a.md) ruled"
+
+test "code, a link, an address, a tag, a day, its own issue and a longer word stay as they are"
+    t = some_targets()
+    kept = [
+        "`defect 235` in a span"
+        "```\ndefect 235 in a fence\n```"
+        "[defect 235](https://example.org/x) and [the repair of defect 235](https://example.org/y)"
+        "https://example.org/defect 235 is an address, then a word"
+        "<code>defect 235</code> and <a href=\"x\">panel 212</a>"
+        "defect 2026-10-12 is a day"
+        "nodefect 235, fixedbugs-defect 235, a/defect 235, #defect 235"
+        "defect 2030 is this issue's own"
+    ]
+
+    for body in kept
+        got = linked(body: body, own: 2030, t: t)
+        assert got.text == body
+        assert got.made == 0
+
+    assert linked(body: kept[7], own: 2030, t: t).left == 1
+
+test "a body linked once is linked again into itself"
+    t = some_targets()
+    body = "Repaired with defect 235 and defects 018 and 034; panel 212 ruled it."
+    once = linked(body: body, own: 999, t: t)
+    assert once.made == 4
+    twice = linked(body: once.text, own: 999, t: t)
+    assert twice.text == once.text
+    assert twice.made == 0
+
+function listed_json(number: i64, title: str, kind: str, body: str) -> str
+    return "{\"number\":" + number.to_str() + ",\"title\":" + issue_json.quoted(title) + ",\"body\":" + issue_json.quoted(body) + ",\"state\":\"closed\",\"labels\":[{\"name\":\"kind:" + kind + "\"}],\"milestone\":null,\"created_at\":\"2026-10-01T12:00:00Z\",\"closed_at\":\"2026-10-02T12:00:00Z\",\"comments\":0}"
+
+test "link writes each body that changes, reads it back, and a dry run or a rerun writes nothing"
+    plain = "Filed 2026-10-01\n\nas defect 235 said"
+    linked_body = "Filed 2026-10-01\n\nas [defect 235](" + WEB + "300) said"
+    page = issue_scripts.issues(
+        [listed_json(number: 301, title: "a decision", kind: "decision", body: plain), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "b")]
+    )
+    dry: issue_pace.Session @= issue_pace.scripted([page])
+    assert linking(@dry, write: false, sittings: some_sittings(), pin: "p1n") == 0
+    assert dry.world.requests.len() == 1
+    assert dry.out == [WEB + "301: 1 links", "link: 2 issues read, 1 bodies would change with 1 links, 0 names left as text (nothing answers them)"]
+    back = issue_scripts.answer(
+        status: 200,
+        body: listed_json(number: 301, title: "a decision", kind: "decision", body: linked_body)
+    )
+    s: issue_pace.Session @= issue_pace.scripted([page, issue_scripts.answer(status: 200, body: "{}"), back])
+    assert linking(@s, write: true, sittings: some_sittings(), pin: "p1n") == 0
+    asked = s.world.requests
+    assert asked[1].method == "PATCH"
+    assert asked[1].path == "/repos/heroes-lang/heroes/issues/301"
+    assert asked[1].body == "{\"body\":" + issue_json.quoted(linked_body) + "}"
+    assert asked[2].method == "GET"
+    assert s.out[0] == WEB + "301 linked: 1"
+    rerun_page = issue_scripts.issues(
+        [listed_json(number: 301, title: "a decision", kind: "decision", body: linked_body), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "b")]
+    )
+    again: issue_pace.Session @= issue_pace.scripted([rerun_page])
+    assert linking(@again, write: true, sittings: some_sittings(), pin: "p1n") == 0
+    assert again.world.requests.len() == 1
+
+test "a body read back otherwise is told and answers 1, and a refused write answers 2"
+    plain = "as defect 235 said"
+    page = issue_scripts.issues(
+        [listed_json(number: 301, title: "a decision", kind: "decision", body: plain), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "b")]
+    )
+    other = issue_scripts.answer(
+        status: 200,
+        body: listed_json(number: 301, title: "a decision", kind: "decision", body: plain)
+    )
+    s: issue_pace.Session @= issue_pace.scripted([page, issue_scripts.answer(status: 200, body: "{}"), other])
+    assert linking(@s, write: true, sittings: some_sittings(), pin: "p1n") == 1
+    assert strings.contains(text: s.err[0], needle: "still differs " + WEB + "301")
+    refused: issue_pace.Session @= issue_pace.scripted(
+        [page, issue_scripts.answer(status: 403, body: "{\"message\":\"Forbidden\"}")]
+    )
+    assert linking(@refused, write: true, sittings: some_sittings(), pin: "p1n") == 2
+    assert strings.contains(text: refused.err[0], needle: "was not linked: 403: Forbidden")
+    empty: issue_pace.Session @= issue_pace.scripted(
+        [issue_scripts.issues([listed_json(number: 301, title: "a decision", kind: "decision", body: plain)])]
+    )
+    assert linking(@empty, write: true, sittings: some_sittings(), pin: "p1n") == 2
+    assert strings.contains(text: empty.err[0], needle: "named no defect")
