@@ -788275,23 +788275,23 @@ bb6:
     if (t30) goto bb9; else goto bb10;
 #line 68 "selfhost/emit/synth.hero"
 bb7:
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     t79 = h4_named;
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     t80 = hero_map_keys(t79);
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     t91 = h22_own22;
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     h22_own22 = t80;
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     hero_array_decref(t91);
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     t81 = hero_array_sort(t80);
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     t92 = h23_own23;
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     h23_own23 = t81;
-#line 81 "selfhost/emit/synth.hero"
+#line 84 "selfhost/emit/synth.hero"
     hero_array_decref(t92);
 #line 788297 "main.c"
     hero_array_incref(t81);
@@ -788571,119 +788571,119 @@ bb19:
 #line 788572 "main.c"
 }
 
-#line 93 "selfhost/emit/synth.hero"
+#line 96 "selfhost/emit/synth.hero"
 void h_emitsynth_collect(h_checkstate_Checked h0_c, HeroArrayHeader * h1_decls, int64_t h2_ty, HeroMapHeader * *ph3_into, HeroMapHeader * *ph4_seen) {
-#line 93 "selfhost/emit/synth.hero"
+#line 96 "selfhost/emit/synth.hero"
     HeroArrayHeader * h5_queue = {0}; int64_t h6_next; int64_t h7_at; h_checktable_Ty h8_s0; h_checktable_Ty_c_function_ty h9_fn_ty; h_0opt_473cb9ae h10_f0 = {0}; HeroArrayHeader * h11_xs0 = {0}; int64_t h12_i0; int64_t h13_p; h_checktable_Ty_c_array h14_arr; h_0opt_473cb9ae h15_f1 = {0}; h_checktable_Ty_c_fallible h16_o; h_0opt_473cb9ae h17_f2 = {0}; h_checktable_Ty_c_map h18_m; h_0opt_473cb9ae h19_f3 = {0}; h_checktable_Ty_c_named h20_n; h_0opt_473cb9ae h21_f4 = {0}; HeroArrayHeader * h22_xs1 = {0}; int64_t h23_i1; int64_t h24_inner; HeroArrayHeader * h25_own25 = {0}; h_0opt_473cb9ae h26_own26 = {0}; h_0opt_473cb9ae h27_own27 = {0}; h_0opt_473cb9ae h28_own28 = {0}; h_0opt_473cb9ae h29_own29 = {0}; h_0opt_473cb9ae h30_own30 = {0}; HeroArrayHeader * h31_own31 = {0}; HeroArrayHeader * h32_own32 = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; h_checkstate_Checked t14; h_checktable_Types t15; int64_t t16; h_checktable_Ty t17; h_checktable_Ty t18; int64_t t19; h_checktable_Ty t20; h_checktable_Ty_c_function_ty t21; HeroMapHeader * t22; int64_t t23; h_0opt_473cb9ae t24; h_0opt_473cb9ae t25; int64_t t26; int64_t t27; bool t28; int64_t t29; bool t30; h_checkstate_Checked t31; h_checktable_Types t32; h_checktable_Ty_c_function_ty t33; h_checktable_Params t34; HeroArrayHeader * t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; int64_t t39; bool t40; HeroArrayHeader * t41; int64_t t42; int64_t t43; int64_t t45; int64_t t47; int64_t t48; int64_t t49; h_checktable_Ty_c_function_ty t51; int64_t t52; h_checktable_Ty t54; h_checktable_Ty_c_array t55; HeroMapHeader * t56; int64_t t57; h_0opt_473cb9ae t58; h_0opt_473cb9ae t59; int64_t t60; int64_t t61; bool t62; int64_t t63; bool t64; h_checktable_Ty_c_array t66; int64_t t67; h_checktable_Ty t69; h_checktable_Ty_c_fallible t70; HeroMapHeader * t71; int64_t t72; h_0opt_473cb9ae t73; h_0opt_473cb9ae t74; int64_t t75; int64_t t76; bool t77; int64_t t78; bool t79; h_checktable_Ty_c_fallible t81; int64_t t82; h_checktable_Ty t84; h_checktable_Ty_c_map t85; HeroMapHeader * t86; int64_t t87; h_0opt_473cb9ae t88; h_0opt_473cb9ae t89; int64_t t90; int64_t t91; bool t92; int64_t t93; bool t94; h_checktable_Ty_c_map t96; int64_t t97; h_checktable_Ty_c_map t100; int64_t t101; h_checktable_Ty t103; h_checktable_Ty_c_named t104; HeroMapHeader * t105; int64_t t106; h_0opt_473cb9ae t107; h_0opt_473cb9ae t108; int64_t t109; int64_t t110; bool t111; int64_t t112; bool t113; h_checkstate_Checked t114; HeroArrayHeader * t115; h_checktable_Ty_c_named t116; int64_t t117; HeroArrayHeader * t118; int64_t t119; int64_t t120; HeroArrayHeader * t121; int64_t t122; bool t123; HeroArrayHeader * t124; int64_t t125; int64_t t126; int64_t t128; int64_t t130; int64_t t131; int64_t t132; HeroArrayHeader * t133; HeroArrayHeader * t134; h_0opt_473cb9ae t135; h_0opt_473cb9ae t136; h_0opt_473cb9ae t137; h_0opt_473cb9ae t138; h_0opt_473cb9ae t139; h_0opt_473cb9ae t140; h_0opt_473cb9ae t141; h_0opt_473cb9ae t142; h_0opt_473cb9ae t143; h_0opt_473cb9ae t144; HeroArrayHeader * t145; HeroArrayHeader * t146; HeroArrayHeader * t147; HeroArrayHeader * t148; goto bb0;
-#line 93 "selfhost/emit/synth.hero"
+#line 96 "selfhost/emit/synth.hero"
 bb0:
     t1 = h2_ty;
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     t2 = hero_array_new(&hero_desc_int, 1);
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     hero_array_push_owned(&t2, &t1);
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     t133 = h25_own25;
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     h25_own25 = t2;
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     hero_array_decref(t133);
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     t134 = h5_queue;
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     hero_array_incref(t2);
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     h5_queue = t2;
-#line 94 "selfhost/emit/synth.hero"
+#line 97 "selfhost/emit/synth.hero"
     hero_array_decref(t134);
     t3 = INT64_C(0);
-#line 95 "selfhost/emit/synth.hero"
+#line 98 "selfhost/emit/synth.hero"
     h6_next = t3;
-#line 95 "selfhost/emit/synth.hero"
+#line 98 "selfhost/emit/synth.hero"
     goto bb1;
-#line 95 "selfhost/emit/synth.hero"
+#line 98 "selfhost/emit/synth.hero"
 bb1:
-#line 97 "selfhost/emit/synth.hero"
+#line 100 "selfhost/emit/synth.hero"
     t4 = h6_next;
-#line 97 "selfhost/emit/synth.hero"
+#line 100 "selfhost/emit/synth.hero"
     t5 = h5_queue;
-#line 97 "selfhost/emit/synth.hero"
+#line 100 "selfhost/emit/synth.hero"
     t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 97 "selfhost/emit/synth.hero"
+#line 100 "selfhost/emit/synth.hero"
     t7 = t4 < t6;
-#line 97 "selfhost/emit/synth.hero"
+#line 100 "selfhost/emit/synth.hero"
     if (t7) goto bb2; else goto bb3;
-#line 97 "selfhost/emit/synth.hero"
+#line 100 "selfhost/emit/synth.hero"
 bb2:
     t8 = h5_queue;
-#line 98 "selfhost/emit/synth.hero"
+#line 101 "selfhost/emit/synth.hero"
     t9 = h6_next;
-#line 98 "selfhost/emit/synth.hero"
+#line 101 "selfhost/emit/synth.hero"
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]);
-#line 98 "selfhost/emit/synth.hero"
+#line 101 "selfhost/emit/synth.hero"
     h7_at = t10;
     t11 = h6_next;
-#line 99 "selfhost/emit/synth.hero"
+#line 102 "selfhost/emit/synth.hero"
     t12 = INT64_C(1);
-#line 99 "selfhost/emit/synth.hero"
+#line 102 "selfhost/emit/synth.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 99 "selfhost/emit/synth.hero"
+#line 102 "selfhost/emit/synth.hero"
     h6_next = t13;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     t14 = h0_c;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     t15 = t14.f_types;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     t16 = h7_at;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     t17 = h_checktable_get(t15, t16);
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     h8_s0 = t17;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     t18 = h8_s0;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     t19 = t18.tag;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     switch (t19) {
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 0: goto bb10;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 1: goto bb10;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 2: goto bb10;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 3: goto bb10;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 4: goto bb10;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 5: goto bb10;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 6: goto bb10;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 7: goto bb6;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 8: goto bb11;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 9: goto bb8;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 10: goto bb7;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 11: goto bb5;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 12: goto bb9;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 13: goto bb11;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 14: goto bb11;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 15: goto bb11;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         case 16: goto bb11;
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
         default: hero_unreachable();
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
     }
-#line 101 "selfhost/emit/synth.hero"
+#line 104 "selfhost/emit/synth.hero"
 bb3:
 #line 788689 "main.c"
     hero_array_release_at(&h5_queue);
@@ -788706,1000 +788706,1000 @@ bb3:
 bb4:
     goto bb1;
 bb5:
-#line 102 "selfhost/emit/synth.hero"
+#line 105 "selfhost/emit/synth.hero"
     t20 = h8_s0;
-#line 102 "selfhost/emit/synth.hero"
+#line 105 "selfhost/emit/synth.hero"
     t21 = t20.as.c_function_ty;
-#line 102 "selfhost/emit/synth.hero"
+#line 105 "selfhost/emit/synth.hero"
     h9_fn_ty = t21;
     t22 = (*ph3_into);
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     t23 = h7_at;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     {
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
       const void *found = hero_map_find(t22, &t23);
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
       if (found == NULL) {
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
         t24 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
       } else {
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
         t24 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
         (&hero_desc_bool)->copy(&t24.as.ok, found);
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
       }
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     }
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     t135 = h26_own26;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     h26_own26 = t24;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t135);
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     t136 = h10_f0;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_retain(&t24);
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     h10_f0 = t24;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t136);
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     t25 = h10_f0;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     t26 = t25.tag;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     t27 = INT64_C(1);
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     t28 = t26 == t27;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
     if (t28) goto bb13; else goto bb14;
-#line 103 "selfhost/emit/synth.hero"
+#line 106 "selfhost/emit/synth.hero"
 bb6:
-#line 115 "selfhost/emit/synth.hero"
+#line 118 "selfhost/emit/synth.hero"
     t54 = h8_s0;
-#line 115 "selfhost/emit/synth.hero"
+#line 118 "selfhost/emit/synth.hero"
     t55 = t54.as.c_array;
-#line 115 "selfhost/emit/synth.hero"
+#line 118 "selfhost/emit/synth.hero"
     h14_arr = t55;
     t56 = (*ph4_seen);
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     t57 = h7_at;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     {
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
       const void *found = hero_map_find(t56, &t57);
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
       if (found == NULL) {
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
         t58 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
       } else {
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
         t58 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
         (&hero_desc_bool)->copy(&t58.as.ok, found);
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
       }
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     }
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     t137 = h27_own27;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     h27_own27 = t58;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t137);
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     t138 = h15_f1;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_retain(&t58);
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     h15_f1 = t58;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t138);
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     t59 = h15_f1;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     t60 = t59.tag;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     t61 = INT64_C(1);
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     t62 = t60 == t61;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
     if (t62) goto bb20; else goto bb21;
-#line 116 "selfhost/emit/synth.hero"
+#line 119 "selfhost/emit/synth.hero"
 bb7:
-#line 119 "selfhost/emit/synth.hero"
+#line 122 "selfhost/emit/synth.hero"
     t69 = h8_s0;
-#line 119 "selfhost/emit/synth.hero"
+#line 122 "selfhost/emit/synth.hero"
     t70 = t69.as.c_fallible;
-#line 119 "selfhost/emit/synth.hero"
+#line 122 "selfhost/emit/synth.hero"
     h16_o = t70;
     t71 = (*ph4_seen);
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     t72 = h7_at;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     {
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
       const void *found = hero_map_find(t71, &t72);
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
       if (found == NULL) {
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
         t73 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
       } else {
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
         t73 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
         (&hero_desc_bool)->copy(&t73.as.ok, found);
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
       }
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     }
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     t139 = h28_own28;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     h28_own28 = t73;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t139);
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     t140 = h17_f2;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_retain(&t73);
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     h17_f2 = t73;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t140);
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     t74 = h17_f2;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     t75 = t74.tag;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     t76 = INT64_C(1);
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     t77 = t75 == t76;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
     if (t77) goto bb23; else goto bb24;
-#line 120 "selfhost/emit/synth.hero"
+#line 123 "selfhost/emit/synth.hero"
 bb8:
-#line 123 "selfhost/emit/synth.hero"
+#line 126 "selfhost/emit/synth.hero"
     t84 = h8_s0;
-#line 123 "selfhost/emit/synth.hero"
+#line 126 "selfhost/emit/synth.hero"
     t85 = t84.as.c_map;
-#line 123 "selfhost/emit/synth.hero"
+#line 126 "selfhost/emit/synth.hero"
     h18_m = t85;
     t86 = (*ph4_seen);
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     t87 = h7_at;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     {
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
       const void *found = hero_map_find(t86, &t87);
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
       if (found == NULL) {
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
         t88 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
       } else {
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
         t88 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
         (&hero_desc_bool)->copy(&t88.as.ok, found);
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
       }
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     }
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     t141 = h29_own29;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     h29_own29 = t88;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t141);
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     t142 = h19_f3;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_retain(&t88);
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     h19_f3 = t88;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t142);
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     t89 = h19_f3;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     t90 = t89.tag;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     t91 = INT64_C(1);
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     t92 = t90 == t91;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
     if (t92) goto bb26; else goto bb27;
-#line 124 "selfhost/emit/synth.hero"
+#line 127 "selfhost/emit/synth.hero"
 bb9:
-#line 143 "selfhost/emit/synth.hero"
+#line 146 "selfhost/emit/synth.hero"
     t103 = h8_s0;
-#line 143 "selfhost/emit/synth.hero"
+#line 146 "selfhost/emit/synth.hero"
     t104 = t103.as.c_named;
-#line 143 "selfhost/emit/synth.hero"
+#line 146 "selfhost/emit/synth.hero"
     h20_n = t104;
     t105 = (*ph4_seen);
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     t106 = h7_at;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     {
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
       const void *found = hero_map_find(t105, &t106);
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
       if (found == NULL) {
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
         t107 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
       } else {
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
         t107 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
         (&hero_desc_bool)->copy(&t107.as.ok, found);
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
       }
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     }
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     t143 = h30_own30;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     h30_own30 = t107;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t143);
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     t144 = h21_f4;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_retain(&t107);
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     h21_f4 = t107;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t144);
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     t108 = h21_f4;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     t109 = t108.tag;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     t110 = INT64_C(1);
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     t111 = t109 == t110;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     if (t111) goto bb29; else goto bb30;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
 bb10:
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     goto bb1;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
 bb11:
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     goto bb1;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
 bb12:
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
     goto bb4;
-#line 144 "selfhost/emit/synth.hero"
+#line 147 "selfhost/emit/synth.hero"
 bb13:
-#line 104 "selfhost/emit/synth.hero"
+#line 107 "selfhost/emit/synth.hero"
     t29 = h7_at;
-#line 104 "selfhost/emit/synth.hero"
+#line 107 "selfhost/emit/synth.hero"
     t30 = true;
-#line 104 "selfhost/emit/synth.hero"
+#line 107 "selfhost/emit/synth.hero"
     hero_map_set(&((*ph3_into)), &t29, &t30);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t31 = h0_c;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t32 = t31.f_types;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t33 = h9_fn_ty;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t34 = t33.f_params;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t35 = h_checktable_params_of(t32, t34);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t145 = h31_own31;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     h31_own31 = t35;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     hero_array_decref(t145);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t146 = h11_xs0;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     hero_array_incref(t35);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     h11_xs0 = t35;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     hero_array_decref(t146);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t36 = INT64_C(0);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     h12_i0 = t36;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     goto bb15;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
 bb14:
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     goto bb12;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
 bb15:
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t37 = h12_i0;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t38 = h11_xs0;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t39 = ((void)(t38 == NULL ? ((void)hero_array_len(t38), hero_unreachable()) : (void)0), t38->len);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t40 = t37 < t39;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     if (t40) goto bb16; else goto bb18;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
 bb16:
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t41 = h11_xs0;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t42 = h12_i0;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t43 = ((void)((t41 == NULL || t42 < 0 || t42 >= t41->len) ? ((void)hero_array_at(t41, t42), hero_unreachable()) : (void)0), (void)(t41->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t41 + 1))[t42]);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     h13_p = t43;
     t45 = h13_p;
-#line 107 "selfhost/emit/synth.hero"
+#line 110 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h5_queue, &t45);
-#line 107 "selfhost/emit/synth.hero"
+#line 110 "selfhost/emit/synth.hero"
     goto bb17;
-#line 107 "selfhost/emit/synth.hero"
+#line 110 "selfhost/emit/synth.hero"
 bb17:
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t47 = h12_i0;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     t48 = INT64_C(1);
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     if (__builtin_add_overflow(t47, t48, &t49)) hero_panic_overflow();
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     h12_i0 = t49;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
     goto bb15;
-#line 106 "selfhost/emit/synth.hero"
+#line 109 "selfhost/emit/synth.hero"
 bb18:
-#line 109 "selfhost/emit/synth.hero"
+#line 112 "selfhost/emit/synth.hero"
     t51 = h9_fn_ty;
-#line 109 "selfhost/emit/synth.hero"
+#line 112 "selfhost/emit/synth.hero"
     t52 = t51.f_result;
-#line 109 "selfhost/emit/synth.hero"
+#line 112 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h5_queue, &t52);
-#line 109 "selfhost/emit/synth.hero"
+#line 112 "selfhost/emit/synth.hero"
     goto bb12;
-#line 109 "selfhost/emit/synth.hero"
+#line 112 "selfhost/emit/synth.hero"
 bb19:
-#line 109 "selfhost/emit/synth.hero"
+#line 112 "selfhost/emit/synth.hero"
     goto bb4;
-#line 109 "selfhost/emit/synth.hero"
+#line 112 "selfhost/emit/synth.hero"
 bb20:
-#line 117 "selfhost/emit/synth.hero"
+#line 120 "selfhost/emit/synth.hero"
     t63 = h7_at;
-#line 117 "selfhost/emit/synth.hero"
+#line 120 "selfhost/emit/synth.hero"
     t64 = true;
-#line 117 "selfhost/emit/synth.hero"
+#line 120 "selfhost/emit/synth.hero"
     hero_map_set(&((*ph4_seen)), &t63, &t64);
     t66 = h14_arr;
-#line 118 "selfhost/emit/synth.hero"
+#line 121 "selfhost/emit/synth.hero"
     t67 = t66.f_element;
-#line 118 "selfhost/emit/synth.hero"
+#line 121 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h5_queue, &t67);
-#line 118 "selfhost/emit/synth.hero"
+#line 121 "selfhost/emit/synth.hero"
     goto bb19;
-#line 118 "selfhost/emit/synth.hero"
+#line 121 "selfhost/emit/synth.hero"
 bb21:
-#line 118 "selfhost/emit/synth.hero"
+#line 121 "selfhost/emit/synth.hero"
     goto bb19;
-#line 118 "selfhost/emit/synth.hero"
+#line 121 "selfhost/emit/synth.hero"
 bb22:
-#line 118 "selfhost/emit/synth.hero"
+#line 121 "selfhost/emit/synth.hero"
     goto bb4;
-#line 118 "selfhost/emit/synth.hero"
+#line 121 "selfhost/emit/synth.hero"
 bb23:
-#line 121 "selfhost/emit/synth.hero"
+#line 124 "selfhost/emit/synth.hero"
     t78 = h7_at;
-#line 121 "selfhost/emit/synth.hero"
+#line 124 "selfhost/emit/synth.hero"
     t79 = true;
-#line 121 "selfhost/emit/synth.hero"
+#line 124 "selfhost/emit/synth.hero"
     hero_map_set(&((*ph4_seen)), &t78, &t79);
     t81 = h16_o;
-#line 122 "selfhost/emit/synth.hero"
+#line 125 "selfhost/emit/synth.hero"
     t82 = t81.f_payload;
-#line 122 "selfhost/emit/synth.hero"
+#line 125 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h5_queue, &t82);
-#line 122 "selfhost/emit/synth.hero"
+#line 125 "selfhost/emit/synth.hero"
     goto bb22;
-#line 122 "selfhost/emit/synth.hero"
+#line 125 "selfhost/emit/synth.hero"
 bb24:
-#line 122 "selfhost/emit/synth.hero"
+#line 125 "selfhost/emit/synth.hero"
     goto bb22;
-#line 122 "selfhost/emit/synth.hero"
+#line 125 "selfhost/emit/synth.hero"
 bb25:
-#line 122 "selfhost/emit/synth.hero"
+#line 125 "selfhost/emit/synth.hero"
     goto bb4;
-#line 122 "selfhost/emit/synth.hero"
+#line 125 "selfhost/emit/synth.hero"
 bb26:
-#line 125 "selfhost/emit/synth.hero"
+#line 128 "selfhost/emit/synth.hero"
     t93 = h7_at;
-#line 125 "selfhost/emit/synth.hero"
+#line 128 "selfhost/emit/synth.hero"
     t94 = true;
-#line 125 "selfhost/emit/synth.hero"
+#line 128 "selfhost/emit/synth.hero"
     hero_map_set(&((*ph4_seen)), &t93, &t94);
     t96 = h18_m;
-#line 126 "selfhost/emit/synth.hero"
+#line 129 "selfhost/emit/synth.hero"
     t97 = t96.f_key;
-#line 126 "selfhost/emit/synth.hero"
+#line 129 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h5_queue, &t97);
     t100 = h18_m;
-#line 127 "selfhost/emit/synth.hero"
+#line 130 "selfhost/emit/synth.hero"
     t101 = t100.f_value;
-#line 127 "selfhost/emit/synth.hero"
+#line 130 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h5_queue, &t101);
-#line 127 "selfhost/emit/synth.hero"
+#line 130 "selfhost/emit/synth.hero"
     goto bb25;
-#line 127 "selfhost/emit/synth.hero"
+#line 130 "selfhost/emit/synth.hero"
 bb27:
-#line 127 "selfhost/emit/synth.hero"
+#line 130 "selfhost/emit/synth.hero"
     goto bb25;
-#line 127 "selfhost/emit/synth.hero"
+#line 130 "selfhost/emit/synth.hero"
 bb28:
-#line 127 "selfhost/emit/synth.hero"
+#line 130 "selfhost/emit/synth.hero"
     goto bb4;
-#line 127 "selfhost/emit/synth.hero"
+#line 130 "selfhost/emit/synth.hero"
 bb29:
-#line 145 "selfhost/emit/synth.hero"
+#line 148 "selfhost/emit/synth.hero"
     t112 = h7_at;
-#line 145 "selfhost/emit/synth.hero"
+#line 148 "selfhost/emit/synth.hero"
     t113 = true;
-#line 145 "selfhost/emit/synth.hero"
+#line 148 "selfhost/emit/synth.hero"
     hero_map_set(&((*ph4_seen)), &t112, &t113);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t114 = h0_c;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t115 = h1_decls;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t116 = h20_n;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t117 = t116.f_decl;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t118 = h_emitsynth_field_types(t114, t115, t117);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t147 = h32_own32;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     h32_own32 = t118;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     hero_array_decref(t147);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t148 = h22_xs1;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     hero_array_incref(t118);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     h22_xs1 = t118;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     hero_array_decref(t148);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t119 = INT64_C(0);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     h23_i1 = t119;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     goto bb31;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
 bb30:
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     goto bb28;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
 bb31:
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t120 = h23_i1;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t121 = h22_xs1;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t122 = ((void)(t121 == NULL ? ((void)hero_array_len(t121), hero_unreachable()) : (void)0), t121->len);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t123 = t120 < t122;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     if (t123) goto bb32; else goto bb34;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
 bb32:
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t124 = h22_xs1;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t125 = h23_i1;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t126 = ((void)((t124 == NULL || t125 < 0 || t125 >= t124->len) ? ((void)hero_array_at(t124, t125), hero_unreachable()) : (void)0), (void)(t124->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t124 + 1))[t125]);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     h24_inner = t126;
     t128 = h24_inner;
-#line 148 "selfhost/emit/synth.hero"
+#line 151 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h5_queue, &t128);
-#line 148 "selfhost/emit/synth.hero"
+#line 151 "selfhost/emit/synth.hero"
     goto bb33;
-#line 148 "selfhost/emit/synth.hero"
+#line 151 "selfhost/emit/synth.hero"
 bb33:
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t130 = h23_i1;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     t131 = INT64_C(1);
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     if (__builtin_add_overflow(t130, t131, &t132)) hero_panic_overflow();
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     h23_i1 = t132;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     goto bb31;
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
 bb34:
-#line 147 "selfhost/emit/synth.hero"
+#line 150 "selfhost/emit/synth.hero"
     goto bb28;
 #line 789239 "main.c"
 }
 
-#line 156 "selfhost/emit/synth.hero"
+#line 159 "selfhost/emit/synth.hero"
 HeroArrayHeader * h_emitsynth_field_types(h_checkstate_Checked h0_c, HeroArrayHeader * h1_decls, int64_t h2_decl) {
-#line 156 "selfhost/emit/synth.hero"
+#line 159 "selfhost/emit/synth.hero"
     HeroArrayHeader * h3_out = {0}; h_ast_DeclKind h4_s0 = {0}; h_ast_DeclKind_c_record_decl h5_rec = {0}; HeroArrayHeader * h6_xs0 = {0}; int64_t h7_i0; h_ast_Field h8_field = {0}; h_0opt_e201354 h9_written = {0}; h_0opt_e201354 h10_f0 = {0}; h_0opt_e201354 h11_f1 = {0}; h_ast_DeclKind_c_variant_decl h12_v = {0}; HeroArrayHeader * h13_xs1 = {0}; int64_t h14_i1; h_ast_Case h15_one_case = {0}; HeroArrayHeader * h16_xs2 = {0}; int64_t h17_i2; h_ast_Field h18_field = {0}; h_0opt_e201354 h19_written = {0}; h_0opt_e201354 h20_f2 = {0}; h_0opt_e201354 h21_f3 = {0}; HeroArrayHeader * h22_ret0 = {0}; HeroArrayHeader * h23_own23 = {0}; h_0opt_e201354 h24_own24 = {0}; h_0opt_e201354 h25_own25 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; h_ast_Decl t4; h_ast_DeclKind t5; h_ast_DeclKind t6; int64_t t7; h_ast_DeclKind t8; h_ast_DeclKind_c_record_decl t9; h_ast_DeclKind_c_record_decl t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; bool t16; HeroArrayHeader * t17; int64_t t18; h_ast_Field t19; h_checkstate_Checked t20; h_ast_Field t21; int64_t t22; h_0opt_e201354 t23; h_0opt_e201354 t24; h_0opt_e201354 t25; int64_t t26; int64_t t27; bool t28; bool t29; h_0opt_e201354 t31; h_0opt_e201354 t32; int64_t t33; int64_t t34; bool t35; h_0opt_e201354 t36; HeroFailure t37; h_0opt_e201354 t38; int64_t t39; int64_t t41; int64_t t42; int64_t t43; h_ast_DeclKind t44; h_ast_DeclKind_c_variant_decl t45; h_ast_DeclKind_c_variant_decl t46; HeroArrayHeader * t47; int64_t t48; int64_t t49; HeroArrayHeader * t50; int64_t t51; bool t52; HeroArrayHeader * t53; int64_t t54; h_ast_Case t55; h_ast_Case t56; HeroArrayHeader * t57; int64_t t58; int64_t t59; HeroArrayHeader * t60; int64_t t61; bool t62; HeroArrayHeader * t63; int64_t t64; h_ast_Field t65; h_checkstate_Checked t66; h_ast_Field t67; int64_t t68; h_0opt_e201354 t69; h_0opt_e201354 t70; h_0opt_e201354 t71; int64_t t72; int64_t t73; bool t74; bool t75; h_0opt_e201354 t77; h_0opt_e201354 t78; int64_t t79; int64_t t80; bool t81; h_0opt_e201354 t82; HeroFailure t83; h_0opt_e201354 t84; int64_t t85; int64_t t87; int64_t t88; int64_t t89; int64_t t90; int64_t t91; int64_t t92; HeroArrayHeader * t93; HeroArrayHeader * t94; HeroArrayHeader * t95; HeroArrayHeader * t96; HeroArrayHeader * t97; h_ast_DeclKind t98; h_ast_DeclKind_c_record_decl t99; HeroArrayHeader * t100; h_ast_DeclKind_c_variant_decl t101; HeroArrayHeader * t102; h_ast_Field t103; h_0opt_e201354 t104; h_0opt_e201354 t105; h_0opt_e201354 t106; h_0opt_e201354 t107; h_ast_Case t108; HeroArrayHeader * t109; h_ast_Field t110; h_0opt_e201354 t111; h_0opt_e201354 t112; h_0opt_e201354 t113; h_0opt_e201354 t114; goto bb0;
-#line 156 "selfhost/emit/synth.hero"
+#line 159 "selfhost/emit/synth.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
-#line 157 "selfhost/emit/synth.hero"
+#line 160 "selfhost/emit/synth.hero"
     t96 = h23_own23;
-#line 157 "selfhost/emit/synth.hero"
+#line 160 "selfhost/emit/synth.hero"
     h23_own23 = t1;
-#line 157 "selfhost/emit/synth.hero"
+#line 160 "selfhost/emit/synth.hero"
     hero_array_decref(t96);
-#line 157 "selfhost/emit/synth.hero"
+#line 160 "selfhost/emit/synth.hero"
     t97 = h3_out;
-#line 157 "selfhost/emit/synth.hero"
+#line 160 "selfhost/emit/synth.hero"
     hero_array_incref(t1);
-#line 157 "selfhost/emit/synth.hero"
+#line 160 "selfhost/emit/synth.hero"
     h3_out = t1;
-#line 157 "selfhost/emit/synth.hero"
+#line 160 "selfhost/emit/synth.hero"
     hero_array_decref(t97);
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     t2 = h1_decls;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     t3 = h2_decl;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     t4 = ((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? ((void)hero_array_at(t2, t3), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_ast_Decl) ? hero_unreachable() : (void)0), ((h_ast_Decl const *)(const void *)(t2 + 1))[t3]);
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     t5 = t4.f_kind;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     t98 = h4_s0;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     h_ast_DeclKind_retain(&t5);
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     h4_s0 = t5;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     h_ast_DeclKind_release(&t98);
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     t6 = h4_s0;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     t7 = t6.tag;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     switch (t7) {
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
         case 0: goto bb4;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
         case 1: goto bb4;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
         case 2: goto bb2;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
         case 3: goto bb3;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
         case 4: goto bb4;
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
         default: hero_unreachable();
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
     }
-#line 159 "selfhost/emit/synth.hero"
+#line 162 "selfhost/emit/synth.hero"
 bb1:
-#line 175 "selfhost/emit/synth.hero"
+#line 178 "selfhost/emit/synth.hero"
     t94 = h3_out;
-#line 175 "selfhost/emit/synth.hero"
+#line 178 "selfhost/emit/synth.hero"
     h22_ret0 = t94;
-#line 175 "selfhost/emit/synth.hero"
+#line 178 "selfhost/emit/synth.hero"
     goto bb27;
-#line 175 "selfhost/emit/synth.hero"
+#line 178 "selfhost/emit/synth.hero"
 bb2:
-#line 160 "selfhost/emit/synth.hero"
+#line 163 "selfhost/emit/synth.hero"
     t8 = h4_s0;
-#line 160 "selfhost/emit/synth.hero"
+#line 163 "selfhost/emit/synth.hero"
     t9 = t8.as.c_record_decl;
-#line 160 "selfhost/emit/synth.hero"
+#line 163 "selfhost/emit/synth.hero"
     t99 = h5_rec;
-#line 160 "selfhost/emit/synth.hero"
+#line 163 "selfhost/emit/synth.hero"
     h_ast_DeclKind_c_record_decl_retain(&t9);
-#line 160 "selfhost/emit/synth.hero"
+#line 163 "selfhost/emit/synth.hero"
     h5_rec = t9;
-#line 160 "selfhost/emit/synth.hero"
+#line 163 "selfhost/emit/synth.hero"
     h_ast_DeclKind_c_record_decl_release(&t99);
     t10 = h5_rec;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t11 = t10.f_fields;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t100 = h6_xs0;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     hero_array_incref(t11);
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     h6_xs0 = t11;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     hero_array_decref(t100);
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t12 = INT64_C(0);
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     h7_i0 = t12;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     goto bb5;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
 bb3:
-#line 166 "selfhost/emit/synth.hero"
+#line 169 "selfhost/emit/synth.hero"
     t44 = h4_s0;
-#line 166 "selfhost/emit/synth.hero"
+#line 169 "selfhost/emit/synth.hero"
     t45 = t44.as.c_variant_decl;
-#line 166 "selfhost/emit/synth.hero"
+#line 169 "selfhost/emit/synth.hero"
     t101 = h12_v;
-#line 166 "selfhost/emit/synth.hero"
+#line 169 "selfhost/emit/synth.hero"
     h_ast_DeclKind_c_variant_decl_retain(&t45);
-#line 166 "selfhost/emit/synth.hero"
+#line 169 "selfhost/emit/synth.hero"
     h12_v = t45;
-#line 166 "selfhost/emit/synth.hero"
+#line 169 "selfhost/emit/synth.hero"
     h_ast_DeclKind_c_variant_decl_release(&t101);
     t46 = h12_v;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t47 = t46.f_cases;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t102 = h13_xs1;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     hero_array_incref(t47);
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     h13_xs1 = t47;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     hero_array_decref(t102);
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t48 = INT64_C(0);
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     h14_i1 = t48;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     goto bb14;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
 bb4:
-#line 173 "selfhost/emit/synth.hero"
+#line 176 "selfhost/emit/synth.hero"
     t93 = h3_out;
-#line 173 "selfhost/emit/synth.hero"
+#line 176 "selfhost/emit/synth.hero"
     h22_ret0 = t93;
-#line 173 "selfhost/emit/synth.hero"
+#line 176 "selfhost/emit/synth.hero"
     goto bb27;
-#line 173 "selfhost/emit/synth.hero"
+#line 176 "selfhost/emit/synth.hero"
 bb5:
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t13 = h7_i0;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t14 = h6_xs0;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t15 = ((void)(t14 == NULL ? ((void)hero_array_len(t14), hero_unreachable()) : (void)0), t14->len);
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t16 = t13 < t15;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     if (t16) goto bb6; else goto bb8;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
 bb6:
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t17 = h6_xs0;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t18 = h7_i0;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? ((void)hero_array_at(t17, t18), hero_unreachable()) : (void)0), (void)(t17->elem->size != sizeof(h_ast_Field) ? hero_unreachable() : (void)0), ((h_ast_Field const *)(const void *)(t17 + 1))[t18]);
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t103 = h8_field;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     h_ast_Field_retain(&t19);
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     h8_field = t19;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     h_ast_Field_release(&t103);
     t20 = h0_c;
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     t21 = h8_field;
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     t22 = t21.f_ty;
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     t23 = h_checkstate_written_type(t20, t22);
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     t104 = h24_own24;
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     h24_own24 = t23;
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     h_0opt_e201354_release(&t104);
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     t105 = h9_written;
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     h_0opt_e201354_retain(&t23);
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     h9_written = t23;
-#line 162 "selfhost/emit/synth.hero"
+#line 165 "selfhost/emit/synth.hero"
     h_0opt_e201354_release(&t105);
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     t24 = h9_written;
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     t106 = h10_f0;
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     h_0opt_e201354_retain(&t24);
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     h10_f0 = t24;
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     h_0opt_e201354_release(&t106);
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     t25 = h10_f0;
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     t26 = t25.tag;
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     t27 = INT64_C(1);
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     t28 = t26 == t27;
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     t29 = !t28;
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
     if (t29) goto bb10; else goto bb11;
-#line 164 "selfhost/emit/synth.hero"
+#line 167 "selfhost/emit/synth.hero"
 bb7:
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t41 = h7_i0;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     t42 = INT64_C(1);
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     if (__builtin_add_overflow(t41, t42, &t43)) hero_panic_overflow();
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     h7_i0 = t43;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     goto bb5;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
 bb8:
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     goto bb1;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
 bb9:
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
     goto bb7;
-#line 161 "selfhost/emit/synth.hero"
+#line 164 "selfhost/emit/synth.hero"
 bb10:
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t31 = h9_written;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t107 = h11_f1;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     h_0opt_e201354_retain(&t31);
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     h11_f1 = t31;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     h_0opt_e201354_release(&t107);
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t32 = h11_f1;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t33 = t32.tag;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t34 = INT64_C(0);
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t35 = t33 == t34;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     if (t35) goto bb12; else goto bb13;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
 bb11:
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     goto bb9;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
 bb12:
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t38 = h11_f1;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t39 = t38.as.ok;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h3_out, &t39);
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     goto bb9;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
 bb13:
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t36 = h11_f1;
-#line 165 "selfhost/emit/synth.hero"
+#line 168 "selfhost/emit/synth.hero"
     t37 = t36.as.err;
 #line 789510 "main.c"
     hero_panic_must(t37);
     hero_unreachable();
 bb14:
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t49 = h14_i1;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t50 = h13_xs1;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t51 = ((void)(t50 == NULL ? ((void)hero_array_len(t50), hero_unreachable()) : (void)0), t50->len);
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t52 = t49 < t51;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     if (t52) goto bb15; else goto bb17;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
 bb15:
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t53 = h13_xs1;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t54 = h14_i1;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t55 = ((void)((t53 == NULL || t54 < 0 || t54 >= t53->len) ? ((void)hero_array_at(t53, t54), hero_unreachable()) : (void)0), (void)(t53->elem->size != sizeof(h_ast_Case) ? hero_unreachable() : (void)0), ((h_ast_Case const *)(const void *)(t53 + 1))[t54]);
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t108 = h15_one_case;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     h_ast_Case_retain(&t55);
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     h15_one_case = t55;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     h_ast_Case_release(&t108);
     t56 = h15_one_case;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t57 = t56.f_fields;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t109 = h16_xs2;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     hero_array_incref(t57);
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     h16_xs2 = t57;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     hero_array_decref(t109);
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t58 = INT64_C(0);
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     h17_i2 = t58;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     goto bb18;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
 bb16:
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t90 = h14_i1;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     t91 = INT64_C(1);
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     if (__builtin_add_overflow(t90, t91, &t92)) hero_panic_overflow();
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     h14_i1 = t92;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     goto bb14;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
 bb17:
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
     goto bb1;
-#line 167 "selfhost/emit/synth.hero"
+#line 170 "selfhost/emit/synth.hero"
 bb18:
     t59 = h17_i2;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t60 = h16_xs2;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t61 = ((void)(t60 == NULL ? ((void)hero_array_len(t60), hero_unreachable()) : (void)0), t60->len);
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t62 = t59 < t61;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     if (t62) goto bb19; else goto bb21;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
 bb19:
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t63 = h16_xs2;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t64 = h17_i2;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(h_ast_Field) ? hero_unreachable() : (void)0), ((h_ast_Field const *)(const void *)(t63 + 1))[t64]);
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t110 = h18_field;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     h_ast_Field_retain(&t65);
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     h18_field = t65;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     h_ast_Field_release(&t110);
     t66 = h0_c;
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     t67 = h18_field;
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     t68 = t67.f_ty;
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     t69 = h_checkstate_written_type(t66, t68);
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     t111 = h25_own25;
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     h25_own25 = t69;
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     h_0opt_e201354_release(&t111);
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     t112 = h19_written;
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     h_0opt_e201354_retain(&t69);
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     h19_written = t69;
-#line 169 "selfhost/emit/synth.hero"
+#line 172 "selfhost/emit/synth.hero"
     h_0opt_e201354_release(&t112);
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     t70 = h19_written;
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     t113 = h20_f2;
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     h_0opt_e201354_retain(&t70);
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     h20_f2 = t70;
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     h_0opt_e201354_release(&t113);
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     t71 = h20_f2;
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     t72 = t71.tag;
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     t73 = INT64_C(1);
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     t74 = t72 == t73;
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     t75 = !t74;
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
     if (t75) goto bb23; else goto bb24;
-#line 171 "selfhost/emit/synth.hero"
+#line 174 "selfhost/emit/synth.hero"
 bb20:
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t87 = h17_i2;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     t88 = INT64_C(1);
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     if (__builtin_add_overflow(t87, t88, &t89)) hero_panic_overflow();
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     h17_i2 = t89;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     goto bb18;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
 bb21:
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     goto bb16;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
 bb22:
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
     goto bb20;
-#line 168 "selfhost/emit/synth.hero"
+#line 171 "selfhost/emit/synth.hero"
 bb23:
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t77 = h19_written;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t114 = h21_f3;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     h_0opt_e201354_retain(&t77);
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     h21_f3 = t77;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     h_0opt_e201354_release(&t114);
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t78 = h21_f3;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t79 = t78.tag;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t80 = INT64_C(0);
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t81 = t79 == t80;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     if (t81) goto bb25; else goto bb26;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
 bb24:
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     goto bb22;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
 bb25:
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t84 = h21_f3;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t85 = t84.as.ok;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     hero_array_push_owned(&h3_out, &t85);
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     goto bb22;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
 bb26:
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t82 = h21_f3;
-#line 172 "selfhost/emit/synth.hero"
+#line 175 "selfhost/emit/synth.hero"
     t83 = t82.as.err;
 #line 789705 "main.c"
     hero_panic_must(t83);
@@ -789729,58 +789729,58 @@ bb27:
     return t95;
 }
 
-#line 199 "selfhost/emit/synth.hero"
+#line 202 "selfhost/emit/synth.hero"
 h_emitsynth_Wanted h_emitsynth_everything(void) {
-#line 199 "selfhost/emit/synth.hero"
+#line 202 "selfhost/emit/synth.hero"
     HeroMapHeader * h0_no_types = {0}; HeroMapHeader * h1_no_named = {0}; HeroMapHeader * h2_own2 = {0}; HeroMapHeader * h3_own3 = {0}; h_emitsynth_Wanted h4_own4 = {0}; HeroMapHeader * t1; HeroMapHeader * t2; HeroMapHeader * t3; HeroMapHeader * t4; bool t5; h_emitsynth_Wanted t6; HeroMapHeader * t7; HeroMapHeader * t8; HeroMapHeader * t9; HeroMapHeader * t10; h_emitsynth_Wanted t11; goto bb0;
-#line 199 "selfhost/emit/synth.hero"
+#line 202 "selfhost/emit/synth.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_int, &hero_desc_bool, 0);
-#line 200 "selfhost/emit/synth.hero"
+#line 203 "selfhost/emit/synth.hero"
     t7 = h2_own2;
-#line 200 "selfhost/emit/synth.hero"
+#line 203 "selfhost/emit/synth.hero"
     h2_own2 = t1;
-#line 200 "selfhost/emit/synth.hero"
+#line 203 "selfhost/emit/synth.hero"
     hero_map_decref(t7);
-#line 200 "selfhost/emit/synth.hero"
+#line 203 "selfhost/emit/synth.hero"
     t8 = h0_no_types;
-#line 200 "selfhost/emit/synth.hero"
+#line 203 "selfhost/emit/synth.hero"
     hero_map_incref(t1);
-#line 200 "selfhost/emit/synth.hero"
+#line 203 "selfhost/emit/synth.hero"
     h0_no_types = t1;
-#line 200 "selfhost/emit/synth.hero"
+#line 203 "selfhost/emit/synth.hero"
     hero_map_decref(t8);
     t2 = hero_map_new(&hero_desc_int, &hero_desc_bool, 0);
-#line 201 "selfhost/emit/synth.hero"
+#line 204 "selfhost/emit/synth.hero"
     t9 = h3_own3;
-#line 201 "selfhost/emit/synth.hero"
+#line 204 "selfhost/emit/synth.hero"
     h3_own3 = t2;
-#line 201 "selfhost/emit/synth.hero"
+#line 204 "selfhost/emit/synth.hero"
     hero_map_decref(t9);
-#line 201 "selfhost/emit/synth.hero"
+#line 204 "selfhost/emit/synth.hero"
     t10 = h1_no_named;
-#line 201 "selfhost/emit/synth.hero"
+#line 204 "selfhost/emit/synth.hero"
     hero_map_incref(t2);
-#line 201 "selfhost/emit/synth.hero"
+#line 204 "selfhost/emit/synth.hero"
     h1_no_named = t2;
-#line 201 "selfhost/emit/synth.hero"
+#line 204 "selfhost/emit/synth.hero"
     hero_map_decref(t10);
     t3 = h0_no_types;
-#line 202 "selfhost/emit/synth.hero"
+#line 205 "selfhost/emit/synth.hero"
     t4 = h1_no_named;
-#line 202 "selfhost/emit/synth.hero"
+#line 205 "selfhost/emit/synth.hero"
     t5 = true;
-#line 202 "selfhost/emit/synth.hero"
+#line 205 "selfhost/emit/synth.hero"
     hero_map_incref(t3);
-#line 202 "selfhost/emit/synth.hero"
+#line 205 "selfhost/emit/synth.hero"
     hero_map_incref(t4);
-#line 202 "selfhost/emit/synth.hero"
+#line 205 "selfhost/emit/synth.hero"
     t6 = (h_emitsynth_Wanted){.f_types = t3, .f_named = t4, .f_every = t5};
-#line 202 "selfhost/emit/synth.hero"
+#line 205 "selfhost/emit/synth.hero"
     t11 = h4_own4;
-#line 202 "selfhost/emit/synth.hero"
+#line 205 "selfhost/emit/synth.hero"
     h4_own4 = t6;
-#line 202 "selfhost/emit/synth.hero"
+#line 205 "selfhost/emit/synth.hero"
     h_emitsynth_Wanted_release(&t11);
 #line 789786 "main.c"
     h_emitsynth_Wanted_retain(&t6);
@@ -789792,157 +789792,157 @@ bb0:
     return t6;
 }
 
-#line 206 "selfhost/emit/synth.hero"
+#line 209 "selfhost/emit/synth.hero"
 h_emitsynth_Wanted h_emitsynth_wanted_of(h_checkstate_Checked h0_c, HeroMapHeader * h1_reached) {
-#line 206 "selfhost/emit/synth.hero"
+#line 209 "selfhost/emit/synth.hero"
     HeroMapHeader * h2_named = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_id; h_checktable_Ty h6_s0; h_checktable_Ty_c_named h7_n; HeroMapHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; h_emitsynth_Wanted h10_own10 = {0}; HeroMapHeader * t1; HeroMapHeader * t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; h_checkstate_Checked t12; h_checktable_Types t13; int64_t t14; h_checktable_Ty t15; h_checktable_Ty t16; int64_t t17; h_checktable_Ty t18; h_checktable_Ty_c_named t19; h_checktable_Ty_c_named t20; int64_t t21; bool t22; HeroMapHeader * t23; HeroMapHeader * t24; HeroMapHeader * t25; int64_t t26; int64_t t27; int64_t t28; HeroMapHeader * t29; HeroMapHeader * t30; bool t31; h_emitsynth_Wanted t32; HeroMapHeader * t33; HeroMapHeader * t34; HeroArrayHeader * t35; HeroArrayHeader * t36; h_emitsynth_Wanted t37; HeroMapHeader * t38; HeroMapHeader * t39; HeroMapHeader * t40; goto bb0;
-#line 206 "selfhost/emit/synth.hero"
+#line 209 "selfhost/emit/synth.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_int, &hero_desc_bool, 0);
-#line 207 "selfhost/emit/synth.hero"
+#line 210 "selfhost/emit/synth.hero"
     t33 = h8_own8;
-#line 207 "selfhost/emit/synth.hero"
+#line 210 "selfhost/emit/synth.hero"
     h8_own8 = t1;
-#line 207 "selfhost/emit/synth.hero"
+#line 210 "selfhost/emit/synth.hero"
     hero_map_decref(t33);
-#line 207 "selfhost/emit/synth.hero"
+#line 210 "selfhost/emit/synth.hero"
     t34 = h2_named;
-#line 207 "selfhost/emit/synth.hero"
+#line 210 "selfhost/emit/synth.hero"
     hero_map_incref(t1);
-#line 207 "selfhost/emit/synth.hero"
+#line 210 "selfhost/emit/synth.hero"
     h2_named = t1;
-#line 207 "selfhost/emit/synth.hero"
+#line 210 "selfhost/emit/synth.hero"
     hero_map_decref(t34);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t2 = h1_reached;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t3 = hero_map_keys(t2);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t35 = h9_own9;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     h9_own9 = t3;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     hero_array_decref(t35);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t36 = h3_xs0;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     hero_array_incref(t3);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     h3_xs0 = t3;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     hero_array_decref(t36);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t4 = INT64_C(0);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     h4_i0 = t4;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     goto bb1;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
 bb1:
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t5 = h4_i0;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t6 = h3_xs0;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t8 = t5 < t7;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     if (t8) goto bb2; else goto bb4;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
 bb2:
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t9 = h3_xs0;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t10 = h4_i0;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t9 + 1))[t10]);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     h5_id = t11;
     t12 = h0_c;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
     t13 = t12.f_types;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
     t14 = h5_id;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
     t15 = h_checktable_get(t13, t14);
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
     h6_s0 = t15;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
     t16 = h6_s0;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
     t17 = t16.tag;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
     switch (t17) {
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 0: goto bb7;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 1: goto bb7;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 2: goto bb7;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 3: goto bb7;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 4: goto bb7;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 5: goto bb7;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 6: goto bb7;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 7: goto bb8;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 8: goto bb8;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 9: goto bb8;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 10: goto bb8;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 11: goto bb8;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 12: goto bb6;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 13: goto bb9;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 14: goto bb9;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 15: goto bb9;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         case 16: goto bb9;
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
         default: hero_unreachable();
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
     }
-#line 212 "selfhost/emit/synth.hero"
+#line 215 "selfhost/emit/synth.hero"
 bb3:
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t26 = h4_i0;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     t27 = INT64_C(1);
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow();
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     h4_i0 = t28;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
     goto bb1;
-#line 211 "selfhost/emit/synth.hero"
+#line 214 "selfhost/emit/synth.hero"
 bb4:
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     t29 = h1_reached;
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     t30 = h2_named;
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     t31 = false;
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     hero_map_incref(t29);
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     hero_map_incref(t30);
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     t32 = (h_emitsynth_Wanted){.f_types = t29, .f_named = t30, .f_every = t31};
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     t37 = h10_own10;
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     h10_own10 = t32;
-#line 218 "selfhost/emit/synth.hero"
+#line 221 "selfhost/emit/synth.hero"
     h_emitsynth_Wanted_release(&t37);
 #line 789948 "main.c"
     h_emitsynth_Wanted_retain(&t32);
@@ -789955,142 +789955,142 @@ bb4:
 bb5:
     goto bb3;
 bb6:
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
     t18 = h6_s0;
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
     t19 = t18.as.c_named;
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
     h7_n = t19;
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
     t20 = h7_n;
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
     t21 = t20.f_decl;
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
     t22 = true;
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
     hero_map_set(&(h2_named), &t21, &t22);
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
     goto bb5;
-#line 213 "selfhost/emit/synth.hero"
+#line 216 "selfhost/emit/synth.hero"
 bb7:
     t23 = h2_named;
-#line 214 "selfhost/emit/synth.hero"
+#line 217 "selfhost/emit/synth.hero"
     t38 = h2_named;
-#line 214 "selfhost/emit/synth.hero"
+#line 217 "selfhost/emit/synth.hero"
     hero_map_incref(t23);
-#line 214 "selfhost/emit/synth.hero"
+#line 217 "selfhost/emit/synth.hero"
     h2_named = t23;
-#line 214 "selfhost/emit/synth.hero"
+#line 217 "selfhost/emit/synth.hero"
     hero_map_decref(t38);
-#line 214 "selfhost/emit/synth.hero"
+#line 217 "selfhost/emit/synth.hero"
     goto bb5;
-#line 214 "selfhost/emit/synth.hero"
+#line 217 "selfhost/emit/synth.hero"
 bb8:
     t24 = h2_named;
-#line 215 "selfhost/emit/synth.hero"
+#line 218 "selfhost/emit/synth.hero"
     t39 = h2_named;
-#line 215 "selfhost/emit/synth.hero"
+#line 218 "selfhost/emit/synth.hero"
     hero_map_incref(t24);
-#line 215 "selfhost/emit/synth.hero"
+#line 218 "selfhost/emit/synth.hero"
     h2_named = t24;
-#line 215 "selfhost/emit/synth.hero"
+#line 218 "selfhost/emit/synth.hero"
     hero_map_decref(t39);
-#line 215 "selfhost/emit/synth.hero"
+#line 218 "selfhost/emit/synth.hero"
     goto bb5;
-#line 215 "selfhost/emit/synth.hero"
+#line 218 "selfhost/emit/synth.hero"
 bb9:
     t25 = h2_named;
-#line 216 "selfhost/emit/synth.hero"
+#line 219 "selfhost/emit/synth.hero"
     t40 = h2_named;
-#line 216 "selfhost/emit/synth.hero"
+#line 219 "selfhost/emit/synth.hero"
     hero_map_incref(t25);
-#line 216 "selfhost/emit/synth.hero"
+#line 219 "selfhost/emit/synth.hero"
     h2_named = t25;
-#line 216 "selfhost/emit/synth.hero"
+#line 219 "selfhost/emit/synth.hero"
     hero_map_decref(t40);
-#line 216 "selfhost/emit/synth.hero"
+#line 219 "selfhost/emit/synth.hero"
     goto bb5;
 #line 790014 "main.c"
 }
 
-#line 220 "selfhost/emit/synth.hero"
+#line 223 "selfhost/emit/synth.hero"
 bool h_emitsynth_wants_type(h_emitsynth_Wanted h0_w, int64_t h1_ty) {
-#line 220 "selfhost/emit/synth.hero"
+#line 223 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae h2_f0 = {0}; bool h3_ret0; h_0opt_473cb9ae h4_own4 = {0}; h_emitsynth_Wanted t1; bool t2; bool t3; h_emitsynth_Wanted t4; HeroMapHeader * t5; int64_t t6; h_0opt_473cb9ae t7; h_0opt_473cb9ae t8; int64_t t9; int64_t t10; bool t11; bool t12; bool t13; h_0opt_473cb9ae t14; h_0opt_473cb9ae t15; goto bb0;
-#line 220 "selfhost/emit/synth.hero"
+#line 223 "selfhost/emit/synth.hero"
 bb0:
     t1 = h0_w;
-#line 221 "selfhost/emit/synth.hero"
+#line 224 "selfhost/emit/synth.hero"
     t2 = t1.f_every;
-#line 221 "selfhost/emit/synth.hero"
+#line 224 "selfhost/emit/synth.hero"
     if (t2) goto bb2; else goto bb3;
-#line 221 "selfhost/emit/synth.hero"
+#line 224 "selfhost/emit/synth.hero"
 bb1:
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t4 = h0_w;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t5 = t4.f_types;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t6 = h1_ty;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     {
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
       const void *found = hero_map_find(t5, &t6);
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
       if (found == NULL) {
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
         t7 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
       } else {
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
         t7 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
         (&hero_desc_bool)->copy(&t7.as.ok, found);
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
       }
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     }
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t14 = h4_own4;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     h4_own4 = t7;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t14);
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t15 = h2_f0;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_retain(&t7);
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     h2_f0 = t7;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t15);
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t8 = h2_f0;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t9 = t8.tag;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t10 = INT64_C(1);
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t11 = t9 == t10;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     t12 = !t11;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     h3_ret0 = t12;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
     goto bb4;
-#line 223 "selfhost/emit/synth.hero"
+#line 226 "selfhost/emit/synth.hero"
 bb2:
-#line 222 "selfhost/emit/synth.hero"
+#line 225 "selfhost/emit/synth.hero"
     t3 = true;
-#line 222 "selfhost/emit/synth.hero"
+#line 225 "selfhost/emit/synth.hero"
     h3_ret0 = t3;
-#line 222 "selfhost/emit/synth.hero"
+#line 225 "selfhost/emit/synth.hero"
     goto bb4;
-#line 222 "selfhost/emit/synth.hero"
+#line 225 "selfhost/emit/synth.hero"
 bb3:
-#line 222 "selfhost/emit/synth.hero"
+#line 225 "selfhost/emit/synth.hero"
     goto bb1;
-#line 222 "selfhost/emit/synth.hero"
+#line 225 "selfhost/emit/synth.hero"
 bb4:
 #line 790096 "main.c"
     t13 = h3_ret0;
@@ -790099,84 +790099,84 @@ bb4:
     return t13;
 }
 
-#line 225 "selfhost/emit/synth.hero"
+#line 228 "selfhost/emit/synth.hero"
 bool h_emitsynth_wants_decl(h_emitsynth_Wanted h0_w, int64_t h1_decl) {
-#line 225 "selfhost/emit/synth.hero"
+#line 228 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae h2_f0 = {0}; bool h3_ret0; h_0opt_473cb9ae h4_own4 = {0}; h_emitsynth_Wanted t1; bool t2; bool t3; h_emitsynth_Wanted t4; HeroMapHeader * t5; int64_t t6; h_0opt_473cb9ae t7; h_0opt_473cb9ae t8; int64_t t9; int64_t t10; bool t11; bool t12; bool t13; h_0opt_473cb9ae t14; h_0opt_473cb9ae t15; goto bb0;
-#line 225 "selfhost/emit/synth.hero"
+#line 228 "selfhost/emit/synth.hero"
 bb0:
     t1 = h0_w;
-#line 226 "selfhost/emit/synth.hero"
+#line 229 "selfhost/emit/synth.hero"
     t2 = t1.f_every;
-#line 226 "selfhost/emit/synth.hero"
+#line 229 "selfhost/emit/synth.hero"
     if (t2) goto bb2; else goto bb3;
-#line 226 "selfhost/emit/synth.hero"
+#line 229 "selfhost/emit/synth.hero"
 bb1:
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t4 = h0_w;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t5 = t4.f_named;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t6 = h1_decl;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     {
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
       const void *found = hero_map_find(t5, &t6);
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
       if (found == NULL) {
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
         t7 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
       } else {
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
         t7 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
         (&hero_desc_bool)->copy(&t7.as.ok, found);
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
       }
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     }
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t14 = h4_own4;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     h4_own4 = t7;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t14);
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t15 = h2_f0;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_retain(&t7);
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     h2_f0 = t7;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     h_0opt_473cb9ae_release(&t15);
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t8 = h2_f0;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t9 = t8.tag;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t10 = INT64_C(1);
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t11 = t9 == t10;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     t12 = !t11;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     h3_ret0 = t12;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
     goto bb4;
-#line 228 "selfhost/emit/synth.hero"
+#line 231 "selfhost/emit/synth.hero"
 bb2:
-#line 227 "selfhost/emit/synth.hero"
+#line 230 "selfhost/emit/synth.hero"
     t3 = true;
-#line 227 "selfhost/emit/synth.hero"
+#line 230 "selfhost/emit/synth.hero"
     h3_ret0 = t3;
-#line 227 "selfhost/emit/synth.hero"
+#line 230 "selfhost/emit/synth.hero"
     goto bb4;
-#line 227 "selfhost/emit/synth.hero"
+#line 230 "selfhost/emit/synth.hero"
 bb3:
-#line 227 "selfhost/emit/synth.hero"
+#line 230 "selfhost/emit/synth.hero"
     goto bb1;
-#line 227 "selfhost/emit/synth.hero"
+#line 230 "selfhost/emit/synth.hero"
 bb4:
 #line 790182 "main.c"
     t13 = h3_ret0;
