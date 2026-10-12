@@ -72,6 +72,20 @@ constant LIMIT: str
 constant ROUTE_REFUSED: [i64]
     [404, 410, 415, 422]
 
+# The waits before an import GitHub answered `failed` with its own internal
+# error is asked again, one per try; past the last the run stops. Measured on
+# 2026-10-12, the first run: two of its first 709 imports failed so, neither
+# made an issue (each number read 404 after it), and the first, asked again, was
+# taken; a `failed` answer is GitHub's word that nothing was made, so asking
+# again cannot make a second issue, where an answer that never came might.
+constant RETRY_WAITS: [i64]
+    [30, 60, 120]
+
+# The `landed` answer that an import failed on GitHub's internal error and may
+# be asked again.
+constant RETRYABLE: i64
+    3
+
 # `chosen` pushed: the rendered files the run takes, of which those whose
 # `github:` is `none` are imported. The exit code (R11).
 function pushed(@s: issue_pace.Session, chosen: [issue_match.Entry], setup: Setup) -> i64
@@ -120,6 +134,11 @@ function pushed(@s: issue_pace.Session, chosen: [issue_match.Entry], setup: Setu
     for flight in state.flights
         if flight.url != ""
             code = landed(@s, setup: setup, state: @state, path: flight.path, url: flight.url)
+
+            # A pending import of the last run that failed on GitHub's
+            # internal error made no issue; its card is imported below.
+            if code == RETRYABLE
+                continue
 
             if code != 0
                 return code
@@ -225,7 +244,38 @@ function saved(@s: issue_pace.Session, path: str, state: issue_state.State) -> b
             return false
 
 # One card imported, its address written, the state cleared; 0, or the exit.
+# An import GitHub answered `failed` on its own internal error is asked again
+# after each of `RETRY_WAITS`, and the run stops past the last.
 function imported(@s: issue_pace.Session, entry: issue_match.Entry, milestone: i64, setup: Setup, @state: issue_state.State, first: bool) -> i64
+    tries: i64 @= 0
+
+    while true
+        code = attempt(@s, entry: entry, milestone: milestone, setup: setup, state: @state, first: first && tries == 0)
+
+        if code != RETRYABLE
+            return code
+
+        if tries >= RETRY_WAITS.len()
+            issue_pace.warn(
+                @s,
+                text: "the import of " + entry.r.path + " failed on GitHub's internal error " + (tries + 1).to_str() + " times; the run stops, and a rerun asks it again"
+            )
+            return 2
+        wait = RETRY_WAITS[tries]
+        issue_pace.say(
+            @s,
+            text: "retry " + entry.r.path + ": GitHub's internal error, asked again in " + wait.to_str() + " s"
+        )
+
+        if issue_pace.pause(@s, seconds: wait).is_err()
+            issue_pace.warn(@s, text: "the run cannot wait before asking " + entry.r.path + " again")
+            return 2
+        tries @ tries + 1
+
+    return 2
+
+# One request to import `entry`, awaited; 0, `RETRYABLE`, or the exit.
+function attempt(@s: issue_pace.Session, entry: issue_match.Entry, milestone: i64, setup: Setup, @state: issue_state.State, first: bool) -> i64
     path = entry.r.path
     state @ issue_state.flown(state: state, flight: issue_state.Flight(path: path, url: "", day: s.day))
 
@@ -288,6 +338,9 @@ function landed(@s: issue_pace.Session, setup: Setup, @state: issue_state.State,
         state @ issue_state.landed(state: state, path: path)
         _ = saved(@s, path: setup.state_path, state: state)
         issue_pace.warn(@s, text: "the import of " + path + " failed, and GitHub says: " + one.errors)
+
+        if strings.contains(text: one.errors, needle: "resource Internal Error")
+            return RETRYABLE
         return 2
     address = issue_github.web_address(one.issue)
 
@@ -581,3 +634,47 @@ test "a file whose card holds an address already is not imported, and the day be
     assert day_before("2028-03-01") == "2028-02-29"
     assert day_before("") == ""
     _ = shell.remove_tree(root).is_err()
+
+test "an import GitHub failed on its own internal error is asked again after a wait and taken, its card given its address"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a])
+    replies = issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(issue_scripts.pending(1)).push(issue_scripts.failed_inside(1)).push(issue_scripts.pending(2)).push(
+        issue_scripts.imported(id: 2, issue: 7)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@s, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 0
+    assert issue_scripts.github_of(root: root, path: a.path) == "https://github.com/heroes-lang/heroes/issues/7"
+    assert issue_scripts.posts(s) == 2
+    thirty: i64 @= 0
+
+    for wait in s.world.waits
+        if wait == 30
+            thirty @ thirty + 1
+
+    assert thirty == 1
+    assert strings.contains(text: s.out[0], needle: "retry " + a.path)
+    assert read_file(root + "/state").must() == "pin " + issue_scripts.PIN + "\n"
+    _ = shell.remove_tree(root).is_err()
+
+test "an import failed on GitHub's internal error four times stops the run and leaves its card as it was"
+    a = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    root = issue_scripts.tree_of([a])
+    replies: [issue_wire.Reply] @= issue_scripts.opening(limit: issue_scripts.limited(), held_issues: [])
+
+    for id in [1, 2, 3, 4]
+        replies @ replies.push(issue_scripts.pending(id)).push(issue_scripts.failed_inside(id))
+
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert pushed(@s, chosen: [issue_scripts.entry(a)], setup: setup_at(root: root, gaps: false)) == 2
+    assert issue_scripts.posts(s) == 4
+    assert issue_scripts.github_of(root: root, path: a.path) == "none"
+    assert strings.contains(text: s.err[s.err.len() - 1], needle: "failed on GitHub's internal error 4 times")
+    assert read_file(root + "/state").must() == "pin " + issue_scripts.PIN + "\n"
+    other = issue_scripts.tree_of([a])
+    plain: issue_pace.Session @= issue_pace.scripted(
+        issue_scripts.opening(limit: issue_scripts.limited(), held_issues: []).push(issue_scripts.pending(1)).push(issue_scripts.failed(1))
+    )
+    assert pushed(@plain, chosen: [issue_scripts.entry(a)], setup: setup_at(root: other, gaps: false)) == 2
+    assert issue_scripts.posts(plain) == 1
+    _ = shell.remove_tree(root).is_err()
+    _ = shell.remove_tree(other).is_err()

@@ -147,6 +147,15 @@ function failed(id: i64) -> issue_wire.Reply
         body: "{\"id\":" + id.to_str() + ",\"status\":\"failed\",\"url\":\"" + IMPORTS + id.to_str() + "\",\"errors\":[{\"location\":\"/issue/labels\",\"resource\":\"Label\",\"field\":\"name\",\"value\":\"kind:task\",\"code\":\"missing\"}]}"
     )
 
+# An import GitHub failed on its own internal error, in the shape it answered
+# twice on 2026-10-12: no location, `Internal Error` for the resource, an id of
+# its own for the value.
+function failed_inside(id: i64) -> issue_wire.Reply
+    return answer(
+        status: 200,
+        body: "{\"id\":" + id.to_str() + ",\"status\":\"failed\",\"url\":\"" + IMPORTS + id.to_str() + "\",\"errors\":[{\"location\":null,\"resource\":\"Internal Error\",\"field\":null,\"value\":\"0df2f4eeafff731ce02167d408444d13d35787bc\",\"code\":\"error\"}]}"
+    )
+
 # The reads every run of `push` opens with: one milestone, the labels a task
 # takes, the limit given, and the issues the list holds.
 function opening(limit: issue_wire.Reply, held_issues: [str]) -> [issue_wire.Reply]
