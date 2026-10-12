@@ -4174,7 +4174,12 @@ function carded(@r: report.Report, scratch: str, present: [str], issues: [cards.
             detail: "  docs/ROADMAP.md cannot be read, so no card's milestone can be asked for"
         )
         return
-    chain = chain_states(roadmap.must())
+    states = chain_states(roadmap.must())
+
+    if states.is_err()
+        report.keep_failure(@r, label: "records/cards", detail: "  " + cards.failure_of(states))
+        return
+    chain = states.must()
 
     if !floors.sound(@r, label: "records/cards", found: issues.len(), floor: CARDS_FLOOR, what: "issue files")
         return
@@ -4786,7 +4791,12 @@ function homed(@r: report.Report, present: [str], issues: [cards.Issue])
     if chain.is_err()
         report.keep_failure(@r, label: "records/homes", detail: "  docs/ROADMAP.md cannot be read")
         return
-    is_open = chain_states(chain.must())
+    states = chain_states(chain.must())
+
+    if states.is_err()
+        report.keep_failure(@r, label: "records/homes", detail: "  " + cards.failure_of(states))
+        return
+    is_open = states.must()
     files = milestone_pages(present)
 
     if files.len() == 0
@@ -4846,19 +4856,48 @@ function homed(@r: report.Report, present: [str], issues: [cards.Issue])
     else
         report.keep_pass(@r)
 
-# The milestones of § The chain, each to whether its row is still open: a row
-# with a `done` cell is closed. The summary rows above the chain carry no row
-# number and are not read (`chain_row_name`).
-function chain_states(text: str) -> {str: bool}
+# The milestones of § The chain, each to whether its row is still open, or the
+# row whose state cell is none of the chain's own shapes. The summary rows above
+# the chain carry no row number and are not read (`chain_row_name`).
+#
+# **A state cell is one of three shapes, and any other is refused by its row**
+# (defect 673): `done YYYY-MM-DD` closes a row, `**OPEN**` and `scheduled` leave
+# it open, the three the table held on 2026-10-12 (62 rows, 1 and 20 once row
+# 84 was mended) and the three `site/src/lib/chain.ts`, the chain's other
+# reader, names. Until that day a row was open unless it held `| done `, so a
+# word nobody wrote here before read as an open milestone in silence: row 84
+# said `closed 2026-10-10` from `d32c19a1`, the close of M-inferred-cell, and
+# `records/homes` would have taken an open task of that closed milestone.
+function chain_states(text: str) -> {str: bool}?
     is_open: {str: bool} @= {}
 
     for row in strings.lines(text)
         found = chain_row_name(row)
 
         if !found.is_err()
-            is_open[found.must()] @ !strings.contains(text: row, needle: "| done ")
+            is_open[found.must()] @ row_open(name: found.must(), row: row)?
 
-    return is_open
+    return ok(is_open)
+
+# Whether the chain row `row`, of milestone `name`, is open, read off its third
+# cell, or why that cell is none of the three shapes.
+function row_open(name: str, row: str) -> bool?
+    cells = strings.split_text(text: row, separator: " | ")
+    state: str @= ""
+
+    if cells.len() >= 3
+        state @ strings.trimmed(cells[2])
+
+    if state == "**OPEN**" || state == "scheduled"
+        return ok(true)
+    day = strings.without_prefix(text: state, prefix: "done ")
+
+    if strings.starts_with(text: state, prefix: "done ") && day.len() == 10 && !cards.day_of(day).is_err()
+        return ok(false)
+    return fail(
+        code: "chain_state",
+        msg: "docs/ROADMAP.md § The chain: the row of " + name + " holds the state `" + state + "`, and a row's state is `done YYYY-MM-DD`, `**OPEN**` or `scheduled` (defect 673)"
+    )
 
 # The one milestone list, and the tree that holds it.
 constant MILESTONES: str
@@ -7152,11 +7191,25 @@ test "a milestone's page stands directly in its tree, and the chain says which m
     )
     assert pages == ["docs/roadmap/milestones/M-x.md"]
     states = chain_states(
-        "| 1 | **M-day-zero** | done 2026-08-03 | `m0` |\n| 83 | **M-issue-files** | **OPEN** | — |\n| **Current milestone** | **M-other** |\n"
-    )
+        "| 1 | **M-day-zero** | done 2026-08-03 | `m0` |\n| 83 | **M-issue-files** | **OPEN** | — |\n| 82 | **M-guide-book** | scheduled | — |\n| **Current milestone** | **M-other** |\n"
+    ).must()
     assert !states["M-day-zero"].must()
     assert states["M-issue-files"].must()
+    assert states["M-guide-book"].must()
     assert states["M-other"].is_err()
+
+test "fixedbugs: a chain row whose state is none of the chain's three shapes is refused by its row, never read as open (defect 673)"
+    for state in ["closed 2026-10-10", "done", "done 2026-10-1", "done 2026-13-01", "OPEN", "Scheduled", ""]
+        refused = chain_states(
+            "| 1 | **M-day-zero** | done 2026-08-03 | `m0` |\n| 84 | **M-inferred-cell** | " + state + " | `m-inferred-cell` |\n"
+        )
+        assert refused.is_err()
+        assert strings.contains(
+            text: cards.failure_of(refused),
+            needle: "the row of M-inferred-cell holds the state `" + state + "`"
+        )
+
+    assert !chain_states("| 84 | **M-inferred-cell** | done 2026-10-10 | `m-inferred-cell` |\n").must()["M-inferred-cell"].must()
 
 test "a file under a directory that moved is found under the directory it moved to, and a gone file is not"
     known: {str: bool} @= {}

@@ -172,7 +172,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 81 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
 | 82 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
 | 83 | **M-issue-files** | **OPEN** | — | — | every item this project tracks is one file of `issues/`, a card on each, ready to be one GitHub issue: its kind, area, milestone, birth and settling commit, its sequence kept by its name. Opened 2026-10-04 by author instruction, ahead of every scheduled row because the lists it replaces are where every other milestone's work is filed · scheduled, no warrant |
-| 84 | **M-inferred-cell** | closed 2026-10-10 | `m-inferred-cell`, deleted 2026-10-11 and placed again the same day on `08a8f8c5` | [062](records/journal/062-inferred-cell.md) | a mutable cell declared by its own symbol, `@=`, and typed by its value as a binding is; a cell nothing re-binds refused with a certain fix; the tree rewritten through the compiler's own fix. Panel 209, ratified 2026-10-10; four steps in one lane the same day |
+| 84 | **M-inferred-cell** | done 2026-10-10 | `m-inferred-cell`, deleted 2026-10-11 and placed again the same day on `08a8f8c5` | [062](records/journal/062-inferred-cell.md) | a mutable cell declared by its own symbol, `@=`, and typed by its value as a binding is; a cell nothing re-binds refused with a certain fix; the tree rewritten through the compiler's own fix. Panel 209, ratified 2026-10-10; four steps in one lane the same day |
 
 Three closed milestones have no tag of their own because they were parents or
 sub-steps: **M-checker-core**, **M-data-declarations** and **M-rich-diagnostics**
