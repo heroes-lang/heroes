@@ -56,9 +56,11 @@ constant EXEMPT: [str]
 # panel 197's sitting and the batch's new modules and cases. **5,252 on
 # 2026-10-12**, lowered on purpose in the commit that removed `issues/`, its
 # 2,030 files having left the tree for GitHub (the author's answers of that
-# day); measured by this suite on that commit's tree.
+# day); measured by this suite on that commit's tree. **5,246 the same
+# evening**, the six modules of the transcription's words having left with
+# the folder's last readers.
 constant LEAST_DOCUMENTS: i64
-    5252
+    5246
 
 # One character found, by its file, its line and its code.
 record Found
