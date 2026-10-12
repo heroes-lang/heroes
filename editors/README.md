@@ -67,6 +67,34 @@ If `code` is not on your PATH: ⇧⌘P → *Shell Command: Install 'code' comman
 in PATH*. Cursor and Windsurf ship the same CLI under `cursor` /
 `windsurf`, and read their own extension directories.
 
+## Update
+
+The extension is not on a marketplace, so nothing updates it for you: an
+update is the same packaging run again over a newer checkout.
+
+```sh
+git pull                                 # the newest editors/ and its manifests
+# then § Install's packaging commands, unchanged, up to the zip, and instead
+# of its last line:
+code --install-extension build/heroes-lang.vsix --force
+code --list-extensions --show-versions | grep heroes-lang   # the version now installed
+```
+
+**`--force` is what makes it work between releases.** The extension's
+version is the language's (`VERSION` in `selfhost/main.hero`, held equal to
+both manifests by the `spec` suite), so it moves only at a release, and
+between two releases every package you build carries the same number. The
+CLI's own help says it: *Use '--force' argument to update to latest
+version*; without it, a package whose version is already installed may be
+refused as already present. A package with a higher version installs over an
+older one with or without it.
+
+Then run ⇧⌘P → *Developer: Reload Window*, or restart VS Code, so the new
+grammar, configuration and `extension.js` are the ones loaded. The two
+things worth checking after an update: a `.hero` file still reads
+**Heroes** in the status bar, and `Run and Debug` offers **Heroes** as a
+debugger (§ Debugging).
+
 ## The bolt on `.hero` files
 
 **The language brings its own icon, from VS Code 1.64.** The extension
