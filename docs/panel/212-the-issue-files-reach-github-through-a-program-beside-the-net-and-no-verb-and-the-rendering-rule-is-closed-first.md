@@ -328,3 +328,31 @@ What it moves, each as R6 item 2 said it would:
 
 What it does not settle, measurement 041 § 4: a public repository, the scale, whether an import counts against
 the 500 an hour, the endpoint's life after that evening, and a real commit's hash in an imported comment.
+
+## Scored at M-issue-files' close, 2026-10-12
+
+Each by the command named, run that evening on the round's tree.
+
+- **compiler-engineer**: missed by the nearest measure. `layout` judges
+  `selfhost/` alone, so its unit was not asked; the ten modules step 13 added
+  (`c98f14b1`) hold 1,479 lines that are neither blank, comment nor test,
+  `git show` of each read through verification.md's `code_of`, against the
+  775 predicted. The verb's route, 1,150 to 1,400, was not built.
+- **ffi-pragmatist**: exact. From `cd279804` to `6461f3e6`, steps 13 to 18,
+  `git diff` of `runtime/` and of `seed/README.md`'s link line is empty. Three
+  comment lines of `runtime/parts/` changed later (step 20, a citation of an
+  issue file rewritten as its issue's address), and no code.
+- **spec-warden**: two of three exact. `grep -c 'Command(' selfhost/cli/table.hero`
+  reads 13, and no start page of either edition says *fourteen*; the spec's
+  real row reads 10,050, not 10,044, moved by the six tokens of the subtitle the
+  author asked for that day and by nothing of this milestone.
+- **historian**: falsified. The six runs that imported 2,028 of the 2,029
+  issues took 2.47 hours of wall clock, each log's birth to its last write
+  (10:09 to 13:12, and 19:05 to 19:06 for the third pass), and no log holds a
+  403 or a `Retry-After`.
+- **llm-ergonomist**: not scored, as the sitting said.
+- **the sitting's own**: exact, over the count grown since. The last `plan`,
+  pinned at `585805bd`, rendered 2,029 of 2,029 files with none refused by the
+  rule; and GitHub's own rendering of all 2,030 issues, read as HTML the same
+  evening, held no `issue-link` and no `user-mention` anchor, and so did all
+  2,033 after R9 item 6's second pass had written its 6,676 links.
