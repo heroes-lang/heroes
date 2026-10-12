@@ -14,23 +14,24 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | **M-issue-files**, row 83, opened 2026-10-04 by author instruction: every item one GitHub issue, issues 1 to 2,029 transcribed from the files of `issues/` (2026-10-04), the folder leaving the tree as its last work by the author's answers of 2026-10-12. Row 63, **M-buildable-structs**, stays `scheduled` (panels 178 and 194). **M-inferred-cell**, row 84, opened and closed on 2026-10-10 in one lane |
-| **Next** | the release **v0.3.0**: its tag on batch 22's closing commit once that commit's CI is green on all four legs, VERSION moving in that commit because the spec changed since v0.2.0; then the formatter's probe the optimistic chain owes after a push touching `selfhost/print/` (three of its six runs ended unfinished on 2026-10-11, none refused), and panel 194's landing as **M-buildable-structs**, row 63 |
-| **Last closed** | **M-inferred-cell**, 2026-10-10 ([062](records/journal/062-inferred-cell.md)), its tag `m-inferred-cell` deleted on 2026-10-11 at 00:45 by the author's instruction and placed again the same day on `08a8f8c5`, the first commit over a list with no `blocking` and no `systemic` defect — a cell declared `@=` and typed by its value, a cell nothing re-binds refused, the tree rewritten by the compiler's own fix · before it **M-agreed-retention** ([061](records/journal/061-agreed-retention.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
-| Milestones closed | **63** of 84 · **63** tags matching `m*`, the legacy `m0`-`m8` included |
-| The compiler | **161,358** lines of Heroes in **618** modules (`find selfhost -name '*.hero'`) · the seed **1,333,626** lines of C, regenerated at each batch's close and the fixpoint verified byte-identical |
+| **Current milestone** | none open: **M-typed-inspection** is taken next by the author's answers of 2026-10-12 (https://github.com/heroes-lang/heroes/issues/2029), its sitting asked for once, and § The chain re-ordered closed rows first when its row opens. Row 63, **M-buildable-structs**, stays `scheduled` (panels 178 and 194) |
+| **Next** | **M-typed-inspection**, a stopped Heroes program shown with Heroes values in the editor's debugger; then the formatter's probe the optimistic chain owes after a push touching `selfhost/print/` (three of its six runs ended unfinished on 2026-10-11, none refused; a comment of `fmt.hero` moved on 2026-10-12), and panel 194's landing as **M-buildable-structs**, row 63 |
+| **Last closed** | **M-issue-files**, 2026-10-12 ([063](records/journal/063-issue-files.md)) — every item one GitHub issue, 2,029 transcribed in the order they were born with their own days, then on GitHub alone, the folder leaving the tree, and every `defect NNN` and `panel NNN` a body names made a link · before it **M-inferred-cell** ([062](records/journal/062-inferred-cell.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
+| Milestones closed | **64** of 84 · **64** tags matching `m*`, the legacy `m0`-`m8` included |
+| The compiler | **161,393** lines of Heroes in **618** modules (`find selfhost -name '*.hero'`) · the seed **1,333,811** lines of C, regenerated at each batch's close and the fixpoint verified byte-identical |
 | The platforms | **four**, since 2026-09-18: Linux x86-64, **Linux arm64**, Darwin arm64, Windows x86-64. The two Linux legs are one axis apart by construction — same Debian, same clang, same libc — so a divergence between them has one candidate cause. Windows is the one the author starts by hand |
 | The spec | **7655** on the vendored ranks and **10,050** on the reader's own, against a ceiling of **10240** (`heroes measure spec/heroes-spec.md`, 2026-10-12). Panel 210's landing in batch 21 spent the 20 above M-inferred-cell's 10,024: an `@` parameter nothing writes or ends refused, and `@_` refused; the subtitle *for the LLM age* in the opening line spent 6 more, by author instruction |
 | The contract | **8167** on the reader's own against a ceiling of **12288**, judged on `claude-opus-5`, refreshed 2026-09-29 |
-| Records | sittings **209** · journals **63**, numbered files only · milestone pages **54** in `docs/roadmap/milestones/` · measurements **39** · issues on GitHub, counted there since 2026-10-12 · questions **466** in `docs/learn/`, 441 open, not issues since 2026-10-05 · `docs/records/book/beats/` **130** |
+| Records | sittings **210** · journals **64**, numbered files only · milestone pages **54** in `docs/roadmap/milestones/` · measurements **40** · issues on GitHub, counted there since 2026-10-12 · questions **469** in `docs/learn/`, 444 open, not issues since 2026-10-05 · `docs/records/book/beats/` **131** |
 | Waiting on the author | the open decision issues on GitHub, the `kind:decision` label; CodeQL's default setup switched off by the author on 2026-10-12 and replaced by `.github/workflows/codeql.yml` (defect 674) |
 
-**Re-measured 2026-10-11 at batch 22's close, for release v0.3.0, the full net on a
-compiler built from the regenerated seed, which is CI's own configuration:
-8,306 passed over the 29 suites and 1 failed**, `records/counts` alone, on the
-open count the close then moved, plus the compiler's own 1,620 and the net's
-own 341. M-inferred-cell's close, 8,107 cases, is
-[062](records/journal/062-inferred-cell.md).
+**Re-measured 2026-10-12 at M-issue-files' close, the full net on a compiler
+built from the regenerated seed, which is CI's own configuration: 8,319
+passed over the 29 suites and 2 failed**, `order` alone, a mark the defect
+2030 repair had lost, restored and read 3 and 0 at `9ccf7d41`; plus the
+compiler's own 1,620 and the net's own 377. The account is
+[063](records/journal/063-issue-files.md); M-inferred-cell's close, 8,107 cases,
+is [062](records/journal/062-inferred-cell.md).
 
 **The by-hand probe `.claude/rules/verification.md` owes where `selfhost/print/`
 moved runs after the push, beside the CI, as § The optimistic chain says since
@@ -167,7 +168,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 80 | **M-qbe-backend** | scheduled | — | — | Part 7 item 15 — the proof that the IR is not C in disguise |
 | 81 | **M-journey-book** | scheduled | — | — | the journey — how this language came to be |
 | 82 | **M-guide-book** | scheduled | — | — | the guide, as a book you would find in a shop · **§1.1** |
-| 83 | **M-issue-files** | **OPEN** | — | — | every item this project tracks is one file of `issues/`, a card on each, ready to be one GitHub issue: its kind, area, milestone, birth and settling commit, its sequence kept by its name. Opened 2026-10-04 by author instruction, ahead of every scheduled row because the lists it replaces are where every other milestone's work is filed · scheduled, no warrant |
+| 83 | **M-issue-files** | done 2026-10-12 | `m-issue-files` | [063](records/journal/063-issue-files.md) | every item this project tracks is one GitHub issue: one file each of `issues/` first, a card on each, then 2,029 issues imported in the order they were born with their own days, then GitHub alone and the folder out of the tree. Opened 2026-10-04 by author instruction, ahead of every scheduled row because the lists it replaces are where every other milestone's work is filed |
 | 84 | **M-inferred-cell** | done 2026-10-10 | `m-inferred-cell`, deleted 2026-10-11 and placed again the same day on `08a8f8c5` | [062](records/journal/062-inferred-cell.md) | a mutable cell declared by its own symbol, `@=`, and typed by its value as a binding is; a cell nothing re-binds refused with a certain fix; the tree rewritten through the compiler's own fix. Panel 209, ratified 2026-10-10; four steps in one lane the same day |
 
 Three closed milestones have no tag of their own because they were parents or
