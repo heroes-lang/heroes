@@ -4,7 +4,7 @@ area: ci
 milestone: none
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2021
 ---
 
 - [x] **674 — CodeQL's default setup spends six hours on the generated C and never finishes, so code scanning stopped** | GitHub's code-scanning default setup, switched on 2026-10-11, has no build to follow, so it extracts C and C++ with none: every `.c` and `.h` of the tree, 710 and 604 files at `808bb4238`, about 96 MB of them generated (`seed/heroes.c` 52.0 MB, the 599 files of `tests/emission/` 44.2 MB) against 0.7 MB of hand-written runtime. Run 38131878650's `Analyze (c-cpp)` was cancelled at GitHub's six-hour limit while still extracting, the run ended `cancelled`, its `Adjust Configuration` job was skipped, and no analysis has run since: the eight alerts batch 22 repaired stand open on `808bb4238`, one of them `high`, and the runtime has never been scanned | `https://github.com/heroes-lang/heroes/actions/runs/38131878650` · the repository's settings, Code security, CodeQL's default setup · `.github/workflows/`, which holds no CodeQL workflow · **class: blocking**
