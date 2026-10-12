@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -84,7 +85,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4a02223e, "opened");
 HERO_STR_STATIC(hero_str_73bdf5b2, "closed twice");
 
-#line 88 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 89 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -128,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 133 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_G_eq(gg * const *a, gg * const *b);
@@ -196,7 +197,7 @@ bb0:
     hero_print_end();
 #line 31 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
     return;
-#line 200 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
+#line 201 "fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_G_eq(gg * const *a, gg * const *b) {
     return hero_handle_eq(*a, *b);

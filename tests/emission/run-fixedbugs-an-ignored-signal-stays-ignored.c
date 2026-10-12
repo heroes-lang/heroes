@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -82,7 +83,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_628aec41, "ignored: ");
 
-#line 86 "fixedbugsanignoredsignalstaysignored.c"
+#line 87 "fixedbugsanignoredsignalstaysignored.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -124,7 +125,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 128 "fixedbugsanignoredsignalstaysignored.c"
+#line 129 "fixedbugsanignoredsignalstaysignored.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -178,7 +179,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
     hero_print_end();
     hero_held_release(&h1_held);
-#line 182 "fixedbugsanignoredsignalstaysignored.c"
+#line 183 "fixedbugsanignoredsignalstaysignored.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h2_own2);
     return;

@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -82,7 +83,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_69fd5e8e, "127.0.0.1");
 
-#line 86 "fixedbugsgetaddrinfoisbindable.c"
+#line 87 "fixedbugsgetaddrinfoisbindable.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -127,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "fixedbugsgetaddrinfoisbindable.c"
+#line 132 "fixedbugsgetaddrinfoisbindable.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b);
@@ -191,7 +192,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_res);
 #line 29 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
     return;
-#line 195 "fixedbugsgetaddrinfoisbindable.c"
+#line 196 "fixedbugsgetaddrinfoisbindable.c"
 }
 #undef h0_res
 HERO_TU_LOCAL bool h_fixedbugsgetaddrinfoisbindable_AI_eq(struct addrinfo * const *a, struct addrinfo * const *b) {

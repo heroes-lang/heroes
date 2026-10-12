@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -46,7 +47,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 11 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 _Static_assert(__builtin_classify_type(((struct one *)0)->a) == 1 && sizeof(((struct one *)0)->a) == sizeof(int32_t) && (_Generic(((struct one *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field One a");
-#line 50 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 51 "fixedbugs092acountinacellpasttherecordaborts.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -127,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 132 "fixedbugs092acountinacellpasttherecordaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092acountinacellpasttherecordaborts_One_eq(const struct one *a, const struct one *b);
@@ -192,7 +193,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 19 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
     return;
-#line 196 "fixedbugs092acountinacellpasttherecordaborts.c"
+#line 197 "fixedbugs092acountinacellpasttherecordaborts.c"
 }
 #undef h0_o
 #undef h1_n

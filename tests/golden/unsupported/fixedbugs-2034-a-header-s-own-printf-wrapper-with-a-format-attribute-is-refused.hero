@@ -1,0 +1,17 @@
+# fixedbugs, defect 2034, 2026-10-12, a shape beside the 569 format case.
+#
+# SYMPTOM: a header of the program's own whose `vprintf` wrapper is declared
+# `__attribute__((format(printf, 1, 2)))`, called with a `char *` for `%d`,
+# built and printed a pointer's low bits (1742570, then 36476650) at exit
+# 0: the attribute makes clang judge the wrapper's call as it judges
+# `printf`'s, and the region ignored that judgement with the rest of `-Wall`.
+#
+# FIX: `-Wformat` stays an error in the region (`emit/header_region.hero`'s
+# `KEPT`), so the attributed wrapper is refused at the header's line 6. A
+# wrapper with no attribute is not seen by clang at all, and builds.
+
+extern "fixedbugs-2034-a-header-s-own-printf-wrapper-with-a-format-attribute-is-refused.h"  #~ ffi_header_refused
+    function fmt_shout() -> i32
+
+function main()
+    print(fmt_shout())

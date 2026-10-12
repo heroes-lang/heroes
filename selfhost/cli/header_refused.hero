@@ -167,7 +167,7 @@ function told(rows: [str], first: clang_first.First, steps: [clang_place.Place],
 
     if !clang_place.offset_of(text: first.message, needle: AS_ERROR).is_err()
         d.notes @ d.notes.push(
-            "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a value narrowed to 32 bits or a pointer of another type"
+            "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a format its arguments do not match, a value narrowed to 32 bits or a pointer of another type"
         )
     d.notes @ d.notes.push(REPAIR)
     return d

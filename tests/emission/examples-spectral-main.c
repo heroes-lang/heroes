@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -84,7 +85,7 @@ HERO_STR_STATIC(hero_str_2e, ".");
 HERO_STR_STATIC(hero_str_2d, "-");
 HERO_STR_STATIC(hero_str_30, "0");
 
-#line 88 "main.c"
+#line 89 "main.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -136,7 +137,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 140 "main.c"
+#line 141 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -174,7 +175,7 @@ bb0:
     t1 = INT64_C(100);
 #line 46 "examples/spectral/main.hero"
     return t1;
-#line 178 "main.c"
+#line 179 "main.c"
 }
 
 #line 49 "examples/spectral/main.hero"
@@ -186,7 +187,7 @@ bb0:
     t1 = INT64_C(10);
 #line 50 "examples/spectral/main.hero"
     return t1;
-#line 190 "main.c"
+#line 191 "main.c"
 }
 
 #line 56 "examples/spectral/main.hero"
@@ -235,7 +236,7 @@ bb0:
     t17 = t4 / t16;
 #line 58 "examples/spectral/main.hero"
     return t17;
-#line 239 "main.c"
+#line 240 "main.c"
 }
 
 #line 61 "examples/spectral/main.hero"
@@ -290,7 +291,7 @@ bb2:
 bb3:
 #line 76 "examples/spectral/main.hero"
     t31 = h1_out;
-#line 294 "main.c"
+#line 295 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h5_own5);
@@ -351,7 +352,7 @@ bb6:
     h2_i = t30;
 #line 74 "examples/spectral/main.hero"
     goto bb1;
-#line 355 "main.c"
+#line 356 "main.c"
 }
 
 #line 80 "examples/spectral/main.hero"
@@ -406,7 +407,7 @@ bb2:
 bb3:
 #line 95 "examples/spectral/main.hero"
     t31 = h1_out;
-#line 410 "main.c"
+#line 411 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h5_own5);
@@ -467,7 +468,7 @@ bb6:
     h2_i = t30;
 #line 93 "examples/spectral/main.hero"
     goto bb1;
-#line 471 "main.c"
+#line 472 "main.c"
 }
 
 #line 98 "examples/spectral/main.hero"
@@ -493,7 +494,7 @@ bb0:
     h2_own2 = t3;
 #line 99 "examples/spectral/main.hero"
     hero_array_decref(t5);
-#line 497 "main.c"
+#line 498 "main.c"
     hero_array_incref(t3);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -554,7 +555,7 @@ bb2:
 bb3:
 #line 110 "examples/spectral/main.hero"
     t12 = h1_out;
-#line 558 "main.c"
+#line 559 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_own3);
@@ -744,7 +745,7 @@ bb6:
     t45 = t43 / t44;
 #line 135 "examples/spectral/main.hero"
     t46 = sqrt(t45);
-#line 748 "main.c"
+#line 749 "main.c"
     hero_array_release_at(&h1_u);
     hero_array_release_at(&h2_v);
     hero_array_release_at(&h7_own7);
@@ -775,7 +776,7 @@ bb0:
     hero_print_str(t3);
 #line 138 "examples/spectral/main.hero"
     hero_print_end();
-#line 779 "main.c"
+#line 780 "main.c"
     hero_str_release_at(&h0_own0);
     return;
 }
@@ -789,7 +790,7 @@ bb0:
     t1 = 0x1.dcd65p+29;
 #line 145 "examples/spectral/main.hero"
     return t1;
-#line 793 "main.c"
+#line 794 "main.c"
 }
 
 #line 147 "examples/spectral/main.hero"
@@ -958,7 +959,7 @@ bb5:
     t18 = h3_f0;
 #line 153 "examples/spectral/main.hero"
     t19 = t18.as.err;
-#line 962 "main.c"
+#line 963 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -992,7 +993,7 @@ bb8:
     goto bb6;
 #line 159 "examples/spectral/main.hero"
 bb9:
-#line 996 "main.c"
+#line 997 "main.c"
     t40 = h8_ret0;
     hero_str_incref(t40);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -1070,7 +1071,7 @@ bb2:
 bb3:
 #line 169 "examples/spectral/main.hero"
     t10 = h1_digits;
-#line 1074 "main.c"
+#line 1075 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_digits);
     hero_str_release_at(&h2_own2);

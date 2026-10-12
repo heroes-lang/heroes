@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -91,7 +92,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 95 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 96 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -135,7 +136,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 140 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -374,7 +375,7 @@ bb9:
     goto bb7;
 #line 30 "tests/golden/run/fixedbugs-353-an-argument-holding-a-lone-surrogate-is-not-text.hero"
 bb10:
-#line 378 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 379 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_word);
@@ -386,7 +387,7 @@ bb10:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 390 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 391 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     return HERO_STR_OK;
 }
 
@@ -509,7 +510,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 513 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 514 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -582,7 +583,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 586 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 587 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -652,7 +653,7 @@ bb2:
 #line 221 "<heroes library>"
 bb3:
     t14 = h0_out;
-#line 656 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
+#line 657 "fixedbugs353anargumentholdingalonesurrogateisnottext.c"
     hero_array_incref(t14);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

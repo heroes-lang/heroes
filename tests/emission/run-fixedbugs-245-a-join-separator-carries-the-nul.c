@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -100,7 +101,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 104 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 105 "fixedbugs245ajoinseparatorcarriesthenul.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -156,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 160 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 161 "fixedbugs245ajoinseparatorcarriesthenul.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -188,7 +189,7 @@ HeroStr h_fixedbugs245ajoinseparatorcarriesthenul_HELD(void) {
 #line 16 "tests/golden/run/fixedbugs-245-a-join-separator-carries-the-nul.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1d7529cf);
-#line 192 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 193 "fixedbugs245ajoinseparatorcarriesthenul.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -263,7 +264,7 @@ bb1:
     goto bb3;
 #line 23 "tests/golden/run/fixedbugs-245-a-join-separator-carries-the-nul.hero"
 bb2:
-#line 267 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 268 "fixedbugs245ajoinseparatorcarriesthenul.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -393,7 +394,7 @@ bb8:
     t28 = h4_f0;
 #line 24 "tests/golden/run/fixedbugs-245-a-join-separator-carries-the-nul.hero"
     t29 = t28.as.err;
-#line 397 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 398 "fixedbugs245ajoinseparatorcarriesthenul.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -401,7 +402,7 @@ bb9:
     t47 = h5_f1;
 #line 27 "tests/golden/run/fixedbugs-245-a-join-separator-carries-the-nul.hero"
     t48 = t47.as.ok;
-#line 405 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 406 "fixedbugs245ajoinseparatorcarriesthenul.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -417,7 +418,7 @@ bb10:
     t45 = h5_f1;
 #line 27 "tests/golden/run/fixedbugs-245-a-join-separator-carries-the-nul.hero"
     t46 = t45.as.err;
-#line 421 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 422 "fixedbugs245ajoinseparatorcarriesthenul.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
@@ -504,7 +505,7 @@ bb0:
     hero_print_uint(t14);
 #line 33 "tests/golden/run/fixedbugs-245-a-join-separator-carries-the-nul.hero"
     hero_print_end();
-#line 508 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 509 "fixedbugs245ajoinseparatorcarriesthenul.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_made);
     hero_str_release_at(&h2_own2);
@@ -515,25 +516,25 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 519 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 520 "fixedbugs245ajoinseparatorcarriesthenul.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 525 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 526 "fixedbugs245ajoinseparatorcarriesthenul.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 531 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 532 "fixedbugs245ajoinseparatorcarriesthenul.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 537 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 538 "fixedbugs245ajoinseparatorcarriesthenul.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -768,7 +769,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 772 "fixedbugs245ajoinseparatorcarriesthenul.c"
+#line 773 "fixedbugs245ajoinseparatorcarriesthenul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

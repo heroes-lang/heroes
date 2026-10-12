@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -51,7 +52,7 @@ _Static_assert(_Generic(&((Inner *)0)->s, Slot * *: 1, default: 0) && sizeof(((I
 #line 24 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
 _Static_assert(_Generic(&((Pair *)0)->a, Inner *: 1, default: 0) && sizeof(((Pair *)0)->a) == sizeof(Inner), "heroes-ffi-field Pair a");
 _Static_assert(_Generic(&((Pair *)0)->b, Inner *: 1, default: 0) && sizeof(((Pair *)0)->b) == sizeof(Inner), "heroes-ffi-field Pair b");
-#line 55 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 56 "fixedbugstheunacquiredsiblingleaksloudly.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -139,7 +140,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 144 "fixedbugstheunacquiredsiblingleaksloudly.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstheunacquiredsiblingleaksloudly_Slot_eq(Slot * const *a, Slot * const *b);
@@ -224,7 +225,7 @@ bb0:
     hero_print_end();
 #line 36 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
     return;
-#line 228 "fixedbugstheunacquiredsiblingleaksloudly.c"
+#line 229 "fixedbugstheunacquiredsiblingleaksloudly.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstheunacquiredsiblingleaksloudly_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

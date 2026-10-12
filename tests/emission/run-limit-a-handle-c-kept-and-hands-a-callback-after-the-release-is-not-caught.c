@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -87,7 +88,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_12576dd3, "the callback read after the release: ");
 
-#line 91 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 92 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 typedef int64_t (*h_0fn_7a996e48)(node *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -135,7 +136,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 140 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_Node_eq(node * const *a, node * const *b);
@@ -172,7 +173,7 @@ bb0:
     t2 = node_value(t1);
 #line 25 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return t2;
-#line 176 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 177 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 
 int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
@@ -224,7 +225,7 @@ bb0:
     hero_print_end();
 #line 32 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return;
-#line 228 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 229 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

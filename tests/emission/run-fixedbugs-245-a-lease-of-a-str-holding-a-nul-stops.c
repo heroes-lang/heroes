@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -98,7 +99,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 102 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 103 "fixedbugs245aleaseofastrholdinganulstops.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -154,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 159 "fixedbugs245aleaseofastrholdinganulstops.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -186,7 +187,7 @@ HeroStr h_fixedbugs245aleaseofastrholdinganulstops_HELD(void) {
 #line 18 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6107d0b4);
-#line 190 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 191 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -261,7 +262,7 @@ bb1:
     goto bb3;
 #line 25 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
 bb2:
-#line 265 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 266 "fixedbugs245aleaseofastrholdinganulstops.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -391,7 +392,7 @@ bb8:
     t28 = h4_f0;
 #line 26 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t29 = t28.as.err;
-#line 395 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 396 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -399,7 +400,7 @@ bb9:
     t47 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t48 = t47.as.ok;
-#line 403 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 404 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -415,7 +416,7 @@ bb10:
     t45 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     t46 = t45.as.err;
-#line 419 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 420 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
@@ -473,7 +474,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-245-a-lease-of-a-str-holding-a-nul-stops.hero"
     hero_print_end();
     hero_held_release(&h1_c);
-#line 477 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 478 "fixedbugs245aleaseofastrholdinganulstops.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h2_own2);
     return;
@@ -481,25 +482,25 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 485 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 486 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 491 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 492 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 497 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 498 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 503 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 504 "fixedbugs245aleaseofastrholdinganulstops.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -734,7 +735,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 738 "fixedbugs245aleaseofastrholdinganulstops.c"
+#line 739 "fixedbugs245aleaseofastrholdinganulstops.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

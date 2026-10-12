@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -85,7 +86,7 @@ HERO_STR_STATIC(hero_str_10e4fea3, "C laid out ");
 HERO_STR_STATIC(hero_str_391e7e27, " bytes");
 HERO_STR_STATIC(hero_str_521d74b5, "C reads ");
 
-#line 89 "fixedbugs245astrclaysoutholdinganulstops.c"
+#line 90 "fixedbugs245astrclaysoutholdinganulstops.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -129,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 133 "fixedbugs245astrclaysoutholdinganulstops.c"
+#line 134 "fixedbugs245astrclaysoutholdinganulstops.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -192,7 +193,7 @@ bb0:
     hero_print_uint(t9);
 #line 16 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
     hero_print_end();
-#line 196 "fixedbugs245astrclaysoutholdinganulstops.c"
+#line 197 "fixedbugs245astrclaysoutholdinganulstops.c"
     hero_str_release_at(&h0_laid);
     hero_str_release_at(&h1_own1);
     return;

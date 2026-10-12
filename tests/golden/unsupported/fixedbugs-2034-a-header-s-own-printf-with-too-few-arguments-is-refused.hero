@@ -1,0 +1,16 @@
+# fixedbugs, defect 2034, 2026-10-12, a shape beside the 569 format case.
+#
+# SYMPTOM: a header of the program's own whose `printf("%d %d\n", 7)` has
+# two conversions and one argument built and printed `7 1807852524` at exit
+# 0, then `7 1864541132`, the second number whatever the register held:
+# clang's `-Wformat-insufficient-args`, a part of `-Wformat`, went with `-Wall`.
+#
+# FIX: `-Wformat` stays an error in the region (`emit/header_region.hero`'s
+# `KEPT`), and a pragma on a group reaches its parts, so the call is refused
+# at the header's line 4.
+
+extern "fixedbugs-2034-a-header-s-own-printf-with-too-few-arguments-is-refused.h"  #~ ffi_header_refused
+    function fmt_shout() -> i32
+
+function main()
+    print(fmt_shout())

@@ -8,6 +8,7 @@
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
+#pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
@@ -82,7 +83,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 86 "aborthandleborrowsthatgivesaway.c"
+#line 87 "aborthandleborrowsthatgivesaway.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -128,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "aborthandleborrowsthatgivesaway.c"
+#line 133 "aborthandleborrowsthatgivesaway.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b);
@@ -181,7 +182,7 @@ bb0:
     }
 #line 27 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
     return;
-#line 185 "aborthandleborrowsthatgivesaway.c"
+#line 186 "aborthandleborrowsthatgivesaway.c"
 }
 HERO_TU_LOCAL bool h_aborthandleborrowsthatgivesaway_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);
