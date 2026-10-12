@@ -1,0 +1,7 @@
+# Defect 2030: the second module named `held`, its `Held` another record.
+
+record Held
+    b: str
+
+function made() -> Held
+    return Held(b: "x")

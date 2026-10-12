@@ -1037,8 +1037,8 @@ int64_t h_library_HERO_OS_BAD_NAME(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 HeroArrayHeader * h_library_args(void);
 void h_library_exit(int64_t h0_code);
-HERO_TU_LOCAL int64_t h_utileach_counted_517bb1b4(HeroArrayHeader * h0_xs, h_0fn_516de6fc h1_fits);
-HERO_TU_LOCAL HeroStr h_utileach_joined_72b72b0c(HeroArrayHeader * h0_xs, h_0fn_23d647b0 h1_shown, HeroStr h2_sep);
+HERO_TU_LOCAL int64_t h_utileach_counted_760871a0(HeroArrayHeader * h0_xs, h_0fn_516de6fc h1_fits);
+HERO_TU_LOCAL HeroStr h_utileach_joined_45dbe725(HeroArrayHeader * h0_xs, h_0fn_23d647b0 h1_shown, HeroStr h2_sep);
 HERO_TU_LOCAL h_0opt_e201354 h_runvalue_wanted_1b9a87(HeroStr h0_what, h_runvalue_Value h1_v);
 HERO_TU_LOCAL h_0opt_f87774a h_runvalue_wanted_1e58d9(HeroStr h0_what, h_runvalue_Value h1_v);
 HERO_TU_LOCAL bool h_utileach_every_1e58d9(HeroArrayHeader * h0_xs, h_0fn_3126f763 h1_fits);
@@ -13659,7 +13659,7 @@ bb2:
 #line 193 "examples/interpreter/run/eval.hero"
     t30 = HERO_STR_LIT(hero_str_16a4);
 #line 193 "examples/interpreter/run/eval.hero"
-    t31 = h_utileach_joined_72b72b0c(t28, t29, t30);
+    t31 = h_utileach_joined_45dbe725(t28, t29, t30);
 #line 193 "examples/interpreter/run/eval.hero"
     t96 = h20_own20;
 #line 193 "examples/interpreter/run/eval.hero"
@@ -25440,7 +25440,7 @@ bb0:
 #line 24 "examples/interpreter/util/each.hero"
 /* counted<Token> */
 #line 24 "examples/interpreter/util/each.hero"
-HERO_TU_LOCAL int64_t h_utileach_counted_517bb1b4(HeroArrayHeader * h0_xs, h_0fn_516de6fc h1_fits) {
+HERO_TU_LOCAL int64_t h_utileach_counted_760871a0(HeroArrayHeader * h0_xs, h_0fn_516de6fc h1_fits) {
 #line 24 "examples/interpreter/util/each.hero"
     int64_t h2_total; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_lextoken_Token h5_one = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_lextoken_Token t10; h_0fn_516de6fc t11; h_lextoken_Token t12; bool t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; HeroArrayHeader * t21; h_lextoken_Token t22; goto bb0;
 #line 24 "examples/interpreter/util/each.hero"
@@ -25542,7 +25542,7 @@ bb7:
 #line 48 "examples/interpreter/util/each.hero"
 /* joined<Value> */
 #line 48 "examples/interpreter/util/each.hero"
-HERO_TU_LOCAL HeroStr h_utileach_joined_72b72b0c(HeroArrayHeader * h0_xs, h_0fn_23d647b0 h1_shown, HeroStr h2_sep) {
+HERO_TU_LOCAL HeroStr h_utileach_joined_45dbe725(HeroArrayHeader * h0_xs, h_0fn_23d647b0 h1_shown, HeroStr h2_sep) {
 #line 48 "examples/interpreter/util/each.hero"
     HeroArrayHeader * h3_pieces = {0}; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; h_runvalue_Value h6_one = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_runvalue_Value t10; h_0fn_23d647b0 t12; h_runvalue_Value t13; HeroStr t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroStr t20; HeroStr t21; HeroArrayHeader * t22; HeroArrayHeader * t23; HeroArrayHeader * t24; h_runvalue_Value t25; HeroStr t26; HeroStr t27; goto bb0;
 #line 48 "examples/interpreter/util/each.hero"

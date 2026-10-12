@@ -122,9 +122,9 @@ HeroStr h_fixedbugsaufcschaingavetwocallsonekey_shown(h_fixedbugsaufcschaingavet
 int64_t h_fixedbugsaufcschaingavetwocallsonekey_add(int64_t h0_acc, int64_t h1_item);
 HeroStr h_fixedbugsaufcschaingavetwocallsonekey_glue(HeroStr h0_acc, HeroStr h1_item);
 void h_fixedbugsaufcschaingavetwocallsonekey_main(void);
-HERO_TU_LOCAL HeroArrayHeader * h_library_map_1920d470(HeroArrayHeader * h0_xs, h_0fn_7df997ea h1_f);
+HERO_TU_LOCAL HeroArrayHeader * h_library_map_42b12237(HeroArrayHeader * h0_xs, h_0fn_7df997ea h1_f);
 HERO_TU_LOCAL int64_t h_library_fold_37f8817a(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_6ca17148 h2_f);
-HERO_TU_LOCAL HeroArrayHeader * h_library_map_192392c2(HeroArrayHeader * h0_xs, h_0fn_43d3f883 h1_f);
+HERO_TU_LOCAL HeroArrayHeader * h_library_map_31a32ac5(HeroArrayHeader * h0_xs, h_0fn_43d3f883 h1_f);
 HERO_TU_LOCAL HeroStr h_library_fold_f720dcd(HeroArrayHeader * h0_xs, HeroStr h1_start, h_0fn_2248724e h2_f);
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f);
 
@@ -264,7 +264,7 @@ bb0:
 #line 70 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t9 = h_fixedbugsaufcschaingavetwocallsonekey_to_n;
 #line 70 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
-    t10 = h_library_map_1920d470(t8, t9);
+    t10 = h_library_map_42b12237(t8, t9);
 #line 70 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t47 = h3_own3;
 #line 70 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -286,7 +286,7 @@ bb0:
 #line 74 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t15 = h_fixedbugsaufcschaingavetwocallsonekey_shown;
 #line 74 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
-    t16 = h_library_map_192392c2(t14, t15);
+    t16 = h_library_map_31a32ac5(t14, t15);
 #line 74 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t48 = h4_own4;
 #line 74 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -314,7 +314,7 @@ bb0:
 #line 78 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t21 = h_fixedbugsaufcschaingavetwocallsonekey_to_n;
 #line 78 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
-    t22 = h_library_map_1920d470(t20, t21);
+    t22 = h_library_map_42b12237(t20, t21);
 #line 78 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t50 = h6_own6;
 #line 78 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -346,7 +346,7 @@ bb0:
 #line 82 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t29 = h_fixedbugsaufcschaingavetwocallsonekey_to_n;
 #line 82 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
-    t30 = h_library_map_1920d470(t28, t29);
+    t30 = h_library_map_42b12237(t28, t29);
 #line 82 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t52 = h8_own8;
 #line 82 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -363,7 +363,7 @@ bb0:
 #line 83 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t33 = h_fixedbugsaufcschaingavetwocallsonekey_to_n;
 #line 83 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
-    t34 = h_library_map_1920d470(t32, t33);
+    t34 = h_library_map_42b12237(t32, t33);
 #line 83 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t53 = h9_own9;
 #line 83 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -393,7 +393,7 @@ bb0:
 #line 85 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t40 = h_fixedbugsaufcschaingavetwocallsonekey_to_n;
 #line 85 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
-    t41 = h_library_map_1920d470(t39, t40);
+    t41 = h_library_map_42b12237(t39, t40);
 #line 85 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
     t55 = h10_own10;
 #line 85 "tests/golden/run/fixedbugs-a-ufcs-chain-gave-two-calls-one-key.hero"
@@ -428,7 +428,7 @@ bb0:
 #line 36 "<heroes library>"
 /* map<R, i64> */
 #line 36 "<heroes library>"
-HERO_TU_LOCAL HeroArrayHeader * h_library_map_1920d470(HeroArrayHeader * h0_xs, h_0fn_7df997ea h1_f) {
+HERO_TU_LOCAL HeroArrayHeader * h_library_map_42b12237(HeroArrayHeader * h0_xs, h_0fn_7df997ea h1_f) {
 #line 36 "<heroes library>"
     HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_fixedbugsaufcschaingavetwocallsonekey_R h5_x; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_fixedbugsaufcschaingavetwocallsonekey_R t10; h_0fn_7df997ea t12; h_fixedbugsaufcschaingavetwocallsonekey_R t13; int64_t t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; goto bb0;
 #line 36 "<heroes library>"
@@ -601,7 +601,7 @@ bb4:
 #line 36 "<heroes library>"
 /* map<R, str> */
 #line 36 "<heroes library>"
-HERO_TU_LOCAL HeroArrayHeader * h_library_map_192392c2(HeroArrayHeader * h0_xs, h_0fn_43d3f883 h1_f) {
+HERO_TU_LOCAL HeroArrayHeader * h_library_map_31a32ac5(HeroArrayHeader * h0_xs, h_0fn_43d3f883 h1_f) {
 #line 36 "<heroes library>"
     HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_fixedbugsaufcschaingavetwocallsonekey_R h5_x; HeroArrayHeader * h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_fixedbugsaufcschaingavetwocallsonekey_R t10; h_0fn_43d3f883 t12; h_fixedbugsaufcschaingavetwocallsonekey_R t13; HeroStr t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; HeroStr t23; goto bb0;
 #line 36 "<heroes library>"

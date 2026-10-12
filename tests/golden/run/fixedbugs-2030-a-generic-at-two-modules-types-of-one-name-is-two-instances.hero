@@ -1,0 +1,39 @@
+# fixedbugs, defect 2030, 2026-10-12: one generic function instantiated at
+# two types of one name, declared in two modules, took one C name, and clang
+# refused a correct program at exit 2, `conflicting types for
+# 'h_one_failure_9c07dcd'`. An instance's name was hashed over the rendering
+# of its type arguments alone, `Held?` for both; it is hashed now as a
+# synthetic type's is, over that rendering and the declared types it names,
+# module-qualified (`selfhost/emit/synth.hero`, `instance_key`).
+#
+# The shapes beside it, each a second instance at the other module's `Held`:
+# an optional, a list, a map, two type parameters and a function type; then
+# the same through two modules of one name in two directories, bound apart
+# by `as`.
+use fixedbugs2030/one
+use fixedbugs2030/a/held
+use fixedbugs2030/b/held as other
+
+record Held
+    b: str
+
+function mine() -> Held?
+    return fail(code: "x", msg: "mine")
+
+function weigh(h: Held) -> i64
+    return h.b.len()
+
+function main()
+    mine_held = Held(b: "two")
+    theirs = one.Held(a: 3)
+    print(one.failure(one.made()) + one.failure(mine()))
+    print(one.count([theirs]) + one.count([mine_held, mine_held]))
+    m1: {str: one.Held} @= {}
+    m1["a"] @ theirs
+    m2: {str: Held} @= {}
+    m2["b"] @ mine_held
+    m2["c"] @ mine_held
+    print(one.keys_of(m1) + one.keys_of(m2))
+    print(one.both(a: [theirs], b: [1]) + one.both(a: [mine_held], b: ["x", "y"]))
+    print(one.apply(f: one.weigh, x: theirs) + one.apply(f: weigh, x: mine_held))
+    print(one.count([held.made()]) + one.count([other.made(), other.made()]))

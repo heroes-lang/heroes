@@ -17,6 +17,7 @@ use check/state
 use check/render
 use ir/containers
 use emit/mangle
+use emit/synth
 use emit/ctype
 use emit/writer
 use token
@@ -26,11 +27,13 @@ use resolve
 use checker
 
 # The C name of one function: its mangled name, plus the hash of what
-# it was instantiated at when it is a monomorphised instance. The
-# rendering that is hashed is the CANONICAL one — render_instance — so
-# the port reproduces the same symbol from the same public spelling,
-# and the fixpoint does not depend on two implementations interning in
-# the same order.
+# it was instantiated at when it is a monomorphised instance. What is
+# hashed is the CANONICAL rendering, render_instance's, plus the declared
+# types it contains, module-qualified (`synth.instance_key`), so the same
+# symbol comes from the same public spelling, the fixpoint does not
+# depend on two implementations interning in the same order, and two
+# modules' `Held` are two instances (defect 2030: the rendering alone
+# named them alike, and clang refused the program).
 function instance_name(f: containers.Function, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> str
     module = source.component_at(s, f.span.start)
     is_test: bool @= false
@@ -45,11 +48,13 @@ function instance_name(f: containers.Function, c: state.Checked, s: source.Sourc
     if f.instance.len() == 0
         return mangle.function_name(module: module, name: f.name)
     rendered = render_instance(c, s, decls, bound: f.instance)
-    return mangle.instance_of(module: module, name: f.name, rendered: rendered)
+    keyed = synth.instance_key(c, s, decls, bound: f.instance, rendered: rendered)
+    return mangle.instance_of(module: module, name: f.name, rendered: keyed)
 
-# The type arguments as one string — what the hash is taken over and
-# what the comment above an instance shows. Independent of the interner
-# ids, of the module, and of the file's name.
+# The type arguments as one string — what the comment above an instance
+# shows, and the half of its key that a reader can spell. Independent of
+# the interner ids and of the file's name; the module of a declared type
+# it names is the other half's (`synth.instance_key`).
 function render_instance(c: state.Checked, s: source.Source, decls: [ast.Decl], bound: [i64]) -> str
     rendered: [str] @= []
     none: [str] = []
