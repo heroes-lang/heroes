@@ -28,8 +28,9 @@
 #   card holds one in a fence (counted 2026-10-12 over the 2,023 issue files:
 #   the three that hold such a sequence hold it in a code span). `raw` reads
 #   every sequence still written bare, a fence's included, and
-#   `records/rendered` refuses a card whose body holds one, so the first card
-#   to write one in a fence is told rather than mangled.
+#   `issue_check.offences` refuses a rendering whose body holds one (a draft's,
+#   before `file` opens its issue), so the first to write one in a fence is
+#   told rather than mangled.
 
 use issue_spans
 use strings

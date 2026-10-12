@@ -1,34 +1,55 @@
-# THE WORDS `issues.hero` IS RUN WITH, read: its first word, one of `render`,
-# `plan`, `push`, `repair`, `prepare` and `finish`, and the flags and files
-# after it.
+# THE WORDS `issues.hero` IS RUN WITH, read: its first word, and the flags,
+# numbers and files after it.
 #
 # Each word takes its own flags and no other, so a flag given to the wrong
 # word is refused by name rather than ignored: `--pin` is `render`'s, `plan`'s,
-# `push`'s and `repair`'s; `--accept-gaps` is `push`'s; and `--yes` is the
-# guard of the four words that write to GitHub, `push`, `repair`, `prepare` and
-# `finish`, none of which runs without it (panel 212's R11; `issues.hero` says
-# why the guard is the program's own). `push` takes `--pin` too, always (R5);
-# `prepare` and `finish` take no file.
+# `push`'s and `repair`'s; `--accept-gaps` is `push`'s; `--kind`,
+# `--milestone`, `--class` and `--json` are `open`'s; and `--yes` is the guard
+# of the four words that write to GitHub through the issue files, `push`,
+# `repair`, `prepare` and `finish`, none of which runs without it (panel 212's
+# R11; `issues.hero` says why the guard is the program's own). `push` takes
+# `--pin` too, always (R5); `prepare` and `finish` take no file.
+#
+# **The words of the issues on GitHub alone** (the author's seven answers of
+# 2026-10-12): `file <draft.md>`, `close <number> <closing.md>`, `comment
+# <number> <text.md>` and `edit <number> <draft.md>` write to GitHub and take no
+# `--yes`, opening, commenting on, closing and correcting an issue through this
+# program being asked once, by that answer (CLAUDE.md § Hard stops); `open`
+# reads.
 
+use cards
+use issue_title
 use strings
 
 constant USAGE: str
-    "heroes run tests/harness/issues.hero -- render|plan [--pin <hash>] [<issue file>...], push --yes --pin <hash> [--accept-gaps] [<issue file>...], repair --yes [--pin <hash>] [<issue file>...], prepare --yes or finish --yes"
+    "heroes run tests/harness/issues.hero -- file <draft.md>, close <number> <closing.md>, comment <number> <text.md>, edit <number> <draft.md>, open [--kind <kind>] [--milestone M-<name>] [--class <class>] [--json]; and, while issues/ stands, render|plan [--pin <hash>] [<issue file>...], push --yes --pin <hash> [--accept-gaps] [<issue file>...], repair --yes [--pin <hash>] [<issue file>...], prepare --yes or finish --yes"
 
-# The words of this program, and those of them that write to GitHub.
+# The words of this program, and those of them that write to GitHub through
+# the issue files and so run only with `--yes`.
 constant WORDS: [str]
-    ["render", "plan", "push", "repair", "prepare", "finish"]
+    ["render", "plan", "push", "repair", "prepare", "finish", "file", "close", "comment", "edit", "open"]
 
 constant WRITING: [str]
     ["push", "repair", "prepare", "finish"]
 
-# What the words after the first asked for, or why they cannot be taken.
+# The words that name one issue by its number, then a file.
+constant NUMBERED: [str]
+    ["close", "comment", "edit"]
+
+# What the words after the first asked for, or why they cannot be taken:
+# `number` is the issue a numbered word names, 0 for none; `kind`,
+# `milestone` and `grade` what `open` narrows to, "" for any.
 record Asked
     word: str
     pin: str
     paths: [str]
     yes: bool
     gaps: bool
+    number: i64
+    kind: str
+    milestone: str
+    grade: str
+    json: bool
     wrong: str
 
 # Why the first word is not one this program takes.
@@ -42,13 +63,19 @@ function parsed(word: str, words: [str]) -> Asked
     paths: [str] @= []
     yes: bool @= false
     gaps: bool @= false
+    kind: str @= ""
+    milestone: str @= ""
+    grade: str @= ""
+    json: bool @= false
     at: i64 @= 0
+    files = word != "prepare" && word != "finish" && word != "open"
+    pinned = word == "render" || word == "plan" || word == "push" || word == "repair"
 
     while at < words.len()
         one = words[at]
         at @ at + 1
 
-        if one == "--pin" && word != "prepare" && word != "finish"
+        if one == "--pin" && pinned
             if pin != "" || at == words.len()
                 return wrong(word: word, why: "`--pin` takes one commit, once")
             pin @ words[at]
@@ -57,9 +84,29 @@ function parsed(word: str, words: [str]) -> Asked
             yes @ true
         else if one == "--accept-gaps" && word == "push"
             gaps @ true
+        else if one == "--json" && word == "open"
+            json @ true
+        else if (one == "--kind" || one == "--milestone" || one == "--class") && word == "open"
+            if at == words.len()
+                return wrong(word: word, why: "`" + one + "` takes a value")
+            value = words[at]
+            at @ at + 1
+
+            if one == "--kind"
+                if kind != "" || !among(word: value, words: cards.KINDS)
+                    return wrong(word: word, why: "`--kind` takes one of " + cards.KINDS.join(", ") + ", once")
+                kind @ value
+            else if one == "--milestone"
+                if milestone != "" || !cards.is_milestone_name(value)
+                    return wrong(word: word, why: "`--milestone` takes one name `M-<words>`, once")
+                milestone @ value
+            else if grade != "" || !among(word: value, words: issue_title.CLASSES)
+                return wrong(word: word, why: "`--class` takes one of " + issue_title.CLASSES.join(", ") + ", once")
+            else
+                grade @ value
         else if strings.starts_with(text: one, prefix: "-")
             return wrong(word: word, why: "`" + one + "` is no flag of `" + word + "`: " + USAGE)
-        else if word == "prepare" || word == "finish"
+        else if !files
             return wrong(word: word, why: "`" + word + "` takes no file: " + USAGE)
         else
             paths @ paths.push(strings.without_prefix(text: one, prefix: "./"))
@@ -72,7 +119,29 @@ function parsed(word: str, words: [str]) -> Asked
             word: word,
             why: "`push` takes `--pin <hash>`, a commit already on origin/main and the same on every rerun (R5): " + USAGE
         )
-    return Asked(word: word, pin: pin, paths: paths, yes: yes, gaps: gaps, wrong: "")
+    number: i64 @= 0
+
+    if word == "file" && paths.len() != 1
+        return wrong(word: word, why: "`file` takes one draft, a file written outside the tree: " + USAGE)
+
+    if among(word: word, words: NUMBERED)
+        if paths.len() != 2 || paths[0].len() == 0 || paths[0][0] == '0' || strings.to_number(paths[0]).default(0) < 1
+            return wrong(word: word, why: "`" + word + "` takes the issue's number, then one file: " + USAGE)
+        number @ strings.to_number(paths[0]).must()
+        paths @ paths.slice(from: 1, to: 2)
+    return Asked(
+        word: word,
+        pin: pin,
+        paths: paths,
+        yes: yes,
+        gaps: gaps,
+        number: number,
+        kind: kind,
+        milestone: milestone,
+        grade: grade,
+        json: json,
+        wrong: ""
+    )
 
 function among(word: str, words: [str]) -> bool
     for one in words
@@ -83,7 +152,19 @@ function among(word: str, words: [str]) -> bool
 
 function wrong(word: str, why: str) -> Asked
     none: [str] = []
-    return Asked(word: word, pin: "", paths: none, yes: false, gaps: false, wrong: why)
+    return Asked(
+        word: word,
+        pin: "",
+        paths: none,
+        yes: false,
+        gaps: false,
+        number: 0,
+        kind: "",
+        milestone: "",
+        grade: "",
+        json: false,
+        wrong: why
+    )
 
 test "each word takes its own flags, push its guards, and a word nobody gave is refused"
     plain = parsed(word: "render", words: [])
@@ -127,3 +208,51 @@ test "each word takes its own flags, push its guards, and a word nobody gave is 
     assert strings.contains(text: parsed(word: "repair", words: ["--yes", "--accept-gaps"]).wrong, needle: "no flag")
     assert strings.contains(text: refusal(["sync"]), needle: "no word")
     assert strings.contains(text: refusal([]), needle: "no word given")
+
+test "the words of the issues on GitHub take a number and a file, or a draft, or open's flags, and no guard"
+    drafted = parsed(word: "file", words: ["/tmp/x/2026-10-12-1800-a.md"])
+    assert drafted.wrong == ""
+    assert drafted.paths == ["/tmp/x/2026-10-12-1800-a.md"]
+    assert strings.contains(text: parsed(word: "file", words: []).wrong, needle: "`file` takes one draft")
+    assert strings.contains(text: parsed(word: "file", words: ["a.md", "b.md"]).wrong, needle: "`file` takes one draft")
+    assert strings.contains(text: parsed(word: "file", words: ["--yes", "a.md"]).wrong, needle: "no flag of `file`")
+    closing = parsed(word: "close", words: ["2031", "/tmp/x/closing.md"])
+    assert closing.wrong == ""
+    assert closing.number == 2031
+    assert closing.paths == ["/tmp/x/closing.md"]
+
+    for word in ["close", "comment", "edit"]
+        assert strings.contains(text: parsed(word: word, words: ["x.md"]).wrong, needle: "takes the issue's number")
+        assert strings.contains(
+            text: parsed(word: word, words: ["0", "x.md"]).wrong,
+            needle: "takes the issue's number"
+        )
+        assert strings.contains(
+            text: parsed(word: word, words: ["07", "x.md"]).wrong,
+            needle: "takes the issue's number"
+        )
+        assert strings.contains(text: parsed(word: word, words: ["7"]).wrong, needle: "takes the issue's number")
+        assert parsed(word: word, words: ["7", "x.md"]).number == 7
+
+    listed = parsed(
+        word: "open",
+        words: ["--kind", "defect", "--milestone", "M-issue-files", "--class", "blocking", "--json"]
+    )
+    assert listed.wrong == ""
+    assert listed.kind == "defect"
+    assert listed.milestone == "M-issue-files"
+    assert listed.grade == "blocking"
+    assert listed.json
+    assert parsed(word: "open", words: []).wrong == ""
+    assert strings.contains(text: parsed(word: "open", words: ["--kind", "bug"]).wrong, needle: "`--kind` takes one of")
+    assert strings.contains(
+        text: parsed(word: "open", words: ["--class", "urgent"]).wrong,
+        needle: "`--class` takes one of"
+    )
+    assert strings.contains(
+        text: parsed(word: "open", words: ["--milestone", "x"]).wrong,
+        needle: "`--milestone` takes one name"
+    )
+    assert strings.contains(text: parsed(word: "open", words: ["--kind"]).wrong, needle: "takes a value")
+    assert strings.contains(text: parsed(word: "open", words: ["x.md"]).wrong, needle: "takes no file")
+    assert strings.contains(text: parsed(word: "render", words: ["--json"]).wrong, needle: "no flag")

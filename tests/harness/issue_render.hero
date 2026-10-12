@@ -8,6 +8,11 @@
 # tree renders one set of bytes: `tests/harness/issues.hero` prints them and
 # `records/rendered` holds every card to them (`issue_check.hero`).
 #
+# **A draft renders by the same rule** (the author's seventh answer of
+# 2026-10-12: a lane drafts an issue in the card's shape and the program
+# renders it by the rule that rendered issues 1 to 2,021), given `Facts` whose
+# `pin` is "", and so takes no `Record:` line.
+#
 # The days (D3): `filed` is the card's; a closed issue's day is the one a body
 # line opening `Closed YYYY-MM-DD` gives, else the author day of the commit its
 # card names, else `filed`, and never a day before `filed`; each is written as
@@ -191,7 +196,11 @@ function render(issue: cards.Issue, facts: issue_git.Facts, twins: [str]) -> Ren
     for row in issue_body.sections(kind: card.kind, rows: rows, opening: opening, hash: hash)
         lines @ lines.push(row)
 
-    lines @ lines.push("Record: " + BLOB + facts.pin + "/" + issue.path)
+    # A draft (`issue_draft.hero`) is pinned at no commit, its file being in
+    # no tree, so its issue carries no `Record:` link and ends with its last
+    # section.
+    if facts.pin != ""
+        lines @ lines.push("Record: " + BLOB + facts.pin + "/" + issue.path)
     comment: str @= ""
 
     if closed && hash != ""

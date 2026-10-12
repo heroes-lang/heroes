@@ -1,0 +1,393 @@
+# WHAT GITHUB HOLDS OF THIS PROJECT'S ISSUES, read once a harness run, for
+# every check that asks about them.
+#
+# Since the author's seven answers of 2026-10-12 (the decision
+# https://github.com/heroes-lang/heroes/issues/2027,
+# filed after the transcription and so with no address yet), the issues live
+# on GitHub alone: the open defects, the
+# decisions waiting, a milestone's work and the record are what
+# `GET /repos/heroes-lang/heroes/issues` answers, and no file of the tree holds
+# them. So the checks of `records` that held the files (`tagged`,
+# `defects-cited`, `numbering`, `verdicts`, `homes`, `prior-art`) read this
+# instead, one listing for all of them.
+#
+# **One listing a run, every state**: `state=all`, a page of `PAGE` at a time,
+# oldest first (`sort=created&direction=asc`, so an issue opened while the run
+# reads lands on a later page and never shifts an earlier one), until a page
+# holds fewer; a pull request, which the same list returns, is kept and
+# marked, and every check leaves it out. Each page is written into the run's
+# scratch as GitHub sent it, `CACHE`, so a second reader in the same run reads
+# the disk and asks GitHub nothing.
+#
+# **A run that cannot ask GitHub says so, and never decides**: no network, no
+# `gh`, no login, a token GitHub refuses, a rate limit that outlasts its
+# waits, a server that keeps failing. Each is `asked: false` with the reason,
+# and every check that needs the listing reports `SKIP` with it, never a pass
+# and never a failure (the author's seventh answer). An answer GitHub GAVE that
+# this reader cannot read (another status, JSON of another shape) is `broken`,
+# a failure, since that is this program's fault and not the world's.
+#
+# Every request goes through `issue_pace.exchange`, the session `push` and
+# `repair` use, so a rate limit is waited out as there; the real transport is
+# `issue_wire.gh()`, which holds the token (`GH_TOKEN` in the CI, the login
+# here), and nothing in this module reads it.
+
+use issue_github
+use issue_pace
+use issue_wire
+use json_fields
+use json_read
+use shell
+use strings
+
+constant PAGE: i64
+    100
+
+# Past this many pages the listing is an answer that never ends: 100,000
+# issues, fifty times what the repository held when this was written.
+constant PAGES: i64
+    1000
+
+# Where a run keeps what GitHub answered, under its scratch directory.
+constant CACHE: str
+    "github-issues"
+
+constant LISTING: str
+    "/repos/heroes-lang/heroes/issues?state=all&sort=created&direction=asc&per_page=100&page="
+
+# The same list of the open issues alone, which the transcription program's
+# `open` reads.
+constant OPEN_LISTING: str
+    "/repos/heroes-lang/heroes/issues?state=open&sort=created&direction=asc&per_page=100&page="
+
+# One issue as the checks read it: `labels` sorted, `milestone` its title or
+# "", `closed` "" while open, `reason` GitHub's `state_reason` or "".
+record Listed
+    number: i64
+    title: str
+    body: str
+    open: bool
+    reason: str
+    labels: [str]
+    milestone: str
+    milestone_open: bool
+    created: str
+    closed: str
+    pull: bool
+
+# What a run could read. `asked` is whether GitHub answered every page; where
+# it did not, `why` says why, and `broken` whether the answer came and could
+# not be read (a failure) rather than never came (a skip).
+record Listing
+    asked: bool
+    broken: bool
+    why: str
+    issues: [Listed]
+
+function unasked(why: str) -> Listing
+    none: [Listed] = []
+    return Listing(asked: false, broken: false, why: why, issues: none)
+
+function broken(why: str) -> Listing
+    none: [Listed] = []
+    return Listing(asked: false, broken: true, why: why, issues: none)
+
+# The listing, from the run's scratch where an earlier reader of this run left
+# it, else from GitHub through `transport`, every page written down as it
+# comes. A listing GitHub could not give is written down too, so no second
+# reader waits for the same refusal.
+function held_at(scratch: str, transport: issue_wire.Transport) -> Listing
+    dir = scratch + "/" + CACHE
+    said = read_file(dir + "/unasked")
+
+    if !said.is_err()
+        return unasked(said.must())
+    pages = read_file(dir + "/pages")
+
+    if !pages.is_err()
+        return from_disk(dir: dir, count: strings.to_number(strings.trimmed(pages.must())).default(-1))
+    s: issue_pace.Session @= issue_pace.session(
+        transport: transport,
+        world: issue_wire.world_at(scratch),
+        live: false
+    )
+    got = listed(@s, dir: dir)
+
+    if !got.asked && !got.broken
+        _ = write_file(path: dir + "/unasked", text: got.why).is_err()
+    return got
+
+# Every page GitHub gives, read and kept under `dir` ("" keeps none).
+function listed(@s: issue_pace.Session, dir: str) -> Listing
+    return listed_from(@s, dir: dir, listing: LISTING)
+
+# Every page of `listing`, `LISTING` or `OPEN_LISTING`, read and kept under
+# `dir` ("" keeps none).
+function listed_from(@s: issue_pace.Session, dir: str, listing: str) -> Listing
+    if dir != "" && shell.mkdir_all(dir).is_err()
+        return broken("cannot make " + dir + " to keep what GitHub answers")
+    out: [Listed] @= []
+    page: i64 @= 1
+
+    while page <= PAGES
+        path = listing + page.to_str()
+        reply = issue_pace.exchange(@s, request: issue_wire.Request(method: "GET", path: path, accept: "", body: ""))
+
+        if reply.is_err()
+            return unasked(issue_github.failure(reply))
+        r = reply.must()
+
+        if r.status != 200
+            return refused(path: path, reply: r)
+
+        if dir != "" && write_file(path: dir + "/page-" + page.to_str() + ".json", text: r.body).is_err()
+            return broken("cannot keep page " + page.to_str() + " of GitHub's answer under " + dir)
+        some = page_of(r.body)
+
+        if some.is_err()
+            return broken("GET " + path + " answered what this reader cannot read: " + issue_github.failure(some))
+
+        for one in some.must()
+            out @ out.push(one)
+
+        if some.must().len() < PAGE
+            if dir != "" && write_file(path: dir + "/pages", text: page.to_str() + "\n").is_err()
+                return broken("cannot keep the count of GitHub's pages under " + dir)
+            return Listing(asked: true, broken: false, why: "", issues: out)
+        page @ page + 1
+
+    return broken("GET " + listing + "<n> gave " + PAGES.to_str() + " full pages and no end")
+
+# A status other than 200: GitHub saying it cannot answer this run (a refused
+# credential, a token without the scope, a server failing), which is a skip;
+# any other is an answer this reader was not written for, a failure.
+function refused(path: str, reply: issue_wire.Reply) -> Listing
+    why = "GET " + path + " answered " + issue_github.said(reply)
+
+    if reply.status == 401 || reply.status == 403 || reply.status >= 500
+        return unasked(why)
+    return broken(why)
+
+# The pages a reader of this run kept, read again.
+function from_disk(dir: str, count: i64) -> Listing
+    if count < 1
+        return broken("the count of pages under " + dir + " is not a number")
+    out: [Listed] @= []
+    page: i64 @= 1
+
+    while page <= count
+        text = read_file(dir + "/page-" + page.to_str() + ".json")
+
+        if text.is_err()
+            return broken("page " + page.to_str() + " of GitHub's answer is missing under " + dir)
+        some = page_of(text.must())
+
+        if some.is_err()
+            return broken("page " + page.to_str() + " under " + dir + " cannot be read: " + issue_github.failure(some))
+
+        for one in some.must()
+            out @ out.push(one)
+
+        page @ page + 1
+
+    return Listing(asked: true, broken: false, why: "", issues: out)
+
+# One page of the listing, each element read.
+function page_of(body: str) -> [Listed]?
+    out: [Listed] @= []
+
+    for one in json_fields.items_of(json_read.read_json(body)?)?
+        out @ out.push(listed_of(one)?)
+
+    return ok(out)
+
+# One issue as GitHub lists it.
+function listed_of(j: json_read.Json) -> Listed?
+    names: [str] @= []
+
+    for label in json_fields.items_of(json_fields.field(of: j, name: "labels")?)?
+        names @ names.push(json_fields.text_at(of: label, name: "name")?)
+
+    milestone: str @= ""
+    milestone_open: bool @= false
+    held = json_fields.field(of: j, name: "milestone")?
+
+    match held
+        .fields _ =>
+            milestone @ json_fields.text_at(of: held, name: "title")?
+            milestone_open @ json_fields.text_at(of: held, name: "state")? == "open"
+        .null_value | .truth _ | .number _ | .text _ | .items _ => milestone @ ""
+
+    reason: str @= ""
+    stated = json_fields.field(of: j, name: "state_reason")
+
+    if !stated.is_err()
+        reason @ json_fields.text_at(of: j, name: "state_reason")?
+    return ok(
+        Listed(number: json_fields.whole_at(of: j, name: "number")?, title: json_fields.text_at(of: j, name: "title")?, body: json_fields.text_at(of: j, name: "body")?, open: json_fields.text_at(of: j, name: "state")? == "open", reason: reason, labels: names.sort(), milestone: milestone, milestone_open: milestone_open, created: json_fields.text_at(of: j, name: "created_at")?, closed: json_fields.text_at(of: j, name: "closed_at")?, pull: !json_fields.field(of: j, name: "pull_request").is_err())
+    )
+
+# The value of the label `<name>:<value>` an issue carries, "" for none: its
+# `kind:`, `class:` or `area:`.
+function label_value(issue: Listed, name: str) -> str
+    for label in issue.labels
+        if strings.starts_with(text: label, prefix: name + ":")
+            return strings.without_prefix(text: label, prefix: name + ":")
+
+    return ""
+
+function kind_of(issue: Listed) -> str
+    return label_value(issue: issue, name: "kind")
+
+# The issues of `held` that are not pull requests and carry `kind:<kind>`.
+function of_kind(held: Listing, kind: str) -> [Listed]
+    out: [Listed] @= []
+
+    for issue in held.issues
+        if !issue.pull && kind_of(issue) == kind
+            out @ out.push(issue)
+
+    return out
+
+# An issue written as GitHub lists one, for the tests of every reader of this
+# module: `state` `open` or `closed`, `milestone` "" for none.
+function json_of(number: i64, title: str, body: str, state: str, labels: [str], milestone: str, created: str, closed: str) -> str
+    named: [str] @= []
+
+    for label in labels
+        named @ named.push("{\"name\":\"" + label + "\"}")
+
+    held: str @= "null"
+
+    if milestone != ""
+        held @ "{\"title\":\"" + milestone + "\",\"number\":1,\"state\":\"open\"}"
+    ended: str @= "null"
+
+    if closed != ""
+        ended @ "\"" + closed + "\""
+    reason: str @= "null"
+
+    if state == "closed"
+        reason @ "\"completed\""
+    return "{\"number\":" + number.to_str() + ",\"title\":\"" + title + "\",\"body\":\"" + body + "\",\"state\":\"" + state + "\",\"state_reason\":" + reason + ",\"labels\":[" + named.join(",") + "],\"milestone\":" + held + ",\"created_at\":\"" + created + "\",\"closed_at\":" + ended + ",\"comments\":0}"
+
+# A `Listing` read from issues written by `json_of`, for a test.
+function held_of(issues: [str]) -> Listing
+    got = page_of("[" + issues.join(",") + "]")
+
+    if got.is_err()
+        return broken(issue_github.failure(got))
+    return Listing(asked: true, broken: false, why: "", issues: got.must())
+
+constant DATE: str
+    "Date: Mon, 12 Oct 2026 10:00:00 GMT"
+
+test "an issue is read with its labels sorted, its milestone and its state, and a pull request marked"
+    one = json_of(
+        number: 7,
+        title: "Defect 235: t",
+        body: "b",
+        state: "closed",
+        labels: ["kind:defect", "class:blocking"],
+        milestone: "M-issue-files",
+        created: "2026-10-03T12:00:00Z",
+        closed: "2026-10-04T12:00:00Z"
+    )
+    got = held_of([one])
+    assert got.asked
+    assert got.issues.len() == 1
+    i = got.issues[0]
+    assert i.number == 7
+    assert i.labels == ["class:blocking", "kind:defect"]
+    assert i.milestone == "M-issue-files"
+    assert i.milestone_open
+    assert !i.open
+    assert i.reason == "completed"
+    assert i.closed == "2026-10-04T12:00:00Z"
+    assert !i.pull
+    assert label_value(issue: i, name: "class") == "blocking"
+    assert kind_of(i) == "defect"
+    assert label_value(issue: i, name: "area") == ""
+    pulled = page_of("[{\"number\":4,\"title\":\"t\",\"body\":null,\"state\":\"open\",\"labels\":[],\"milestone\":null,\"created_at\":\"2026-10-12T09:00:00Z\",\"closed_at\":null,\"pull_request\":{}}]").must()[0]
+    assert pulled.pull
+    assert pulled.body == ""
+    assert pulled.reason == ""
+    assert of_kind(held: Listing(asked: true, broken: false, why: "", issues: [i, pulled]), kind: "defect").len() == 1
+
+test "the listing is read a page at a time until a short page, kept, and read again from the disk"
+    full: [str] @= []
+
+    for n in range(from: 1, to: 101)
+        full @ full.push(
+            json_of(number: n, title: "t", body: "", state: "open", labels: ["kind:task"], milestone: "", created: "2026-10-01T12:00:00Z", closed: "")
+        )
+
+    last = json_of(
+        number: 101,
+        title: "u",
+        body: "",
+        state: "open",
+        labels: [],
+        milestone: "",
+        created: "2026-10-02T12:00:00Z",
+        closed: ""
+    )
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [DATE], body: "[" + full.join(",") + "]"), issue_wire.answer(status: 200, headers: [DATE], body: "[" + last + "]")]
+    )
+    scratch = shell.own_scratch()
+    dir = scratch + "/" + CACHE
+    got = listed(@s, dir: dir)
+    assert got.asked
+    assert got.issues.len() == 101
+    assert s.world.requests.len() == 2
+    assert s.world.requests[1].path == LISTING + "2"
+    assert s.world.requests[1].method == "GET"
+    again = held_at(scratch: scratch, transport: issue_wire.scripted())
+    assert again.asked
+    assert again.issues.len() == 101
+    assert again.issues[100].title == "u"
+    _ = shell.remove_tree(scratch).is_err()
+
+test "a GitHub that cannot be asked is a skip with its reason, and an answer this reader cannot read is a failure"
+    nobody: issue_pace.Session @= issue_pace.scripted([])
+    gone = listed(@nobody, dir: "")
+    assert !gone.asked
+    assert !gone.broken
+    assert strings.contains(text: gone.why, needle: "the script holds no answer for GET " + LISTING + "1")
+
+    for status in [401, 403, 502]
+        s: issue_pace.Session @= issue_pace.scripted(
+            [issue_wire.answer(status: status, headers: [DATE], body: "{\"message\":\"Bad credentials\"}")]
+        )
+
+        # A read GitHub failed is asked again (`issue_pace`), so a 502 is
+        # answered as often as it is asked.
+        if status == 502
+            s @ issue_pace.scripted(
+                [issue_wire.answer(status: 502, headers: [DATE], body: ""), issue_wire.answer(status: 502, headers: [DATE], body: ""), issue_wire.answer(status: 502, headers: [DATE], body: ""), issue_wire.answer(status: 502, headers: [DATE], body: ""), issue_wire.answer(status: 502, headers: [DATE], body: "")]
+            )
+        got = listed(@s, dir: "")
+        assert !got.asked
+        assert !got.broken
+        assert strings.contains(text: got.why, needle: "answered " + status.to_str())
+
+    lost: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 404, headers: [DATE], body: "{\"message\":\"Not Found\"}")]
+    )
+    missing = listed(@lost, dir: "")
+    assert missing.broken
+    assert strings.contains(text: missing.why, needle: "404: Not Found")
+    odd: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire.answer(status: 200, headers: [DATE], body: "{\"not\":\"a list\"}")]
+    )
+    assert listed(@odd, dir: "").broken
+
+test "a listing GitHub could not give is written down, and a second reader of the run asks nothing"
+    scratch = shell.own_scratch()
+    shell.mkdir_all(scratch + "/" + CACHE).must()
+    write_file(path: scratch + "/" + CACHE + "/unasked", text: "no network").must()
+    got = held_at(scratch: scratch, transport: issue_wire.scripted())
+    assert !got.asked
+    assert got.why == "no network"
+    _ = shell.remove_tree(scratch).is_err()
