@@ -33,8 +33,10 @@ use issue_pace
 use report
 use strings
 
-# The last number of the old series (defects 001 to 677, the files of
-# `issues/` until 2026-10-12).
+# The highest number of the old series, the defects filed while the issues
+# were files of `issues/` (until 2026-10-12). Written as no range here: this
+# check reads `defects N to M` as a citation of every number between, and 42
+# numbers below this one were never issued (measured 2026-10-12).
 constant OLD_LAST: i64
     677
 
