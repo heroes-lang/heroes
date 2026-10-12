@@ -80,6 +80,9 @@ distinction dies in the mangler, which drops the leading `$`. If the census says
 named locals are mostly synthetic, the frame filter is free; if it says they are real
 bindings spread over a long function, a slot table beside the binary is what buys
 scope, and that is a panel question rather than a decision taken here.
+**The census was taken on 2026-10-12**, step 3: of 138, 121 and 111 locals the
+author wrote 10, 7 and 11, and the `$` is gone from the C names
+(`docs/measurements/042-a-stopped-frame-shows-the-c-names-and-of-its-locals-the-author-wrote-fewer-than-one-in-ten.md`).
 
 **Not in this milestone**: making `print(p)` work. A `to_str` derived over a record's
 fields is M-reflection-verdict's own question in its own words, and taking it here
