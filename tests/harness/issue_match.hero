@@ -1,0 +1,283 @@
+# WHETHER AN ISSUE GITHUB HOLDS IS THE ONE A CARD RENDERS: the comparison
+# `plan` reports and the reconciliation `push` starts with.
+#
+# `.claude/rules/records.md` § The issues (panel 212's R5 and R10, ratified
+# 2026-10-11):
+#
+# - **an issue that differs from its file is reported and never edited**
+#   (R10): a card holding a `github:` address is compared field by field with
+#   the issue it names, its title, body, state, labels, milestone, days and the
+#   one closing comment's count, and every difference is named;
+# - **a run stopped between an import and the card's write creates no second
+#   issue** (R5): a card whose `github:` is `none` is matched to an issue GitHub
+#   holds already where the issue's `Record:` link names the card's file and its
+#   `created_at` is the card's `filed` at noon, which only an import can set, so
+#   no stranger's issue is taken for one of ours, and a pull request never is;
+# - the milestones, one per row of `docs/ROADMAP.md` § The chain (R6 item 3),
+#   that GitHub lacks or holds open or closed otherwise than their row, and the
+#   labels the issues to import take that GitHub lacks, with those GitHub holds
+#   that no issue file takes (`kind:learn`, R6 item 3);
+# - the order of the import, `filed` then the name, compared byte for byte.
+#
+# A comparison reads the `Record:` link's pin out of the issue and compares the
+# body as if it named the run's, so an issue pinned elsewhere is told its pin
+# differs once rather than its whole body.
+
+use cards
+use issue_github
+use issue_render
+use strings
+
+# A rendered issue file and its card's `github:` value.
+record Entry
+    r: issue_render.Rendered
+    github: str
+
+# A row of the chain: its number, its milestone, its state (`done`, `open` for
+# `**OPEN**`, or `scheduled`, the three shapes the chain writes), and whether
+# that state closes the row.
+record Row
+    number: i64
+    name: str
+    mark: str
+    closed: bool
+
+# What GitHub holds that a run asks. `listing` is what the list of imports
+# answered where it was asked, "" where it was not.
+record Github
+    milestones: [issue_github.Milestone]
+    labels: [str]
+    limit: issue_github.Limit
+    held: [issue_github.Held]
+    listing: str
+
+record Found
+    path: str
+    number: i64
+
+record Survey
+    found: [Found]
+    doubled: [str]
+    differences: [str]
+    matching: i64
+    missing_milestones: [str]
+    absent_rows: [str]
+    mismatched: [str]
+    missing_labels: [str]
+    unused_labels: [str]
+    to_import: [Entry]
+
+constant BLOB: str
+    "https://github.com/heroes-lang/heroes/blob/"
+
+# `entries` in the cards' order: `filed`, then the name, compared byte for
+# byte, the path last so that the order is total.
+function ordered(entries: [Entry]) -> [Entry]
+    at: {str: Entry} @= {}
+
+    for entry in entries
+        at[entry.r.filed + " " + strings.base_name(entry.r.path) + " " + entry.r.path] @ entry
+
+    out: [Entry] @= []
+
+    for key in keys(at).sort()
+        out @ out.push(at[key].must())
+
+    return out
+
+# The pin and the issue file a body's `Record:` line names, each "" where it
+# names none.
+function recorded(body: str) -> [str]
+    for row in strings.lines(body)
+        if strings.starts_with(text: row, prefix: "Record: " + BLOB)
+            rest = strings.without_prefix(text: row, prefix: "Record: " + BLOB)
+            slash = strings.index_of(text: rest, needle: "/")
+
+            if !slash.is_err() && slash.must() == 40 && cards.is_full_hash(rest.slice(from: 0, to: 40))
+                return [rest.slice(from: 0, to: 40), rest.slice(from: 41, to: rest.len())]
+
+    return ["", ""]
+
+# Whether `held` is the import of `entry`'s card.
+function is_import_of(held: issue_github.Held, entry: Entry) -> bool
+    return !held.pull && recorded(held.body)[1] == entry.r.path && held.created == issue_render.instant(entry.r.filed)
+
+# What differs between `held` and what `entry` renders, by field name.
+function differences_of(entry: Entry, held: issue_github.Held, pin: str) -> [str]
+    out: [str] @= []
+    r = entry.r
+    pinned = recorded(held.body)[0]
+    body: str @= held.body
+
+    if pinned != "" && pinned != pin
+        out @ out.push("the Record link's pin, " + pinned)
+        body @ strings.split_text(text: body, separator: BLOB + pinned + "/").join(BLOB + pin + "/")
+
+    if held.pull
+        out @ out.push("a pull request")
+
+    if held.title != r.title
+        out @ out.push("title")
+
+    if body != r.body
+        out @ out.push("body")
+    state: str @= "open"
+    closed: str @= ""
+
+    if r.closed
+        state @ "closed"
+        closed @ issue_render.instant(r.closed_day)
+
+    if held.state != state
+        out @ out.push("state " + held.state)
+
+    if held.labels != r.labels.sort()
+        out @ out.push("labels " + held.labels.join(","))
+
+    if held.milestone != r.milestone
+        out @ out.push("milestone `" + held.milestone + "`")
+
+    if held.created != issue_render.instant(r.filed)
+        out @ out.push("created " + held.created)
+
+    if held.closed != closed
+        out @ out.push("closed " + held.closed)
+    comments: i64 @= 0
+
+    if r.comment != ""
+        comments @ 1
+
+    if held.comments != comments
+        out @ out.push(held.comments.to_str() + " comments")
+    return out
+
+# What `chosen`, the issue files the run takes, meet on GitHub; `entries` is
+# every issue file, which the milestones and labels no file takes are read
+# against.
+function surveyed(entries: [Entry], chosen: [Entry], rows: [Row], gh: Github, pin: str) -> Survey
+    by_number: {i64: issue_github.Held} @= {}
+
+    for held in gh.held
+        by_number[held.number] @ held
+
+    found: [Found] @= []
+    doubled: [str] @= []
+    differences: [str] @= []
+    matching: i64 @= 0
+    to_import: [Entry] @= []
+    needs: {str: bool} @= {}
+    takes: {str: bool} @= {}
+
+    for entry in ordered(chosen)
+        if entry.github != "none"
+            number = strings.to_number(strings.without_prefix(text: entry.github, prefix: cards.ISSUE_URL)).default(0)
+
+            match by_number[number]
+                .ok held =>
+                    said = differences_of(entry: entry, held: held, pin: pin)
+
+                    if said.len() == 0
+                        matching @ matching + 1
+                    else
+                        differences @ differences.push(entry.r.path + " " + entry.github + ": " + said.join(", "))
+                .err _ => differences @ differences.push(
+                    entry.r.path + " " + entry.github + ": no such issue in the list"
+                )
+
+            continue
+        imports: [i64] @= []
+
+        for held in gh.held
+            if is_import_of(held: held, entry: entry)
+                imports @ imports.push(held.number)
+
+        # Two imports of one file: the lower number is the first GitHub gave.
+        sorted = imports.sort()
+
+        if sorted.len() > 1
+            doubled @ doubled.push(
+                entry.r.path + " is held by " + sorted.len().to_str() + " issues, the lowest " + sorted[0].to_str()
+            )
+
+        if sorted.len() > 0
+            found @ found.push(Found(path: entry.r.path, number: sorted[0]))
+            continue
+        to_import @ to_import.push(entry)
+
+        if entry.r.milestone != ""
+            needs[entry.r.milestone] @ true
+
+        for label in entry.r.labels
+            takes[label] @ true
+
+    held_milestones: {str: bool} @= {}
+    absent_rows: [str] @= []
+    mismatched: [str] @= []
+
+    for one in gh.milestones
+        held_milestones[one.title] @ one.open
+
+    for row in rows
+        match held_milestones[row.name]
+            .ok open =>
+                if open == row.closed
+                    mismatched @ mismatched.push(
+                        row.name + " (" + opened(open) + " on GitHub, its row " + opened(!row.closed) + ")"
+                    )
+            .err _ => absent_rows @ absent_rows.push(row.name)
+
+    missing_milestones: [str] @= []
+
+    for name in keys(needs).sort()
+        if held_milestones[name].is_err()
+            missing_milestones @ missing_milestones.push(name)
+
+    held_labels: {str: bool} @= {}
+
+    for label in gh.labels
+        held_labels[label] @ true
+
+    missing_labels: [str] @= []
+
+    for label in keys(takes).sort()
+        if held_labels[label].is_err()
+            missing_labels @ missing_labels.push(label)
+
+    taken: {str: bool} @= {}
+
+    for entry in entries
+        for label in entry.r.labels
+            taken[label] @ true
+
+    unused: [str] @= []
+
+    for label in gh.labels.sort()
+        if taken[label].is_err()
+            unused @ unused.push(label)
+
+    return Survey(
+        found: found,
+        doubled: doubled,
+        differences: differences,
+        matching: matching,
+        missing_milestones: missing_milestones,
+        absent_rows: absent_rows,
+        mismatched: mismatched,
+        missing_labels: missing_labels,
+        unused_labels: unused,
+        to_import: to_import
+    )
+
+function opened(open: bool) -> str
+    if open
+        return "open"
+    return "closed"
+
+# The milestone numbers by title.
+function numbers(gh: Github) -> {str: i64}
+    out: {str: i64} @= {}
+
+    for one in gh.milestones
+        out[one.title] @ one.number
+
+    return out

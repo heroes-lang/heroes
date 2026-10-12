@@ -6,8 +6,8 @@
 # an issue is imported whole, its title, body, days, labels, closed state and
 # closing comment in one request, which is `payload` here. The milestone and the
 # organisation's `Defect` field stand beside it on the line: the import names a
-# milestone by GitHub's number, which `plan` maps, and cannot set the field (R6
-# item 5).
+# milestone by GitHub's number, which `push` reads from GitHub and writes in
+# (`numbered`), and cannot set the field (R6 item 5).
 #
 # A string is escaped as JSON asks and no further: a quote and a backslash, a
 # newline as `\n`, every other control byte as `\u00XX`; a byte above ASCII
@@ -62,8 +62,14 @@ function nullable(key: str, value: str) -> str
         return quoted(key) + ":null"
     return member(key: key, value: value)
 
-# The request the import takes for `r`.
+# The request the import takes for `r`, as `render` prints it: the milestone
+# stands beside it on the line, by name, since its number is GitHub's.
 function payload(r: issue_render.Rendered) -> str
+    return numbered(r: r, milestone: 0)
+
+# The request the import takes for `r`, its milestone named by `milestone`, the
+# number GitHub gave it, or by none where it is 0: what `push` sends.
+function numbered(r: issue_render.Rendered, milestone: i64) -> str
     opened = issue_render.instant(r.filed)
     labels: [str] @= []
 
@@ -85,6 +91,9 @@ function payload(r: issue_render.Rendered) -> str
         fields @ fields.push(member(key: "updated_at", value: opened))
         fields @ fields.push(quoted("closed") + ":false")
     fields @ fields.push(quoted("labels") + ":[" + labels.join(",") + "]")
+
+    if milestone > 0
+        fields @ fields.push(quoted("milestone") + ":" + milestone.to_str())
     comments: [str] @= []
 
     if r.comment != ""
@@ -129,6 +138,7 @@ test "a closed issue's payload carries its days at noon, its labels and its one 
     )
     assert payload(r) == "{\"issue\":{\"title\":\"Defect 235: t\",\"body\":\"b\\n\",\"created_at\":\"2026-10-03T12:00:00Z\",\"updated_at\":\"2026-10-04T12:00:00Z\",\"closed_at\":\"2026-10-04T12:00:00Z\",\"closed\":true,\"labels\":[\"kind:defect\",\"area:cli\"]},\"comments\":[{\"body\":\"Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238\",\"created_at\":\"2026-10-04T12:00:00Z\"}]}"
     assert line(r) == "{\"path\":\"issues/a.md\",\"milestone\":null,\"defect\":\"235\",\"payload\":" + payload(r) + "}"
+    assert numbered(r: r, milestone: 84) == "{\"issue\":{\"title\":\"Defect 235: t\",\"body\":\"b\\n\",\"created_at\":\"2026-10-03T12:00:00Z\",\"updated_at\":\"2026-10-04T12:00:00Z\",\"closed_at\":\"2026-10-04T12:00:00Z\",\"closed\":true,\"labels\":[\"kind:defect\",\"area:cli\"],\"milestone\":84},\"comments\":[{\"body\":\"Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238\",\"created_at\":\"2026-10-04T12:00:00Z\"}]}"
     open_one = issue_render.Rendered(
         path: "issues/b.md",
         refusal: "",
@@ -152,3 +162,29 @@ test "a closed issue's payload carries its days at noon, its labels and its one 
     )
     assert payload(open_one) == "{\"issue\":{\"title\":\"t\",\"body\":\"\",\"created_at\":\"2026-10-11T12:00:00Z\",\"updated_at\":\"2026-10-11T12:00:00Z\",\"closed\":false,\"labels\":[]},\"comments\":[]}"
     assert line(open_one) == "{\"path\":\"issues/b.md\",\"milestone\":\"M-issue-files\",\"defect\":null,\"payload\":" + payload(open_one) + "}"
+
+test "a card that names no milestone gives a payload with no milestone field, as 1,817 of 2,019 cards did on 2026-10-12"
+    bare = issue_render.Rendered(
+        path: "issues/c.md",
+        refusal: "",
+        unborn: false,
+        title: "t",
+        cut: false,
+        prefix: "",
+        pathed: "",
+        self_from: "",
+        fields: 0,
+        body: "b",
+        labels: ["kind:task"],
+        milestone: "",
+        defect: "",
+        closed: false,
+        filed: "2026-10-12",
+        closed_day: "",
+        closed_from: "",
+        raised: false,
+        comment: ""
+    )
+    assert numbered(r: bare, milestone: 0) == "{\"issue\":{\"title\":\"t\",\"body\":\"b\",\"created_at\":\"2026-10-12T12:00:00Z\",\"updated_at\":\"2026-10-12T12:00:00Z\",\"closed\":false,\"labels\":[\"kind:task\"]},\"comments\":[]}"
+    assert numbered(r: bare, milestone: 0) == payload(bare)
+    assert line(bare) == "{\"path\":\"issues/c.md\",\"milestone\":null,\"defect\":null,\"payload\":" + payload(bare) + "}"

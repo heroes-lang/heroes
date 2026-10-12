@@ -1,0 +1,355 @@
+# A JSON READER FOR WHAT GITHUB ANSWERS `issues.hero`'s `plan` and `push`.
+#
+# The compiler has one, `selfhost/mutate/json_read.hero`, and the harness
+# cannot reach it: a `use` starts at the directory of the file compiled and
+# names no parent (spec § 1), so a root under `tests/harness/` sees only its
+# own directory. This is that reader ported, its reading unchanged: RFC 8259
+# whole, the six kinds, every escape, a pair of `\u` surrogates joined into
+# one character, a lone surrogate or a raw control byte inside a string
+# refused, a number kept as the text it was written with. What reads a value's
+# fields is `json_fields.hero`, as the compiler's reader leaves it to its own
+# `json_fields`.
+#
+# What GitHub answers is read as it was sent, and not through `gh --jq`: the
+# tests then answer with what GitHub recorded (measurement 041 and the reads of
+# `plan`), and the program's own reading is what they judge, where a jq program
+# would be a second language no test of this tree runs.
+#
+# THE RECURSION, mapped (`.claude/rules/module-shape.md`): `value` reads one
+# value and calls `listed` for `[` and `named` for `{`, each of which calls
+# `value` for every element. Nesting deeper than `DEPTH` is refused as a
+# failure rather than met by the abort recursion too deep would be (spec § 9),
+# so a hostile answer ends the read and never the process.
+
+# One JSON value.
+variant Json
+    null_value
+    truth
+        v: bool
+    # The number as it was written: an integer is read from it by `whole_of`.
+    number
+        written: str
+    text
+        v: str
+    items
+        all: [Json]
+    # An object's names and values, in the order the document wrote them.
+    fields
+        names: [str]
+        values: [Json]
+
+# Where a read stands in its text.
+record Reader
+    text: str
+    at: i64
+    depth: i64
+
+# Deeper than any answer GitHub's REST routes give (an issue nests four levels)
+# by a wide margin, and far shallower than the stack.
+constant DEPTH: i64
+    64
+
+# The one value `text` holds, with nothing but whitespace around it.
+function read_json(text: str) -> Json?
+    r: Reader @= Reader(text: text, at: 0, depth: 0)
+    got = value(@r)?
+    skip_space(@r)
+
+    if r.at != text.len()
+        return refused(r, why: "text after the value")
+    return ok(got)
+
+function refused(r: Reader, why: str) -> Json?
+    return fail(code: "not_json", msg: why + " at byte " + r.at.to_str())
+
+function skip_space(@r: Reader)
+    text = r.text
+    at: i64 @= r.at
+
+    while at < text.len() && (text[at] == 32 || text[at] == 9 || text[at] == 10 || text[at] == 13)
+        at @ at + 1
+
+    r.at @ at
+
+function value(@r: Reader) -> Json?
+    skip_space(@r)
+
+    if r.at >= r.text.len()
+        return refused(r, why: "a value missing")
+
+    if r.depth >= DEPTH
+        return refused(r, why: "nesting deeper than " + DEPTH.to_str())
+    b = r.text[r.at]
+
+    if b == '{'
+        return named(@r)
+
+    if b == '['
+        return listed(@r)
+
+    if b == '"'
+        return ok(.text(v: string(@r)?))
+
+    if b == '-' || b >= '0' && b <= '9'
+        return number(@r)
+
+    for word in ["true", "false", "null"]
+        if bytes_at(text: r.text, at: r.at, needle: word)
+            r.at @ r.at + word.len()
+
+            if word == "null"
+                return ok(.null_value)
+            return ok(.truth(v: word == "true"))
+
+    return refused(r, why: "no value")
+
+function listed(@r: Reader) -> Json?
+    r.at @ r.at + 1
+    r.depth @ r.depth + 1
+    out: [Json] @= []
+    skip_space(@r)
+
+    if r.at < r.text.len() && r.text[r.at] == ']'
+        r.at @ r.at + 1
+        r.depth @ r.depth - 1
+        return ok(.items(all: out))
+
+    while true
+        out @ out.push(value(@r)?)
+        skip_space(@r)
+
+        if r.at >= r.text.len()
+            return refused(r, why: "an array left open")
+
+        if r.text[r.at] == ']'
+            r.at @ r.at + 1
+            r.depth @ r.depth - 1
+            return ok(.items(all: out))
+
+        if r.text[r.at] != ','
+            return refused(r, why: "neither `,` nor `]`")
+        r.at @ r.at + 1
+
+function named(@r: Reader) -> Json?
+    r.at @ r.at + 1
+    r.depth @ r.depth + 1
+    names: [str] @= []
+    values: [Json] @= []
+    skip_space(@r)
+
+    if r.at < r.text.len() && r.text[r.at] == '}'
+        r.at @ r.at + 1
+        r.depth @ r.depth - 1
+        return ok(.fields(names: names, values: values))
+
+    while true
+        skip_space(@r)
+
+        if r.at >= r.text.len() || r.text[r.at] != '"'
+            return refused(r, why: "a name missing")
+        names @ names.push(string(@r)?)
+        skip_space(@r)
+
+        if r.at >= r.text.len() || r.text[r.at] != ':'
+            return refused(r, why: "`:` missing")
+        r.at @ r.at + 1
+        values @ values.push(value(@r)?)
+        skip_space(@r)
+
+        if r.at >= r.text.len()
+            return refused(r, why: "an object left open")
+
+        if r.text[r.at] == '}'
+            r.at @ r.at + 1
+            r.depth @ r.depth - 1
+            return ok(.fields(names: names, values: values))
+
+        if r.text[r.at] != ','
+            return refused(r, why: "neither `,` nor `}`")
+        r.at @ r.at + 1
+
+# A string's characters, `r.at` on its opening quote; each run between two
+# escapes is copied once, and the pieces joined once.
+function string(@r: Reader) -> str?
+    text = r.text
+    at: i64 @= r.at + 1
+    parts: [str] @= []
+    plain: i64 @= at
+
+    while at < text.len()
+        b = text[at]
+
+        if b == '"'
+            parts @ parts.push(text.slice(from: plain, to: at))
+            r.at @ at + 1
+            return ok(parts.join(""))
+
+        if b < 32
+            return fail(code: "not_json", msg: "a control byte inside a string at byte " + at.to_str())
+
+        if b == '\\'
+            parts @ parts.push(text.slice(from: plain, to: at))
+            r.at @ at
+            parts @ parts.push(escaped(@r)?)
+            at @ r.at
+            plain @ at
+        else
+            at @ at + 1
+
+    return fail(code: "not_json", msg: "a string left open")
+
+# One escape, `r.at` on its backslash; leaves `r.at` past it.
+function escaped(@r: Reader) -> str?
+    if r.at + 1 >= r.text.len()
+        return fail(code: "not_json", msg: "an escape cut short at byte " + r.at.to_str())
+    b = r.text[r.at + 1]
+    r.at @ r.at + 2
+
+    simple = match b
+        '"'  => "\""
+        '\\' => "\\"
+        '/'  => "/"
+        'n'  => "\n"
+        't'  => "\t"
+        'r'  => "\r"
+        'b'  => encoded(8)
+        'f'  => encoded(12)
+        _    => ""
+
+    if simple.len() > 0
+        return ok(simple)
+
+    if b != 'u'
+        return fail(code: "not_json", msg: "an escape JSON has not at byte " + (r.at - 2).to_str())
+    code = hex4(@r)?
+
+    if code >= 56320 && code <= 57343
+        return fail(code: "not_json", msg: "a low surrogate alone at byte " + (r.at - 6).to_str())
+
+    if code < 55296 || code > 56319
+        return ok(encoded(code))
+
+    # A high surrogate is half a character, and only its low half completes it.
+    if r.at + 1 < r.text.len() && r.text[r.at] == '\\' && r.text[r.at + 1] == 'u'
+        r.at @ r.at + 2
+        low = hex4(@r)?
+
+        if low >= 56320 && low <= 57343
+            return ok(encoded(65536 + (code - 55296) * 1024 + (low - 56320)))
+    return fail(code: "not_json", msg: "a high surrogate alone at byte " + r.at.to_str())
+
+# Four hexadecimal digits at `r.at`, as a number; leaves `r.at` past them.
+function hex4(@r: Reader) -> i64?
+    if r.at + 4 > r.text.len()
+        return fail(code: "not_json", msg: "`\\u` cut short at byte " + r.at.to_str())
+    out: i64 @= 0
+
+    for _ in range(from: 0, to: 4)
+        d = hex_digit(r.text[r.at])
+
+        if d < 0
+            return fail(code: "not_json", msg: "`\\u` takes four hexadecimal digits, at byte " + r.at.to_str())
+        out @ out * 16 + d
+        r.at @ r.at + 1
+
+    return ok(out)
+
+function hex_digit(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if b >= 'a' && b <= 'f'
+        return to_i64(b - 'a').must() + 10
+
+    if b >= 'A' && b <= 'F'
+        return to_i64(b - 'A').must() + 10
+    return -1
+
+function number(@r: Reader) -> Json?
+    start = r.at
+
+    if r.text[r.at] == '-'
+        r.at @ r.at + 1
+
+    first = r.at
+
+    if !digits(@r)
+        return refused(r, why: "a number with no digit")
+
+    # JSON writes no leading zero: `01` is not a number.
+    if r.at - first > 1 && r.text[first] == '0'
+        return refused(r, why: "a leading zero")
+
+    if r.at < r.text.len() && r.text[r.at] == '.'
+        r.at @ r.at + 1
+
+        if !digits(@r)
+            return refused(r, why: "a fraction with no digit")
+
+    if r.at < r.text.len() && (r.text[r.at] == 'e' || r.text[r.at] == 'E')
+        r.at @ r.at + 1
+
+        if r.at < r.text.len() && (r.text[r.at] == '+' || r.text[r.at] == '-')
+            r.at @ r.at + 1
+
+        if !digits(@r)
+            return refused(r, why: "an exponent with no digit")
+    return ok(.number(written: r.text.slice(from: start, to: r.at)))
+
+function digits(@r: Reader) -> bool
+    text = r.text
+    start = r.at
+    at: i64 @= start
+
+    while at < text.len() && text[at] >= '0' && text[at] <= '9'
+        at @ at + 1
+
+    r.at @ at
+    return at > start
+
+function bytes_at(text: str, at: i64, needle: str) -> bool
+    if at < 0 || at + needle.len() > text.len()
+        return false
+    k: i64 @= 0
+
+    while k < needle.len()
+        if text[at + k] != needle[k]
+            return false
+        k @ k + 1
+
+    return true
+
+# A code point written as UTF-8, or "" for one no character has.
+function encoded(code: i64) -> str
+    if code < 0 || code > 1114111 || code >= 55296 && code <= 57343
+        return ""
+    out: [u8] @= []
+
+    if code < 128
+        out @ out.push(to_u8(code).must())
+    else if code < 2048
+        out @ out.push(to_u8(192 + (code >> 6)).must())
+        out @ out.push(to_u8(128 + (code & 63)).must())
+    else if code < 65536
+        out @ out.push(to_u8(224 + (code >> 12)).must())
+        out @ out.push(to_u8(128 + (code >> 6 & 63)).must())
+        out @ out.push(to_u8(128 + (code & 63)).must())
+    else
+        out @ out.push(to_u8(240 + (code >> 18)).must())
+        out @ out.push(to_u8(128 + (code >> 12 & 63)).must())
+        out @ out.push(to_u8(128 + (code >> 6 & 63)).must())
+        out @ out.push(to_u8(128 + (code & 63)).must())
+    return out.validated_bytes().must()
+
+test "every escape is read, a surrogate pair is one character, and a body keeps its lines"
+    assert read_json("\"q\\\" b\\\\ s\\/ n\\n t\\t r\\r\"").must() == .text(v: "q\" b\\ s/ n\n t\t r\r")
+    assert read_json("\"\\u00e9\\u2014 \\u00B7\"").must() == .text(v: "é— ·")
+    assert read_json("\"\\ud83d\\ude00\"").must() == .text(v: "😀")
+    assert read_json("\"Filed 2026-10-03 · closed\"").must() == .text(v: "Filed 2026-10-03 · closed")
+
+test "what JSON refuses is refused, and nesting past the bound fails"
+    for bad in ["", "{", "[1,]", "01", "{\"a\" 1}", "\"open", "tru", "1 2", "-", "1.", "\"\\x\"", "\"\\ud83d\"", "\"\\ude00\""]
+        assert read_json(bad).is_err()
+
+    past = to_u64(DEPTH + 1).must()
+    assert read_json("[".repeat(past) + "]".repeat(past)).is_err()

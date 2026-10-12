@@ -1,0 +1,416 @@
+# `plan`: WHAT A RUN OF `push` WOULD DO, against what GitHub holds, writing
+# nothing.
+#
+# `.claude/rules/records.md` § The issues, *What an issue becomes on GitHub*
+# (panel 212's R5, R6, R10 and R11, ratified 2026-10-11). `gathered` reads what
+# GitHub holds, every read a GET, the list of imports since a day among them,
+# which `push` reads only for an import asked and never answered, so `plan`
+# says what it answers; the reading is `issue_match`'s; `lines_of` says, in
+# this order: the milestones and labels the issues to import lack, the
+# interaction limit (R6 item 4), each card whose issue differs from it (R10),
+# each card whose issue GitHub holds already (R5), how many issues the run
+# would import, and **which source each closed day took** (D3), as the rule
+# says `plan` prints.
+#
+# The issues are listed only as far as a question reaches: every page where a
+# card holds an address to compare, else down to the earliest card that has
+# none (`issue_github.issues_since`), else not at all.
+
+use cards
+use issue_github
+use issue_match
+use issue_pace
+use issue_render
+use issue_scripts
+use issue_wire
+use json_read
+use strings
+
+# The rows of `docs/ROADMAP.md` § The chain: a first cell that is a row
+# number, a second a bold `M-<name>`, a third its state, **`done YYYY-MM-DD`
+# for a closed row and `**OPEN**` or `scheduled` for an open one**, the three
+# shapes the chain writes, and any other refused by its row rather than read
+# as either, since a milestone's state is what `prepare` writes to GitHub. Read
+# from the chain itself on 2026-10-12: 62 rows `done`, one `**OPEN**`, 20
+# `scheduled`, and row 84 `closed 2026-10-10`, which this reader then took as
+# closed and `records` as open (defect 673); mended to `done 2026-10-10` the
+# same day, 63 closed and 21 open.
+function chain_of(text: str) -> [issue_match.Row]?
+    out: [issue_match.Row] @= []
+
+    for line in strings.lines(text)
+        cells = strings.split_text(text: line, separator: " | ")
+
+        if cells.len() < 3 || !strings.starts_with(text: cells[0], prefix: "| ") || cells[0].len() > 8
+            continue
+        number = strings.to_number(strings.without_prefix(text: cells[0], prefix: "| "))
+        name = strings.without_suffix(text: strings.without_prefix(text: cells[1], prefix: "**"), suffix: "**")
+
+        if number.is_err() || !strings.starts_with(text: cells[1], prefix: "**M-") || !cards.is_milestone_name(name)
+            continue
+        state = strings.trimmed(cells[2])
+        day = strings.without_prefix(text: state, prefix: "done ")
+        mark: str @= ""
+
+        if state == "**OPEN**"
+            mark @ "open"
+        else if state == "scheduled"
+            mark @ "scheduled"
+        else if strings.starts_with(text: state, prefix: "done ") && day.len() == 10 && !cards.day_of(day).is_err()
+            mark @ "done"
+        else
+            return fail(
+                code: "chain_state",
+                msg: "docs/ROADMAP.md § The chain: row " + number.must().to_str() + ", " + name + ", holds the state `" + state + "`, and a row's state is `done YYYY-MM-DD`, `**OPEN**` or `scheduled`"
+            )
+        out @ out.push(issue_match.Row(number: number.must(), name: name, mark: mark, closed: mark == "done"))
+
+    return ok(out)
+
+# How many rows of `rows` carry each mark, `done 62, closed 1, ...`, in the
+# order the marks first appear.
+function marks_of(rows: [issue_match.Row]) -> str
+    order: [str] @= []
+    count: {str: i64} @= {}
+
+    for row in rows
+        if count[row.mark].is_err()
+            order @ order.push(row.mark)
+        count[row.mark] @ count[row.mark].default(0) + 1
+
+    out: [str] @= []
+
+    for mark in order
+        out @ out.push("`" + mark + "` " + count[mark].must().to_str())
+
+    return out.join(", ")
+
+# What GitHub holds that `entries` ask about; the issues are listed only as far
+# as a card's comparison or reconciliation reaches (`issue_github.issues_since`).
+function gathered(@s: issue_pace.Session, entries: [issue_match.Entry], ask_listing: bool) -> issue_match.Github?
+    milestones = issue_github.milestones(@s)?
+    labels = issue_github.labels(@s)?
+    limit = issue_github.limit(@s)?
+    held: [issue_github.Held] @= []
+    addressed: bool @= false
+    bound: str @= ""
+
+    for entry in entries
+        if entry.github != "none"
+            addressed @ true
+        else if bound == "" || issue_github.before(a: issue_render.instant(entry.r.filed), b: bound)
+            bound @ issue_render.instant(entry.r.filed)
+
+    if addressed
+        held @ issue_github.issues_since(@s, bound: "")?
+    else if bound != ""
+        held @ issue_github.issues_since(@s, bound: bound)?
+    listing: str @= ""
+
+    if ask_listing
+        listing @ imports_listed(@s)
+    return ok(issue_match.Github(milestones: milestones, labels: labels, limit: limit, held: held, listing: listing))
+
+# What the list of imports since the newest answer's day answers, read-only.
+# It is the gist's second witness of an import (measurement 041, its last
+# section), not the import's route: on 2026-10-12 it answered 404 on
+# `heroes-lang/heroes`, which says nothing of whether `POST .../import/issues`
+# still answers, a question only `push`'s first import asks.
+function imports_listed(@s: issue_pace.Session) -> str
+    path = issue_github.REPO + "/import/issues?since=" + s.day
+    got = issue_pace.exchange(
+        @s,
+        request: issue_wire.Request(method: "GET", path: path, accept: issue_github.PREVIEW, body: "")
+    )
+
+    match got
+        .ok r  => return "GET " + path + " with the import's media type answered " + issue_github.said(r)
+        .err e => return "GET " + path + " could not be asked: " + e.msg
+
+# The lines `plan` prints for `survey`, after the count of the files it read.
+function lines_of(survey: issue_match.Survey, chosen: [issue_match.Entry], rows: [issue_match.Row], gh: issue_match.Github) -> [str]
+    out: [str] @= []
+    held_count = gh.milestones.len().to_str()
+    out @ out.push(
+        "milestones: the chain has " + rows.len().to_str() + " rows, " + closed_rows(rows).to_str() + " of them closed (" + marks_of(rows) + "), and GitHub holds " + held_count + " milestones; the issues to import lack " + listed(survey.missing_milestones)
+    )
+    out @ out.push("milestones: rows of the chain with no milestone on GitHub " + listed(survey.absent_rows))
+    out @ out.push("milestones: open or closed otherwise than their row " + listed(survey.mismatched))
+    out @ out.push(
+        "labels: GitHub holds " + gh.labels.len().to_str() + "; the issues to import lack " + listed(survey.missing_labels)
+    )
+    out @ out.push("labels: GitHub holds and no issue file takes " + listed(survey.unused_labels))
+
+    if gh.limit.limit == ""
+        out @ out.push("interaction limit: none in force, so `push` refuses without `--accept-gaps`")
+    else if gh.limit.limit == "collaborators_only"
+        out @ out.push("interaction limit: " + gh.limit.limit + ", until " + gh.limit.expires)
+    else
+        out @ out.push(
+            "interaction limit: " + gh.limit.limit + ", until " + gh.limit.expires + ", which lets others than collaborators open an issue, so `push` refuses it without `--accept-gaps`"
+        )
+    addressed: i64 @= 0
+
+    for entry in chosen
+        if entry.github != "none"
+            addressed @ addressed + 1
+
+    out @ out.push(
+        "addressed: " + addressed.to_str() + " cards hold a `github:` address; " + survey.matching.to_str() + " match their issue and " + survey.differences.len().to_str() + " differ, each reported and never edited"
+    )
+
+    for one in survey.differences
+        out @ out.push("  differs " + one)
+
+    out @ out.push(
+        "found: the list gave " + gh.held.len().to_str() + " issues; " + survey.found.len().to_str() + " cards whose `github:` is `none` have their issue already, whose address `push` writes, importing none of them"
+    )
+
+    for one in survey.found
+        out @ out.push("  found " + one.path + " " + issue_github.web_address(one.number))
+
+    for one in survey.doubled
+        out @ out.push("  doubled " + one)
+
+    count = survey.to_import.len()
+
+    if count == 0
+        out @ out.push("import: `push` would import no issue")
+    else
+        out @ out.push(
+            "import: `push` would import " + count.to_str() + " issues, the first " + survey.to_import[0].r.path + " and the last " + survey.to_import[count - 1].r.path
+        )
+    sources: {str: i64} @= {}
+    days: [str] @= []
+
+    for entry in issue_match.ordered(chosen)
+        if entry.r.closed
+            sources[entry.r.closed_from] @ sources[entry.r.closed_from].default(0) + 1
+
+            raised = if entry.r.raised
+                " raised to filed"
+            else
+                ""
+            days @ days.push(
+                "  closed " + entry.r.closed_day + " by " + entry.r.closed_from + raised + " " + entry.r.path
+            )
+
+    out @ out.push(
+        "closed days (D3): by a `Closed` line " + sources["body"].default(0).to_str() + ", by the commit's day " + sources["commit"].default(0).to_str() + ", at `filed` " + sources["filed"].default(0).to_str()
+    )
+
+    for one in days
+        out @ out.push(one)
+
+    if gh.listing != ""
+        out @ out.push(
+            "the list of imports since a day, which `push` reads only for an import asked and never answered: " + gh.listing
+        )
+    return out
+
+function closed_rows(rows: [issue_match.Row]) -> i64
+    count: i64 @= 0
+
+    for row in rows
+        if row.closed
+            count @ count + 1
+
+    return count
+
+function listed(names: [str]) -> str
+    if names.len() == 0
+        return "none"
+    return names.len().to_str() + ": " + names.join(", ")
+
+# `plan`'s exit (R11): 1 where an issue to import names a milestone or a label
+# GitHub lacks, else 0; a card that cannot render is the caller's to count.
+function code_of(survey: issue_match.Survey) -> i64
+    if survey.missing_milestones.len() > 0 || survey.missing_labels.len() > 0
+        return 1
+    return 0
+
+test "the chain's rows are read with their state, a summary row is not one, and a state of another shape is refused"
+    text = "| **Current milestone** | **M-issue-files** |\n|---|---|\n| 1 | **M-day-zero** | done 2026-08-03 | `m0` | x | y |\n| 83 | **M-issue-files** | **OPEN** | | x | y |\n| 84 | **M-inferred-cell** | done 2026-10-10 | | x | y |\n| 70 | **M-qbe-backend** | scheduled | | x | y |\n"
+    rows = chain_of(text).must()
+    assert rows.len() == 4
+    assert rows[0] == issue_match.Row(number: 1, name: "M-day-zero", mark: "done", closed: true)
+    assert rows[1] == issue_match.Row(number: 83, name: "M-issue-files", mark: "open", closed: false)
+    assert rows[2].closed
+    assert rows[3].mark == "scheduled"
+    assert !rows[3].closed
+    assert marks_of(rows) == "`done` 2, `open` 1, `scheduled` 1"
+
+    for state in ["closed 2026-10-10", "done", "done 2026-13-01", "OPEN", ""]
+        refused = chain_of("| 84 | **M-inferred-cell** | " + state + " | | x | y |\n")
+        assert strings.contains(
+            text: issue_github.failure(refused),
+            needle: "row 84, M-inferred-cell, holds the state `" + state + "`"
+        )
+
+test "an issue the file renders matches, each field that differs is named, and a pin elsewhere is told once"
+    e = issue_scripts.entry(
+        issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "https://github.com/heroes-lang/heroes/issues/7")
+    )
+    held = issue_github.held_of(json_read.read_json(issue_scripts.held(e: e, number: 7)).must()).must()
+    assert issue_match.differences_of(entry: e, held: held, pin: issue_scripts.PIN).len() == 0
+    edited = issue_github.Held(
+        number: 7,
+        title: "edited",
+        body: held.body + "\nmore",
+        state: "closed",
+        labels: ["kind:defect"],
+        milestone: "",
+        created: held.created,
+        closed: "2026-10-02T12:00:00Z",
+        comments: 2,
+        pull: false
+    )
+    assert issue_match.differences_of(entry: e, held: edited, pin: issue_scripts.PIN) == ["title", "body", "state closed", "labels kind:defect", "milestone ``", "closed 2026-10-02T12:00:00Z", "2 comments"]
+    elsewhere = "2".repeat(40)
+    moved = issue_github.Held(
+        number: 7,
+        title: held.title,
+        body: strings.split_text(text: held.body, separator: issue_scripts.PIN).join(elsewhere),
+        state: held.state,
+        labels: held.labels,
+        milestone: held.milestone,
+        created: held.created,
+        closed: held.closed,
+        comments: 0,
+        pull: false
+    )
+    assert issue_match.differences_of(entry: e, held: moved, pin: issue_scripts.PIN) == ["the Record link's pin, " + elsewhere]
+    gh = issue_match.Github(
+        milestones: [issue_github.Milestone(title: "M-issue-files", number: 1, open: true)],
+        labels: ["kind:task"],
+        limit: issue_github.Limit(limit: "", expires: "", origin: ""),
+        held: [edited],
+        listing: ""
+    )
+    none: [issue_match.Row] = []
+    said = issue_match.surveyed(entries: [e], chosen: [e], rows: none, gh: gh, pin: issue_scripts.PIN)
+    assert said.differences == [e.r.path + " https://github.com/heroes-lang/heroes/issues/7: title, body, state closed, labels kind:defect, milestone ``, closed 2026-10-02T12:00:00Z, 2 comments"]
+    assert said.to_import.len() == 0
+    gone = issue_match.surveyed(
+        entries: [e],
+        chosen: [e],
+        rows: none,
+        gh: issue_match.Github(milestones: gh.milestones, labels: gh.labels, limit: gh.limit, held: [], listing: ""),
+        pin: issue_scripts.PIN
+    )
+    assert strings.contains(text: gone.differences[0], needle: "no such issue in the list")
+
+test "a card's issue is found by its Record link and its day, a stranger's or a pull request never, and a file held twice is told"
+    a = issue_scripts.entry(
+        issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    )
+    b = issue_scripts.entry(
+        issue_scripts.card(filed: "2026-10-02", name: "b", milestone: "M-issue-files", github: "none")
+    )
+    c = issue_scripts.entry(
+        issue_scripts.card(filed: "2026-10-03", name: "c", milestone: "M-issue-files", github: "none")
+    )
+    mine = issue_github.held_of(json_read.read_json(issue_scripts.held(e: a, number: 5)).must()).must()
+    twice = issue_github.held_of(json_read.read_json(issue_scripts.held(e: c, number: 9)).must()).must()
+    again = issue_github.held_of(json_read.read_json(issue_scripts.held(e: c, number: 6)).must()).must()
+    stranger = issue_github.Held(
+        number: 8,
+        title: "x",
+        body: b.r.body,
+        state: "open",
+        labels: [],
+        milestone: "",
+        created: "2026-10-12T09:13:00Z",
+        closed: "",
+        comments: 0,
+        pull: false
+    )
+    pull = issue_github.Held(
+        number: 10,
+        title: "x",
+        body: b.r.body,
+        state: "open",
+        labels: [],
+        milestone: "",
+        created: issue_render.instant("2026-10-02"),
+        closed: "",
+        comments: 0,
+        pull: true
+    )
+    assert issue_match.is_import_of(held: mine, entry: a)
+    assert !issue_match.is_import_of(held: stranger, entry: b)
+    assert !issue_match.is_import_of(held: pull, entry: b)
+    gh = issue_match.Github(
+        milestones: [issue_github.Milestone(title: "M-issue-files", number: 1, open: true)],
+        labels: ["kind:task"],
+        limit: issue_github.Limit(limit: "", expires: "", origin: ""),
+        held: [twice, pull, stranger, again, mine],
+        listing: ""
+    )
+    none: [issue_match.Row] = []
+    said = issue_match.surveyed(entries: [c, b, a], chosen: [c, b, a], rows: none, gh: gh, pin: issue_scripts.PIN)
+    assert said.found.len() == 2
+    assert said.found[0] == issue_match.Found(path: a.r.path, number: 5)
+    assert said.found[1] == issue_match.Found(path: c.r.path, number: 6)
+    assert said.doubled == [c.r.path + " is held by 2 issues, the lowest 6"]
+    assert said.to_import.len() == 1
+    assert said.to_import[0].r.path == b.r.path
+
+test "the milestones and labels GitHub lacks, rows absent or otherwise closed, and labels no file takes, are said with the plan's other lines"
+    a = issue_scripts.entry(
+        issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "none")
+    )
+    b = issue_scripts.entry(
+        issue_scripts.card(filed: "2026-10-02", name: "b", milestone: "M-guide-book", github: "none")
+    )
+    rows = [
+        issue_match.Row(number: 1, name: "M-issue-files", mark: "open", closed: false)
+        issue_match.Row(number: 2, name: "M-journey-book", mark: "done", closed: true)
+        issue_match.Row(number: 3, name: "M-guide-book", mark: "scheduled", closed: false)
+    ]
+    gh = issue_match.Github(
+        milestones: [issue_github.Milestone(title: "M-journey-book", number: 2, open: true), issue_github.Milestone(title: "M-guide-book", number: 3, open: true)],
+        labels: ["kind:learn", "kind:task"],
+        limit: issue_github.Limit(limit: "", expires: "", origin: ""),
+        held: [],
+        listing: "GET x answered 200"
+    )
+    said = issue_match.surveyed(entries: [b, a], chosen: [b, a], rows: rows, gh: gh, pin: issue_scripts.PIN)
+    assert said.missing_milestones == ["M-issue-files"]
+    assert said.absent_rows == ["M-issue-files"]
+    assert said.mismatched == ["M-journey-book (open on GitHub, its row closed)"]
+    assert said.missing_labels.len() == 0
+    assert said.unused_labels == ["kind:learn"]
+    assert code_of(said) == 1
+    assert issue_match.numbers(gh)["M-guide-book"].must() == 3
+    lines = lines_of(survey: said, chosen: [b, a], rows: rows, gh: gh)
+    assert lines[0] == "milestones: the chain has 3 rows, 1 of them closed (`open` 1, `done` 1, `scheduled` 1), and GitHub holds 2 milestones; the issues to import lack 1: M-issue-files"
+    assert lines[5] == "interaction limit: none in force, so `push` refuses without `--accept-gaps`"
+    assert strings.contains(
+        text: lines.join("\n"),
+        needle: "import: `push` would import 2 issues, the first " + a.r.path + " and the last " + b.r.path
+    )
+    assert strings.contains(
+        text: lines.join("\n"),
+        needle: "closed days (D3): by a `Closed` line 0, by the commit's day 0, at `filed` 0"
+    )
+    assert lines[lines.len() - 1] == "the list of imports since a day, which `push` reads only for an import asked and never answered: GET x answered 200"
+
+test "plan reads every page of the issues where a card holds an address, and asks the import route with its own media type"
+    a = issue_scripts.entry(
+        issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: "https://github.com/heroes-lang/heroes/issues/1")
+    )
+    replies = [
+        issue_scripts.milestones(["M-issue-files"])
+        issue_scripts.labels(["kind:task"])
+        issue_scripts.limited()
+        issue_scripts.issues([])
+        issue_scripts.answer(status: 200, body: "[]")
+    ]
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    gh = gathered(@s, entries: [a], ask_listing: true).must()
+    assert gh.limit.limit == "collaborators_only"
+    assert s.world.requests[3].path == "/repos/heroes-lang/heroes/issues?state=all&sort=created&direction=desc&per_page=100&page=1"
+    assert s.world.requests[4].path == "/repos/heroes-lang/heroes/import/issues?since=2026-10-12"
+    assert s.world.requests[4].accept == issue_github.PREVIEW
+    assert strings.contains(text: gh.listing, needle: "answered 200")

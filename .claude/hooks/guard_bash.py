@@ -584,8 +584,9 @@ def verdict(command, cwd=None, seen=frozenset()):
 
 
 # **A GitHub write is an outward act, asked for every time** (CLAUDE.md § Hard
-# stops; defect 671, panel 212). The tracked settings ask only for `git push*`,
-# and the author's local ones allow `gh api` on the repository and `gh run *`
+# stops; defect 671, panel 212). The tracked settings asked only for `git
+# push*` (and, since the transcription program's `push` was built, for that
+# too, R7), and the author's local ones allow `gh api` on the repository and `gh run *`
 # whole, so until this rule a write from the assistant's shell asked nothing:
 # `gh api` with any `-f`, `-F` or `--input` switches to POST on its own
 # (`gh api --help`). The rule is an ALLOW-list of reads and everything else is

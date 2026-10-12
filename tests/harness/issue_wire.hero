@@ -1,0 +1,312 @@
+# THE WIRE TO GITHUB: one request out, one answer back, and the wait between.
+#
+# Panel 212's R4, ratified 2026-10-11 (`.claude/rules/records.md` § The issues,
+# *the route*): every request is `gh api -i --hostname github.com`, its method
+# named, its body on standard input through `shell.run_fed` (`--input -`), and
+# the answer read from what `-i` prints: the status line, the headers and the
+# body. **`gh`'s exit code is never read as the answer**: it is 1 for every
+# HTTP failure alike (the ffi-pragmatist's twelve scenarios,
+# `docs/panel/212-reports/ffi-pragmatist.md` § 1), so a 404, a 422 and a rate
+# limit differ only in the status line. `--hostname github.com` is in every
+# request because without it an environment variable chooses the host (the
+# same report, measured with `GH_HOST`). **The program never reads the token**:
+# `gh` holds it, and nothing here asks it for one.
+#
+# THE TRANSPORT IS A VALUE (`Transport`), handed to the logic that asks: `gh`
+# is the real one and the only code in the tree that spawns `gh` for this
+# program; `scripted` answers from a list of recorded replies and spawns
+# nothing, so every branch of `plan` and `push` is tested with no network and
+# no account. A function value captures nothing (design.md Part 6), so the
+# state a transport keeps, the script, the requests it was asked and the waits,
+# is a `World` it is handed and hands back.
+#
+# THE WAIT IS THE TRANSPORT'S TOO. The tree has no clock and no sleep (spec
+# § 11 offers none), so the real `pause` spawns `sleep`, in pieces shorter than
+# the harness's watchdog (`shell.WATCHDOG_SECONDS`), and the scripted one only
+# writes the seconds down, which is what a test of pacing reads.
+#
+# WHETHER A REQUEST MAY HAVE REACHED GITHUB is said on every answer that has no
+# status line (`Reply.sent`): a `gh` that could not be started sent nothing,
+# and nor did one that exited 4, which is `gh`'s word for no login (the same
+# report); any other ending of a write is a request that may have been taken,
+# which `push` never sends a second time without asking GitHub first.
+
+use shell
+use strings
+
+constant HOST: str
+    "github.com"
+
+# `gh`'s own exit code for *not logged in*, the one its code names.
+constant NO_LOGIN: i64
+    4
+
+# The longest one `sleep` is asked for, well inside the watchdog.
+constant PIECE: i64
+    300
+
+# One request: `GET` or `POST`, a path under `api.github.com` with its query,
+# the `Accept` media type or "" for `gh`'s own, and the body, "" for a read.
+record Request
+    method: str
+    path: str
+    accept: str
+    body: str
+
+# One answer: its HTTP status, its headers by lowercased name and its body; or
+# no status, `failure` saying why, and `sent` whether the request may have
+# reached GitHub all the same.
+record Reply
+    status: i64
+    headers: {str: str}
+    body: str
+    failure: str
+    sent: bool
+
+# What a transport keeps between two calls: the real one's scratch directory,
+# the scripted one's replies and how many it has given, and, for both, every
+# request asked and every wait in seconds.
+record World
+    scratch: str
+    script: [Reply]
+    at: i64
+    requests: [Request]
+    waits: [i64]
+
+record Answered
+    world: World
+    reply: Reply
+
+# A wait done, or `failure` saying why it could not be.
+record Paused
+    world: World
+    failure: str
+
+record Transport
+    send: (function(world: World, request: Request) -> Answered)
+    pause: (function(world: World, seconds: i64) -> Paused)
+
+# The real transport: `gh` and `sleep`.
+function gh() -> Transport
+    return Transport(send: gh_sent, pause: slept)
+
+# The transport a test hands the logic: the replies of `script`, in order.
+function scripted() -> Transport
+    return Transport(send: script_sent, pause: noted)
+
+function world_at(scratch: str) -> World
+    none: [Reply] = []
+    return world_of(scratch: scratch, script: none)
+
+function world_of(scratch: str, script: [Reply]) -> World
+    asked: [Request] = []
+    waited: [i64] = []
+    return World(scratch: scratch, script: script, at: 0, requests: asked, waits: waited)
+
+# The words `gh` is run with for `request`, its body, where it has one, going
+# on standard input; a request with none, a read or a `DELETE`, sends none.
+function words_for(request: Request) -> [str]
+    out: [str] @= ["gh", "api", "-i", "--hostname", HOST, "-X", request.method]
+
+    if request.accept != ""
+        out @ out.push("-H").push("Accept: " + request.accept)
+    out @ out.push(request.path)
+
+    if request.body != ""
+        out @ out.push("--input").push("-")
+    return out
+
+function gh_sent(world: World, request: Request) -> Answered
+    w: World @= world
+    w.requests @ w.requests.push(request)
+    input = w.scratch + "/request-" + shell.pid().to_str()
+    written: ()? @= shell.mkdir_all(w.scratch)
+
+    if !written.is_err()
+        written @ write_file(path: input, text: request.body)
+
+    if written.is_err()
+        return Answered(
+            world: w,
+            reply: failed(why: "the request's body could not be written to " + input, sent: false)
+        )
+    ran = shell.run_fed(scratch: w.scratch, program: "gh", words: words_for(request), stdin_path: input)
+
+    match ran
+        .ok r =>
+            got = reply_of(r.out)
+
+            if got.status > 0
+                return Answered(world: w, reply: got)
+            why = "`gh` exited " + r.code.to_str() + " with no HTTP answer" + shell.said_on_stderr(r.err)
+            return Answered(world: w, reply: failed(why: why, sent: request.method != "GET" && r.code != NO_LOGIN))
+        .err e =>
+            return Answered(
+                world: w,
+                reply: failed(why: e.msg, sent: e.code != "not_started" && request.method != "GET")
+            )
+
+function slept(world: World, seconds: i64) -> Paused
+    w: World @= world
+    w.waits @ w.waits.push(seconds)
+    left: i64 @= seconds
+
+    while left > 0
+        piece: i64 @= left
+
+        if piece > PIECE
+            piece @ PIECE
+        ran = shell.run(scratch: w.scratch, program: "sleep", words: ["sleep", piece.to_str()])
+
+        if ran.is_err() || ran.must().code != 0
+            return Paused(world: w, failure: "`sleep " + piece.to_str() + "` did not run: " + shell.ending(ran))
+        left @ left - piece
+
+    return Paused(world: w, failure: "")
+
+function script_sent(world: World, request: Request) -> Answered
+    w: World @= world
+    w.requests @ w.requests.push(request)
+
+    if w.at >= w.script.len()
+        return Answered(
+            world: w,
+            reply: failed(why: "the script holds no answer for " + request.method + " " + request.path, sent: request.method != "GET")
+        )
+    got = w.script[w.at]
+    w.at @ w.at + 1
+    return Answered(world: w, reply: got)
+
+function noted(world: World, seconds: i64) -> Paused
+    w: World @= world
+    w.waits @ w.waits.push(seconds)
+    return Paused(world: w, failure: "")
+
+function failed(why: str, sent: bool) -> Reply
+    none: {str: str} = {}
+    return Reply(status: 0, headers: none, body: "", failure: why, sent: sent)
+
+# A reply as a script records one: a status, headers written `name: value`, and
+# a body.
+function answer(status: i64, headers: [str], body: str) -> Reply
+    named: {str: str} @= {}
+
+    for line in headers
+        at = strings.index_of(text: line, needle: ":")
+
+        if !at.is_err()
+            named[lowered(line.slice(from: 0, to: at.must()))] @ strings.trimmed(
+                line.slice(from: at.must() + 1, to: line.len())
+            )
+
+    return Reply(status: status, headers: named, body: body, failure: "", sent: true)
+
+# What `gh api -i` printed, read: `HTTP/2.0 202 Accepted`, the headers one a
+# line, a blank line, the body. Lines end `\r\n`, as `gh` writes them; a bare
+# `\n` is read too. No status line reads as status 0.
+function reply_of(out: str) -> Reply
+    none: {str: str} = {}
+    unread = Reply(status: 0, headers: none, body: "", failure: "", sent: true)
+
+    if !strings.starts_with(text: out, prefix: "HTTP/")
+        return unread
+    cut: i64 @= -1
+    skip: i64 @= 0
+    crlf = strings.index_of(text: out, needle: "\r\n\r\n")
+    lf = strings.index_of(text: out, needle: "\n\n")
+
+    if !crlf.is_err() && (lf.is_err() || crlf.must() < lf.must())
+        cut @ crlf.must()
+        skip @ 4
+    else if !lf.is_err()
+        cut @ lf.must()
+        skip @ 2
+    head: str @= out
+    body: str @= ""
+
+    if cut >= 0
+        head @ out.slice(from: 0, to: cut)
+        body @ out.slice(from: cut + skip, to: out.len())
+    rows = strings.lines(head)
+    first = strings.words(strings.without_suffix(text: rows[0], suffix: "\r"))
+
+    if first.len() < 2
+        return unread
+    status = strings.to_number(first[1])
+
+    if status.is_err() || first[1].len() != 3
+        return unread
+    headers: {str: str} @= {}
+
+    for row in rows.slice(from: 1, to: rows.len())
+        line = strings.without_suffix(text: row, suffix: "\r")
+        at = strings.index_of(text: line, needle: ":")
+
+        if at.is_err()
+            continue
+        name = lowered(line.slice(from: 0, to: at.must()))
+        value = strings.trimmed(line.slice(from: at.must() + 1, to: line.len()))
+
+        if headers[name].is_err()
+            headers[name] @ value
+        else
+            headers[name] @ headers[name].must() + ", " + value
+
+    return Reply(status: status.must(), headers: headers, body: body, failure: "", sent: true)
+
+# A header's value, "" where the answer carries none.
+function header(reply: Reply, name: str) -> str
+    return reply.headers[name].default("")
+
+# ASCII letters made lowercase, every other byte kept.
+function lowered(text: str) -> str
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b >= 'A' && b <= 'Z'
+            out @ out.push(b + 32)
+        else
+            out @ out.push(b)
+        at @ at + 1
+
+    return out.validated_bytes().must()
+
+test "what gh api -i prints is read into a status, lowercased headers and a body"
+    out = "HTTP/2.0 202 Accepted\r\nContent-Type: application/json; charset=utf-8\r\nRetry-After: 30\r\nVary: Accept\r\nVary: Authorization\r\n\r\n{\"status\":\"pending\"}"
+    got = reply_of(out)
+    assert got.status == 202
+    assert header(reply: got, name: "retry-after") == "30"
+    assert header(reply: got, name: "vary") == "Accept, Authorization"
+    assert header(reply: got, name: "x-ratelimit-reset") == ""
+    assert got.body == "{\"status\":\"pending\"}"
+    assert reply_of("HTTP/2.0 204 No Content\r\nX-Github-Request-Id: A\r\n\r\n").body == ""
+    assert reply_of("HTTP/1.1 404 Not Found\nServer: x\n\n{\"message\":\"Not Found\"}").status == 404
+    assert reply_of("").status == 0
+    assert reply_of("gh: Not Found (HTTP 404)").status == 0
+    assert reply_of("HTTP/2.0 abc\r\n\r\n").status == 0
+
+test "a request is gh api with its method, host, media type, path and, where it has one, the body on stdin"
+    assert words_for(Request(method: "GET", path: "/repos/o/r/labels?page=1", accept: "", body: "")) == ["gh", "api", "-i", "--hostname", "github.com", "-X", "GET", "/repos/o/r/labels?page=1"]
+    assert words_for(Request(method: "POST", path: "/repos/o/r/import/issues", accept: "application/x", body: "{}")) == ["gh", "api", "-i", "--hostname", "github.com", "-X", "POST", "-H", "Accept: application/x", "/repos/o/r/import/issues", "--input", "-"]
+    assert words_for(Request(method: "DELETE", path: "/repos/o/r/labels/kind%3Alearn", accept: "", body: "")) == ["gh", "api", "-i", "--hostname", "github.com", "-X", "DELETE", "/repos/o/r/labels/kind%3Alearn"]
+
+test "the scripted transport answers in order, writes down every request and wait, and runs out loudly"
+    t = scripted()
+    send = t.send
+    pause = t.pause
+    w: World @= world_of(scratch: "unused", script: [answer(status: 200, headers: ["Date: x"], body: "[]")])
+    got = send(world: w, request: Request(method: "GET", path: "/a", accept: "", body: ""))
+    w @ got.world
+    assert got.reply.status == 200
+    assert header(reply: got.reply, name: "date") == "x"
+    past = send(world: w, request: Request(method: "POST", path: "/b", accept: "", body: "{}"))
+    w @ past.world
+    assert past.reply.status == 0
+    assert past.reply.sent
+    assert strings.contains(text: past.reply.failure, needle: "no answer for POST /b")
+    w @ pause(world: w, seconds: 7).world
+    assert w.requests.len() == 2
+    assert w.waits == [7]
