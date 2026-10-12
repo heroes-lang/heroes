@@ -268,3 +268,13 @@ Facts only; the design is the sitting's (issue 939).
   are this version's rendering.
 - **What `name` resolved to**, item 1 above.
 - **The count of 2026-09-06**, section 5.
+
+## 8. The scratch, kept beside this file
+
+Added 2026-10-12, the same night, by the author's instruction given for the
+panels' working folders, meant as: *put the evidence in the result, then throw
+the folders away*. The 30 text files of `build/census/` that § 2 to § 5 name,
+the programs, the IR dumps, the emitted C and the lldb transcripts, stand in
+`042-a-stopped-frame-shows-the-c-names-and-of-its-locals-the-author-wrote-fewer-than-one-in-ten.tar.xz`, beside this file:
+`tar -xJf docs/measurements/042-a-stopped-frame-shows-the-c-names-and-of-its-locals-the-author-wrote-fewer-than-one-in-ten.tar.xz -C build` puts them back at `build/census/`.
+The three binaries are not kept; § 2's commands rebuild them.
