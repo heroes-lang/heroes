@@ -1,5 +1,5 @@
 {
-  "//": "A small icon set, not a full theme. .hero gets the Aladdin Sane bolt; the file types this repo actually contains get a distinguishable shape; everything else gets a plain sheet. Enough that switching to it is not a downgrade while working here.",
+  "//": "A small icon set, not a full theme. .hero gets the Aladdin Sane bolt; the file types this repo actually contains get a distinguishable shape; everything else gets a plain sheet. Enough that switching to it is not a downgrade while working here. The extensions are those `git ls-files` lists (2026-10-12): the golden cases' `.frozen` `.applied` `.fixed` `.agreed` beside `.expected`, and the example programs' inputs, are data; an extension no tracked file has is left out.",
   "iconDefinitions": {
     "_hero": {
       "iconPath": "./hero-file.svg"
@@ -32,22 +32,43 @@
     "c": "_code",
     "h": "_code",
     "js": "_code",
+    "mjs": "_code",
     "ts": "_code",
+    "astro": "_code",
     "py": "_code",
     "sh": "_code",
-    "zsh": "_code",
+    "ps1": "_code",
     "md": "_doc",
     "txt": "_doc",
     "html": "_doc",
     "css": "_doc",
     "svg": "_doc",
     "json": "_data",
+    "jsonl": "_data",
     "toml": "_data",
-    "yaml": "_data",
     "yml": "_data",
+    "xml": "_data",
+    "vsixmanifest": "_data",
     "lock": "_data",
     "tiktoken": "_data",
-    "expected": "_data"
+    "tsv": "_data",
+    "diff": "_data",
+    "patch": "_data",
+    "log": "_data",
+    "d": "_data",
+    "pc": "_data",
+    "expected": "_data",
+    "frozen": "_data",
+    "applied": "_data",
+    "fixed": "_data",
+    "agreed": "_data",
+    "args": "_data",
+    "stdin": "_data",
+    "asm": "_data",
+    "cells": "_data",
+    "maze": "_data",
+    "script": "_data",
+    "todo": "_data"
   },
   "languageIds": {
     "hero": "_hero"

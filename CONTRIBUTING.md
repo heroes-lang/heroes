@@ -121,8 +121,8 @@ and in
   here is a deliverable: it is supposed to carry the place, the other end of the
   story and the repair, without your opening another file. One that does not is a
   defect.
-- **A build that fails on your machine.** Three platforms are tested and yours
-  may be a fourth.
+- **A build that fails on your machine.** Four platforms are tested and yours
+  may be a fifth.
 - **A question about why something is the way it is.** If the answer is not
   already in `design.md`, `spec/heroes-spec.md` or a panel session, the question
   has found a gap in the record.

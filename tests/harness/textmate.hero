@@ -12,12 +12,19 @@
 #
 # **A reader, not a regular-expression engine.** It knows what the literal
 # rules use (literals and their escapes, `\xHH`, `.`, classes with ranges and
-# `^`, groups with `|`, the greedy `?` `*` `+` `{n}` `{n,}` `{n,m}`) and it
-# REFUSES the rest by name: an anchor, a lookaround, a back-reference, a lazy or
-# possessive quantifier, a class escape such as `\d`. A construct read as
-# something else is a check that passes on a grammar it never ran, which is
-# the failure the module exists to end; a refusal is red and says what to teach
-# it.
+# `^`, groups with `|`, the greedy `?` `*` `+` `{n}` `{n,}` `{n,m}`, and since
+# 2026-10-12 the word boundary `\b`, which the number rules open and close
+# with) and it REFUSES the rest by name: an anchor, a lookaround, a
+# back-reference, a lazy or possessive quantifier, a class escape such as `\d`.
+# A construct read as something else is a check that passes on a grammar it
+# never ran, which is the failure the module exists to end; a refusal is red
+# and says what to teach it.
+#
+# **It also reads which words a scope paints** (`scoped_words`, 2026-10-12):
+# every rule and every capture of the grammar named with that scope, the words
+# being those of the group it paints. `suite_spec` holds the foreign words and
+# the contextual words to the compiler's own tables with it, wherever in the
+# grammar a rule paints them.
 #
 # **The order is the editor's.** At one place every rule of the list is tried,
 # the earliest start wins and a tie goes to the rule written first. Every rule
@@ -49,8 +56,9 @@ record Painted
     reach: i64
 
 # One item of a pattern: an atom and how often it repeats. `kind` is
-# `literal`, `any`, `class` or `group`; `from` and `to` bound a class's members
-# or a group's alternatives inside the pattern; `max` is -1 for no bound.
+# `literal`, `any`, `class`, `group` or `boundary`, the last matching no
+# character and never repeated; `from` and `to` bound a class's members or a
+# group's alternatives inside the pattern; `max` is -1 for no bound.
 record Item
     kind: str
     one: str
@@ -121,6 +129,23 @@ function optional_string(text: str, object: Span, key: str) -> str?
 function member(text: str, object: Span, key: str) -> Span?
     if object.start >= object.stop || text[object.start] != '{'
         return fail(code: "not_an_object", msg: "`" + key + "` was asked of a value that is not an object")
+
+    for one in pairs(text: text, object: object)?
+        if one.key == key
+            return ok(one.value)
+
+    return fail(code: "absent", msg: "no `" + key + "` in the object")
+
+# One member of a JSON object: its key, undone of its escapes, and its value.
+record Pair
+    key: str
+    value: Span
+
+# The members of the JSON object `object` spans, in order.
+function pairs(text: str, object: Span) -> [Pair]?
+    if object.start >= object.stop || text[object.start] != '{'
+        return fail(code: "not_an_object", msg: "a member was asked of a value that is not an object")
+    out: [Pair] @= []
     at: i64 @= skip_space(text: text, at: object.start + 1)
 
     while at < object.stop && text[at] != '}'
@@ -131,15 +156,13 @@ function member(text: str, object: Span, key: str) -> Span?
             return fail(code: "malformed", msg: "a key with no `:` after it in the grammar")
         begins = skip_space(text: text, at: colon + 1)
         value = Span(start: begins, stop: value_end(text: text, at: begins)?)
-
-        if json_string(text: text, value: named)? == key
-            return ok(value)
+        out @ out.push(Pair(key: json_string(text: text, value: named)?, value: value))
         at @ skip_space(text: text, at: value.stop)
 
         if at < object.stop && text[at] == ','
             at @ skip_space(text: text, at: at + 1)
 
-    return fail(code: "absent", msg: "no `" + key + "` in the object")
+    return ok(out)
 
 # The values of the JSON array `array` spans, in order.
 function elements(text: str, array: Span) -> [Span]?
@@ -250,6 +273,125 @@ function json_string(text: str, value: Span) -> str?
 
     return ok(out)
 
+## The words a scope paints
+
+# Every word the grammar paints with `scope`, in the order the file holds
+# them, read from every rule whose `name` carries it, the words of its
+# pattern's first group, and from every capture named with it, the words of
+# the group the capture numbers in its rule's pattern. The whole JSON is
+# walked, so a rule nested in a region's `patterns` is read as one at the top.
+#
+# **A group that is not a list of words is refused**, never read as fewer
+# words: `(as\s)` or `(?:tag)` would otherwise give a word list that differs
+# from the one the editor paints. And a region named with the scope is
+# refused, since it paints whatever the region holds and no words of its own.
+function scoped_words(grammar: str, scope: str) -> [str]?
+    out: [str] @= []
+    walk_words(@out, text: grammar, value: Span(start: skip_space(text: grammar, at: 0), stop: grammar.len()), scope: scope)?
+    return ok(out)
+
+function walk_words(@out: [str], text: str, value: Span, scope: str) -> ()?
+    if value.start >= value.stop
+        return ok()
+
+    if text[value.start] == '['
+        for element in elements(text: text, array: value)?
+            walk_words(@out, text: text, value: element, scope: scope)?
+
+        return ok()
+
+    if text[value.start] != '{'
+        return ok()
+    matched = optional_string(text: text, object: value, key: "match")?
+    began = optional_string(text: text, object: value, key: "begin")?
+
+    if names_scope(name: optional_string(text: text, object: value, key: "name")?, scope: scope)
+        if matched.len() > 0
+            for word in group_words(capture_group(pattern: matched, n: 1)?)?
+                out @ out.push(word)
+        else if began.len() > 0
+            return fail(
+                code: "unread",
+                msg: "a region is named `" + scope + "`, which paints what it holds and no words of its own"
+            )
+
+    for one in pairs(text: text, object: value)?
+        pattern: str @= ""
+
+        if one.key == "captures"
+            pattern @ matched
+
+            if pattern.len() == 0
+                pattern @ began
+        else if one.key == "beginCaptures"
+            pattern @ began
+        else if one.key == "endCaptures"
+            pattern @ optional_string(text: text, object: value, key: "end")?
+
+        if pattern.len() > 0
+            for capture in pairs(text: text, object: one.value)?
+                if names_scope(name: optional_string(text: text, object: capture.value, key: "name")?, scope: scope)
+                    group = capture_group(pattern: pattern, n: strings.to_number(capture.key)?)?
+
+                    for word in group_words(group)?
+                        out @ out.push(word)
+
+        walk_words(@out, text: text, value: one.value, scope: scope)?
+
+    return ok()
+
+# Whether a rule's `name`, one or more scopes separated by spaces, holds `scope`.
+function names_scope(name: str, scope: str) -> bool
+    for one in strings.split_text(text: name, separator: " ")
+        if one == scope
+            return true
+
+    return false
+
+# The text of the `n`th capturing group of `pattern`, counted by its opening
+# `(` from the left as the engine counts them: a `(?` opens no capture, and a
+# `(` escaped or inside a class opens nothing.
+function capture_group(pattern: str, n: i64) -> str?
+    p = pattern.chars()
+    seen: i64 @= 0
+    i: i64 @= 0
+
+    while i < p.len()
+        if p[i] == "\\"
+            i @ i + 2
+            continue
+
+        if p[i] == "["
+            i @ class_end(p: p, at: i, to: p.len())? + 1
+            continue
+
+        if p[i] == "(" && (i + 1 >= p.len() || p[i + 1] != "?")
+            seen @ seen + 1
+
+            if seen == n
+                close = group_end(p: p, at: i, to: p.len())?
+                return ok(p.slice(from: i + 1, to: close).join(""))
+        i @ i + 1
+
+    return fail(code: "unread", msg: "`" + pattern + "` has no group " + n.to_str())
+
+# The words of a group that is a list of them, `tag|partial`: each an ASCII
+# letter or `_` throughout, none empty.
+function group_words(group: str) -> [str]?
+    out: [str] @= []
+
+    for word in strings.split_text(text: group, separator: "|")
+        if word.len() == 0
+            return fail(code: "unread", msg: "the group `" + group + "` has an empty alternative")
+
+        for c in word.chars()
+            if c.len() != 1 || !(c[0] >= 'a' && c[0] <= 'z' || c[0] >= 'A' && c[0] <= 'Z' || c == "_")
+                return fail(code: "unread", msg: "the group `" + group + "` is not a list of words")
+
+        out @ out.push(word)
+
+    return ok(out)
+
 ## Running a rule list
 
 # What `rules` paint at the start of `text`: the first rule, in the list's
@@ -320,9 +462,17 @@ function sequence_ends(p: [str], from: i64, to: i64, s: [str], at: i64) -> [i64]
         item = item_at(p: p, at: i, to: to)?
         next_places: [i64] @= []
 
-        for place in places
-            for one in repeated(p: p, item: item, s: s, at: place, count: 0)?
-                next_places @ kept(next_places, one)
+        # A boundary keeps the places it holds at and moves none: it matches
+        # no character, so the repetition below, which ends a loop on a match
+        # of nothing, would read it as never matching.
+        if item.kind == "boundary"
+            for place in places
+                if at_boundary(s: s, at: place)?
+                    next_places @ kept(next_places, place)
+        else
+            for place in places
+                for one in repeated(p: p, item: item, s: s, at: place, count: 0)?
+                    next_places @ kept(next_places, one)
 
         places @ next_places
 
@@ -380,7 +530,16 @@ function item_at(p: [str], at: i64, to: i64) -> Item?
     c = p[at]
     item: Item @= Item(kind: "literal", one: c, from: 0, to: 0, negated: false, min: 1, max: 1, next: at + 1)
 
-    if c == "\\"
+    if c == "\\" && at + 1 < to && p[at + 1] == "b"
+        item.kind @ "boundary"
+        item.next @ at + 2
+
+        # A count on a boundary asks nothing a single one does not, and the
+        # engine would read it; this reader keeps out what it does not run.
+        if item.next < to && (p[item.next] == "*" || p[item.next] == "+" || p[item.next] == "?" || p[item.next] == "{")
+            return fail(code: "unread", msg: "a count on `\\b`, which this reader does not run")
+        return ok(item)
+    else if c == "\\"
         item.one @ escaped(p: p, at: at, to: to)?
         item.next @ escape_end(p: p, at: at)
     else if c == "."
@@ -581,6 +740,25 @@ function next_member(p: [str], at: i64) -> i64
 
 ## Characters
 
+# Whether `\b` holds between `s[at - 1]` and `s[at]`: a word character on one
+# side and none on the other, the text's two ends counting as none. A word
+# character is an ASCII letter, digit or `_`. Beside a character above ASCII
+# the reader refuses, because Oniguruma asks Unicode which of those is a
+# letter and this reader does not, and a guess would be a boundary the
+# editor does not see.
+function at_boundary(s: [str], at: i64) -> bool?
+    before = at > 0 && word_character(s[at - 1])?
+    after = at < s.len() && word_character(s[at])?
+    return ok(before != after)
+
+function word_character(c: str) -> bool?
+    if c.len() != 1
+        return fail(
+            code: "unread",
+            msg: "`\\b` beside `" + c + "`, a character above ASCII, which this reader does not class"
+        )
+    return ok(is_alnum(c[0]) || c == "_")
+
 # One character's code, from its UTF-8 bytes.
 function code_of(c: str) -> i64
     if c.len() == 0
@@ -648,9 +826,36 @@ test "a pattern is run, and the match taken is the one the engine prefers"
     assert ends(pattern: "\\x80", text: "z", at: 0).is_err()
     assert ends(pattern: "x{2,}", text: "xxxy", at: 0).must() == [3, 2]
 
+test "a word boundary matches no character, and holds only between a word character and none"
+    # The integer rule of the grammar, on what a program writes after a
+    # number: the boundary before `)` holds, the one before `u` or `_` does
+    # not, so `1u8` and `1_` paint nothing as an integer.
+    integer = "\\b(?:0|[1-9](?:_?[0-9])*)\\b"
+    assert ends(pattern: integer, text: "1_000)", at: 0).must() == [5]
+    assert ends(pattern: integer, text: "0x", at: 0).must().len() == 0
+    assert ends(pattern: integer, text: "1u8", at: 0).must().len() == 0
+    assert ends(pattern: integer, text: "1_)", at: 0).must().len() == 0
+    assert ends(pattern: integer, text: "1._5", at: 0).must() == [1]
+
+    # The text's two ends count as no word character.
+    assert ends(pattern: "\\bif\\b", text: "if", at: 0).must() == [2]
+    assert ends(pattern: "\\b", text: "", at: 0).must().len() == 0
+    assert ends(pattern: "a\\b", text: "a b", at: 0).must() == [1]
+
+    # Inside a word there is none, and a boundary takes no width: two in a row
+    # are one.
+    assert ends(pattern: "\\b", text: "xy", at: 1).must().len() == 0
+    assert ends(pattern: "\\b\\bx", text: "x", at: 0).must() == [1]
+    assert at_boundary(s: "a(".chars(), at: 1).must()
+    assert !at_boundary(s: "_1".chars(), at: 1).must()
+    assert at_boundary(s: "é".chars(), at: 0).is_err()
+
 test "a construct the reader does not know is refused, never read as another"
     assert ends(pattern: "(?<![A-Za-z0-9_])f\"", text: "f\"", at: 0).is_err()
-    assert ends(pattern: "\\bif\\b", text: "if", at: 0).is_err()
+    assert ends(pattern: "\\Bif", text: "if", at: 0).is_err()
+    assert ends(pattern: "\\b?if", text: "if", at: 0).is_err()
+    assert ends(pattern: "[\\b]", text: "b", at: 0).is_err()
+    assert ends(pattern: "\\bé", text: "é", at: 0).is_err()
     assert ends(pattern: "^\\s*##", text: "##", at: 0).is_err()
     assert ends(pattern: "a*?", text: "aa", at: 0).is_err()
     assert ends(pattern: "[[:alpha:]]", text: "a", at: 0).is_err()
@@ -681,3 +886,28 @@ test "a code is read from its bytes"
     assert code_of("😀") == 128512
     assert hex_value("f") == 15
     assert hex_value("g") == -1
+
+test "the words a scope paints are read from every rule and every capture named with it"
+    grammar = "{\"patterns\": [{\"include\": \"#use\"}], \"repository\": {\"use\": {\"match\": \"^(use) +([a-z/]+) +(as)\", \"captures\": {\"1\": {\"name\": \"keyword.control.use.hero\"}, \"3\": {\"name\": \"keyword.other.contextual.hero\"}}}, \"extern\": {\"begin\": \"^(extern)(?: +('[^']*') +(link|package))?\", \"end\": \"^(?=[^ #])\", \"beginCaptures\": {\"3\": {\"name\": \"keyword.other.contextual.hero\"}}, \"patterns\": [{\"match\": \"(tag|owned)(?! *:)\", \"name\": \"other.scope keyword.other.contextual.hero\"}]}, \"comment\": {\"comment\": \"keyword.other.contextual.hero in prose names nothing\", \"match\": \"#.*\", \"name\": \"comment.line.number-sign.hero\"}}}"
+    assert scoped_words(grammar: grammar, scope: "keyword.other.contextual.hero").must() == ["as", "link", "package", "tag", "owned"]
+    assert scoped_words(grammar: grammar, scope: "keyword.control.use.hero").must() == ["use"]
+    assert scoped_words(grammar: grammar, scope: "no.such.scope").must().len() == 0
+
+    # A region named with the scope paints what it holds, and a group that is
+    # not a list of words would read as other words than the editor paints.
+    region = "{\"repository\": {\"x\": {\"begin\": \"(a)\", \"end\": \"b\", \"name\": \"s.hero\"}}}"
+    assert scoped_words(grammar: region, scope: "s.hero").is_err()
+    spaced = "{\"repository\": {\"x\": {\"match\": \"(as )\", \"name\": \"s.hero\"}}}"
+    assert scoped_words(grammar: spaced, scope: "s.hero").is_err()
+    ungrouped = "{\"repository\": {\"x\": {\"match\": \"as\", \"name\": \"s.hero\"}}}"
+    assert scoped_words(grammar: ungrouped, scope: "s.hero").is_err()
+
+test "a capturing group is counted as the engine counts it"
+    assert capture_group(pattern: "(?:a)(b|c)[(]\\((d)", n: 1).must() == "b|c"
+    assert capture_group(pattern: "(?:a)(b|c)[(]\\((d)", n: 2).must() == "d"
+    assert capture_group(pattern: "(a(b))", n: 2).must() == "b"
+    assert capture_group(pattern: "(a)", n: 2).is_err()
+    assert group_words("as").must() == ["as"]
+    assert group_words("null|nil|None|counted_by").must() == ["null", "nil", "None", "counted_by"]
+    assert group_words("a||b").is_err()
+    assert group_words("a\\b").is_err()

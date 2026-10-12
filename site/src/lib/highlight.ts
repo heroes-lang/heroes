@@ -14,7 +14,10 @@
  * user's own type is left uncoloured on purpose (`site/README.md` § Syntax
  * colouring). A word after a dot stays plain too, because `s.cstr()` calls a
  * method and `cstr` there is not the type: that is a fact about the character
- * before the word rather than a premise about the program.
+ * before the word rather than a premise about the program. The keyword class
+ * also takes the contextual words, `owned` or `link` or `as`, but only in the
+ * places the parser reads them as marks (`markAt`), since everywhere else they
+ * are ordinary names.
  *
  * The guarantee that makes this safe to run over 118 files nobody re-reads is
  * `assertRoundTrip`: strip the spans, decode the three entities, and what comes
@@ -23,7 +26,7 @@
  * mechanism is that a reader can check it.
  */
 
-import { keywords, typeWords } from './tables.ts';
+import { contextual, keywords, typeWords } from './tables.ts';
 
 /** What a token is coloured as. `ident` and `other` carry no class. */
 export type TokenKind = 'c' | 'k' | 't' | 's' | 'n' | 'ident' | 'other';
@@ -227,6 +230,7 @@ function inBase(ch: string, marker: string): boolean {
 export function tokenize(source: string): Token[] {
   const kw = keywords();
   const types = typeWords();
+  const marks = contextual();
   const out: Token[] = [];
   let i = 0;
 
@@ -281,8 +285,35 @@ export function tokenize(source: string): Token[] {
     beforePrevious.kind === 'other' &&
     beforePrevious.text === ':';
 
+  /**
+   * Where the parser reads a contextual word as a mark, and nowhere else
+   * (spec § 1's `Use`, § 13's `Extern`, `Member` and `CParam`): `as` on a
+   * `use` line after its path; `link` or `package` on an `extern` line after
+   * its header's string; the other twelve on the indented lines of an extern
+   * group, which runs from a column-0 `extern` line to the next line whose
+   * first character is neither a space nor `#`, and never where the word is
+   * followed by `:`, which makes it a parameter's or a field's name. The
+   * editor's grammar paints the same places by the same rule
+   * (`editors/vscode/syntaxes/heroes.tmLanguage.json`, `#contextual`).
+   */
+  let lineHead: string | null = null;
+  let inExtern = false;
+  const atLineStart = (at: number) => {
+    const first = source[at] ?? '';
+    const head = /^[a-z_]+/.exec(source.slice(at, at + 16));
+    lineHead = first !== ' ' && head !== null ? head[0] : null;
+    if (first !== ' ' && first !== '#' && first !== '\n' && first !== '') inExtern = lineHead === 'extern';
+  };
+  const markAt = (word: string, start: number, end: number): boolean => {
+    if (!marks.has(word)) return false;
+    if (word === 'as') return lineHead === 'use' && source[start - 1] === ' ' && previous !== null && previous.kind === 'ident';
+    if (word === 'link' || word === 'package') return lineHead === 'extern' && previous !== null && previous.kind === 's';
+    return inExtern && lineHead === null && !/^ *:/.test(source.slice(end, end + 64));
+  };
+
   while (i < source.length) {
     const ch = source[i];
+    if (i === 0 || source[i - 1] === '\n') atLineStart(i);
 
     // A comment runs to the end of the line and never includes the newline,
     // because the newline is what ends it (`scan.hero::comment`).
@@ -352,7 +383,13 @@ export function tokenize(source: string): Token[] {
       while (end < source.length && (isAlnum(source[end]) || source[end] === '_')) end += 1;
       const word = source.slice(i, end);
       const kind: TokenKind =
-      afterDot() || afterColons() ? 'ident' : kw.has(word) ? 'k' : types.has(word) ? 't' : 'ident';
+      afterDot() || afterColons()
+        ? 'ident'
+        : kw.has(word) || markAt(word, i, end)
+          ? 'k'
+          : types.has(word)
+            ? 't'
+            : 'ident';
       push(kind, word);
       i = end;
       continue;

@@ -29,6 +29,7 @@ import { plain } from './highlight.ts';
 import { tracklist } from './nods.ts';
 import { version } from './tables.ts';
 import { checkClaims, specReal, ceilingK } from './claims.ts';
+import { fillSizes } from './sizes.ts';
 import { chainSection } from './chain.ts';
 
 /** One figure, as the check reads it. */
@@ -151,7 +152,7 @@ export function page(html: string, pagePath: string): string {
   // anybody did, which is where four false claims in one day came from.
   checkClaims(html, pagePath);
   return fillOutbound(
-    fillChain(fillTracklist(fillCeiling(fillMeasured(fillVersion(html, pagePath))), pagePath), pagePath)
+    fillChain(fillTracklist(fillCeiling(fillMeasured(fillSizes(fillVersion(html, pagePath)))), pagePath), pagePath)
   );
 }
 

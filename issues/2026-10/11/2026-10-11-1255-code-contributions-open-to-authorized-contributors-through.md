@@ -71,3 +71,7 @@ checklist of what a pull request carries; the new form, and the comment of
 `.github/ISSUE_TEMPLATE/config.yml`. The records that quote the old policy,
 journal 037, the pages of M-open-repository and M-publication-gate and the
 decision of 2026-09-08, stand at their dates.
+
+## Corrected 2026-10-12
+
+*No page of the site states the policy*, above, was wrong. Six passages in two editions did, read again on 2026-10-12 when the author asked for the site's text to follow the latest updates: the home's book box (*"Code is not accepted here yet, so there is no patch to send"*) and its footer (*"code contributions are not open yet"*), and the about page's book box (*"takes no code contributions yet"*), each in English and Italian; and a seventh in `site/src/llms.txt` (*"code contributions are not open yet, and CONTRIBUTING.md names the conditions"*), with an eighth outside the site, `README.md`'s *"no patch is taken"*. So the live site went on stating the old policy after this decision, until the correction is deployed. All eight are corrected in the commit that adds this section, and `site/src/lib/claims.ts` refuses the removed phrases from then on, `llms.txt` included, the way it already refused the sentences of a private repository.
