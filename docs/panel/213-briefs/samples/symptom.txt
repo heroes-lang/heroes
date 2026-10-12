@@ -1,0 +1,1 @@
+`best(players: [Player]) -> str` should return the name of the player with the highest score. Called on three players it printed `alan`. The program is stopped at the line `return winner` of `best`, after its loop.

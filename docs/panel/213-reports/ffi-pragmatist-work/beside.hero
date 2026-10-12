@@ -1,0 +1,13 @@
+variant Token
+    num
+        v: i64
+    plus
+
+function main()
+    grid = [[1, 2], [3]]
+    empty: [i64] = []
+    toks: [Token] = [.num(v: 1), .plus]
+    groups = {"a": ["x", "y"], "b": []}
+    flags = [true, false]
+    xs = [1.5, 2.25]
+    print(grid.len() + empty.len() + toks.len() + groups.len() + flags.len() + xs.len())
