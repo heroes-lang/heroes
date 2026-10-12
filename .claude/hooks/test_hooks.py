@@ -2141,34 +2141,34 @@ class GithubWrites(unittest.TestCase):
 
 
 class Credit(unittest.TestCase):
-    """CL-082 and CL-083, 2026-10-11: an issue file, and a file the code cites
-    a defect in, are asked of the `records` suite narrowed to them."""
+    """CL-083, 2026-10-11: a file the code cites a defect in is asked of the
+    `records` suite narrowed to it. Since the author's seven answers of
+    2026-10-12 the issues are GitHub's, so an issue file of `issues/` is asked
+    nothing, and the narrowed run reads the defects' names from the copy the
+    last full run kept, skipping, and so saying nothing, where there is none."""
 
     def setUp(self):
         self.top = fresh("hooks-credit-")
         self.tree = make_tree(os.path.join(self.top, "tree"))
         self.issue = os.path.join("issues", "2026-10", "11", "2026-10-11-1501-x.md")
 
-    def test_an_issue_file_its_suite_fails_is_refused_with_the_suite_words(self):
-        answer(
-            self.tree, "records", 1,
-            "  records: 0 passed, 1 failed\nFAIL records/prior-art\n"
-            "  issues/2026-10/11/2026-10-11-1501-x.md: a closed `task` holds no `## What was done` section\n"
-            "harness: 0 passed, 1 failed\n",
-        )
-        issue = write(os.path.join(self.tree, self.issue), "---\nkind: task\n---\n")
-        code, said = written(self.tree, issue)
-        self.assertEqual(code, 2, said)
-        self.assertIn("is refused by the `records` suite narrowed to it", said)
-        self.assertIn("holds no `## What was done`", said)
-        self.assertEqual(runs(self.tree), ["records " + self.issue])
-
-    def test_an_issue_file_its_suite_passes_says_nothing(self):
-        answer(self.tree, "records", 0, "  records: 1 passed, 0 failed\nharness: 1 passed, 0 failed\n")
-        issue = write(os.path.join(self.tree, self.issue), "---\nkind: decision\n---\n")
+    def test_an_issue_file_is_asked_nothing(self):
+        answer(self.tree, "records", 1, "FAIL records/prior-art\n  a refusal no run may give\n")
+        issue = write(os.path.join(self.tree, self.issue), "---\nkind: task\n---\n\ndefect 9\n")
         code, said = written(self.tree, issue)
         self.assertEqual(code, 0, said)
-        self.assertEqual(runs(self.tree), ["records " + self.issue])
+        self.assertEqual(runs(self.tree), [])
+
+    def test_a_cited_file_whose_register_copy_is_absent_says_nothing(self):
+        answer(
+            self.tree, "records", 0,
+            "SKIP records/defects-cited\n  no copy of the defects' names at build/defect-register\n"
+            "  records: 0 passed, 0 failed\nharness: 0 passed, 0 failed\n",
+        )
+        cites = write(os.path.join(self.tree, "runtime", "x.c"), "/* Defect 9 */\n")
+        code, said = written(self.tree, cites)
+        self.assertEqual(code, 0, said)
+        self.assertEqual(runs(self.tree), ["records runtime/x.c"])
 
     def test_a_document_outside_issues_is_not_asked(self):
         doc = write(os.path.join(self.tree, "docs", "x.md"), "defect 9\n")
@@ -2177,7 +2177,7 @@ class Credit(unittest.TestCase):
         self.assertEqual(runs(self.tree), [])
 
     def test_a_c_file_citing_a_defect_is_asked_and_one_citing_none_is_not(self):
-        answer(self.tree, "records", 1, "FAIL records/defects-cited\n  runtime/x.c:1: defect 9 names no defect of `issues/`\n")
+        answer(self.tree, "records", 1, "FAIL records/defects-cited\n  runtime/x.c:1: defect 9 names no defect the copy of GitHub's names at build/defect-register holds\n")
         cites = write(os.path.join(self.tree, "runtime", "x.c"), "/* Defect 9 */\n")
         code, said = written(self.tree, cites)
         self.assertEqual(code, 2, said)
@@ -2196,21 +2196,24 @@ class Credit(unittest.TestCase):
         self.assertEqual(runs(self.tree), ["records tests/harness/m.hero"])
         self.assertIn(self.tree + "|check tests/harness/m.hero", calls(self.tree))
 
-    def test_an_issue_file_in_a_tree_with_no_compiler_is_told_so(self):
+    def test_a_cited_file_in_a_tree_with_no_compiler_is_told_so(self):
         bare = make_tree(os.path.join(self.top, "bare"), compiler=False)
-        issue = write(os.path.join(bare, self.issue), "---\nkind: task\n---\n")
-        code, said = written(bare, issue)
+        cites = write(os.path.join(bare, "runtime", "x.c"), "/* defect 9 */\n")
+        code, said = written(bare, cites)
         self.assertEqual(code, 2, said)
         self.assertIn("not judged", said)
         self.assertIn("`records` suite", said)
 
 
 class TrackedAsks(unittest.TestCase):
-    """Panel 212's R7, the guard's other half: the transcription program's
-    `push`, `repair`, `prepare` and `finish` write to GitHub from a `gh` they
-    spawn, which no rule of the shell guard can see, so the tracked settings
-    ask the author before every run of each, however it is spelled, and ask
-    nothing of `render` and `plan`, which write nothing. A rule is read as the
+    """Panel 212's R7, the guard's other half, as the author's seven answers of
+    2026-10-12 amended it: opening, commenting on, closing and correcting an
+    issue through the transcription program is asked once, by that answer, so
+    `push`, `repair` and the words of the issues on GitHub, `file`, `close`,
+    `comment`, `edit` and `open`, are asked nothing; a milestone, a label and an
+    interaction limit stay asked every time, so `prepare` and `finish`, which
+    write them from a `gh` they spawn and no rule of the shell guard can see,
+    are asked before every run, however each is spelled. A rule is read as the
     harness reads one, `*` standing for any text; that an `ask` outranks an
     `allow` is the harness's order."""
 
@@ -2225,15 +2228,6 @@ class TrackedAsks(unittest.TestCase):
                 if rule.startswith("Bash(") and rule.endswith(")")
                 and fnmatch.fnmatchcase(command, rule[len("Bash("):-1])]
 
-    def test_every_spelling_of_a_push_is_asked_and_none_is_denied(self):
-        for command in ("./heroes run tests/harness/issues.hero -- push --yes --pin cd2798043",
-                        "./heroes run tests/harness/issues.hero -- push",
-                        "heroes run tests/harness/issues.hero -- push --yes --pin cd2798043 --accept-gaps",
-                        "caffeinate -i ./heroes run tests/harness/issues.hero -- push --yes --pin cd2798043",
-                        "caffeinate -i heroes run tests/harness/issues.hero -- push --yes --pin x issues/a.md"):
-            self.assertTrue(self.matched("ask", command), command)
-            self.assertFalse(self.matched("deny", command), command)
-
     def test_every_spelling_of_prepare_and_finish_is_asked_and_none_is_denied(self):
         for word in ("prepare --yes", "finish --yes", "prepare", "finish"):
             for start in ("./heroes", "heroes", "caffeinate -i ./heroes", "caffeinate -i heroes"):
@@ -2241,12 +2235,17 @@ class TrackedAsks(unittest.TestCase):
                 self.assertTrue(self.matched("ask", command), command)
                 self.assertFalse(self.matched("deny", command), command)
 
-    def test_every_spelling_of_repair_is_asked_and_none_is_denied(self):
-        for word in ("repair --yes", "repair --yes --pin dd0b5f5aa issues/a.md", "repair"):
-            for start in ("./heroes", "heroes", "caffeinate -i ./heroes", "caffeinate -i heroes"):
+    def test_the_writes_asked_once_ask_nothing_and_none_is_denied(self):
+        for word in ("push --yes --pin cd2798043", "push --yes --pin x --accept-gaps issues/a.md",
+                     "repair --yes", "repair --yes --pin dd0b5f5aa issues/a.md",
+                     "file /tmp/x/2026-10-12-1800-a.md", "close 2031 /tmp/x/closing.md",
+                     "comment 2031 /tmp/x/text.md", "edit 2031 /tmp/x/2026-10-12-1800-a.md",
+                     "open --kind defect --json"):
+            for start in ("./heroes", "caffeinate -i ./heroes"):
                 command = start + " run tests/harness/issues.hero -- " + word
-                self.assertTrue(self.matched("ask", command), command)
+                self.assertFalse(self.matched("ask", command), command)
                 self.assertFalse(self.matched("deny", command), command)
+            self.assertTrue(self.matched("allow", "./heroes run tests/harness/issues.hero -- " + word), word)
 
     def test_render_and_plan_ask_nothing(self):
         for command in ("./heroes run tests/harness/issues.hero -- plan",

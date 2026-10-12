@@ -1,5 +1,5 @@
 # WHERE CODE STANDS IN MARKDOWN, AS GITHUB READS IT: the one model of code the
-# issue renderer and `records/rendered` share.
+# issue renderer and its checks (`issue_check.hero`) share.
 #
 # `.claude/rules/records.md` § The issues, panel 212's R3: an item line splits on
 # ` | ` outside a code span (D2), a backticked commit hash is written bare (D6),

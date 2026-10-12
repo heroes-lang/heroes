@@ -14,8 +14,9 @@
 # `\u` escape of a control character, which GitHub stores otherwise, is
 # `issue_controls.hero`'s, run over the body this module made inert.
 #
-# `live` is `records/rendered`'s half: it reads a rendered body for anything
-# still doing one of the three, and the card that holds one is refused.
+# `live` is `issue_check.offences`' half: it reads a rendered body for anything
+# still doing one of the three, and the draft or card that holds one is
+# refused.
 
 use issue_spans
 use strings

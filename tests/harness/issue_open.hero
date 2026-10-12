@@ -1,0 +1,131 @@
+# `open`: THE OPEN ISSUES, READ FROM GITHUB, one line each or one JSON object
+# a line, for a person and for the skills that read the lists.
+#
+# Since the author's seven answers of 2026-10-12 the open defects, the
+# decisions waiting and a milestone's work are GitHub's open issues and no
+# file's (the decision
+# https://github.com/heroes-lang/heroes/issues/2027,
+# filed after the transcription), so this is their one reader: the open
+# issues listed (`github_issues.OPEN_LISTING`, every page, pull requests left
+# out), narrowed by `--kind`, `--milestone` and `--class`, in the order of
+# their numbers. A line is the number, the kind, the class (`-` for none), the
+# milestone (`-` for none) and the title, one space apart and the title last,
+# so a reader splits four times and keeps the rest; `--json` prints instead
+# one object a line, its members named, its absent ones `null`: the number,
+# the address, the title, the kind, the class, the area, the milestone, every
+# label, `created_at` and the body, what the `/batch` skill reads to compose a
+# batch. It writes nothing.
+
+use github_issues
+use issue_json
+use issue_pace
+use issue_wire
+use strings
+
+# What `open` narrows the list to: a kind, a milestone and a class, each ""
+# for any.
+record Narrowed
+    kind: str
+    milestone: str
+    grade: str
+
+# The open issues of `listing` that `wanted` keeps, by number.
+function chosen(listing: github_issues.Listing, wanted: Narrowed) -> [github_issues.Listed]
+    by: {i64: github_issues.Listed} @= {}
+
+    for one in listing.issues
+        if one.pull || !one.open
+            continue
+
+        if wanted.kind != "" && github_issues.kind_of(one) != wanted.kind
+            continue
+
+        if wanted.milestone != "" && one.milestone != wanted.milestone
+            continue
+
+        if wanted.grade != "" && github_issues.label_value(issue: one, name: "class") != wanted.grade
+            continue
+        by[one.number] @ one
+
+    out: [github_issues.Listed] @= []
+
+    for number in keys(by).sort()
+        out @ out.push(by[number].must())
+
+    return out
+
+function dash(value: str) -> str
+    if value == ""
+        return "-"
+    return value
+
+# One issue as `open` prints it.
+function line_of(issue: github_issues.Listed) -> str
+    return issue.number.to_str() + " " + dash(github_issues.kind_of(issue)) + " " + dash(github_issues.label_value(issue: issue, name: "class")) + " " + dash(issue.milestone) + " " + issue.title
+
+# One issue as `open --json` prints it.
+function json_of(issue: github_issues.Listed) -> str
+    labels: [str] @= []
+
+    for label in issue.labels
+        labels @ labels.push(issue_json.quoted(label))
+
+    members = [
+        "\"number\":" + issue.number.to_str()
+        issue_json.member(key: "url", value: "https://github.com/heroes-lang/heroes/issues/" + issue.number.to_str())
+        issue_json.member(key: "title", value: issue.title)
+        issue_json.nullable(key: "kind", value: github_issues.kind_of(issue))
+        issue_json.nullable(key: "class", value: github_issues.label_value(issue: issue, name: "class"))
+        issue_json.nullable(key: "area", value: github_issues.label_value(issue: issue, name: "area"))
+        issue_json.nullable(key: "milestone", value: issue.milestone)
+        "\"labels\":[" + labels.join(",") + "]"
+        issue_json.member(key: "created_at", value: issue.created)
+        issue_json.member(key: "body", value: issue.body)
+    ]
+    return "{" + members.join(",") + "}"
+
+# `open`: the list read and printed; 0, or 2 where GitHub could not be read.
+function opened(@s: issue_pace.Session, wanted: Narrowed, json: bool) -> i64
+    listing = github_issues.listed_from(@s, dir: "", listing: github_issues.OPEN_LISTING)
+
+    if !listing.asked
+        issue_pace.warn(@s, text: "GitHub could not be read: " + listing.why)
+        return 2
+
+    for one in chosen(listing: listing, wanted: wanted)
+        if json
+            issue_pace.say(@s, text: json_of(one))
+        else
+            issue_pace.say(@s, text: line_of(one))
+
+    return 0
+
+function page() -> [str]
+    return [
+        github_issues.json_of(number: 9, title: "Defect 235: t", body: "b", state: "open", labels: ["kind:defect", "class:blocking", "area:cli"], milestone: "", created: "2026-10-03T12:00:00Z", closed: "")
+        github_issues.json_of(number: 4, title: "a task", body: "b", state: "open", labels: ["kind:task"], milestone: "M-issue-files", created: "2026-10-04T12:00:00Z", closed: "")
+        github_issues.json_of(number: 5, title: "an improvement", body: "b", state: "open", labels: ["kind:defect", "class:improvement"], milestone: "", created: "2026-10-05T12:00:00Z", closed: "")
+    ]
+
+constant DATE: str
+    "Date: Mon, 12 Oct 2026 10:00:00 GMT"
+
+test "open lists the open issues by number, one line each, narrowed by kind, milestone and class"
+    every = Narrowed(kind: "", milestone: "", grade: "")
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_wire_answer("[" + page().join(",") + "]")]
+    )
+    assert opened(@s, wanted: every, json: false) == 0
+    assert s.world.requests[0].path == github_issues.OPEN_LISTING + "1"
+    assert s.out == ["4 task - M-issue-files a task", "5 defect improvement - an improvement", "9 defect blocking - Defect 235: t"]
+    listing = github_issues.held_of(page())
+    assert chosen(listing: listing, wanted: Narrowed(kind: "defect", milestone: "", grade: "")).len() == 2
+    assert chosen(listing: listing, wanted: Narrowed(kind: "defect", milestone: "", grade: "blocking"))[0].number == 9
+    assert chosen(listing: listing, wanted: Narrowed(kind: "", milestone: "M-issue-files", grade: ""))[0].number == 4
+    assert json_of(listing.issues[0]) == "{\"number\":9,\"url\":\"https://github.com/heroes-lang/heroes/issues/9\",\"title\":\"Defect 235: t\",\"kind\":\"defect\",\"class\":\"blocking\",\"area\":\"cli\",\"milestone\":null,\"labels\":[\"area:cli\",\"class:blocking\",\"kind:defect\"],\"created_at\":\"2026-10-03T12:00:00Z\",\"body\":\"b\"}"
+    t: issue_pace.Session @= issue_pace.scripted([])
+    assert opened(@t, wanted: every, json: true) == 2
+    assert strings.contains(text: t.err[0], needle: "GitHub could not be read")
+
+function issue_wire_answer(body: str) -> issue_wire.Reply
+    return issue_wire.answer(status: 200, headers: [DATE], body: body)

@@ -1,0 +1,436 @@
+# A DRAFT OF AN ISSUE: the file a lane writes outside the tree, in the card's
+# shape, that `file` opens an issue from and `edit` makes an issue match.
+#
+# The author's seven answers of 2026-10-12 (the decision
+# https://github.com/heroes-lang/heroes/issues/2027,
+# filed after the transcription): the issues live on GitHub alone, and **a
+# lane writes a draft in the shape of today's card**, which the transcription
+# program checks, renders by the rule that rendered issues 1 to 2,021, and
+# opens. So a draft is held, before any request, to every rule a file of
+# `issues/` was held to by `records` until that day, and refused by each with
+# its reason:
+#
+# - the card, eight lines and a blank one (`cards.read_card`), its `github:`
+#   `none`, since an address means the issue exists, and its `commit` never
+#   `self`, which names the commit that writes a file, and a draft is never
+#   committed; a commit it names is one git knows;
+# - its one item, its line first and its body indented, and a defect's line
+#   whole and its one class stated twice (`item_shape.hero`, what
+#   `records/lists` held); **a decision taken is drafted after the commit that
+#   applies it, its item ticked, `- [x]`, and its card's `commit` that commit**,
+#   and `file` closes it as it opens it, so a draft holding no open item holds
+#   a ticked one first and names its commit;
+# - its `filed` the day its `**Origin:**` names first, and its milestone a row
+#   of the chain, an open feature or task naming an open one (what
+#   `records/cards` and `records/homes` held);
+# - a decision's `## Prior art` and a closed feature's or task's `## What was
+#   done` (`credit.issue_offences`, what `records/prior-art` held);
+# - **a defect names no number of its own** (the author's fifth answer): one
+#   filed from now on is named by its GitHub issue number, which `file` writes
+#   into its title as `Defect <number>: `, so a draft whose name carries
+#   `defect-NNN-` or whose first field opens `NNN — ` is refused, and its title
+#   leaves room for that prefix under GitHub's 250 characters; `edit` of an old
+#   defect keeps the number the issue's title already holds;
+# - the rendering itself, what GitHub would not take or would read as a link
+#   (`issue_check.offences`, what `records/rendered` held);
+# - and the draft is no file of the tree: an issue file of `issues/`, or any
+#   file git tracks, is not a draft, and filing one again would make a second
+#   issue of an issue.
+#
+# A draft is rendered pinned at no commit (`issue_render.hero`), so its issue
+# carries no `Record:` line. The draft is never deleted here: the caller
+# removes it once its issue reads back whole.
+
+use cards
+use credit
+use issue_check
+use issue_git
+use issue_numbers
+use issue_render
+use issue_safe
+use issue_title
+use item_shape
+use shell
+use strings
+
+# The room a new defect's title leaves for `Defect <number>: `, five digits
+# and the words around them, under the rendering's 250 characters.
+constant NUMBERED_ROOM: i64
+    14
+
+# A draft read: its issue as `cards` reads it, its rendering, and every reason
+# it is refused, none where an issue may be opened from it.
+record Draft
+    issue: cards.Issue
+    r: issue_render.Rendered
+    refused: [str]
+
+# The draft at `path`, read, checked and rendered, or a failure where it cannot
+# be read or git cannot answer. `known` is every path the tree holds, which a
+# sitting's file is asked of; `chain` each milestone of § The chain to whether
+# its row is open (`cards.chain_states`); `numbered` is the defect number the
+# issue's title already holds where `edit` corrects an old defect, "" where a
+# draft may name none (`file`, and `edit` of a new defect).
+function drafted(scratch: str, path: str, known: {str: bool}, chain: {str: bool}, numbered: str) -> Draft?
+    text = read_file(path)
+
+    if text.is_err()
+        return fail(code: "unreadable", msg: "cannot read the draft " + path)
+    issue = cards.issue_of(path: path, text: text.must())
+    refused: [str] @= []
+
+    if tracked(scratch: scratch, path: path)?
+        refused @ refused.push(
+            "it is a file of the tree, which git tracks, and a draft is written outside it: filing an issue file again would open a second issue of one"
+        )
+    card = issue.card
+
+    if card.complaints.len() > 0
+        for one in card.complaints
+            refused @ refused.push(one)
+
+        return ok(
+            Draft(issue: issue, r: issue_render.refused(path: path, why: card.complaints[0], unborn: false), refused: refused)
+        )
+
+    if card.github != "none"
+        refused @ refused.push(
+            "its card's `github:` holds " + card.github + ", so its issue exists: `edit <number> <draft.md>` makes that issue match it, and `github: none` is what a draft says"
+        )
+
+    if card.commit == "self"
+        refused @ refused.push(
+            "its card says `commit: self`, the commit that writes the file, and a draft is never committed: name the commit whole, or `none`"
+        )
+        return ok(
+            Draft(issue: issue, r: issue_render.refused(path: path, why: "`commit: self`", unborn: false), refused: refused)
+        )
+
+    for one in shape_offences(issue: issue, numbered: numbered)
+        refused @ refused.push(one)
+
+    for one in card_offences(issue: issue, chain: chain)
+        refused @ refused.push(one)
+
+    for one in credit.issue_offences(issue: issue, known: known)
+        refused @ refused.push(strings.without_prefix(text: one, prefix: path + ": "))
+
+    if issue_git.shallow(scratch)?
+        return fail(
+            code: "shallow",
+            msg: "this clone's history is shortened, so the commits a draft names cannot be asked for; run where the history is whole"
+        )
+    hashes: [str] @= []
+
+    if cards.is_full_hash(card.commit)
+        hashes @ hashes.push(card.commit)
+    days = issue_git.days_of(scratch: scratch, hashes: hashes)?
+
+    if hashes.len() > 0 && days[card.commit].is_err()
+        refused @ refused.push("its card's `commit` is " + card.commit + ", which names no commit of this history")
+    commits = issue_git.commits_among(scratch: scratch, words: issue_safe.hash_words(issue.body))?
+    none: {str: str} = {}
+    unfollowed: {str: bool} = {}
+    facts = issue_git.Facts(
+        history: true,
+        pin: "",
+        made: none,
+        made_by: none,
+        unfollowed: unfollowed,
+        days: days,
+        commits: commits
+    )
+    twins: [str] = []
+    r = issue_render.render(issue: issue, facts: facts, twins: twins)
+
+    for one in issue_check.offences(r)
+        refused @ refused.push(one)
+
+    if card.kind == "defect" && numbered == "" && issue_title.characters(r.title) > issue_title.TITLE_LIMIT - NUMBERED_ROOM
+        refused @ refused.push(
+            "its title is " + issue_title.characters(r.title).to_str() + " characters, and a new defect's leaves room under 250 for the `Defect <number>: ` its issue takes: at most " + (issue_title.TITLE_LIMIT - NUMBERED_ROOM).to_str()
+        )
+    return ok(Draft(issue: issue, r: r, refused: refused))
+
+# What the text below a draft's card departs from: its one item, open or
+# ticked, a defect's line and class, and the number a defect may not name.
+function shape_offences(issue: cards.Issue, numbered: str) -> [str]
+    out: [str] @= []
+    text: str @= issue.body
+
+    # A decision taken holds its item ticked, and is held to an item's shape
+    # as an open one is: the box is the one thing that differs.
+    if !issue.open
+        if !strings.starts_with(text: text, prefix: "- [x] ")
+            out @ out.push(
+                "line " + issue.first.to_str() + " is not a ticked item, and a draft that holds no open item is a decision taken, drafted after the commit that applies it with its item ticked first: `- [x] **<first field>** | <what> | <where>`"
+            )
+            return out
+        text @ "- [ ] " + strings.without_prefix(text: text, prefix: "- [x] ")
+
+        if !cards.is_full_hash(issue.card.commit)
+            out @ out.push(
+                "line 6: `commit` is `" + issue.card.commit + "`, and a draft filed closed names the commit that applies it, its forty digits"
+            )
+
+    for one in item_shape.item_offences(text: text, first: issue.first)
+        out @ out.push(one)
+
+    if issue.card.kind != "defect"
+        return out
+
+    for one in item_shape.defect_line_offences(text: text, first: issue.first)
+        out @ out.push(one)
+
+    classes = item_shape.class_offences_from(text: text, first: issue.first)
+
+    for one in classes
+        out @ out.push(one)
+
+    if classes.len() > 0
+        out @ out.push(item_shape.CLASS_RULE)
+    named = defect_numbers(issue)
+
+    if named.numbers.len() > 0 && named.numbers.join(" ") != numbered
+        if numbered == ""
+            out @ out.push(
+                "it names " + named.said + ", and a defect filed since 2026-10-12 is named by its GitHub issue number, which its issue's title takes as `Defect <number>: `: write its first field `**<title>**`, and its name without `defect-NNN-`"
+            )
+        else
+            out @ out.push("it names " + named.said + ", and the issue it corrects is defect " + numbered)
+    return out
+
+# What a draft's card says that its text or the chain does not: its `filed`
+# against the day its `**Origin:**` names first, and its milestone against
+# § The chain, an open feature or task owing an open one.
+function card_offences(issue: cards.Issue, chain: {str: bool}) -> [str]
+    out: [str] @= []
+    card = issue.card
+    origin = cards.origin_day(issue.body)
+
+    if origin != "" && origin != card.filed
+        out @ out.push("line 5: `filed` is " + card.filed + ", and its `**Origin:**` names " + origin + " first")
+    work = issue.open && (card.kind == "feature" || card.kind == "task")
+
+    if card.milestone == "none"
+        if work
+            out @ out.push(
+                "line 4: an open " + card.kind + " names no milestone, and a milestone's work is owed to one"
+            )
+        return out
+    row = chain[card.milestone]
+
+    if row.is_err()
+        out @ out.push("line 4: `milestone` is " + card.milestone + ", which has no row in docs/ROADMAP.md § The chain")
+    else if work && !row.must()
+        out @ out.push(
+            "line 4: `milestone` is " + card.milestone + ", which is CLOSED, and an open " + card.kind + " is owed to an open one"
+        )
+    return out
+
+# The numbers a defect's draft names, as the rendering reads them: its name's
+# `defect-NNN-`, else its first field's `NNN — `.
+function defect_numbers(issue: cards.Issue) -> issue_numbers.Numbered
+    opening = issue_title.opening_of(kind: "defect", rows: strings.lines(issue.body))
+    first: str @= ""
+
+    if opening.from != "log" && opening.at >= 0 && opening.fields.len() > 0
+        first @ opening.fields[0]
+    return issue_numbers.defect_numbers(name: issue.name, first: first)
+
+# Whether git tracks `path`: `git ls-files --error-unmatch` answers 0 for a
+# tracked file, 1 for one it does not track, and 128 for a path outside the
+# repository, which it does not track either.
+function tracked(scratch: str, path: str) -> bool?
+    ran = shell.run(scratch: scratch, program: "git", words: ["git", "ls-files", "--error-unmatch", "--", path])?
+    return ok(ran.code == 0)
+
+# A draft written into the run's scratch for a test, and read.
+function test_draft(scratch: str, name: str, text: str) -> Draft
+    shell.mkdir_all(scratch).must()
+    path = scratch + "/" + name
+    write_file(path: path, text: text).must()
+    known: {str: bool} = {}
+    return drafted(scratch: scratch, path: path, known: known, chain: test_chain(), numbered: "").must()
+
+# A chain of two rows for the tests, one open and one closed.
+function test_chain() -> {str: bool}
+    chain: {str: bool} @= {}
+    chain["M-issue-files"] @ true
+    chain["M-ir-lowering"] @ false
+    return chain
+
+constant DEFECT_ITEM: str
+    "- [ ] **a header name is refused** | what happens | where to look · **class: blocking**\n\n    **Origin:** a lane, 2026-10-12.\n\n    **Class: blocking**, 2026-10-12, a correct program refused.\n"
+
+test "a defect's draft in today's card shape renders with no number and no Record line"
+    scratch = shell.own_scratch()
+
+    if issue_git.shallow(scratch).default(true)
+        _ = shell.remove_tree(scratch).is_err()
+        return
+    text = cards.card_text(kind: "defect", area: "compiler", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + DEFECT_ITEM
+    got = test_draft(scratch: scratch, name: "2026-10-12-1800-a-header-name-is-refused.md", text: text)
+    assert got.refused.len() == 0
+    assert got.r.title == "a header name is refused"
+    assert got.r.labels == ["kind:defect", "class:blocking", "area:compiler"]
+    assert !got.r.closed
+    assert got.r.defect == ""
+    assert !strings.contains(text: got.r.body, needle: "Record: ")
+    assert strings.starts_with(text: got.r.body, prefix: "Filed 2026-10-12\n\n### What happens\n\nwhat happens\n")
+    _ = shell.remove_tree(scratch).is_err()
+
+test "a draft is refused for its card, its address, `self`, an old number, its item, its class and its prior art"
+    scratch = shell.own_scratch()
+
+    if issue_git.shallow(scratch).default(true)
+        _ = shell.remove_tree(scratch).is_err()
+        return
+    bad_card = test_draft(scratch: scratch, name: "2026-10-12-1800-a.md", text: "- [ ] **a** | b | c\n")
+    assert strings.contains(text: bad_card.refused[0], needle: "line 1 is")
+    filed = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-b.md",
+        text: cards.card_text(kind: "task", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "https://github.com/heroes-lang/heroes/issues/7") + "- [ ] **M-issue-files** | b | c\n"
+    )
+    assert strings.contains(text: filed.refused[0], needle: "so its issue exists")
+    selfish = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-c.md",
+        text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-10-12", commit: "self", github: "none") + "# taken\n\nprose\n"
+    )
+    assert strings.contains(text: selfish.refused[0], needle: "a draft is never committed")
+    numbered = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-def" + "ect-678-x.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + DEFECT_ITEM
+    )
+    assert numbered.refused.len() == 1
+    assert strings.contains(
+        text: numbered.refused[0],
+        needle: "it names Def" + "ect 678, and a defect filed since 2026-10-12 is named by its GitHub issue number"
+    )
+    fielded = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-x.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **678 — x** | a | b · **class: blocking**\n\n    **Class: blocking**, 2026-10-12, a reason.\n"
+    )
+    assert strings.contains(text: fielded.refused[0], needle: "it names Def" + "ect 678")
+    loose = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-y.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **x** | a | b\n\nprose at column zero\n"
+    )
+    said = loose.refused.join("\n")
+    assert strings.contains(text: said, needle: "prose at column zero")
+    assert strings.contains(text: said, needle: "does not end with ` · **class: <name>**`")
+    assert strings.contains(text: said, needle: "the class rule")
+    art = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-z.md",
+        text: cards.card_text(kind: "task", area: "none", milestone: "M-issue-files", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **M-issue-files** | a | b\n\n    ## Prior art\n"
+    )
+    assert strings.contains(text: art.refused.join("\n"), needle: "stands on a `task`")
+    _ = shell.remove_tree(scratch).is_err()
+
+test "a decision taken renders closed with its settling comment, and a commit git does not know is refused"
+    scratch = shell.own_scratch()
+
+    if issue_git.shallow(scratch).default(true)
+        _ = shell.remove_tree(scratch).is_err()
+        return
+    head = issue_git.pinned(scratch: scratch, pin: "HEAD").must()
+    taken = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-a-decision-taken.md",
+        text: cards.card_text(kind: "decision", area: "records", milestone: "none", filed: "2026-10-12", commit: head, github: "none") + "- [x] **the author** | A decision taken | the answer\n"
+    )
+    assert taken.refused.len() == 0
+    assert taken.r.closed
+    assert taken.r.comment == "Settled by " + head
+    assert taken.r.title == "A decision taken"
+    unknown = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-b.md",
+        text: cards.card_text(kind: "decision", area: "records", milestone: "none", filed: "2026-10-12", commit: "0000000000000000000000000000000000000001", github: "none") + "- [x] **the author** | Taken | prose\n"
+    )
+    assert strings.contains(text: unknown.refused.join("\n"), needle: "names no commit of this history")
+    _ = shell.remove_tree(scratch).is_err()
+
+test "a draft that is a file of the tree is refused, and a long defect title leaves room for its number"
+    scratch = shell.own_scratch()
+
+    if issue_git.shallow(scratch).default(true)
+        _ = shell.remove_tree(scratch).is_err()
+        return
+    known: {str: bool} = {}
+    tree_file = drafted(
+        scratch: scratch,
+        path: "tests/harness/cards.hero",
+        known: known,
+        chain: test_chain(),
+        numbered: ""
+    ).must()
+    assert strings.contains(text: tree_file.refused[0], needle: "it is a file of the tree")
+    long = "word ".repeat(48) + "end"
+    wide = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-long.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **" + long + "** | a | b · **class: blocking**\n\n    **Class: blocking**, 2026-10-12, a reason.\n"
+    )
+    assert strings.contains(text: wide.refused.join("\n"), needle: "leaves room under 250")
+    _ = shell.remove_tree(scratch).is_err()
+
+test "a decision taken is a ticked item naming its commit, every defect states one class, and the card agrees with its origin and the chain"
+    scratch = shell.own_scratch()
+
+    if issue_git.shallow(scratch).default(true)
+        _ = shell.remove_tree(scratch).is_err()
+        return
+    head = issue_git.pinned(scratch: scratch, pin: "HEAD").must()
+    prose = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-a.md",
+        text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-10-12", commit: head, github: "none") + "# A decision taken\n\nprose\n"
+    )
+    assert strings.contains(text: prose.refused[0], needle: "is not a ticked item")
+    unsettled = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-b.md",
+        text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [x] **the author** | taken | x\n"
+    )
+    assert strings.contains(
+        text: unsettled.refused.join("\n"),
+        needle: "a draft filed closed names the commit that applies it"
+    )
+    repaired = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-c.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "none", filed: "2026-10-12", commit: head, github: "none") + "- [x] **x** | a | b\n"
+    )
+    assert strings.contains(text: repaired.refused.join("\n"), needle: "the class rule")
+    late = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-d.md",
+        text: cards.card_text(kind: "task", area: "none", milestone: "M-issue-files", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **M-issue-files** | a | b\n\n    **Origin:** a lane, 2026-10-11.\n"
+    )
+    assert late.refused == ["line 5: `filed` is 2026-10-12, and its `**Origin:**` names 2026-10-11 first"]
+    homeless = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-e.md",
+        text: cards.card_text(kind: "task", area: "none", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **a task** | a | b\n"
+    )
+    assert strings.contains(text: homeless.refused[0], needle: "names no milestone")
+    closed_home = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-f.md",
+        text: cards.card_text(kind: "feature", area: "none", milestone: "M-ir-lowering", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **M-ir-lowering** | a | b\n"
+    )
+    assert strings.contains(text: closed_home.refused[0], needle: "which is CLOSED")
+    nowhere = test_draft(
+        scratch: scratch,
+        name: "2026-10-12-1800-g.md",
+        text: cards.card_text(kind: "defect", area: "none", milestone: "M-guide-book", filed: "2026-10-12", commit: "none", github: "none") + DEFECT_ITEM
+    )
+    assert strings.contains(text: nowhere.refused[0], needle: "has no row in docs/ROADMAP.md § The chain")
+    _ = shell.remove_tree(scratch).is_err()

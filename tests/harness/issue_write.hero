@@ -1,0 +1,911 @@
+# THE WRITES OF `file`, `edit`, `close` AND `comment`: one issue at a time,
+# through the REST route, every write read back.
+#
+# The author's seven answers of 2026-10-12 (the decision
+# https://github.com/heroes-lang/heroes/issues/2027,
+# filed after the transcription): the issues live on GitHub alone, and
+# opening, commenting on, closing and correcting one through this program is
+# asked once, by that answer (CLAUDE.md § Hard stops). Every request goes
+# through the session `push` and `repair` use (`issue_pace.exchange`):
+# serial, a second between two writes, the rate limit waited out, and **a
+# write whose answer never came is never sent again by the same run**, since
+# it may have been taken.
+#
+# - `filed`: a draft's issue opened (`POST /repos/heroes-lang/heroes/issues`,
+#   its title, body, labels, and milestone by GitHub's number), refused before
+#   any write where GitHub lacks a milestone or a label it names, or where its
+#   card's `filed` is not GitHub's day; then made its draft's, `repair`'s
+#   reading (`issue_repair.owed`): a defect's title takes its own number,
+#   `Defect <number>: `, the issue being the defect's name since that answer;
+#   a draft holding no open item (a decision taken) is closed `completed` and
+#   given its settling comment where its card names a commit. **A rerun with
+#   the same draft opens no second issue**: the newest issues are listed
+#   first, and one whose body is the draft's rendering is the one it opened.
+#   The issue's address is printed on stdout the moment it exists.
+# - `edited`: an OPEN issue made to match a corrected draft, its title, body,
+#   labels and milestone, `repair`'s logic for one issue; a `Record:` line the
+#   issue holds stays, since it names the file the issue was imported from.
+#   **A closed issue is a record** (`.claude/rules/records.md` § A record is
+#   never rewritten): a sentence of it since falsified is corrected underneath,
+#   by `commented` and with its date, and `edited` refuses it, as it refuses a
+#   draft that would close an issue, which is `closed_with`'s.
+# - `closed_with`: a settling section appended to the issue's body, a
+#   defect's `## The repair` and every other kind's `## What was done`, before
+#   its `Record:` line where it has one, its one comment posted (`Fixed by` for
+#   a defect, `Settled by` for the rest, and the commit), and the issue closed
+#   `completed`.
+# - `commented`: one comment posted.
+#
+# Every one is read back alone, and an issue GitHub holds otherwise after it is
+# told on stderr and answers 1, never asked again in silence; a write GitHub
+# refuses answers 2. The days GitHub writes are the day of the run: the REST
+# route sets no other, and the card's own day stands in the body's first line.
+
+use cards
+use issue_check
+use issue_controls
+use issue_draft
+use issue_github
+use issue_json
+use issue_match
+use issue_pace
+use issue_render
+use issue_repair
+use issue_safe
+use issue_scripts
+use issue_wire
+use json_fields
+use json_read
+use strings
+
+constant ISSUES: str
+    "/repos/heroes-lang/heroes/issues"
+
+constant NEWEST: str
+    "/repos/heroes-lang/heroes/issues?state=all&sort=created&direction=desc&per_page=100&page=1"
+
+constant WEB: str
+    "https://github.com/heroes-lang/heroes/issues/"
+
+# A defect's title as its issue holds it since the author's fifth answer: its
+# own number, then the title its draft renders.
+function numbered_title(title: str, number: i64) -> str
+    return "Defect " + number.to_str() + ": " + title
+
+# The milestone numbers GitHub holds, by title, and its labels; or why they
+# could not be read.
+record Names
+    numbers: {str: i64}
+    labels: {str: bool}
+
+function held_names(@s: issue_pace.Session) -> Names?
+    numbers: {str: i64} @= {}
+
+    for one in issue_github.milestones(@s)?
+        numbers[one.title] @ one.number
+
+    labels: {str: bool} @= {}
+
+    for one in issue_github.labels(@s)?
+        labels[one] @ true
+
+    return ok(Names(numbers: numbers, labels: labels))
+
+# What a write of `r` names that GitHub lacks, one sentence each: a milestone
+# or a label, which stay the author's to make (the second answer).
+function lacking(r: issue_render.Rendered, held: Names) -> [str]
+    out: [str] @= []
+
+    if r.milestone != "" && held.numbers[r.milestone].is_err()
+        out @ out.push(
+            "GitHub has no milestone `" + r.milestone + "`, which the draft names; making one is the author's"
+        )
+
+    for label in r.labels
+        if held.labels[label].is_err()
+            out @ out.push("GitHub has no label `" + label + "`, which the draft takes; making one is the author's")
+
+    return out
+
+# Why a card's `filed` is not the day GitHub dates the issue, or "": it may
+# stand one day either side, a day being read in the writer's zone.
+function day_offence(card_day: str, today: str) -> str
+    if today == ""
+        return ""
+    a = cards.day_of(card_day)
+    b = cards.day_of(today)
+
+    if a.is_err() || b.is_err()
+        return ""
+    gap = days(a.must()) - days(b.must())
+
+    if gap >= -1 && gap <= 1
+        return ""
+    return "its card's `filed` is " + card_day + ", and GitHub dates the issue " + today + ": a draft is filed the day its card says, so write the day it is filed"
+
+function days(digits: i64) -> i64
+    return issue_pace.days_from_civil(year: digits / 10000, month: digits / 100 % 100, day: digits % 100)
+
+# The request that opens `r`'s issue, its milestone by `milestone`, 0 for none.
+function opening_request(r: issue_render.Rendered, milestone: i64) -> issue_wire.Request
+    labels: [str] @= []
+
+    for label in r.labels
+        labels @ labels.push(issue_json.quoted(label))
+
+    fields: [str] @= [
+        issue_json.member(key: "title", value: r.title)
+        issue_json.member(key: "body", value: r.body)
+        "\"labels\":[" + labels.join(",") + "]"
+    ]
+
+    if milestone > 0
+        fields @ fields.push("\"milestone\":" + milestone.to_str())
+    return issue_wire.Request(method: "POST", path: ISSUES, accept: "", body: "{" + fields.join(",") + "}")
+
+# The issue the newest page holds whose body is `r`'s, its title `r`'s or a
+# defect's numbered: the one an earlier run of the same draft opened; 0 for
+# none.
+function opened_before(@s: issue_pace.Session, r: issue_render.Rendered) -> i64?
+    reply = issue_pace.exchange(@s, request: issue_wire.Request(method: "GET", path: NEWEST, accept: "", body: ""))?
+
+    if reply.status != 200
+        return fail(code: "refused", msg: "GET " + NEWEST + " answered " + issue_github.said(reply))
+
+    for one in json_fields.items_of(json_read.read_json(reply.body)?)?
+        held = issue_github.held_of(one)?
+
+        if !held.pull && held.body == r.body && (held.title == r.title || held.title == numbered_title(title: r.title, number: held.number))
+            return ok(held.number)
+
+    return ok(0)
+
+# `file`: the draft's issue opened and made its draft's; the exit code (R11).
+function filed(@s: issue_pace.Session, draft: issue_draft.Draft) -> i64
+    if draft.refused.len() > 0
+        for one in draft.refused
+            issue_pace.warn(@s, text: draft.issue.path + ": " + one)
+
+        return 1
+    names = held_names(@s)
+
+    if names.is_err()
+        issue_pace.warn(@s, text: "GitHub could not be read: " + issue_github.failure(names))
+        return 2
+    r = draft.r
+    refused: [str] @= lacking(r: r, held: names.must())
+    late = day_offence(card_day: r.filed, today: s.day)
+
+    if late != ""
+        refused @ refused.push(late)
+
+    if refused.len() > 0
+        for one in refused
+            issue_pace.warn(@s, text: draft.issue.path + ": " + one)
+
+        return 1
+    before = opened_before(@s, r: r)
+
+    if before.is_err()
+        issue_pace.warn(@s, text: "GitHub could not be read: " + issue_github.failure(before))
+        return 2
+    number: i64 @= before.must()
+
+    if number > 0
+        issue_pace.warn(
+            @s,
+            text: draft.issue.path + " was filed already, as " + WEB + number.to_str() + ", by an earlier run; it is made to match the draft, and no second issue is opened"
+        )
+    else
+        opened = issue_pace.exchange(
+            @s,
+            request: opening_request(r: r, milestone: names.must().numbers[r.milestone].default(0))
+        )
+
+        if opened.is_err()
+            issue_pace.warn(
+                @s,
+                text: "the issue of " + draft.issue.path + " was not opened: " + issue_github.failure(opened) + "; a rerun with the same draft finds an issue it opened by its body and opens no second one"
+            )
+            return 2
+
+        if opened.must().status != 201
+            issue_pace.warn(
+                @s,
+                text: "GitHub refused the issue of " + draft.issue.path + ": " + issue_github.said(opened.must())
+            )
+            return 2
+        made = json_fields.whole_at(of: json_read.read_json(opened.must().body).default(.null_value), name: "number")
+
+        if made.is_err() || made.must() < 1
+            issue_pace.warn(
+                @s,
+                text: "GitHub opened the issue of " + draft.issue.path + " and its answer names no number: " + issue_github.failure(made) + "; a rerun with the same draft finds it by its body"
+            )
+            return 2
+        number @ made.must()
+    issue_pace.say(@s, text: WEB + number.to_str())
+    owed: issue_render.Rendered @= r
+
+    if draft.issue.card.kind == "defect"
+        owed.title @ numbered_title(title: r.title, number: number)
+    return matched(@s, r: owed, number: number, numbers: names.must().numbers, what: draft.issue.path)
+
+# `edit`: the issue `number` made to match the draft; the exit code.
+function edited(@s: issue_pace.Session, number: i64, draft: issue_draft.Draft) -> i64
+    if draft.refused.len() > 0
+        for one in draft.refused
+            issue_pace.warn(@s, text: draft.issue.path + ": " + one)
+
+        return 1
+    names = held_names(@s)
+
+    if names.is_err()
+        issue_pace.warn(@s, text: "GitHub could not be read: " + issue_github.failure(names))
+        return 2
+    refused = lacking(r: draft.r, held: names.must())
+
+    if refused.len() > 0
+        for one in refused
+            issue_pace.warn(@s, text: draft.issue.path + ": " + one)
+
+        return 1
+    held = issue_github.issue(@s, number: number)
+
+    if held.is_err()
+        issue_pace.warn(@s, text: WEB + number.to_str() + " could not be read: " + issue_github.failure(held))
+        return 2
+
+    if held.must().pull
+        issue_pace.warn(@s, text: WEB + number.to_str() + " is a pull request, and only an issue is edited")
+        return 1
+
+    if held.must().state != "open"
+        issue_pace.warn(
+            @s,
+            text: WEB + number.to_str() + " is closed, and a closed issue is a record: a sentence of it since falsified is corrected underneath, by `comment` and with its date, never by `edit`"
+        )
+        return 1
+
+    if draft.r.closed
+        issue_pace.warn(
+            @s,
+            text: draft.issue.path + " holds no open item, and `edit` corrects an open issue's title, body, labels and milestone: an issue is closed by `close`"
+        )
+        return 1
+    owed: issue_render.Rendered @= draft.r
+
+    if draft.issue.card.kind == "defect" && issue_draft.defect_numbers(draft.issue).numbers.len() == 0
+        owed.title @ numbered_title(title: draft.r.title, number: number)
+    kept_line = record_line(held.must().body)
+
+    if kept_line != ""
+        owed.body @ owed.body + "\n" + kept_line
+    issue_pace.say(@s, text: WEB + number.to_str())
+    return matched(@s, r: owed, number: number, numbers: names.must().numbers, what: draft.issue.path)
+
+# The `Record:` line a body holds, naming the file the issue was imported
+# from, or "".
+function record_line(body: str) -> str
+    for row in strings.lines(body)
+        if strings.starts_with(text: row, prefix: "Record: https://github.com/heroes-lang/heroes/blob/")
+            return row
+
+    return ""
+
+# The issue `number` made to hold `r`: what it owes (`issue_repair.owed`) in
+# one `PATCH`, its settling comment where it is closed and holds none, and the
+# issue read back; 0, 1 where GitHub still holds it otherwise, 2 where GitHub
+# refused a write.
+function matched(@s: issue_pace.Session, r: issue_render.Rendered, number: i64, numbers: {str: i64}, what: str) -> i64
+    address = WEB + number.to_str()
+    path = ISSUES + "/" + number.to_str()
+    entry = issue_match.Entry(r: r, github: address)
+    held = issue_github.issue(@s, number: number)
+
+    if held.is_err()
+        issue_pace.warn(@s, text: address + " could not be read: " + issue_github.failure(held))
+        return 2
+    o = issue_repair.owed(entry: entry, held: held.must(), numbers: numbers)
+
+    if o.members.len() > 0
+        patch = issue_pace.exchange(
+            @s,
+            request: issue_wire.Request(method: "PATCH", path: path, accept: "", body: "{" + o.members.join(",") + "}")
+        )
+
+        if patch.is_err() || patch.must().status != 200
+            issue_pace.warn(@s, text: address + " (" + what + ") was not made to match: " + answered(patch))
+            return 2
+
+    if o.comment
+        posted = issue_pace.exchange(
+            @s,
+            request: issue_wire.Request(method: "POST", path: path + "/comments", accept: "", body: "{" + issue_json.member(key: "body", value: r.comment) + "}")
+        )
+
+        if posted.is_err() || posted.must().status != 201
+            issue_pace.warn(
+                @s,
+                text: "the settling comment of " + address + " (" + what + ") was not posted: " + answered(posted)
+            )
+            return 2
+
+    if o.names.len() > 0
+        issue_pace.warn(@s, text: address + " written: " + o.names.join(", "))
+    again = issue_github.issue(@s, number: number)
+
+    if again.is_err()
+        issue_pace.warn(@s, text: address + " was written and could not be read back: " + issue_github.failure(again))
+        return 1
+    left = issue_repair.owed(entry: entry, held: again.must(), numbers: numbers)
+
+    if left.members.len() > 0 || left.comment
+        issue_pace.warn(@s, text: "still differs " + address + " (" + what + "): " + left.names.join(", "))
+        return 1
+    return 0
+
+# What is wrong with a text a write would put on GitHub: its size, a reference
+# or a mention still live, a control character's escape GitHub would store
+# otherwise (`issue_check.offences`' readings, for a text that is no issue).
+function text_offences(text: str) -> [str]
+    out: [str] @= []
+
+    if strings.trimmed(text) == ""
+        out @ out.push("it says nothing")
+
+    if text.len() > issue_check.BODY_LIMIT
+        out @ out.push("it is " + text.len().to_str() + " bytes, over 65,535")
+
+    for one in issue_safe.live(text)
+        out @ out.push("it still holds " + one)
+
+    for one in issue_controls.raw(text)
+        out @ out.push(
+            "it holds `" + one + "` written bare, a control character's escape GitHub stores in caret notation"
+        )
+
+    return out
+
+# `text` as GitHub may take it: references and mentions in code, a backticked
+# word `commits` names written bare, a control character's escape kept
+# (`issue_render.hero`'s two passes over a body).
+function made_inert(text: str, commits: {str: bool}) -> str
+    return issue_controls.entities(issue_safe.protect(text: text, commits: commits))
+
+# A closing section read: the heading it opens with, the text it adds and the
+# commit its last line names; `wrong` says why it cannot close an issue of
+# `kind`, "" where it can.
+record Closing
+    heading: str
+    text: str
+    hash: str
+    wrong: str
+
+# The closing text `given` for an issue of `kind`, which `close` appends under
+# `## The repair` for a defect and `## What was done` for every other kind
+# (`.claude/rules/records.md` § The issues, the program's words): the text may
+# open with that heading, or with no heading at all, which then takes it; one
+# opening with another heading is refused, a section settling another kind or
+# none. It ends with the commit's forty digits on a line of their own, bare,
+# as every section stating a repair or a settling does.
+function closing_of(given: str, kind: str) -> Closing
+    rows: [str] @= []
+
+    for row in strings.lines(given)
+        rows @ rows.push(strings.without_suffix(text: row, suffix: "\r"))
+
+    while rows.len() > 0 && strings.trimmed(rows[0]) == ""
+        rows @ rows.slice(from: 1, to: rows.len())
+
+    while rows.len() > 0 && strings.trimmed(rows[rows.len() - 1]) == ""
+        rows @ rows.slice(from: 0, to: rows.len() - 1)
+
+    section: str @= "What was done"
+
+    if kind == "defect"
+        section @ "The repair"
+
+    if rows.len() > 0 && !strings.starts_with(text: strings.trimmed(rows[0]), prefix: "#")
+        headed: [str] @= ["## " + section, ""]
+
+        for row in rows
+            headed @ headed.push(row)
+
+        rows @ headed
+
+    if rows.len() < 2 || strings.trimmed(rows[0]) != "## " + section
+        return Closing(
+            heading: "",
+            text: "",
+            hash: "",
+            wrong: "it does not open with `## " + section + "`, the section that settles a " + kind
+        )
+    last = strings.trimmed(rows[rows.len() - 1])
+
+    if !cards.is_full_hash(last)
+        return Closing(
+            heading: "",
+            text: "",
+            hash: "",
+            wrong: "its last line is not the forty digits of the commit that settled the issue, bare"
+        )
+    body = rows.slice(from: 1, to: rows.len()).join("\n")
+    return Closing(heading: "### " + section, text: "### " + section + "\n" + body, hash: last, wrong: "")
+
+# `body` with `section` added: before its `Record:` line where it holds one,
+# else at its end, one blank line around it.
+function with_section(body: str, section: str) -> str
+    kept_line = record_line(body)
+
+    if kept_line == ""
+        return trimmed_end(body) + "\n\n" + section + "\n"
+    head = strings.split_text(text: body, separator: kept_line)
+    return trimmed_end(head[0]) + "\n\n" + section + "\n\n" + kept_line + head.slice(from: 1, to: head.len()).join(kept_line)
+
+function trimmed_end(text: str) -> str
+    out: str @= text
+
+    while strings.ends_with(text: out, suffix: "\n") || strings.ends_with(text: out, suffix: " ")
+        out @ out.slice(from: 0, to: out.len() - 1)
+
+    return out
+
+# The comments of issue `number`, every page.
+function comments_of(@s: issue_pace.Session, number: i64) -> [str]?
+    out: [str] @= []
+
+    for one in issue_github.listed(@s, path: ISSUES + "/" + number.to_str() + "/comments")?
+        out @ out.push(json_fields.text_at(of: one, name: "body")?)
+
+    return ok(out)
+
+# `close`: the issue `number` given its settling section, its one comment and
+# its closed state; `commits` the backticked words of `given` and its last
+# line's commit that git knows. The exit code.
+function closed_with(@s: issue_pace.Session, number: i64, given: str, commits: {str: bool}) -> i64
+    address = WEB + number.to_str()
+    held = issue_github.issue(@s, number: number)
+
+    if held.is_err()
+        issue_pace.warn(@s, text: address + " could not be read: " + issue_github.failure(held))
+        return 2
+    issue = held.must()
+    kind: str @= ""
+
+    for label in issue.labels
+        if strings.starts_with(text: label, prefix: "kind:")
+            kind @ strings.without_prefix(text: label, prefix: "kind:")
+
+    if issue.pull || kind == ""
+        issue_pace.warn(@s, text: address + " is no issue of this project's four kinds, its labels naming no `kind:`")
+        return 1
+    closing = closing_of(given: given, kind: kind)
+
+    if closing.wrong != ""
+        issue_pace.warn(@s, text: "the closing text of " + address + ": " + closing.wrong)
+        return 1
+
+    if commits[closing.hash].is_err()
+        issue_pace.warn(
+            @s,
+            text: "the closing text of " + address + " ends with " + closing.hash + ", which names no commit of this history"
+        )
+        return 1
+    section = made_inert(text: closing.text, commits: commits)
+    body: str @= issue.body
+
+    if !strings.contains(text: body, needle: section)
+        body @ with_section(body: body, section: section)
+    wrong = text_offences(body)
+
+    if wrong.len() > 0
+        for one in wrong
+            issue_pace.warn(@s, text: address + "'s body with its closing section: " + one)
+
+        return 1
+    comment: str @= "Settled by " + closing.hash
+
+    if kind == "defect"
+        comment @ "Fixed by " + closing.hash
+    said: [str] @= []
+
+    if issue.comments > 0
+        got = comments_of(@s, number: number)
+
+        if got.is_err()
+            issue_pace.warn(@s, text: "the comments of " + address + " could not be read: " + issue_github.failure(got))
+            return 2
+        said @ got.must()
+    issue_pace.say(@s, text: address)
+    path = ISSUES + "/" + number.to_str()
+
+    if !holds(texts: said, text: comment)
+        posted = issue_pace.exchange(
+            @s,
+            request: issue_wire.Request(method: "POST", path: path + "/comments", accept: "", body: "{" + issue_json.member(key: "body", value: comment) + "}")
+        )
+
+        if posted.is_err() || posted.must().status != 201
+            issue_pace.warn(@s, text: "the comment of " + address + " was not posted: " + answered(posted))
+            return 2
+    members: [str] @= []
+
+    if body != issue.body
+        members @ members.push(issue_json.member(key: "body", value: body))
+
+    if issue.state != "closed"
+        members @ members.push("\"state\":\"closed\",\"state_reason\":\"completed\"")
+
+    if members.len() > 0
+        patch = issue_pace.exchange(
+            @s,
+            request: issue_wire.Request(method: "PATCH", path: path, accept: "", body: "{" + members.join(",") + "}")
+        )
+
+        if patch.is_err() || patch.must().status != 200
+            issue_pace.warn(@s, text: address + " was not closed: " + answered(patch))
+            return 2
+    again = issue_github.issue(@s, number: number)
+    comments = comments_of(@s, number: number)
+
+    if again.is_err() || comments.is_err()
+        issue_pace.warn(
+            @s,
+            text: address + " was closed and could not be read back: " + issue_github.failure(again) + issue_github.failure(comments)
+        )
+        return 1
+    left: [str] @= []
+
+    if again.must().body != body
+        left @ left.push("body")
+
+    if again.must().state != "closed"
+        left @ left.push("state " + again.must().state)
+
+    if !holds(texts: comments.must(), text: comment)
+        left @ left.push("no comment `" + comment + "`")
+
+    if left.len() > 0
+        issue_pace.warn(@s, text: "still differs " + address + ": " + left.join(", "))
+        return 1
+    return 0
+
+# `comment`: one comment on the issue `number`, its text made inert; the exit
+# code.
+function commented(@s: issue_pace.Session, number: i64, given: str, commits: {str: bool}) -> i64
+    address = WEB + number.to_str()
+    text = made_inert(text: strings.trimmed(given), commits: commits)
+    wrong = text_offences(text)
+
+    if wrong.len() > 0
+        for one in wrong
+            issue_pace.warn(@s, text: "the comment for " + address + ": " + one)
+
+        return 1
+    held = issue_github.issue(@s, number: number)
+
+    if held.is_err()
+        issue_pace.warn(@s, text: address + " could not be read: " + issue_github.failure(held))
+        return 2
+
+    if held.must().pull
+        issue_pace.warn(@s, text: address + " is a pull request, and only an issue is commented on here")
+        return 1
+    posted = issue_pace.exchange(
+        @s,
+        request: issue_wire.Request(method: "POST", path: ISSUES + "/" + number.to_str() + "/comments", accept: "", body: "{" + issue_json.member(key: "body", value: text) + "}")
+    )
+
+    if posted.is_err() || posted.must().status != 201
+        issue_pace.warn(@s, text: "the comment for " + address + " was not posted: " + answered(posted))
+        return 2
+    answer = json_read.read_json(posted.must().body).default(.null_value)
+    id = json_fields.whole_at(of: answer, name: "id")
+    shown = json_fields.text_at(of: answer, name: "html_url").default("")
+
+    if id.is_err() || !strings.starts_with(text: shown, prefix: WEB + number.to_str())
+        issue_pace.warn(
+            @s,
+            text: "the comment for " + address + " was posted and GitHub's answer names no comment of it: " + issue_github.failure(id)
+        )
+        return 1
+    issue_pace.say(@s, text: shown)
+    back = issue_pace.exchange(
+        @s,
+        request: issue_wire.Request(method: "GET", path: ISSUES + "/comments/" + id.must().to_str(), accept: "", body: "")
+    )
+
+    if back.is_err() || back.must().status != 200
+        issue_pace.warn(@s, text: shown + " was posted and could not be read back: " + answered(back))
+        return 1
+
+    if json_fields.text_at(of: json_read.read_json(back.must().body).default(.null_value), name: "body").default("") != text
+        issue_pace.warn(@s, text: "still differs " + shown + ": GitHub holds its text otherwise than it was sent")
+        return 1
+    return 0
+
+function holds(texts: [str], text: str) -> bool
+    for one in texts
+        if one == text
+            return true
+
+    return false
+
+function answered(reply: issue_wire.Reply?) -> str
+    return match reply
+        .ok r  => "GitHub answered " + issue_github.said(r)
+        .err e => e.msg
+
+# An issue as GitHub answers one `GET` or one `POST` of it, for a test: `r`'s
+# title, body, labels and milestone, open, `comments` of them.
+function answer_of(r: issue_render.Rendered, number: i64, title: str, state: str, comments: i64) -> issue_wire.Reply
+    names: [str] @= []
+
+    for label in r.labels
+        names @ names.push("{\"name\":" + issue_json.quoted(label) + "}")
+
+    milestone: str @= "null"
+
+    if r.milestone != ""
+        milestone @ "{\"title\":" + issue_json.quoted(r.milestone) + ",\"number\":1}"
+    closed: str @= "null"
+
+    if state == "closed"
+        closed @ "\"2026-10-12T10:05:00Z\""
+    return issue_scripts.answer(
+        status: 200,
+        body: "{\"number\":" + number.to_str() + ",\"title\":" + issue_json.quoted(title) + ",\"body\":" + issue_json.quoted(r.body) + ",\"state\":\"" + state + "\",\"labels\":[" + names.join(",") + "],\"milestone\":" + milestone + ",\"created_at\":\"2026-10-12T10:00:00Z\",\"closed_at\":" + closed + ",\"comments\":" + comments.to_str() + "}"
+    )
+
+function created(reply: issue_wire.Reply) -> issue_wire.Reply
+    return issue_scripts.answer(status: 201, body: reply.body)
+
+# A draft as `issue_draft` reads one, built from a card for a test: no git.
+function draft_of(issue: cards.Issue) -> issue_draft.Draft
+    none: [str] = []
+    return issue_draft.Draft(issue: issue, r: issue_scripts.entry(issue).r, refused: none)
+
+# A rendering pinned at no commit, as a draft's is.
+function unpinned(issue: cards.Issue) -> issue_render.Rendered
+    r: issue_render.Rendered @= issue_scripts.entry(issue).r
+    r.body @ strings.split_text(text: r.body, separator: "\nRecord: https://github.com/heroes-lang/heroes/blob/" + issue_scripts.PIN + "/" + issue.path).join(
+        ""
+    )
+    return r
+
+function defect_draft() -> issue_draft.Draft
+    issue = cards.issue_of(
+        path: "/tmp/x/2026-10-12-1800-a-header.md",
+        text: cards.card_text(kind: "defect", area: "compiler", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + "- [ ] **a header** | what | where · **class: blocking**\n\n    **Class: blocking**, 2026-10-12, a reason.\n"
+    )
+    none: [str] = []
+    return issue_draft.Draft(issue: issue, r: unpinned(issue), refused: none)
+
+# The title a new defect's issue takes, spelt in two pieces because the
+# citation check reads this file and no defect of that number exists.
+function new_title() -> str
+    return "Def" + "ect 2031: a header"
+
+function names_reply() -> [issue_wire.Reply]
+    return [
+        issue_scripts.milestones(["M-issue-files"])
+        issue_scripts.labels(["kind:defect", "class:blocking", "area:compiler", "kind:task", "kind:decision"])
+    ]
+
+test "a defect's draft is opened, its title then numbered by its own issue, read back, and its address printed"
+    d = defect_draft()
+    assert d.r.title == "a header"
+    replies = names_reply().push(issue_scripts.answer(status: 200, body: "[]")).push(created(answer_of(r: d.r, number: 2031, title: "a header", state: "open", comments: 0))).push(answer_of(r: d.r, number: 2031, title: "a header", state: "open", comments: 0)).push(issue_scripts.answer(status: 200, body: "{}")).push(
+        answer_of(r: d.r, number: 2031, title: new_title(), state: "open", comments: 0)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert filed(@s, draft: d) == 0
+    asked = s.world.requests
+    assert asked[2].path == NEWEST
+    assert asked[3].method == "POST"
+    assert asked[3].path == "/repos/heroes-lang/heroes/issues"
+    assert asked[3].body == "{\"title\":\"a header\",\"body\":" + issue_json.quoted(d.r.body) + ",\"labels\":[\"kind:defect\",\"class:blocking\",\"area:compiler\"]}"
+    assert asked[5].method == "PATCH"
+    assert asked[5].path == "/repos/heroes-lang/heroes/issues/2031"
+    assert asked[5].body == "{\"title\":\"" + new_title() + "\"}"
+    assert asked[6].method == "GET"
+    assert s.out == ["https://github.com/heroes-lang/heroes/issues/2031"]
+    assert s.world.waits == [1]
+
+test "a draft refused, a label GitHub lacks or a day not GitHub's opens nothing"
+    refused: issue_draft.Draft @= defect_draft()
+    refused.refused @ ["its title is too long"]
+    s: issue_pace.Session @= issue_pace.scripted([])
+    assert filed(@s, draft: refused) == 1
+    assert s.world.requests.len() == 0
+    assert strings.contains(text: s.err[0], needle: "its title is too long")
+    d = defect_draft()
+    t: issue_pace.Session @= issue_pace.scripted([issue_scripts.milestones([]), issue_scripts.labels(["kind:defect"])])
+    assert filed(@t, draft: d) == 1
+    assert t.err == ["/tmp/x/2026-10-12-1800-a-header.md: GitHub has no label `class:blocking`, which the draft takes; making one is the author's", "/tmp/x/2026-10-12-1800-a-header.md: GitHub has no label `area:compiler`, which the draft takes; making one is the author's"]
+    assert issue_scripts.posts(t) == 0
+    old: issue_draft.Draft @= defect_draft()
+    old.r.filed @ "2026-10-01"
+    u: issue_pace.Session @= issue_pace.scripted(names_reply())
+    assert filed(@u, draft: old) == 1
+    assert strings.contains(text: u.err[0], needle: "GitHub dates the issue 2026-10-12")
+    assert day_offence(card_day: "2026-10-13", today: "2026-10-12") == ""
+    assert day_offence(card_day: "2026-11-01", today: "2026-10-31") == ""
+    assert day_offence(card_day: "2026-10-14", today: "2026-10-12") != ""
+
+test "a rerun of a draft whose issue was opened finds it by its body and opens no second one"
+    d = defect_draft()
+    held = answer_of(r: d.r, number: 2031, title: "a header", state: "open", comments: 0)
+    replies = names_reply().push(issue_scripts.answer(status: 200, body: "[" + held.body + "]")).push(held).push(issue_scripts.answer(status: 200, body: "{}")).push(
+        answer_of(r: d.r, number: 2031, title: new_title(), state: "open", comments: 0)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert filed(@s, draft: d) == 0
+    assert issue_scripts.posts(s) == 0
+    assert strings.contains(
+        text: s.err[0],
+        needle: "was filed already, as https://github.com/heroes-lang/heroes/issues/2031"
+    )
+    assert s.out == ["https://github.com/heroes-lang/heroes/issues/2031"]
+
+test "an opening whose answer never came stops the run and says a rerun opens no second issue"
+    d = defect_draft()
+    s: issue_pace.Session @= issue_pace.scripted(names_reply().push(issue_scripts.answer(status: 200, body: "[]")))
+    assert filed(@s, draft: d) == 2
+    assert strings.contains(text: s.err[0], needle: "may have reached GitHub")
+    assert strings.contains(text: s.err[0], needle: "opens no second one")
+    assert s.out.len() == 0
+
+test "a decision taken is opened, closed completed and given its settling comment"
+    issue = cards.issue_of(
+        path: "/tmp/x/2026-10-12-1800-taken.md",
+        text: cards.card_text(kind: "decision", area: "none", milestone: "none", filed: "2026-10-12", commit: issue_scripts.SETTLED, github: "none") + "# A decision taken\n\nThe author answered.\n"
+    )
+    none: [str] = []
+    d = issue_draft.Draft(issue: issue, r: unpinned(issue), refused: none)
+    assert d.r.closed
+    held = answer_of(r: d.r, number: 2032, title: d.r.title, state: "open", comments: 0)
+    replies = names_reply().push(issue_scripts.answer(status: 200, body: "[]")).push(created(held)).push(held).push(issue_scripts.answer(status: 200, body: "{}")).push(issue_scripts.answer(status: 201, body: "{}")).push(
+        answer_of(r: d.r, number: 2032, title: d.r.title, state: "closed", comments: 1)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert filed(@s, draft: d) == 0
+    asked = s.world.requests
+    assert asked[5].body == "{\"state\":\"closed\",\"state_reason\":\"completed\"}"
+    assert asked[6].path == "/repos/heroes-lang/heroes/issues/2032/comments"
+    assert asked[6].body == "{\"body\":\"Settled by " + issue_scripts.SETTLED + "\"}"
+
+test "an issue still otherwise after its write is told and answers 1, and a refused write answers 2"
+    d = defect_draft()
+    held = answer_of(r: d.r, number: 2031, title: "a header", state: "open", comments: 0)
+    replies = names_reply().push(issue_scripts.answer(status: 200, body: "[]")).push(created(held)).push(held).push(issue_scripts.answer(status: 200, body: "{}")).push(
+        held
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert filed(@s, draft: d) == 1
+    assert strings.contains(
+        text: s.err[s.err.len() - 1],
+        needle: "still differs https://github.com/heroes-lang/heroes/issues/2031"
+    )
+    refused = names_reply().push(issue_scripts.answer(status: 200, body: "[]")).push(
+        issue_scripts.answer(status: 422, body: "{\"message\":\"Validation Failed\"}")
+    )
+    t: issue_pace.Session @= issue_pace.scripted(refused)
+    assert filed(@t, draft: d) == 2
+    assert strings.contains(text: t.err[0], needle: "422: Validation Failed")
+
+test "edit makes an issue its draft's, numbering a new defect's title and keeping an imported issue's Record line"
+    d = defect_draft()
+    stale = answer_of(r: d.r, number: 2031, title: "a header", state: "open", comments: 0)
+    replies = names_reply().push(stale).push(stale).push(issue_scripts.answer(status: 200, body: "{}")).push(
+        answer_of(r: d.r, number: 2031, title: new_title(), state: "open", comments: 0)
+    )
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert edited(@s, number: 2031, draft: d) == 0
+    assert s.world.requests[4].body == "{\"title\":\"" + new_title() + "\"}"
+    kept_line = "Record: https://github.com/heroes-lang/heroes/blob/" + issue_scripts.PIN + "/issues/2026-10/01/2026-10-01-0000-a.md"
+    imported: issue_render.Rendered @= d.r
+    imported.body @ d.r.body + "\n" + kept_line
+    imported.title @ new_title()
+    same = answer_of(r: imported, number: 2031, title: new_title(), state: "open", comments: 0)
+    t: issue_pace.Session @= issue_pace.scripted(names_reply().push(same).push(same).push(same))
+    assert edited(@t, number: 2031, draft: d) == 0
+    assert issue_scripts.posts(t) == 0
+    assert t.world.requests.len() == 5
+    assert record_line(imported.body) == kept_line
+
+test "close appends the settling section before the Record line, posts its comment and closes the issue completed"
+    hash = issue_scripts.SETTLED
+    given = "\n## The repair\n\nThe guard reads the header at `" + hash.slice(from: 0, to: 8) + "`.\n\n" + hash + "\n"
+    commits: {str: bool} @= {}
+    commits[hash] @ true
+    commits[hash.slice(from: 0, to: 8)] @ true
+    kept_line = "Record: https://github.com/heroes-lang/heroes/blob/" + issue_scripts.PIN + "/issues/2026-10/01/2026-10-01-0000-a.md"
+    body = "Filed 2026-10-01\n\n### What happens\n\nx\n\n" + kept_line
+    shaped = closing_of(given: given, kind: "defect")
+    assert shaped.wrong == ""
+    section = made_inert(text: shaped.text, commits: commits)
+    assert section == "### The repair\n\nThe guard reads the header at 01234567.\n\n" + hash
+    closed_body = with_section(body: body, section: section)
+    assert closed_body == "Filed 2026-10-01\n\n### What happens\n\nx\n\n" + section + "\n\n" + kept_line
+    open_issue = "{\"number\":7,\"title\":\"Defect 235: t\",\"body\":" + issue_json.quoted(body) + ",\"state\":\"open\",\"labels\":[{\"name\":\"kind:defect\"}],\"milestone\":null,\"created_at\":\"2026-10-01T12:00:00Z\",\"closed_at\":null,\"comments\":0}"
+    done_issue = "{\"number\":7,\"title\":\"Defect 235: t\",\"body\":" + issue_json.quoted(closed_body) + ",\"state\":\"closed\",\"labels\":[{\"name\":\"kind:defect\"}],\"milestone\":null,\"created_at\":\"2026-10-01T12:00:00Z\",\"closed_at\":\"2026-10-12T10:00:00Z\",\"comments\":1}"
+    replies = [
+        issue_scripts.answer(status: 200, body: open_issue)
+        issue_scripts.answer(status: 201, body: "{}")
+        issue_scripts.answer(status: 200, body: "{}")
+        issue_scripts.answer(status: 200, body: done_issue)
+        issue_scripts.answer(status: 200, body: "[{\"body\":\"Fixed by " + hash + "\"}]")
+    ]
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert closed_with(@s, number: 7, given: given, commits: commits) == 0
+    asked = s.world.requests
+    assert asked[1].body == "{\"body\":\"Fixed by " + hash + "\"}"
+    assert asked[2].method == "PATCH"
+    assert asked[2].body == "{" + issue_json.member(key: "body", value: closed_body) + ",\"state\":\"closed\",\"state_reason\":\"completed\"}"
+    assert s.out == ["https://github.com/heroes-lang/heroes/issues/7"]
+
+test "a closing text that does not open with its kind's section or end with a known commit closes nothing"
+    assert strings.contains(
+        text: closing_of(given: "## What was done\n\nx\n\n" + issue_scripts.SETTLED, kind: "defect").wrong,
+        needle: "`## The repair`"
+    )
+    assert strings.contains(
+        text: closing_of(given: "## The repair\n\nlanded at `0123`.\n", kind: "defect").wrong,
+        needle: "forty digits"
+    )
+    assert closing_of(given: "## What was done\n\nRatified.\n\n" + issue_scripts.SETTLED, kind: "decision").wrong == ""
+    assert strings.contains(
+        text: closing_of(given: "## Verdict\n\nRatified.\n\n" + issue_scripts.SETTLED, kind: "decision").wrong,
+        needle: "`## What was done`"
+    )
+    assert closing_of(given: "## What was done\n\nx\n\n" + issue_scripts.SETTLED, kind: "task").wrong == ""
+    bare = closing_of(given: "\nThe guard reads the header.\n\n" + issue_scripts.SETTLED + "\n", kind: "defect")
+    assert bare.wrong == ""
+    assert bare.text == "### The repair\n\nThe guard reads the header.\n\n" + issue_scripts.SETTLED
+    assert closing_of(given: "Landed.\n\n" + issue_scripts.SETTLED, kind: "task").text == "### What was done\n\nLanded.\n\n" + issue_scripts.SETTLED
+    assert strings.contains(
+        text: closing_of(given: "### Notes\n\nx\n\n" + issue_scripts.SETTLED, kind: "task").wrong,
+        needle: "`## What was done`"
+    )
+    open_issue = "{\"number\":7,\"title\":\"t\",\"body\":\"b\",\"state\":\"open\",\"labels\":[{\"name\":\"kind:task\"}],\"milestone\":null,\"created_at\":\"2026-10-01T12:00:00Z\",\"closed_at\":null,\"comments\":0}"
+    unknown: {str: bool} = {}
+    s: issue_pace.Session @= issue_pace.scripted([issue_scripts.answer(status: 200, body: open_issue)])
+    assert closed_with(@s, number: 7, given: "## What was done\n\nx\n\n" + issue_scripts.SETTLED, commits: unknown) == 1
+    assert strings.contains(text: s.err[0], needle: "names no commit of this history")
+    assert issue_scripts.posts(s) == 0
+    assert with_section(body: "Filed x\n\n### What it delivers\n\ny\n", section: "### What was done\n\nz") == "Filed x\n\n### What it delivers\n\ny\n\n### What was done\n\nz\n"
+
+test "a comment is made inert, posted, and read back by its own address"
+    commits: {str: bool} = {}
+    open_issue = "{\"number\":7,\"title\":\"t\",\"body\":\"b\",\"state\":\"open\",\"labels\":[{\"name\":\"kind:task\"}],\"milestone\":null,\"created_at\":\"2026-10-01T12:00:00Z\",\"closed_at\":null,\"comments\":0}"
+    sent = "see `#3`, asked of `@someone`"
+    replies = [
+        issue_scripts.answer(status: 200, body: open_issue)
+        issue_scripts.answer(status: 201, body: "{\"id\":99,\"html_url\":\"https://github.com/heroes-lang/heroes/issues/7#issuecomment-99\",\"body\":" + issue_json.quoted(sent) + "}")
+        issue_scripts.answer(status: 200, body: "{\"id\":99,\"body\":" + issue_json.quoted(sent) + "}")
+    ]
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert commented(@s, number: 7, given: "\nsee #3, asked of @someone\n", commits: commits) == 0
+    assert s.world.requests[1].body == "{\"body\":" + issue_json.quoted(sent) + "}"
+    assert s.world.requests[2].path == "/repos/heroes-lang/heroes/issues/comments/99"
+    assert s.out == ["https://github.com/heroes-lang/heroes/issues/7#issuecomment-99"]
+    empty: issue_pace.Session @= issue_pace.scripted([])
+    assert commented(@empty, number: 7, given: "\n\n", commits: commits) == 1
+    assert empty.world.requests.len() == 0
+
+test "edit refuses a closed issue, which comment corrects, and a draft that would close an open one"
+    d = defect_draft()
+    closed = answer_of(r: d.r, number: 2031, title: new_title(), state: "closed", comments: 1)
+    s: issue_pace.Session @= issue_pace.scripted(names_reply().push(closed))
+    assert edited(@s, number: 2031, draft: d) == 1
+    assert strings.contains(text: s.err[0], needle: "a closed issue is a record")
+    assert strings.contains(text: s.err[0], needle: "by `comment`")
+    assert issue_scripts.posts(s) == 0
+    taken: issue_draft.Draft @= d
+    taken.r.closed @ true
+    open_one = answer_of(r: d.r, number: 2031, title: new_title(), state: "open", comments: 0)
+    t: issue_pace.Session @= issue_pace.scripted(names_reply().push(open_one))
+    assert edited(@t, number: 2031, draft: taken) == 1
+    assert strings.contains(text: t.err[0], needle: "an issue is closed by `close`")

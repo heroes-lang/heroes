@@ -1,0 +1,722 @@
+# THE `records` CHECKS THAT ASK GITHUB, since the issues left the tree.
+#
+# The author's seven answers of 2026-10-12 (the decision
+# https://github.com/heroes-lang/heroes/issues/2027,
+# filed after the transcription) put every issue on GitHub alone, so what
+# `records` held of the files it now holds of what `github_issues.hero` read:
+#
+# - `records/tagged`, its route for a tag whose own tree holds no `issues/`
+#   (`standing` and `unqueued`; `suite_records.hero` keeps reading the tag's
+#   tree where it holds one, the one exact record of what that tag stood over);
+# - `records/defects-cited`, whose register is `register_of` here and whose
+#   reading of the code is `credit.hero`'s;
+# - `records/numbering`, that no number names two defects (`numbering`);
+# - `records/verdicts`, that a pending sitting is asked by an open decision
+#   (`queued`);
+# - `records/homes`, that an open feature or task names an open milestone
+#   (`unhomed`);
+# - `records/prior-art`, that a decision's `### Prior art` keeps its two forms
+#   (`prior_art`).
+#
+# **The names of a defect** (the fifth answer): the defects filed until
+# 2026-10-12 keep their numbers, 001 to `OLD_LAST`, each in its issue's title,
+# `Defect 235:` or `Defects 018 to 021:`, and a file of several items holds the
+# later ones as body lines `- **034 — ...**`; one filed since is named by its
+# GitHub issue number, its title `Defect <its number>:`, which the transcription
+# program's `file` word writes. GitHub had 2,021 issues when the second pass
+# ended, so the two series never meet.
+
+use cards
+use credit
+use github_issues
+use issue_pace
+use report
+use strings
+
+# The last number of the old series (defects 001 to 677, the files of
+# `issues/` until 2026-10-12).
+constant OLD_LAST: i64
+    677
+
+# The one old number issued twice, held by two issues, each body naming the
+# other (`.claude/rules/records.md` § The issues, the labels bullet).
+constant ISSUED_TWICE: i64
+    14
+
+# An `adjacent` defect counts as `blocking` from this many tags it stood open
+# at, the tag judged included (`.claude/rules/verification.md` § Bounded
+# discovery: *it becomes `blocking` when two milestone tags have been placed
+# since it was filed*); `suite_records.hero`'s reading of a tag's tree counts
+# the same.
+constant AGED_AT: i64
+    2
+
+constant BLOB: str
+    "https://github.com/heroes-lang/heroes/blob/"
+
+constant LABEL_NUMBERING: str
+    "records/numbering"
+
+constant LABEL_PRIOR_ART: str
+    "records/prior-art"
+
+# The defects' names as GitHub holds them: each old number to the issues whose
+# title or body item names it, the issue numbers of the new defects, and the
+# open defects whose title names no number at all.
+record Register
+    old: {i64: [i64]}
+    new: {i64: bool}
+    misnamed: [str]
+    unnamed: [str]
+
+# The numbers a title opens with after `Defect ` or `Defects `, in any case:
+# `Defect 235: x`, `Defects 018 to 021: x`, `Defects 058 and 059: x`,
+# `Defect 218 closed: x`, and a new defect's `Defect <its number>: x`.
+function title_numbers(title: str) -> [i64]
+    none: [i64] = []
+
+    if !credit.spells_defect(text: title, i: 0)
+        return none
+    at: i64 @= 6
+
+    if at < title.len() && (title[at] == 's' || title[at] == 'S')
+        at @ at + 1
+
+    if at >= title.len() || title[at] != ' '
+        return none
+    return credit.numbers_after(text: title, at: at + 1, wide: true)
+
+# The old numbers of a body's later items, as the rendering writes them: a
+# plain list line `- **034 — ...**` (a file's second and later item lines,
+# D7), or an item line kept whole.
+function body_numbers(body: str) -> [i64]
+    out: [i64] @= []
+
+    for row in strings.lines(body)
+        line = strings.trimmed(row)
+        field: str @= ""
+
+        for opening in ["- **", "- [ ] **", "- [x] **"]
+            if field == "" && strings.starts_with(text: line, prefix: opening)
+                field @ strings.without_prefix(text: line, prefix: opening)
+
+        digits = credit.digit_run(text: field, at: 0)
+
+        if digits > 0 && digits <= 3 && credit.has_at(text: field, at: digits, piece: " — ")
+            # Digits are ASCII, so the cut stands between characters.
+            out @ out.push(strings.to_number(field.slice(from: 0, to: digits)).must())
+
+    return out
+
+# The register GitHub holds: every defect issue, pull requests aside.
+function register_of(held: github_issues.Listing) -> Register
+    old: {i64: [i64]} @= {}
+    new: {i64: bool} @= {}
+    misnamed: [str] @= []
+    unnamed: [str] @= []
+    none: [i64] = []
+
+    for issue in github_issues.of_kind(held: held, kind: "defect")
+        named = title_numbers(issue.title)
+
+        if named.len() == 0 && issue.open
+            unnamed @ unnamed.push(told(issue))
+
+        for n in named
+            if n == issue.number && n > OLD_LAST
+                new[n] @ true
+            else if n > OLD_LAST
+                misnamed @ misnamed.push(
+                    told(issue) + " names defect " + n.to_str() + ", which is neither an old defect's number nor its own"
+                )
+            else
+                old[n] @ old[n].default(none).push(issue.number)
+
+        for n in body_numbers(issue.body)
+            if n <= OLD_LAST && !holds(numbers: old[n].default(none), number: issue.number)
+                old[n] @ old[n].default(none).push(issue.number)
+
+    return Register(old: old, new: new, misnamed: misnamed, unnamed: unnamed)
+
+# Every name the register holds, old and new, which never meet.
+function names_of(register: Register) -> {i64: bool}
+    out: {i64: bool} @= {}
+
+    for n in keys(register.old)
+        out[n] @ true
+
+    for n in keys(register.new)
+        out[n] @ true
+
+    return out
+
+# The register as the cache file the write hook's narrowed run reads
+# (`suite_records.hero`'s `REGISTER`): a line saying what it is, then one name a
+# line, in order.
+function register_text(names: {i64: bool}) -> str
+    rows: [str] @= ["# the defects' names GitHub held at this records run: one a line"]
+
+    for n in keys(names).sort()
+        rows @ rows.push(n.to_str())
+
+    return rows.join("\n") + "\n"
+
+# The names a cache file holds, or why it holds none this can read.
+function register_read(text: str) -> {i64: bool}?
+    out: {i64: bool} @= {}
+
+    for row in strings.lines(text)
+        line = strings.trimmed(row)
+
+        if line == "" || strings.starts_with(text: line, prefix: "#")
+            continue
+        n = strings.to_number(line)
+
+        if n.is_err() || n.must() < 1
+            return fail(code: "shape", msg: "`" + line + "` is not a defect's name")
+        out[n.must()] @ true
+
+    if keys(out).len() == 0
+        return fail(code: "empty", msg: "it holds no name")
+    return ok(out)
+
+# `records/numbering`: no old number names two defects (`ISSUED_TWICE` aside),
+# no defect's title names a new number not its own, and no open defect's title
+# names none, since the number is how a defect is cited.
+function numbering(@r: report.Report, held: github_issues.Listing)
+    if !held.asked
+        unanswered(@r, held: held, label: LABEL_NUMBERING)
+        return
+    register = register_of(held)
+    offences: [str] @= []
+
+    if keys(register.old).len() == 0
+        offences @ offences.push(
+            "this check read zero old defect numbers from GitHub, so it would pass whatever the issues held: the titles' shape moved, or the listing is not the repository's"
+        )
+
+    for n in keys(register.old).sort()
+        holders = register.old[n].must()
+
+        if holders.len() > 1 && n != ISSUED_TWICE
+            shown: [str] @= []
+
+            for one in holders.sort()
+                shown @ shown.push(one.to_str())
+
+            offences @ offences.push(
+                "defect " + padded(n) + " is named by " + holders.len().to_str() + " issues, " + shown.join(", ") + ": two lanes took one number"
+            )
+
+    for one in register.misnamed
+        offences @ offences.push(one)
+
+    for one in register.unnamed
+        offences @ offences.push(
+            one + " is an open defect whose title names no number, and the number is how it is cited; `heroes run tests/harness/issues.hero -- edit <number> <draft.md>` makes it `Defect <number>: ...`"
+        )
+
+    if offences.len() > 0
+        report.keep_failure(
+            @r,
+            label: LABEL_NUMBERING,
+            detail: "  " + offences.join("\n  ") + "\n  An old defect keeps its number 001 to " + OLD_LAST.to_str() + ", in its issue's title; a new one is named by its own issue number,\n  `Defect <number>:` (`.claude/rules/records.md` § The issues)."
+        )
+    else
+        report.keep_pass(@r)
+
+# Whether an open decision on GitHub asks for the sitting whose file's name
+# opens with `digits`: its title opens `Panel <digits>`, as the file spells
+# them or as the integer they are, and then no digit.
+function queued(digits: str, held: github_issues.Listing) -> bool
+    bare: str @= digits
+    number = strings.to_number(digits)
+
+    if !number.is_err()
+        bare @ number.must().to_str()
+
+    for issue in github_issues.of_kind(held: held, kind: "decision")
+        if issue.open && (names_panel(title: issue.title, digits: digits) || names_panel(title: issue.title, digits: bare))
+            return true
+
+    return false
+
+# Whether `title` opens `panel <digits>`, in any case, and no digit follows.
+function names_panel(title: str, digits: str) -> bool
+    opening = "panel " + digits
+
+    if title.len() < opening.len()
+        return false
+    at: i64 @= 0
+
+    while at < opening.len()
+        b: u8 @= title[at]
+
+        if b >= 'A' && b <= 'Z'
+            b @ b + 32
+
+        if b != opening[at]
+            return false
+        at @ at + 1
+
+    return at == title.len() || !cards.is_digit_byte(title[at])
+
+# Why each open feature or task GitHub holds is not owed to an open milestone:
+# it names none, one with no row in § The chain (`chain`, each milestone to
+# whether its row is open), one whose row is closed, or one GitHub holds
+# closed.
+function unhomed(held: github_issues.Listing, chain: {str: bool}) -> [str]
+    out: [str] @= []
+
+    for kind in ["feature", "task"]
+        for issue in github_issues.of_kind(held: held, kind: kind)
+            if !issue.open
+                continue
+            home = issue.milestone
+
+            if home == ""
+                out @ out.push(
+                    told(issue) + ": an open " + kind + " names no milestone, and a milestone's work is owed to one"
+                )
+                continue
+            open_now = chain[home]
+
+            if open_now.is_err()
+                out @ out.push(told(issue) + ": " + home + " has no row in § The chain")
+            else if !open_now.must()
+                out @ out.push(told(issue) + ": " + home + " is CLOSED and this item of its work is still open")
+            else if !issue.milestone_open
+                out @ out.push(told(issue) + ": " + home + " is open in § The chain and closed on GitHub")
+
+    return out
+
+# The lines a body's `### Prior art` section opens, up to the next heading or
+# the `Record:` line, or none where it has no such section.
+function prior_art_rows(body: str) -> credit.Section
+    rows = strings.lines(body)
+    none: [str] = []
+    i: i64 @= 0
+
+    while i < rows.len()
+        if strings.trimmed(rows[i]) == "### Prior art"
+            taken: [str] @= []
+            j: i64 @= i + 1
+
+            while j < rows.len() && !strings.starts_with(text: rows[j], prefix: "#") && !strings.starts_with(text: rows[j], prefix: "Record: ")
+                taken @ taken.push(rows[j])
+                j @ j + 1
+
+            return credit.Section(found: true, rows: taken)
+        i @ i + 1
+
+    return credit.Section(found: false, rows: none)
+
+# `records/prior-art` over GitHub: a `### Prior art` section stands only on a
+# decision, opens with its sitting's file and the day its links were re-read,
+# and holds precedents in the two forms; a heading nearly it is told.
+# `known` is every path the tree holds, which a sitting's file is asked of.
+function prior_art(@r: report.Report, held: github_issues.Listing, known: {str: bool})
+    if !held.asked
+        unanswered(@r, held: held, label: LABEL_PRIOR_ART)
+        return
+    offences: [str] @= []
+
+    for issue in held.issues
+        if issue.pull
+            continue
+        where = told(issue)
+
+        for line in credit.near_misses(issue.body)
+            if line != "### Prior art"
+                offences @ offences.push(
+                    where + ": `" + line + "` is nearly the heading, which GitHub's body writes `### Prior art` exactly, and a section under another spelling is one no check reads"
+                )
+
+        section = prior_art_rows(issue.body)
+
+        if section.found
+            for wrong in credit.section_offences(where: where, kind: github_issues.kind_of(issue), rows: section.rows, known: known)
+                offences @ offences.push(wrong)
+
+    if offences.len() > 0
+        report.keep_failure(
+            @r,
+            label: LABEL_PRIOR_ART,
+            detail: "  " + offences.join("\n  ") + "\n  `.claude/rules/records.md` § And the record says whose idea it was (CL-082)."
+        )
+    else
+        report.keep_pass(@r)
+
+# A check that needs GitHub and could not ask it: a skip with the reason, or a
+# failure where the answer came and could not be read.
+function unanswered(@r: report.Report, held: github_issues.Listing, label: str)
+    if held.broken
+        report.keep_failure(@r, label: label, detail: "  GitHub's answer could not be read: " + held.why)
+    else
+        report.keep_skip(
+            @r,
+            label: label,
+            detail: "  GitHub could not be asked, so this check judged nothing: " + held.why
+        )
+
+# A milestone tag and the instant `git` says it was created, in seconds since
+# 1970 UTC.
+record Tag
+    name: str
+    at: i64
+
+# `git tag --format='%(creatordate:unix) %(refname:short)'`, newest first, as
+# tags; a row this cannot read fails the listing, since a tag left out ages
+# nothing.
+function tags_of(out: str) -> [Tag]?
+    tags: [Tag] @= []
+
+    for row in strings.lines(out)
+        if strings.trimmed(row) == ""
+            continue
+        parts = strings.words(row)
+
+        if parts.len() != 2
+            return fail(code: "shape", msg: "`" + row + "` is not `<seconds> <tag>`")
+        at = strings.to_number(parts[0])
+
+        if at.is_err() || at.must() < 0
+            return fail(code: "shape", msg: "`" + row + "` does not open with the seconds of its tag")
+        tags @ tags.push(Tag(name: parts[1], at: at.must()))
+
+    return ok(tags)
+
+# The seconds since 1970 UTC of an instant as GitHub writes one,
+# `2026-10-11T12:00:00Z`, or a failure.
+function epoch_of(instant: str) -> i64?
+    wrong = "`" + instant + "` is not an instant `YYYY-MM-DDTHH:MM:SSZ`"
+
+    if instant.len() != 20 || instant[10] != 'T' || instant[19] != 'Z' || instant[13] != ':' || instant[16] != ':'
+        return fail(code: "shape", msg: wrong)
+    day = cards.day_of(instant)
+
+    if day.is_err()
+        return fail(code: "shape", msg: wrong)
+    seconds: i64 @= 0
+
+    for at in [11, 14, 17]
+        if !cards.is_digit_byte(instant[at]) || !cards.is_digit_byte(instant[at + 1])
+            return fail(code: "shape", msg: wrong)
+        seconds @ seconds * 60 + to_i64(instant[at] - '0').must() * 10 + to_i64(instant[at + 1] - '0').must()
+
+    d = day.must()
+    return ok(issue_pace.days_from_civil(year: d / 10000, month: d / 100 % 100, day: d % 100) * 86400 + seconds)
+
+# Whether `issue` was imported from a file of `issues/`: its body's `Record:`
+# line names such a file at a commit. The import dated each such issue from
+# its card, a day and no minute, written as noon UTC.
+function imported(issue: github_issues.Listed) -> bool
+    for row in strings.lines(issue.body)
+        if strings.starts_with(text: row, prefix: "Record: " + BLOB)
+            rest = strings.without_prefix(text: row, prefix: "Record: " + BLOB)
+
+            if rest.len() > 48 && cards.is_full_hash(rest.slice(from: 0, to: 40)) && strings.starts_with(text: rest.slice(from: 40, to: rest.len()), prefix: "/issues/")
+                return true
+
+    return false
+
+# Whether the instant `instant` of `issue` stands at or before `at`.
+#
+# **An imported issue's noon is a day, not an instant**: the import wrote each
+# card's day as noon UTC (`.claude/rules/records.md` § The issues, the days),
+# so such an instant is read as its day, at or before `at` where its day is
+# not later than `at`'s. Every import came before the folder left the tree,
+# and so before every tag this route judges (`suite_records.hero` judges a tag
+# placed while the folder stood by that tag's own tree), so an issue imported
+# open, or closed, on the day of such a tag was so before it. Any other
+# instant is GitHub's own, read to the second.
+function at_or_before(issue: github_issues.Listed, instant: str, at: i64) -> bool
+    seconds = epoch_of(instant)
+
+    # An instant this cannot read stands after every tag: the issue is read as
+    # not yet closed, never as closed early.
+    if seconds.is_err()
+        return false
+
+    if strings.ends_with(text: instant, suffix: "T12:00:00Z") && imported(issue)
+        return seconds.must() / 86400 <= at / 86400
+    return seconds.must() <= at
+
+# Whether `issue` stood open at the instant `at`: created by then, and not
+# closed by then.
+function open_at(issue: github_issues.Listed, at: i64) -> bool
+    if !at_or_before(issue: issue, instant: issue.created, at: at)
+        return false
+    return issue.closed == "" || !at_or_before(issue: issue, instant: issue.closed, at: at)
+
+# The open defects that count against the tag `judged`, `tags` being every
+# milestone tag up to it, each with why: `blocking` and `systemic`, a defect
+# with no class label (which counts as `blocking`), and an `adjacent` one open
+# at `AGED_AT` tags or more, the judged among them; an `improvement` never.
+function standing(held: github_issues.Listing, judged: Tag, tags: [Tag]) -> [str]
+    out: [str] @= []
+
+    for issue in github_issues.of_kind(held: held, kind: "defect")
+        if !open_at(issue: issue, at: judged.at)
+            continue
+        classed = github_issues.label_value(issue: issue, name: "class")
+
+        if classed == "improvement"
+            continue
+
+        if classed == ""
+            out @ out.push(told(issue) + "\n      no `class:` label, and a defect without one counts as `blocking`")
+            continue
+
+        if classed != "adjacent"
+            out @ out.push(told(issue) + "\n      `" + classed + "`")
+            continue
+        since: [str] @= []
+
+        for tag in tags
+            if tag.at <= judged.at && open_at(issue: issue, at: tag.at)
+                since @ since.push(tag.name)
+
+        if since.len() >= AGED_AT
+            out @ out.push(
+                told(issue) + "\n      `adjacent`, open at " + since.len().to_str() + " tags (" + since.join(" ") + "), the tag judged among them, and an `adjacent` defect counts as `blocking` once " + AGED_AT.to_str() + " have been"
+            )
+
+    return out
+
+# The open decisions at the tag `judged` that are not a sitting's
+# ratification, whose title opens `Panel <digits>:` as the rendering gives it.
+function unqueued(held: github_issues.Listing, judged: Tag) -> [str]
+    out: [str] @= []
+
+    for issue in github_issues.of_kind(held: held, kind: "decision")
+        if open_at(issue: issue, at: judged.at) && !ratifies(issue.title)
+            out @ out.push(told(issue))
+
+    return out
+
+# Whether a decision's title is a sitting's ratification: `Panel <digits>:`.
+function ratifies(title: str) -> bool
+    if !strings.starts_with(text: title, prefix: "Panel ")
+        return false
+    digits = credit.digit_run(text: title, at: 6)
+    return digits > 0 && credit.has_at(text: title, at: 6 + digits, piece: ":")
+
+# An issue as a failure names it: its address and its title.
+function told(issue: github_issues.Listed) -> str
+    return "https://github.com/heroes-lang/heroes/issues/" + issue.number.to_str() + " (" + issue.title + ")"
+
+function holds(numbers: [i64], number: i64) -> bool
+    for one in numbers
+        if one == number
+            return true
+
+    return false
+
+function padded(n: i64) -> str
+    if n < 10
+        return "00" + n.to_str()
+
+    if n < 100
+        return "0" + n.to_str()
+    return n.to_str()
+
+constant RECORDED: str
+    "Record: https://github.com/heroes-lang/heroes/blob/1111111111111111111111111111111111111111/issues/2026-10/01/2026-10-01-0000-a.md"
+
+function fixture(number: i64, title: str, kind: str, extra: [str], body: str, state: str, created: str, closed: str) -> str
+    labels: [str] @= ["kind:" + kind]
+
+    for one in extra
+        labels @ labels.push(one)
+
+    return github_issues.json_of(
+        number: number,
+        title: title,
+        body: body,
+        state: state,
+        labels: labels,
+        milestone: "",
+        created: created,
+        closed: closed
+    )
+
+test "a defect's names are its title's numbers and its body's later items, and a new one is its own number"
+    assert title_numbers("Defect 235: a header") == [235]
+    assert title_numbers("Defects 018 to 021: four") == [18, 19, 20, 21]
+    assert title_numbers("Defects 058 and 059: two") == [58, 59]
+    assert title_numbers("Defect 218 closed: a cube") == [218]
+    assert title_numbers("defect 093 the lane") == [93]
+    assert title_numbers("Def" + "ect 2031: a new one") == [2031]
+    assert title_numbers("A decision about defect 235").len() == 0
+    assert title_numbers("Defective").len() == 0
+    assert body_numbers("Filed x\n\n- **034 — the counter** | a\n- **035 — b**\n- [x] **036 — c**\n- **2031 — no**\n- a plain line\n") == [34, 35, 36]
+    held = github_issues.held_of(
+        [fixture(number: 1215, title: "Defect 033: one", kind: "defect", extra: [], body: "- **034 — two**", state: "closed", created: "2026-09-15T12:00:00Z", closed: "2026-09-15T12:00:00Z"), fixture(number: 2031, title: "Def" + "ect 2031: new", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-13T08:00:00Z", closed: ""), fixture(number: 2032, title: "Def" + "ect 2040: wrong", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-13T08:00:00Z", closed: ""), fixture(number: 2033, title: "a title with no number", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-13T08:00:00Z", closed: ""), fixture(number: 9, title: "Defect 500: a decision's title", kind: "decision", extra: [], body: "b", state: "open", created: "2026-10-13T08:00:00Z", closed: "")]
+    )
+    register = register_of(held)
+    assert register.old[33].must() == [1215]
+    assert register.old[34].must() == [1215]
+    assert register.old[500].is_err()
+    assert !register.new[2031].is_err()
+    assert register.new[2040].is_err()
+    assert register.misnamed.len() == 1
+    assert strings.contains(text: register.misnamed[0], needle: "names def" + "ect 2040")
+    assert register.unnamed.len() == 1
+    names = names_of(register)
+    assert keys(names).sort() == [33, 34, 2031]
+    text = register_text(names)
+    assert text == "# the defects' names GitHub held at this records run: one a line\n33\n34\n2031\n"
+    assert keys(register_read(text).must()).sort() == [33, 34, 2031]
+    assert register_read("# nothing\n").is_err()
+    assert register_read("12\nx\n").is_err()
+
+test "numbering refuses an old number two issues name, a new number not the issue's own and an open defect with none"
+    clean = github_issues.held_of(
+        [fixture(number: 1, title: "Defect 014: one", kind: "defect", extra: [], body: "b", state: "closed", created: "2026-09-05T12:00:00Z", closed: "2026-09-05T12:00:00Z"), fixture(number: 2, title: "Defect 014: two", kind: "defect", extra: [], body: "b", state: "closed", created: "2026-09-06T12:00:00Z", closed: "2026-09-06T12:00:00Z"), fixture(number: 3, title: "Defect 235: x", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-04T12:00:00Z", closed: "")]
+    )
+    r: report.Report @= report.empty()
+    numbering(@r, held: clean)
+    assert r.passed == 1
+    assert r.failed == 0
+    twice = github_issues.held_of(
+        [fixture(number: 3, title: "Defect 235: x", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-04T12:00:00Z", closed: ""), fixture(number: 4, title: "Defect 235: y", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-04T12:00:00Z", closed: ""), fixture(number: 2040, title: "Def" + "ect 2041: z", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-13T08:00:00Z", closed: ""), fixture(number: 2041, title: "no number", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-13T08:00:00Z", closed: "")]
+    )
+    t: report.Report @= report.empty()
+    numbering(@t, held: twice)
+    assert t.failed == 1
+    assert strings.contains(text: t.failures[0], needle: "defect 235 is named by 2 issues, 3, 4")
+    assert strings.contains(text: t.failures[0], needle: "names def" + "ect 2041, which is neither")
+    assert strings.contains(
+        text: t.failures[0],
+        needle: "issues/2041 (no number) is an open defect whose title names no number"
+    )
+    empty: report.Report @= report.empty()
+    numbering(@empty, held: github_issues.held_of([]))
+    assert strings.contains(text: empty.failures[0], needle: "read zero old defect numbers")
+    skipped: report.Report @= report.empty()
+    numbering(@skipped, held: github_issues.unasked("no network"))
+    assert skipped.failed == 0
+    assert skipped.passed == 0
+    assert strings.contains(text: skipped.skips[0], needle: "no network")
+    broken: report.Report @= report.empty()
+    numbering(@broken, held: github_issues.broken("not JSON"))
+    assert broken.failed == 1
+
+test "a sitting is queued by an open decision whose title opens with its number, padded or bare"
+    asking = github_issues.held_of(
+        [fixture(number: 5, title: "Panel 099: ratify", kind: "decision", extra: [], body: "b", state: "open", created: "2026-10-04T12:00:00Z", closed: "")]
+    )
+    assert queued(digits: "099", held: asking)
+    bare = github_issues.held_of(
+        [fixture(number: 5, title: "Panel 99: ratify", kind: "decision", extra: [], body: "b", state: "open", created: "2026-10-04T12:00:00Z", closed: "")]
+    )
+    assert queued(digits: "099", held: bare)
+    assert !queued(digits: "999", held: asking)
+    assert !queued(digits: "09", held: asking)
+    tasked = github_issues.held_of(
+        [fixture(number: 5, title: "Panel 099: ratify", kind: "task", extra: [], body: "b", state: "open", created: "2026-10-04T12:00:00Z", closed: "")]
+    )
+    assert !queued(digits: "099", held: tasked)
+    answered = github_issues.held_of(
+        [fixture(number: 5, title: "Panel 099: ratify", kind: "decision", extra: [], body: "b", state: "closed", created: "2026-10-04T12:00:00Z", closed: "2026-10-05T12:00:00Z")]
+    )
+    assert !queued(digits: "099", held: answered)
+    assert names_panel(title: "PANEL 212 sits", digits: "212")
+    assert !names_panel(title: "Panel 2120: x", digits: "212")
+
+test "an open feature or task names a milestone open in the chain and on GitHub"
+    chain: {str: bool} @= {}
+    chain["M-issue-files"] @ true
+    chain["M-ir-lowering"] @ false
+    homed = github_issues.held_of(
+        [github_issues.json_of(number: 1, title: "t", body: "b", state: "open", labels: ["kind:task"], milestone: "M-issue-files", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 2, title: "d", body: "b", state: "open", labels: ["kind:defect"], milestone: "", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 3, title: "done", body: "b", state: "closed", labels: ["kind:feature"], milestone: "M-ir-lowering", created: "2026-10-04T12:00:00Z", closed: "2026-10-05T12:00:00Z")]
+    )
+    assert unhomed(held: homed, chain: chain).len() == 0
+    stray = github_issues.held_of(
+        [github_issues.json_of(number: 4, title: "a", body: "b", state: "open", labels: ["kind:task"], milestone: "", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 5, title: "b", body: "b", state: "open", labels: ["kind:feature"], milestone: "M-ir-lowering", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 6, title: "c", body: "b", state: "open", labels: ["kind:task"], milestone: "M-guide-book", created: "2026-10-04T12:00:00Z", closed: "")]
+    )
+    said = unhomed(held: stray, chain: chain)
+    assert said.len() == 3
+    assert strings.contains(text: said[0], needle: "an open feature names") || strings.contains(text: said[0], needle: "M-ir-lowering is CLOSED")
+
+test "a decision's prior art on GitHub keeps its opener and its two forms, and stands on a decision alone"
+    known: {str: bool} @= {}
+    known["docs/panel/196-a-sitting.md"] @ true
+    known["docs/panel/196-reports/historian.md"] @ true
+    good = "Filed 2026-10-11\\n\\n### Prior art\\n\\nPanel 196 (`docs/panel/196-a-sitting.md`), every link read 2026-10-11.\\n\\n- **Taken from Ada**: [AI05](https://example.org/ai): the refusal\\n\\n### Recommendation\\n\\nratify\\n\\nRecord: x"
+    held = github_issues.held_of(
+        [fixture(number: 7, title: "Panel 196: ratify", kind: "decision", extra: [], body: good, state: "open", created: "2026-10-11T12:00:00Z", closed: "")]
+    )
+    r: report.Report @= report.empty()
+    prior_art(@r, held: held, known: known)
+    assert r.failed == 0
+    assert r.passed == 1
+    assert prior_art_rows(held.issues[0].body).rows.len() == 5
+    wrong = "### Prior art\\n\\nPanel 196, read on the day.\\n\\n- not searched\\n"
+    bad = github_issues.held_of(
+        [fixture(number: 8, title: "Defect 300: x", kind: "defect", extra: [], body: wrong, state: "open", created: "2026-10-11T12:00:00Z", closed: ""), fixture(number: 9, title: "y", kind: "decision", extra: [], body: "#### Prior Art\\n\\nx", state: "open", created: "2026-10-11T12:00:00Z", closed: "")]
+    )
+    t: report.Report @= report.empty()
+    prior_art(@t, held: bad, known: known)
+    assert t.failed == 1
+    assert strings.contains(text: t.failures[0], needle: "stands on a `defect`")
+    assert strings.contains(text: t.failures[0], needle: "is neither `- **Taken from <who>**:`")
+    assert strings.contains(text: t.failures[0], needle: "`#### Prior Art` is nearly the heading")
+
+test "an instant is read to the second, and an imported issue's noon as its day"
+    assert epoch_of("2026-10-12T10:00:00Z").must() == 1791799200
+    assert epoch_of("1970-01-01T00:00:00Z").must() == 0
+    assert epoch_of("2026-10-12 10:00:00Z").is_err()
+    assert epoch_of("2026-13-12T10:00:00Z").is_err()
+    assert epoch_of("2026-10-12T1a:00:00Z").is_err()
+    tag = epoch_of("2026-10-11T09:57:53Z").must()
+    imported_one = github_issues.held_of([fixture(number: 1973, title: "Defect 605: x", kind: "defect", extra: ["class:blocking"], body: RECORDED, state: "closed", created: "2026-10-10T12:00:00Z", closed: "2026-10-11T12:00:00Z")]).issues[0]
+    assert imported(imported_one)
+    assert !open_at(issue: imported_one, at: tag)
+    written = github_issues.held_of([fixture(number: 2031, title: "Def" + "ect 2031: x", kind: "defect", extra: ["class:blocking"], body: "b", state: "closed", created: "2026-10-10T12:00:00Z", closed: "2026-10-11T12:00:00Z")]).issues[0]
+    assert !imported(written)
+    assert open_at(issue: written, at: tag)
+    assert !open_at(issue: written, at: epoch_of("2026-10-10T11:00:00Z").must())
+
+test "a tag stands over improvements and young adjacent defects, and over no blocking, systemic or unclassed one"
+    judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
+    earlier = Tag(name: "m-earlier", at: epoch_of("2026-10-15T10:00:00Z").must())
+    tags = [judged, earlier]
+    young = github_issues.held_of(
+        [fixture(number: 2030, title: "Def" + "ect 2030: a", kind: "defect", extra: ["class:adjacent"], body: "b", state: "open", created: "2026-10-16T08:00:00Z", closed: ""), fixture(number: 2031, title: "Def" + "ect 2031: b", kind: "defect", extra: ["class:improvement"], body: "b", state: "open", created: "2026-10-01T08:00:00Z", closed: ""), fixture(number: 2032, title: "Def" + "ect 2032: c", kind: "defect", extra: ["class:blocking"], body: "b", state: "closed", created: "2026-10-01T08:00:00Z", closed: "2026-10-19T08:00:00Z"), fixture(number: 2033, title: "Def" + "ect 2033: d", kind: "defect", extra: ["class:blocking"], body: "b", state: "open", created: "2026-10-21T08:00:00Z", closed: "")]
+    )
+    assert standing(held: young, judged: judged, tags: tags).len() == 0
+    aged = github_issues.held_of(
+        [fixture(number: 2030, title: "Def" + "ect 2030: a", kind: "defect", extra: ["class:adjacent"], body: "b", state: "open", created: "2026-10-14T08:00:00Z", closed: "")]
+    )
+    said = standing(held: aged, judged: judged, tags: tags)
+    assert said.len() == 1
+    assert strings.contains(text: said[0], needle: "open at 2 tags (m-judged m-earlier)")
+    hard = github_issues.held_of(
+        [fixture(number: 2034, title: "Def" + "ect 2034: e", kind: "defect", extra: ["class:systemic"], body: "b", state: "open", created: "2026-10-01T08:00:00Z", closed: ""), fixture(number: 2035, title: "Def" + "ect 2035: f", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-01T08:00:00Z", closed: "")]
+    )
+    held = standing(held: hard, judged: judged, tags: tags)
+    assert held.len() == 2
+    assert strings.contains(text: held[0], needle: "`systemic`")
+    assert strings.contains(text: held[1], needle: "no `class:` label")
+
+test "the open decisions at a tag are its ratifications, and any other counts"
+    judged = Tag(name: "m-judged", at: epoch_of("2026-10-20T10:00:00Z").must())
+    held = github_issues.held_of(
+        [fixture(number: 1, title: "Panel 212: ratify", kind: "decision", extra: [], body: "b", state: "open", created: "2026-10-11T12:00:00Z", closed: ""), fixture(number: 2, title: "Which shape the chain takes", kind: "decision", extra: [], body: "b", state: "open", created: "2026-10-11T12:00:00Z", closed: ""), fixture(number: 3, title: "Panel 118 finding: x", kind: "decision", extra: [], body: "b", state: "open", created: "2026-10-11T12:00:00Z", closed: "")]
+    )
+    said = unqueued(held: held, judged: judged)
+    assert said.len() == 2
+    assert ratifies("Panel 212: x")
+    assert !ratifies("Panel 118 finding: x")
+    assert !ratifies("panel 212: x")
+
+test "the tags are read with their seconds, newest first, and a row this cannot read fails the listing"
+    got = tags_of("1791712673 m-inferred-cell\n1790627131 m-agreed-retention\n").must()
+    assert got.len() == 2
+    assert got[0].name == "m-inferred-cell"
+    assert got[0].at == 1791712673
+    assert tags_of("").must().len() == 0
+    assert tags_of("m-x\n").is_err()
+    assert tags_of("x m-x\n").is_err()
