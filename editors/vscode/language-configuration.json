@@ -22,13 +22,20 @@
     ["'", "'"]
   ],
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*((constant|function|record|variant|test|extern|if|else if|else|for|while|match)\\b.*$|.*=>\\s*$)",
+    "increaseIndentPattern": "^(?:(?:constant|function|record|variant|test|extern)\\b.*|\\s*(?:if|else|for|while|match)\\b.*|.*(?:@=|=|\\breturn)\\s+(?:match|if)\\b.*|.*=>\\s*(?:#.*)?)$",
     "decreaseIndentPattern": "^\\s*(else|else if)\\b"
   },
   "onEnterRules": [
     {
       "beforeText": "^\\s*#.*$",
       "action": { "indent": "none" }
+    },
+    {
+      "beforeText": "^\\s*(?:return|break|continue)\\b(?!.*\\b(?:match|if)\\b).*$",
+      "action": { "indent": "outdent" }
     }
-  ]
+  ],
+  "folding": {
+    "offSide": true
+  }
 }

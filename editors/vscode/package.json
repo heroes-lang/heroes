@@ -1,12 +1,22 @@
 {
   "name": "heroes-lang",
   "displayName": "Heroes",
-  "description": "Syntax highlighting for the Heroes language (.hero)",
-  "version": "0.0.1",
+  "description": "Syntax highlighting, editor configuration and a file icon theme for the Heroes language (.hero)",
+  "version": "0.3.0",
   "publisher": "heroes-lang",
   "private": true,
+  "license": "Apache-2.0",
+  "homepage": "https://heroes-lang.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/heroes-lang/heroes",
+    "directory": "editors/vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/heroes-lang/heroes/issues"
+  },
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.64.0"
   },
   "categories": [
     "Programming Languages"
@@ -22,7 +32,11 @@
         "extensions": [
           ".hero"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/hero-file.svg",
+          "dark": "./icons/hero-file.svg"
+        }
       }
     ],
     "grammars": [
@@ -32,10 +46,17 @@
         "path": "./syntaxes/heroes.tmLanguage.json"
       }
     ],
+    "configurationDefaults": {
+      "[hero]": {
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "editor.detectIndentation": false
+      }
+    },
     "iconThemes": [
       {
         "id": "heroes-bolt",
-        "label": "Heroes (bolt on .hero only)",
+        "label": "Heroes (bolt on .hero)",
         "path": "./icons/heroes-icon-theme.json"
       }
     ]

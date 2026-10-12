@@ -39,7 +39,15 @@
 #               spelling of its escape by code, is painted as one exactly
 #               where the lexer reads one, in each of the three literals, the
 #               grammar's rules RUN by `textmate.hero` (`escapes_painted`,
-#               defect 377).
+#               defect 377); and since 2026-10-12 it paints as foreign every
+#               word the lexer refuses and as contextual every word the parser
+#               reads in one place (`words_painted`), its number and character
+#               rules paint what the lexer reads and refuses, run
+#               (`literals_painted`), and the plugin's two manifests say the
+#               language's version (`plugin_agrees`);
+#   registry    each row of the reserved-word registry says what the compiler
+#               prints, the foreign words read out of `declared_word`'s arms
+#               and the other rows run (`registered`, 2026-10-12).
 #
 # WHERE THE COMPILER'S SIDE COMES FROM. The two lists — what it reserves and
 # what it refuses — are read out of `selfhost/`'s own source, not copied
@@ -53,6 +61,7 @@ use floors
 use shell
 use spec_text
 use strings
+use suite_grammar
 use textmate
 
 constant SPEC: str
@@ -104,7 +113,7 @@ constant SPEC_TOKENS: i64
 # with no commit ever naming a delta, for the plain reason that `measure`
 # defaults to the other file.
 constant REGISTRY_TOKENS: i64
-    916
+    1139
 
 # **The ceiling, 10240 by author decision 2026-09-14**, taken while
 # M-marked-acquisition was landing `acquires <releaser>` and the document stood
@@ -366,12 +375,16 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     named(@r, spec: text.must(), reserved: reserved)
     offered(@r, spec: text.must(), reserved: reserved)
     rejected(@r, spec: text.must(), refused: refused)
+    registered(@r, scratch: scratch, compiler: compiler)
     inventory(@r, spec: text.must())
     shape(@r, spec: text.must())
     anchors(@r)
     colouring(@r)
+    words_painted(@r, refused: refused)
     braces(@r, scratch: scratch, compiler: compiler)
     escapes_painted(@r, scratch: scratch, compiler: compiler, spec: text.must())
+    literals_painted(@r, scratch: scratch, compiler: compiler)
+    plugin_agrees(@r)
     return ok(r)
 
 # The two gated numbers, and the headroom.
@@ -2191,6 +2204,11 @@ test "the compiler's two lists are read out of its own source"
     assert strings.contains(text: words, needle: "None")
     assert strings.contains(text: words, needle: "catch")
 
+    # By word and not by substring, since 2026-10-12: `int`, whose arm the
+    # formatter breaks over two lines, and every word of the arms that carry
+    # several. `int` was read all along and painted by nothing.
+    assert absent_from(want: ["int", "null", "nil", "None", "try", "catch", "throw", "raise", "import", "include"], got: refused).len() == 0
+
 test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail is a decoration"
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
     refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
@@ -2455,3 +2473,965 @@ test "a section citation is judged where it names the spec, by title or by numbe
     assert unknown_anchors("(§4.19, spec § Strings,", other: none).len() == 0
     assert unknown_anchors("is `@` (spec § Functions and", other: none).len() == 0
     assert unknown_anchors("see spec § Fu", other: none).len() == 1
+
+## The words the grammar paints
+
+# The foreign words and the contextual words, read wherever the grammar
+# paints them (`textmate.scoped_words`), each held to the compiler's own table:
+# the two feature issues of M-vscode-extension (2026-09-10 and 2026-09-14)
+# asked for this check first, and the colouring to follow from it.
+#
+# **A word the lexer refuses and the grammar leaves plain is a mistake shown as
+# legal while it is typed**, the thesis's own feature missing from the editor:
+# `int` is refused by `declared_word` and the grammar never painted it, and no
+# check could say so until 2026-10-12. **A contextual word is a set held here
+# and a place held by the grammar's rules**: the parser reads each in one
+# position, so a program may still name a parameter `owned`; which words the
+# grammar paints is this check's, and where it paints them is the rules' own.
+constant FOREIGN_SCOPE: str
+    "invalid.illegal.foreign-keyword.hero"
+
+constant CONTEXTUAL_SCOPE: str
+    "keyword.other.contextual.hero"
+
+function words_painted(@r: report.Report, refused: [str])
+    text = read_file(GRAMMAR)
+
+    if text.is_err()
+        report.keep_failure(@r, label: "spec/colouring", detail: "  cannot read " + GRAMMAR)
+        return
+
+    if floors.sound(@r, label: "spec/colouring", found: refused.len(), floor: LEAST_FOREIGN, what: "refused words read out of " + KEYWORD_SOURCE)
+        words_agree(
+            @r,
+            want: refused,
+            got: textmate.scoped_words(grammar: text.must(), scope: FOREIGN_SCOPE),
+            scope: FOREIGN_SCOPE,
+            source: "`declared_word` in " + KEYWORD_SOURCE + " refuses",
+            lesson: "A word the lexer refuses and the grammar leaves plain is a mistake shown as\n  legal while it is typed; one the grammar paints and the lexer reads is a\n  correct program painted as an error."
+        )
+    contextual = suite_grammar.quoted_on_next_line(path: KEYWORD_SOURCE, marker: "constant WORD_")
+
+    if floors.sound(@r, label: "spec/colouring", found: contextual.len(), floor: suite_grammar.LEAST_CONTEXTUAL, what: "contextual words read out of " + KEYWORD_SOURCE)
+        words_agree(
+            @r,
+            want: contextual,
+            got: textmate.scoped_words(grammar: text.must(), scope: CONTEXTUAL_SCOPE),
+            scope: CONTEXTUAL_SCOPE,
+            source: "the `WORD_` constants of " + KEYWORD_SOURCE + " declare",
+            lesson: "A contextual word the grammar never paints is a mark of the language shown\n  as a name; one it paints that the parser does not read is a name shown as\n  a mark. Where each is painted is the grammar's rules: only where the parser\n  reads it."
+        )
+
+# One set of words against another, said in both directions.
+function words_agree(@r: report.Report, want: [str], got: [str]?, scope: str, source: str, lesson: str)
+    if got.is_err()
+        report.keep_failure(
+            @r,
+            label: "spec/colouring",
+            detail: "  the words " + GRAMMAR + " paints `" + scope + "` cannot be read: " + why_unrun(got) + "\n  Write the rule's words as one group of words, or teach `tests/harness/textmate.hero`\n  the shape: a word list the check cannot read is one nothing judges."
+        )
+        return
+    absent = absent_from(want: want, got: got.must())
+    extra = absent_from(want: got.must(), got: want)
+
+    if absent.len() == 0 && extra.len() == 0
+        report.keep_pass(@r)
+        return
+    said: str @= ""
+
+    if absent.len() > 0
+        said @ said + "  " + source + " and " + GRAMMAR + " does not paint `" + scope + "`: " + absent.join(" ") + "\n"
+
+    if extra.len() > 0
+        said @ said + "  " + GRAMMAR + " paints `" + scope + "` and " + source + " none of: " + extra.join(" ") + "\n"
+    report.keep_failure(@r, label: "spec/colouring", detail: said + "  " + lesson)
+
+## The literals the grammar paints, run
+
+# A number and a character literal, each written in ways the lexer reads and
+# ways it refuses, and a string's and an `f` literal's raw tab and control
+# characters, which the lexer refuses written as themselves (spec § 1; panel
+# 192's R2): each run through the grammar's rules for its literal as an editor
+# runs them (`textmate.hero`, first match wins), and lexed by the compiler.
+#
+# The grammar painted `07`, `1e5` and `1__000` as numbers and `'\'` and `'''`
+# as characters until 2026-10-12, and `1_000` as three tokens, no check
+# running a rule of either. **The forms are written here, which is a premise,
+# so it is held both ways**: what the table says the lexer does with each is
+# asked of the lexer too, and a form it reads otherwise is red, naming the
+# form, rather than a check judging the grammar by a table gone stale.
+#
+# `lexed` is `legal` for one literal the lexer reads, which the grammar must
+# paint as one, `constant.numeric` or `constant.character` over the whole;
+# `refused` for one it refuses, which the grammar must paint `invalid.illegal`
+# where it opens; and `split` for text the lexer reads as several tokens,
+# `1u8` a number and a name, which the grammar may paint neither as one
+# literal nor as an error, since the lexer refuses nothing there; and `plain`
+# for a character a comment holds, the tab, which the grammar must not paint
+# as an error (2026-10-12: a tab is refused everywhere else).
+record Form
+    rule: str
+    written: str
+    lexed: str
+
+function literal_forms() -> [Form]
+    out: [Form] @= []
+
+    for written in ["0", "7", "1_000", "0x1f", "0xFF", "0o37", "0b101", "0x1_f", "1.5", "07.5", "00.5", "1_000.5", "1.5_0"]
+        out @ out.push(Form(rule: "number", written: written, lexed: "legal"))
+
+    for written in ["07", "00", "0_7", "07x", "1e5", "1E5", "1.5e3", "1e+5", "0e5", "0X1F", "0O7", "0B1", "0x1.5", "0b1.0", "0x", "0xfg", "0b2", "0o8", "0b1x", "0x_1", "1__000", "1_", "1_u", "1_.5", "1.5_"]
+        out @ out.push(Form(rule: "number", written: written, lexed: "refused"))
+
+    for written in ["1u8", "1._5", "1e", "0xa.b"]
+        out @ out.push(Form(rule: "number", written: written, lexed: "split"))
+
+    for written in ["'a'", "'~'", "' '", "'\"'", "'\\n'", "'\\t'", "'\\r'", "'\\''", "'\\\\'"]
+        out @ out.push(Form(rule: "char", written: written, lexed: "legal"))
+
+    for written in ["'\\'", "'''", "''", "'ab'", "'é'", "'\\\"'", "'\\u{1b}'", "'\t'", "'\u{1}'"]
+        out @ out.push(Form(rule: "char", written: written, lexed: "refused"))
+
+    for rule in ["string", "interpolated"]
+        for written in ["\t", "\u{1}", "\u{1b}", "\u{7f}"]
+            out @ out.push(Form(rule: rule, written: written, lexed: "refused"))
+
+    # A comment and a heading hold a tab, and refuse the other controls.
+    for rule in ["comment", "section"]
+        out @ out.push(Form(rule: rule, written: "\t", lexed: "plain"))
+
+        for written in ["\u{1}", "\u{1b}", "\u{7f}"]
+            out @ out.push(Form(rule: rule, written: written, lexed: "refused"))
+
+    return out
+
+function literals_painted(@r: report.Report, scratch: str, compiler: str)
+    grammar = read_file(GRAMMAR)
+
+    if grammar.is_err()
+        report.keep_failure(@r, label: "spec/colouring", detail: "  cannot read " + GRAMMAR)
+        return
+    wrong: [str] @= []
+    path = scratch + "/spec-literal.hero"
+
+    for form in literal_forms()
+        got = form_painted(grammar: grammar.must(), form: form)
+
+        if got.is_err()
+            report.keep_failure(
+                @r,
+                label: "spec/colouring",
+                detail: "  the grammar's `" + form.rule + "` rules cannot be run on " + shown_form(form) + ": " + why_unpainted(got) + "\n  Teach `tests/harness/textmate.hero` the construct, or write the rule without it: a rule the check cannot run is a rule nothing judges."
+            )
+            return
+        written = write_file(path: path, text: form_program(form))
+
+        if written.is_err()
+            report.keep_failure(@r, label: "spec/colouring", detail: "  cannot write " + path)
+            return
+        ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "lex", path])
+
+        if ran.is_err() || ran.must().code != 0 && ran.must().code != 1
+            report.keep_failure(
+                @r,
+                label: "spec/colouring",
+                detail: "  the lexer gave no verdict on " + shown_form(form) + ": " + shell.ending(ran)
+            )
+            return
+        said = form_disagreement(form: form, code: ran.must().code, got: got.must())
+
+        if said.len() > 0
+            wrong @ wrong.push(said)
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/colouring",
+        detail: "  " + wrong.join("\n  ") + "\n  " + GRAMMAR + "'s rules for each literal were run as an editor runs them,\n  first match wins (`tests/harness/textmate.hero`), and each form was lexed by the\n  compiler. A form the lexer reads and the grammar paints otherwise is a correct\n  program shown as an error; one it refuses and the grammar paints as legal is a\n  mistake shown as legal."
+    )
+
+function form_painted(grammar: str, form: Form) -> textmate.Painted?
+    rules = textmate.rules_of(grammar: grammar, name: form.rule)?
+    return textmate.painted(rules: rules, text: form_subject(form))
+
+function why_unpainted(got: textmate.Painted?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# What the lexer is given: the form as a call's argument, a string's and an
+# `f` literal's between two letters as `escapes_painted` writes an escape.
+function form_program(form: Form) -> str
+    if form.rule == "string" || form.rule == "interpolated"
+        return escape_program(literal: form.rule, escape: form.written)
+
+    if form.rule == "comment" || form.rule == "section"
+        return comment_opener(form.rule) + " a" + form.written + "b\nfunction main()\n    print(1)\n"
+    return "function main()\n    print(" + form.written + ")\n"
+
+function comment_opener(rule: str) -> str
+    if rule == "section"
+        return "##"
+    return "#"
+
+# What the grammar's rules are run on: the form and what the program writes
+# after it, so a rule that runs past the form's end is seen to.
+function form_subject(form: Form) -> str
+    if form.rule == "string" || form.rule == "interpolated"
+        return form.written + "z\")"
+
+    if form.rule == "comment" || form.rule == "section"
+        return form.written + "b"
+    return form.written + ")"
+
+# Where the grammar and the lexer part on one form, in one sentence; "" where
+# they agree.
+function form_disagreement(form: Form, code: i64, got: textmate.Painted) -> str
+    whole = form.written.chars().len()
+    as_literal = strings.starts_with(text: got.scope, prefix: painted_prefix(form.rule)) && got.reach == whole
+    as_error = strings.starts_with(text: got.scope, prefix: "invalid.illegal")
+    shown = shown_form(form)
+
+    if form.lexed == "refused"
+        if code != 1
+            return shown + ": the table says the lexer refuses it, and the lexer exits " + code.to_str()
+
+        if !as_error
+            return shown + ": the lexer refuses it, and the grammar paints " + painted_said(got)
+        return ""
+
+    if form.lexed == "plain"
+        if code != 0
+            return shown + ": the table says the lexer reads it, and the lexer exits " + code.to_str()
+
+        if as_error
+            return shown + ": the lexer reads it, and the grammar paints " + painted_said(got)
+        return ""
+
+    if code != 0
+        return shown + ": the table says the lexer reads it, and the lexer exits " + code.to_str()
+
+    if form.lexed == "legal" && !as_literal
+        return shown + ": the lexer reads one literal, and the grammar paints " + painted_said(got)
+
+    if form.lexed == "split" && (as_literal || as_error)
+        return shown + ": the lexer reads several tokens and refuses none, and the grammar paints " + painted_said(got)
+    return ""
+
+function painted_prefix(rule: str) -> str
+    if rule == "number"
+        return "constant.numeric"
+    return "constant.character"
+
+# A form in a sentence: its literal, with every character a line cannot show
+# written by its code, so a report never writes a raw tab or ESC.
+function shown_form(form: Form) -> str
+    shown: str @= ""
+
+    for c in form.written.chars()
+        code = to_i64(c[0]).must()
+
+        if c.len() == 1 && (code < 32 || code == 127)
+            digits = "0123456789ABCDEF"
+            shown @ shown + "<U+00" + digits.slice(from: code / 16, to: code / 16 + 1) + digits.slice(from: code % 16, to: code % 16 + 1) + ">"
+        else
+            shown @ shown + c
+
+    where: str @= "a number"
+
+    if form.rule == "char"
+        where @ "a character literal"
+    else if form.rule == "comment"
+        where @ "a comment"
+    else if form.rule == "section"
+        where @ "a heading"
+    else if form.rule != "number"
+        where @ literal_said(form.rule)
+    return "`" + shown + "` in " + where
+
+## The plugin's version
+
+constant PLUGIN_MANIFEST: str
+    "editors/vscode/package.json"
+
+constant VSIX_MANIFEST: str
+    "editors/vsix/extension.vsixmanifest"
+
+constant VERSION_SOURCE: str
+    "selfhost/main.hero"
+
+# The plugin's version is the language's (author decision 2026-10-12), and the
+# package's two manifests say one version, one engine and one description:
+# VS Code reads `package.json`, the Marketplace and `code --install-extension`
+# read the `.vsixmanifest`, and each fact is written in both by hand. The
+# plugin said `0.0.1` beside a language at `0.3.0` until that day.
+function plugin_agrees(@r: report.Report)
+    package = read_file(PLUGIN_MANIFEST)
+    manifest = read_file(VSIX_MANIFEST)
+    main_text = read_file(VERSION_SOURCE)
+
+    if package.is_err() || manifest.is_err() || main_text.is_err()
+        report.keep_failure(
+            @r,
+            label: "spec/colouring",
+            detail: "  cannot read " + PLUGIN_MANIFEST + ", " + VSIX_MANIFEST + " or " + VERSION_SOURCE
+        )
+        return
+    wrong = plugin_disagreements(package: package.must(), manifest: manifest.must(), main_text: main_text.must())
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/colouring",
+        detail: "  " + wrong.join("\n  ") + "\n  The plugin's version is the language's, `VERSION` in " + VERSION_SOURCE + "\n  (author decision 2026-10-12), and the two manifests describe one package."
+    )
+
+# Where the three files part, one sentence each.
+function plugin_disagreements(package: str, manifest: str, main_text: str) -> [str]
+    wrong: [str] @= []
+    language = quoted_after(text: main_text, marker: "constant VERSION: str")
+    version = package_field(package: package, path: ["version"])
+
+    if language.len() == 0
+        wrong @ wrong.push("no `constant VERSION: str` with its string on the next line in " + VERSION_SOURCE)
+    else if version != language
+        wrong @ wrong.push(PLUGIN_MANIFEST + " says version `" + version + "`, and the language is `" + language + "`")
+    identity = xml_attribute(text: manifest, after: "<Identity ", name: "Version")
+
+    if identity != version
+        wrong @ wrong.push(
+            VSIX_MANIFEST + " says version `" + identity + "`, and " + PLUGIN_MANIFEST + " `" + version + "`"
+        )
+    engine = package_field(package: package, path: ["engines", "vscode"])
+    property = xml_attribute(text: manifest, after: "Id=\"Microsoft.VisualStudio.Code.Engine\"", name: "Value")
+
+    if engine.len() == 0 || property != engine
+        wrong @ wrong.push(
+            VSIX_MANIFEST + " says the engine `" + property + "`, and " + PLUGIN_MANIFEST + " `" + engine + "`"
+        )
+    description = package_field(package: package, path: ["description"])
+    described = xml_text(text: manifest, element: "Description")
+
+    if description.len() == 0 || described != description
+        wrong @ wrong.push(
+            VSIX_MANIFEST + " describes the package as \"" + described + "\", and " + PLUGIN_MANIFEST + " as \"" + description + "\""
+        )
+    return wrong
+
+# The first quoted text on the line after the first line holding `marker`,
+# "" where there is none.
+function quoted_after(text: str, marker: str) -> str
+    take: bool @= false
+
+    for line in strings.lines(text)
+        if take
+            return first_quoted(text: line, from: 0).default("")
+        take @ strings.contains(text: line, needle: marker)
+
+    return ""
+
+# The string at `path` in the package's JSON, each step a member of the
+# object before it; "" where any step is absent.
+function package_field(package: str, path: [str]) -> str
+    at: textmate.Span @= textmate.Span(start: textmate.skip_space(text: package, at: 0), stop: package.len())
+    i: i64 @= 0
+
+    while i + 1 < path.len()
+        inner = textmate.member(text: package, object: at, key: path[i])
+
+        if inner.is_err()
+            return ""
+        at @ inner.must()
+        i @ i + 1
+
+    if path.len() == 0
+        return ""
+    return textmate.optional_string(text: package, object: at, key: path[path.len() - 1]).default("")
+
+# The value of the attribute `name` in the first tag holding `after`, read
+# from there to the tag's end; "" where there is none.
+function xml_attribute(text: str, after: str, name: str) -> str
+    at = strings.index_of(text: text, needle: after)
+
+    if at.is_err()
+        return ""
+    rest = text.slice(from: at.must(), to: text.len())
+    tag_end = strings.index_of(text: rest, needle: ">")
+
+    if tag_end.is_err()
+        return ""
+    tag = rest.slice(from: 0, to: tag_end.must())
+    opens = strings.index_of(text: tag, needle: " " + name + "=\"")
+
+    if opens.is_err()
+        return ""
+    return xml_unescaped(first_quoted(text: tag, from: opens.must()).default(""))
+
+# The text of the first `element`, between its opening tag and its closing
+# one; "" where there is none.
+function xml_text(text: str, element: str) -> str
+    at = strings.index_of(text: text, needle: "<" + element)
+
+    if at.is_err()
+        return ""
+    rest = text.slice(from: at.must(), to: text.len())
+    opened = strings.index_of(text: rest, needle: ">")
+    closes = strings.index_of(text: rest, needle: "</" + element + ">")
+
+    if opened.is_err() || closes.is_err() || closes.must() < opened.must()
+        return ""
+    return xml_unescaped(rest.slice(from: opened.must() + 1, to: closes.must()))
+
+# XML's five named entities undone, `&amp;` last so an escaped entity stays one.
+function xml_unescaped(text: str) -> str
+    out: str @= text
+
+    for pair in [["&lt;", "<"], ["&gt;", ">"], ["&quot;", "\""], ["&apos;", "'"], ["&amp;", "&"]]
+        out @ strings.split_text(text: out, separator: pair[0]).join(pair[1])
+
+    return out
+
+## The registry says what the compiler prints
+
+# `spec/reserved-words.md` is the registry of the prescribed errors, and it
+# said texts the compiler had stopped printing: `fn`'s `x: int -> int`,
+# `var`'s `v: int @ 0`, `const`'s `MAX: int` and `null`'s `int?`, written for
+# a language whose integer was `int`, which the language deleted and refused
+# on 2026-08-12 (3280ffeaa); and it had no row for `int` (defect 676,
+# 2026-10-12). Nothing
+# compared a row to the compiler, so each drifted with nobody told.
+#
+# **A row naming foreign words is held to `declared_word`'s arm, read from the
+# source**: the same words, and its text the arm's message after `error: `,
+# whitespace aside. The table's own line breaks and doubled spaces are the
+# notation, not the claim. **A row naming no foreign word is a parser's
+# prescription, and it is RUN**: `registry_probes()` gives each one the program
+# that provokes it, and the row says what `check --brief` prints first. A row
+# with no probe is red, so no row is left that nothing holds. **And the
+# keywords' paragraph names `keyword()`'s words**, the closed list.
+record Arm
+    words: [str]
+    message: str
+
+record Row
+    head: str
+    text: str
+
+record Probe
+    head: str
+    program: str
+
+function registry_probes() -> [Probe]
+    return [
+        Probe(head: "`return` used as `return;`", program: "function f() -> i64\n    return;\n\nfunction main()\n    print(f())\n")
+        Probe(head: "`return` with no value, in a function with `-> i64`", program: "function f() -> i64\n    return\n\nfunction main()\n    print(f())\n")
+    ]
+
+function registered(@r: report.Report, scratch: str, compiler: str)
+    text = read_file(REGISTRY)
+    source = read_file(KEYWORD_SOURCE)
+
+    if text.is_err() || source.is_err()
+        report.keep_failure(@r, label: "spec/registry", detail: "  cannot read " + REGISTRY + " or " + KEYWORD_SOURCE)
+        return
+    arms = foreign_arms(source.must())
+    words: [str] @= []
+
+    for arm in arms
+        for word in arm.words
+            words @ words.push(word)
+
+    if !floors.sound(@r, label: "spec/registry", found: words.len(), floor: LEAST_FOREIGN, what: "foreign words read with their messages out of " + KEYWORD_SOURCE)
+        return
+    rows = registry_rows(text.must())
+    wrong: [str] @= registry_disagreements(rows: rows, arms: arms)
+
+    for one in keyword_paragraph_disagreements(registry: text.must(), keywords: compiler_keywords(KEYWORD_SOURCE))
+        wrong @ wrong.push(one)
+
+    for one in unprobed_rows(rows: rows, probes: registry_probes())
+        wrong @ wrong.push(one)
+
+    for probe in registry_probes()
+        said = probe_said(scratch: scratch, compiler: compiler, probe: probe)
+
+        if said.is_err()
+            wrong @ wrong.push("the row `" + probe.head + "` could not be run: " + why_said(said))
+            continue
+
+        for one in probe_disagreements(rows: rows, probe: probe, said: said.must())
+            wrong @ wrong.push(one)
+
+    if wrong.len() == 0
+        report.keep_pass(@r)
+        return
+    report.keep_failure(
+        @r,
+        label: "spec/registry",
+        detail: "  " + wrong.join("\n  ") + "\n  " + REGISTRY + " is the registry of the prescribed errors, and a row\n  saying a text the compiler does not print is a false briefing: the rows for\n  `fn`, `var`, `const` and `null` said `int` from 2026-08-12, when the language deleted\n  and refused it (3280ffeaa), to 2026-10-12 (defect 676)."
+    )
+
+function why_said(got: str?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# What `check --brief` prints first of the probe's program, the message after
+# its `error[code]: `.
+function probe_said(scratch: str, compiler: str, probe: Probe) -> str?
+    path = scratch + "/spec-registry.hero"
+    write_file(path: path, text: probe.program)?
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "check", path, "--brief"])?
+
+    for line in strings.lines(ran.err + ran.out)
+        at = strings.index_of(text: line, needle: "]: ")
+
+        if strings.contains(text: line, needle: "error[") && !at.is_err()
+            return ok(line.slice(from: at.must() + 3, to: line.len()))
+
+    return fail(code: "no_diagnostic", msg: "`check --brief` printed no error, exit " + ran.code.to_str())
+
+# Every foreign arm of `declared_word`: the words before its `=>`, on the
+# message's line or the line above it as `words_in_arms` reads them, and the
+# message's text.
+function foreign_arms(source: str) -> [Arm]
+    out: [Arm] @= []
+    previous: str @= ""
+    marker = "ForeignWord(message: \""
+
+    for row in strings.lines(source)
+        at = strings.index_of(text: row, needle: marker)
+        head_row: str @= previous
+        previous @ row
+
+        if at.is_err()
+            continue
+        arrow_here = strings.index_of(text: row.slice(from: 0, to: at.must()), needle: "=>")
+
+        if !arrow_here.is_err()
+            head_row @ row
+        arrow = strings.index_of(text: head_row, needle: "=>")
+
+        if arrow.is_err()
+            continue
+        head = head_row.slice(from: 0, to: arrow.must())
+        words: [str] @= []
+        cursor: i64 @= 0
+
+        while cursor < head.len()
+            quoted = first_quoted(text: head, from: cursor)
+
+            if quoted.is_err()
+                cursor @ head.len()
+            else
+                words @ words.push(quoted.must())
+                cursor @ cursor + advance_past(text: head, from: cursor)
+
+        if words.len() > 0
+            out @ out.push(Arm(words: words, message: string_at(text: row, from: at.must() + marker.len())))
+
+    return out
+
+# The text of a Heroes string literal whose opening quote is just before
+# `from`, its two escapes a message can hold undone.
+function string_at(text: str, from: i64) -> str
+    cs = text.slice(from: from, to: text.len()).chars()
+    out: str @= ""
+    i: i64 @= 0
+
+    while i < cs.len() && cs[i] != "\""
+        if cs[i] == "\\" && i + 1 < cs.len()
+            out @ out + cs[i + 1]
+            i @ i + 2
+            continue
+        out @ out + cs[i]
+        i @ i + 1
+
+    return out
+
+# The table's rows, each its first cell and its second, the header and the
+# separator left out because their first cell holds no backtick.
+function registry_rows(text: str) -> [Row]
+    out: [Row] @= []
+
+    for line in strings.lines(text)
+        if !strings.starts_with(text: line, prefix: "| `") || !strings.ends_with(text: line, suffix: " |")
+            continue
+        inner = line.slice(from: 2, to: line.len() - 2)
+        cut = strings.index_of(text: inner, needle: " | ")
+
+        if cut.is_err()
+            continue
+        out @ out.push(
+            Row(head: inner.slice(from: 0, to: cut.must()), text: inner.slice(from: cut.must() + 3, to: inner.len()))
+        )
+
+    return out
+
+# The foreign words a row's first cell names, `` `null` / `nil` ``; none where
+# the cell holds anything else, a parser's prescription such as `` `return`
+# used as `return;` ``.
+function row_words(head: str) -> [str]
+    out: [str] @= []
+    none: [str] = []
+
+    for piece in strings.split_text(text: head, separator: " / ")
+        if piece.len() < 3 || !strings.starts_with(text: piece, prefix: "`") || !strings.ends_with(text: piece, suffix: "`")
+            return none
+        word = piece.slice(from: 1, to: piece.len() - 1)
+
+        for c in word.chars()
+            if c.len() != 1 || !(c[0] >= 'a' && c[0] <= 'z' || c[0] >= 'A' && c[0] <= 'Z')
+                return none
+
+        out @ out.push(word)
+
+    return out
+
+# Where the rows and the arms part, one sentence each.
+function registry_disagreements(rows: [Row], arms: [Arm]) -> [str]
+    wrong: [str] @= []
+    listed: [str] @= []
+
+    for row in rows
+        words = row_words(row.head)
+
+        if words.len() == 0
+            continue
+
+        for word in words
+            listed @ listed.push(word)
+
+        arm = arm_of(arms: arms, word: words[0])
+
+        if arm.is_err()
+            wrong @ wrong.push("the row for " + row.head + " names words the lexer does not refuse")
+            continue
+
+        if absent_from(want: words, got: arm.must().words).len() > 0 || absent_from(want: arm.must().words, got: words).len() > 0
+            wrong @ wrong.push(
+                "the row for " + row.head + " groups other words than the compiler's arm, `" + arm.must().words.join("` `") + "`"
+            )
+        want = "error: " + arm.must().message
+
+        if normalised(row.text) != normalised(want)
+            wrong @ wrong.push(
+                "the row for " + row.head + " says\n      " + row.text + "\n    and the compiler prints\n      " + want
+            )
+
+    for arm in arms
+        for word in arm.words
+            if absent_from(want: [word], got: listed).len() > 0
+                wrong @ wrong.push("`" + word + "` is refused by the lexer, and the registry has no row for it")
+
+    return wrong
+
+function arm_of(arms: [Arm], word: str) -> Arm?
+    for arm in arms
+        if absent_from(want: [word], got: arm.words).len() == 0
+            return ok(arm)
+
+    return fail(code: "no_arm", msg: word)
+
+# Where a probe's row and what the compiler printed part.
+function probe_disagreements(rows: [Row], probe: Probe, said: str) -> [str]
+    for row in rows
+        if row.head == probe.head
+            want = "error: " + said
+
+            if normalised(row.text) != normalised(want)
+                return [
+                    "the row for " + row.head + " says\n      " + row.text + "\n    and the compiler prints\n      " + want
+                ]
+            none: [str] = []
+            return none
+
+    return ["no row of the registry is headed " + probe.head + ", which a probe here runs"]
+
+# The registry's rows that name no foreign word and that no probe runs.
+function unprobed_rows(rows: [Row], probes: [Probe]) -> [str]
+    out: [str] @= []
+
+    for row in rows
+        if row_words(row.head).len() > 0
+            continue
+        held: bool @= false
+
+        for probe in probes
+            if probe.head == row.head
+                held @ true
+
+        if !held
+            out @ out.push(
+                "the row " + row.head + " names no foreign word and no probe here runs it, so nothing holds its text"
+            )
+
+    return out
+
+# The keywords' paragraph against `keyword()`: the backticked words from
+# `Keywords of Heroes itself` to the `— plus` after them.
+function keyword_paragraph_disagreements(registry: str, keywords: [str]) -> [str]
+    at = strings.index_of(text: registry, needle: "Keywords of Heroes itself")
+
+    if at.is_err()
+        return ["the registry has no paragraph opening `Keywords of Heroes itself`"]
+    rest = registry.slice(from: at.must(), to: registry.len())
+    stop = strings.index_of(text: rest, needle: "— plus")
+    paragraph: str @= rest
+
+    if !stop.is_err()
+        paragraph @ rest.slice(from: 0, to: stop.must())
+    spans: [str] @= []
+    pieces = strings.split_text(text: paragraph, separator: "`")
+    i: i64 @= 1
+
+    while i < pieces.len()
+        if row_words("`" + pieces[i] + "`").len() == 1
+            spans @ spans.push(pieces[i])
+        i @ i + 2
+
+    wrong: [str] @= []
+    absent = absent_from(want: keywords, got: spans)
+    extra = absent_from(want: spans, got: keywords)
+
+    if absent.len() > 0
+        wrong @ wrong.push(
+            "the keywords' paragraph leaves out `" + absent.join("` `") + "`, which `keyword()` reserves"
+        )
+
+    if extra.len() > 0
+        wrong @ wrong.push(
+            "the keywords' paragraph names `" + extra.join("` `") + "`, which `keyword()` does not reserve"
+        )
+    return wrong
+
+function normalised(text: str) -> str
+    return strings.words(text).join(" ")
+
+test "a word the grammar leaves out, and one it paints too many, are each red and named"
+    missing: report.Report @= report.empty()
+    words_agree(
+        @missing,
+        want: ["int", "fn"],
+        got: ok(["fn"]),
+        scope: "s.hero",
+        source: "the table holds",
+        lesson: "why"
+    )
+    assert missing.failed == 1
+    assert strings.contains(text: missing.failures[0], needle: "does not paint `s.hero`: int")
+    extra: report.Report @= report.empty()
+    words_agree(
+        @extra,
+        want: ["fn"],
+        got: ok(["fn", "while"]),
+        scope: "s.hero",
+        source: "the table holds",
+        lesson: "why"
+    )
+    assert extra.failed == 1
+    assert strings.contains(text: extra.failures[0], needle: "none of: while")
+    unread: report.Report @= report.empty()
+    words_agree(
+        @unread,
+        want: ["fn"],
+        got: fail(code: "unread", msg: "a group of no words"),
+        scope: "s.hero",
+        source: "the table holds",
+        lesson: "why"
+    )
+    assert unread.failed == 1
+    assert strings.contains(text: unread.failures[0], needle: "a group of no words")
+
+    # Order is not the claim, and neither is a word painted by two rules.
+    same: report.Report @= report.empty()
+    words_agree(
+        @same,
+        want: ["as", "tag"],
+        got: ok(["tag", "as", "tag"]),
+        scope: "s.hero",
+        source: "the table holds",
+        lesson: "why"
+    )
+    assert same.passed == 1
+    assert same.failed == 0
+
+test "the plugin's version, engine and description are each held in both manifests"
+    package = "{\n  \"name\": \"heroes-lang\",\n  \"description\": \"Heroes & more\",\n  \"version\": \"0.3.0\",\n  \"engines\": { \"vscode\": \"^1.71.0\" }\n}\n"
+    manifest = "<PackageManifest>\n  <Metadata>\n    <Identity Language=\"en-US\" Id=\"heroes-lang\" Version=\"0.3.0\" Publisher=\"heroes-lang\" />\n    <Description xml:space=\"preserve\">Heroes &amp; more</Description>\n    <Properties>\n      <Property Id=\"Microsoft.VisualStudio.Code.Engine\" Value=\"^1.71.0\" />\n    </Properties>\n  </Metadata>\n</PackageManifest>\n"
+    main_text = "# the version\nconstant VERSION: str\n    \"0.3.0\"\n"
+    assert plugin_disagreements(package: package, manifest: manifest, main_text: main_text).len() == 0
+    behind = plugin_disagreements(
+        package: package,
+        manifest: manifest,
+        main_text: "constant VERSION: str\n    \"0.4.0\"\n"
+    )
+    assert behind.len() == 1
+    assert strings.contains(text: behind[0], needle: "says version `0.3.0`, and the language is `0.4.0`")
+    identity = plugin_disagreements(
+        package: package,
+        manifest: strings.split_text(text: manifest, separator: "Version=\"0.3.0\"").join("Version=\"0.0.1\""),
+        main_text: main_text
+    )
+    assert identity.len() == 1
+    assert strings.contains(text: identity[0], needle: "says version `0.0.1`")
+    engine = plugin_disagreements(
+        package: strings.split_text(text: package, separator: "^1.71.0").join("^1.60.0"),
+        manifest: manifest,
+        main_text: main_text
+    )
+    assert engine.len() == 1
+    assert strings.contains(text: engine[0], needle: "the engine `^1.71.0`")
+    described = plugin_disagreements(
+        package: package,
+        manifest: strings.split_text(text: manifest, separator: "&amp; more").join("only"),
+        main_text: main_text
+    )
+    assert described.len() == 1
+    assert strings.contains(text: described[0], needle: "describes the package as \"Heroes only\"")
+    assert plugin_disagreements(package: package, manifest: manifest, main_text: "no version here\n").len() == 1
+    assert quoted_after(text: main_text, marker: "constant VERSION: str") == "0.3.0"
+    assert package_field(package: package, path: ["engines", "vscode"]) == "^1.71.0"
+    assert package_field(package: package, path: ["engines", "absent"]) == ""
+    assert xml_attribute(text: manifest, after: "<Identity ", name: "Id") == "heroes-lang"
+    assert xml_text(text: manifest, element: "Description") == "Heroes & more"
+
+test "a literal the lexer reads painted otherwise, and one it refuses painted as legal, are each a sentence"
+    legal = Form(rule: "number", written: "1_000", lexed: "legal")
+    assert form_disagreement(form: legal, code: 0, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 5)) == ""
+    assert strings.contains(
+        text: form_disagreement(form: legal, code: 0, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 1)),
+        needle: "`1_000` in a number: the lexer reads one literal, and the grammar paints `constant.numeric.integer.hero` over 1 characters"
+    )
+    refused = Form(rule: "char", written: "'\\'", lexed: "refused")
+    assert form_disagreement(form: refused, code: 1, got: textmate.Painted(scope: "invalid.illegal.char-literal.hero", reach: 3)) == ""
+    assert strings.contains(
+        text: form_disagreement(form: refused, code: 1, got: textmate.Painted(scope: "constant.character.hero", reach: 3)),
+        needle: "the lexer refuses it, and the grammar paints `constant.character.hero`"
+    )
+
+    # The table is a premise, and the lexer is asked: a form it reads where
+    # the table says refused is red, naming the table.
+    assert strings.contains(
+        text: form_disagreement(form: refused, code: 0, got: textmate.Painted(scope: "invalid.illegal.char-literal.hero", reach: 3)),
+        needle: "the table says the lexer refuses it"
+    )
+    assert strings.contains(
+        text: form_disagreement(form: legal, code: 1, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 5)),
+        needle: "the table says the lexer reads it"
+    )
+
+    # Several tokens: painted as one literal or as an error is red, a part of
+    # it painted or nothing is not.
+    split = Form(rule: "number", written: "1u8", lexed: "split")
+    assert form_disagreement(form: split, code: 0, got: textmate.Painted(scope: "", reach: 0)) == ""
+    assert form_disagreement(form: split, code: 0, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 1)) == ""
+    assert form_disagreement(form: split, code: 0, got: textmate.Painted(scope: "invalid.illegal.separator.hero", reach: 1)).len() > 0
+    assert form_disagreement(form: split, code: 0, got: textmate.Painted(scope: "constant.numeric.integer.hero", reach: 3)).len() > 0
+
+    # A raw control character is shown by its code, never written raw.
+    assert shown_form(Form(rule: "string", written: "\t\u{1b}é", lexed: "refused")) == "`<U+0009><U+001B>é` in a string"
+    assert form_program(Form(rule: "interpolated", written: "\t", lexed: "refused")) == "function main()\n    print(f\"a\tz\")\n"
+    assert form_subject(Form(rule: "number", written: "07", lexed: "refused")) == "07)"
+
+    # A comment's tab is the lexer's to hold, and painted as an error it is red.
+    tab = Form(rule: "comment", written: "\t", lexed: "plain")
+    assert form_disagreement(form: tab, code: 0, got: textmate.Painted(scope: "", reach: 0)) == ""
+    assert strings.contains(
+        text: form_disagreement(form: tab, code: 0, got: textmate.Painted(scope: "invalid.illegal.tab.hero", reach: 1)),
+        needle: "`<U+0009>` in a comment: the lexer reads it, and the grammar paints `invalid.illegal.tab.hero`"
+    )
+    assert form_program(Form(rule: "section", written: "\t", lexed: "plain")) == "## a\tb\nfunction main()\n    print(1)\n"
+
+    # Every rule a form names is one the grammar holds, run on the real file.
+    real = read_file(GRAMMAR)
+    assert !real.is_err()
+
+    for form in literal_forms()
+        assert !form_painted(grammar: real.must(), form: form).is_err()
+
+test "each registry row is held to the compiler's arm, and a word, a grouping or a text apart is a sentence"
+    source = "        \"fn\" => ok(\n            ForeignWord(message: \"`fn` is not a word — use `function`\", repair: .swap(word: \"function\"))\n        )\n        \"null\" | \"nil\" => ok(\n            ForeignWord(message: \"there is no \\\"null\\\" here\", repair: .guidance)\n        )\n        \"let\" => ok(ForeignWord(message: \"`let` is not a word\", repair: .guidance))\n        return ok(\n            ForeignWord(message: \"a call's own words\", repair: .guidance)\n        )\n"
+    arms = foreign_arms(source)
+    assert arms.len() == 3
+    assert arms[0].words == ["fn"]
+    assert arms[1].words == ["null", "nil"]
+    assert arms[1].message == "there is no \"null\" here"
+    assert arms[2].words == ["let"]
+    registry = "| Foreign word | Error text |\n|---|---|\n| `fn` | error: `fn` is not a word —  use `function` |\n| `null` / `nil` | error: there is no \"null\" here |\n| `let` | error: `let` is not a word |\n| `return` used as `return;` | error: something |\n"
+    rows = registry_rows(registry)
+    assert rows.len() == 4
+    assert row_words(rows[1].head) == ["null", "nil"]
+    assert row_words(rows[3].head).len() == 0
+
+    # Whitespace is the table's notation, not the claim.
+    assert registry_disagreements(rows: rows, arms: arms).len() == 0
+    wrong_text = registry_rows(strings.split_text(text: registry, separator: "use `function`").join("use `fun`"))
+    assert strings.contains(
+        text: registry_disagreements(rows: wrong_text, arms: arms).join("\n"),
+        needle: "the row for `fn` says"
+    )
+    no_row = registry_rows(
+        strings.split_text(text: registry, separator: "| `let` | error: `let` is not a word |\n").join("")
+    )
+    assert strings.contains(
+        text: registry_disagreements(rows: no_row, arms: arms).join("\n"),
+        needle: "`let` is refused by the lexer, and the registry has no row for it"
+    )
+    regrouped = registry_rows(strings.split_text(text: registry, separator: "`null` / `nil`").join("`null`"))
+    assert strings.contains(
+        text: registry_disagreements(rows: regrouped, arms: arms).join("\n"),
+        needle: "groups other words than the compiler's arm"
+    )
+    stranger = registry_rows(registry + "| `goto` | error: no |\n")
+    assert strings.contains(
+        text: registry_disagreements(rows: stranger, arms: arms).join("\n"),
+        needle: "names words the lexer does not refuse"
+    )
+
+    # A row naming no foreign word is run, and one no probe runs is red.
+    probe = Probe(head: "`return` used as `return;`", program: "")
+    assert probe_disagreements(rows: rows, probe: probe, said: "something").len() == 0
+    assert strings.contains(
+        text: probe_disagreements(rows: rows, probe: probe, said: "other").join("\n"),
+        needle: "and the compiler prints"
+    )
+    assert strings.contains(
+        text: probe_disagreements(rows: rows, probe: Probe(head: "`x`", program: ""), said: "s").join("\n"),
+        needle: "no row of the registry is headed"
+    )
+    assert unprobed_rows(rows: rows, probes: [probe]).len() == 0
+    assert unprobed_rows(rows: rows, probes: [Probe(head: "`x`", program: "")]).len() == 1
+    assert unprobed_rows(rows: rows, probes: registry_probes()).len() == 0
+
+    # The keywords' paragraph names `keyword()`'s words, no fewer and no more.
+    paragraph = "Keywords of Heroes itself (cannot be identifiers): `if` `else` — plus the forms `=>`.\n"
+    assert keyword_paragraph_disagreements(registry: paragraph, keywords: ["if", "else"]).len() == 0
+    assert strings.contains(
+        text: keyword_paragraph_disagreements(registry: paragraph, keywords: ["if", "else", "nullptr"]).join("\n"),
+        needle: "leaves out `nullptr`"
+    )
+    assert strings.contains(
+        text: keyword_paragraph_disagreements(registry: paragraph, keywords: ["if"]).join("\n"),
+        needle: "names `else`"
+    )
+
+    # And the real table: every word `declared_word` refuses, each with its
+    # message, the two-line arm and the three-word arm included.
+    real = read_file(KEYWORD_SOURCE)
+    assert !real.is_err()
+    found = foreign_arms(real.must())
+    words: [str] @= []
+
+    for arm in found
+        for word in arm.words
+            words @ words.push(word)
+
+    assert words.len() >= LEAST_FOREIGN
+    assert absent_from(want: words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord("), got: words).len() == 0
+    assert arm_of(arms: found, word: "int").must().message == "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`"
+    assert arm_of(arms: found, word: "None").must().words == ["null", "nil", "None"]

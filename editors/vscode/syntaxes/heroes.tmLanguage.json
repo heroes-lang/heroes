@@ -6,31 +6,55 @@
   "patterns": [
     { "include": "#section" },
     { "include": "#comment" },
+    { "include": "#tab" },
+    { "include": "#control" },
     { "include": "#foreign" },
+    { "include": "#use" },
+    { "include": "#extern" },
+    { "include": "#declaration" },
     { "include": "#keyword" },
     { "include": "#builtin-type" },
     { "include": "#hole" },
     { "include": "#interpolated" },
     { "include": "#string" },
+    { "include": "#backtick" },
     { "include": "#char" },
     { "include": "#number" },
-    { "include": "#declaration" },
+    { "include": "#slashes" },
     { "include": "#operator" }
   ],
   "repository": {
     "section": {
-      "comment": "`##` opens a section heading (spec: comment text is markdown)",
-      "match": "^\\s*##.*$",
-      "name": "markup.heading.hero"
+      "comment": "`##` opens a section heading (spec: comment text is markdown). Since 2026-10-12 it is scoped as a comment as well as a heading, so a theme that paints no heading still paints it as the comment it is, and it ends at its line's end, where the lexer ends it. A tab inside it is legal, as in any comment, and is not painted; a raw control character is refused there and is.",
+      "begin": "^\\s*##",
+      "end": "$",
+      "name": "comment.line.double-number-sign.hero markup.heading.hero",
+      "patterns": [
+        { "include": "#control" }
+      ]
     },
     "comment": {
-      "comment": "A comment directly above a declaration is its documentation",
-      "match": "#.*$",
-      "name": "comment.line.number-sign.hero"
+      "comment": "A comment directly above a declaration is its documentation. A region since 2026-10-12, so the raw control characters the lexer refuses inside a comment are painted there (spec § 1); a tab, which a comment holds, is not.",
+      "begin": "#",
+      "end": "$",
+      "name": "comment.line.number-sign.hero",
+      "patterns": [
+        { "include": "#control" }
+      ]
+    },
+    "tab": {
+      "comment": "A tab is a compile error everywhere but inside a comment (spec § 1; design.md §4.15): `tab_in_indentation`, `tab_in_line`, and `raw_tab` inside a literal. The two comment rules come first in the list and take their whole line, so a tab inside a comment never reaches this rule. Written `\\x09` and never `\\t`, which the check's own reader refuses.",
+      "match": "\\x09",
+      "name": "invalid.illegal.tab.hero"
+    },
+    "control": {
+      "comment": "A raw control character, the tab and the line feed aside: refused in code (`unexpected_character`), in a comment, a string, an `f` literal's text and a character literal (`invisible_character`, panel 192's R2 and R3). The bidirectional controls, U+2028 and U+2029 are refused too and are not painted here: their pattern needs `\\x{…}`, which the check's reader does not run.",
+      "match": "[\\x00-\\x08\\x0a-\\x1f\\x7f]",
+      "name": "invalid.illegal.control-character.hero"
     },
     "foreign": {
-      "comment": "spec/reserved-words.md — keywords imported from another language. Marked INVALID on purpose: the editor shows the mistake before the compiler does. `use` was in this list and is a Heroes keyword, so every module line in every file showed as an error; it now sits in #keyword, where the spec puts it (`a module is named with use`). The list is otherwise the spec's own table, word for word.",
-      "match": "\\b(struct|enum|union|class|fn|func|def|let|var|const|elif|switch|case|null|nil|None|try|catch|throw|raise|import|include)\\b",
+      "comment": "spec/reserved-words.md — keywords imported from another language. Marked INVALID on purpose: the editor shows the mistake before the compiler does. `use` was in this list and is a Heroes keyword, so every module line in every file showed as an error; it now sits in #keyword, where the spec puts it (`a module is named with use`). The list is otherwise the spec's own table, word for word. Corrected 2026-10-12: the table it copied had no row for `int`, which `selfhost/keywords.hero`'s `declared_word` has refused since `selfhost/` was born, so this list never painted it. The list is now the words of `declared_word`'s arms, which the `spec/colouring` check holds it to, and the registry's rows are held to the same arms.",
+      "match": "\\b(int|struct|enum|union|class|fn|func|def|let|var|const|elif|switch|case|null|nil|None|try|catch|throw|raise|import|include)\\b",
       "name": "invalid.illegal.foreign-keyword.hero"
     },
     "keyword": {
@@ -38,9 +62,70 @@
       "match": "\\b(constant|function|record|variant|match|if|else|for|while|in|break|continue|return|test|assert|extern|nullptr|use|true|false|fail)\\b",
       "name": "keyword.control.hero"
     },
+    "use": {
+      "comment": "`as` is a contextual word (`selfhost/keywords.hero`'s `contextual()`), read by the parser only after a `use` line's path (spec § 1, `Use`), so it is painted only there: a column-0 `use`, its path, a space, then `as`. Anywhere else `as` is a name. A `use` line without `as` is painted by #keyword.",
+      "match": "^(use)\\s+([A-Za-z_][A-Za-z0-9_]*(?:/[A-Za-z_][A-Za-z0-9_]*)*)\\s+(as)\\b",
+      "captures": {
+        "1": { "name": "keyword.control.use.hero" },
+        "2": { "name": "entity.name.namespace.hero" },
+        "3": { "name": "keyword.other.contextual.hero" }
+      }
+    },
+    "extern": {
+      "comment": "An `extern` group (spec § 13, `Extern`): a column-0 `extern` line and the lines below it, up to the first line whose first character is neither a space nor `#`, so a blank line or a column-0 comment does not end it, the same rule `site/src/lib/highlight.ts` follows. `link` and `package` are painted only right after the header's string on the `extern` line; the group's other contextual words only on its indented lines (#extern-member).",
+      "begin": "^(extern)\\b(?:\\s+(\"(?:[^\"\\\\]|\\\\.)*\")\\s+(link|package)\\b)?",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.extern.hero" },
+        "2": { "name": "string.quoted.double.hero" },
+        "3": { "name": "keyword.other.contextual.hero" }
+      },
+      "end": "^(?=[^\\s#])",
+      "patterns": [
+        { "include": "#extern-member" },
+        { "include": "$self" }
+      ]
+    },
+    "extern-member": {
+      "comment": "One indented line of an `extern` group, where the parser reads the marks of `Member` and `CParam` (spec § 13): each painted unless the next character that is not a space is `:`, so a parameter or a field named `owned` stays a name. These are the eleven contextual words besides `as`, `link` and `package`.",
+      "begin": "^(?=[ ]+\\S)",
+      "end": "$",
+      "patterns": [
+        {
+          "match": "\\b(tag|partial|owned|counted_by|lent|consumes|acquires|borrows|transfers|retains|when)\\b(?!\\s*:)",
+          "name": "keyword.other.contextual.hero"
+        },
+        { "include": "$self" }
+      ]
+    },
+    "declaration": {
+      "comment": "`function dist2(…)` / `record Point` — the kind opens the line, the name follows (panel 018). Since 2026-10-12 the kind is painted here, before #keyword reaches it, and the name by its kind: a function, a type, a constant. The `extern` prefix this rule allowed is gone: an `extern` line opens a group and its members are indented declarations (spec § 13).",
+      "patterns": [
+        {
+          "match": "^\\s*(function)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "storage.type.declaration.hero" },
+            "2": { "name": "entity.name.function.hero" }
+          }
+        },
+        {
+          "match": "^\\s*(record|variant)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "storage.type.declaration.hero" },
+            "2": { "name": "entity.name.type.hero" }
+          }
+        },
+        {
+          "match": "^\\s*(constant)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "captures": {
+            "1": { "name": "storage.type.declaration.hero" },
+            "2": { "name": "variable.other.constant.hero" }
+          }
+        }
+      ]
+    },
     "builtin-type": {
-      "comment": "spec/heroes-spec.md § Types, the whole table. This read `int|f64|bool|str|ptr|cstr` and so coloured a word the language does not have while leaving every sized integer plain: `i64` is what a program actually writes, and it was the one type never highlighted. `[T]`, `{K: V}` and `T?` are shapes rather than words and are built out of these.",
-      "match": "\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|str|ptr|cstr)\\b",
+      "comment": "spec/heroes-spec.md § Types, the whole table. This read `int|f64|bool|str|ptr|cstr` and so coloured a word the language does not have while leaving every sized integer plain: `i64` is what a program actually writes, and it was the one type never highlighted. `[T]`, `{K: V}` and `T?` are shapes rather than words and are built out of these. Since 2026-10-12 not after `.` or `::`, where the word is a field's name.",
+      "match": "(?<!\\.)(?<!::)\\b(i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|bool|str|ptr|cstr)\\b",
       "name": "support.type.hero"
     },
     "hole": {
@@ -49,8 +134,9 @@
       "name": "markup.italic.hole.hero"
     },
     "string": {
+      "comment": "A string is one line (spec § 1), so it ends at its closing quote or at the line's end, where the lexer refuses it as `unterminated_string`; until 2026-10-12 a string left open painted every line after it as text.",
       "begin": "\"",
-      "end": "\"",
+      "end": "\"|$",
       "name": "string.quoted.double.hero",
       "patterns": [
         {
@@ -67,13 +153,15 @@
           "comment": "the backslash is reserved — anything else is a compile error",
           "match": "\\\\.",
           "name": "invalid.illegal.unknown-escape.hero"
-        }
+        },
+        { "include": "#tab" },
+        { "include": "#control" }
       ]
     },
     "interpolated": {
-      "comment": "spec § 2: an `f` touching the opening quote makes `{e}` a hole, any expression, ended by the `}` that closes it with nested brackets and literals skipped; `{{` and `}}` each write one brace, and a `}` alone in the text is an error (panel 184 R1, ratified 2026-10-01). This grammar had no rule for the form until 2026-10-02 (`.claude/rules/diagnostics-and-goldens.md` measured it so on 2026-09-10), so a hole's code was painted as text and a quote inside a hole ended the string. The `spec/colouring` check holds the two brace escapes and the lone brace against what the compiler's own lexer accepts and refuses (`selfhost/lex_interp.hero`).",
+      "comment": "spec § 2: an `f` touching the opening quote makes `{e}` a hole, any expression, ended by the `}` that closes it with nested brackets and literals skipped; `{{` and `}}` each write one brace, and a `}` alone in the text is an error (panel 184 R1, ratified 2026-10-01). This grammar had no rule for the form until 2026-10-02 (`.claude/rules/diagnostics-and-goldens.md` measured it so on 2026-09-10), so a hole's code was painted as text and a quote inside a hole ended the string. The `spec/colouring` check holds the two brace escapes and the lone brace against what the compiler's own lexer accepts and refuses (`selfhost/lex_interp.hero`). Since 2026-10-12 it ends at its line's end too, as a string does, and paints a raw tab or control character in its text.",
       "begin": "(?<![A-Za-z0-9_])f\"",
-      "end": "\"",
+      "end": "\"|$",
       "name": "string.quoted.double.interpolated.hero",
       "patterns": [
         { "match": "\\\\[ntr\\\\\"]", "name": "constant.character.escape.interpolated.hero" },
@@ -81,13 +169,15 @@
         { "match": "\\\\.", "name": "invalid.illegal.unknown-escape.hero" },
         { "match": "\\{\\{|\\}\\}", "name": "constant.character.escape.brace.hero" },
         { "match": "\\}", "name": "invalid.illegal.lone-brace.hero" },
-        { "include": "#interpolation-hole" }
+        { "include": "#interpolation-hole" },
+        { "include": "#tab" },
+        { "include": "#control" }
       ]
     },
     "interpolation-hole": {
-      "comment": "A hole of an `f` literal: ordinary code up to the `}` that closes it, its content `meta.embedded` so a theme paints it as code rather than as the string around it, a `{ }` inside it (a map literal) taken whole so its `}` closes nothing early, and a literal inside it read as the literal it is, through `$self`.",
+      "comment": "A hole of an `f` literal: ordinary code up to the `}` that closes it, its content `meta.embedded` so a theme paints it as code rather than as the string around it, a `{ }` inside it (a map literal) taken whole so its `}` closes nothing early, and a literal inside it read as the literal it is, through `$self`. It ends at its line's end too since 2026-10-12, where the lexer ends the literal.",
       "begin": "\\{",
-      "end": "\\}",
+      "end": "\\}|$",
       "beginCaptures": { "0": { "name": "punctuation.section.interpolation.begin.hero" } },
       "endCaptures": { "0": { "name": "punctuation.section.interpolation.end.hero" } },
       "name": "meta.interpolation.hero",
@@ -99,37 +189,53 @@
     },
     "interpolation-braces": {
       "begin": "\\{",
-      "end": "\\}",
+      "end": "\\}|$",
       "patterns": [
         { "include": "#interpolation-braces" },
         { "include": "$self" }
       ]
     },
+    "backtick": {
+      "comment": "A string in backticks, or a backtick alone to its line's end, which the lexer refuses as `unexpected_character` and tells to write the string in double quotes.",
+      "match": "`[^`]*`?",
+      "name": "invalid.illegal.backtick.hero"
+    },
     "char": {
-      "comment": "one ASCII character or one escape; its value is an int (§4.3). The escape class carried `[nt\\\\']` until 2026-09-13 and so painted `'\\r'` as `invalid.illegal.char-literal.hero` by falling through to the third pattern — the same missing `r` as in the string rule above, in the second of the two places it had to be written by hand.",
+      "comment": "one ASCII character or one escape; its value is an int (§4.3). The escape class carried `[nt\\\\']` until 2026-09-13 and so painted `'\\r'` as `invalid.illegal.char-literal.hero` by falling through to the third pattern — the same missing `r` as in the string rule above, in the second of the two places it had to be written by hand. The second pattern took every printable character until 2026-10-12, the quote and the backslash with them, so `'''` and `'\\'`, both refused by the lexer, were painted as characters; it leaves both out now. The third pattern is written as it always was, and the check splits the file on its text.",
       "patterns": [
         { "match": "'\\\\[ntr\\\\']'", "name": "constant.character.hero" },
-        { "match": "'[\\x20-\\x7E]'", "name": "constant.character.hero" },
+        { "match": "'[\\x20-\\x26\\x28-\\x5b\\x5d-\\x7e]'", "name": "constant.character.hero" },
         { "match": "'[^']*'", "name": "invalid.illegal.char-literal.hero" }
       ]
     },
     "number": {
+      "comment": "spec § 2 and `selfhost/number.hero`, first match wins: an uppercase base prefix and a based literal with a fraction are refused, then the three bases, then a based literal the lexer refuses (no digit, a digit of another base, a misplaced `_`), an exponent, a misplaced `_` in a decimal literal, a float (a leading zero allowed before its point), a leading zero, and an integer. Text the lexer reads as several tokens, `1u8` or `1._5`, is painted as neither one literal nor an error. Until 2026-10-12 this read `[0-9]+` alone, so `1_000` and every based literal went unpainted and `07` and `1e5` were painted as numbers. The `spec/colouring` check runs these rules on each form against the lexer.",
       "patterns": [
-        { "match": "\\b[0-9]+\\.[0-9]+\\b", "name": "constant.numeric.float.hero" },
-        { "match": "\\b[0-9]+\\b", "name": "constant.numeric.integer.hero" }
+        { "match": "\\b0[XOB][0-9A-Za-z_]*(?:\\.[0-9][0-9A-Za-z_]*)?", "name": "invalid.illegal.base-prefix-case.hero" },
+        { "match": "\\b0[xob][0-9A-Za-z_]*\\.[0-9][0-9A-Za-z_]*", "name": "invalid.illegal.based-fraction.hero" },
+        { "match": "\\b0x[0-9a-fA-F](?:_?[0-9a-fA-F])*\\b", "name": "constant.numeric.hex.hero" },
+        { "match": "\\b0o[0-7](?:_?[0-7])*\\b", "name": "constant.numeric.octal.hero" },
+        { "match": "\\b0b[01](?:_?[01])*\\b", "name": "constant.numeric.binary.hero" },
+        { "match": "\\b0[xob][0-9A-Za-z_]*", "name": "invalid.illegal.based-digits.hero" },
+        { "match": "\\b[0-9](?:_?[0-9])*(?:\\.[0-9](?:_?[0-9])*)?[eE][+-]?[0-9]+", "name": "invalid.illegal.exponent.hero" },
+        { "match": "\\b[0-9][0-9_]*(?:\\.[0-9][0-9_]*)?(?:__|_\\b|_[A-Za-z])", "name": "invalid.illegal.separator.hero" },
+        { "match": "\\b[0-9](?:_?[0-9])*\\.[0-9](?:_?[0-9])*\\b", "name": "constant.numeric.float.hero" },
+        { "match": "\\b0(?:_?[0-9])+", "name": "invalid.illegal.leading-zero.hero" },
+        { "match": "\\b(?:0|[1-9](?:_?[0-9])*)\\b", "name": "constant.numeric.integer.hero" }
       ]
     },
-    "declaration": {
-      "comment": "`function dist2(…)` / `record Point` — the kind opens the line, the name follows (panel 018)",
-      "match": "^\\s*(?:extern\\s+)?(?:constant|function|record|variant)\\s+([A-Za-z_][A-Za-z0-9_]*)",
-      "captures": { "1": { "name": "entity.name.function.hero" } }
+    "slashes": {
+      "comment": "`//` is refused wherever it stands outside a string or a comment, `unexpected_character`: a comment begins with `#`, and an integer is divided by `/`.",
+      "match": "//",
+      "name": "invalid.illegal.slashes.hero"
     },
     "operator": {
+      "comment": "`selfhost/punctuation.hero`'s table, the longest first: its two-byte operators, then the one-byte ones. `<<` `>>` and `&` `^` `~` joined on 2026-10-12, spec § 7's bitwise row.",
       "patterns": [
-        { "match": "->|=>|==|!=|<=|>=|&&|\\|\\||::", "name": "keyword.operator.hero" },
+        { "match": "->|=>|==|!=|<=|>=|&&|\\|\\||<<|>>|::", "name": "keyword.operator.hero" },
         { "match": "@=", "name": "keyword.operator.mutable.hero" },
         { "match": "@", "name": "keyword.operator.mutable.hero" },
-        { "match": "[-+*/%<>=!?|.]", "name": "keyword.operator.hero" }
+        { "match": "[-+*/%<>=!?|.&^~]", "name": "keyword.operator.hero" }
       ]
     }
   }
