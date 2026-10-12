@@ -13,7 +13,7 @@
 #    holds already is never edited**, and one whose state differs from its row
 #    is reported (R10's rule, read for milestones);
 # 2. **the label `kind:learn` deleted** where it exists (R6 item 3, the task
-#    filed 2026-10-05 as `issues/2026-10/05/2026-10-05-1947-the-kind-learn-label-leaves-github-when-learn-md-does.md`),
+#    filed 2026-10-05 as https://github.com/heroes-lang/heroes/issues/1689),
 #    its name written percent-encoded in the path;
 # 3. **the interaction limit set** (R6 item 4): `PUT
 #    /repos/heroes-lang/heroes/interaction-limits` with `collaborators_only` and

@@ -1,21 +1,26 @@
 # WHO GOT THERE FIRST, AND WHAT A DEFECT'S NUMBER RESOLVES TO.
 #
-# Two checks of the `records` suite, each the executor of a rule the author
-# gave on 2026-10-07 (`.claude/rules/records.md` § And the record says whose
-# idea it was, its outward verse, and `.claude/rules/records.md` § The issues,
-# the rendering rule; CL-082 and CL-083):
+# The readings behind two checks of the `records` suite, each the executor of a
+# rule the author gave on 2026-10-07 (`.claude/rules/records.md` § And the
+# record says whose idea it was, and `.claude/rules/records.md` § The issues;
+# CL-082 and CL-083):
 #
-# - `records/prior-art`: a `## Prior art` section stands only on a `decision`
-#   issue of a sitting the historian sat in; it opens with the sitting's file
-#   and the day its links were re-read; every other line is one precedent,
-#   `Taken from` or `Reached first by`, with its link; it is never empty, and
-#   a heading that is nearly it is told. And a closed `feature` or `task`
-#   holds `## What was done`, naming its card's commit.
-# - `records/defects-cited`: every `defect NNN` the compiler, the runtime, the
-#   seed and the tests cite names a defect the register holds, a file of
-#   several defects by every number its item lines name. The register is the
-#   item line and not the file's name, as `suite_records.hero`'s
-#   `defect_register` reads it, and the name where an old item carries none.
+# - **prior art**: a `## Prior art` section stands only on a `decision` of a
+#   sitting the historian sat in; it opens with the sitting's file and the day
+#   its links were re-read; every other line is one precedent, `Taken from` or
+#   `Reached first by`, with its link; it is never empty, and a heading that is
+#   nearly it is told. And a closed `feature` or `task` holds `## What was
+#   done`, naming its card's commit. `section_offences` is the rule, which the
+#   transcription program's `file` asks of a draft (`issue_offences`) and
+#   `records_github.hero` of every issue GitHub holds (`records/prior-art`).
+# - **`records/defects-cited`**: every `defect NNN` the compiler, the runtime,
+#   the seed and the tests cite names a defect. Since the issues left the tree
+#   (the author's seven answers of 2026-10-12) the names are GitHub's: an old
+#   defect's number, 001 to 677, in its issue's title or as a later item of a
+#   file of several, and a new defect's own issue number
+#   (`records_github.register_of`); the full run reads them from GitHub and
+#   keeps them in `build/`, which the write hook's run narrowed to one file
+#   reads (`suite_records.hero`'s `REGISTER`).
 #
 # **The citations are asked of git, not read by this module**: the four roots
 # held 125 MB on 2026-10-11, the seed 52 MB of it, and one `git grep` over
@@ -58,9 +63,6 @@ constant CITED_ROOTS: [str]
 # `floors.SLACK` is told the number to write here.
 constant CITED_FLOOR: i64
     7457
-
-constant LABEL_PRIOR_ART: str
-    "records/prior-art"
 
 constant LABEL_CITED: str
     "records/defects-cited"
@@ -193,19 +195,24 @@ function precedent_offence(row: str) -> str
 
 # Every offence of a `## Prior art` section standing on `issue`.
 function prior_art_offences(issue: cards.Issue, section: Section, known: {str: bool}) -> [str]
-    out: [str] @= []
-    where = issue.path + ": `## Prior art` "
+    return section_offences(where: issue.path, kind: issue.card.kind, rows: section.rows, known: known)
 
-    if issue.card.kind != "decision"
+# Every offence of a prior-art section's `rows`, standing on an issue of `kind`
+# that a message names `where`: a file's path, or an issue's address.
+function section_offences(where: str, kind: str, rows: [str], known: {str: bool}) -> [str]
+    out: [str] @= []
+    told = where + ": `## Prior art` "
+
+    if kind != "decision"
         out @ out.push(
-            where + "stands on a `" + issue.card.kind + "`, and only the decision issue of a sitting carries one; a defect, a feature or a task says *Ruled by panel NNN* and links it"
+            told + "stands on a `" + kind + "`, and only the decision issue of a sitting carries one; a defect, a feature or a task says *Ruled by panel NNN* and links it"
         )
     opener: str @= ""
     precedents: i64 @= 0
     i: i64 @= 0
 
-    while i < section.rows.len()
-        row = section.rows[i]
+    while i < rows.len()
+        row = rows[i]
         i @ i + 1
 
         if strings.trimmed(row) == ""
@@ -217,33 +224,33 @@ function prior_art_offences(issue: cards.Issue, section: Section, known: {str: b
         wrong = precedent_offence(row)
 
         if wrong != ""
-            out @ out.push(where + "line `" + strings.trimmed(row) + "` " + wrong)
+            out @ out.push(told + "line `" + strings.trimmed(row) + "` " + wrong)
         else
             precedents @ precedents + 1
 
     if opener == ""
-        out @ out.push(where + "is empty: a section that names no precedent is left out, not written")
+        out @ out.push(told + "is empty: a section that names no precedent is left out, not written")
         return out
     sittings = sittings_named(line: opener, known: known)
 
     if sittings.len() == 0
         out @ out.push(
-            where + "opens with `" + strings.trimmed(opener) + "`, which names no sitting's file under `docs/panel/` in a code span"
+            told + "opens with `" + strings.trimmed(opener) + "`, which names no sitting's file under `docs/panel/` in a code span"
         )
 
     for sitting in sittings
         if !historian_sat(sitting: sitting, known: known)
             out @ out.push(
-                where + "rests on " + sitting + ", a sitting the historian did not sit in: no report of theirs in its folder and no mention in the synthesis"
+                told + "rests on " + sitting + ", a sitting the historian did not sit in: no report of theirs in its folder and no mention in the synthesis"
             )
 
     if !names_read_day(opener)
         out @ out.push(
-            where + "opens with `" + strings.trimmed(opener) + "`, which does not say `read YYYY-MM-DD`, the day every link was re-read"
+            told + "opens with `" + strings.trimmed(opener) + "`, which does not say `read YYYY-MM-DD`, the day every link was re-read"
         )
 
     if precedents == 0
-        out @ out.push(where + "holds no precedent line after its opener")
+        out @ out.push(told + "holds no precedent line after its opener")
 
     return out
 
@@ -280,45 +287,31 @@ function done_offence(issue: cards.Issue) -> str
 
     return where + "has `commit: " + commit + "` on its card, so `## What was done` cannot name the commit: fill the card first"
 
-# Every check of the sections, over the issues whose path holds `only`, all
-# of them where it is "".
-function prior_art(@r: report.Report, present: [str], issues: [cards.Issue], only: str)
-    known: {str: bool} @= {}
-
-    for path in present
-        known[path] @ true
-
+# Every offence of one issue file against the sections' rules: a heading
+# nearly `## Prior art`, the section itself, and a closed feature's or task's
+# `## What was done`. `known` is every path the tree holds, which a sitting's
+# file is asked of. What `file` asks of a draft before it opens its issue.
+function issue_offences(issue: cards.Issue, known: {str: bool}) -> [str]
     offences: [str] @= []
 
-    for issue in issues
-        if only != "" && !strings.contains(text: issue.path, needle: only)
-            continue
-
-        for line in near_misses(issue.body)
-            offences @ offences.push(
-                issue.path + ": `" + line + "` is nearly the heading, which is `## Prior art` exactly, and a section under another spelling is one no check reads"
-            )
-
-        section = section_of(body: issue.body, heading: PRIOR_ART)
-
-        if section.found
-            for wrong in prior_art_offences(issue: issue, section: section, known: known)
-                offences @ offences.push(wrong)
-
-        if !issue.open && (issue.card.kind == "feature" || issue.card.kind == "task")
-            wrong = done_offence(issue)
-
-            if wrong != ""
-                offences @ offences.push(wrong)
-
-    if offences.len() > 0
-        report.keep_failure(
-            @r,
-            label: LABEL_PRIOR_ART,
-            detail: "  " + offences.join("\n  ") + "\n  `.claude/rules/records.md` § And the record says whose idea it was (CL-082) and `.claude/rules/records.md` § The issues, the rendering rule."
+    for line in near_misses(issue.body)
+        offences @ offences.push(
+            issue.path + ": `" + line + "` is nearly the heading, which is `## Prior art` exactly, and a section under another spelling is one no check reads"
         )
-    else
-        report.keep_pass(@r)
+
+    section = section_of(body: issue.body, heading: PRIOR_ART)
+
+    if section.found
+        for wrong in prior_art_offences(issue: issue, section: section, known: known)
+            offences @ offences.push(wrong)
+
+    if !issue.open && (issue.card.kind == "feature" || issue.card.kind == "task")
+        wrong = done_offence(issue)
+
+        if wrong != ""
+            offences @ offences.push(wrong)
+
+    return offences
 
 # How many digits stand at `at`.
 function digit_run(text: str, at: i64) -> i64
@@ -346,16 +339,22 @@ function has_at(text: str, at: i64, piece: str) -> bool
 
 # The numbers a list names from `at`: `235`, `324 and 325`, `018 to 021`,
 # `130, 131`; and not the day of `130, 2026-09-28` nor the lane of `130, lane
-# b6`, since a number here has at most three digits and the next must be one.
-function numbers_after(text: str, at: i64) -> [i64]
+# b6`. A number of the old series has at most three digits; `wide` reads one
+# of any length as well, a new defect's issue number, `2031`, and a run of
+# digits a `-` and another digit follow is a day and ends the list.
+function numbers_after(text: str, at: i64, wide: bool) -> [i64]
     out: [i64] @= []
     i: i64 @= at
     reading: bool @= true
+    longest: i64 @= 3
+
+    if wide
+        longest @ 18
 
     while reading
         digits = digit_run(text: text, at: i)
 
-        if digits == 0 || digits > 3
+        if digits == 0 || digits > longest || dated(text: text, at: i + digits)
             reading @ false
             continue
 
@@ -367,7 +366,7 @@ function numbers_after(text: str, at: i64) -> [i64]
         if has_at(text: text, at: i, piece: " to ")
             more = digit_run(text: text, at: i + 4)
 
-            if more > 0 && more <= 3
+            if more > 0 && more <= longest && !dated(text: text, at: i + 4 + more)
                 m = strings.to_number(text.slice(from: i + 4, to: i + 4 + more)).must()
                 k: i64 @= n
 
@@ -392,6 +391,11 @@ function numbers_after(text: str, at: i64) -> [i64]
 
     return out
 
+# Whether a `-` and a digit stand at `at`, after a run of digits: the run is
+# then a year or a day of `2026-09-28`, never a number of a list.
+function dated(text: str, at: i64) -> bool
+    return at + 1 < text.len() && text[at] == '-' && cards.is_digit_byte(text[at + 1])
+
 # Whether the six bytes at `i` spell `defect` in any case.
 function spells_defect(text: str, i: i64) -> bool
     word = "defect"
@@ -414,10 +418,12 @@ function spells_defect(text: str, i: i64) -> bool
     return true
 
 # Every defect number a line cites: `defect 235`, `Defect 235`, `DEFECT 235`,
-# `defect-235`, `defects 324 and 325`, `defects 018 to 021`; and none from
-# `defect_register` or `defective`, where no space or dash follows the word,
-# nor from *open defects 0*, a count, since the numbers issued start at 1.
-function numbers_cited(text: str) -> [i64]
+# `defect-235`, `defects 324 and 325`, `defects 018 to 021`, and, where `wide`,
+# a new defect's issue number, four digits or more; and none from
+# `defect_register` or `defective`,
+# where no space or dash follows the word, nor from *open defects 0*, a count,
+# since the numbers issued start at 1.
+function numbers_cited(text: str, wide: bool) -> [i64]
     out: [i64] @= []
     i: i64 @= 0
 
@@ -431,73 +437,10 @@ function numbers_cited(text: str) -> [i64]
             j @ j + 1
 
         if j < text.len() && (text[j] == ' ' || text[j] == '-')
-            for n in numbers_after(text: text, at: j + 1)
+            for n in numbers_after(text: text, at: j + 1, wide: wide)
                 if n > 0
                     out @ out.push(n)
         i @ j
-
-    return out
-
-# The defect numbers an item line's first field names: `**235 — ...**`,
-# `**Defect 011 — ...**`, `**Defects 018 to 021: ...**`; none for a sitting's
-# or a milestone's field.
-function numbers_on_item(line: str) -> [i64]
-    none: [i64] = []
-
-    if !strings.starts_with(text: line, prefix: "- [ ] **") && !strings.starts_with(text: line, prefix: "- [x] **")
-        return none
-
-    # Eight ASCII bytes open the line, so the cut stands between characters.
-    field = line.slice(from: 8, to: line.len())
-
-    if strings.starts_with(text: field, prefix: "Defects ")
-        return numbers_after(text: field, at: 8)
-
-    if strings.starts_with(text: field, prefix: "Defect ")
-        return numbers_after(text: field, at: 7)
-    digits = digit_run(text: field, at: 0)
-
-    if digits > 0 && digits <= 3
-        return numbers_after(text: field, at: 0)
-
-    return none
-
-# The number a defect file's name carries after its stamp, `defect-NNN-`, or
-# 0 where it carries none.
-function number_in_name(name: str) -> i64
-    if name.len() < 16
-        return 0
-
-    # Sixteen ASCII bytes open an entry's name, so the cut stands between
-    # characters.
-    slug = name.slice(from: 16, to: name.len())
-
-    if !strings.starts_with(text: slug, prefix: "defect-")
-        return 0
-    rest = strings.without_prefix(text: slug, prefix: "defect-")
-    digits = digit_run(text: rest, at: 0)
-
-    if digits == 0 || digits > 3 || digits >= rest.len() || rest[digits] != '-'
-        return 0
-
-    return strings.to_number(rest.slice(from: 0, to: digits)).must()
-
-# The register: every number a defect issue's item lines or name states.
-function register_of(issues: [cards.Issue]) -> {i64: bool}
-    out: {i64: bool} @= {}
-
-    for issue in issues
-        if issue.card.kind != "defect"
-            continue
-
-        for row in strings.lines(issue.body)
-            for n in numbers_on_item(row)
-                out[n] @ true
-
-        named = number_in_name(issue.name)
-
-        if named > 0
-            out[named] @ true
 
     return out
 
@@ -509,10 +452,21 @@ function under_roots(path: str) -> bool
 
     return false
 
+# Whether the citations of `path` are read in the old series alone: a file of
+# the frozen corpus of planted mistakes (panel 187's R2,
+# `tests/golden/recovery/corpus/`), a copy of the tree of its day kept byte for
+# byte, whose citations of a number of four digits or more are fixtures of
+# a test it froze (the file name of the thousandth defect, in the old
+# series' spelling) and no new defect's name,
+# and which no repair may edit.
+function old_names_only(path: str) -> bool
+    return strings.ends_with(text: path, suffix: ".frozen")
+
 # Every `defect NNN` under the cited roots, or under `only` where it names a
-# path there, resolved in the register; the whole walk's count floored.
-function defects_cited(@r: report.Report, scratch: str, issues: [cards.Issue], only: str)
-    register = register_of(issues)
+# path there, resolved among `names`, the defects' names `from` gave (GitHub's
+# listing, or the copy of it the last full run kept); the whole walk's count
+# floored.
+function defects_cited(@r: report.Report, scratch: str, names: {i64: bool}, from: str, only: str)
     words: [str] @= ["git", "grep", "-n", "-a", "-i", "-E", "defects?[ -][0-9]", "--"]
 
     if only == ""
@@ -545,11 +499,9 @@ function defects_cited(@r: report.Report, scratch: str, issues: [cards.Issue], o
         place = line.slice(from: 0, to: first.must() + 1 + second.must())
         text = after.slice(from: second.must() + 1, to: after.len())
 
-        for n in numbers_cited(text)
-            if register[n].is_err()
-                offences @ offences.push(
-                    place + ": defect " + n.to_str() + " names no defect of `issues/`, whose register is a defect file's item line or its name"
-                )
+        for n in numbers_cited(text: text, wide: !old_names_only(line.slice(from: 0, to: first.must())))
+            if names[n].is_err()
+                offences @ offences.push(place + ": defect " + n.to_str() + " names no defect " + from + " holds")
             else
                 resolved @ resolved + 1
 
@@ -561,7 +513,7 @@ function defects_cited(@r: report.Report, scratch: str, issues: [cards.Issue], o
         report.keep_failure(
             @r,
             label: LABEL_CITED,
-            detail: "  " + offences.join("\n  ") + "\n  A number the code cites is a name for ever (`.claude/rules/records.md` § The issues, CL-083): file the defect, or cite the one that exists."
+            detail: "  " + offences.join("\n  ") + "\n  A number the code cites is a name for ever (`.claude/rules/records.md` § The issues, CL-083): an old defect's\n  is the number its issue's title opens with, `Defect 235:`, and a new one's is its own issue number;\n  file the defect, or cite the one that exists."
         )
     else if only != ""
         report.keep_pass(@r)
@@ -601,30 +553,31 @@ test "the opener names the sitting's file in a code span and the day the links w
     assert historian_sat(sitting: "docs/panel/196-a-sitting.md", known: known)
 
 test "a line cites every number it names after the word, in any case, and no day or lane"
-    assert numbers_cited("def" + "ect 235 was repaired") == [235]
-    assert numbers_cited("Def" + "ect 235, 2026-09-28: a day") == [235]
-    assert numbers_cited("def" + "ect 130, lane b6") == [130]
-    assert numbers_cited("def" + "ects 324 and 325's cases") == [324, 325]
-    assert numbers_cited("def" + "ects 018 to 021 misinformed") == [18, 19, 20, 21]
-    assert numbers_cited("def" + "ect 130, 131, and 132") == [130, 131, 132]
-    assert numbers_cited("DEF" + "ECT 014 (panel 113)") == [14]
-    assert numbers_cited("fixedbugs-def" + "ect-382-x") == [382]
-    assert numbers_cited("defect_register and a defective 3").len() == 0
-    assert numbers_cited("def" + "ect 1234 is no number here").len() == 0
-    assert numbers_cited("def" + "ect 235 — a title with a dash") == [235]
-    assert numbers_cited("open def" + "ects 0, open decisions 0").len() == 0
-    assert numbers_cited("def" + "ects 058 and 059 — one string") == [58, 59]
+    assert numbers_cited(text: "def" + "ect 235 was repaired", wide: true) == [235]
+    assert numbers_cited(text: "Def" + "ect 235, 2026-09-28: a day", wide: true) == [235]
+    assert numbers_cited(text: "def" + "ect 130, lane b6", wide: true) == [130]
+    assert numbers_cited(text: "def" + "ects 324 and 325's cases", wide: true) == [324, 325]
+    assert numbers_cited(text: "def" + "ects 018 to 021 misinformed", wide: true) == [18, 19, 20, 21]
+    assert numbers_cited(text: "def" + "ect 130, 131, and 132", wide: true) == [130, 131, 132]
+    assert numbers_cited(text: "DEF" + "ECT 014 (panel 113)", wide: true) == [14]
+    assert numbers_cited(text: "fixedbugs-def" + "ect-382-x", wide: true) == [382]
+    assert numbers_cited(text: "defect_register and a defective 3", wide: true).len() == 0
+    assert numbers_cited(text: "def" + "ect 235 — a title with a dash", wide: true) == [235]
+    assert numbers_cited(text: "open def" + "ects 0, open decisions 0", wide: true).len() == 0
+    assert numbers_cited(text: "def" + "ects 058 and 059 — one string", wide: true) == [58, 59]
 
-test "an item's first field names its defects in three forms, and a sitting's names none"
-    assert numbers_on_item("- [x] **235 — a title** | what | where") == [235]
-    assert numbers_on_item("- [x] **Defect 011 — two arguments** | what | where") == [11]
-    assert numbers_on_item("- [x] **Defects 018 to 021: four diagnostics** | what | where") == [18, 19, 20, 21]
-    assert numbers_on_item("- [ ] **panel 196** | q | w").len() == 0
-    assert numbers_on_item("- [ ] **M-issue-files** | q | w").len() == 0
-    assert numbers_on_item("    **Origin:** 235").len() == 0
-    assert number_in_name("2026-10-04-0409-defect-235-a-header-name.md") == 235
-    assert number_in_name("2026-10-04-0409-a-decision-about-defect-235.md") == 0
-    assert number_in_name("short.md") == 0
+test "a new defect's name is its issue number, read where the file is not frozen, and a day is never one"
+    assert numbers_cited(text: "def" + "ect 2031 was filed on GitHub", wide: true) == [2031]
+    assert numbers_cited(text: "fixedbugs-def" + "ect-2031-x", wide: true) == [2031]
+    assert numbers_cited(text: "def" + "ects 235 and 2031", wide: true) == [235, 2031]
+    assert numbers_cited(text: "def" + "ect 2031 is no old number", wide: false).len() == 0
+    assert numbers_cited(text: "def" + "ect 2026-10-12, a day", wide: true).len() == 0
+    assert numbers_cited(text: "def" + "ect 130, 2026-09-28: a day", wide: true) == [130]
+    assert numbers_cited(text: "def" + "ects 130 to 2026-09-28", wide: true) == [130]
+    assert old_names_only("tests/golden/recovery/corpus/tests/harness/suite_records.hero.frozen")
+    assert !old_names_only("tests/harness/suite_records.hero")
+
+test "the cited roots are the compiler, the runtime, the seed and the tests"
     assert under_roots("tests/golden/check/x.hero")
     assert under_roots("seed")
     assert !under_roots("issues/2026-10/11/x.md")

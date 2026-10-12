@@ -2,7 +2,7 @@
 # being the truth.
 #
 # `.claude/rules/records.md` § The issues, R10 as the author amended it on
-# 2026-10-12 (`issues/2026-10/12/2026-10-12-1320-the-author-answers-four-the-repair-word-the-limit-the-two.md`):
+# 2026-10-12 (https://github.com/heroes-lang/heroes/issues/2023):
 # an issue that differs from its file is reported by `plan` and made to match
 # it by `repair --yes`, never the reverse. For each card that holds an address,
 # its issue as GitHub's list gives it (`read_all`, every page, never one read

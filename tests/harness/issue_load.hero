@@ -5,8 +5,9 @@
 # `issues/` git tracks, in name order, `issues/README.md` aside; those named on
 # the command line where some are; each rendered as `issue_render` renders it,
 # pinned at one commit, and judged by `issue_check.offences`, so a card that
-# cannot render is refused by its path and reason. `records/rendered` holds every
-# card to the same modules.
+# cannot render is refused by its path and reason. `records/rendered` held every
+# card to the same modules until 2026-10-12. This module serves the words of
+# the files alone, and leaves with the folder (`issues.hero`).
 #
 # Two questions about the pin are `plan`'s and `push`'s alone
 # (`.claude/rules/records.md` § The issues: the `Record:` permalink is pinned at

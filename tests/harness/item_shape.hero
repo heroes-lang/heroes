@@ -1,0 +1,607 @@
+# THE SHAPE OF AN ISSUE'S ITEM: one item line first, its body indented under
+# it, and a defect's class stated on its line and in its body.
+#
+# The one shape the lists took on 2026-09-07 (CL-066,
+# `.claude/rules/records.md` § The lists), held of each issue file by
+# `records/lists` until the issues left the tree (the author's seven answers of
+# 2026-10-12), and now of a draft by the transcription program's `file` and
+# `edit` before an issue is opened from it (`issue_draft.hero`); and the class
+# rule (the author's *D1a* of 2026-10-02, `.claude/rules/verification.md` §
+# Bounded discovery), which `records/tagged` also reads off a tag's own tree
+# where that tree still holds the issue files (`suite_records.hero`).
+#
+# Moved here from `suite_records.hero` on 2026-10-12, unchanged in what it
+# reads, so that the program and the suite ask one reading.
+
+use cards
+use strings
+
+# The line that fences the item region of all three live lists, at the top and
+# again at the bottom. It is a CONSTANT for the reason `VERDICT_HEADING` is one:
+# the files, the check and the message that explains the check must not be able
+# to disagree about it.
+constant BANNER: str
+    "*******************************************************************************"
+
+# One open issue's text below its card against the shape an item has had since
+# the lists took one shape (CL-066): its line first and open, the only item in
+# it, and every other line blank or indented under it, as a body is. `first` is
+# the line of the file the text starts on, so a complaint names the line a
+# reader opens the file at.
+function item_offences(text: str, first: i64) -> [str]
+    rows = strings.lines(text)
+
+    if rows.len() == 0
+        return ["holds no item, and an open issue holds exactly one"]
+    out: [str] @= []
+    opening = rows[0]
+
+    if !strings.starts_with(text: opening, prefix: "- [ ] ")
+        out @ out.push(
+            "line " + first.to_str() + " is not the item's line, and an open issue's item stands first under its card: " + head_of(opening)
+        )
+    i: i64 @= 1
+
+    while i < rows.len()
+        row = rows[i]
+
+        if strings.starts_with(text: row, prefix: "- [")
+            out @ out.push(
+                "line " + (first + i).to_str() + ": an item line below line " + first.to_str() + ", and an issue holds one item, on its first line: " + head_of(row)
+            )
+        else if strings.trimmed(row).len() > 0 && !strings.starts_with(text: row, prefix: "    ")
+            out @ out.push(
+                "line " + (first + i).to_str() + ": prose at column zero, and an item's body is indented under its line: " + head_of(row)
+            )
+        i @ i + 1
+
+    return out
+
+# What a defect item's line departs from between its number and its class
+# token, "" where nothing: `- [ ] **NNN — <title>** | <what> | <where>`, the
+# title closed by `**` and the bar after it, then what it does and where to
+# look, set apart by ` | `, a field free to quote ` | ` itself. **The class
+# rule read the line's end and its number its start, and nothing read between**
+# (defect 190): item 130's line as `8349d264` left it, its title never closed
+# and not one bar in it, read whole after that commit and every one until it
+# was restored. The class token is the class rule's to read (`line_class`).
+function line_shape(first: str) -> str
+    rest = strings.without_prefix(text: first, prefix: "- [ ] **")
+    close = strings.index_of(text: rest, needle: "**")
+
+    if close.is_err()
+        return "its title is never closed by `**`"
+
+    # `**` is ASCII, so each cut stands between characters.
+    after = rest.slice(from: close.must() + 2, to: rest.len())
+
+    if !strings.starts_with(text: after, prefix: " | ")
+        return "its title's closing `**` is not followed by ` | `, which sets it apart from what the defect does"
+    fields: str @= strings.without_prefix(text: after, prefix: " | ")
+    token = strings.index_of(text: fields, needle: CLASS_TOKEN)
+
+    if !token.is_err()
+        fields @ fields.slice(from: 0, to: token.must())
+    first_bar = strings.index_of(text: fields, needle: " | ")
+
+    if first_bar.is_err()
+        return "its line holds one field after its title, and an item holds two, what it does and where to look, set apart by ` | `"
+    last_bar = last_bar_at(fields)
+
+    if strings.trimmed(fields.slice(from: 0, to: first_bar.must())).len() == 0
+        return "its field of what the defect does is empty"
+
+    if strings.trimmed(fields.slice(from: last_bar + 3, to: fields.len())).len() == 0
+        return "its field of where to look is empty"
+
+    return ""
+
+# Where the last ` | ` of `fields` stands; the caller has found one.
+function last_bar_at(fields: str) -> i64
+    at: i64 @= fields.len() - 3
+
+    while at > 0 && !(fields[at] == 32 && fields[at + 1] == 124 && fields[at + 2] == 32)
+        at @ at - 1
+
+    return at
+
+# THE CLASS OF A DEFECT, READ OFF ITS ITEM (the author's *D1a* of 2026-10-02,
+# `.claude/rules/verification.md` § Bounded discovery).
+#
+# A defect's item states its class twice: its line ends
+# ` · **class: <name>**`, which is what a reader scanning the list sees, and
+# its body holds one line opening `**Class: <name>**, YYYY-MM-DD` with the
+# reason after the day (`.claude/rules/records.md` § The lists), which is
+# where the day `records/tagged` ages an `adjacent` item from lives. Two
+# places that state one fact are held to state the same one, or the second
+# becomes a place where a different truth lives.
+#
+# **Only the defects are held to it**: a decision, a milestone's work and a
+# question carry no class, and `lists` asks this of the defects alone, of
+# `docs/work/DEFECTS.md` until 2026-10-04 and of each file in `DEFECT_FILES`
+# since; `records/tagged` asks it of the list at a tag, in either shape.
+constant CLASSES: [str]
+    [
+        "blocking"
+        "adjacent"
+        "systemic"
+        "improvement"
+    ]
+
+# The end of an item's line, before the name and its closing `**`.
+constant CLASS_TOKEN: str
+    " · **class: "
+
+# What opens the body's line. The bare `**Class:` is what is counted, so that
+# a line written `**Class:**`, or with no space, is one more line and not none.
+constant CLASS_LINE: str
+    "**Class:"
+
+# The rule in one line, printed under the items a draft is refused for.
+constant CLASS_RULE: str
+    "the class rule (.claude/rules/records.md § The lists): a defect's draft opens, below its card, with its item's line, which ends with ` · **class: <name>**`, and holds one body line opening `**Class: <name>**, YYYY-MM-DD` and its reason, the same `<name>` in both, one of `blocking`, `adjacent`, `systemic` and `improvement`"
+
+# One open item of a list: the line it starts on, its `- [ ] ` line trimmed
+# as `open_items_at` gives it, and that line with the body under it.
+record Region
+    line: i64
+    head: str
+    text: str
+
+# What an item says about its class: the class it is held to, the day its
+# `**Class:` line names as the number YYYYMMDD, and every way the item departs
+# from the shape. **`kind` and `day` are empty unless `complaints` is**, so a
+# reader that asks only the class can never take a malformed item for a
+# classed one: `records/tagged` reads an empty `kind` as `blocking`.
+record Classed
+    kind: str
+    day: i64
+    complaints: [str]
+
+# Every open item of a list's text, wherever it stands: `open_items_at` reads
+# every `- [ ] ` line of the file and so does this, so the two agree on what a
+# tag stood over. A body runs to the next item, to a banner, or to a line at
+# column zero, the three things a body is not.
+function open_regions(text: str) -> [Region]
+    out: [Region] @= []
+    none: [str] = []
+    rows: [str] @= none
+    head: str @= ""
+    start: i64 @= 0
+    number: i64 @= 0
+
+    for row in strings.lines(text)
+        number @ number + 1
+        item = strings.starts_with(text: row, prefix: "- [")
+        column_zero = strings.trimmed(row) != "" && !strings.starts_with(text: row, prefix: "    ")
+
+        if rows.len() > 0 && (item || row == BANNER || column_zero)
+            out @ out.push(Region(line: start, head: head, text: rows.join("\n")))
+            rows @ none
+
+        if strings.starts_with(text: row, prefix: "- [ ] ")
+            head @ strings.trimmed(row)
+            start @ number
+            rows @ [row]
+        else if rows.len() > 0
+            rows @ rows.push(row)
+
+    if rows.len() > 0
+        out @ out.push(Region(line: start, head: head, text: rows.join("\n")))
+
+    return out
+
+# One item's class, from its line and its body (`Classed`).
+function classed(text: str) -> Classed
+    rows = strings.lines(text)
+    complaints: [str] @= []
+
+    if rows.len() == 0
+        return Classed(kind: "", day: 0, complaints: ["there is no item line"])
+    on_line = line_class(rows[0])
+
+    if on_line.is_err()
+        complaints @ complaints.push(failure_of(on_line))
+    marked: [i64] @= []
+    i: i64 @= 1
+
+    while i < rows.len()
+        if strings.starts_with(text: strings.trimmed(rows[i]), prefix: CLASS_LINE)
+            marked @ marked.push(i)
+        i @ i + 1
+
+    day: i64 @= 0
+
+    if marked.len() == 0
+        complaints @ complaints.push("its body holds no line opening `**Class: <name>**, YYYY-MM-DD` and its reason")
+    else if marked.len() > 1
+        complaints @ complaints.push(
+            "its body holds " + marked.len().to_str() + " lines opening `" + CLASS_LINE + "`, and an item carries exactly one"
+        )
+    else
+        stated = class_stated(rows: rows, at: marked[0])
+
+        if stated.is_err()
+            complaints @ complaints.push(failure_of(stated))
+        else if !on_line.is_err() && stated.must().kind != on_line.must()
+            complaints @ complaints.push(
+                "its line says `" + on_line.must() + "` and its `" + CLASS_LINE + "` line says `" + stated.must().kind + "`, and the two state one class"
+            )
+        else
+            day @ stated.must().day
+    none: [str] = []
+
+    if complaints.len() > 0
+        return Classed(kind: "", day: 0, complaints: complaints)
+
+    return Classed(kind: on_line.must(), day: day, complaints: none)
+
+# The class an item's line ends with, or why it ends with none this reads.
+# Trailing spaces are not content, as `scan_where` reads a rule.
+function line_class(row: str) -> str?
+    line = strings.trimmed(row)
+    tokens = strings.split_text(text: line, separator: "**class: ").len() - 1
+
+    if tokens == 0
+        return fail(code: "shape", msg: "its line does not end with ` · **class: <name>**`")
+
+    if tokens > 1
+        return fail(
+            code: "shape",
+            msg: "its line carries " + tokens.to_str() + " class tokens, and an item carries exactly one"
+        )
+    at = strings.index_of(text: line, needle: CLASS_TOKEN)
+
+    if at.is_err()
+        return fail(code: "shape", msg: "its class token is not set off by ` · `, as ` · **class: <name>**` spells it")
+    rest = line.slice(from: at.must() + CLASS_TOKEN.len(), to: line.len())
+    name = strings.without_suffix(text: rest, suffix: "**")
+
+    if !strings.ends_with(text: rest, suffix: "**") || strings.contains(text: name, needle: "**")
+        return fail(code: "shape", msg: "its class token is not the end of its line")
+
+    if !is_class(name)
+        return fail(
+            code: "shape",
+            msg: "its line names the class `" + name + "`, and the classes are " + classes_told()
+        )
+
+    return ok(name)
+
+# The body's `**Class:` line at `rows[at]`, as a `Classed` with nothing to
+# complain of, or why it does not read `**Class: <name>**, YYYY-MM-DD` and a
+# reason. The reason may run on to the lines below, to its paragraph's end.
+function class_stated(rows: [str], at: i64) -> Classed?
+    row = strings.trimmed(rows[at])
+    opening = CLASS_LINE + " "
+
+    if !strings.starts_with(text: row, prefix: opening)
+        return fail(code: "shape", msg: "its `" + CLASS_LINE + "` line does not open `**Class: <name>**`")
+    rest = strings.without_prefix(text: row, prefix: opening)
+    close = strings.index_of(text: rest, needle: "**")
+
+    if close.is_err()
+        return fail(code: "shape", msg: "its `" + CLASS_LINE + "` line never closes the bold around its class")
+    name = rest.slice(from: 0, to: close.must())
+
+    if !is_class(name)
+        return fail(
+            code: "shape",
+            msg: "its `" + CLASS_LINE + "` line names `" + name + "`, and the classes are " + classes_told()
+        )
+    after = rest.slice(from: close.must() + 2, to: rest.len())
+
+    if !strings.starts_with(text: after, prefix: ", ")
+        return fail(
+            code: "shape",
+            msg: "its `**Class: " + name + "**` is not followed by `, YYYY-MM-DD`, the day it was classed"
+        )
+    dated = strings.without_prefix(text: after, prefix: ", ")
+    day = cards.day_of(dated)
+
+    if day.is_err()
+        return fail(
+            code: "shape",
+            msg: "its `" + CLASS_LINE + "` line gives no day after its class: " + failure_of(day)
+        )
+
+    # `day_of` read the first ten bytes as ASCII, so the eleventh starts a
+    # character and the cut is safe.
+    reason: str @= dated.slice(from: 10, to: dated.len())
+    next: i64 @= at + 1
+
+    while next < rows.len() && strings.trimmed(rows[next]) != ""
+        reason @ reason + " " + rows[next]
+        next @ next + 1
+
+    if !has_letter(reason)
+        return fail(code: "shape", msg: "its `" + CLASS_LINE + "` line gives its day and no reason after it")
+    none: [str] = []
+
+    return ok(Classed(kind: name, day: day.must(), complaints: none))
+
+function is_class(name: str) -> bool
+    for one in CLASSES
+        if one == name
+            return true
+
+    return false
+
+function classes_told() -> str
+    return "`" + CLASSES.join("`, `") + "`"
+
+function has_letter(text: str) -> bool
+    i: i64 @= 0
+
+    while i < text.len()
+        byte = text[i]
+
+        if byte >= 'a' && byte <= 'z' || byte >= 'A' && byte <= 'Z'
+            return true
+        i @ i + 1
+
+    return false
+
+# Every way the open items of a defect text depart from the class rule, one
+# complaint per departure, each naming its item by line and head: one defect
+# file since 2026-10-04, `docs/work/DEFECTS.md` whole before it.
+function class_offences(text: str) -> [str]
+    return class_offences_from(text: text, first: 1)
+
+# The same, for a text that starts on line `first` of its file, which is an
+# issue's below its card: the complaint names the line a reader opens.
+function class_offences_from(text: str, first: i64) -> [str]
+    out: [str] @= []
+
+    for region in open_regions(text)
+        for complaint in classed(region.text).complaints
+            out @ out.push(
+                "line " + (region.line + first - 1).to_str() + ": " + head_of(region.head) + ": " + complaint
+            )
+
+    return out
+
+# One defect file for the tests below, as a file of `DEFECT_FILES` holds it
+# since 2026-10-04: the item's line first, and its body indented under it.
+# The ` — ` after the number is the list's own format, which `defect_number`
+# reads. (It held the one-item list, banners and count, until that day.)
+function one_defect(head: str, body: [str]) -> str
+    rows: [str] @= [head]
+
+    for line in body
+        if line == ""
+            rows @ rows.push("")
+        else
+            rows @ rows.push("    " + line)
+
+    return rows.join("\n") + "\n"
+
+# What `class_offences` says of a list when it says exactly one thing, and the
+# empty string otherwise, which contains no needle: a test that expects one
+# complaint fails on two as it fails on none.
+function only_complaint(text: str) -> str
+    said = class_offences(text)
+
+    if said.len() != 1
+        return ""
+
+    return said[0]
+
+# What a defect's item line owes beyond an item's shape: its title closed by
+# `**` and its two fields there (`line_shape`, defect 190), told on line
+# `first`, where the text below the card starts.
+function defect_line_offences(text: str, first: i64) -> [str]
+    out: [str] @= []
+    rows = strings.lines(text)
+
+    if rows.len() == 0 || !strings.starts_with(text: rows[0], prefix: "- [ ] ")
+        return out
+    shape = line_shape(rows[0])
+
+    if shape != ""
+        out @ out.push("line " + first.to_str() + ": " + shape + ": " + head_of(rows[0]))
+
+    return out
+
+# Enough of a line to recognise it, cut where a character starts.
+function head_of(row: str) -> str
+    if row.len() <= 78
+        return row
+    return row.slice(from: 0, to: strings.boundary_at_or_below(text: row, at: 78)) + " …"
+
+function failure_of<T>(got: T?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+test "an open issue holds its one item, its line first under its card, and its body indented"
+    good = "- [ ] **M-ir-lowering** | a thing | somewhere\n\n    **Origin:** 2026-09-07.\n"
+    assert item_offences(text: good, first: 10).len() == 0
+
+    # Something above the item's line; a second item; prose at column zero;
+    # nothing at all. Each names the line a reader opens the file at.
+    headed = item_offences(text: "# a title\n" + good, first: 10)
+    assert strings.contains(text: headed[0], needle: "line 10 is not the item's line")
+    second = item_offences(text: good + "\n- [ ] **M-ir-lowering** | another | x\n", first: 10)
+    assert second.len() == 1
+    assert strings.contains(text: second[0], needle: "line 14: an item line below line 10")
+    loose = item_offences(text: good + "\nAnd this paragraph is not indented.\n", first: 10)
+    assert loose.len() == 1
+    assert strings.contains(text: loose[0], needle: "line 14: prose at column zero")
+    assert strings.contains(text: item_offences(text: "", first: 10)[0], needle: "holds no item")
+
+test "an item of the defect list states one class on its line and the same in its body"
+    filed = [
+        ""
+        "**Origin:** a lane, 2026-10-02."
+        ""
+        "**Class: adjacent**, 2026-10-02 (the rule): a second message for one"
+        "mistake, found beside the work."
+    ]
+    good = one_defect(
+        head: "- [ ] **161 — a second message for one mistake** | what | where · **class: adjacent**",
+        body: filed
+    )
+    assert class_offences(good).len() == 0
+    assert item_offences(text: good, first: 1).len() == 0
+    item = classed(open_regions(good)[0].text)
+    assert item.kind == "adjacent"
+    assert item.day == 20261002
+
+    # Each of the four is a class, and trailing spaces are not a line's content.
+    for kind in CLASSES
+        spaced = one_defect(
+            head: "- [ ] **162 — x** | a | b · **class: " + kind + "**  ",
+            body: ["", "**Class: " + kind + "**, 2026-10-02, a reason."]
+        )
+        assert class_offences(spaced).len() == 0
+
+    # The reason may run on below its day, to its paragraph's end.
+    run_on = one_defect(
+        head: "- [ ] **163 — x** | a | b · **class: blocking**",
+        body: ["", "**Class: blocking**, 2026-10-02 (", "a crash at exit 0)."]
+    )
+    assert class_offences(run_on).len() == 0
+
+test "an item with no class on its line, two, a fifth, or one out of place is refused by name"
+    body = ["", "**Class: blocking**, 2026-10-02, a crash."]
+
+    # No token, and the token spelt with the body's capital, which is not the
+    # line's spelling. The complaint names the item by its line and its head.
+    bare = one_defect(head: "- [ ] **164 — x** | a | b", body: body)
+    assert strings.contains(text: only_complaint(bare), needle: "does not end with ` · **class: <name>**`")
+    assert strings.starts_with(text: only_complaint(bare), prefix: "line 1: - [ ] **164 — x**")
+    capital = one_defect(head: "- [ ] **164 — x** | a | b · **Class: blocking**", body: body)
+    assert strings.contains(text: only_complaint(capital), needle: "does not end with")
+
+    # Two tokens, a fifth class and an empty one.
+    two = one_defect(head: "- [ ] **164 — x** | a | b · **class: blocking** · **class: adjacent**", body: body)
+    assert strings.contains(text: only_complaint(two), needle: "carries 2 class tokens")
+    fifth = one_defect(head: "- [ ] **164 — x** | a | b · **class: blocker**", body: body)
+    assert strings.contains(text: only_complaint(fifth), needle: "names the class `blocker`")
+    empty = one_defect(head: "- [ ] **164 — x** | a | b · **class: **", body: body)
+    assert strings.contains(text: only_complaint(empty), needle: "names the class ``")
+
+    # Out of place: before the bar rather than at the end, and not set off.
+    inside = one_defect(head: "- [ ] **164 — x** · **class: blocking** | a | b", body: body)
+    assert strings.contains(text: only_complaint(inside), needle: "not the end of its line")
+    unset = one_defect(head: "- [ ] **164 — x** | a | b **class: blocking**", body: body)
+    assert strings.contains(text: only_complaint(unset), needle: "not set off by ` · `")
+
+test "an item's body states its class once, with its day and its reason, and agrees with its line"
+    head = "- [ ] **165 — x** | a | b · **class: blocking**"
+    silent = one_defect(head: head, body: ["", "**Origin:** a lane, 2026-10-02."])
+    assert strings.contains(text: only_complaint(silent), needle: "its body holds no line opening")
+    twice = one_defect(
+        head: head,
+        body: ["", "**Class: blocking**, 2026-10-02, a crash.", "", "**Class: blocking**, 2026-10-03, again."]
+    )
+    assert strings.contains(text: only_complaint(twice), needle: "holds 2 lines opening `**Class:`")
+
+    # The spelling the rule names loosely, `**Class:**`, is a line and a wrong one.
+    unspaced = one_defect(head: head, body: ["", "**Class:** blocking, 2026-10-02, a crash."])
+    assert strings.contains(text: only_complaint(unspaced), needle: "does not open `**Class: <name>**`")
+    fifth = one_defect(head: head, body: ["", "**Class: urgent**, 2026-10-02, a crash."])
+    assert strings.contains(text: only_complaint(fifth), needle: "line names `urgent`")
+    other = one_defect(head: head, body: ["", "**Class: adjacent**, 2026-10-02, a second message."])
+    assert strings.contains(
+        text: only_complaint(other),
+        needle: "its line says `blocking` and its `**Class:` line says `adjacent`"
+    )
+
+    # A malformed item is held to no class and no day, so nothing downstream
+    # can read it as the weaker of the two it states.
+    split = classed(open_regions(other)[0].text)
+    assert split.kind == ""
+    assert split.day == 0
+    undated = one_defect(head: head, body: ["", "**Class: blocking**: a crash."])
+    assert strings.contains(text: only_complaint(undated), needle: "is not followed by `, YYYY-MM-DD`")
+    days = [
+        "2026-10-2, a crash."
+        "02-10-2026, a crash."
+        "2026-13-02, a crash."
+        "2026-02-30, a crash."
+        "2026-10-021, a crash."
+        "2026·10-02, a crash."
+    ]
+
+    for day in days
+        misdated = one_defect(head: head, body: ["", "**Class: blocking**, " + day])
+        assert strings.contains(text: only_complaint(misdated), needle: "gives no day after its class")
+
+    unreasoned = one_defect(head: head, body: ["", "**Class: blocking**, 2026-10-02."])
+    assert strings.contains(text: only_complaint(unreasoned), needle: "gives its day and no reason")
+
+    # A sentence that names the spelling is not a second line of it.
+    naming = one_defect(
+        head: head,
+        body: ["", "**Class: blocking**, 2026-10-02, a crash.", "", "and the `**Class:` line above says so."]
+    )
+    assert class_offences(naming).len() == 0
+
+test "an open item's body runs to the next item, a banner or a line at column zero"
+    rows = [
+        BANNER
+        "**OPEN: 2**"
+        ""
+        "- [ ] **166 — a** | x | y · **class: blocking**"
+        ""
+        "    **Class: blocking**, 2026-10-02, a crash."
+        ""
+        "- [ ] **167 — b** | x | y · **class: blocking**"
+        ""
+        "    the body of b"
+        "loose prose"
+        "    **Class: blocking**, 2026-10-02, under the prose."
+        BANNER
+    ]
+    regions = open_regions(rows.join("\n"))
+    assert regions.len() == 2
+    assert regions[0].line == 4
+    assert regions[1].line == 8
+    assert strings.contains(text: regions[0].text, needle: "a crash")
+    assert !strings.contains(text: regions[0].text, needle: "167")
+
+    # The line under the loose prose belongs to no item, so `b` states none.
+    assert !strings.contains(text: regions[1].text, needle: "under the prose")
+    assert classed(regions[1].text).kind == ""
+
+# DEFECT 190, held as a test (2026-10-04): a defect item's line is read whole
+# between its number and its class token. Item 130's line as `8349d264` left
+# it read whole; so does each shape beside it here, refused by name, and a
+# field quoting ` | `, as 190's own does, is no offence.
+test "fixedbugs: a defect item's line is read whole, its title closed and its two fields there (defect 190)"
+    body = ["", "**Class: systemic**, 2026-10-02, a reason."]
+    damaged = one_defect(
+        head: "- [ ] **130 — after a unction main()`, three bound matches `a = match n`, `b = match n`, `c = match n`, each with the arms `+ => 10` and `_ => 20`, report lines 4 and 10 and never line 7; two statement matches `match n` over `+ => print(1)` report only the first; and a plain statement after one such match, `y = 3 )` overecovery · **class: systemic**",
+        body: body
+    )
+    said = defect_line_offences(text: damaged, first: 10)
+    assert said.len() == 1
+    assert strings.starts_with(text: said[0], prefix: "line 10: its title's closing `**` is not followed by ` | `")
+    shapes = [
+        "- [ ] **164 — x · **class: blocking**"
+        "- [ ] **164 — x** · **class: blocking**"
+        "- [ ] **164 — x** | only what it does · **class: blocking**"
+        "- [ ] **164 — x** |  | where · **class: blocking**"
+        "- [ ] **164 — x** | what |  · **class: blocking**"
+        "- [ ] **164 — x"
+    ]
+    told = [
+        "its title's closing `**` is not followed by ` | `"
+        "its title's closing `**` is not followed by ` | `"
+        "its line holds one field after its title"
+        "its field of what the defect does is empty"
+        "its field of where to look is empty"
+        "its title is never closed by `**`"
+    ]
+    at: i64 @= 0
+
+    while at < shapes.len()
+        got = defect_line_offences(text: one_defect(head: shapes[at], body: body), first: 10)
+        assert got.len() == 1
+        assert strings.starts_with(text: got[0], prefix: "line 10: " + told[at])
+        at @ at + 1
+
+    bars_inside = one_defect(head: "- [ ] **164 — x** | no ` | ` at all | where · **class: blocking**", body: body)
+    assert defect_line_offences(text: bars_inside, first: 10).len() == 0
