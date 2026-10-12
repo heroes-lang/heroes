@@ -1,4 +1,4 @@
-- [ ] **M-arm-platform exit quiz** | Two defects were filed apart because their repairs looked different: one a language question, one a table row in `emit/c_spellings.hero`. **Before reading: predict how many lines the second repair took.** | `docs/records/done/2026-09-18-0130-defects-058-and-059-close-on-one-string.md`
+- [ ] **M-arm-platform exit quiz** | Two defects were filed apart because their repairs looked different: one a language question, one a table row in `emit/c_spellings.hero`. **Before reading: predict how many lines the second repair took.** | https://github.com/heroes-lang/heroes/issues/1259
 
     Defect 059 was this, on the machine where `char` is unsigned:
 

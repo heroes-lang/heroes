@@ -125,7 +125,7 @@ of `owned` on a `ptr`, `empty_record`'s caret) plus CL-036's re-printer walk, 5
 rule (i)'s prototype and the affine handle's copy-site count.
 
 **Step 4's scouting, 2026-09-13, and the form NARROWS before it lands**
-(`docs/records/log/2026-09-13-1300-the-form-narrows-before-it-lands-and-the-false-clause-was-the-coordinators-not-the-sittings.md`).
+(https://github.com/heroes-lang/heroes/issues/1185).
 Five scouts plus a completeness critic mapped the change before a line was
 written, and two author decisions came out of it. **A handle does NOT convert to
 `ptr`**: the clause saying otherwise was in the **coordinator's brief**, not in
@@ -158,7 +158,7 @@ named**: `.named` answers *not numeric*, so `@out: Db` gets no pointee width
 assertion and the out-parameter story rests on the `_Static_assert` probe alone.
 
 **Step 4, 2026-09-13: the form lands and DEFECT 029 CLOSES**
-(`docs/records/log/2026-09-13-1400-…`). `sqlite3_step(db)` is
+(https://github.com/heroes-lang/heroes/issues/1186). `sqlite3_step(db)` is
 `error[type_mismatch]: expected Stmt, found Db` on its own line, and the
 unchanged example prints `rows: 3` byte-identical. **The measurement**:
 `swap-ptr` read 15 mutants, 8 killed and **0 of the 7 that were the class**
@@ -209,7 +209,7 @@ here. **What the sitting actually bought is not the name.** It is that
 `@tail: ptr` was making this compiler emit a `(void *)` cast where `@tail: cstr`
 hands clang the exact type, so panel 140's *11 times in 2 files* is now **0**.
 Ratified in full the same day; the record is
-`docs/records/done/2026-09-14-0100-panel-146-is-ratified-and-the-sitting-convened-over-a-word-found-a-cast.md`
+https://github.com/heroes-lang/heroes/issues/1193
 and the sitting is
 `docs/panel/146-the-name-survives-and-the-sitting-convened-over-it-found-a-cast.md`.
 

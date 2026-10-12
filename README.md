@@ -203,7 +203,7 @@ included.
 | `design.md` | the source of truth for the language, and the reasoning behind it |
 | `spec/heroes-spec.md` | the contract, budgeted at 10240 tokens measured by the tokeniser that reads it, a control instrument and never a tutorial |
 | `docs/ROADMAP.md` | the milestone chain, in execution order |
-| `issues/` | every defect, decision and milestone task, one file each, ready to be one GitHub issue |
+| [the issues](https://github.com/heroes-lang/heroes/issues) | every defect, decision and milestone task, one GitHub issue each |
 | `docs/panel/` | the design reviews: five judges with differentiated inputs, their vetoes, and what lifted them |
 | `docs/records/journal/` | one entry per milestone: what was built, what broke, and why |
 

@@ -2,7 +2,7 @@
 
     **Where to look:** `selfhost/handles.hero`'s module comment;
     `docs/panel/145-a-handle-is-a-pointer-with-a-name-and-the-compiler-already-reads-the-name.md`;
-    `docs/records/log/2026-09-13-1400-a-handle-is-a-pointer-with-a-name-and-the-form-is-a-quarter-of-what-it-was-priced-at.md`;
+    https://github.com/heroes-lang/heroes/issues/1186;
     CLAUDE.md's opening paragraph.
 
     **Why it matters:** five scouts were sent to price this form and they came

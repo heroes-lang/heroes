@@ -12,13 +12,14 @@ closed questions before implementing — only when the author explicitly asks
 for it before a step; no other ceremony attaches to it.)
 
 ## 1. Orient
-`git log --oneline -10` · the newest decisions in `issues/` · `docs/ROADMAP.md` status · read
+`git log --oneline -10` · the open decisions,
+`heroes run tests/harness/issues.hero -- open --kind decision` · `docs/ROADMAP.md` status · read
 `spec/heroes-spec.md` in full. If no step was named, take the next one from
 the ROADMAP.
 
 **Opening a milestone means opening its own page, `docs/roadmap/milestones/<its name>.md`,
-which carries its reasoning, and the open `feature` and `task` issues whose card
-names it** (`grep -rl "milestone: <its name>" issues/`). That list is work with a home — a measurement to run, a
+which carries its reasoning, and the open `feature` and `task` issues of its
+GitHub milestone** (`heroes run tests/harness/issues.hero -- open --milestone <its name>`). That list is work with a home — a measurement to run, a
 paragraph owed, a row to price — put aside precisely because doing it earlier
 would do it against a smaller corpus or a compiler that had not grown into the
 question yet. There is no `/scheduled` skill and there should not be one: a third
@@ -28,40 +29,34 @@ the list needs is not a caller of its own, it is *this line* — without it the
 file is write-only, which is the failure mode of every list nobody is obliged to
 open.
 
-**Every item is an issue file, since 2026-10-04** (`.claude/rules/records.md`
-§ The issues, the author's instruction of that day). **An item the step finishes
-is ticked where it stands**, with what closed it written under it and the card's
-`commit` filled: the commit that repaired a defect, or `self` where the closing
-commit is the one writing the file. A `feature` or a `task` closes under a
-`## What was done` section, one line and its commit, which is what its GitHub
-issue says it delivered (`.claude/rules/records.md` § The issues, 2026-10-11).
-Nothing moves, so the link a GitHub issue
-holds to the file never breaks. **An item the step finds** is filed as a new
-file in today's folder, `issues/<year-month>/<day>/<stamp>-<slug>.md`, its card
-first and its kind the one that matches what it asks: a `feature` or `task`
-naming the milestone that owes it, a `decision` if it names a default the
-compiler is running on, **a `defect` if it is BROKEN** (a crash, a wrong answer
-at exit 0, a silence where a message is owed; its slug opens `defect-NNN-`, the
-number one above the highest any issue states); and a question that only asks
-what is true is not an issue but a file of `docs/learn/` (§ 4) — and **never as a bare bullet or a `## ` section**, which is
-a notation no count in this project can see. The ROADMAP's count line moves with
-a defect or a decision filed or closed (`records/counts`). Before the lists
-became files a ticked item had to be moved by hand, and by 2026-08-26
-`DECIDE.md` held 138 ticked items and zero open ones: a rule nobody performs
-(CL-044, CL-080).
+**Every item is a GitHub issue, since 2026-10-12** (`.claude/rules/records.md`
+§ The issues, the author's answers of that day). **An item the step finishes is
+closed after the commit that finishes it**: `heroes run tests/harness/issues.hero -- close <number>
+<closing.md>`, the closing text in a scratch file, which `close` appends under
+`## The repair` for a defect and `## What was done` for every other kind, one
+line or a few, ending with that commit's hash; that section is what the issue
+says it delivered. **An item the step finds** is drafted in the lane's scratch
+folder under `.claude/worktrees/`, never in a tracked path, and opened with
+`heroes run tests/harness/issues.hero -- file <draft.md>`, which prints its URL; its kind is the one that
+matches what it asks: a `feature` or `task` naming the milestone that owes it,
+a `decision` if it names a default the compiler is running on, **a `defect` if
+it is BROKEN** (a crash, a wrong answer at exit 0, a silence where a message is
+owed; its number is the issue's, which `file` writes into its title); and a
+question that only asks what is true is not an issue but a file of
+`docs/learn/` (§ 4), and **never a bare bullet or a `## ` section**, which is a
+notation no count in this project can see. Before the lists became issues a
+ticked item had to be moved by hand, and by 2026-08-26 `DECIDE.md` held 138
+ticked items and zero open ones: a rule nobody performs (CL-044, CL-080).
 
-**The shape of a filed item:** its card (`kind`, `area`, `milestone`, `filed`,
+**The shape of a draft:** its card (`kind`, `area`, `milestone`, `filed`,
 `commit`, `github`, eight lines and a blank one), then one line of three
-fields, `- [ ] **<first field>** | <what, in one line> | <where to look>`, then
-an optional body indented four spaces opening with `**Origin:**` and its date,
-the same day as the card's `filed` and the name's. The first field is what the
-instrument reads: `**M-<name>**` for a milestone's work, `**panel NNN**` for a
-sitting's ratification, `**NNN — <title>**` for a defect, the origin for a
-question. **A line that will carry a path into a body needs its date on that
-same physical line** — `records/citations` reads one line at a time, and
-re-wrapping a paragraph moved five dates off their paths the day this shape
-landed. `records/cards` and `records/lists` are what fail when any of it is not
-done.
+fields, `- [ ] **<first field>** | <what, in one line> | <where to look>`, a
+defect's ending ` · **class: <name>**`, then an optional body indented four
+spaces opening with `**Origin:**` and its date, the same day as the card's
+`filed`. The first field is what the instrument reads: `**M-<name>**` for a
+milestone's work, `**panel NNN**` for a sitting's ratification, the title alone
+for a new defect, the origin for a question. `file` refuses a draft that is not
+in this shape and says why (`.claude/rules/records.md` § The issues).
 
 ## 2. Implement
 - If the step touches a panel path (CLAUDE.md § 4), run `/panel` first, and
@@ -162,9 +157,10 @@ Milestone close — the checklist (this is its only copy):
   `YYYY-MM-DD-HHMM-<slug>.md` and holding the one line
   `date | milestone | the beat`; the directory, read in name order, is the
   book's chronology, and no index of it is kept;
-- one `decision` issue per decision made, a new file of today's folder of
-  `issues/`, closed the day it is filed (no box), its card's `commit` `self`,
-  saying the decision, its reason, its design.md § and its panel;
+- one `decision` issue per decision made, drafted after the commit that
+  applies it, its item ticked and its card's `commit` that commit, and opened
+  with `file`, which closes it at once: the decision, its reason, its design.md
+  § and its panel;
 - **score every prediction whose milestone this is**, and lapse the ones you
   cannot: `grep -n "$(git describe --tags --abbrev=0)\|<this milestone>" docs/roadmap/milestones/
   docs/measurements/010-spec-budget-ledger.md docs/panel/*.md`. (It named

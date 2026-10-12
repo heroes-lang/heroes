@@ -34,7 +34,7 @@ it would report a promise where there is none. The count it opens with is its
 
 **Both items closed 2026-09-14 at this milestone's own close**, and their record
 is
-`docs/records/done/2026-09-14-1200-m-cleanup-verdict-both-items-closed-and-the-count-falsified-the-question.md`.
+https://github.com/heroes-lang/heroes/issues/1201.
 The count this file demanded before any argument is
 `docs/measurements/030-three-release-obligations-and-only-one-of-them-is-silent.md`,
 and it falsified two thirds of the premise above: `owned` puts no obligation on

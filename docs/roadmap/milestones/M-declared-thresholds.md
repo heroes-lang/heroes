@@ -87,13 +87,13 @@ forward called the risk low because they count things that do not grow; two of
 the three had more than doubled. CLAUDE.md §5 and §6 stay where they are, the
 removal costed and unspent, for the day an amendment has to pay for itself. The
 record is
-`docs/records/done/2026-09-13-0010-decided-2026-09-13-author-the-runtime-floors-convert-and-sections-5-and-6-stay.md`.
+https://github.com/heroes-lang/heroes/issues/1156.
 
 ## What is closed
 
 All three items this milestone opened were closed by it, on 2026-09-12, and the
 record is
-`docs/records/done/2026-09-12-2310-m-declared-thresholds-three-items-closed-by-their-own-milestone.md`.
+https://github.com/heroes-lang/heroes/issues/1153.
 The contract moved to the reader's tokeniser at a ceiling of 12288; the delta
 gate landed in the same commit and fired on that commit's own edit; and the
 floors are checked from both sides, with eight re-based to today's count.

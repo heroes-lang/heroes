@@ -73,7 +73,7 @@ constant VERSION: str
 # 256 MiB is reserved address space and not memory: a page is committed when
 # a walk first touches it, so a shallow program costs what it did. The floor
 # it buys is measured, never assumed (panel 184's R6,
-# `docs/records/log/2026-10-03-1130-panel-184-r5-landed-every-command-runs-on-a-thread-whose-stack-the-compiler-chooses.md`),
+# https://github.com/heroes-lang/heroes/issues/1521),
 # and past it the abort stands as `panic: stack exhausted`, exit 134.
 extern "hero_os.h"
     function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64

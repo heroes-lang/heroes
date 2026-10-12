@@ -1,7 +1,6 @@
 ---
 paths:
   - "docs/**"
-  - "issues/**"
   - "CLAUDE.md"
   - ".claude/**"
   - "site/README.md"
@@ -15,8 +14,8 @@ What each rule cost to learn is in `docs/records/contract/case-law.md`, cited as
 
 ## A record is never rewritten
 
-`docs/panel/`, `docs/records/journal/`, `docs/measurements/`, a closed issue in
-`issues/` below its card (§ The issues), `docs/records/book/beats/`,
+`docs/panel/`, `docs/records/journal/`, `docs/measurements/`, a closed issue
+on GitHub (§ The issues), `docs/records/book/beats/`,
 `docs/records/contract/`, `tests/golden/`, every commit subject and the twelve
 legacy tags are append-only. Where a sentence in
 one has since been falsified, the correction is **added underneath**, with its
@@ -32,14 +31,15 @@ suite green.
 
 ## A tree of entries: one file each, and no map
 
-**A new entry is a NEW FILE**, `YYYY-MM-DD-HHMM-<slug>.md`, in `issues/` or in
-`docs/records/book/beats/`. Two sessions then write two files and never one
-line, which is the whole reason the shape exists. The minute in the name is a
+**A new entry is a NEW FILE**, `YYYY-MM-DD-HHMM-<slug>.md`, in
+`docs/records/book/beats/` or in `docs/learn/`'s folder of its day. Two
+sessions then write two files and never one line, which is the whole reason
+the shape exists. The minute in the name is a
 POSITION for an entry written before its record became a tree: a historical
 entry has no clock reading, and two entries of one day still have an order.
 **No directory index**, because an index is a second place where truth lives
 and the only tabulated one here drifted for nine closes in silence.
-`records/entries` holds the beats' names and `records/cards` the issues'.
+`records/entries` holds the beats' names.
 
 **No map either, since 2026-10-05** — author instruction, meant as: *I prefer
 cleanliness for the future to keeping the historical legacy*. From 2026-09-12
@@ -101,14 +101,14 @@ sat, the historian spoke, and what the historian said was taken into account;
 backwards too, in those cases alone; elsewhere do not even write that the
 search was not made*). So a `decision` issue of a sitting in which the
 historian sat, whose resolution rests on a precedent the historian sourced,
-ends with a `## Prior art` section, written in the session that files the
-sitting:
+ends with a `## Prior art` section, written into its draft by the session that
+files the sitting:
 
 - its first line names the sitting's file under `docs/panel/`, the historian's
   report under its `-reports/` folder or the synthesis's seat row where the
   sitting kept none, and the day every link below was re-read, `read
-  YYYY-MM-DD`; where one card ratified several sittings the line names each of
-  them, and the historian's having sat is asked of each (`records/prior-art`);
+  YYYY-MM-DD`; where one issue ratifies several sittings the line names each
+  of them, and the historian's having sat is asked of each;
 - then one line per precedent, in one of two forms and no other:
   `- **Taken from <language or project>**: [<reference>](<url>): <the rule or
   refusal adopted on their evidence>`, or `- **Reached first by <language or
@@ -134,10 +134,8 @@ credit where it is owed and for silence everywhere else. The heading is
 Rust's, the seventh section of the RFC template in `rust-lang/rfcs` (read
 2026-10-07); Swift Evolution's closing *Acknowledgments* is what `**Origin:**`
 already does for the people inside this project. What it cost to learn is
-CL-082. The executor is `records/prior-art` (`tests/harness/credit.hero`),
-which also holds a closed `feature`'s or `task`'s `## What was done` to its
-card's commit, and the write hook asks it of an issue file as it is written
-(`.claude/rules/verification.md` § A suite is the last judge).
+CL-082. The executor is `tests/harness/credit.hero`, which `file` asks of a
+draft before it opens the issue (§ The issues).
 
 ## Milestone identifiers are names, not numbers
 
@@ -170,361 +168,228 @@ moves only in the commit that carries the tag. While `X` is 0, `Y` moves when
 is the instrument, and no binary is uploaded. The reasoning and the six choices
 are CL-067 and the decision issue of 2026-09-07.
 
-## The issues — author instruction 2026-10-04
+## The issues
 
-Meant as: *every defect, every decision and everything in the record should
-already have the structure to be copied one file to one GitHub issue, keeping
-their sequence and the commit that settled each*, and then: *everything goes into
-a top-level `issues` folder, it is more orderly; we change the rules, toward a
-final definition*. **Every item this project tracks is one file in `issues/`, and
-one file is one GitHub issue.** `tests/harness/cards.hero` reads them, and
-`records/cards`, `lists`, `defects`, `numbering`, `counts`, `verdicts`, `homes`,
-`tagged`, `appended`, `prior-art`, `defects-cited` and `rendered` are this
-section's executors.
+**Every item this project tracks is one issue of `heroes-lang/heroes`, and the
+issues live on GitHub alone** (the author's answers of 2026-10-12). From
+2026-10-04 each was one file of `issues/`, and issues 1 to 2,029 were
+transcribed from those files (panel 212); the folder left the tree with
+M-issue-files' last work, and a dated record that cites one of its files reads
+it against the last commit that held it (§ A tree of entries). **Opening,
+commenting on, closing and correcting an issue goes through the program below
+and is asked once** (CLAUDE.md § Hard stops); a milestone, a label and every
+other write to GitHub stay asked every time.
 
-**What an issue is**, the card's `kind`: a `defect`, a measured failure, its
-class on its line (§ The lists); a `decision`, a question with the default it
-leaves running, a sitting's ratification, or a decision taken, which is an issue
-closed the day it is filed, as every entry of the old log is; a `feature`, a
-milestone's item that changes what a Heroes program or the `heroes` command does
-for somebody writing programs; a `task`, a milestone's item that serves the
-project, its instruments, records, platforms and site. **Not an issue**: a
-question of comprehension, `/learn`'s, which is a file of `docs/learn/` with no
-card and is never transcribed (§ The lists; the author's *1a 2a* of
-2026-10-05); a milestone, which is its page in
-`docs/roadmap/milestones/` and its row in the ROADMAP's chain and becomes a GitHub
-milestone named `M-<name>`; a sitting, a journal, a beat, the case law, a
-measurement. Those are the account an issue links to.
+**What an issue is**, its `kind:` label: a `defect`, a measured failure, with
+its class (§ The lists); a `decision`, a question with the default it leaves
+running, a sitting's ratification, or a decision taken, closed the day it is
+opened; a `feature`, a milestone's item that changes what a Heroes program or
+the `heroes` command does for somebody writing programs; a `task`, a
+milestone's item that serves the project, its instruments, records, platforms
+and site. **Not an issue**: a question of comprehension, a file of
+`docs/learn/` (§ The lists); a milestone, which is its page in
+`docs/roadmap/milestones/`, its row in the ROADMAP's chain and the GitHub
+milestone `M-<name>`; a sitting, which stays a file of `docs/panel/` linked
+from the decision that ratifies it and is never a GitHub Discussion (the
+author's *6b*, 2026-10-05); a journal, a beat, the case law, a measurement.
+Those are the account an issue links to.
 
-**Where it lives, for ever**: `issues/<year-month>/<day>/<stamp>-<slug>.md`,
-the folder being the day its name carries, and **nothing moves when an issue
-closes**, so a link to the file, GitHub's included, stays good. A folder per day
-because GitHub's web view and its contents API list 1,000 entries a folder
-(GitHub's documentation, read 2026-10-04) and August 2026 alone held 1,086 files,
-where a day held at most 319. Not a folder per kind: a kind is a classification
-and is corrected, and a path that moved with a correction would break every link
-to it. Not a bucket per thousand numbers: a counter every filing shares is the
-number two lanes take at once, `records/numbering`'s own story.
+**The labels**: `kind:<kind>` on every issue; `class:<class>` on a defect;
+`area:<area>` where the area is not `none`, an area being a directory of
+`selfhost/`, `compiler` for a module at its top, or a top-level area of the
+tree (`AREAS` in `tests/harness/cards.hero`); and the GitHub milestone
+`M-<name>` where the issue names one with a row in the chain, an open
+`feature` or `task` naming an open one.
 
-**The name is the birth.** A new issue's stamp is the minute it is filed, so the
-names read in order are the issues in the order they were born, which is the
-order they are transcribed in. The slug is the title's words, lowercased, every
-run of other characters one `-`, cut at a word boundary to at most 60
-characters; a defect's opens `defect-NNN-`, its number, and a sitting's
-ratification `panel-NNN-`. The files of `docs/records/done/`, `docs/records/log/`
-and `docs/learn/` kept their names when they moved here on 2026-10-04 (the
-questions went back to `docs/learn/` on 2026-10-05, keeping them again), a closed
-entry's stamp being the day it closed, so a citation of one resolves by the rule,
-the same name in its stamp's folder (`issue_redirect`); the one name two trees
-shared, the log's `2026-09-23-1215-a-seats-copy-is-its-own.md`, became
-`…-decided.md`. The 78 open defects, the open decision and the 51 open items of
-the milestone pages took a birth stamp that day, the minute a position within
-the day, as every rotation's is.
+**An issue is born as a draft in the card's shape, outside the tracked tree**,
+in the session's or the lane's scratch folder under `.claude/worktrees/`, which
+git ignores. The program checks it, renders it, opens the issue and removes the
+draft, so no copy of an issue stands in the tree beside it: a second place
+where its truth lives is one that drifts (§ A tree of entries). The draft is
+what a file of `issues/` was until 2026-10-12:
 
-**The state is the item's box** (CL-032): an issue is open while it holds an
-unticked item, `- [ ] `, whose line stands first under its card, and closed once
-it holds none. A decision recorded as taken holds no box and is closed the day
-it is filed. **Closing** ticks the box where it stands, adds what closed it (a
-defect's *The repair* section), and fills `commit`.
+- **the card**, eight lines and a blank one: `---`, then `kind`, `area`,
+  `milestone` (`M-<name>` or `none`), `filed` (the day it is filed, the day its
+  `**Origin:**` names), `commit` (`none` while it is open, else the forty digits
+  of the commit that settled it) and `github` (`none`), then `---`;
+- **the item**, one line of three fields,
+  `- [ ] **<first field>** | <what, in one line> | <where to look>` (CL-066),
+  a defect's ending ` · **class: <name>**`; then an optional body indented four
+  spaces opening with `**Origin:**` and its date, a defect's holding its
+  `**Class:**` line (§ The lists), a sitting's decision its `## Prior art` where
+  one is owed (§ And the record says whose idea it was);
+- **a decision taken** is drafted after the commit that applies it, its item
+  ticked, `- [x]`, and its card's `commit` that commit, and `file` closes it as
+  it opens it.
 
-**The card**, eight lines and a blank one, opens every file:
+**The program's words**, `heroes run tests/harness/issues.hero -- <word> ...`
+from the repository's root: a program of the harness and no verb of `heroes`
+(panel 212's R1, ratified 2026-10-11), every request to GitHub made through
+`gh`, which holds the token:
 
-| field | value |
-|---|---|
-| `kind` | `defect`, `decision`, `feature` or `task` |
-| `area` | a directory of `selfhost/`, `compiler` for a module at its top, a top-level area of the tree, or `none`; `AREAS` in `cards.hero`, held to the tree each run |
-| `milestone` | `M-<name>` with a row in the chain, or `none`; an open `feature` or `task` names an open one |
-| `filed` | the day it was filed: an open issue's is its name's day, a closed one's is not later, and where the body's `**Origin:**` names a day, it is that day |
-| `commit` | the forty digits of the commit that settled it, a defect's being its `Repaired at`; `self` where that commit is the one writing the file, which git answers; `none` while it is open, or where the record does not say |
-| `github` | `none`, or `https://github.com/heroes-lang/heroes/issues/<number>` once it is there |
+- **`file <draft.md>`** checks the draft, renders it by the rule below, opens
+  the issue with its labels and milestone, removes the draft and prints the
+  issue's URL; a defect's title opens `Defect <n>:`, `<n>` its issue number;
+- **`close <number> <closing.md>`** appends the closing text to the issue, a
+  defect's under `## The repair` and every other kind's under
+  `## What was done`, ending with the commit's hash; posts `Fixed by <commit>`
+  for a defect or `Settled by <commit>` for the rest; and closes it as
+  `completed`;
+- **`comment <number> <text.md>`** adds a comment;
+- **`edit <number> <draft.md>`** makes an open issue's title, body, labels and
+  milestone those of a corrected draft;
+- **`open [--kind <kind>] [--milestone M-<name>] [--class <class>] [--json]`**
+  lists the open issues, the one reader of the lists (§ The lists) and of the
+  skills.
 
-**Three values state in a structured line what the item states in prose**, and
-the card is their structured home: `commit` is one of the commits the body says
-it was `Repaired at`, `filed` the day its `**Origin:**` names first, `milestone`
-the milestone its first field names. `records/cards` holds them to agree, so
-neither drifts from the other in silence. **The card is metadata**: it is
-corrected where it stands, by a commit that says why. Below it a closed issue is
-a record, append-only from the line under the card, and `records/appended` is
-that rule's executor: the one exception to § A record is never rewritten has
-one.
+**A closed issue is a record** (§ A record is never rewritten): a sentence of
+it since falsified is corrected underneath, by `comment` and with its date,
+and never by `edit`, which corrects an open issue.
 
-**Order**: `filed`, then the name, compared byte for byte. The promise is the
-order, not the number: the repository is public, and an issue opened from
-outside while ours are transcribed takes a number between two of them.
+**The numbers** (the author's fifth answer of 2026-10-12, CL-083): defects 001
+to 677, filed while the issues were files, keep theirs, which their titles open
+with, `Defect NNN:`, and which the organisation's issue field `Defect` holds
+where it exists; `014`, issued twice, stands on two issues that name each
+other. A defect filed since is named by its GitHub issue number, every one
+above the numbers GitHub held that day, so the two series never meet. Either
+way the number is the defect's name for ever, cited `defect <n>` by the code,
+the tests and the commits; a new defect's draft has no number, its first field
+being its title alone, and `file` gives it the issue's. **The order is
+GitHub's**: an issue takes the next number, ours and a stranger's alike, and
+issues 1 to 2,029 took theirs in the order of the files' names.
 
-**What an issue becomes on GitHub**, the rule in one place. It is rendered by a
-program of the harness and by no verb (panel 212's R1, ratified 2026-10-11):
-`tests/harness/issues.hero`, run as `heroes run tests/harness/issues.hero --
-<render|plan|push> ...`, whose rendering `records/rendered` holds over every
-card (R2). Every reading below is deterministic, so one tree renders one set of
-bytes:
+**What an issue becomes on GitHub**, the rendering rule in one place.
+`tests/harness/issues.hero` renders every draft by it, as it rendered issues 1
+to 2,029 from their files, and every reading is deterministic, so one draft
+renders one set of bytes:
 
-- **the title** (R3's D1) is the file's `# ` heading where it opens with one;
-  else a defect's bold first field with its `NNN — ` taken off; else the item's
-  second field; else, for an item of one field, its first; else, for a row of
-  the old log, its second field; **else the first paragraph of text below the
-  card, its lines joined, a leading day taken off with the ` · ` after it where
-  there is one**, since a card's lines are wrapped by hand and a first line is a
-  fragment of a sentence (17
-  cards reach this reading, measured 2026-10-11: 15 rows written `YYYY-MM-DD ·
-  **...**`, one day with no ` | ` after it, one bold opening); a file of several
-  items takes its first's. Its `**` markers are taken off; **a title that is a
-  code span holding a path and nothing else takes the file's slug words
-  instead**, and one that opens with such a span and goes on keeps its own
-  words, the span with them (R3 said *opens with*; read literally it turned 52
-  titles into slug words and many into broken phrases, the old slugs having
-  dropped their code spans, measured 2026-10-11, so the coordinator narrowed it
-  to the title a stranger cannot use, which is what the ergonomist found; the
-  literal reading is the author's to restore); it is cut at a word boundary to
-  at most 250 characters, never inside a code span, and a cut title stands whole
-  as the body's line after the days, unless the body already holds that text
-  under a heading (a title taken from the item's second field), so that no
-  paragraph is read twice. **A sitting's ratification opens with its
-  number too**, `Panel 212: <title>`, where its first field is `**panel NNN**`
-  and the title does not open so already, since nothing else in the issue would
-  say which sitting it ratifies. **A defect's title opens with its number as a word**, `Defect 235:
-  <title>`, a file of several `Defects 018 to 021: <title>`, added only where
-  the title does not open so already, because that number is the name the code,
-  the tests and the commits use (6,925 citations of `defect NNN` under
-  `selfhost/`, `runtime/`, `seed/` and `tests/`, 3,261 test files and 1,504
-  commit subjects, measured 2026-10-11) and GitHub's number is an address no
-  file knows until `github:` holds it (CL-083). **A defect's number** is the one
-  its file name carries, else the `NNN — ` its first field opens with, and the
-  title and the field `Defect` read the same one; a defect with neither takes no
-  prefix and no field value (measured 2026-10-11 over 666 defect cards: 585 by
-  the name, 34 by the first field, 47 with neither);
-- **an item line splits on ` | ` outside a code span** (D2), a code span read
-  as GitHub reads one, backtick runs paired by their length; four cards whose
-  items write about backticks (237, 347, 414, 644) read as fewer fields than
-  their writers meant, and are rendered as GitHub would show their lines, the
-  coordinator's reading of 2026-10-12 against the alternative of counting single
-  backticks, which mends one of the four and reads every other line as GitHub
-  does not;
-- **the labels** are `kind:<kind>`, `class:<class>` for a defect and
-  `area:<area>`, where `area: none` and a defect with no class take no label
-  (D5); the milestone is `M-<name>`, and `none` takes none. **The
-  organisation's issue field `Defect`**, a text field visible to everyone
-  holding the three-digit number, several separated by one space, so that
-  `field.defect:235` finds it (GitHub's documentation, read 2026-10-11), is
-  created once by an organisation administrator, `POST
-  /orgs/heroes-lang/issue-fields`, the author's act, and **is set only where it
-  exists when a run starts** (R6 item 5): the import cannot set it, so it is
-  CL-083's second bridge and never one a run relies on. The two issues of the
-  number issued twice, `014`, each hold it, and each body names the other;
-- **the days**: the body opens `Filed YYYY-MM-DD · closed YYYY-MM-DD` on every
-  route, and **GitHub's own dates are the card's days too**: the issue import
-  endpoint, an unofficial preview, sets an issue's `created_at` and `closed_at`
-  and its comment's from the request (measured 2026-10-11, `docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`;
-  until then this line said a transcription cannot back-date them, and the
-  author's instruction of 2026-10-06 asked it amended if the endpoint answered
-  yes). `filed` is the card's; **`closed`** is the day a body line opening
-  `Closed YYYY-MM-DD` gives (486 cards hold one, 2026-10-11), else the author date of the commit the card names,
-  else the card's `filed`, and never a day before `filed`; `plan` prints which
-  source each took (D3). A card holds days and no minutes, so **each day is
-  written as noon UTC**, which every zone from UTC-12 to UTC+11 reads as that
-  same day (the coordinator's reading of 2026-10-11, R3 being silent on the
-  hour), the closing comment taking the `closed` instant;
-- **the route**: an issue is imported whole, its days, labels, milestone, closed
-  state and closing comment in one request, each import read `imported` before
-  the next starts so that the numbers keep the files' order; the run's first
-  request asks the endpoint again, and where it refuses the run stops: the REST
-  route, which dates every issue the day it runs, is taken only on the author's
-  word. Serial, at least one second between writes, and on a 403 or a 429 the
-  `retry-after` seconds, else `x-ratelimit-reset`, else one minute, growing
-  (R5; GitHub's documented limits are 80 content requests a minute and 500 an
-  hour, so 2,017 imports are about four hours if an import counts as one,
-  which is unrun);
+- **the title** is the draft's `# ` heading where it opens with one; else a
+  defect's bold first field, its `NNN — ` taken off; else the item's second
+  field; else, for an item of one field, its first; else, for a row of the old
+  log, its second; else the first paragraph below the card, its lines joined
+  and a leading day taken off with the ` · ` after it, since a line wrapped by
+  hand is a fragment of a sentence. Its `**` markers are taken off; a title
+  that is a code span holding a path and nothing else takes the slug words of
+  the file's name, a path being a title a stranger cannot use; it is cut at a
+  word boundary to at most 250 characters, never inside a code span, and a cut
+  title stands whole as the body's line after the days, unless the body holds
+  that text under a heading. **A sitting's ratification opens `Panel NNN: `**,
+  where its first field is `**panel NNN**`, since nothing else would say which
+  sitting it ratifies; **a defect's opens `Defect <n>: `**, a file of several
+  `Defects 018 to 021: `, where the title does not open so already, because
+  that number is the name the code, the tests and the commits use (CL-083);
+- **an item line splits on ` | ` outside a code span**, a code span read as
+  GitHub reads one, backtick runs paired by their length, so a line renders as
+  GitHub would show it;
+- **the days**: the body opens `Filed YYYY-MM-DD`, and `Filed YYYY-MM-DD ·
+  closed YYYY-MM-DD` once closed, `closed` being the day a body line opening
+  `Closed YYYY-MM-DD` gives, else the author date of the commit the card names,
+  else `filed`, never before it. A transcribed issue holds those days as
+  GitHub's own, each written as noon UTC, which every zone from UTC-12 to
+  UTC+11 reads as that day: the import endpoint takes them from the request
+  (`docs/measurements/041-the-import-endpoint-keeps-an-issues-own-days-and-an-imported-reference-leaves-no-backlink.md`);
+  an issue `file` opens is dated by GitHub the day it runs;
 - **the body**: the item under the headings of its kind's form in
   `.github/ISSUE_TEMPLATE/`, a defect's second field under *What happens* and
-  its third under *Where to look*, **where its item has the three fields of the
-  list's shape of 2026-09-07** (CL-066); where it has another number of fields,
-  an older shape whose second field is often a day and whose third the whole
-  account, its fields after the first stand under the form's first heading,
-  one paragraph each, and no later heading names what its text is not. **This
-  holds for every kind** (measured 2026-10-12: defects 566 of three fields and
-  100 of another count, the other kinds 131 and 425); then a defect's `**Origin:**`, its `**Class:**` and
-  *The repair* under headings of those names (D6); a decision's question,
-  default, recommendation and verdict, and its `## Prior art` under *Prior
-  art*, after *Origin* (§ And the record says whose idea it was); a feature's
-  or a task's *What it delivers* and, once closed, its `## What was done` under
-  *What was done*; any other paragraph under *Notes*; a card's second and later
-  `- [ ]` lines become plain list lines, so GitHub shows no task progress (D7);
-  then `Record:` and the file's permalink, pinned at a commit already on
-  `origin/main`, given to the run as `--pin <hash>` and the same on every rerun
-  (R5). **Every section stating a repair or a settling ends with the commit's
-  hash, written bare**, since GitHub links a bare hash and not one in a code
-  span (D6). **A card's `self` is the commit that wrote `commit: self` into
-  it**, the earliest of `git log -S'commit: self' --format=%H -- <file>`; where
-  that prints nothing or names a commit dated before the card's `filed`, the
-  same asked with `--follow`, for a card moved after it was closed; and where
-  that too prints nothing, the commit that brought the file to its path on the
-  trunk, `git log --diff-filter=A --diff-merges=first-parent`, for a card that
-  entered by a merge (D4). Measured 2026-10-11 over the 75 `self` cards: 73 by
-  the first reading and 2 by the last (093 and panel 178's ratification, both
-  brought by the merge `3088caa7`), none left. R3 had read D4 as the file's
-  earliest commit, and that is the commit which OPENED a card closed later: it
-  named the wrong commit for 25 of the 75, panel 212's ratification among them
-  (its earliest commit `c1d49c62` filed it open, `b85be4ed` closed it); and
-  `--follow` alone followed panel 191's card into an older file's history, nine
-  days before it was filed. The guard is a fact of the card: a commit cannot
-  settle an issue filed after it;
-- **what a body must not do**: a bare `#NNN` and an `@word` are written inside a
-  code span, since outside one the first links to our own issue of that number
-  the moment it exists and the second notifies an account; a link to another
-  project's issue or pull request is written with `redirect.github.com`, which
-  leaves no backlink (GitHub's documentation, and measured on the REST route,
-  041); and **a literal backslash and `u` followed by the four digits of a C0
-  or C1 control character** (`0000` to `001f`, `0080` to `009f`) is written
-  with its backslash as `&#92;`, a code span holding one becoming an HTML
-  `<code>` element whose text is escaped as HTML, since GitHub stores such a
-  sequence in caret notation on the import route and on the REST route alike
-  (measured 2026-10-12: issues 1354 and 1643 held `\^A` and `\^[` for
-  `\u0001` and `\u009b` after their import and again after a PATCH, while
-  `\u007f` and `\u200b` stood as written; defect 675), and the oracle shows
-  `<code>&#92;u0001</code>` displayed as the code span is. **The oracle** is `POST /markdown`, mode `gfm`, context
-  `heroes-lang/heroes`, which writes nothing: no rendered body may hold an
-  `issue-link` or a `user-mention` anchor;
-- a closed issue whose card names a commit takes one comment, `Fixed by
-  <commit>` for a defect and `Settled by <commit>` for the rest: GitHub links a
-  bare hash to its commit, so no pull request is needed; a closed card whose
-  `commit` is `none`, the record not saying, takes none;
-- **every `defect NNN` and every `panel NNN` a body names becomes a link in a
-  second pass**, to that defect's issue and to that sitting's ratification
-  issue, where the prior art stands once; a run of its own after the last file
-  is transcribed, because the issues are born in the order of their names, a
-  closing text may name an issue born after it, and no address exists before
-  its issue does (R9 item 6). So a repair a sitting ruled is linked to its
-  ruling where its text names the sitting, and no field of the card is invented
-  to say which sitting ruled it;
-- **a run stopped between an import and the commit that fills its card's
-  `github:` creates no second issue**: the address is written into the card
-  once its import reads `imported` and before the next request, and a run
-  killed between the two is reconciled by listing the repository's recent
-  issues, a list and not a search, matched on the `Record:` permalink, an import
-  that answered `pending` being read first (R5);
-- `github:` in the file is the truth of the mapping, and **an issue that
-  differs from its file is reported by `plan` and made to match it by `repair
-  --yes`**, never the reverse (R10, amended by the author's answer of
-  2026-10-12, `issues/2026-10/12/2026-10-12-1320-the-author-answers-four-the-repair-word-the-limit-the-two.md`):
-  its title, body, labels and milestone rewritten where they differ, the body
-  beyond its `Record:` pin, which stays the one it was imported with; its state
-  made its card's, a card closed after its import closing the issue with its
-  closing comment, dated the day `repair` runs, since the REST route sets no
-  day; through the REST route, one request per change, paced as `push`; and
-  every repaired issue read back, one GitHub still holds otherwise told and
-  never asked again in silence. A day GitHub holds (`created_at`, `closed_at`)
-  is reported and never changed, the REST route having no field for it. The
-  first issues it met: two bodies the import stored otherwise than they were
-  sent, `\^A` and `\^[` for a card's literal `\u0001` and `\u009b`
-  (issues 1354 and 1643, defect 675);
-- **a question of comprehension is not transcribed**, and since the author's
-  *1a 2a* of 2026-10-05 it is not an issue at all (the *5a* of the same day had
-  kept it out of GitHub: none is ever ticked, so on a public tracker each would
-  stand open for ever);
-- **a sitting is not a GitHub Discussion** (the author's *6b*, 2026-10-05): it
-  stays a file of `docs/panel/`, linked from the decision issue that ratifies
-  it.
-
-How each value of the cards written on 2026-10-04 was derived, rule by rule and
-with its count, is that day's decision issue,
-`issues/2026-10/04/2026-10-04-2308-every-item-becomes-an-issue-file.md`.
+  its third under *Where to look* where the item has the three fields of
+  2026-09-07's shape (CL-066), and every field after the first under the form's
+  first heading, one paragraph each, where it has another count, so that no
+  heading names what its text is not; then a defect's `**Origin:**`,
+  `**Class:**` and *The repair* under headings of those names; a decision's
+  question, default, recommendation and verdict, and its `## Prior art` under
+  *Prior art*, after *Origin*; a feature's or a task's *What it delivers* and,
+  once closed, *What was done*; any other paragraph under *Notes*; a second or
+  later `- [ ]` line as a plain list line, so GitHub shows no task progress;
+  then, for an issue transcribed from a file, `Record:` and the file's
+  permalink, pinned at a commit already on `origin/main`. **Every section
+  stating a repair or a settling ends with the commit's hash, written bare**,
+  since GitHub links a bare hash and not one in a code span;
+- **what a body must not do**: a bare `#NNN` and an `@word` are written inside
+  a code span, since outside one the first links to our own issue of that
+  number and the second notifies an account; a link to another project's issue
+  or pull request goes through `redirect.github.com`, which leaves no backlink;
+  and a literal backslash and `u` followed by the four digits of a C0 or C1
+  control character (`0000` to `001f`, `0080` to `009f`) is written with its
+  backslash as `&#92;`, a code span holding one becoming an HTML `<code>`
+  element whose text is escaped as HTML, since GitHub stores such a sequence in
+  caret notation (defect 675). **The oracle** is `POST /markdown`, mode `gfm`,
+  context `heroes-lang/heroes`, which writes nothing: no rendered body may hold
+  an `issue-link` or a `user-mention` anchor;
+- **every `defect NNN` and every `panel NNN` a body names is a link**, to that
+  defect's issue and to that sitting's ratification, where the prior art stands
+  once, so no field is invented to say which sitting ruled a repair; the
+  transcription made them in a second pass after its last file, since a closing
+  text may name an issue born after it (R9 item 6);
+- **the route** of the transcription (R5): each file imported whole, its days,
+  labels, milestone, closed state and closing comment in one request, read
+  `imported` before the next so that the numbers keep the files' order, serial
+  and paced by GitHub's limits; **a run stopped** between an import and the
+  card's `github:` reconciled by listing the recent issues on their `Record:`
+  permalinks, never by a second issue; and, while the files were the truth, an
+  issue that differed from its file made to match it by `repair --yes` (R10, as
+  the author amended it on 2026-10-12,
+  https://github.com/heroes-lang/heroes/issues/2023).
 
 ## The lists
 
-**Since 2026-10-04 four lists are views of `issues/`** (§ The issues): the
-open defects are the open `defect` issues, the decision list the open `decision`
-issues, a milestone's work the open `feature` and `task` issues naming it, and
-the record the closed issues. Each item keeps the one shape the lists took on
-2026-09-07 (CL-066), under its card:
-`- [ ] **<first field>** | <what, in one line> | <where to look>`, its line
-first, and an optional body indented four spaces opening with `**Origin:**` and
-its date. `records/lists` is its executor.
-
-**The learning list is the fifth, and not a view of `issues/` since
-2026-10-05**: its questions are files of `docs/learn/<year-month>/<day>/`, one
-each, in the same shape with no card above it, a question answered staying
-ticked where it is, and `docs/learn/README.md` is its front page.
+**Four lists are views of GitHub's issues** (§ The issues), each read with
+`open`: the open defects, `--kind defect`; the decisions, `--kind decision`; a
+milestone's work, the open `feature` and `task` issues of `--milestone
+M-<name>`; and the record, the closed issues. **The learning list is the
+fifth, and is not an issue** (the author's *1a 2a* of 2026-10-05): its
+questions are files of `docs/learn/<year-month>/<day>/`, one each, in the
+item's shape with no card above it, a question answered staying ticked where it
+is, and `docs/learn/README.md` is its front page. It stays off GitHub by the
+author's *5a* of the same day: none is ever ticked, so on a public tracker each
+would stand open for ever.
 
 **The first field is what an instrument reads**, so it differs by kind: a
-defect's `**NNN — <title>**`, the number its file's name carries after
-`defect-`; the padded `**panel NNN**` of a sitting's ratification; the
-`**M-<name>**` of a milestone's item, the milestone its card names; the origin
-of a question. Put a sitting's number in a body instead and every pending
-verdict reports as unqueued, silently.
+defect's `**NNN — <title>**`, its number, or its title alone in a new draft;
+the padded `**panel NNN**` of a sitting's ratification, which titles the issue
+`Panel NNN:` and is how a pending verdict is found queued; the `**M-<name>**`
+of a milestone's item, the milestone its card names; the origin of a question.
+Put a sitting's number in a body instead and its pending verdict reads as
+unqueued, silently.
 
 **A defect's item ends its line with ` · **class: <name>**`** (`blocking`,
-`adjacent`, `systemic` or `improvement`) and carries a `**Class:**` body line
-with its date and reason, since 2026-10-02 (the author's *D1a*;
-`.claude/rules/verification.md` § Bounded discovery). That body line opens
-`**Class: <name>**, YYYY-MM-DD`, the line's own class and the day it was
-classed in digits, then its reason, and `records/tagged` ages an `adjacent`
-item from that day: it counts as `blocking` from the second tag placed since,
-a tag counting when its day is later or the item stood open at it, the tag
-judged included.
+`adjacent`, `systemic` or `improvement`), which becomes its `class:` label, and
+carries a `**Class:**` body line, since 2026-10-02 (the author's *D1a*;
+`.claude/rules/verification.md` § Bounded discovery). That line opens
+`**Class: <name>**, YYYY-MM-DD`, the class and the day it was classed in
+digits, then its reason, and `records/tagged` ages an `adjacent` defect from
+that day: it counts as `blocking` from the second tag placed since, a tag
+counting when its day is later or the defect stood open at it.
 
 **A line that carries an archived or never-written path carries its date on that
 same physical line**, because the citation check reads one line at a time.
 
-## A live list is a preamble, a count and its items — author instruction 2026-09-16
+## A live list is a preamble and its items
 
-**Since 2026-10-04 the lists' items are issues** (§ The issues), and what this
-section binds is their front pages. `issues/README.md` carries **a very short
-preamble** alone, under `PREAMBLE_CEILING`, and no item, no banner and no count:
-the open counts are derived from the issues' cards. A milestone's page under
-`docs/roadmap/milestones/` carries its reasoning alone, which `/step` § 1 calls the
-thing that must not be lost, under no ceiling and with no item. `docs/ROADMAP.md`
-carries a very short preamble, then the two open counts, then its tables. **No
-other story goes in any of them**, and a story already there is MOVED rather
-than deleted — to a decision issue, to the milestone's journal, or to the issue
-the story is about, which is where a thing that happened belongs anyway.
+Author instruction 2026-09-16. **The lists' items are GitHub's issues** (§ The
+issues), and what this section
+binds is the pages of the tree that front them. A milestone's page under
+`docs/roadmap/milestones/` carries its reasoning alone, which `/step` § 1 calls
+the thing that must not be lost, under no ceiling and with no item.
+`docs/ROADMAP.md` carries a very short preamble, then its tables, and no count
+of the issues, GitHub's counts being the truth (the author's sixth answer of
+2026-10-12). **No other story goes in either**, and a story already there is
+MOVED rather than deleted: to a decision issue, to the milestone's journal, or
+to the issue the story is about, which is where a thing that happened belongs
+anyway.
 
-Until that day `docs/work/DECIDE.md` and the milestone files carried the
-preamble, the `**OPEN: N**` banner and the items, and `docs/work/DEFECTS.md` was
-the defects' front page (2026-09-16 to 2026-10-04); the paragraphs below are
-that rule's reasoning, which the issues kept.
-
-The reason is what these files are for. A list is opened by somebody about to
-attack an item, and the ROADMAP by somebody asking what is next; both are opened
-to find a number and a row. On the day this rule was given, `DEFECTS.md`'s
-preamble ran to **28 lines and 982 words**, and **one paragraph of it** was a
-single sentence of **4551 bytes** recording which sitting issued which defect
-number since 2026-09-08 — true, hard-won, and standing in front of every reader
-who only wanted to know what is broken today.
-
-**Two things the move measured, and both argue for it.** That paragraph stated
-the next number to issue **twice, with different values** — `grep -o` returns
-**037** and **052** inside the one sentence, because it had been appended to for
-weeks and nothing reads it: `records/numbering` computes the next number as one
-above the highest issued, and its own comment says why. And it pointed **three
-times** at `docs/work/DONE.md`, a file that has been a MAP since 2026-09-12 (two
-hits there, one in `DECIDE.md`). A pointer nobody follows does not rot loudly.
-
-**The gap this closes is that `list_offences` only ever policed the item
-region.** It refuses a ticked item between the banners, prose between the
-banners, an item outside them — and says nothing about what sits ABOVE the
-opening banner, which is where all 982 words were. The instrument written after
-`DEFECTS.md` grew 2753 bytes of prose about five already-repaired defects was
-watching the half of the file that was not the problem. So the executor is
-extended rather than the rule left as prose: `records/lists` measures the
-preamble against a ceiling, and `records/counts` compares the ROADMAP's two
-numbers to the banners the two lists state.
-
-**And the ROADMAP's counts had already drifted when the rule was given**, which
-is why they get an instrument and not a convention: § Where we are read *open
-defects 0, open decisions 0* while `DEFECTS.md`'s own banner read `**OPEN: 3**`.
-That is § A tree of entries' lesson — an index is a second place where truth
-lives — arriving in the one document the author opens to see where the project
-is.
-
-**The milestone files get a larger allowance than the two lists**, named
-separately and for a reason rather than by generosity: their preamble IS the
-milestone's reasoning, which `/step` § 1 calls the thing that must not be lost.
-What the rule excludes there is the same thing it excludes everywhere — the
-record of what has already happened.
+The reason is what these pages are for: one is opened by somebody about to
+attack an item, the ROADMAP by somebody asking what is next, both to find a row.
+On the day this rule was given the defects' front page held 28 lines and 982
+words of history in front of its items, one sentence of it stating the next
+number to issue twice with two values; and a count a page carries beside the
+list it counts drifts, as the ROADMAP's did that day, *open defects 0* against
+the list's own 3 (CL-064). That is § A tree of entries' lesson, an index is a
+second place where truth lives, arriving in the one document the author opens
+to see where the project is.
 
 ## Two habits that come from being one checkout among several
 
-**Re-read the chain and the log immediately before writing a scheduling fact**,
+**Re-read the chain and the decisions immediately before writing a scheduling fact**,
 never from the copy read at session start (CL-047). For a multi-anchor edit to a
 shared record: script the pairs, assert each anchor matches exactly once,
 dry-run, then apply.
@@ -543,12 +408,22 @@ index, decide.
 name redirects, and creating a repository there would kill the redirects
 permanently, so that name is never reused (CL-033).
 
+**Open sessions keep each other informed** (author instruction 2026-10-12,
+meant as: *always talk with the other open chat, to stay aligned*). Before
+touching a file another open session may touch, before filing or closing an
+issue, and before a push, a session tells the open sessions what it will touch
+and when, through `ListAgents` and `SendMessage`; it answers what they send; it
+says in its own conversation what was agreed; and it never asks another session
+to do what its own permissions refuse, a refusal binding the work and not only
+the session it was met in. Two sessions that do not speak meet in the shared
+index or on the trunk, which is what CL-041 and CL-070 cost.
+
 ## Working in lanes, since 2026-09-12
 
 A **lane** is one milestone, in one detached worktree, held by one session. The
 rotations above are what make it possible: a lane writes its own milestone file,
-its own issues under `issues/`, its own beat — every one of them a file nobody
-else is writing.
+its own beat and its own issue drafts, every one of them a file nobody else is
+writing, and the issues it opens each take GitHub's next number.
 
 - **The worktree lives inside this tree, under `.claude/worktrees/<lane>`, and
   never in a folder beside the project** (author instruction 2026-09-28, meant
@@ -622,8 +497,9 @@ reading, and a fifth from 2026-10-06:
   and travels in the closing commit; a repair commit does not carry it.
 - **A repair commit's body is about fifteen lines**: the class, the cases, the
   gate line. The story is written once, in the defect's issue at the batch's
-  close, under its *The repair* section. Measured on that night: repair bodies of 101, 114 and 48
-  lines, and `docs/work/DEFECTS.md` at 2,936 words for five items.
+  close, by `close` as its `## The repair`. Measured on that night: repair
+  bodies of 101, 114 and 48 lines, and the defects' list at 2,936 words for
+  five items.
 - **A lane is taken over only once its agent is known to have stopped**
   (journal 061: a lane resumed an hour before was still working when the
   coordinator committed, and the trunk's seed was not its source's fixpoint).
@@ -670,19 +546,19 @@ Five things a lane needs that this tree has and a fresh worktree does not:
 And the ordering that makes it safe: **merge the lane before opening the next
 one on the same files**, so the second starts from the first's result rather than
 from a base that is already behind.
-- **One `**OPEN**` row at a time, today.** `site/src/lib/chain.ts` throws when
-  § The chain carries more than one, so two lanes cannot both open their row
-  until that is decided — it is an outward-facing file. The question is filed as
-  a decision issue. Until it is settled, a second lane works with its row left
-  `scheduled` and says so in its commits.
+**Each lane opens its own row.** More than one `**OPEN**` row may stand in
+§ The chain since the author's decision of 2026-09-12, one per lane holding a
+milestone, and `site/src/lib/chain.ts`, which asserted one until that day,
+names every open row, since a page naming the first of two is wrong about the
+second.
 
 ## Where a session's output goes
 
 A conversation whose work is questions, with no file of code, spec or design
 modified, **writes no note of its own** (CL-053). What it settled is an issue it
-ticks, or a decision issue closed the day it is filed; what it left open is an
+closes, or a decision issue closed the day it is opened; what it left open is an
 open issue, a `decision` or its milestone's `feature` or `task`; a concept it
 explained is an entry in `docs/learn/glossary/`; a question worth re-asking is a
 file of `docs/learn/`; a change to the language is a panel. Every one but the
-glossary's and the question's is a file of `issues/` (§ The issues). The path
-between them is the git history.
+glossary's and the question's is an issue on GitHub (§ The issues). The path
+between them is the git history and the commits each closing names.

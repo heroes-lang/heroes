@@ -48,7 +48,7 @@ Windows box's C library carries neither (its `sys/` holds `locking.h`,
 `stat.h`, `timeb.h`, `types.h` and `utime.h`), so under the strict reading
 143 could never close; the author's *4a* had closed 151 this way for SDL3
 that morning
-(`docs/records/log/2026-10-03-1123-the-author-answers-a-a-case-a-platform-cannot-run-is-judged-where-its-header-is.md`).
+(https://github.com/heroes-lang/heroes/issues/1520).
 
 **The Linux arm64 leg runs its suites four at a time inside the container**,
 the compiler's own tests alone first and `cache` alone after, each suite its
@@ -80,7 +80,7 @@ where LeakSanitizer lives (CL-055); **Linux arm64 and Windows run once, before
 the push**, with CI as the judge after it. Until that day this paragraph said
 *before the commit*, and the practice had already moved: 31 commits that no
 platform but this Mac had seen stood on the trunk on 2026-09-28
-(`docs/records/log/2026-09-28-1640-m-agreed-retention-closes-over-the-defects-found-after-its-last-eight.md`).
+(https://github.com/heroes-lang/heroes/issues/1382).
 What the record shows the other platforms finding, every case, is a fact at the
 C boundary: a mechanism with no Windows arm, a missing include under the Linux
 sanitiser, 40 leaked bytes, a sharing violation on the Windows runner. So the

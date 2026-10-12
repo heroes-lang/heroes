@@ -84,8 +84,8 @@ first:
 ## How a change is merged
 
 The maintainer merges, with a merge commit and never a rebase, because the
-record cites commit hashes and a rebase would falsify them. The issue's file
-under `issues/` is written by the maintainer; you do not need to learn the
+record cites commit hashes and a rebase would falsify them. An issue's labels,
+class and closing are written by the maintainer; you do not need to learn the
 record's format to contribute to the compiler.
 
 ## What the licence lets you do anyway, and that is not withdrawn

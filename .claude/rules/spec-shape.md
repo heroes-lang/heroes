@@ -97,7 +97,7 @@ that day stay true at their date and read against the layout at commit
 ## What was refused, and by whom, so it is not proposed again as new
 
 An EBNF **appendix** (author decision 2026-08-12, recorded in
-`docs/records/done/2026-08-13-0146-decided-2026-08-12-author-v2-restores-the-symmetry.md`;
+https://github.com/heroes-lang/heroes/issues/362;
 design.md Part 7 item 16: *an appendix is spec tokens spent on a grammar a
 reader would then have to reconcile with the prose*). **That refusal is of an
 APPENDIX and nothing else, since 2026-09-12**: panel 133 found a third route

@@ -3,7 +3,7 @@
     **Where to look:** the three programs are in the sitting,
     `docs/panel/144-the-cost-is-in-the-spelling-and-nobody-had-written-the-cheap-one.md`
     § What was measured; `selfhost/ir/place_store.hero:27-31`, which states its own
-    limit in one sentence; and `docs/records/log/2026-08-26-0001-…`, where this
+    limit in one sentence; and https://github.com/heroes-lang/heroes/issues/716, where this
     repository did exactly this repair to itself.
 
     **Why it matters:** two of the three are 1 000 000 pushes in 0.02 seconds and
