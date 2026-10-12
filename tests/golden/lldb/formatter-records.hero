@@ -1,0 +1,51 @@
+# The formatter `editors/lldb/heroes_lldb.py`, imported from the tree as the
+# session's first command, shows a record and a variant in Heroes' own syntax
+# (panel 213): a record as its construction, `Point(x: 3, y: 4)`, and its
+# fields under the names the author wrote, `room.corner.x`; a case as
+# `.word(text: "hi", at: ...)`, a case with no fields as `.plus`, and a
+# `match` arm's payload as the case it holds. The locals keep the emitted C's
+# names (`h0_p`), which no formatter changes.
+
+record Point
+    x: i64
+    y: i64
+
+record Room
+    name: str
+    corner: Point
+
+variant Token
+    num
+        v: i64
+    word
+        text: str
+        at: Point
+    plus
+
+variant Light
+    red
+    green
+
+function shade(light: Light) -> i64
+    return match light
+        .red   => 1
+        .green => 2
+
+function main()
+    p = Point(x: 3, y: 4)
+    room = Room(name: "lab", corner: Point(x: 9, y: 10))
+    w: Token = .word(text: "hi", at: Point(x: 1, y: 1))
+    pl: Token = .plus
+    light: Light = .green
+    print(p.x + room.corner.y + shade(light: light))
+
+    match pl
+        .num _  => print(0)
+        .word _ => print(0)
+        .plus   => print(1)
+
+    match w
+        .num n => print(n.v)
+        .word wd =>
+            print(wd.text)
+        .plus => print(1)

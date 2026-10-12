@@ -1,0 +1,20 @@
+# At a stop before any binding is written, lldb asks the formatter
+# `editors/lldb/heroes_lldb.py` for every slot of the frame, the temporaries
+# holding whatever the stack held among them, as lldb-dap's Variables view
+# does on every stop (panel 213 saw sixteen tracebacks there from a first
+# prototype). A `str` slot holds the runtime's one non-value, a NULL, and shows
+# `<unassigned>`; lldb itself prints `NULL` for a NULL array or map before it
+# asks any formatter; a slot of the stack's bytes falls back to lldb's own
+# display; and no traceback reaches either stream, which the suite asks of
+# every case. One line on, the first slot holds its value.
+
+record Room
+    name: str
+    size: i64
+
+function main()
+    name = "ada"
+    names = ["ada", "grace"]
+    ages = {"ada": 36}
+    room = Room(name: "lab", size: 3)
+    print(name.len() + names.len() + ages.len() + room.size + room.name.len())
