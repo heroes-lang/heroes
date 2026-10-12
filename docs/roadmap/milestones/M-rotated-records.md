@@ -38,4 +38,11 @@ defect is a file of `docs/work/defects/`, `docs/work/DEFECTS.md` is its front
 page, and `records/tagged` reads the directory at a tag that has it and the
 single file at one that has not. Not a rotation: no map stays behind, the
 items being open work and not a record
-(`docs/records/log/2026-10-04-0206-the-defect-list-becomes-one-file-per-defect.md`).
+(https://github.com/heroes-lang/heroes/issues/1619).
+
+**Corrected 2026-10-12, twice.** The sentence on the `**OPEN**` row was false
+from 2026-09-12: `site/src/lib/chain.ts` stopped asserting one open row on the
+author's decision of that day, and more than one row may stand open, one per
+lane. And the defects left the tree: from 2026-10-04 each was a file of
+`issues/` (2026-10-04), and since 2026-10-12 each is a GitHub issue
+(`.claude/rules/records.md` § The issues).

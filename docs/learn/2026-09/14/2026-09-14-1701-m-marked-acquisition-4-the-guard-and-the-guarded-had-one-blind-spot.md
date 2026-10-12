@@ -3,7 +3,7 @@
     **Where to look:** `selfhost/print/dump.hero`, the `owned_suffix` comment and
     the `signature` renderer above it; `git show bd3238cd:selfhost/print/dump.hero`
     for the state it describes;
-    `docs/records/done/2026-09-14-1700-the-mark-lands-in-both-positions-and-the-dump-had-been-eating-consumes-for-a-day.md`.
+    https://github.com/heroes-lang/heroes/issues/1194.
 
     **Why it matters:** the comment says, in terms, that *a form missing HERE
     makes the formatter's self-check agree with a formatter that is deleting

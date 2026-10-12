@@ -2,7 +2,7 @@
 
 **Opened 2026-10-10 by the author's ratification of panel 209** (17:57, in
 conversation, recorded as a reading in
-`issues/2026-10/10/2026-10-10-1736-panel-209-ratify-amend-or-overturn-a-cell-declared-by-its-own-symbol.md`),
+https://github.com/heroes-lang/heroes/issues/1962),
 with the order *push, then wait for batch 19*: the lane opened at 19:01, after
 session heroes-lang-98 reported `lane-round-b19:main` on origin and its four
 lanes quiet. Row 84 of the chain. The sitting is

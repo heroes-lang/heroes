@@ -66,9 +66,8 @@ in the message itself.
   hold — is distilled into `docs/learn/glossary/NNN-<concept>.md` (numbered in birth
   order, English, canonical analogies, origin cited, never deleted) and the
   glossary index is updated.
-- Tick each question covered where it stands, its card's `commit` set to
-  `self`; a ticked question is closed and stays where it is, as every issue
-  does. Commit: `learn: <what was covered>`.
+- Tick each question covered where it stands; a ticked question stays where
+  it is, the list being its own record. Commit: `learn: <what was covered>`.
 
 **Lessons stay impersonal — shapes and rules, never scores.** Nothing about how
 the author did is written anywhere, in this repository or in a message. What is
@@ -81,7 +80,7 @@ nowhere else; `docs/learn/README.md` is their front page. The queue was split by
 kind on 2026-08-12 because one file held 192 open items of three kinds, and a
 list you have to filter before you can read it is a list nobody opens. **A
 question is not an issue** (the author's *1a 2a* of 2026-10-05): it carries no
-card and never goes to GitHub, and the work's kinds are the cards' of `issues/`
+card and never goes to GitHub, and the work's kinds are the GitHub issues'
 (`.claude/rules/records.md` § The issues):
 
 - **a question of `docs/learn/`** — what is true. This skill's, and only this skill's.
@@ -89,9 +88,9 @@ card and never goes to GitHub, and the work's kinds are the cards' of `issues/`
   goes on behaving some way while it waits, which is a different urgency from
   wanting to understand.
 - **`feature`** and **`task`** — work with a home, read by `/step` at the
-  milestone their card names.
+  milestone their issue names.
 
-A closed issue is the record, and it stays where it was filed. The files named
+A closed issue is the record, on GitHub. The files named
 `LEARN.md`, `DECIDE.md` and `SCHEDULED.md` until 2026-10-04 (the second until
 that day, the other two until 2026-09-12) are retired.
 

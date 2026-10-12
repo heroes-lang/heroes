@@ -16,7 +16,8 @@ body:
           wrong;
         - `docs/panel/` holds the design sessions, with the vetoes and what
           lifted them;
-        - `issues/` holds every decision, one file each, named for its day.
+        - the issues labelled `kind:decision` hold every decision, one issue
+          each.
   - type: textarea
     id: question
     attributes:

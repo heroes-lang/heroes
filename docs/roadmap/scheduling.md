@@ -63,7 +63,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   once**, in two sessions, and the table says so rather than hiding one.
 - **M-core-packages** and **M-web-framework** — **scheduled by author instruction
   2026-09-03**, the same evening, out of a reasoning session
-  (`issues/2026-09/03/2026-09-03-0009-the-want-for-a-standard-library-becomes-two.md`, which carries what it measured): *"I would like
+  (https://github.com/heroes-lang/heroes/issues/819, which carries what it measured): *"I would like
   to have every tool needed to build a web framework in the style of Rails or
   Django, or even thinner, like Go, Echo or FastAPI"*, and then, when a single
   toolkit was proposed, *"I picture several packages that combine, and then the
@@ -82,7 +82,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   instruction** — *"let us do a big think about the roadmap and about the
   things in decide and scheduled too … let us judge whether there are steps we
   have not considered so far … then we reorder them all in a very logical order"* — out
-  of a reasoning session (`issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md`). Three
+  of a reasoning session (https://github.com/heroes-lang/heroes/issues/820). Three
   faults in the order were measured and each moved a row: the language's one
   scheduled ruling sat at row 41, behind the packages, the framework, QBE and
   both tools, so **51,788 lines of Heroes in 178 modules** — the size of the one
@@ -178,8 +178,8 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
   placed immediately before the gate for M-install-channels' reason and not for
   its subject: everything here is built and tested in private, and the outward
   act is the gate's. **It reverses half of a recorded refusal, and the row says
-  which half.** `issues/2026-09/03/2026-09-03-0010-the-chain-is-re-read-for-what-it-lacked-seven.md` refused *a web playground* on 2026-09-03 —
-  one of five candidates `issues/2026-09/04/2026-09-04-0611-settled-the-order-of-rows-33-to-51-with-a-reason-for.md` records as refused *so the
+  which half.** https://github.com/heroes-lang/heroes/issues/820 refused *a web playground* on 2026-09-03 —
+  one of five candidates https://github.com/heroes-lang/heroes/issues/854 records as refused *so the
   candidate is not proposed again as new* — with the parenthesis *Part 2 and Part
   9: wasm breaks the FFI premise*. Both cited passages, `design.md:590` and
   `design.md:2869`, are about a **Heroes program** targeting the web, and the
@@ -377,7 +377,7 @@ row number, because a reorder moves a number and never a name (CLAUDE.md §14).
 author instruction.** The author asked, that evening, for every defect, decision
 and closed record to have the structure of one GitHub issue, then for one
 top-level folder holding them all (`.claude/rules/records.md` § The issues; the
-decision is `issues/2026-10/04/2026-10-04-2308-every-item-becomes-an-issue-file.md`).
+decision is https://github.com/heroes-lang/heroes/issues/1654).
 It is placed last in number and first in order because the lists it replaces are
 where every other milestone's work is filed: a milestone opened before it would
 file its items into a shape that was being retired. No row moved; § The chain

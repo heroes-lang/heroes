@@ -73,7 +73,7 @@ named it.
 the box the author powered on: the C library spells **zero** array parameters and
 Win32 spells 89, of which 2 are byte-typed with a fixed extent. `L_tmpnam` is
 **260** there, against 1024 and 20. The record is
-`docs/records/done/2026-09-19-1030-the-fourth-platform-spells-none-in-its-c-library.md`,
+https://github.com/heroes-lang/heroes/issues/1269,
 and it states that the Windows leg used a weaker instrument than the other three.
 
 ## What the milestone has landed, and the prediction it registered

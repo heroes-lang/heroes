@@ -5,7 +5,6 @@ paths:
   - "examples/**"
   - "spec/**"
   - "docs/**"
-  - "issues/**"
   - ".claude/**"
 ---
 
@@ -110,7 +109,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `selfhost/diag.hero` | **`annotations`** (every thesis rule it lists has a witness), plus everything `selfhost/**` already gets |
 | `selfhost/emit/ffi_build.hero`, `ffi_lookup.hero`, `header_reach.hero`, `selfhost/cli/package_answer.hero`, `selfhost/diag_render.hero` | **the net's own tests** (`absence.hero`'s `spellings()`), plus everything `selfhost/**` already gets |
 | `runtime/**` | **`runtime`**, plus the form that holds the change's cases (`run` for a program that runs) and the platforms (`.claude/rules/platforms.md`) |
-| `docs/**`, `issues/**`, `.claude/**` | `records` `unseen` |
+| `docs/**`, `.claude/**` | `records` `unseen` |
 | `CLAUDE.md`, `docs/ROADMAP.md`, `docs/measurements/010-spec-budget-ledger.md` | `records` `unseen` **`spec`** (the contract's ceiling, the headings a `§` citation names, the spec's ledger) |
 | `editors/**` | `spec` (the editor's grammar, held to the language's words) |
 | `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets; their temporary folders, made and removed by the tests themselves in the system's temporary directory, are the author's one exception (2026-10-09) to CLAUDE.md § Hard stops' *no file outside this repository's root*, since two tests ask how a file outside every tree is judged |
@@ -179,7 +178,7 @@ moves: the batch's trial gate at `bead6e45` read `emit` 7 and 1 on
 had not run because the `selfhost/emit/**` row named `emission` alone. And
 `tests/harness/suite_unseen.hero` (defect 356, panel 192's R12) reads every
 file `shell.project_files` names, so an invisible character written into a
-document, an issue or the spec is its verdict and no other suite's.
+document or the spec is its verdict and no other suite's.
 
 **The site's build was missing from this map until 2026-09-28**, and it cost a
 deploy. `heroes probe` became the command's thirteenth verb at M-agreed-retention
@@ -421,8 +420,8 @@ change's cases live in, and which suites the batch's census and platforms owe.
 the ones that skip a check hoping all goes well and go back on the rare time
 the last check fails; re-read the whole history: the times we had to go back
 are few and do not justify so long a chain of checks.* Measured that day over
-batches 8 to 15, the record of their closing commits and of `issues/` read
-by an agent, every number its command's: of the 362 defects filed from
+batches 8 to 15, the record of their closing commits and of `issues/` (2026-10-09)
+read by an agent, every number its command's: of the 362 defects filed from
 2026-10-01 to 09, **24 were found by a check of the chain (6.6%)** and 338
 by a person, a seat or a lane at work. Gate A and gate B ran 8 times each and
 found **no defect of the compiler or the runtime** (gate B one in the harness,
@@ -495,7 +494,8 @@ gated once. **It is filled from the open list**:
 `blocking` first, then the `adjacent` and `improvement` items that share a
 cluster's files, then the oldest `adjacent`, then `improvement`; so no
 `blocking` item waits for others to be found, and when fewer than sixteen are
-open the batch takes them all.
+open the batch takes them all. **`/batch` composes it** from the open defect
+issues by this order and prints its lanes, filing and closing nothing.
 
 **Amended 2026-10-05 by author instruction**, meant as: *seeing how well this
 process is going with many defects in a batch, I would take it to a maximum
@@ -509,7 +509,7 @@ of six steps at most.
 **A batch's own questions take the recommended answer** (the author's *5a*
 of 2026-10-04, meant as: *yes, a standing default for your recommended
 answers in batches*;
-`docs/records/log/2026-10-04-1236-the-author-answers-1a-2a-3a-4a-5a-6b.md`).
+https://github.com/heroes-lang/heroes/issues/1625).
 A question a batch raises, which the coordinator would otherwise put to the
 author, is decided by the coordinator with the resolution it recommends. It
 rests on a measurement as any recommendation does (CLAUDE.md § 3), and the
@@ -609,11 +609,10 @@ commits, 11 merges each with a coordinator's gate, 10 repair commits, 8 gates of
   million lines of churn, about 21 whole-file rewrites, and **21 of 58 merges
   carried a seed conflict**, every one settled by rebuilding. A repair commit's
   body says *seed not regenerated, awaiting the batch gate*, in about fifteen
-  lines: the class, the cases, the gate line. Its issue file stays `- [ ]` and
-  gains one dated body line, *Repaired at `<hash>`, gated by its cases and the
-  compiler's own tests; the net is owed at the batch's close*, and its card's
-  `commit` takes that hash whole, so that no sentence says closed before the
-  net has said it.
+  lines: the class, the cases, the gate line. Its issue stays open and gains
+  one comment, `comment`'s, *Repaired at `<hash>`, gated by its cases and the
+  compiler's own tests; the net is owed at the batch's close*, the hash whole,
+  so that nothing says closed before the net has said it.
 
 **Before the first repair of a cluster, attack the shapes beside all of its
 defects in one pass** (CL-061, CL-078): on the night counted above the shapes
@@ -636,9 +635,9 @@ the same defect. Two rules that are each right multiplied: the shapes beside
 a repair are attacked (CL-061, CL-078), and every one of them became the
 same lane's item and blocked the tag.
 
-**Every defect carries one class**, its file's item ending its
-line ` · **class: <name>**`, and its body one line opening
-`**Class: <name>**, YYYY-MM-DD` with the reason after the day
+**Every defect carries one class**, its item ending its
+line ` · **class: <name>**`, which is its `class:` label, and its body one line
+opening `**Class: <name>**, YYYY-MM-DD` with the reason after the day
 (`.claude/rules/records.md` § The lists):
 
 - **`blocking`**: the current work's acceptance fails, or, whatever the
@@ -668,9 +667,9 @@ found is filed, classed, and left.
 not when nothing more can be found in the files it touched. **A milestone is
 tagged** over zero `blocking` and zero `systemic` items (CLAUDE.md §
 Verification), and the author's goal *0 defects* reads as that (the author's
-*D3a*). The executor is `records/lists` (one class per item) and
-`records/tagged` (only `blocking` and `systemic` count, and an aged
-`adjacent` counts as `blocking`).
+*D3a*). The executors are `file`, which opens a defect's draft only with
+one class, and `records/tagged` (only `blocking` and `systemic` count, and an
+aged `adjacent` counts as `blocking`).
 
 **A recovery item closes** (panel 187's R1, ratified 2026-10-03, the author's
 answer *(a)*) when each of its rows is repaired, filed `adjacent` apart one
@@ -714,11 +713,9 @@ between the batch's base and head, at each step the compiler rebuilt from
 six steps. The culprit
 alone is redone, with the other repairs' cases in view; where the culprit is
 the interaction of two repairs, the later one is redone and the record says so.
-**Green**: each repaired defect's issue is ticked where it stands and given its
-*The repair* section, nothing moving (`.claude/rules/records.md` § The issues,
-since 2026-10-04; it was moved by `git mv` into `docs/records/done/` that day
-only), the ROADMAP's count moves with the ticks, and the closing commit carries
-the counts.
+**Green**: the closing commit carries the counts, and then each repaired
+defect's issue is closed by `close`, its `## The repair` ending with the hash
+of the commit that repaired it (`.claude/rules/records.md` § The issues).
 
 **CL-054 is discharged at the batch, not per repair**: *run the suite you did
 not expect to move* is what the full net is, and a repair defers it knowingly,
@@ -776,13 +773,13 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   (defect 384): a compiler built before a source of its tree was written, the
   file written aside, has its refusal told as its age, with the rebuild and
   its words beneath, never as *does not parse*; an older compiler that accepts
-  the file says nothing. **Since 2026-10-11 an issue file is asked of the
-  `records` suite narrowed to it** (`tests/harness/credit.hero`: its
-  `## Prior art`, and a closed feature's or task's `## What was done` against
-  its card's commit), and a file under `selfhost/`, `runtime/`, `seed/` or
-  `tests/` that cites a `defect NNN` is asked whether the number names a
-  defect of `issues/` (`records/defects-cited`), the author's instructions of
-  2026-10-07 (CL-082, CL-083).
+  the file says nothing. **Since 2026-10-11** a file under `selfhost/`,
+  `runtime/`, `seed/` or `tests/` that cites a `defect NNN` is asked whether
+  the number names a defect (`records/defects-cited`), the author's
+  instruction of 2026-10-07 (CL-083); since 2026-10-12 the defects are GitHub's
+  issues, and a check that cannot ask GitHub says `SKIP`, never green and
+  never red. A draft's `## Prior art` is asked by `file` before it opens the
+  issue (`.claude/rules/records.md` § The issues).
 - **Layer 1, before a commit** (`.claude/hooks/guard_bash.py`): a harness run
   whose named compiler is older than `seed/heroes.c` or the newest file under
   `selfhost/` or `runtime/` is refused (2026-09-18 cost 31 minutes and two nets
@@ -842,8 +839,9 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   `-f`, `-F` or `--input` being a POST by `gh`'s own rule, a GraphQL `mutation`
   a write, `gh auth token` a secret printed into a transcript. The author's
   local settings allowed `gh api` on the repository whole and no refusal stood
-  behind them. What the rule cannot see is a program that spawns `gh` inside, so
-  the transcription program carries its own `--yes`.
+  behind them. What the rule cannot see is a program that spawns `gh` inside,
+  so the writes of `tests/harness/issues.hero` are the author's to allow, and
+  since 2026-10-12 they are asked once (CLAUDE.md § Hard stops).
 - **Layer 2, per repair**: the form that holds its cases and the compiler's own
   tests.
 - **Layer 3, per batch**: the seed, the fixpoint, the full net, the census.
@@ -876,7 +874,7 @@ done
 sessions' gates and builds ran on this machine all day, and a number taken
 beside them is discarded by the ratio. What stands: the whole net read
 `real 948.31` on 2026-09-18
-(`docs/records/log/2026-09-18-2327-the-number-had-a-platform-in-it.md`), `run` 65 s
+(https://github.com/heroes-lang/heroes/issues/1266), `run` 65 s
 on 2026-09-28 (journal 061), and three rule files gave it three durations, 13,
 15 and 20 minutes, which is CL-064 on the number that decides how a session is
 planned. This section is that number's one home from today.
