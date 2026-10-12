@@ -2228,17 +2228,14 @@ class TrackedAsks(unittest.TestCase):
                 if rule.startswith("Bash(") and rule.endswith(")")
                 and fnmatch.fnmatchcase(command, rule[len("Bash("):-1])]
 
-    def test_every_spelling_of_prepare_and_finish_is_asked_and_none_is_denied(self):
-        for word in ("prepare --yes", "finish --yes", "prepare", "finish"):
-            for start in ("./heroes", "heroes", "caffeinate -i ./heroes", "caffeinate -i heroes"):
-                command = start + " run tests/harness/issues.hero -- " + word
-                self.assertTrue(self.matched("ask", command), command)
-                self.assertFalse(self.matched("deny", command), command)
+    def test_the_program_asks_nothing_and_a_push_is_still_asked(self):
+        # The transcription's prepare and finish, asked every time, left with
+        # the folder of issue files on 2026-10-12, and so did their asks.
+        self.assertEqual(self.permissions.get("ask", []), ["Bash(git push*)"])
+        self.assertTrue(self.matched("ask", "git push origin HEAD:main"))
 
     def test_the_writes_asked_once_ask_nothing_and_none_is_denied(self):
-        for word in ("push --yes --pin cd2798043", "push --yes --pin x --accept-gaps issues/a.md",
-                     "repair --yes", "repair --yes --pin dd0b5f5aa issues/a.md",
-                     "file /tmp/x/2026-10-12-1800-a.md", "close 2031 /tmp/x/closing.md",
+        for word in ("file /tmp/x/2026-10-12-1800-a.md", "close 2031 /tmp/x/closing.md",
                      "comment 2031 /tmp/x/text.md", "edit 2031 /tmp/x/2026-10-12-1800-a.md",
                      "open --kind defect --json"):
             for start in ("./heroes", "caffeinate -i ./heroes"):
@@ -2247,10 +2244,9 @@ class TrackedAsks(unittest.TestCase):
                 self.assertFalse(self.matched("deny", command), command)
             self.assertTrue(self.matched("allow", "./heroes run tests/harness/issues.hero -- " + word), word)
 
-    def test_render_and_plan_ask_nothing(self):
-        for command in ("./heroes run tests/harness/issues.hero -- plan",
-                        "./heroes run tests/harness/issues.hero -- plan --pin cd2798043",
-                        "./heroes run tests/harness/issues.hero -- render issues/2026-10/11/a.md",
+    def test_the_reads_ask_nothing(self):
+        for command in ("./heroes run tests/harness/issues.hero -- draft /tmp/x/2026-10-12-1800-a.md",
+                        "./heroes run tests/harness/issues.hero -- open",
                         "./heroes run tests/harness/main.hero -- ./heroes records"):
             self.assertFalse(self.matched("ask", command), command)
             self.assertTrue(self.matched("allow", command), command)

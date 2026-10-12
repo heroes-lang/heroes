@@ -1,33 +1,23 @@
-# WHAT ONLY GIT KNOWS ABOUT AN ISSUE FILE, asked in as few processes as it takes.
+# WHAT ONLY GIT KNOWS ABOUT A DRAFT, asked in as few processes as it takes.
 #
-# Asked by the transcription's words while `issues/` stands, and by `file` of
-# a draft (`issue_draft.hero`: the day a commit was authored, and which
-# backticked words name a commit), which outlives the folder.
+# Asked by `draft`, `file` and `edit` (`issue_draft.hero`) and by `close` and
+# `comment` (`issues.hero`): the day a commit was authored, which closes an
+# issue whose body names no day; whether a word written in backticks names a
+# commit, which is then written bare (panel 212's D3 and D6, ratified
+# 2026-10-11; `.claude/rules/records.md` § The issues). Every commit's day is
+# one `git log --no-walk --stdin` and every word one `git cat-file
+# --batch-check`, each fed on standard input through `shell.run_fed`.
 #
-# `.claude/rules/records.md` § The issues (panel 212's D3, D4 and D6, ratified
-# 2026-10-11, D4 amended by the coordinator the same day): the day a commit was
-# authored, which closes an issue whose body names no day; the commit a `self`
-# card names; whether a word written in backticks names a commit, which is then
-# written bare; and the commit the `Record:` link is pinned to (R5's `--pin`).
-#
-# A `self` card's commit is the one that wrote `commit: self` into it, the
-# earliest of `git log -S'commit: self'` on its file; where that names none, or
-# one authored before the card was filed, which no commit settling it can be,
-# the same asked with `--follow`, for a card moved after it closed; and where
-# that too names none, the earliest commit that added the file on the trunk's
-# line, `--diff-filter=A --diff-merges=first-parent`, for a card that entered
-# by a merge. Every commit's day is one `git log --no-walk --stdin` and every
-# word one `git cat-file --batch-check`, each fed on standard input through
-# `shell.run_fed`; `-S` and `--follow` take one path, so a `self` card is one
-# process, and a later reading one more only for the cards that need it.
+# Until 2026-10-12 it also answered the transcription's readings of the files
+# of `issues/`, the commit a `self` card names (D4) and the `Record:` link's
+# pin; they left with the folder, a draft never naming `self`, and their last
+# state is the tree of the commit `ISSUES_ARCHIVED_AT` names
+# (`tests/harness/suite_records.hero`).
 #
 # A clone whose history is shortened answers none of these truly: there
-# `history` is false and nothing is asked, `issues.hero` refuses to render, and
-# `file` refuses to read a draft (the CI's checkout is one commit deep, as
-# `records/cards` found first, a check of the files until 2026-10-12).
+# `file` refuses to read a draft (the CI's checkout is one commit deep).
 
 use cards
-use issue_safe
 use shell
 use strings
 
@@ -57,41 +47,6 @@ function pinned(scratch: str, pin: str) -> str?
     if ran.code != 0 || !cards.is_full_hash(strings.trimmed(ran.out))
         return fail(code: "no_commit", msg: "`" + pin + "` names no commit of this history")
     return ok(strings.trimmed(ran.out))
-
-# The earliest commit that wrote `commit: self` into `path`, asked across its
-# moves where `follow` is true, or "" (D4's first and second readings).
-function written(scratch: str, path: str, follow: bool) -> str?
-    words: [str] @= ["git", "log", "-Scommit: self"]
-
-    if follow
-        words @ words.push("--follow")
-    said = asked(scratch: scratch, words: words.push("--format=%H").push("--").push(path))?
-    found: str @= ""
-
-    for row in strings.lines(said)
-        if cards.is_full_hash(row)
-            found @ row
-
-    return ok(found)
-
-# The earliest commit that added `path` on the trunk's line, a merge seen from
-# its first parent, or "": D4's third reading. `--name-only` limits what
-# `--diff-merges=first-parent` prints, and only the hash lines are read.
-function added(scratch: str, path: str) -> str?
-    said = asked(scratch: scratch, words: ["git", "log", "--diff-filter=A", "--diff-merges=first-parent", "--format=%H", "--name-only", "--", path])?
-    found: str @= ""
-
-    for row in strings.lines(said)
-        if cards.is_full_hash(row)
-            found @ row
-
-    return ok(found)
-
-# Whether git holds any commit of `path`, asked where no reading names one: a
-# file not yet committed holds none.
-function held(scratch: str, path: str) -> bool?
-    said = asked(scratch: scratch, words: ["git", "log", "-1", "--format=%H", "--", path])?
-    return ok(strings.trimmed(said) != "")
 
 # The author day of each of `hashes` git knows, by hash; one it does not know
 # is left out (`--ignore-missing`), and a draft naming it is refused
@@ -134,72 +89,6 @@ function commits_among(scratch: str, words: [str]) -> {str: bool}?
 
     return ok(out)
 
-# Everything `issues` need asked of git, pinned at `pin`.
-function gather(scratch: str, issues: [cards.Issue], pin: str) -> Facts?
-    made: {str: str} @= {}
-    made_by: {str: str} @= {}
-    unfollowed: {str: bool} @= {}
-    days: {str: str} @= {}
-    commits: {str: bool} @= {}
-
-    if shallow(scratch)?
-        return ok(
-            Facts(history: false, pin: pin, made: made, made_by: made_by, unfollowed: unfollowed, days: days, commits: commits)
-        )
-    hashes: {str: bool} @= {}
-    words: {str: bool} @= {}
-    picked: {str: str} @= {}
-
-    for issue in issues
-        if issue.card.commit == "self"
-            picked[issue.path] @ written(scratch: scratch, path: issue.path, follow: false)?
-        else if cards.is_full_hash(issue.card.commit)
-            hashes[issue.card.commit] @ true
-
-        for word in issue_safe.hash_words(issue.body)
-            words[word] @ true
-
-    asked_days: {str: bool} @= {}
-
-    for path in keys(picked)
-        if picked[path].must() != ""
-            asked_days[picked[path].must()] @ true
-
-    picked_days = days_of(scratch: scratch, hashes: keys(asked_days).sort())?
-
-    for issue in issues
-        if issue.card.commit != "self"
-            continue
-        found = picked[issue.path].must()
-        day = picked_days[found].default("")
-
-        if found != "" && day != "" && cards.day_of(day).must() >= cards.day_of(issue.card.filed).must()
-            made[issue.path] @ found
-            made_by[issue.path] @ "pickaxe"
-        else
-            moved = written(scratch: scratch, path: issue.path, follow: true)?
-
-            if moved != ""
-                made[issue.path] @ moved
-                made_by[issue.path] @ "follow"
-            else
-                second = added(scratch: scratch, path: issue.path)?
-                made[issue.path] @ second
-
-                if second != ""
-                    made_by[issue.path] @ "addition"
-                else if held(scratch: scratch, path: issue.path)?
-                    unfollowed[issue.path] @ true
-
-        if made[issue.path].must() != ""
-            hashes[made[issue.path].must()] @ true
-
-    days @ days_of(scratch: scratch, hashes: keys(hashes).sort())?
-    commits @ commits_among(scratch: scratch, words: keys(words).sort())?
-    return ok(
-        Facts(history: true, pin: pin, made: made, made_by: made_by, unfollowed: unfollowed, days: days, commits: commits)
-    )
-
 # What git printed for `words`, or why it could not answer.
 function asked(scratch: str, words: [str]) -> str?
     ran = shell.run(scratch: scratch, program: "git", words: words)?
@@ -225,7 +114,7 @@ function fed(scratch: str, words: [str], lines: [str]) -> str?
         )
     return ok(ran.out)
 
-test "git answers a pin, a file's first commit, commits' days and which words are commits"
+test "git answers a pin, commits' days and which words are commits"
     scratch = shell.own_scratch()
 
     if shallow(scratch).default(true)
@@ -234,57 +123,10 @@ test "git answers a pin, a file's first commit, commits' days and which words ar
     head = pinned(scratch: scratch, pin: "HEAD").must()
     assert cards.is_full_hash(head)
     assert pinned(scratch: scratch, pin: "no-such-ref-at-all").is_err()
-    assert written(scratch: scratch, path: "tests/harness/no-such-file.hero", follow: true).must() == ""
-    assert !held(scratch: scratch, path: "tests/harness/no-such-file.hero").must()
-    merged = "issues/2026-09/25/2026-09-25-1106-panel-178-ratify-the-rest-is-zero-where-it-is-written.md"
-    assert written(scratch: scratch, path: merged, follow: false).must() == ""
-    assert written(scratch: scratch, path: merged, follow: true).must() == ""
-    assert held(scratch: scratch, path: merged).must()
-    assert added(scratch: scratch, path: merged).must() == "3088caa793819b38caa1ff492253789f94be26a9"
-    assert added(scratch: scratch, path: "tests/harness/no-such-file.hero").must() == ""
     days = days_of(scratch: scratch, hashes: [head, "0000000000000000000000000000000000000001"]).must()
     assert days[head].must().len() == 10
     assert days["0000000000000000000000000000000000000001"].is_err()
     named = commits_among(scratch: scratch, words: [head.slice(from: 0, to: 12), "0000000"]).must()
     assert !named[head.slice(from: 0, to: 12)].is_err()
     assert named["0000000"].is_err()
-    _ = shell.remove_tree(scratch).is_err()
-
-test "a self card's commit is the one that wrote `commit: self`, else the trunk's addition of a card a merge brought"
-    scratch = shell.own_scratch()
-
-    if shallow(scratch).default(true)
-        _ = shell.remove_tree(scratch).is_err()
-        return
-    moved = "issues/2026-09/24/2026-09-24-0002-defect-093-a-str-holding-a-zero-byte-reaches-c-through-cstr-cut-at-that.md"
-    merged = "issues/2026-09/25/2026-09-25-1106-panel-178-ratify-the-rest-is-zero-where-it-is-written.md"
-    extracted = "issues/2026-10/04/2026-10-04-0000-panel-191-ratify-amend-or-overturn-r1-to-r9-route-c-dirwide.md"
-    reopened = "issues/2026-10/11/2026-10-11-1846-panel-212-ratify-amend-or-overturn-r1-to-r11-a-program-beside-the-net.md"
-    carried = "issues/2026-10/04/2026-10-04-0007-defect-279-eleven-living-files-cite-a-closed-defect-as-an-item-of-docs.md"
-    read: [cards.Issue] @= []
-
-    # The cards are read from the tree while `issues/` stands; once the folder
-    # leaves it, with the transcription's words that use this module, there is
-    # nothing to read and nothing these readings serve.
-    for path in [moved, merged, extracted, reopened, carried]
-        text = read_file(path)
-
-        if text.is_err()
-            _ = shell.remove_tree(scratch).is_err()
-            return
-        read @ read.push(cards.issue_of(path: path, text: text.must()))
-
-    facts = gather(scratch: scratch, issues: read, pin: "HEAD").must()
-    assert facts.made[moved].must() == "3088caa793819b38caa1ff492253789f94be26a9"
-    assert facts.made_by[moved].must() == "addition"
-    assert facts.made[merged].must() == "3088caa793819b38caa1ff492253789f94be26a9"
-    assert facts.made_by[merged].must() == "addition"
-    assert facts.made[extracted].must() == "7bb6e6874c3f8e8694c0d70dff2ca498a157a6ee"
-    assert facts.made_by[extracted].must() == "pickaxe"
-
-    # The commit that closed it, and not `c1d49c62`, which filed it open.
-    assert facts.made[reopened].must() == "b85be4edf27272e7ada823a83c192a8ad787d4a0"
-    assert facts.made_by[reopened].must() == "pickaxe"
-    assert facts.made[carried].must() == "6a1117fc1c2263d7fa488496a626d6955b6d8020"
-    assert keys(facts.unfollowed).len() == 0
     _ = shell.remove_tree(scratch).is_err()
