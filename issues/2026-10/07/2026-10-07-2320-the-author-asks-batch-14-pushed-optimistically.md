@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-07
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1833
 ---
 
 # The author asks batch 14 pushed optimistically

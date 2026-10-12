@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-02
 commit: 6c95f44a622ff4064ffa0ee02d055349041084d5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1463
 ---
 
 # Defect 170 closed: a correct program whose types nest deeper than the C compiler survives stops `build` at exit 2 with clang's crash text

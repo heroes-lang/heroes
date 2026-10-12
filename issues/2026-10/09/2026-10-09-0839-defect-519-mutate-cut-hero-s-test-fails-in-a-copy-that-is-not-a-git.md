@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-09
 commit: 0e9bd4cdc807227dae500589e94b8b12cdceac23
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1867
 ---
 
 - [x] **519 — `mutate/cut.hero`'s test fails in a copy that is not a git checkout** | it asks `.` for a git checkout, so the compiler's own tests read one failure in any `git archive` snapshot or copy without `.git`, the base the same (lanes b15-runtime and b15-emit) | `selfhost/mutate/cut.hero` · defect 448 · **class: improvement**

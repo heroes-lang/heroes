@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-04
 commit: 761525bb3727aa916e492615398358ba7fa4dceb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1637
 ---
 
 # The author ratifies panel 190, funds sitting 192, and asks for the push

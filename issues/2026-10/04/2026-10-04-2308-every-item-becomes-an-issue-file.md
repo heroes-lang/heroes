@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-04
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1654
 ---
 
 # Every item becomes an issue file, one for one GitHub issue, in `issues/`

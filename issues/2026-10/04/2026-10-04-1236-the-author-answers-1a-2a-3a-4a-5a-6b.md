@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-04
 commit: f6a3122e818f9f622f7f264bdff5a47a8472a746
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1625
 ---
 
 # The author answers 1a 2a 3a 4a 5a 6b: the push now, panel 189 ratified, its paid run unfunded, two sittings after 190, the batch's own questions by the recommended answer

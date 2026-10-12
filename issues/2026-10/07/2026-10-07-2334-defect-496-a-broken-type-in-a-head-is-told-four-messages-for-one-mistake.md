@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-07
 commit: be205ad0ae9e8a1172891ee2378e3626298b3929
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1842
 ---
 
 - [x] **496 — a broken type in a head is told four messages for one mistake** | defect 456's shapes: the broken-type head is told 4 messages; with two such types, the second one's `expected_function_type` is told twice at one place (8:9); the 456 cases pin it as it stands (lane b14-text) | `selfhost/parse/brace_habit.hero` and the head's recovery · defect 456 · **class: adjacent**

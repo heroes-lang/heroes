@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-09-28
 commit: aee8b01ed0a4f427fcaf31b0aadf55ba4962fa4d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1379
 ---
 
 # Defect 118 closed: `fmt` refuses an arm continued at its own margin at exit 1, as the compiler does

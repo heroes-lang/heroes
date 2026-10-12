@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-17
 commit: 4d4eec4386dcffed8b699d5bd2d6b09159b3e73f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1251
 ---
 
 # The reader that forgets the level

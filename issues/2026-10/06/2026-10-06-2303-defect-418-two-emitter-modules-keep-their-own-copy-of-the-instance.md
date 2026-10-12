@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: 6c87c041cf26ed32e4ddc795ae9d73e6c13570f2
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1757
 ---
 
 - [x] **418 — two emitter modules keep their own copy of the instance lookup for calls** | `emit/inst.hero` and `emit/members.hero` each keep the rule that finds a generic call's instance, which `func_ref.instance_at` now names; one copy could serve both | `selfhost/emit/inst.hero`, `selfhost/emit/members.hero`, `selfhost/emit/func_ref.hero` · **class: improvement**

@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-03
 commit: 54d8e383028a54692114112bca97085009eb2667
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1556
 ---
 
 - [x] **204 — inside a list whose `[` the lexer paired with a closer of another kind further down, a binding is read as an element and told without the `[`, and the stray closer waits for the `]`** | `x = [1, 2` over `print(x)` over `y = 3 )`: one message, `expected_separator` at the `=` two lines below the `[`, *found `=`*, naming no `[`; with the `]` written, the `)` is told, `expected_end_of_line`, on a second run | `selfhost/parse/unclosed.hero` (panel 183's R1, a binding below a `[` ends its reach only where the lexer named the `[` never closed) · `selfhost/closers.hero` (the closer of another kind paired with the `[`) · **class: adjacent**

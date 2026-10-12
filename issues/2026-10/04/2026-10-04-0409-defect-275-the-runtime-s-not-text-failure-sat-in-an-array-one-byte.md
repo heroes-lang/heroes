@@ -4,7 +4,7 @@ area: golden
 milestone: none
 filed: 2026-10-04
 commit: cf7d6efa3456c4657ccd6eab6b5c1f6287e62b03
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1622
 ---
 
 - [x] **275 — the runtime's `not_text` failure sat in an array one byte short, so its message reads *these bytes are not valid UTF-* and C reads past it** | `b: [u8] = [99, 97, 102, 233]` and `b.validated_bytes()`: `.err` with `e.msg` *these bytes are not valid UTF-* and `len(e.msg)` 30, where the runtime's text is 31 letters; `.must()` on it panics *... not valid UTF-8*, `fprintf`'s `%s` reading the 31st letter and on to the first zero byte past the array (batch 8's round compiler, this Mac, 2026-10-04, `tests/golden/run/fixedbugs-275-a-failure-message-keeps-its-last-letter.hero`); the other seven static texts of the runtime measured right, `does_not_fit`'s 39 letters in 40, `missing_key`'s and *no such key* in 12, `true` and `false` | `runtime/parts/failure.c:104` (`hero_failure_not_text`: `char b[31]` for a 31-letter literal, which C fills with no terminator and no diagnostic) · `HERO_STR_STATIC` and `HERO_STR_LIT` (`runtime/heroes_runtime.h:186`), which size a text by its own literal · **class: blocking**

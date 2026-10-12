@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-03
 commit: fcdddfa56caad12943bc56923f44d36773533b02
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1501
 ---
 
 - [x] **261 — the IR builder's `build.slot` and `build.param` copy a growing table through a struct field** | 320,499 copies on `one-return-many-800` (batch 8's emit lane, counted in an instrumented copy of its compiler's C (`build --emit-c`, the lane's tip `96473596`), 2026-10-03, its report's *Found beside*, `<scratchpad>/batch8/emit/shapes/` and `<scratchpad>/round1003d/shapes2000/`), the pattern batch 8's 230 repaired in three other places | `selfhost/ir/build.hero:254` and `:259` (`param`, `slot`) · **class: improvement**

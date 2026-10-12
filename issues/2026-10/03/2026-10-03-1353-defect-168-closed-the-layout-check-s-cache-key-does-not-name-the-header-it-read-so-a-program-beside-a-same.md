@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-02
 commit: cf949d33ce7ab7870b9bdc9fd0e5a15ade3fef3b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1459
 ---
 
 # Defect 168 closed: the layout check's cache key does not name the header it read, so a program beside a same-named header replays another directory's verdict: a binding its own header refutes builds and prints a wrong value

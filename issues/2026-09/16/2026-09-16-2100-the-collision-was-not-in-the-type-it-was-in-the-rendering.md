@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-16
 commit: 524cb9efb9910197824bf68f664e1c2ecc611daf
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1244
 ---
 
 # The collision was not in the type, it was in the rendering

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-09
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1879
 ---
 
 # Panel 198 sat: a package's answer is judged word by word and value by value

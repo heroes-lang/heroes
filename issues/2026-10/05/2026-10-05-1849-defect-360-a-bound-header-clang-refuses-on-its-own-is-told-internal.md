@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-05
 commit: e0dc8780e5481fbe3ae7b111d2f60d8e9b6ee25a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1687
 ---
 
 - [x] **360 — a bound header clang refuses on its own is told `internal error` at exit 2, the author's header blamed on the compiler** | `extern "bad.h"` over a header holding `int broken = ;` answers *internal error: compiling the generated C failed:* with clang's *./bad.h:3:14: error: expected expression*, then *clang refused the generated C*, at exit 2 (this Mac, the round's compiler at `2dd5611c`, 2026-10-05, `<scratchpad>/hdr-bad/`); the Windows box said the same for defect 337's fixture header, which clang 23.1.1 refuses there | `selfhost/cli/produce.hero:220-242` (a clang refusal `blamed` does not read as the author's becomes `internal error`) · `selfhost/cli/units.hero:175` (the unit's failure, the generated C named) · **class: blocking**

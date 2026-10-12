@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 47bc65f3dc901c53795c8d3f82d8026a05e640c4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1861
 ---
 
 - [x] **513 — constructing each case of an N-case variant costs the square of N** | 0.62, 1.59 and 4.90 billion instructions at 400, 800 and 1,600 cases on defect 409's tree; read as `case_construct`'s name scan, unsampled (lane b15-check) | `selfhost/check/` (`case_construct`) · **class: improvement**

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: 8ac4e17dc59c42a04369e10011dc3c12ab27602e
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1816
 ---
 
 - [x] **471 — `-gno-column-info` would drop a column that means nothing under `#line`** | a column under `#line` is the C file's column printed against a `.hero` line (lldb draws its caret under the wrong character); (K) cuts objects 5.95% at 400 returns, `-O0`; UBSan's false column comes from the front end and survives it; Linux ASan's column and CodeView's unmeasured (panel 197's route (K)) | `selfhost/cli/flags.hero` · panel 197's R7 · **class: improvement**

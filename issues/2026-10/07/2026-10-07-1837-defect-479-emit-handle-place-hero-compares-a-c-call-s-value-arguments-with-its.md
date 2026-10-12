@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: e8aafc46515fed5b962fba0c1004db497c223baa
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1824
 ---
 
 - [x] **479 — `emit/handle_place.hero` compares a C call's value arguments with its `@` arguments pairwise** | `rewritten`, defect 260's cost shape (lane b14-resolve, read, not measured) | `selfhost/emit/handle_place.hero` · defect 260 · **class: improvement**

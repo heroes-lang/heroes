@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-07
 commit: 7dd2ac34b91e3361ebefdab5c3c672befd22ab84
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1778
 ---
 
 - [x] **437 — a `heroes` ended by SIGKILL still leaves its program running** | no process can catch SIGKILL, so a `heroes` killed that way still orphans its child after defect 425's repair; Linux offers `PR_SET_PDEATHSIG`, which the lane did not add, and macOS has no equal | `runtime/parts/run.c`, the child before exec · **class: improvement**

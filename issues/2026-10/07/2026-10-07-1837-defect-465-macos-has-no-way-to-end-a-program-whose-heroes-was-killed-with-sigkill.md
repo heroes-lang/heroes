@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-07
 commit: 5a2d7cf11e8d7d8520874ce542b36d12761f7719
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1810
 ---
 
 - [x] **465 — macOS has no way to end a program whose `heroes` was killed with SIGKILL** | defect 437 closed it on Linux with `PR_SET_PDEATHSIG`; on the Mac lane b14-runtime built and measured a sentinel process per runner holding a pipe, which killed the child 3 of 3 for about 0.85 million instructions a fork (`<scratchpad>/batch14/runtime/sentinel/sentinel.c`); it adds a long-lived process to every `heroes` that launches anything | `runtime/parts/run.c` · defect 437 · **class: improvement**

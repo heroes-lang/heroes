@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-21
 commit: b5ee40c4bb52ca99f49f729c75a603a5eeac9433
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1300
 ---
 
 # The runtime says what was live, and the net learns to ask for a sanitiser

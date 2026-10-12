@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-10
 commit: 7e602cb82a0d231520d0d17f0805c48effeceb41
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1936
 ---
 
 - [x] **574 — `print({})` is offered *annotate the binding* where there is no binding** | defect 553's repair offers an empty map a map's annotation, `m: {str: i64} = {}`; for `print({})`, an empty map with nothing to type it and no binding, the fix still says *annotate the binding* | the empty-literal fix of `selfhost/check/` (defect 553's repair, `4156ee29`) · **class: adjacent**

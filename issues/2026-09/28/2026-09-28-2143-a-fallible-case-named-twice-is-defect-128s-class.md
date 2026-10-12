@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-28
 commit: f0b84729cb64487978e24ba353e3ed97fdebeff5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1391
 ---
 
 # A fallible case named twice is defect 128's class, not a defect found after the waiver

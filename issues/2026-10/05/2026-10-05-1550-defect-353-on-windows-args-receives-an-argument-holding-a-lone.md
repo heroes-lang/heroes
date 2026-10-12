@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-05
 commit: 8aa7729fa75bd6582fdfef4a2f9384b89c05a6cb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1675
 ---
 
 - [x] **353 — on Windows `args()` receives an argument holding a lone surrogate as valid UTF-8, so the spec's *one that is not UTF-8 aborts* is false there** | an argument `x<D800>y` reaches `args()` as `x?y` through the narrow door and as `x<U+FFFD>y` under the UTF-8 manifest (panel 191's runs at `7f4c0cc5`, carried); both are valid UTF-8, a wrong value with no failure, where on this Mac and Linux arm64 the WTF-8 bytes of the same argument abort `args()` and give `args_checked()` `not_text` (panel 192's ffi-pragmatist) | `spec/heroes-spec.md:324-325` · the runtime's `argv` on Windows (`hero_args_set`, `os.c`) · panel 192's R6 (the wide `argv` converted losslessly to WTF-8) · defect 238's `c-dirwide`, with which it composes · **class: blocking**

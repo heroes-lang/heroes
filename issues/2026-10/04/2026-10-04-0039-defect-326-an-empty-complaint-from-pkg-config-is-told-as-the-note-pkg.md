@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-04
 commit: 98d01442aa2c00105d280af5a36fa3832109962b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1606
 ---
 
 - [x] **326 — an empty complaint from `pkg-config` is told as the note *pkg-config said:* with nothing after it** | a `pkg-config` that fails and writes nothing on its error stream: the package's `ffi_package` carries the note *pkg-config said:* and no words, a note that promises an answer and holds none | `selfhost/cli/package_answer.hero` (the notes written from pkg-config's complaint) · defect 285's reading of the answer's lines · **class: adjacent**

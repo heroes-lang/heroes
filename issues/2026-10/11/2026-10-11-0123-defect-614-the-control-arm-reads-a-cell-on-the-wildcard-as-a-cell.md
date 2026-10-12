@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-11
 commit: 519ac63b1a3ee6688b04feeac61e7db56afff27f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1982
 ---
 
 - [x] **614 — the control arm reads a cell on the wildcard as a cell** | under `check --permissive`, which drops `never_rebound` and so defect 608's refusal, `_ @= nullptr` is refused `cannot_infer`, *`nullptr` alone says `ptr`, not which handle `_` will hold*, with a guess writing `_: <Handle> @= nullptr`, where `_ = nullptr` is accepted in both arms; `_ @= []` is told `cannot_infer` with the guess *annotate the cell: `_: [i64] @= []`* where `_ = []` is told the binding's; `_ @= f(1)`, `_ @= h(1)` (a `T?`) and `_ @= g(1)` (a `()`) exit 0 as their `=` lines do in that arm | `selfhost/check/walk.hero`'s `.declare` arm, `born(…, cell: true)` for any name, `_` included; `selfhost/check/empty_binding.hero` (`poisoned`'s `bare_cell`, `retell`'s `cell`) · **class: adjacent**

@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1725
 ---
 
 # Panel 195 sat: a literal constant is one static block whose count is never written, and a sanitized build keeps the block per read

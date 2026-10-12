@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-11
 commit: 9694ba6ef88b109d118c65cd72c919b972e40131
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1997
 ---
 
 - [x] **645 — on the Windows target an `inline` definition is read by C99's rule, where clang reads Microsoft's, so four of `stdio.h`'s functions are refused `ffi_defined_twice`** | C99 makes an `inline` definition external where one declaration lacks `inline` or says `extern` (6.7.4p7), and `cli/defined_twice.hero` reads that rule on every target; clang for `x86_64-pc-windows-msvc` emits every `inline` definition as a COMDAT the linker keeps once (`linkonce_odr`, `weak_odr` for `extern inline`), so the Windows C library's `_snprintf`, `_vsnprintf`, `sprintf` and `vsprintf`, each an `inline` definition with a later declaration without `inline` (`stdio.h` lines 1959 and 1785), link from two units there and were told as defined twice, after defect 643's repair alone left the twoarity row with those four | `selfhost/cli/defined_twice.hero` (`merged`, `definitions`, `inline_only`); `tests/golden/surface-fixtures/twoarity/`; the Windows box · **class: blocking**

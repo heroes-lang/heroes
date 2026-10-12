@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-09
 commit: 0ec27fe0bd6aceccd8a4e7b9b8ba5a1e6aca811e
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1855
 ---
 
 - [x] **509 — on the CI's Windows leg ASan's report at `--sanitize` names no frame, so defect 322's case is red** | the CI run 37844345400 on `811f8398` (2026-10-08): `run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level` at `--sanitize`, built at `-O2` under `-gline-tables-only`, reports `AddressSanitizer: heap-use-after-free` with every frame an address alone (`fixedbugs322...exe+0x140032d1d`), no file and no line, so the needle `fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero:21` is absent; clang 20.1.8 on the runner; the same case green on Darwin arm64, Linux arm64 and Linux x86-64; the Windows box (clang 23.1.1) unrun | `selfhost/cli/flags.hero` (`debug_words`: line tables at `-O2`), the link line on Windows (`link.hero`), `tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero` · panel 197's R2 and R6 · defect 322 · **class: blocking**

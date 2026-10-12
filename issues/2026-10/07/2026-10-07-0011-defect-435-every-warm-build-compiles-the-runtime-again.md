@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: 040d583f704513b7ef863d8b9ab02f745201ebd3
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1776
 ---
 
 - [x] **435 — every warm build compiles the runtime again** | a warm `heroes build` runs `clang -c runtime/runtime.c` every time, read in the clang-call log by lane b13-run400; its cost unmeasured | `selfhost/cli/`, the runtime object's cache · **class: improvement**

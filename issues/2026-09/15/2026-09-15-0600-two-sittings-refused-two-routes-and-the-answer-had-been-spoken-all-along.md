@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-15
 commit: 21716c167fd6ae0bbf45e4193058efe3f2c84d37
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1220
 ---
 
 # Two sittings refused two routes, and the answer had been spoken all along

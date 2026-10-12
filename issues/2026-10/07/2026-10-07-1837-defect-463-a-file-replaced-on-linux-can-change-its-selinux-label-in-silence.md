@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-07
 commit: ec6a9e24adac4724e3555e42a68a49afc9fde9b4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1808
 ---
 
 - [x] **463 — a file replaced on Linux can change its SELinux label in silence** | the stage skips any `security.*` attribute it cannot set, so a replaced file could silently change label; no SELinux in the container to test (lane b14-runtime, unrun) | `runtime/parts/replace.c`, `runtime/parts/write.c` (batch 14's round, unmerged on 2026-10-07) · defect 438 · **class: improvement**

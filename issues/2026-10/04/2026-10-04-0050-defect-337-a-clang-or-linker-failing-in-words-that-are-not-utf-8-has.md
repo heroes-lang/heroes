@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-04
 commit: 55b1a29fe87eb703cad25fab80297f2cdfb0daff
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1617
 ---
 
 - [x] **337 — a clang or linker failing in words that are not UTF-8 has them dropped whole, and the author reads `linking failed:` over an empty line** | the trunk's compiler of `761525bb` on this Mac, 2026-10-04 at 16:55 by the files' own write times, with a `clang` first on the `PATH` that runs the real one and fails only the final link, writing `lld-link: error: impossibile aprire caf\351.obj` on stderr: `heroes build hello.hero` exits 2 with `internal error: linking failed:`, an empty line, and `error: clang refused the generated C`, the linker's line gone; the same line written as UTF-8 (`caf\303\251`) is forwarded whole. `run_clang` reads the child's stderr with `read_file`, which refuses bytes that are not UTF-8, and then forwards nothing (`<scratchpad>/probe-337/`, `err2.txt` and `err3.txt`) | `selfhost/cli/toolchain.hero:137` (`captured = read_file(err_path)`, `noise` left empty when it fails) · `selfhost/cli/produce.hero:220` to `:241` (the ffi blame reads the same words) · 317, the harness's own reading of a child's bytes · panel 191's R8 · **class: blocking**

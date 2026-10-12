@@ -4,7 +4,7 @@ area: process
 milestone: M-agreed-retention
 filed: 2026-09-20
 commit: 64c9265411b6de2175b6235646f023035da991ae
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1295
 ---
 
 # A seat's copy is its own

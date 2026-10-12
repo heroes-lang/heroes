@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-02
 commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1448
 ---
 
 # Defect 161 closed: a package's compile flags other than `-I` never reach clang, so a correct package is refused or stops `build` at exit 2

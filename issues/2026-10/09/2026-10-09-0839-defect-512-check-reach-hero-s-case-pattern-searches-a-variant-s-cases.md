@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 3fc7ed936198ef55882d94574dece68d1faea5d8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1860
 ---
 
 - [x] **512 — `check/reach.hero`'s `case_pattern` searches a variant's cases by name at each arm** | 0.54, 1.50 and 4.82 billion instructions at 400, 800 and 1,600 cases with defect 409's repair, still quadratic (lane b15-check) | `selfhost/check/reach.hero` (`case_pattern`) · **class: improvement**

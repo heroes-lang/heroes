@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: 3f032bc7b4a35890406a2ac4a657f25a3ccee832
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1609
 ---
 
 - [x] **329 — a letter after a number's leading-zero digits, `00x7` or `0644u`, is told twice: `leading_zero` and `expected_end_of_line`** | `x = 00x7` and `x = 0644u`: each gets `leading_zero` at the number and `expected_end_of_line` at the letter, two messages for the one mistake; defect 324's goldens (`check/fixedbugs-324-*`) pin both as they stand | `selfhost/number.hero` and `selfhost/leading_zeros.hero` (where the leading zero's reading stops) · defect 324 · **class: adjacent**

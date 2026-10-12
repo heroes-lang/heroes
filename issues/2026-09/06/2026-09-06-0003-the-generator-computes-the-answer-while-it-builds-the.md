@@ -4,7 +4,7 @@ area: harness
 milestone: M-generated-programs
 filed: 2026-09-06
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/931
 ---
 
 - [ ] **M-generated-programs** | the generator computes the answer while it builds the program | `tests/harness/suite_corpus.hero` § configurations · `examples/montecarlo/main.hero`

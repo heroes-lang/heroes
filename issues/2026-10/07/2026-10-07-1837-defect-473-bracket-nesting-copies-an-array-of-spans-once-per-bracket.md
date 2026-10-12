@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-07
 commit: 62f312ec52177e062092e5a0e42bb812c49fd1e6
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1818
 ---
 
 - [x] **473 — bracket nesting copies an array of spans once per bracket** | `check` of `x = [[...1...]]`: `token.Span` copies 1,004,007 at depth 1,000 and 4,007,055 at 2,000; a type written deep in a signature does the same; not located to a line (lane b14-check) | the lexer or the parser · **class: improvement**

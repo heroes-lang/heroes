@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-04
 commit: 57ce29ad52cd2763ea46c23b718b94b3754a14e0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1619
 ---
 
 # The defect list becomes one file per defect: `docs/work/defects/`, with `DEFECTS.md` its front page

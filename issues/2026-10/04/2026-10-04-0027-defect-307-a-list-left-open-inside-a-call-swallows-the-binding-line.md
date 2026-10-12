@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-04
 commit: afde4848915dbcbc5d43e9fa5f81294bb27a454c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1594
 ---
 
 - [x] **307 — a list left open inside a call swallows the binding line below it, its mistake told only once the list is closed** | the shape of defect 204 inside a call's arguments: the list's recovery takes the binding line below it, and that line's own mistake waits for the list's repair (lane b9-recovery's compiler, 2026-10-04) | `selfhost/parse/unclosed.hero` · `selfhost/grammar_expr.hero` (a call's arguments) · defect 204 · **class: adjacent**

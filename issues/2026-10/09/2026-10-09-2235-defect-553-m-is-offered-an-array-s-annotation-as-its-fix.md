@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 4156ee2946729c46567e9abecd0462a0b5140541
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1907
 ---
 
 - [x] **553 — `m = {}` is offered an array's annotation as its fix** | an empty map literal with nothing to type it gets the fix *annotate the binding: `xs: [i64] = []`*, an array's example for a map (lane b17-check) | the empty-literal fix of `selfhost/check/` · **class: adjacent**

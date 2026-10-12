@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-02
 commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1451
 ---
 
 # Defect 164 closed: a record field misspelt as a name the header defines as a macro stops `build` with an internal error and clang's text

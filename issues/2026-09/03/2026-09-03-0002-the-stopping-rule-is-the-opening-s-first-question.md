@@ -4,7 +4,7 @@ area: process
 milestone: M-doc-generator
 filed: 2026-09-03
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/808
 ---
 
 - [ ] **M-doc-generator** | the stopping rule is the opening's first question | `CLAUDE.md` §10 · `docs/measurements/003-closure-list-audit.md:82-100`

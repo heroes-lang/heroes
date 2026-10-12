@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: d9f5ddb8be6a819680f28490d2aa7ef6237a9772
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1520
 ---
 
 # The author answers A: a case a platform cannot run is judged where its header is, with a twin on the program's own header everywhere

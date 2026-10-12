@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-07
 commit: 486cc7feb10b96405970f952dc9a002f4e5586d3
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1831
 ---
 
 - [x] **486 — the map command misses `tests/harness`, which `canonical` walks** | `canonical`'s `SOURCE_DIRS` walks `tests/harness`, the map command does not search for it, so the `tests/harness/**` row runs one suite too few (lane b14-hooks; `grep -n '"tests/harness"' tests/harness/suite_canonical.hero`) | `.claude/rules/verification.md` § The map · defect 288 · **class: improvement**

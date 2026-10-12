@@ -4,7 +4,7 @@ area: golden
 milestone: none
 filed: 2026-10-02
 commit: 1cd675868318030a46c9970d6b0ad1e71281bc6c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1445
 ---
 
 # Defect 155 closed: the public CI is red on `03e70520`: defect 140's variants case passes a C compiler's own limit

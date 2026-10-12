@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-20
 commit: b6e26fcc3240ebe1c92625392a93063b301849c9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1291
 ---
 
 # Heroes must be robust, and the default flips

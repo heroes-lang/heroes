@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-15
 commit: 115c4dd177727f02a6c0e13b2e73172c3bac4a96
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1229
 ---
 
 - [x] **045 — a null handle handed to a C function that reads through it SEGFAULTS, which §1.12 forbids outright** | `cstr` arguments are guarded on their way out and handles are not, so a null handle reaching a header that dereferences it built clean and died at exit 139 with nothing on either stream | **repaired 2026-09-15**, panel 154 R1 and R2, ratification pending | `selfhost/cli/flags.hero` · `runtime/parts/stack.c`'s `HERO_NULL_WINDOW` and its handler

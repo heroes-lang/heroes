@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: 170db6ba3a83f345022ec9ecb29bbd99c026b10f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1838
 ---
 
 - [x] **492 — the emitter's instance lookup scans every function per call** | after defect 418 made it one lookup, it still walks every function for each call (lane b14-emit, unmeasured) | `selfhost/ir/instances.hero` · defect 418 · **class: improvement**

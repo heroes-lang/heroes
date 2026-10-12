@@ -4,7 +4,7 @@ area: process
 milestone: M-issue-files
 filed: 2026-10-11
 commit: ca3d3532a4d7b96cc11683d7de7c3b22318eca1b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2016
 ---
 
 - [x] **671 — a GitHub write from the assistant's shell asks nothing: the local permissions allow `gh api` on the repository and `guard_bash.py` does not name `gh`** | `.claude/settings.local.json` (the author's, git-ignored) allows `Bash(gh api repos/heroes-lang/heroes/*)`, `Bash(gh api --allow-escape-sequences repos/heroes-lang/heroes/*)` and `Bash(gh run *)` and has no `ask` and no `deny`; `gh api` with any `-f` or `-F` field switches to POST (`gh api --help`), so `gh api repos/heroes-lang/heroes/issues -f title=x` is a write that passes; the tracked `.claude/settings.json` asks only for `git push*` and `guard_bash.py` has no rule about `gh` (`grep -c -E '\bgh\b' .claude/hooks/guard_bash.py` is 0); CLAUDE.md § Hard stops says an outward-facing act is asked for every time and that the settings and hooks enforce it | `.claude/hooks/guard_bash.py` · `.claude/settings.json` · `.claude/hooks/test_hooks.py` · panel 212 R7 · **class: blocking**

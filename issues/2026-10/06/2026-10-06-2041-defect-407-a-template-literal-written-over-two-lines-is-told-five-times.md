@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-06
 commit: 03779be81fb3f978b4818b15decc48a6b09959c9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1746
 ---
 
 - [x] **407 — a template literal written over two lines is told five times** | a JavaScript template literal whose backticks fall on two lines gets 5 messages on the base and on lane front alike, since the lexer reads one line at a time and defect 391's repair reads a backtick string that closes on its line | `selfhost/lexer.hero`, `selfhost/backtick_strings.hero` · **class: adjacent**

@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-03
 commit: 3e6f076e8b875613113f7f8b18b39d7a0a9221a4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1506
 ---
 
 - [x] **266 — `pairing.close_after` scans the closing offsets from the first, so a file of unclosed `for` heads costs the square of its heads** | `for n > f(0` left open, repeated: 5.42 times for 4 times the heads (batch 8's recovery lane, instructions retired, 2026-10-03, its report's *Found beside*, `<scratchpad>/batch8/recovery/r184s/for_unclosed_*`) | `selfhost/parse/pairing.hero:19` (`close_after`) · **class: adjacent**

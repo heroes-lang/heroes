@@ -4,7 +4,7 @@ area: records
 milestone: M-buildable-structs
 filed: 2026-09-25
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1335
 ---
 
 - [ ] **M-buildable-structs** | `m2 = m` copies a `pthread_mutex_t`, which POSIX does not allow, and nothing refuses it | `docs/panel/178-reports/completeness-critic.md` § 5 question 2

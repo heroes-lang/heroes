@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-28
 commit: 687c54f34fea0c8393828dd444279ec43b61fc59
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1388
 ---
 
 # Defect 127 closed: a literal arm takes the width of what it matches

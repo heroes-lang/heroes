@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-11
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1988
 ---
 
 # Panel 210 sat: an `@` parameter nothing writes or ends is refused, the spec sentence waiting for its refresh

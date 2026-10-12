@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-26
 commit: fa813325a4ba437fd93a50107ce8299568ddb92b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1355
 ---
 
 # Defect 103 closed: the lexer is linear in the size of a file, and the compiler checks itself a quarter faster

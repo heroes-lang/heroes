@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-11
 commit: 18aa64b76ec2d326ccc313ac71db4805c784a3f5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1977
 ---
 
 - [x] **608 — `_ @= e` is accepted, a cell nothing can re-bind** | `_ @= f(x)` checks and runs as the discard `_ = f(x)` does: `resolve/state.declare` answers the wildcard with a silent `fail(code: "wildcard")` and declares nothing, so the never-re-bound rule, which reads the locals, never sees a cell; yet spec § 5 says `_` binds nothing, so there is no cell to declare and the line is the rule's own shape, a `@=` that is a `=` in disguise. Measured after M-inferred-cell's push by `heroes mutate examples --operator bind-as-cell --survivors`: 833 mutants, 785 killed (94%), 48 surviving, **47 of them `_ @= …`** and the one other in a module holding a hole, which the sweep exempts on purpose. The repair is one message at the symbol, `never_rebound` with its certain fix writing `=`, told where the resolver meets the wildcard's `@=` (`resolve/walk.hero`'s `.declare` arm), and a golden beside `tests/golden/check/never-rebound-cell.hero` | `selfhost/resolve/walk.hero` (the `.declare` arm, before `state.declare`), `selfhost/resolve/state.hero` `declare` (the wildcard's silent answer), `selfhost/resolve/errors.hero` `never_rebound`; the `bind-as-cell` row of `docs/metrics/operators.md`, whose rate this is · **class: blocking**

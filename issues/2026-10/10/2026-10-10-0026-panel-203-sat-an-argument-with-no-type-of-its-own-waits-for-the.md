@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1923
 ---
 
 # Panel 203 sat: an argument with no type of its own waits for the call's others, and a self-call through a parameter aborts at run time

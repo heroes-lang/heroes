@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-25
 commit: 517b8e25692a4cf0075c04fd306e5017fd428cd4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1339
 ---
 
 # An end a call announces is pending until the call returns

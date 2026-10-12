@@ -4,7 +4,7 @@ area: design
 milestone: M-thesis-harness
 filed: 2026-09-12
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1139
 ---
 
 - [ ] **M-thesis-harness** | the Part 11 experiment that scores what the productions bought, and the instrument that runs it | `design.md` Part 11 · `docs/panel/133-the-half-that-can-be-derived-and-the-half-that-cannot.md` § Predictions to score

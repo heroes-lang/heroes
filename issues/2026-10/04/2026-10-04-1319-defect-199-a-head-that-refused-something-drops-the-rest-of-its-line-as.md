@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-02
 commit: b510f9025c75289d4bd91f8402be8713ed0e1267
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1482
 ---
 
 - [x] **199 — a head that refused something drops the rest of its line as debris, a stray closer in it with it** | `if f(1 +) )` over its body: `expected_expression` at the call's `)`, and the stray `)` after it told only once the operand is written | `selfhost/parse/opening.hero:147` (`drop_rest_of_line` after a failed head) · pinned by `tests/golden/check/panel-187-a-failed-heads-rest-is-dropped-as-debris.hero` · **class: adjacent**

@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-15
 commit: 56b75ff8972a0ac525b453d2d7d2a5f42be55b04
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1228
 ---
 
 - [x] **044 — a record naming one field type TWICE registers only the first handle behind it, so a correct program aborts and a leaking one passes** | `check/reaches.hero`'s `gather` threaded one `seen` map across sibling fields, so the second field whose type was already walked enumerated nothing | **repaired 2026-09-15** | `selfhost/check/reaches.hero`'s `gather`, `fields_of` and `on_route`

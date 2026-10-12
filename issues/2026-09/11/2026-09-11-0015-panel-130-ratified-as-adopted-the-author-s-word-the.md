@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 9ab292e19073616e4ad2bcdcbdc4f7a393eefe2b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1120
 ---
 
 2026-09-11 · **Panel 130 ratified as adopted**, the author's word the same evening

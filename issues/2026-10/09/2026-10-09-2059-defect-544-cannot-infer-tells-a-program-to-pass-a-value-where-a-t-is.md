@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 2549a0b744fe82eee5044600d0c5b30339c2b4d5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1898
 ---
 
 - [x] **544 — `cannot_infer` tells a program to pass a value where a `T?` is expected when it did** | `g(x: 1, n: ok(2))` with `n: i64?` is refused `cannot_infer` with *pass it where a `T?` is expected*, which is what the program did (panel 201's spec-warden) | the `cannot_infer` message of `selfhost/check/` · panel 201 · **class: blocking**

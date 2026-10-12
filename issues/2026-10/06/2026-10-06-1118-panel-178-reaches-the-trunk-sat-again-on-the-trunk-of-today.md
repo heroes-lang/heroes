@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1716
 ---
 
 - [x] **M-issue-files** | panel 178 (2026-09-25, *the rest is zero where it is written*, M-buildable-structs' sitting) and what it filed live only on the branch `lane-panel-178`, never merged: its sitting, briefs and reports, its four defects 091 to 094 (the trunk's defect numbers go from 090 to 095) and row 63's description (`e597cfcd`); its ratification is in no list, so row 63 cannot open on it. It is sat again on the trunk as it is after batch 12, every premise and measurement of 178 re-run there, and then brought in: the old sitting kept as the record it is, the new one's resolution and its ratification issue, each of 091 to 094 re-run and filed by what it is today | `git log lane-panel-178`, `git show lane-panel-178:docs/panel/178-the-rest-is-zero-where-it-is-written-and-c-says-which-value-is-valid.md` · `docs/ROADMAP.md` row 63 · `.claude/skills/panel/SKILL.md`

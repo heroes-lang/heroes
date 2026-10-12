@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1722
 ---
 
 # The author answers 1, 2, 3: M-issue-files to this session, GitHub last, panels 195 and 194 ratified by delegation

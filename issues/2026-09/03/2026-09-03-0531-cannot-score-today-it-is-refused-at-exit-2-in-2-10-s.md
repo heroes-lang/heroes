@@ -4,7 +4,7 @@ area: examples
 milestone: M-corpus-depth
 filed: 2026-08-13
 commit: f3b0b20d485d1236bd4674091eb9497a37e1e592
-github: none
+github: https://github.com/heroes-lang/heroes/issues/418
 ---
 
 - [x] **M-corpus-depth, step 1 — before any program is written, because every score after it depends on it** | found 2026-09-03 by step 0's own measurement, the first `heroes mutate` over `examples/` since 2026-08-13 | **`heroes mutate` cannot score `examples/` today: it is refused at exit 2 in 2.10 s, and has been since `examples/shapes/` landed on 2026-09-02 (`c12de74`).** `mutate` walks every `.hero` under the directory and checks each one **from its own directory**, and two of them are modules below a nested program's root: `examples/shapes/geom/area.hero` (`use geom/point`) and `examples/shapes/render/ascii.hero` (`use geom/point`, `use scale`), which alone are `error[unknown_module]` while `heroes check examples/shapes/main.hero` is exit 0 — panel 099 R5's leaf hazard, met by the one caller that walks leaves by construction. Nobody saw it for a day because `mutate` over `examples/` ran in no CI leg. **The shape**: a file's program root is the nearest directory at or above it, no higher than the corpus directory, holding a `main.hero`, and a mutant of a module is checked with that root as the base of its `use` paths. Measured meanwhile as the provisional baseline: the sum of one run per directory over 35 of 36 directories, verified exact on the gallery | selfhost/cli/mutate.hero · selfhost/mutate/score.hero · docs/panel/099 § Author's verdict · docs/measurements/014-mutate-over-thirty-five.md | a metric the thesis rests on has been unable to read its own corpus for a day, and the instrument that would have said so does not exist

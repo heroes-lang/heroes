@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-03
 commit: 1303e5296c947dc104923c7b2819353f8c501397
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1504
 ---
 
 - [x] **265 — `line_end.said_here` walks every report said so far, so a file of refused `while` and `if` heads costs the square of its heads** | failed `while` and `if` heads grow 5.47 times for 4 times the heads (batch 8's recovery lane, instructions retired, 2026-10-03, its report's *Found beside*, `<scratchpad>/batch8/recovery/r184s/while_failed_*` and `if_failed_*`), the shape beside defect 184's `for` heads | `selfhost/parse/line_end.hero:166` (`said_here`) · **class: adjacent**

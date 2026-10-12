@@ -4,7 +4,7 @@ area: design
 milestone: M-guide-book
 filed: 2026-09-08
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/999
 ---
 
 - [ ] **M-guide-book** | the held-out tasks must never be committed, now that the repository is public | `docs/metrics/tasks.md` · `design.md` Part 11

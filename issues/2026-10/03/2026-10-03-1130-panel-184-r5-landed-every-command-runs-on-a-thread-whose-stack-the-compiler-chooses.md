@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: 8637cccd3ebdb880abb5d68e8834b103611ea0b0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1521
 ---
 
 # Panel 184's R5 landed: every command runs on a thread whose stack the compiler chooses

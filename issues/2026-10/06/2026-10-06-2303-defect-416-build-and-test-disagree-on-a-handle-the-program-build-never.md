@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-06
 commit: a82dd2a11432cb5de134383432ef3c16a3ad3814
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1755
 ---
 
 - [x] **416 — `build` and `test` disagree on a handle the program build never reaches** | `record UH tag utag` over a union's tag, unused or bound only in a test: `build` and `run` exit 0 while `test` refuses `ffi_tag_is_a_union`, even with no test block; the same for a misspelled tag (`ffi_unknown_name`); each message is true, and the verbs disagree on whether it is asked | the records the pointee and tag questions reach per verb, `selfhost/cli/` · **class: adjacent**

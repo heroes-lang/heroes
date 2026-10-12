@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: f08092e2cad68c8baa08baacc0536fde95875d07
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1955
 ---
 
 - [x] **589 — glibc's link warning for `mktemp` reaches the author raw at the emitted C's path** | on Linux arm64 a program binding and calling `mktemp` builds at exit 0 and prints `ld`'s *`.../mktemp.c:89:(.text+0x1c): warning: the use of 'mktemp' is dangerous, better use 'mkstemp' or 'mkdtemp'`*, naming the emitted C, not the `.hero` line; glibc's header marks nothing, so no clang group reaches it (the seat's `c/linux_heroes.txt`) | the link step's output, `selfhost/cli/link.hero`; panel 208 decides whether the deprecation's verdict reaches it, landing with defect 584 · **class: blocking**

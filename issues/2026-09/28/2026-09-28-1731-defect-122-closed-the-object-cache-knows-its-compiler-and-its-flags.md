@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-28
 commit: 464320c810fc9f1f8a567c2b33498351696a3942
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1383
 ---
 
 # Defect 122 closed: a build's object cache knows which C compiler and which flags built an object

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-11
 commit: d15596f1d7c31201d1c54f3c7c9951e4e13e1f5b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1994
 ---
 
 - [x] **642 — the linkage question reads no answer on the Windows target, so `ffi_declared_two_ways` is never told there and `ffi_defined_twice` loses the header's line** | `cli/two_ways_ask.hero` asks whether a name has external linkage by a `static` redeclaration and reads clang's refusal, *static declaration of 'twice' follows non-static declaration*; clang for `x86_64-pc-windows-msvc` reads C with Microsoft's extensions, where the redeclaration is allowed and said only under `-Wmicrosoft-redeclare-static`, in other words (*redeclaring non-static 'twice' as static is a Microsoft extension*), so it wrote nothing, every name read internal, defect 555's two cases built at exit 0 and defect 556's three were told without `line N` | `selfhost/cli/two_ways_ask.hero` (`asked_of`, `read`); the Windows box · **class: blocking**

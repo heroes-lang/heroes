@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-30
 commit: b39ae3d5b8c2b45de877661f7040be8d918a93fa
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1411
 ---
 
 # Defect 139 closed: a match statement leaves its block only when every arm does, and a branch that ended on a statement is told from one that jumped

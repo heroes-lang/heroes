@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-18
 commit: 7895047e7917ebfcb9ec4571a7f7c1948e2dbb93
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1262
 ---
 
 # The sitting convened on a wall and measured that the wall was not there

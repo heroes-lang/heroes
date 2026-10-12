@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-20
 commit: 62a7ed6a16b80c377f8cafd47ecc3f0b1e6a8653
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1289
 ---
 
 # Four sittings ratified, and the default is not flipped

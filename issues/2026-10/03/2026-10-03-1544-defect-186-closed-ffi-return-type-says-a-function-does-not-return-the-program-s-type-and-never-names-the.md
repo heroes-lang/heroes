@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-02
 commit: edfeb7d2c8889b679fd7557ef3e97589e3d19ca9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1465
 ---
 
 # Defect 186 closed: `ffi_return_type` says a function does not return the program's type and never names the type the header gives

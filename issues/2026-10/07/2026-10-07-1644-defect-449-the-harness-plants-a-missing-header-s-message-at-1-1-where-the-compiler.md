@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-07
 commit: 271007e78532f4085c422228ae888dd57939207b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1792
 ---
 
 - [x] **449 — the harness plants a missing header's message at `:1:1`, where the compiler says the group's first declaration** | the harness's planted missing-header messages sit at `:1:1`, the compiler's at the group's first declaration (`:2:5` in the lane's case); left because moving it moves other suites' mark tests (lane b14-harness-a, 2026-10-07) | `tests/harness/absence.hero` · defect 328 · **class: improvement**

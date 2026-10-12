@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-05
 commit: 8b3d0d67ede109f2162aab9e0bbc7b4a18639595
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1676
 ---
 
 - [x] **354 — `[97, 0, 98].validated_bytes()` answers a one-byte `str`, cutting at the zero with no word** | a `[u8]` holding a zero byte answers `validated_bytes()` with the bytes before the zero alone, `len` 1 for three bytes, no failure (panel 192's ffi-pragmatist and coordinator, this Mac, 2026-10-05; `<scratchpad>/192-facts/repair/esc.hero`); the spec gives `validated_bytes()` to *a field of bytes*, read to its first zero, and says nothing of a `[u8]`, which the compiler accepts | `hero_str_try_from_bytes` (`runtime/parts/str.c:379`, its `memchr`) · `spec/heroes-spec.md:384` · panel 192's R1, under which a `str` holds a NUL · **class: blocking**

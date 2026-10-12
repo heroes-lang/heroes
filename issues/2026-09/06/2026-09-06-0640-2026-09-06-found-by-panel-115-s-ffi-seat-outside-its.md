@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-06
 commit: e61fec3b6eff672b3cefd7c6db9fca06908e1397
-github: none
+github: https://github.com/heroes-lang/heroes/issues/959
 ---
 
 - [x] **015 — a `certain` fix machine-applies into a program that does not compile** | 2026-09-06, found by panel 115's ffi seat outside its remit, verified by the coordinator the same hour | **repaired 2026-09-06, same day** | panel 115, § Two side findings | **a rule the whole fix machinery rests on, broken by one diagnostic**

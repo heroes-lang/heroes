@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-07
 commit: a61521bf3bc97d87ee3c3e877d466f7be6229e50
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1793
 ---
 
 - [x] **450 — three suites spell a missing header's tail themselves instead of reading it from `absence`** | `suite_annotations`, `suite_corpus` and `suite_special` spell *clang looked and did not find it* themselves; it matches the compiler today, and `absence.HEADER_LOOKED` holds it since defect 328 (lane b14-harness-a, 2026-10-07) | the three suites · defect 328 · **class: improvement**

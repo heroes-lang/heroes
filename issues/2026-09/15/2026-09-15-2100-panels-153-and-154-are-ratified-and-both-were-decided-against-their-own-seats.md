@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-09-15
 commit: 19ee8adb72b4c22f1e36e6f2117c7c6a72b2737c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1231
 ---
 
 - [x] **panel 153** | Does the LANGUAGE need a way to read the struct behind a pointer C hands back, when a header of the author's own already does it at zero language cost? | **RATIFIED 2026-09-15**, as adopted | `docs/panel/153-the-option-set-was-short-by-one-and-the-route-nobody-listed-already-ships.md`

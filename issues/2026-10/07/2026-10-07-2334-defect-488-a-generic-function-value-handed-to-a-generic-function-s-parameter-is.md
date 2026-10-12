@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: a9e557db3172ce97d15348e6fb601448f3e3a0b4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1834
 ---
 
 - [x] **488 — a generic function value handed to a generic function's parameter is refused `cannot_infer`, where spec § 9 read plainly would admit it** | `app(f: ident, x: 20)` with `ident<A>` and `app<A>(f: (function(A) -> A), x: A)`, `ns.map(ident)` and `ns.fold(19, keep)` are refused `cannot_infer`; the message names the narrowing itself (*hand it to a non-generic function's parameter*), defect 402's design; spec § 9 says a type parameter takes its type *from the type the context asks for* (lane b14-emit; reproduced by the coordinator at 20:01 on the trunk and the round) | `selfhost/check/`, the inference of a function value · spec § 9 · defect 402 · **class: improvement**

@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-08-12
 commit: 3111799d8fe746b4adfd260b54eb8d0dbb341bba
-github: none
+github: https://github.com/heroes-lang/heroes/issues/305
 ---
 
 - [x] The record | panel 016/017 | **RATIFIED 2026-08-12** (blanket author instruction — see the panel file's Ratification section for what that does and does not settle). Both RATIFIED as they landed (author instruction, `/goal`). Worth reading anyway for the two reversals: 017's A was decided by *executing* three options, and its historian's objection was answered by building the rule once instead of per construct — the judge's own withdrawal condition | docs/panel/016-command-surface.md, docs/panel/017-type-system-edges.md | the panel changed the design twice more, and both times the change came from a judge's evidence rather than from the proposal

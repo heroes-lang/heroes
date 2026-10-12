@@ -4,7 +4,7 @@ area: records
 milestone: M-agreed-retention
 filed: 2026-09-28
 commit: c7b03a12c432bdea708de4f2d9526719d6cbb2ce
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1390
 ---
 
 # The predictions of M-agreed-retention, scored

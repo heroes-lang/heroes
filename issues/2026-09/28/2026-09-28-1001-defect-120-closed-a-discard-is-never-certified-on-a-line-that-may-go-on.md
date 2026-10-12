@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-28
 commit: aee8b01ed0a4f427fcaf31b0aadf55ba4962fa4d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1381
 ---
 
 # Defect 120 closed: a discard is never certified on a line that may go on with the one above

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-05
 commit: 8800ce9ccd02bb0fb477b8c113ae0e89f24c5e14
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1683
 ---
 
 - [x] **359 — on Windows `build -o name` writes `name` with no `.exe`, which `cmd.exe` and PowerShell cannot start** | on the Windows box, `heroes.exe build hi.hero -o name` answers *wrote name* at exit 0 and the file is a PE32+ console executable that Git Bash runs and `cmd //c name` refuses, *is not recognized as an internal or external command*, as PowerShell's `& .\name` does, *The operation attempted is not supported*; `build hi.hero` with no `-o` writes `build/<key>/hi.exe`, with the suffix, and `-o named.exe` writes `named.exe`, which `cmd //c named` starts (batch 11's coordinator, 2026-10-05, on `4c3524fb`'s compiler, found by defect 231's fair pair, whose `-o p231/astar800` wrote one) | `selfhost/cli/link.hero:49` (the default name takes `process.exe_suffix()`) and `:58` (`binary @ output.must()`, the author's path taken as written) · **class: adjacent**

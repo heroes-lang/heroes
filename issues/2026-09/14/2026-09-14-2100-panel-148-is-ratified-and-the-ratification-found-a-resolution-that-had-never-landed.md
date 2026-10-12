@@ -4,7 +4,7 @@ area: design
 milestone: none
 filed: 2026-09-14
 commit: ac2e70363d2301c6e67fcbf7311ba8284733efd5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1212
 ---
 
 - [x] **panel 148** | the surface of the mark panel 147 admitted: option C refused on twelve headers of nineteen, and the mark that lands is written and names what ends the life | **ratified 2026-09-14**, all six resolutions as adopted, the robust one and not the conservative one | **The author declined the bare `acquires` at +58** recorded at R5's end, so the mark names its releaser and the completeness diagnostic stands. **The ratification came after the milestone had closed and been tagged, which made it a verdict on what SHIPPED rather than on what was proposed — and that is what found the gap.** **R1's design.md Part 6 row did not exist.** The resolution said the inferred obligation goes to Part 6 with the ffi seat's falsifier; the milestone closed; no row was written, and `grep SSL_get0_peer_certificate docs/design/design.md` was empty at the ratification. It was written then, carrying the twelve-of-nineteen count, the adjacent-lines pair in `openssl/ssl.h`, the `-Weverything` probe that shows clang cannot separate them either, the compelled-free direction that makes it §1.12 corruption rather than §1.12 leak, and the falsifier verbatim. **A resolution is not landed because a sitting adopted it**, and nothing in the close checklist asks whether the Part 6 rows a sitting orders were actually written | `docs/panel/148-the-mark-is-written-and-never-inferred-and-it-names-what-ends-the-life.md` § Author's verdict · design.md Part 6 · `docs/measurements/010` rows 154 and 155 | 148

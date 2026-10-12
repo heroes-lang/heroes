@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-07
 commit: 9107d98db56b5248d271ffb7502cdbbf18b5e568
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1804
 ---
 
 - [x] **459 — an outer list never closed around an inner list the lexer closes elsewhere is told twice for one `]]` edit** | the never-closed outer `[` keeps its own report beside the binding's message naming the inner `[`, two messages for one edit, deliberate under defect 307's rule; merging them needs the outer opener's report carried to the binding's message across reports being cut (lane b14-parse, 313's six shapes on the base, none spurious) | `selfhost/parse/unclosed.hero`, `selfhost/closers.hero` · defects 313 and 307 · **class: adjacent**

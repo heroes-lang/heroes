@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-21
 commit: 497a048f638887d6bf0f64542afce49eed136659
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1303
 ---
 
 # A process that never started stops being a record with an exit code

@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: da2d22ae36452d387f6098d4168972c794f50ad4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1583
 ---
 
 - [x] **293 — the scanner costs about a million instructions a refused character on a line of 4,000, growing with the line** | refused characters cost about 74 thousand instructions each at 79 on a line (400 to 800 lines doubling), and about one million each at 4,000 on one line, what is left after defect 282 bounded the telling (lane b9-notext, instruction counts, 2026-10-04) | `selfhost/scan.hero` and the layout it calls · **class: improvement**

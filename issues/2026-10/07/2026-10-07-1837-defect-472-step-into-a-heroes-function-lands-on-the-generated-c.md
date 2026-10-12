@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: a3ebe9eb33051f073861bbbeafc5e0f886258e9d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1817
 ---
 
 - [x] **472 — `step` into a Heroes function lands on the generated C** | `step` into `square` lands on `dbg.c:34:5` under every debug word (panel 197's compiler-engineer); design.md `:682`'s attribution of prologue code, which an author still sees as C | the emitted prologue's `#line` · design.md §3.1 `:682` · panel 197's R7 · **class: improvement**

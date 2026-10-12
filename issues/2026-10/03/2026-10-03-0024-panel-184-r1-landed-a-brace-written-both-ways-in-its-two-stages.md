@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: ffaf4cec4ca7f3ff4a182b579e9947010e5aaf4f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1511
 ---
 
 # Panel 184's R1 landed: `{{` and `}}` each write one brace, and a lone `}` is an error, in its two stages

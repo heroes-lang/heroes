@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-09
 commit: cd2355e35f62614901113ef0ac6b4e5cc23eabf0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1896
 ---
 
 - [x] **542 — `no_entry_point` on a module built alone never names the file that uses it** | `heroes build geom.hero` of a module tells *add `function main()`, or use `--emit-c`*, caret on its last token, and never *build the file that uses this one*; measurement 040's readers added a `main` under that note (panel 201's critic) | the `no_entry_point` note · panel 201 R2 · defect 467 · **class: improvement**

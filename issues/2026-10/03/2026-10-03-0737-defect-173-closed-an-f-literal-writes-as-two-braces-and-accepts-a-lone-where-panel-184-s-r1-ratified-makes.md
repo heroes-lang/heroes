@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-01
 commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1427
 ---
 
 # Defect 173 closed: an `f` literal writes `}}` as two braces and accepts a lone `}`, where panel 184's R1, ratified, makes `}}` one brace and a lone `}` an error

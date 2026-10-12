@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 3248ea843ab5039ba2eb1d06d4db7c28cde9a922
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1880
 ---
 
 - [x] **530 — a branch that ends a handle itself still copies the whole group array at its first change** | when each `if` branch itself ends a handle, `check` reads 1.49, 3.73 and 10.73 billion instructions at 500, 1,000 and 2,000 after defect 511's repair: a path's first change unshares the flat held array and the `at` map, a copy of every local's group (lane b16-compiler; its generator `.claude/worktrees/scratch-b15/compiler/511/gen2.py`, ignored by git) | `selfhost/check/flow.hero`, `selfhost/check/flow_log.hero` · defect 511 · **class: improvement**

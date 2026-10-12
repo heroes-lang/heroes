@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-05
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1688
 ---
 
 # The author answers 1a 2a: the push waits for the next batch's legs, and `kind:learn` goes with `learn.md`

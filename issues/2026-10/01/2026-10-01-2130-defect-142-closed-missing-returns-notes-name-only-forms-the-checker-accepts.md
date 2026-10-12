@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-30
 commit: b39ae3d5b8c2b45de877661f7040be8d918a93fa
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1412
 ---
 
 # Defect 142 closed: missing_return's notes name only forms the checker accepts

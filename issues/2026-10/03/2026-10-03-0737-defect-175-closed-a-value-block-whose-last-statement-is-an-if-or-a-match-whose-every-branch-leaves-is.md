@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-02
 commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1453
 ---
 
 # Defect 175 closed: a value block whose last statement is an `if` or a `match` whose every branch leaves is refused `no_value`, where panel 185's R4, ratified, makes the block leave and its arm a jumping arm

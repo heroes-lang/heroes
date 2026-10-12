@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-27
 commit: f39836a6df00ceceb5ecd36314b60a2da5fb9401
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1361
 ---
 
 # Defect 105 closed: every artifact a verb prints is linear in its size, and `fmt` is faster than before its guard

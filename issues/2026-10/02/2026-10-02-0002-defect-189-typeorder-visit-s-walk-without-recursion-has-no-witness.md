@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-02
 commit: d83ef0b1e7ec1f77b7b07b82d59c0cb59a9bafa8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1431
 ---
 
 - [x] **189 — `typeorder.visit`'s walk without recursion has no witness** | the record chains the run cases emit are 1,000 deep (`run/fixedbugs-140-records-` and `-extern-records-a-thousand-deep-build`), and at 1,000 and 5,000 lane ci140's mutant, `visit` restored to its recursion, emits the trunk's bytes (666,776 and 3,358,806, `cmp` equal) | `selfhost/emit/typeorder.hero:130` and its one test at `:206` · **class: improvement**

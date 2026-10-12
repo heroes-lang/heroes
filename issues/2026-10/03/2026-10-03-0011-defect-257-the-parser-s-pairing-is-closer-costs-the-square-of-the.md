@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-03
 commit: 5ddf3f4d320628bc6f0992c73bc08690eb02d15f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1497
 ---
 
 - [x] **257 — the parser's `pairing.is_closer` costs the square of the bracket depth** | 40,040,825 calls on `record-literal-2000` (batch 8's emit lane, counted in an instrumented copy of its compiler's C (`build --emit-c`, the lane's tip `96473596`), 2026-10-03, its report's *Found beside*, `<scratchpad>/batch8/emit/shapes/` and `<scratchpad>/round1003d/shapes2000/`) | `selfhost/parse/pairing.hero:54` (`is_closer`) · **class: improvement**

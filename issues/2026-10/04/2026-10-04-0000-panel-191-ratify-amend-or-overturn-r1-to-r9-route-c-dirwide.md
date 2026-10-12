@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-04
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1567
 ---
 
 - [x] **panel 191** | ratify, amend or overturn R1 to R9 (route `c-dirwide` for defect 238: the UTF-8 code-page manifest compiled into the runtime's own object, a refusal to start where `GetACP()` is not 65001, the directory door made wide; the lone-surrogate directory repaired at the landing; the cases red on `7f4c0cc5` first; (a) alone, (a′), (e), (f) and (g) refused; Q-c and Q-i handed to panel 192), and set the floor: the oldest Windows a Heroes program starts on | `docs/panel/191-on-windows-a-name-reaches-the-runtime-through-a-utf-8-code-page-its-own-object-carries-and-a-program-refuses-to-start-without-it.md` § The resolution

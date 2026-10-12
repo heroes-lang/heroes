@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1891
 ---
 
 # Panel 201 sat: the spec says a generic function's parameter types no value, and a cycle that cannot end is refused

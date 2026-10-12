@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-07
 commit: 0690164366894f72edbcf0f5f7551df41dee34d4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1809
 ---
 
 - [x] **464 — `runtime/runtime.c` counts its parts as seventeen, and there are twenty-four** | the comment says *SEVENTEEN FILES*; `runtime/parts/` holds 24 (lane b14-runtime) | `runtime/runtime.c` · **class: improvement**

@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-11
 commit: a1ec2eb995098507b4d60523e82acfb367befccb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2010
 ---
 
 - [x] **670 — the key guard admits any request whose command names the token count anywhere** | CodeQL alert 4 (`py/incomplete-url-substring-sanitization`, high), and behind it a hole: `guard_bash.py` refused a client's segment naming `api.anthropic.com` unless `/v1/messages/count_tokens` appeared ANYWHERE in it. Measured on the trunk's guard: a request to `/v1/messages` carrying the endpoint's words in its body passed, a second URL after a legitimate one (`/v1/organizations`) passed, and `api.anthropic.com.example.org/v1/messages/count_tokens`, a host that would receive the key, passed | `.claude/hooks/guard_bash.py:735` · **class: blocking**

@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-07
 commit: cb8c5704b35485dbcdd8b3b8e21e5ab91c9ec21d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1827
 ---
 
 - [x] **482 — `closers.close_to_its_kind` walks the whole stack for every closer of the wrong kind** | `(` N times then `]` N times: `lex` costs 0.34, 1.21 and 4.59 billion at 1,000, 2,000 and 4,000; the same line gets N `expected_group_close`, one per `]` (lane b14-parse) | `selfhost/closers.hero` · **class: improvement**

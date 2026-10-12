@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-15
 commit: 5ad1c755b9ea1faaeb62cd5f0f773475c7ca5c4b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1233
 ---
 
 # Four rows move behind the gate, by author instruction

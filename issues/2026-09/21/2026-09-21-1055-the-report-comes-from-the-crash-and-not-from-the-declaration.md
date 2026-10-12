@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-21
 commit: 65c91594501cb84ca2d202f42bad3b957a421461
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1299
 ---
 
 # The report comes from the crash, and not from the declaration

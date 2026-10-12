@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-02
 commit: e28f4fc767589be57988c690bf6c60700c424477
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1458
 ---
 
 # Defect 167 closed: the pointee check reads a header without the build's own `-O2` or `--sanitize`, so a parameter the header types otherwise under them is accepted and the program writes past its `i32`

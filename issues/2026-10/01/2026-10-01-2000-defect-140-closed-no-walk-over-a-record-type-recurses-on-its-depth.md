@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-30
 commit: 6708ba0521af542def2be41ff0798db7b2e3d518
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1408
 ---
 
 # Defect 140 closed: no walk over a record type recurses on its depth, and none gives up at one

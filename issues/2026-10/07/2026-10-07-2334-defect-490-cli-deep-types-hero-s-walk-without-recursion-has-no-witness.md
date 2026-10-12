@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: 1ef2ccfe0e7035b514372ac5d3da048730e97e7c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1836
 ---
 
 - [x] **490 — `cli/deep_types.hero`'s walk without recursion has no witness** | defect 189's shape in the cli's own walk over the deepest by-value chain: a mutant restoring its recursion is caught by nothing (lane b14-emit's reading) | `selfhost/cli/deep_types.hero` · defect 189 · **class: improvement**

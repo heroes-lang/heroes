@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: 4efb0a8e2e703662aa91b23a68f3a819e318c55e
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1576
 ---
 
 - [x] **283 — bidirectional control characters and U+2028 are accepted in comments and strings, so a line can show one order and mean another** | `function main()` over a comment holding U+202E (RIGHT-TO-LEFT OVERRIDE, Trojan Source's character) and `print("ab<U+202E>cd")`: `check` exit 0, and the program prints the override's three bytes, `e2 80 ae`, between `ab` and `cd` (batch 8's round compiler, this Mac, 2026-10-04, `<scratchpad>/filings-b8/probe/c281/bidi.hero`); the spec-warden measured the same for the other bidirectional controls and U+2028 (`docs/panel/189-reports/spec-warden.md`, *Byproducts*) | the lexer's comment and string readers (`selfhost/lexer.hero`) · spec § 1 (*comments and strings are UTF-8*) · panel 188, which refused these characters in a header's string only · **class: systemic**

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-09
 commit: 4899e21a6ea48c7c1c07f33623050b4ed68d7a09
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1910
 ---
 
 - [x] **556 — two non-static definitions of one C name in bound headers make `build` exit 2** | the critic's `onedef` (one header defining a non-static function, named by two modules) and `extdef` (two headers each defining a non-static `twice`): `build` exits 2, *internal error: linking failed: duplicate symbol '_twice'*, blaming the compiler; `onedef` passes `test`, the reverse of the two-header case | the link step's reading of a duplicate symbol, `selfhost/cli/` · panel 202 · **class: blocking**

@@ -4,7 +4,7 @@ area: none
 milestone: M-issue-files
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2019
 ---
 
 # The author answers three: the thanks page, the seats' credential rule, the Defect field

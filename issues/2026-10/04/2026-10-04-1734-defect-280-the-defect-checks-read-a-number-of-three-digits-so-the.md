@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-04
 commit: 6b361fc34e61d97a54504d0380a0cdabb72bb881
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1640
 ---
 
 - [x] **280 — the defect checks read a number of three digits, so the thousandth defect has no name they accept** | `is_defect_name` asks three digits and then `-` (`tests/harness/suite_records.hero:4785`), and `defect_number` reads three digits off an item's line (`:2178`), so `1000-<slug>.md` would be refused by `records/defects` at the first filing past 999; the highest number issued is 277 (read by the coordinator, 2026-10-04) | `tests/harness/suite_records.hero` (`is_defect_name`, `defect_number`, the test at `:5622`) · `docs/work/DEFECTS.md`'s *three digits* · **class: improvement**

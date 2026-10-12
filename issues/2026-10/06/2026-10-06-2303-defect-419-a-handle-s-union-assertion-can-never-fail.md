@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: c20965118b4af4eebc5f4b4a51f8f37819492d0f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1758
 ---
 
 - [x] **419 — a handle's union assertion can never fail** | the emitter writes `_Static_assert(__builtin_classify_type(*(T * *)0) != 13, ...)` for a handle, which classifies a pointer and so always holds; its own comment in `emit/extern_union.hero` says a handle is never a union; removing it moves 7 blessed emissions | `selfhost/emit/extern_union.hero` · **class: improvement**

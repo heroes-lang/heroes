@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-02
 commit: 2caca5620fae121ba23fd6eefe9ef04cf4c305ce
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1442
 ---
 
 # Defect 165 closed: an operator alone above an arm's pattern is offered the deletion of its line, and the arm is read without it

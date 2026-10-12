@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-12
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2020
 ---
 
 - [x] **673 — `records` reads a chain row as open wherever its state cell is not `done YYYY-MM-DD`, and row 84 said `closed 2026-10-10`** | `tests/harness/suite_records.hero` `chain_states` set a milestone's openness to `!contains(row, "| done ")`, so every state word but `done` read as open, the quiet direction; and `docs/ROADMAP.md` § The chain row 84, M-inferred-cell, read `closed 2026-10-10` since its close at `d32c19a1`, where the other 62 closed rows read `done YYYY-MM-DD`, so `records/homes` read a closed milestone as open and would have passed an open task filed under it (none names it today); `site/src/lib/chain.ts`, the chain's other reader, took the same row for `scheduled` | `tests/harness/suite_records.hero` (`chain_states`, its callers `carded` and `homed`) · `docs/ROADMAP.md` § The chain, row 84 · `site/src/lib/chain.ts` · **class: adjacent**

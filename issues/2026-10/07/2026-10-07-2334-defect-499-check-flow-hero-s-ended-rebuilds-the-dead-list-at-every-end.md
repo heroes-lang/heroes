@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: 1a6499ed2092008331ae601835c0e6d155403883
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1845
 ---
 
 - [x] **499 — `check/flow.hero`'s `ended` rebuilds the dead list at every end** | 23,994,000 copies at 4,000 handles ended: the filter that rebuilds the list, not a field push (lane b14-p409) | `selfhost/check/flow.hero:153` · defect 409 · **class: improvement**

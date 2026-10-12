@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-02
 commit: 826ddc2f06a582675137e6cdf427e97eddb4df68
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1461
 ---
 
 # Defect 156 closed: a C struct with a bit-field member stops `build` with an internal error and clang's text

@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-11
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2011
 ---
 
 - [x] **M-issue-files** | the backlog of the two sections: `## Prior art` appended to the decision issue of every sitting whose resolution rests on a precedent the historian sourced, the 186 syntheses naming the historian read one by one, each link re-read on the day and classed `Taken from` or `Reached first by`, nothing written where the conditions fail; and `## What was done` appended to the 76 closed `feature` and `task` issues that lack it, one line from the issue's own prose and the commit its card or git names | `docs/panel/` · `issues/` · `.claude/rules/records.md` § And the record says whose idea it was

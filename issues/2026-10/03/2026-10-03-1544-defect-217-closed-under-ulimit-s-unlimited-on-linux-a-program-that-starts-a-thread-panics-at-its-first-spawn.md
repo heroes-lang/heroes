@@ -4,7 +4,7 @@ area: examples
 milestone: none
 filed: 2026-10-03
 commit: ffaf9f4dc40f97c82379b5e16a0f84506c5e359c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1526
 ---
 
 # Defect 217 closed: under `ulimit -s unlimited` on Linux, a program that starts a thread panics at its first spawn

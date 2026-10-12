@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-18
 commit: ef7b013bcd42debc4924ef787b2e5dd44138b6c0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1264
 ---
 
 - [x] **061 — a fixed-array field cannot be passed to C at all** | `strlen(u.sysname)` against `function strlen(s: cstr) -> u64` is `type_mismatch`, because Heroes gives a fixed array no array-to-pointer decay, so a bound `char[N]` field only LOOKS bound | `selfhost/check/lending.hero` · `selfhost/emit/field_lend.hero` · `spec § 13`

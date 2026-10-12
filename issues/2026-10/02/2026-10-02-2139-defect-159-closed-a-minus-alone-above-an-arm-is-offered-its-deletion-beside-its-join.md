@@ -4,7 +4,7 @@ area: design
 milestone: none
 filed: 2026-10-02
 commit: 2caca5620fae121ba23fd6eefe9ef04cf4c305ce
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1441
 ---
 
 # Defect 159 closed: a `-` alone above an arm's pattern is offered its deletion beside its join, two guesses

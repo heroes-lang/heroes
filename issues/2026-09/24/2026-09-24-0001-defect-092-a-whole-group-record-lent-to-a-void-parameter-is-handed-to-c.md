@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-24
 commit: f66ccb77fecaa219049b9aa2fb1dae3abeb688bf
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1325
 ---
 
 - [x] **092 — a whole group record lent to a `void *` parameter is handed to C with no bound on the count C is told, and C writes past it** | a record behind `@` against a `void *` passes every pointee check, so `read(fd, buf: @h, n: 4096)` into a 48-byte record is `check` 0 and a stack overflow at run time | `selfhost/emit/extern_probe.hero` · `selfhost/cli/pointee.hero` · `tests/golden/fixedbugs/ffi-pointee-void.hero` · `spec § 13` · **class: blocking**

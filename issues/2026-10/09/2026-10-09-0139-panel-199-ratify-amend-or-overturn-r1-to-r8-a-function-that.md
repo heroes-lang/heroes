@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1856
 ---
 
 - [x] **panel 199** | ratify, amend or overturn R1 to R8 (`check` refuses, as `endless_recursion`, a function every path of whose body reaches a call of itself, a call before it counting as a way out only when its callee may end the program, R4, a thesis rule with no fix; recursion too deep aborts at every level, sibling calls kept as calls at `-O2`, so spec `:280` holds; clang's `-Winfinite-recursion` no longer passed on once the rule lands, closing defect 507; no spec sentence; the cases, the landing on its own trunk, the platforms; 457, 508 and 507 closed by them, mutual recursion and function values filed apart; (B), (C), (K), (D), R1, R2, R3, (H), (L) and (J) refused) | `docs/panel/199-a-function-that-can-only-call-itself-is-refused-and-recursion-too-deep-aborts-at-every-level.md`

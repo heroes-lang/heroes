@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-27
 commit: 23bf73edbb1e1d86bf94f228ed0d1b96cbc470a9
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1363
 ---
 
 # Defect 106 closed: a list refuses a subtraction it would split

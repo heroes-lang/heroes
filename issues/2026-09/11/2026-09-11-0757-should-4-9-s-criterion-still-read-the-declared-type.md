@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-11
 commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1132
 ---
 
 - [x] **panel 129** | should §4.9's criterion still read the DECLARED type, now that a generic callback's roles can be inverted in silence? | `design.md:1432-1435` · `docs/panel/129-the-names-inside-the-type.md` · `selfhost/library_source.hero:84`

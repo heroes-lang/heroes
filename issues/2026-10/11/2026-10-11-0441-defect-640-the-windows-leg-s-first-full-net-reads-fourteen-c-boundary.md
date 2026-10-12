@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-11
 commit: f6d5801f3ab40a2f473ea8f7fc8a98c0a478436c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1992
 ---
 
 - [x] **640 — the Windows leg's first full net reads fourteen C-boundary cases red** | `harness: 8020 passed, 20 failed` on Windows x86-64, fourteen of them the C boundary's: `unsupported/fixedbugs-555-*` (2: the program builds, `ffi_declared_two_ways` not told), `fixedbugs-556-*` (3: told without the header's line), `fixedbugs-562-a-header-only-inline-*` (a header-only C99 inline links there and prints 6), `fixedbugs-591-*` and `fixedbugs-592-*` (6: `labs(x: i64)` is `ffi_parameter_type` first, Windows' `long` being 32 bits), and `surface` rows *a header-only C99 inline is refused by run as by build* and *one C symbol carries two bindings, in two modules* (`twoarity`, exit 1 where 0 is owed); causes to be told apart on the Windows box: a case not portable, judged where its shape holds or rewritten portable, or a Windows defect of the reader | `selfhost/cli/` (`two_ways`, `defined_twice`, the link readers), the cases under `tests/golden/unsupported/` and `surface-fixtures/`; the Windows box · **class: blocking**

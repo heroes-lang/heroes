@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-01
 commit: 9d1c209d1cef5a7f643d8913117b73aecbe3594a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1418
 ---
 
 # Seven rulings the recovery batches applied, written where they can be read

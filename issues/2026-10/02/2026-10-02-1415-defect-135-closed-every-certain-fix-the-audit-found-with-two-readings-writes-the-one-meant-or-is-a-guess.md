@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-30
 commit: 435201935c2adf4afdd5610b10335b213e8c1239
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1415
 ---
 
 # Defect 135 closed: every certain fix the audit found with two readings now writes the one meant, or is a guess

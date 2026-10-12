@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-01
 commit: 9f87fe17b93dc88be3a230da029aeb25731c9b2c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1424
 ---
 
 # Defect 149 closed: a value block is told at the line that ends it, and a constant at the statement it leaves by

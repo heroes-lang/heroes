@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1921
 ---
 
 # Panel 202 sat: every verb cuts a program's C by module, and what two modules' headers disagree on is told before the link

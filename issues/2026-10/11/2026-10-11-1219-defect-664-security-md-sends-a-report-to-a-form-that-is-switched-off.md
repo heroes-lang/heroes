@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-11
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2001
 ---
 
 - [x] **664 — SECURITY.md sends a report to a form that is switched off** | `SECURITY.md` § Reporting says *use GitHub's private vulnerability reporting, on this repository's Security tab*, and the issue chooser's contact link *A security report* lands on the policy page; measured on 2026-10-11 with the GitHub API's `private-vulnerability-reporting` endpoint for `heroes-lang/heroes`: `{"enabled":false}`. So a reporter who follows the policy finds no form on that tab, and the fallback the policy names, a public issue with no detail in it, is the only channel that works. The policy has read this way since M-open-repository step 4 (2026-09-08), and nothing in the tree can see a repository setting. The repair is the setting, not the sentence: enabling the form with the same endpoint's `PUT`, an outward act asked of the author, and reading it back | `SECURITY.md` § Reporting · `.github/ISSUE_TEMPLATE/config.yml` (the contact link) · the repository's Settings, Code security and analysis, Private vulnerability reporting · **class: blocking**

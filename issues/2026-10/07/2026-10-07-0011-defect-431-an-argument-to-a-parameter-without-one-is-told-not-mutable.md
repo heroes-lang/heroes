@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: e5b7a318b7bd7dc8d89f34100a0425fb0672d2d0
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1772
 ---
 
 - [x] **431 — an `@` argument to a parameter without one is told `not_mutable` before `marker_mismatch`** | `f(x: @p)`, `p` bound with `=` and `f`'s parameter not `@`: told first `not_mutable` (make `p` a cell), and `marker_mismatch` only once that is done, which was never the repair | `selfhost/resolve/` or `selfhost/check/`, the order of the two refusals · **class: adjacent**

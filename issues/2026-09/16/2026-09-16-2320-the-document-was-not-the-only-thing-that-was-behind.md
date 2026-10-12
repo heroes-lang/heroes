@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-16
 commit: 8bce482db7cb7a42f9bc1efde79633258853aa2b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1249
 ---
 
 # The document was not the only thing that was behind

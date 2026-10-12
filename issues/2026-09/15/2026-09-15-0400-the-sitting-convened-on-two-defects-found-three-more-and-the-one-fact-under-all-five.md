@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-15
 commit: 83ae78fefe019e091ab9d55c5adebd1141ba8a46
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1218
 ---
 
 # The sitting convened on two defects found three more, and the one fact under all five

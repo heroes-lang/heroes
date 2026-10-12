@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 28915417c2d73197253dfeb3a51fb4a71ae5f54f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1116
 ---
 
 2026-09-11 · **M-named-callbacks, panel 130, on the route panel 129 recommended

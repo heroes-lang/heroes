@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-07
 commit: 699241f6135090962b134c96144444042ba5e1b1
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1832
 ---
 
 - [x] **487 — the commit guard does not watch `git rebase --continue` or `git am --continue`** | both commit the whole index; defect 403's guard covers merge, cherry-pick and revert only (lane b14-hooks) | `.claude/hooks/commits.py` (batch 14's round, unmerged on 2026-10-07) · defect 403 · **class: improvement**

@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-03
 commit: f57047318351e2e024d55d1d5647a65d437dd9de
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1493
 ---
 
 - [x] **252 — what lld-link and a Windows `pkg-config` do with a `>`, a quote or a backslash in a `link` or `package` name, and with a `/` in a `link`, is unmeasured, and the rules admit them** | batch 8 refuses `*`, `<`, `?` and `|` in a group head's name for Windows, and the names NTFS stores as another file's (234, 235), judging all three strings, and admits `>`, `"` and `\` in a `link` or a `package` and `/` in a `link` (batch 8's FFI lane, 2026-10-03, its report's finding 4); `selfhost/head_windows.hero:21` says *What lld-link and a Windows `pkg-config` do with such names is unrun* | `selfhost/head_windows.hero` · `selfhost/head_names.hero` · the Windows box · **class: improvement**

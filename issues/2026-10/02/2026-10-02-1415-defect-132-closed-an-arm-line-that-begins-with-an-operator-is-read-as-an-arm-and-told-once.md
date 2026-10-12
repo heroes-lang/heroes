@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-29
 commit: 435201935c2adf4afdd5610b10335b213e8c1239
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1397
 ---
 
 # Defect 132 closed: an arm line that begins with an operator is read as an arm, its operator told once, and never joined to the line above

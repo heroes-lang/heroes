@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-10
 commit: b3d82b234224aace2ab5b92d4c4219fa86bbbf6a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1919
 ---
 
 - [x] **565 — a recursion too deep aborts at `-O2` without the note naming the recursion** | `param_value.hero` (a self-call through a parameter) aborts 134 at `-O0` with *stack exhausted in paramvalue.go, inside the recursion of paramvalue.go and paramvalue.step*, and at `-O2`, `heroes run`'s level, with *stack exhausted in paramvalue.step* alone; `viamap` loses its `map` frame the same way; every run aborts 134, so the stop holds and the message is less exact | the runtime's report of an exhausted stack and the frames it can read at `-O2` · panel 203 R2 · **class: adjacent**

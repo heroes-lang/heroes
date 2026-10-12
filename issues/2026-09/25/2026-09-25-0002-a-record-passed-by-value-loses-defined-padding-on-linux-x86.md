@@ -4,7 +4,7 @@ area: records
 milestone: M-buildable-structs
 filed: 2026-09-25
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1334
 ---
 
 - [ ] **M-buildable-structs** | a record passed by value loses defined padding on Linux x86-64, and C can write those bytes out | `docs/panel/178-reports/completeness-critic.md` § 1 finding 1 · `docs/panel/178-reports/completeness-critic-work/w/pad/`

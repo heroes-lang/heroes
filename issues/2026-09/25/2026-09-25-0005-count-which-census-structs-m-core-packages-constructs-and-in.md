@@ -4,7 +4,7 @@ area: records
 milestone: M-buildable-structs
 filed: 2026-09-25
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1337
 ---
 
 - [ ] **M-buildable-structs** | count which census structs M-core-packages constructs, and in how many bindings, because panel 178's payment rests on it | `docs/panel/178-reports/spec-warden.md` § prediction · `docs/panel/178-briefs/census.sh`

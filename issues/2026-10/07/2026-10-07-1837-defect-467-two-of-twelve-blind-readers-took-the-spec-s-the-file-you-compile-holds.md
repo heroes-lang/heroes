@@ -4,7 +4,7 @@ area: spec
 milestone: none
 filed: 2026-10-07
 commit: f0a126758de76004bb02ee7f7d4d40deb64350cc
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1812
 ---
 
 - [x] **467 — two of twelve blind readers took the spec's *the file you compile holds `function main()`* to bind a module** | spec line 22; two of the 12 sessions of measurement 040 on module files added a `main`, which `check` accepts without (lane b14-m212) | `spec/heroes-spec.md:22` · docs/measurements/040 (batch 14's round, unmerged on 2026-10-07) · **class: improvement**

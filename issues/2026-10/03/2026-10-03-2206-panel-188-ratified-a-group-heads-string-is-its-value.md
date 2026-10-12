@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-03
 commit: 9818ef8868a3414cb23ed3bc2c371eeb134ba82b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1531
 ---
 
 # Panel 188 ratified: a group head's string is its value, and what its tool cannot carry as one name is refused on its line

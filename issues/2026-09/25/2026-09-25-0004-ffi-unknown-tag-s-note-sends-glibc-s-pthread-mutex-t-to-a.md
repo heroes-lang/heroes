@@ -4,7 +4,7 @@ area: records
 milestone: M-buildable-structs
 filed: 2026-09-25
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1336
 ---
 
 - [ ] **M-buildable-structs** | `ffi_unknown_tag`'s note sends glibc's `pthread_mutex_t` to a handle, and following it aborts; the untagged record works | `docs/panel/178-reports/ffi-pragmatist.md` § 2 · `docs/panel/178-reports/completeness-critic.md` finding 8

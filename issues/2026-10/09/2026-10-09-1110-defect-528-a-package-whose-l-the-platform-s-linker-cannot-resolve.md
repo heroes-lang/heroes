@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-09
 commit: 19c8c453ee14447e8244d8fab360546048deac40
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1876
 ---
 
 - [x] **528 — a package whose `-l` the platform's linker cannot resolve makes `build` exit 2** | `libiodbc` (its `-liodbc` absent from the machine) and `libuv-static` (`-l:libuv.a`) exit 2, *internal error: linking failed*, under the frozen compiler of panel 198 and under its route K alike; defect 224 tells a `link` name the linker cannot find, and a package's `-l` is not told | the link step's reading of the linker's *missing library* line, `selfhost/cli/` · defect 224 · panel 198 · **class: blocking**

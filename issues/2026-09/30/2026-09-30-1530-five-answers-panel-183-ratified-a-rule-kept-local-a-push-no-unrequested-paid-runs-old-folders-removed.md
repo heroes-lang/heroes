@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-30
 commit: fd523aad7f4f63cdcb639cc0e93181bed639cb6d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1403
 ---
 
 # Five answers: panel 183 ratified, a rule kept local, a push, no unrequested paid runs, the old folders removed

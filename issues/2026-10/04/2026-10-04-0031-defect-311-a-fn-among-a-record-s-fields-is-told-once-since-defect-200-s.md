@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-04
 commit: 627c64db4fcb72d848aa2891419b22ca812dd34c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1598
 ---
 
 - [x] **311 — a `fn` among a record's fields is told once since defect 200's repair, and the message no longer says to take the record as a parameter** | `fn` written among a record's fields, the record twin of defect 200: two messages before, one since `7831aec7`, and that one has lost *taking the record as a parameter*, the route the old second message gave (lane b9-recovery's compiler, 2026-10-04) | `selfhost/parse/member_lines.hero` · defect 200's repair, `7831aec7` · **class: adjacent**

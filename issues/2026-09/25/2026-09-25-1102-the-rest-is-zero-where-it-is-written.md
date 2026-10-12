@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-25
 commit: d267b56a108c2d6ae77e61055906d8af7d246849
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1341
 ---
 
 # The rest is zero where it is written, and C says which value is valid

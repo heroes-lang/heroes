@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-07
 commit: 9c72d0b5ff64a7d2ce26aceeeb161b9a48c08a91
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1847
 ---
 
 - [x] **501 — a program's own `validated` replaces the library's in silence** | panel 162's text says `validated` moves into the table of built-ins; it is still on `resolve/builtin_names.hero`'s exception list, so a program's own `validated` silently replaces the library's in its module; reserving it needs `emit/bytes_text.hero`'s own `validated` renamed (lane b14-resolve) | `selfhost/resolve/builtin_names.hero`, `selfhost/emit/bytes_text.hero` · defect 455 · panel 162 · **class: improvement**

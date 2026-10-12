@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-09-24
 commit: 5767900515f50b59ccfd27ab3ca7e919b55081cd
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1330
 ---
 
 

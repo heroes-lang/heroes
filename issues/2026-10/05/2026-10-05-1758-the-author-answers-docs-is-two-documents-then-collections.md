@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-05
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1686
 ---
 
 # The author answers: the top of `docs/` is two documents, then collections

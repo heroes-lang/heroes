@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: f72905b76350d2c25d6715f279539743b406520d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1516
 ---
 
 # Panel 185's R4 landed: a block whose last `if` or `match` leaves on every branch leaves

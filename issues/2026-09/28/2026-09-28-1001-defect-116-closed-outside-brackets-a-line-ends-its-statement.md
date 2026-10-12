@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-27
 commit: aee8b01ed0a4f427fcaf31b0aadf55ba4962fa4d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1373
 ---
 
 # Defect 116 closed: outside brackets a line ends its statement, and one that cannot is refused at the break

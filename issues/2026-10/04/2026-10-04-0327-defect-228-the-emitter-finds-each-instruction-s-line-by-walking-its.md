@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-03
 commit: 17322f0e49adf9d510475f995af6b9ce11d9a697
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1540
 ---
 
 - [x] **228 — the emitter finds each instruction's line by walking its source line by character, so a long line costs its length squared** | lane irverify's profile: `writer.at_span` → `source.locate`/`line_col`, 65% of `concat-chain-2000`'s build after defect 218's repair (`<scratchpad>/lane-irverify/`, 2026-10-03) | `selfhost/emit/writer.hero`, `selfhost/source.hero` · **class: improvement**

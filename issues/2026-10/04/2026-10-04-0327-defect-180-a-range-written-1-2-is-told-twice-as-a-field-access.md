@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-02
 commit: e0ea7c9dc747b2bcf19ea94227a9ae6fd424fa4e
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1470
 ---
 
 - [x] **180 — a range written `1..2` is told twice as a field access** | `x = 1..2`: `expected_field_name` at 3:11, *found `.`*, and again at 3:12, *found a number (`2`)*; `x = 0x1..5` the same at 3:13 and 3:14 | `selfhost/grammar_expr.hero:343` · **class: adjacent**

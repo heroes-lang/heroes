@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-03
 commit: 2cc846cc1f74f87ba7bdaa6bfd2b6e55e9c3eafa
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1486
 ---
 
 - [x] **210 — the recovery instrument lives in the scratchpad as a Python tool, where a reboot can lose it; its home is `heroes mutate`'s recovery arm, with its plan pinned** | `<scratchpad>/instrument/tool/` (3,618 code lines of Python, the compiler-engineer's count); panel 187's R2 reads it at every recovery round's gate, and the fourth round's reading had to subtract a corpus program the language changed under it by hand | `selfhost/cli/mutate.hero` and `selfhost/mutate/` · panel 187's R2 and R3 · **class: improvement**

@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-11
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2018
 ---
 
 - [ ] **M-issue-files** | after the transcription, the rule for where an issue lives: in the files of `issues/` and on GitHub both, or on GitHub alone, written in `.claude/rules/records.md` § The issues, with every check, hook and skill that reads the files moved with it; the author's view is not to keep two copies | `.claude/rules/records.md` § The issues, `tests/harness/cards.hero`, `tests/harness/suite_records.hero`, `CLAUDE.md` § 3

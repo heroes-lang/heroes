@@ -4,7 +4,7 @@ area: records
 milestone: M-declared-extents
 filed: 2026-09-19
 commit: 61fa67e4e3419fbe71e9b76f9cc636cc1223b8ad
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1269
 ---
 
 # The fourth platform spells none in its C library

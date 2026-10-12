@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-09-25
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1342
 ---
 
 - [x] **panel 178** | ratify panel 178: a group record's construction may end with `rest: zero`, with no promise about padding; zero is admitted as bytes and never as a claim of validity; a header's initialiser binds as a group constant; C's `char` is `i8` in § 13; a string into a fixed field and `[x; N]` wait behind their measurements; a zero default for every type is refused | `docs/panel/178-the-rest-is-zero-where-it-is-written-and-c-says-which-value-is-valid.md`

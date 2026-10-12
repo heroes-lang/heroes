@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-09
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1888
 ---
 
 - [x] **panel 200** | ratify, amend or overturn R1 to R7 (453: route B, `--emit-c` compiling the fused unit, landing after the two-group program is told truly, filed `blocking`; 465: the sentinel per runner, landing after its SIGPIPE, reap and guard items; 470: route C, a counted slot released by its address, ABI 30, a record's release out of line, landing in batch 17 if whole; 472: the prologue's line in one physical line, unbuilt; 523: a known cost, panel 182 standing, and the deep record's exit 2 filed `blocking`; the cards; a second `-fsyntax-only` pass, the kqueue watcher, `exec` alone, slot coalescing, route D's per-line `#line` and a reversal of panel 182 refused) | `docs/panel/200-a-counted-slot-is-released-by-its-address-and-the-emitted-program-s-other-routes-are-ruled.md`

@@ -4,7 +4,7 @@ area: emit
 milestone: M-deployable-binary
 filed: 2026-09-28
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1375
 ---
 
 - [ ] **M-deployable-binary** | panel 182's deferred routes, each back only on its own condition: the consuming store (b), the initialising stores (f), a value declared where it is defined (g), MemorySanitizer as a Linux instrument leg, and one slot for the synthetic slots of mutually exclusive arms | `docs/panel/182-a-value-is-never-zeroed-a-slot-is-and-a-definition-is-whole.md` · `docs/panel/182-reports/completeness-critic.md` · `selfhost/emit/`

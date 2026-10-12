@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-04
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1657
 ---
 
 - [ ] **M-issue-files** | the transcription of the issue files into GitHub issues, in the order their `filed` days and names give, each file's `github:` filled by the commit that records it | `issues/README.md` · `.claude/rules/records.md` § The issues (order, rendering)

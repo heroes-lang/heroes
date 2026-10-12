@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-07
 commit: 7259a7b6cbe2c4c8022a9e87e618e5b2a91caf0b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1807
 ---
 
 - [x] **462 — a string read after its last release is never checked** | only increments and releases look at a string's mark; a read (print, concat) does not, so the doubled control of defect 314 printed garbage bytes before panicking (lane b14-runtime); a check per read costs a load per read, unmeasured | `runtime/parts/str.c` · defect 314 · **class: improvement**

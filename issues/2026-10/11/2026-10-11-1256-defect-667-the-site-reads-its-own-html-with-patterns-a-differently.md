@@ -4,7 +4,7 @@ area: site
 milestone: none
 filed: 2026-10-11
 commit: a1ec2eb995098507b4d60523e82acfb367befccb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2007
 ---
 
 - [x] **667 — the site reads its own HTML with patterns a differently written tag passes** | CodeQL alerts 6, 7 and 8 (`js/incomplete-multi-character-sanitization`, high) and 5 (`js/bad-tag-filter`, high). Three readers drop a fragment's tags with `.replace(/<[^>]*>/g, '')`, which removes every `<` that has a `>` after it and leaves the one that has none: `a <script src="x"` comes out unchanged, `<script` standing, into the feed or a meta description. The script check of the built pages matched `/<script\b([^>]*)>([\s\S]*?)<\/script>/g` alone, so `<SCRIPT>` writing a cookie passed, a `<script` never closed passed, and a declared script with `SRC="https://..."` passed the no-`src` rule, each measured against the old check on a crafted page | `site/src/pages/log.xml.ts:67`, `site/src/lib/nods.ts:53`, `site/src/lib/descriptions.ts:62`, `site/src/lib/scripts.ts:50` · **class: blocking**

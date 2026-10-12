@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-20
 commit: abf9a17e8f9aded03150ff2850c9b3dcd68c8672
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1293
 ---
 
 - [x] **068 — a record rewritten under C's held address, which no sanitizer can see** | **closed 2026-09-21**, M-declared-extents step 24 | **The lend is refused where it is made, one line before the assignment that corrupted it**: `k_register` says no `lent`, so `lend_kept` fires at `s.name.ptr()` and the write two lines below never reaches C's copy of the address | `selfhost/check/lend_landing.hero` · `tests/golden/check/fixedbugs-a-record-rewritten-under-a-held-address.hero` | 171

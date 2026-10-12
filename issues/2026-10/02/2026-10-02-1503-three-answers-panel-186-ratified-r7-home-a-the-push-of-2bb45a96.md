@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-02
 commit: 4d0f27a1d630ff8b5ea95fb609ef734c6494e9cc
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1439
 ---
 
 # Three answers: panel 186 ratified, R7's home (a), the push of 2bb45a96

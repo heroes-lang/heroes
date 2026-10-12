@@ -4,7 +4,7 @@ area: design
 milestone: none
 filed: 2026-10-04
 commit: 1eb854c3c079c5ab7a90e7067848efa21ce839a4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1618
 ---
 
 # The author answers 1a 2a 3a 4a 5a: 225 pinned as a known cost, design.md §4.19 corrected, 183 accepted, a soundness sitting for 231, the defects one file each

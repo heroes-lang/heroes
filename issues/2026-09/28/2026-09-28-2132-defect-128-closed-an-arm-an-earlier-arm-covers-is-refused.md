@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-28
 commit: 687c54f34fea0c8393828dd444279ec43b61fc59
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1389
 ---
 
 # Defect 128 closed: an arm an earlier arm covers is refused, a literal's value and a fallible's case included

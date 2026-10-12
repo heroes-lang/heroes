@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-10-09
 commit: 09a6a5a1976ae364f6b48f1f1cd399ffafe53c79
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1862
 ---
 
 - [x] **514 — the commit guard does not watch the git commands that discard staged work** | `git merge --abort`, `git rebase --abort`, `git rebase --skip`, `git cherry-pick --abort` and `--skip` delete a peer's staged new file and revert its staged change at exit 0, and `git rebase --autostash` runs a stash the hard stop forbids; reproducer: stop a merge on a conflict, `printf c > c.txt; git add c.txt`, `git merge --abort`, and `c.txt` is gone (lane b15-hooks, git 2.56.0) | `.claude/hooks/guard_bash.py`, `.claude/hooks/commits.py` · defects 403 and 487 · **class: adjacent**

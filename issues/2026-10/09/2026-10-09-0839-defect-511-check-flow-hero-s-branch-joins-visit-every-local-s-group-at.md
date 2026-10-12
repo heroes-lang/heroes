@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 87e49bae9c4256fa05eecec94422490be9f6ddd7
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1859
 ---
 
 - [x] **511 — `check/flow.hero`'s branch joins visit every local's group at each meet** | n handles ended, then n `if`s: 3.24, 11.3 and 41.2 billion instructions at 500, 1,000 and 2,000 after defect 499's repair, quadratic (cubic on the base, 93.9 and 742 billion at 500 and 1,000); shared or copy-on-write groups would answer it (lane b15-check) | `selfhost/check/flow.hero` · defect 499 · **class: improvement**

@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: e5fa493904db40abeeacc7a74cfcf0cf9371598b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1899
 ---
 
 - [x] **545 — a type argument written at a call is told as an unknown name** | `ident<i64>(3)` is told *nothing named `i64` is in scope*, never that a generic function's type arguments are never written (spec § 9) (panel 201's spec-warden) | `selfhost/check/` or `selfhost/parse/` · spec § 9 · **class: adjacent**

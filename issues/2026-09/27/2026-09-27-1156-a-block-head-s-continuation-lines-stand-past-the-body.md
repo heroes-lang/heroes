@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-27
 commit: 29ed560108e1511efcf304e7432d30e911279818
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1359
 ---
 
 # A block head printed across lines stands past the body's column

@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: f72905b76350d2c25d6715f279539743b406520d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1515
 ---
 
 # Panel 185's R5 landed: one predicate for where a path ends, and the seal where a value is read

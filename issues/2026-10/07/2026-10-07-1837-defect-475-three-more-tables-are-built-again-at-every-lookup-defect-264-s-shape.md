@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: 6630fe83f5f641fed6e238da6c6cad1756731be1
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1820
 ---
 
 - [x] **475 — three more tables are built again at every lookup, defect 264's shape** | on the compiler's own check: `widths.int_kinds` 22,187 calls, `widths.float_kinds` 16,103, `operators.binary_tokens` 3,467 (lane b14-check) | `selfhost/widths.hero`, `selfhost/operators.hero` · defect 264 · **class: improvement**

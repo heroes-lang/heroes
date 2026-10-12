@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-07
 commit: 208ea207a56c4af48c13afa606dd659121c08096
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1779
 ---
 
 - [x] **438 — `write_file` truncates before it writes** | `write_file` opens its file truncated and then writes, so a concurrent reader can see it empty and a kill between the two leaves it empty, its old contents lost; lane b13-tmpl407's case had to change its witness for it | `runtime/`, `write_file` · **class: improvement**

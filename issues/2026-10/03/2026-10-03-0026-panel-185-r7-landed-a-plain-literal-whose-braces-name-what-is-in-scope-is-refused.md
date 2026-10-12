@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: ffaf4cec4ca7f3ff4a182b579e9947010e5aaf4f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1513
 ---
 
 # Panel 185's R7 landed: a plain literal whose braces would be a hole naming only what is in scope is refused

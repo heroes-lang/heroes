@@ -4,7 +4,7 @@ area: runtime
 milestone: M-panic-location
 filed: 2026-09-03
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/812
 ---
 
 - [ ] **M-panic-location** | what a panic says today, so the "before" is on the record | `runtime/parts/panic.c:21-25` · `runtime/parts/stack.c:202-213`, `:292`

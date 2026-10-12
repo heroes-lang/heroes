@@ -4,7 +4,7 @@ area: records
 milestone: M-corpus-depth
 filed: 2026-09-03
 commit: dc677afc56d74a28981e569deed5dafd35796013
-github: none
+github: https://github.com/heroes-lang/heroes/issues/847
 ---
 
 - [x] **M-corpus-depth: panel 106's adopted resolution is BUILT — slot sharing does not land, and the exit sweep's load temporary is gone** | `docs/panel/106-the-frame-is-the-sweeps-own-temporaries.md`, soundness lane 2026-09-03, **both seats vetoed the proposal** | **The sitting refused what it was convened for and adopted what its own measurements found, and this entry is the IMPLEMENTATION of that resolution — not its ratification, which is still open in `docs/work/DECIDE.md` naming `panel 106`.** The distinction cost an hour on the day it was written: this entry first carried the ratification item's own title, `records/verdicts` went red within the minute, and the check was right — a queue entry that stands in for the author is not closed by doing the work it describes. The full argument, with the ffi-pragmatist's two compiled failures and the compiler-engineer's 0.05%, is on the panel's own page | docs/panel/106 · docs/measurements/015-the-sweeps-own-temporaries.md | the recursion ceiling of every program in this language was set by an implementation detail nobody chose

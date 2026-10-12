@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-09
 commit: fd0ebba6f2153eabf393b67dfd31bef47686c5ac
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1904
 ---
 
 - [x] **550 — two groups whose headers conflict through an included file are told falsely in one order** | when the conflicting definition sits in a file another group's header includes, clang's note names that file, which no group names, so defect 538's repair tells one `use` order of both headers and the other still with the old false message; telling it order-free needs the include graph (lane b17-emit; reproducer `.claude/worktrees/scratch-b15/b17-emit/inc/`, ignored by git) | `selfhost/cli/headers_together.hero` · defect 538 · panel 200 R1 · **class: blocking**

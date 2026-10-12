@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-05
 commit: b93bf7f8212cafd9d80c892ac3a2d10c47139aeb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1666
 ---
 
 - [x] **344 — an unclosed list or map re-walks to the end of its declaration for each opener, so N unclosed lines cost the square of N** | `list_line.ended_at_a_binding` and `unclosed.never_closed` walk to the declaration's end once per `[` or `{`: unclosed `[` lines took 46.8 billion instructions at 2,000 and 738.7 billion at 8,000, unclosed `{` lines 24.0 and 375.0 billion (lane b11-parse, 2026-10-05, the lane's report) | `selfhost/parse/list_line.hero` and `selfhost/parse/unclosed.hero`, batch 12's files · defects 266 and 342 · **class: adjacent**

@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-03
 commit: f92754ecd606d291c1b3c1d66ad739d0e77070fa
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1487
 ---
 
 - [x] **212 — class (b), a mistake told only once another is fixed, has no measurement at the project's sizes** | the blind readings' two class (b) programs are 3 and 5 lines; panel 183's 20 of 20 were 31 to 105; the spec-warden's named run (rows 131-32 and `g2/r12`, ten sessions, about 4 to 5 USD) and the 300-line form panel 183's critic left owed are unrun | panel 187's R7 and R10 · `docs/panel/187-reports/spec-warden.md` § 8 · **class: improvement**

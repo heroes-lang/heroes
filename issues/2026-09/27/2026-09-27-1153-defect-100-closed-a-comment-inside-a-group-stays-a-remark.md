@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-09-25
 commit: 29ed560108e1511efcf304e7432d30e911279818
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1350
 ---
 
 # Defect 100 closed: a comment inside a group that is not a member's doc stays a remark when `fmt` runs

@@ -4,7 +4,7 @@ area: editors
 milestone: M-vscode-extension
 filed: 2026-09-14
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1196
 ---
 
 - [ ] **M-vscode-extension** | neither thing that COLOURS a program knows any of the eight contextual marks, and no check compares their word lists | `editors/vscode/syntaxes/heroes.tmLanguage.json` · `site/src/lib/highlight.ts` · `.claude/rules/diagnostics-and-goldens.md` § A new surface form

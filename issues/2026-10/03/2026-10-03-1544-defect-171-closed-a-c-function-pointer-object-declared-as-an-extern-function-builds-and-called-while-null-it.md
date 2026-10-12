@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-10-02
 commit: 428fc2a68b58a3b60485eb72f81729d4972059ed
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1464
 ---
 
 # Defect 171 closed: a C function-pointer object declared as an `extern` `function` builds, and called while null it panics naming a callback the program never passed

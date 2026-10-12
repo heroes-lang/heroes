@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: 393ebf53a59ec347d112171f7ac57b3901c8ace8
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1959
 ---
 
 - [x] **593 — on macOS two links of the same objects from one line give two binaries that differ** | measured 2026-10-10 on this Mac (Apple clang 21.0.0, `ld-27037.1`): the compiler's 580 objects linked twice by hand from one response file into one path gave two binaries that differ from byte 1449, the `LC_UUID`, on; the base compiler's per-module build of itself, built twice warm, gave two that differ in 206,113 bytes, and two generations of the repaired compiler differ in 231,207 with an identical symbol table and debug map (`nm -ap`) and the C they emit `cmp`-equal; in the Linux arm64 container (Debian clang 22.1.8) the two generations are `cmp`-equal; what in the link varies is not known, unrun | `selfhost/cli/link.hero`'s `link_line` and the flags it carries (`flags.level_words`, the link's own flags); the linker's options for a reproducible output · **class: improvement**

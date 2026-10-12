@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 228c36769b1da9b3824883a8961853cc6a3569c7
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1908
 ---
 
 - [x] **554 — a generic function of two labelled parameters given a function type is told twice** | `g: (function(B, B) -> B) = pick`, `pick` generic with two labelled parameters, gets both `needs_parameter_names` and a label `type_mismatch` for one mistake, on the base as well (lane b17-check) | `selfhost/check/function_value.hero` · **class: adjacent**

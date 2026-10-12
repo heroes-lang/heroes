@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-07
 commit: b594a130dd5e83a003b0b3e95531ca869a4cfe65
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1771
 ---
 
 - [x] **430 — a function whose result type names its parameter stops the build** | `function pick() -> (function(x: i64) -> i64)` returning `inc`: `check` 0, then `run` exit 2, *internal error: the lowered program is not well formed* and *the verifier refused* (the coordinator, 00:11); the unlabelled `(function(i64) -> i64)` runs, and so does a labelled binding type (the lane's) | the lowering of a function value returned against a labelled function type, `selfhost/ir/` · **class: blocking**

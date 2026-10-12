@@ -4,7 +4,7 @@ area: runtime
 milestone: M-core-packages
 filed: 2026-09-10
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1073
 ---
 
 - [ ] **M-core-packages** step 6 | only an `i64` crosses into a thread, and the spec never says the word | `runtime/hero_os.h:251-256` · `selfhost/check/ffi.hero:76-92` · `design.md` Part 7.13 · `examples/threads/main.hero`

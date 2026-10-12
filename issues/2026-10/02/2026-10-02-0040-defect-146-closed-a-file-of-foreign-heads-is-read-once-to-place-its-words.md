@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-09-30
 commit: b9fdb0a3d777829b2e0e62396944bd59283132cf
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1414
 ---
 
 # Defect 146 closed: a file of foreign heads is read once to place its words, and the parser grows its arrays in place

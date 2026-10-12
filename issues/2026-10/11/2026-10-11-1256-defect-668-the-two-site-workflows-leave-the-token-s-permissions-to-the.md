@@ -4,7 +4,7 @@ area: ci
 milestone: none
 filed: 2026-10-11
 commit: a1ec2eb995098507b4d60523e82acfb367befccb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2008
 ---
 
 - [x] **668 — the two site workflows leave the token's permissions to the repository's setting** | CodeQL alerts 1 and 2 (`actions/missing-workflow-permissions`, medium). `deploy-site.yml`'s job and `release-site.yml`'s call declare no `permissions`, so GITHUB_TOKEN gets whatever the repository's default grants. That default reads `read` today (`gh api repos/heroes-lang/heroes/actions/permissions/workflow`: `default_workflow_permissions` `read`), so no write was ever granted; a change of the setting would widen both jobs in silence. `ci.yml` already states `contents: read` at its top | `.github/workflows/deploy-site.yml:58`, `.github/workflows/release-site.yml:24` · **class: improvement**

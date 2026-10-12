@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-07
 commit: ac33242ee17328d03977307e580479fa446ca28c
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1813
 ---
 
 - [x] **468 — Windows' clang dies in its front end on the options chain 10,000 deep, under every debug word** | `o10000` (variants and options 10,000 deep): exit 139 on the box at `-g`, line tables and `-g0` alike, stock and under panel 197's (E), clang warning *stack nearly exhausted* at a struct copy (panel 197's compiler-engineer; the phase split owed on the box) | past panel 184's R6 floor of 2,000 · panel 197's R7 · defect 219 · **class: improvement**

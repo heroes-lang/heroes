@@ -4,7 +4,7 @@ area: records
 milestone: M-buildable-structs
 filed: 2026-09-25
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1332
 ---
 
 - [ ] **M-buildable-structs** | land panel 178's resolution: `rest: zero` for a group record, § 13's `char` sentence, the header initialiser as a constant (defect 094's repair) and the fixed-element write (defect 091's) | `docs/panel/178-the-rest-is-zero-where-it-is-written-and-c-says-which-value-is-valid.md` · `docs/panel/178-reports/compiler-engineer-work/r1-and-091.diff`

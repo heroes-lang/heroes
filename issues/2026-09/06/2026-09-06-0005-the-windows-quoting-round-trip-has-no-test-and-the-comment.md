@@ -4,7 +4,7 @@ area: runtime
 milestone: M-panic-location
 filed: 2026-09-06
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/936
 ---
 
 - [ ] **M-panic-location** | the Windows quoting round trip has no test, and the comment claimed one | `runtime/parts/run.c` § quoted · `tests/harness/suite_records.hero` § citations

@@ -4,7 +4,7 @@ area: harness
 milestone: none
 filed: 2026-10-02
 commit: 28bb52140fb95a3161f6870117c8f508b26e7b97
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1485
 ---
 
 - [x] **190 — `records/lists` reads an item's class token and not the rest of its first line, so an item that lost its title and its *where* field reads as whole** | item 130's first line as `8349d264` left it, with no `**` closing its title and no ` | ` at all, before its class token: `records` 24 passed, 0 failed, after that commit and after every one until the item was restored at `50644159` | `tests/harness/suite_records.hero` (`list_offences`; the class rule, about `:4448-4610`) · **class: improvement**

@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-03
 commit: 8e2bbe6d7faf0288617fc4e03080b85f95dc682a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1522
 ---
 
 # Panel 184's R7 landed: `fmt` holds on the thread, the depth of types is repaired apart, and nothing pins a boundary

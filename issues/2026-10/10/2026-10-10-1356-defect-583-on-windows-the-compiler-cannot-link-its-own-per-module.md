@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: bf1eb16bc7f0d456689864bf7f7954c5cb585dff
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1949
 ---
 
 - [x] **583 — on Windows the compiler cannot link its own per-module build, its command line too long** | on the Windows box (clang 23.1.1) the link of `selfhost/main.hero`'s per-module build fails with OS error 87, 558 objects and 32,243 characters of object paths on one command line, past Windows' limit; it happens on the trunk too, before batch 18; the compiler's own fused C builds and passes there | the link step's command, `selfhost/cli/` (the link words, `link_flags.hero` in batch 18's round): a response file for the link on every platform, or where the line would pass the limit · **class: blocking**

@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-05
 commit: 7c6f214498449954c2aa328dd5f476ad9ead6a1a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1674
 ---
 
 - [x] **352 — over a first arm, the refusal says the next line goes on *at the same margin*, naming the level after the jump cap rather than the margin as written** | a continuation refused over a `match`'s first arm: the message's *at the same margin* names the level the parser capped the jump at, not the margin the line was written at; the base says the same (lane b11-parse, 2026-10-05, the lane's report) | the parser's continuation message · defect 268 · **class: adjacent**

@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-07
 commit: 488de2cb6873f12d2c3cc09bbe61a95ec6d93a82
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1789
 ---
 
 - [x] **446 — a rooted `link` and a header named `nul:x.h` reach the tools under `--permissive`** | `machine_locked_path` is a thesis rule, so `--permissive` hands a rooted `link` and `nul:x.h` to the linker and to clang (lane b14-box, 2026-10-07); what Windows does with `nul:x.h` is unmeasured | `selfhost/head_windows.hero` · defects 252 and 253 · **class: improvement**

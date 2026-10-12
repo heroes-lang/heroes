@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-28
 commit: 405caf90891a1daad7ddba2a132b45319fb76e5a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1376
 ---
 
 # Outside brackets a line ends its statement, in both directions

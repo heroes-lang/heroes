@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-05
 commit: f50b9102628108472a4ed31567c48403bc73fa2f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1672
 ---
 
 - [x] **350 — five more sites push a diagnostic or a row through a copy of the whole list, defect 146's pattern, outside the parser** | `resolve/state.push_diagnostic` (`r.out.diagnostics @ ...push`), `check/state.hero:237`, `resolve/cycles.hero` (two) and `ir/interning.hero` grow their lists by a copy each push, so N reports cost the square of N (lane b11-parse, 2026-10-05, read in the code and named in its report; unmeasured per site) | the five sites · defects 146, 267 and 343, the same pattern repaired elsewhere · **class: adjacent**

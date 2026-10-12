@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1961
 ---
 
 # Panel 208 sat: a name its header marks deprecated builds silent, and one it marks unavailable is refused on its extern line

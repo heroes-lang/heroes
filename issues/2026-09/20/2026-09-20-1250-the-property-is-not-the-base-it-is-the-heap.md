@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-20
 commit: 7267db075bd884501b2848b733d8cc81d051bd63
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1281
 ---
 
 # The property is not the base, it is the heap

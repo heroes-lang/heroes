@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: 8e24d7eac9eaf8de61351be85c501918956c46ca
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1825
 ---
 
 - [x] **480 — `emit/mangle.hero` says the library declares nothing but the inventory's names** | false: the library declares `validated` and `args_checked` too, harmless today (lane b14-resolve) | `selfhost/emit/mangle.hero` · defect 455 · **class: improvement**

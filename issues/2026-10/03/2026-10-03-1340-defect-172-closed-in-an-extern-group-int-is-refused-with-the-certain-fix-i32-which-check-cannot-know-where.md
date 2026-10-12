@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-02
 commit: da3e29af815645a3bcb98fd9e16681b6b5ed7b8d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1456
 ---
 
 # Defect 172 closed: in an `extern` group, `int` is refused with the `certain` fix `i32`, which `check` cannot know: where the header's type is 64 bits, the applied binding is refused anew by `build`

@@ -4,7 +4,7 @@ area: golden
 milestone: none
 filed: 2026-10-02
 commit: 7c05e64d218b798153172684967b46b7ae8d6459
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1460
 ---
 
 # Defect 191 closed: a record named after a typedef of a struct the header keeps opaque, with fields, stops `build` at exit 2 under clang 18, whose refusal of a member read through it does not name the typedef

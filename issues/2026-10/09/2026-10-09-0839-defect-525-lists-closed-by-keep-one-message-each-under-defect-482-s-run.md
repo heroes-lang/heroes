@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-09
 commit: c7b3473f48d263691ff7c57d22c199e7df109555
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1873
 ---
 
 - [x] **525 — lists closed by `)` keep one message each under defect 482's run** | defect 482's repair tells a run of wrong closers once, and lists closed by `)` keep one message each, each naming its own `[` column (lane b15-parse) | `selfhost/parse/` · defect 482 · **class: adjacent**

@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-11
 commit: 7c01e6f96b9dd80678938e5a1eaf0c4747589eb6
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1984
 ---
 
 - [x] **629 — a handle consumed through the UFCS receiver of a parameter without `@` is accepted, where the named call is refused** | `function finish(n: Node)` whose body is `n.node_free()`, `node_free` a C function whose parameter `consumes`, is accepted, and a later use of the caller's handle aborts 134 at run time; the named call `node_free(n)` in the same body is refused `consumed_borrowed_handle`, which the checker asks only on the named-call path (`selfhost/check/walk.hero:1202`); `h.h_into(...)` for `transfers` the same | `selfhost/check/walk.hero` and the UFCS call's lowering of a consuming parameter; panel 210 R4 · **class: blocking**

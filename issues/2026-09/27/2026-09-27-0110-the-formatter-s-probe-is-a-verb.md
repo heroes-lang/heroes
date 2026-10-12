@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-27
 commit: f37b01b34d29babf82908f69baf8527592a51b20
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1357
 ---
 
 # The formatter's probe is a verb, and its oracle is ruled before it lands

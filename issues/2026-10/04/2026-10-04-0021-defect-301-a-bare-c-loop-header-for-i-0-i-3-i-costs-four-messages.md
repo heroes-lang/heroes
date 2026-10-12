@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-04
 commit: e08488a52a04851bd433960ac028973cc376525b
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1588
 ---
 
 - [x] **301 — a bare C loop header, `for i = 0; i < 3; i++`, costs four messages** | `for i = 0; i < 3; i++` with no parentheses: four messages, where defect 194's repair tells the parenthesised header once (lane b9-recovery's compiler, 2026-10-04) | `selfhost/scan.hero` (the lexer's `;`), `selfhost/parse/loop_habit.hero` · defect 194 · **class: adjacent**

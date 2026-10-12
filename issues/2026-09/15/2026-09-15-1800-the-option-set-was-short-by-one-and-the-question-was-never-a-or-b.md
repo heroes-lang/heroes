@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-15
 commit: 76bcd43ae585462d9aef5b13919e2d197d92a0c3
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1226
 ---
 
 # The option set was short by one, and the question was never A or B

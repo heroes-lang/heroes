@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-07
 commit: da3193a8471f89865f75f0761e1214b418254c04
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1780
 ---
 
 - [x] **439 — an `@` passed to an unknown callee keeps its mark** | an `@` passed to a call whose callee name is unknown, or past the last parameter, keeps its mark, so with a name bound by `=` it can be told `not_mutable` beside `unknown_name` or the arity error | `selfhost/resolve/built_marks.hero` · **class: improvement**

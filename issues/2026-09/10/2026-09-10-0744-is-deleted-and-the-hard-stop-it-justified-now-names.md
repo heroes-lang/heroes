@@ -4,7 +4,7 @@ area: site
 milestone: none
 filed: 2026-09-10
 commit: d821d7e4f9d00d054d8416d6adb25ee6db42ea66
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1096
 ---
 
 - [x] **`site/public/CNAME` is deleted, and the hard stop it justified now names

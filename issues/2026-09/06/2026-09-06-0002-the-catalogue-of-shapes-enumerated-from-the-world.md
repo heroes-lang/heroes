@@ -4,7 +4,7 @@ area: golden
 milestone: M-generated-programs
 filed: 2026-09-06
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/929
 ---
 
 - [ ] **M-generated-programs** | the catalogue of shapes, enumerated from the world | `tests/golden/fixedbugs/` · `docs/work/DONE.md`, the defect entries

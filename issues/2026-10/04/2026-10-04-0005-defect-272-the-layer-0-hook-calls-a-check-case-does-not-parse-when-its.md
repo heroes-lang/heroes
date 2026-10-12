@@ -4,7 +4,7 @@ area: golden
 milestone: none
 filed: 2026-10-04
 commit: 8d7b11dd25a3b73a7fe027503233fe4222c518b2
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1572
 ---
 
 - [x] **272 — the layer-0 hook calls a check case *does not parse* when its intended diagnostic makes `fmt` refuse it** | writing `tests/golden/check/fixedbugs-225-a-climb-to-the-root-is-a-known-cost.hero`, whose `machine_locked_path` is annotated: the hook answered *does not parse; the compiler says: ... error: refusing to format a file with diagnostics*, exit 2, while `check`, `annotations` and `fixes` read the case 1 and 0 each (2026-10-04); every case holding a parse-stage refusal, `ffi-a-group-head-names-not-locates` on the trunk's compiler among them, draws the same | `.claude/hooks/fmt_check.py:86` to `:94` · **class: improvement**

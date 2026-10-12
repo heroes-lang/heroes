@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-27
 commit: 362231e140090a0f0b97f6952a25ba4498f6df7e
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1360
 ---
 
 # A line inside brackets breaks by how it ends, and a list refuses a subtraction it would split

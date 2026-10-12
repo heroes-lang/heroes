@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-09-15
 commit: 4f42f2fca8cce5d71ffd28941d70b2aa6fb29096
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1221
 ---
 
 - [x] **panel 150** | the counter becomes a SET, a `tag` names a C type NAME, the mark is refused on a `ptr`, and the spec is corrected on both counts it is false about | **ratified 2026-09-15**, as adopted, the robust resolution and not the conservative one | **Two of four resolutions had already landed when the yes was given**, so the verdict is partly on what SHIPPED. **R1 landed** and closed defects 038, 039 and 040 together, because all three were one fact: the correct failure path went from abort 134 to exit 0, a leaked handle plus one null release went from exit 0 in silence to an abort naming the address, and a fixed array released element by element went from `+3` and an abort to exit 0 — the program had been correct all along. **R3 is owed and its shape changed**: refusing the mark on a `ptr` today would leave `getaddrinfo` unbindable rather than badly bound, because panels 151 and 152 left the author with no alternative spelling, so it waits on defect 037's remaining half. **R4 is owed at +7 real**, and panel 152's spec-warden re-ran all three probes and confirmed the document is still false at HEAD. **R2 is superseded rather than owed**: it adopted *a `tag` names a C type NAME* without a spelling, and two later sittings refused two spellings on measurement and adopted a third | `docs/panel/150-the-runtime-holds-a-number-where-it-needs-a-set.md` § Author's verdict | 150

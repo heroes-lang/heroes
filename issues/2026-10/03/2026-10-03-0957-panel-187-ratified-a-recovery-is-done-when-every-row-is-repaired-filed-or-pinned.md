@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-03
 commit: 3d704b03777c2359dc9cf746a33b9e9d4561ed25
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1517
 ---
 
 # Panel 187 ratified: a recovery is done when every row is repaired, filed or pinned, and the instrument compares two compilers

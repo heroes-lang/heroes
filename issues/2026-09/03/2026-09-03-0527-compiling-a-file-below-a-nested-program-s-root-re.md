@@ -4,7 +4,7 @@ area: compiler
 milestone: M-robustness-guards
 filed: 2026-09-03
 commit: df287cb0497ccc3e75f0427f5aa9cd02e1a37ac6
-github: none
+github: https://github.com/heroes-lang/heroes/issues/836
 ---
 
 - [x] **`M-robustness-guards`, step 6** | panel 099 R5, ratified 2026-09-03 with the sitting; the leaf-test hazard the verdict said it did not settle | **Compiling a file below a nested program's root re-bases every `use` path, in silence.** `heroes test selfhost/lexer.hero` is that invocation today, harmless only while the file's directory is the root. R5 states the rule; it owes a diagnostic that names the file and the root it took, and a golden fixture with two directories that fires it. Measured 2026-09-03: no list carried this (0 hits in SCHEDULED.md and DONE.md) | docs/panel/099 § Author's verdict · selfhost/modules.hero:144 · selfhost/source.hero:175 · selfhost/resolve/top.hero:147-148 | the ergonomist built a program legal under both bases that prints 2 or 3 depending on which one is in force

@@ -4,7 +4,7 @@ area: design
 milestone: none
 filed: 2026-10-02
 commit: 2b7afefdf3be7b518196071180036026ae1faa6f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1434
 ---
 
 # Panel 185's R7 decided: the forgotten `f` is refused where the braces hold names all bound

@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1943
 ---
 
 # Panel 206 sat: a constant's written body that cannot be computed is a compile error, and arithmetic in a function still aborts where it runs

@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-03
 commit: 4d8259cc622f053083c69d8c33110bdc6f1f47fb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1558
 ---
 
 - [x] **208 — a dead `break` after a `return` inside `while true` is told twice, `unreachable_statement` and `missing_return`** | `while true` over `if m > 3`, `return m`, `break`, in a `function f(n: i64) -> i64`: `unreachable_statement` at the `break` and `missing_return` on `f`, both gone once the `break` is deleted | `selfhost/check/flow.hero` (panel 184's R4: a `while true` with a `break` of its own does not end a path, read by syntax) · **class: adjacent**

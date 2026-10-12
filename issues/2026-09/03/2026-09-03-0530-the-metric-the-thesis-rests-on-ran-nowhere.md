@@ -4,7 +4,7 @@ area: examples
 milestone: none
 filed: 2026-08-13
 commit: f3b0b20d485d1236bd4674091eb9497a37e1e592
-github: none
+github: https://github.com/heroes-lang/heroes/issues/417
 ---
 
 - [x] **Should `heroes mutate` over `examples/` run in CI, and on which leg?** | M-corpus-depth step 0, 2026-09-03 — the first `mutate` over `examples/` since 2026-08-13 found it **refused at exit 2**, broken since 2026-09-02 (`c12de74`), and no instrument had said so | **The metric the thesis rests on ran nowhere automatically.** `suite_surface.hero:281` ran `mutate examples/gallery` (twelve single-file programs) on every leg; nothing ran it over the corpus the score is defined on, so a change that stopped it reading its own corpus — as `examples/shapes/` did for a day — was seen only when somebody typed the command. Three shapes were put to the author: (a) a surface row asserting `mutate examples` exits 0 on every leg, the cheap gate that catches exactly step 0's failure without pinning a rate; (b) the full score on the tag-triggered run only, printed into the log, Nim's out-of-band pattern; (c) both. Not proposed: pinning the kill rate in CI — the rate is a measurement (Part 11 metric 3) and moves by design | .github/workflows/ci.yml · tests/harness/suite_surface.hero · selfhost/cli/mutate.hero · docs/measurements/014-mutate-over-thirty-five.md | a measurement nobody is obliged to run is write-only, and this one was for three weeks

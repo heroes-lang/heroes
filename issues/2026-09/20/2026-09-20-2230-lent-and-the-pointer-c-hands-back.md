@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-20
 commit: 61a43d374c13631a34b163fd80761a31717b0e5f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1292
 ---
 
 # `lent`, and the pointer C hands back

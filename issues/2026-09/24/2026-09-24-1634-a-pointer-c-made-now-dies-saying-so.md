@@ -4,7 +4,7 @@ area: none
 milestone: M-agreed-retention
 filed: 2026-09-21
 commit: 43c225d53f89cc98310d34830187c29c0661deeb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1307
 ---
 
 # The milestone's first item closed: a pointer C made and gave back twice now dies saying so

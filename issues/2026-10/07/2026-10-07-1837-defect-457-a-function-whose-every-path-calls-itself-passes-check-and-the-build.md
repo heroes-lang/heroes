@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-07
 commit: 167d196b34c891b7ec6511355f5d2e0209b136bc
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1802
 ---
 
 - [x] **457 — a function whose every path calls itself passes `check`, and the build shows clang's warning over the generated C** | `function forever(n: i64) -> i64` returning `forever(n)`: `check` exit 0; `build` exit 0 printing clang's *warning: all paths through this function will call itself [-Winfinite-recursion]* over the emitted C; the run aborts *stack exhausted*, exit 134 (lane b14-resolve; the same shape behind defect 455's `bytes`, run by the coordinator before 16:48: `<scratchpad>/batch14/shadow/`) | the checker, which has no rule for it; the build, which passes clang's warning through in C words · defect 455 · **class: systemic**

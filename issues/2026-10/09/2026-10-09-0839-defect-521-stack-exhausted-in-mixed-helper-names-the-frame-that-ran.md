@@ -4,7 +4,7 @@ area: compiler
 milestone: none
 filed: 2026-10-09
 commit: 7e761a991d0589f257ca1d84692dfd0e90adf87d
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1869
 ---
 
 - [x] **521 — `stack exhausted in mixed.helper` names the frame that ran out, not the recursion** | `climbs(helper(n))`: the panic names `helper`, the last frame, where the recursion is `climbs` (panel 199's compiler-engineer, route (M)) | the stack guard's message, `runtime/parts/stack.c` · panel 199 · **class: adjacent**

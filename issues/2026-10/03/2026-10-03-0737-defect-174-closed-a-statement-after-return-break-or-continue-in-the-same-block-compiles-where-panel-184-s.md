@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-01
 commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1428
 ---
 
 # Defect 174 closed: a statement after `return`, `break` or `continue` in the same block compiles, where panel 184's R4, ratified, makes it a compile error

@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: fe2b01ee050a65d06bd3377634f3f3975f031e0a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1843
 ---
 
 - [x] **497 — `emit/callback_guard.hero`'s `guarded` is two fifths of `--emit-c`'s emitting thread** | 36,330 of 90,720 samples on the emitting thread during `--emit-c` of the compiler's own source, mostly `memmove` and `Inst` retain and release, reached from `callback_thunk.lookup_table`; a value-copy cost, not a push (lane b14-p409) | `selfhost/emit/callback_guard.hero`, `selfhost/emit/callback_thunk.hero` · defect 409 · **class: improvement**

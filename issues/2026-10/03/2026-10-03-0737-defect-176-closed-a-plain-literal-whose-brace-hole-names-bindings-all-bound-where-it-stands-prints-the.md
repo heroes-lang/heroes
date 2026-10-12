@@ -4,7 +4,7 @@ area: records
 milestone: none
 filed: 2026-10-02
 commit: fc8687de2b2516fe8180d996faf83b2ad0c88910
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1454
 ---
 
 # Defect 176 closed: a plain literal whose brace hole names bindings all bound where it stands prints the braces, where panel 185's R7, decided by the author, refuses it with the `f` as its fix

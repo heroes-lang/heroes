@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-02
 commit: 0bcd442cd7ca3251779aa586b283580e41681b97
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1440
 ---
 
 # Clock times written without reading the clock, corrected

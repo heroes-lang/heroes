@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-10
 commit: 54bc6cb122fc5a5d518172c361842e4c1d1937ea
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1952
 ---
 
 - [x] **586 — a unit's compile line carries every package's compile words whole, and about forty-five large packages pass what one Windows line holds** | each `package` a program's groups name is asked of `pkg-config` alone and its `-I -D -U -F` words reach every unit's compile line and every probe's (`libraries.compile_flags` keeps each package's whole, a word two packages share once per package); measured 2026-10-10 on this Mac: a unit's line of a cold build is 687 characters with no package, the ten largest `pkg-config --cflags` answers of its 505 packages sum 14,946 characters and the fifty largest 34,670, past the 32,767 `CreateProcess` takes, where those fifty answers deduplicated are 4,273; that Windows then refuses the compile with reason 87, as it refused defect 583's link, is unrun | `selfhost/cli/units.hero`'s `tu_object`, `compiling.unit_words`, the probes' lines (`header_ask`, `two_ways_ask`, `pragma_ask`, `switch_ask`, `defined_twice`, `layout`, `pointee`); `cli/response_file.hero` is the route defect 583's link took · **class: improvement**

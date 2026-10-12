@@ -4,7 +4,7 @@ area: none
 milestone: M-separate-compilation
 filed: 2026-08-26
 commit: 1945659f34e230570fe3796cf1da08f20917d148
-github: none
+github: https://github.com/heroes-lang/heroes/issues/740
 ---
 
 - [x] M-separate-compilation step 6 | **CLOSED 2026-08-26 — the work was committed as `c2ae7b1` and this item's own premise (*"the work is on disk and uncommitted"*) died with it.** The hoist the item named was done and the step landed: the compiler builds itself as 157 translation units, links, checks its own source at exit 0, and re-emits all 297 blessed emissions byte for byte. The numbers it carried are superseded too — fused 203 s against per-module >900 s became fused ~123 s against per-module 261 s cold / 250 s warm after the step's four repairs, which is the measurement the still-open item records. **What survives is the pair of measurement lessons, and they are worth more than the code**: a `build/` directory left to grow to 31 GB / 49,554 entries made every timing meaningless (the first per-module reading, 484 s, was taken against a clean-disk baseline — a comparison rigged by the measurer, caught by `du`), and a baseline older than the tree it is compared against is not a baseline. Was:

@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-09-08
 commit: 1fe7d804632b325b7ecdba0ba0fd36c0296d9404
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1028
 ---
 
 - [x] **017 — `heroes measure` overstates the spec's usable room by 60 tokens** | the number a session consults before amending the spec is 60 larger than the number the net goes red at, and both are printed by this repository | `selfhost/cli/measure.hero:157` · `tests/harness/suite_spec.hero:203`

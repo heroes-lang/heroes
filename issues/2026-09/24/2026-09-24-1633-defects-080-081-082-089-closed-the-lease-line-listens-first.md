@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-09-23
 commit: 43c225d53f89cc98310d34830187c29c0661deeb
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1312
 ---
 
 # Defects 080, 081, 082 and 089 closed: the lease line listens first, says under, hears every trap, and leaves an ignored signal alone

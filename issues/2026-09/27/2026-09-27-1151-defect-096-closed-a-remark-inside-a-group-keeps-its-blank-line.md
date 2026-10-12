@@ -4,7 +4,7 @@ area: print
 milestone: none
 filed: 2026-09-25
 commit: 29ed560108e1511efcf304e7432d30e911279818
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1348
 ---
 
 # Defect 096 closed: a remark inside a group keeps the blank line under it, and `fmt` formats the file

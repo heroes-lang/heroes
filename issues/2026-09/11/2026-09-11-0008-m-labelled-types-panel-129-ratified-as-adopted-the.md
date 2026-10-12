@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 619eec7be5c703e5792ec8f986ed6b5d2cd2d604
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1113
 ---
 
 2026-09-11 · **M-labelled-types, panel 129, ratified as adopted the same day.** A

@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-12
 commit: 0989e9ba4c421e240c9caa6d4139df5ce3395845
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1138
 ---
 
 2026-09-12 · **A field's name becomes a name the checker resolves, and the

@@ -4,7 +4,7 @@ area: cli
 milestone: M-issue-files
 filed: 2026-10-04
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1655
 ---
 
 - [ ] **M-issue-files** | a `heroes` verb that renders an issue file as the issue GitHub takes, its title, labels, milestone, body and closing comment by `.claude/rules/records.md` § The issues' rendering rule, so a transcription is a command and not a reading | `.claude/rules/cli-surface.md` (the stopping rule) · `tests/harness/cards.hero` · `.github/ISSUE_TEMPLATE/`

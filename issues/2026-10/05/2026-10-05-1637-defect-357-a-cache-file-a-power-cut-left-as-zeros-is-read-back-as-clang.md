@@ -4,7 +4,7 @@ area: cli
 milestone: none
 filed: 2026-10-05
 commit: a17f142e94803e24fb2a6d02c82214671b1fdb50
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1681
 ---
 
 - [x] **357 — a cache file a power cut left as zeros is read back as clang's refusal, an internal error at exit 2** | the Windows box's crash on 2026-10-04 (its System log: Kernel-Power 41, and EventLog 6008 *the previous system shutdown at 6:46:31 PM*) left 11 files of `/c/w/b10-4c3524fb-23776/build/`, written from 18:47:05 to 18:47:07, at their length and every byte zero, a pointee check's 3-byte `verdict-702a199d28974598-736ae57c2d490824.txt` among them; from then on `heroes.exe build tests/golden/unsupported/fixedbugs-157-a-record-over-an-enum-s-tag.hero` in that folder says `internal error: ` and three NUL bytes, then *clang refused the generated C*, at exit 2, where the same `heroes.exe` in a fresh folder says `ffi_tag_is_a_union` at exit 1 (measured on the box, 2026-10-05) | `publish.write_whole` and `publish.publish` (`selfhost/cli/publish.hero:95-116`: a write and a rename, no flush, where `runtime/parts/replace.c`'s `hero_stage_flush` flushes before its rename) · their 21 calls in `selfhost/cli/` (`compiling` 1, `layout` 8, `link` 1, `pointee` 5, `toolchain` 2, `units` 4) · `pointee.hero:146-153` and `layout.judged`, which read a kept verdict that is not `ok\n` as clang's words whatever it holds · **class: blocking**

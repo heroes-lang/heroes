@@ -4,7 +4,7 @@ area: golden
 milestone: none
 filed: 2026-10-01
 commit: 606700e262e9d18483ee44ba7e05cdec2dbafd35
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1420
 ---
 
 # Panel 183's R3: the opener's message reworded, and a narrower rule prototyped first

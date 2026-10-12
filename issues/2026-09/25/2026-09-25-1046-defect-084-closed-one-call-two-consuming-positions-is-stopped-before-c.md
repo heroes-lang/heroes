@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-09-23
 commit: 517b8e25692a4cf0075c04fd306e5017fd428cd4
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1319
 ---
 
 # Defect 084 closed: one call taking a handle at two consuming positions is stopped before C, says so, and the binding is a shim

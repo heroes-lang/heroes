@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 73b1e9d3cddcddf926e3b8e2de7062fbb3fca597
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1881
 ---
 
 - [x] **531 — a wrong-arity call through a function value names `this function` as if it were a name** | the message reads *`this function` takes 1 argument(s), found 2*: a placeholder printed in backticks where a name stands (lane b16-compiler) | the arity diagnostic of a call through a function value, `selfhost/check/` · defect 510 · **class: adjacent**

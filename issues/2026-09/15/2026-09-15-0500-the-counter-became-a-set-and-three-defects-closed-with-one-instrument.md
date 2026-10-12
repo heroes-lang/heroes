@@ -4,7 +4,7 @@ area: runtime
 milestone: none
 filed: 2026-09-15
 commit: 2e7d221cac517e500d51f0bf8247884af71d9605
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1219
 ---
 
 - [x] **038 — a mark is one obligation and a fixed array of handles can be released one element at a time** | `Slot[4]` behind one `acquires`, released element by element, aborted at 134 against a runtime message naming no cause that fit | **repaired 2026-09-15**, and **the program was correct all along** | **It did not close by refusing and it did not close by counting**, which were the two routes panel 150's seats split over with two opposing vetoes. It closed by **changing the instrument**: `runtime/parts/alloc.c` now holds the SET of live handle addresses, and `check/reaches.hero`'s new `handle_suffixes` tells the emitter every handle a marked type reaches, so the four elements of a `Slot[4]` go into the set individually. **Releasing them one by one now balances and exits 0**; releasing the composite balances; doing both is a double release the set can name. The written length is the only number there is, and panel 150 measured that C's FILLED count is a runtime choice no mark can carry — with a set it need not be carried, because an unfilled element is a NULL and a NULL never enters. Measured before: `+3`, abort 134. Measured after: **exit 0** | `runtime/parts/alloc.c` · `selfhost/check/reaches.hero` · `selfhost/emit/ops.hero` | 150

@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1724
 ---
 
 - [x] **panel 195** | ratify, amend or overturn R1 to R5 (a literal constant is one `HERO_ARRAY_STATIC` block whose count is never written, the guard returning on exactly -1 and panicking by name below 1, `HERO_RUNTIME_ABI` 27 to 28; a sanitized build keeps the block per read; the landing's cases on three platforms; `onceheld`, the static writable block, the per-thread copy, the static table and hoisting refused, the element route's inlined read filed apart; the stamp's move in a batch of its own) | `docs/panel/195-a-literal-constant-is-one-static-block-whose-count-is-never-written-and-a-sanitized-build-keeps-the-block-per-read.md` § The resolution

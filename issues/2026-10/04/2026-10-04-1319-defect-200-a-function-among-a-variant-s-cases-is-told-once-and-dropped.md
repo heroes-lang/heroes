@@ -4,7 +4,7 @@ area: parse
 milestone: none
 filed: 2026-10-02
 commit: 7831aec7292e236b4e84d51bd6a320b6a1a7cec1
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1483
 ---
 
 - [x] **200 — a `function` among a variant's cases is told once and dropped with its block, so a mistake inside it waits until it moves out** | `variant V` over `red` and `function f()` over `print(1 +)`: `expected_case` at the `function`, and the `1 +` untold; among a record's fields the same function is read as the function it is since `26358f9c` | `selfhost/parse/member_lines.hero:205` (`skip_line`) and `:202` (`balanced_block`) · pinned by `tests/golden/check/panel-187-a-function-among-a-variants-cases-is-dropped.hero` · **class: adjacent**

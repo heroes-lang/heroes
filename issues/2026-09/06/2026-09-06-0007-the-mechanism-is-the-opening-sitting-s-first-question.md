@@ -4,7 +4,7 @@ area: cli
 milestone: M-typed-inspection
 filed: 2026-09-06
 commit: none
-github: none
+github: https://github.com/heroes-lang/heroes/issues/939
 ---
 
 - [ ] **M-typed-inspection** | the mechanism is the opening sitting's first question | `CLAUDE.md` §10 · `selfhost/cli/table.hero` § run_flags · `docs/ROADMAP.md` § M-vscode-extension

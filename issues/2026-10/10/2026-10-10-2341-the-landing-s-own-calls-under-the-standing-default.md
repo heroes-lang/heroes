@@ -4,7 +4,7 @@ area: compiler
 milestone: M-inferred-cell
 filed: 2026-10-10
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1975
 ---
 
 **The landing's own calls, taken under the standing default** (the author's *5a* of 2026-10-04: a batch's questions take the recommended answer, said once in the record). Panel 209's resolution bound the landing in its § The landing; where the lane had to choose, it chose as follows, each measured in its step's commit body, and the author can turn any of them.

@@ -4,7 +4,7 @@ area: records
 milestone: M-issue-files
 filed: 2026-10-05
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1684
 ---
 
 # The author answers 1a 2a: a learn question is not an issue, and leaves issues/ for docs/learn/

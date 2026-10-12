@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-23
 commit: 85a1d91c43c285a60ee2132c70b2707165c00c17
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1311
 ---
 
 # A transfer names where the life goes, and a reference joins the life it finds

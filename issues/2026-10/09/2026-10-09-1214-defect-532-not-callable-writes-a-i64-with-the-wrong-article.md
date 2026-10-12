@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: 4186d8ad7f3628b2b68fb3dfcef7692a869eac71
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1882
 ---
 
 - [x] **532 — `not_callable` writes `a i64` with the wrong article** | the message reads *this is a `i64`, and a `i64` cannot be called* (lane b16-compiler) | `not_callable`'s message, `selfhost/check/` · **class: adjacent**

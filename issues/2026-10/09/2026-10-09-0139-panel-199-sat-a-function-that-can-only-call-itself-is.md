@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-09
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1857
 ---
 
 # Panel 199 sat: a function that can only call itself is refused, and recursion too deep aborts at every level

@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-06
 commit: 1f5d9b70158b08a2f2ea325592ab21ba8fe46e0f
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1723
 ---
 
 - [x] **389 — every array read calls `hero_array_at` where an inline index would do** | a loop reading a name bound to a 32-element array a million times, `local.hero`, retires 116.5 million instructions; the same loop with the read's call replaced by an inline index, 85.5 million (panel 195's completeness critic, its second pass, 2026-10-06, its `second/measure/`; not re-run by the coordinator) | `selfhost/emit/`, the read of an array element · `runtime/heroes_runtime.h`, `hero_array_at` · panel 195 R4 · **class: improvement**

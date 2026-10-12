@@ -4,7 +4,7 @@ area: process
 milestone: none
 filed: 2026-08-04
 commit: dd8fc6fff93c102f8c3aa1812ba6b956ecf92429
-github: none
+github: https://github.com/heroes-lang/heroes/issues/56
 ---
 
 2026-08-04 | `heroes check` is the frontend command from M3a on, and golden `check/` runs through it instead of `parse`; the resolver runs only when lexing and parsing produced nothing, so a broken file reports exactly what it reported before | the stage the goldens run through moves with the deepest frontend stage (DESIGN-LOG 2026-08-04); the name now stops moving — M3b–M3d deepen `check` without renaming it | CLAUDE.md §9 | — |

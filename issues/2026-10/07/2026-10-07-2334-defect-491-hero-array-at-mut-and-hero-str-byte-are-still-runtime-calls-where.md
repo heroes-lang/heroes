@@ -4,7 +4,7 @@ area: emit
 milestone: none
 filed: 2026-10-07
 commit: 7aa1f95f1a4229af0e134807a341ef576893dd71
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1837
 ---
 
 - [x] **491 — `hero_array_at_mut` and `hero_str_byte` are still runtime calls where defect 389 inlined reads** | 389's cost shape; `at_mut` sits nested inside place expressions, so the read's inline form would duplicate calls there (lane b14-emit) | `selfhost/emit/`, `runtime/heroes_runtime.h` · defect 389 · **class: improvement**

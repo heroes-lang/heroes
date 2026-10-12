@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-09-17
 commit: 3ee24685db5195ac2d215d9d264ea742f2b110ec
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1254
 ---
 
 - [x] **050 — a test of a doubly-fallible value asks the outer layer and reads as asking the inner one** | `m["b"].is_err()` on a `{str: i64?}` and `find(xs, …).is_err()` on a `[i64?]` are `check` 0 and RUN, and both answer *was the key there* where the line reads *did the stored value fail* | `docs/panel/158-the-sitting-produced-a-resolution-and-left-it-off-its-own-ballot.md` R4 · `selfhost/check/ops.hero`

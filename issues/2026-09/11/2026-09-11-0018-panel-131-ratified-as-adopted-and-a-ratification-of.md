@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-11
 commit: 879139cd5f3479d45594505928fa0ef1295cd8a7
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1123
 ---
 
 2026-09-11 · **Panel 131 ratified as adopted, and a ratification of four days

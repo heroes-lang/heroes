@@ -4,7 +4,7 @@ area: check
 milestone: none
 filed: 2026-10-06
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1736
 ---
 
 - [x] **panel 194** | ratify, amend or overturn R1 to R8 (`rest: zero` on a group record built on panel 186's `build`-side judgement, a union none of whose members is named zeroed by the emitted C itself, no padding promise; C's `char` is `i8` in § 13 and in the `ffi_field_type` note, landing with R1; zero as bytes and a header's initialiser as a constant, defect 392 ruled the binding author's; 091 closed by 097; T and A waiting; R2, D, Z1, a `check`-side R1, R0's second spelling and *nothing* refused; 092's count in C's own unit, an undeclared whole-record lend to `void *` refused, route B refused, no interim; five defects filed) | `docs/panel/194-the-rest-is-zero-where-a-group-s-construction-says-so-and-a-lend-s-count-is-in-c-s-own-unit.md` § The resolution

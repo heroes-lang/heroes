@@ -4,7 +4,7 @@ area: records
 milestone: M-inferred-cell
 filed: 2026-10-11
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1978
 ---
 
 # The tag `m-inferred-cell` waits for its seven blocking defects

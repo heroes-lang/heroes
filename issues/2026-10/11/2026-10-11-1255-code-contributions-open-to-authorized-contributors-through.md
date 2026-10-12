@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-10-11
 commit: self
-github: none
+github: https://github.com/heroes-lang/heroes/issues/2006
 ---
 
 # Code contributions open to authorized contributors, through an issue first

@@ -4,7 +4,7 @@ area: ir
 milestone: none
 filed: 2026-10-03
 commit: 9bd02fcaeb9d66049caeda38afccc609bace4fce
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1528
 ---
 
 # Defect 218 closed: the IR verifier's cost grows about as the cube of a function's size, so 7 of 25 nesting shapes at 2,000 deep do not build in 150 s on this Mac, 8 in the Linux container

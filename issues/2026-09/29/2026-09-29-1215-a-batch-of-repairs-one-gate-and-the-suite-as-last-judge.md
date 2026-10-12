@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-29
 commit: eb3fb613ef27526d73317409ddb1de9e7279c383
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1396
 ---
 
 # A batch of repairs, one gate, and the suite as the last judge

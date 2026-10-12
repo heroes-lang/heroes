@@ -4,7 +4,7 @@ area: resolve
 milestone: none
 filed: 2026-10-07
 commit: 80f8824f15749d3d0894377b343e3a8139abbb7a
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1805
 ---
 
 - [x] **460 — a type parameter named like a built-in is told three times** | `g<len>(x: len)`: `builtin_name_taken` and two more messages, because the refused parameter is never bound (lane b14-resolve) | `selfhost/resolve/decls.hero` · defect 455 · **class: adjacent**

@@ -4,7 +4,7 @@ area: measure
 milestone: M-declared-thresholds
 filed: 2026-09-12
 commit: df9fb73c4c17fd561173f955e36ad19a1f0dd8d5
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1153
 ---
 
 - [x] Covered | M-declared-thresholds | **The contract is judged on the reader's tokeniser**, closed 2026-09-12 by the milestone that filed it. `CONTRACT_CEILING` 5500 -> 12288, written as `7306 + 4982` and never as a round figure; `selfhost/measure/pinned.hero` carries a second record; `run_refresh` takes two judged documents and still refuses every other path; `measure` prints a `real` row for the contract where it printed none. The number was MEASURED by this session's own tool before it was set, which was the warden's condition: 7306, and 7402 after this milestone's own edits to the contract. **What the item could not know**: `run_refresh`'s refusal of every file but the spec was pinned by a test, so extending it had to keep the refusal for unjudged paths — `design.md` is the witness kept in the case, because §1.6 says in its own words that the compiler has no budget.

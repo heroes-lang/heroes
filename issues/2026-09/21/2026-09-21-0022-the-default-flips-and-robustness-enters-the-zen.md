@@ -4,7 +4,7 @@ area: none
 milestone: none
 filed: 2026-09-21
 commit: abf9a17e8f9aded03150ff2850c9b3dcd68c8672
-github: none
+github: https://github.com/heroes-lang/heroes/issues/1298
 ---
 
 # The default flips, and robustness enters the Zen
