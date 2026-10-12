@@ -21,6 +21,7 @@
 # history is judged there all the same.
 
 use cards
+use issue_controls
 use issue_git
 use issue_json
 use issue_render
@@ -61,6 +62,15 @@ function offences(r: issue_render.Rendered) -> [str]
 
     for one in issue_safe.live(r.body)
         out @ out.push("its body still holds " + one)
+
+    # Defect 675: GitHub stores such a sequence in caret notation.
+    for one in issue_controls.raw(r.body)
+        out @ out.push(
+            "its body still holds `" + one + "` written bare, a control character's escape GitHub stores in caret notation (`issue_controls.hero`)"
+        )
+
+    for one in issue_controls.raw(r.title)
+        out @ out.push("its title holds `" + one + "`, a control character's escape GitHub stores in caret notation")
 
     if r.closed && cards.day_of(r.closed_day).must() < cards.day_of(r.filed).must()
         out @ out.push("closed " + r.closed_day + ", before it was filed, " + r.filed)

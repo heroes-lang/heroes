@@ -19,6 +19,7 @@
 
 use cards
 use issue_body
+use issue_controls
 use issue_git
 use issue_numbers
 use issue_safe
@@ -216,7 +217,7 @@ function render(issue: cards.Issue, facts: issue_git.Facts, twins: [str]) -> Ren
         pathed: pathed,
         self_from: facts.made_by[issue.path].default(""),
         fields: item_fields(opening),
-        body: issue_safe.protect(text: lines.join("\n"), commits: facts.commits),
+        body: issue_controls.entities(issue_safe.protect(text: lines.join("\n"), commits: facts.commits)),
         labels: labels_of(kind: card.kind, area: card.area, rows: rows),
         milestone: milestone,
         defect: defect,

@@ -10,7 +10,9 @@
 # one too; a link to another project's issue or pull request leaves a backlink
 # there, so it is written with `redirect.github.com`; and a commit hash written
 # in backticks is not linked, so one git says names a commit is written bare.
-# Code is left as it is: `issue_spans.hero` says where it stands.
+# Code is left as it is: `issue_spans.hero` says where it stands. A literal
+# `\u` escape of a control character, which GitHub stores otherwise, is
+# `issue_controls.hero`'s, run over the body this module made inert.
 #
 # `live` is `records/rendered`'s half: it reads a rendered body for anything
 # still doing one of the three, and the card that holds one is refused.
@@ -102,6 +104,10 @@ function guarded(region: str, ticks: i64) -> str
 # it holds a `/`, `owner/repo#N`; a word before it, `C#1`, links nothing.
 function reference_at(text: str, at: i64, from: i64) -> i64
     if text[at] != '#' || at + 1 >= text.len() || !is_digit(text[at + 1])
+        return -1
+
+    # `&#92;`, a character reference, which no reader takes for an issue.
+    if at > from && text[at - 1] == '&' && digits_end(text: text, at: at + 1) < text.len() && text[digits_end(text: text, at: at + 1)] == ';'
         return -1
     start: i64 @= at
 
@@ -312,6 +318,8 @@ test "a rendered body is read for what would still link, mention or backlink"
     assert live("https://github.com/a/b/pull/7").len() == 1
     assert live("```\n#1 @x\n```").len() == 0
     assert live("an address a@b.com and C#1").len() == 0
+    assert live("a &#92;u0001 and <code>&#92;u009b</code>").len() == 0
+    assert live("an &#3 and &#4x").len() == 2
     nothing: {str: bool} = {}
     text = "#1 @x a/b#2 https://github.com/a/b/issues/3 `#4` ` stray #5"
     assert live(protect(text: text, commits: nothing)).len() == 0

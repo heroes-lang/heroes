@@ -38,8 +38,13 @@ record Loaded
 # the program cannot run: a path that is no issue file, git that cannot answer,
 # a history too short to.
 function loaded(scratch: str, paths: [str], pin: str) -> Loaded?
+    every = issue_files(scratch)?
+    return rendered_at(scratch: scratch, every: every, chosen: chosen_of(every: every, paths: paths)?, pin: pin)
+
+# Every issue file under `issues/` git tracks, in name order, its front page
+# aside.
+function issue_files(scratch: str) -> [cards.Issue]?
     every: [cards.Issue] @= []
-    known: {str: bool} @= {}
 
     for path in shell.project_files(scratch)?
         if strings.starts_with(text: path, prefix: "issues/") && strings.ends_with(text: path, suffix: ".md") && path != "issues/README.md"
@@ -48,24 +53,35 @@ function loaded(scratch: str, paths: [str], pin: str) -> Loaded?
             if text.is_err()
                 return fail(code: "unreadable", msg: "cannot read " + path + ": " + issue_check.said(text))
             every @ every.push(cards.issue_of(path: path, text: text.must()))
-            known[path] @ true
 
-    chosen: [cards.Issue] @= every
+    return ok(every)
 
-    if paths.len() > 0
-        chosen @ []
+# The files of `every` that `paths` name, every one where `paths` is empty, or
+# the first path that names none.
+function chosen_of(every: [cards.Issue], paths: [str]) -> [cards.Issue]?
+    if paths.len() == 0
+        return ok(every)
+    by_path: {str: cards.Issue} @= {}
 
-        for path in paths
-            if known[path].is_err()
+    for issue in every
+        by_path[issue.path] @ issue
+
+    chosen: [cards.Issue] @= []
+
+    for path in paths
+        match by_path[path]
+            .ok issue => chosen @ chosen.push(issue)
+            .err _ =>
                 return fail(
                     code: "unknown",
                     msg: "`" + path + "` is no issue file of this tree; name one from the repository's root, `issues/<year-month>/<day>/<name>.md`"
                 )
 
-            for issue in every
-                if issue.path == path
-                    chosen @ chosen.push(issue)
+    return ok(chosen)
 
+# `chosen`, files of `every`, rendered at `pin`, each judged by
+# `issue_check.offences`.
+function rendered_at(scratch: str, every: [cards.Issue], chosen: [cards.Issue], pin: str) -> Loaded?
     pinned = issue_git.pinned(scratch: scratch, pin: pin)?
     facts = issue_git.gather(scratch: scratch, issues: chosen, pin: pinned)
 
@@ -96,6 +112,34 @@ function loaded(scratch: str, paths: [str], pin: str) -> Loaded?
             unrendered @ unrendered + 1
 
     return ok(Loaded(every: every, chosen: entries, refused: refused, unrendered: unrendered, pin: pinned))
+
+# `chosen`, files of `every`, each rendered at its pin in `pins` (`fallback`
+# where it has none), one rendering per pin: what `repair` holds an issue to,
+# so that the pin its own `Record:` line names is never what differs.
+function rendered_by_pin(scratch: str, every: [cards.Issue], chosen: [cards.Issue], pins: {str: str}, fallback: str) -> Loaded?
+    groups: {str: [cards.Issue]} @= {}
+    none: [cards.Issue] = []
+
+    for issue in chosen
+        pin = pins[issue.path].default(fallback)
+        groups[pin] @ groups[pin].default(none).push(issue)
+
+    entries: [issue_match.Entry] @= []
+    refused: [str] @= []
+    unrendered: i64 @= 0
+
+    for pin in keys(groups).sort()
+        one = rendered_at(scratch: scratch, every: every, chosen: groups[pin].must(), pin: pin)?
+
+        for entry in one.chosen
+            entries @ entries.push(entry)
+
+        for line in one.refused
+            refused @ refused.push(line)
+
+        unrendered @ unrendered + one.unrendered
+
+    return ok(Loaded(every: every, chosen: entries, refused: refused, unrendered: unrendered, pin: fallback))
 
 # The paths of `paths` the tree of commit `pin` does not hold, asked in one
 # `git cat-file --batch-check`, `%(rest)` handing back the path each line asked.

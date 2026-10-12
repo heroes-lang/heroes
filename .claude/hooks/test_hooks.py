@@ -2207,12 +2207,12 @@ class Credit(unittest.TestCase):
 
 class TrackedAsks(unittest.TestCase):
     """Panel 212's R7, the guard's other half: the transcription program's
-    `push`, `prepare` and `finish` write to GitHub from a `gh` they spawn,
-    which no rule of the shell guard can see, so the tracked settings ask the
-    author before every run of each, however it is spelled, and ask nothing of
-    `render` and `plan`, which write nothing. A rule is read as the harness
-    reads one, `*` standing for any text; that an `ask` outranks an `allow` is
-    the harness's order."""
+    `push`, `repair`, `prepare` and `finish` write to GitHub from a `gh` they
+    spawn, which no rule of the shell guard can see, so the tracked settings
+    ask the author before every run of each, however it is spelled, and ask
+    nothing of `render` and `plan`, which write nothing. A rule is read as the
+    harness reads one, `*` standing for any text; that an `ask` outranks an
+    `allow` is the harness's order."""
 
     def setUp(self):
         with open(os.path.join(os.path.dirname(HOOKS), "settings.json"), encoding="utf-8") as f:
@@ -2236,6 +2236,13 @@ class TrackedAsks(unittest.TestCase):
 
     def test_every_spelling_of_prepare_and_finish_is_asked_and_none_is_denied(self):
         for word in ("prepare --yes", "finish --yes", "prepare", "finish"):
+            for start in ("./heroes", "heroes", "caffeinate -i ./heroes", "caffeinate -i heroes"):
+                command = start + " run tests/harness/issues.hero -- " + word
+                self.assertTrue(self.matched("ask", command), command)
+                self.assertFalse(self.matched("deny", command), command)
+
+    def test_every_spelling_of_repair_is_asked_and_none_is_denied(self):
+        for word in ("repair --yes", "repair --yes --pin dd0b5f5aa issues/a.md", "repair"):
             for start in ("./heroes", "heroes", "caffeinate -i ./heroes", "caffeinate -i heroes"):
                 command = start + " run tests/harness/issues.hero -- " + word
                 self.assertTrue(self.matched("ask", command), command)

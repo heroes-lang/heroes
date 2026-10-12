@@ -1,0 +1,481 @@
+# `repair`: AN ISSUE THAT DIFFERS FROM ITS FILE MADE TO MATCH IT, the file
+# being the truth.
+#
+# `.claude/rules/records.md` § The issues, R10 as the author amended it on
+# 2026-10-12 (`issues/2026-10/12/2026-10-12-1320-the-author-answers-four-the-repair-word-the-limit-the-two.md`):
+# an issue that differs from its file is reported by `plan` and made to match
+# it by `repair --yes`, never the reverse. For each card that holds an address,
+# its issue as GitHub's list gives it (`read_all`, every page, never one read
+# an issue) is held to the card rendered at the pin the issue's own `Record:`
+# line names (`pin_of`; the caller renders each group of cards at its pin), so
+# the pin is never what differs; and `owed` says what the issue owes its card:
+#
+# - its title, body, labels and milestone, where they differ, rewritten by one
+#   `PATCH /repos/heroes-lang/heroes/issues/<n>` carrying exactly those fields;
+# - its state made its card's in the same request: a card closed after its
+#   import closes the issue, `completed`, and its closing comment (`Fixed by` or
+#   `Settled by` and the commit, as `render` gives it) is posted where the issue
+#   holds no comment; the REST route dates both the day it runs, which the
+#   line printed for the issue says; a card opened again opens it;
+# - its days, `created_at` and `closed_at`, are reported and never changed: the
+#   REST route has no field for them.
+#
+# Every repaired issue is read back alone and held to its card again; one GitHub
+# still holds otherwise is told on stderr and counted, never asked again in
+# silence. Before any write the run refuses (exit 1) where a field it would
+# write names a milestone or a label GitHub lacks, as `push` does. Every request
+# goes through the session `push` uses: serial, a second between two writes,
+# the rate limit waited out; a write GitHub refused, or whose answer never
+# came, stops the run (exit 2), and a rerun, reading everything again, writes
+# only what still differs.
+
+use cards
+use issue_github
+use issue_json
+use issue_match
+use issue_pace
+use issue_render
+use issue_scripts
+use issue_wire
+use strings
+
+# What one issue owes its card: the JSON members a `PATCH` writes and their
+# names, whether it is closed by them, whether its closing comment is posted,
+# and the days GitHub holds otherwise, which nothing writes.
+record Owed
+    members: [str]
+    names: [str]
+    closing: bool
+    comment: bool
+    days: [str]
+
+# What a run did: issues compared, repaired and matching after, still differing
+# (or not read back), and holding a day otherwise.
+record Tally
+    compared: i64
+    repaired: i64
+    still: i64
+    days: i64
+
+# What GitHub holds that `repair` reads: the milestones, the labels and every
+# issue, the list read to its last page.
+function read_all(@s: issue_pace.Session) -> issue_match.Github?
+    milestones = issue_github.milestones(@s)?
+    labels = issue_github.labels(@s)?
+    held = issue_github.issues_since(@s, bound: "")?
+    none = issue_github.Limit(limit: "", expires: "", origin: "")
+    return ok(issue_match.Github(milestones: milestones, labels: labels, limit: none, held: held, listing: ""))
+
+# The number an address names, 0 for none.
+function number_of(address: str) -> i64
+    if !cards.is_issue_url(address)
+        return 0
+    return issue_github.number_after(text: address, prefix: cards.ISSUE_URL).default(0)
+
+# The pin a card is rendered at: the one its issue's `Record:` line names, else
+# `fallback`, for an issue whose body names none.
+function pin_of(held: issue_github.Held?, fallback: str) -> str
+    match held
+        .ok h =>
+            named = issue_match.recorded(h.body)[0]
+
+            if named != ""
+                return named
+            return fallback
+        .err _ => return fallback
+
+# The pin each card of `chosen` is rendered at, by path, read off its issue in
+# `held`.
+function pins_of(chosen: [cards.Issue], held: [issue_github.Held], fallback: str) -> {str: str}
+    by_number: {i64: issue_github.Held} @= {}
+
+    for one in held
+        by_number[one.number] @ one
+
+    out: {str: str} @= {}
+
+    for issue in chosen
+        out[issue.path] @ pin_of(held: by_number[number_of(issue.card.github)], fallback: fallback)
+
+    return out
+
+# What `held` owes `entry`'s card; `numbers` are GitHub's milestones by title.
+function owed(entry: issue_match.Entry, held: issue_github.Held, numbers: {str: i64}) -> Owed
+    r = entry.r
+    members: [str] @= []
+    names: [str] @= []
+
+    if held.title != r.title
+        members @ members.push("\"title\":" + issue_json.quoted(r.title))
+        names @ names.push("title")
+
+    if held.body != r.body
+        members @ members.push("\"body\":" + issue_json.quoted(r.body))
+        names @ names.push("body")
+
+    if held.labels != r.labels.sort()
+        quoted: [str] @= []
+
+        for label in r.labels
+            quoted @ quoted.push(issue_json.quoted(label))
+
+        members @ members.push("\"labels\":[" + quoted.join(",") + "]")
+        names @ names.push("labels")
+
+    if held.milestone != r.milestone
+        number = if r.milestone == ""
+            "null"
+        else
+            numbers[r.milestone].default(0).to_str()
+        members @ members.push("\"milestone\":" + number)
+        names @ names.push("milestone")
+
+    state = if r.closed
+        "closed"
+    else
+        "open"
+    closing = held.state != state && r.closed
+
+    if held.state != state
+        members @ members.push("\"state\":\"" + state + "\"")
+        names @ names.push("state " + state)
+
+        if closing
+            members @ members.push("\"state_reason\":\"completed\"")
+    comment = r.closed && r.comment != "" && held.comments == 0
+
+    if comment
+        names @ names.push("closing comment")
+    days: [str] @= []
+
+    if held.created != issue_render.instant(r.filed)
+        days @ days.push("created_at " + held.created + " where the card says " + issue_render.instant(r.filed))
+
+    if r.closed && held.state == "closed" && held.closed != issue_render.instant(r.closed_day)
+        days @ days.push("closed_at " + held.closed + " where the card says " + issue_render.instant(r.closed_day))
+    return Owed(members: members, names: names, closing: closing, comment: comment, days: days)
+
+# What the repairs of `entries` would write that GitHub lacks: a milestone or a
+# label, one sentence each.
+function lacking(entries: [issue_match.Entry], by_number: {i64: issue_github.Held}, gh: issue_match.Github) -> [str]
+    numbers = issue_match.numbers(gh)
+    labels: {str: bool} @= {}
+
+    for label in gh.labels
+        labels[label] @ true
+
+    out: [str] @= []
+
+    for entry in entries
+        match by_number[number_of(entry.github)]
+            .ok held =>
+                names = owed(entry: entry, held: held, numbers: numbers).names
+
+                for name in names
+                    if name == "milestone" && entry.r.milestone != "" && numbers[entry.r.milestone].is_err()
+                        out @ out.push(
+                            "GitHub has no milestone `" + entry.r.milestone + "`, which the repair of " + entry.r.path + " writes"
+                        )
+
+                    if name == "labels"
+                        for label in entry.r.labels
+                            if labels[label].is_err()
+                                out @ out.push(
+                                    "GitHub has no label `" + label + "`, which the repair of " + entry.r.path + " writes"
+                                )
+            .err _ => _ = 0
+
+    return out
+
+# `entries`, rendered each at its issue's pin, repaired; the exit code (R11).
+function repaired(@s: issue_pace.Session, entries: [issue_match.Entry], gh: issue_match.Github) -> i64
+    by_number: {i64: issue_github.Held} @= {}
+
+    for held in gh.held
+        by_number[held.number] @ held
+
+    refused = lacking(entries: entries, by_number: by_number, gh: gh)
+
+    if refused.len() > 0
+        for one in refused
+            issue_pace.warn(@s, text: one)
+
+        return 1
+    numbers = issue_match.numbers(gh)
+    tally: Tally @= Tally(compared: 0, repaired: 0, still: 0, days: 0)
+
+    for entry in issue_match.ordered(entries)
+        tally.compared @ tally.compared + 1
+        number = number_of(entry.github)
+
+        match by_number[number]
+            .ok held =>
+                if held.pull
+                    issue_pace.warn(@s, text: entry.github + ", the address of " + entry.r.path + ", is a pull request")
+                    tally.still @ tally.still + 1
+                    continue
+                o = owed(entry: entry, held: held, numbers: numbers)
+
+                for day in o.days
+                    issue_pace.say(
+                        @s,
+                        text: "day differs " + entry.r.path + " " + entry.github + ": " + day + "; reported, never changed"
+                    )
+
+                if o.days.len() > 0
+                    tally.days @ tally.days + 1
+
+                if o.members.len() > 0 || o.comment
+                    code = fixed(@s, entry: entry, number: number, o: o, numbers: numbers, tally: @tally)
+
+                    if code != 0
+                        return code
+            .err _ =>
+                issue_pace.warn(
+                    @s,
+                    text: entry.r.path + " holds " + entry.github + ", which GitHub's list of the repository's issues does not hold"
+                )
+                tally.still @ tally.still + 1
+
+    issue_pace.say(
+        @s,
+        text: "repair: " + tally.compared.to_str() + " issues compared, " + tally.repaired.to_str() + " repaired, " + tally.still.to_str() + " still differing or unread, " + tally.days.to_str() + " holding a day otherwise than their card, reported and never changed"
+    )
+
+    if tally.still > 0
+        return 1
+    return 0
+
+# One issue's repair: the `PATCH`, the closing comment, the read-back; 0, or
+# the exit where GitHub refused a write.
+function fixed(@s: issue_pace.Session, entry: issue_match.Entry, number: i64, o: Owed, numbers: {str: i64}, @tally: Tally) -> i64
+    path = issue_github.REPO + "/issues/" + number.to_str()
+
+    if o.members.len() > 0
+        patch = issue_pace.exchange(
+            @s,
+            request: issue_wire.Request(method: "PATCH", path: path, accept: "", body: "{" + o.members.join(",") + "}")
+        )
+
+        if patch.is_err() || patch.must().status != 200
+            issue_pace.warn(
+                @s,
+                text: "the issue " + entry.github + " of " + entry.r.path + " was not repaired: " + answered(patch)
+            )
+            return 2
+
+    if o.comment
+        body = "{\"body\":" + issue_json.quoted(entry.r.comment) + "}"
+        posted = issue_pace.exchange(
+            @s,
+            request: issue_wire.Request(method: "POST", path: path + "/comments", accept: "", body: body)
+        )
+
+        if posted.is_err() || posted.must().status != 201
+            issue_pace.warn(
+                @s,
+                text: "the closing comment of " + entry.github + " (" + entry.r.path + ") was not posted: " + answered(posted)
+            )
+            return 2
+
+    dated = if o.closing || o.comment
+        "; closed or commented today, the REST route setting no day of the card's"
+    else
+        ""
+    issue_pace.say(@s, text: "repaired " + entry.r.path + " " + entry.github + ": " + o.names.join(", ") + dated)
+
+    match issue_github.issue(@s, number: number)
+        .ok again =>
+            left = owed(entry: entry, held: again, numbers: numbers)
+
+            if left.members.len() > 0 || left.comment
+                issue_pace.warn(
+                    @s,
+                    text: "still differs " + entry.r.path + " " + entry.github + ": " + left.names.join(", ")
+                )
+                tally.still @ tally.still + 1
+            else
+                tally.repaired @ tally.repaired + 1
+        .err e =>
+            issue_pace.warn(
+                @s,
+                text: "the issue " + entry.github + " of " + entry.r.path + " was repaired and could not be read back: " + e.msg
+            )
+            tally.still @ tally.still + 1
+
+    return 0
+
+function answered(reply: issue_wire.Reply?) -> str
+    return match reply
+        .ok r  => "GitHub answered " + issue_github.said(r)
+        .err e => e.msg
+
+constant ADDRESS: str
+    "https://github.com/heroes-lang/heroes/issues/7"
+
+function gh_of(held: [issue_github.Held]) -> issue_match.Github
+    return issue_match.Github(
+        milestones: [issue_github.Milestone(title: "M-issue-files", number: 1, open: true)],
+        labels: ["kind:task"],
+        limit: issue_github.Limit(limit: "", expires: "", origin: ""),
+        held: held,
+        listing: ""
+    )
+
+function open_entry() -> issue_match.Entry
+    return issue_scripts.entry(
+        issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: ADDRESS)
+    )
+
+function closed_entry() -> issue_match.Entry
+    return issue_scripts.entry(issue_scripts.done_card(filed: "2026-10-01", name: "a", github: ADDRESS))
+
+test "a body GitHub holds otherwise is rewritten by one PATCH of that field alone and reads back equal"
+    e = open_entry()
+    held: issue_github.Held @= issue_scripts.held_issue(e: e, number: 7)
+    held.body @ strings.split_text(text: held.body, separator: "a is owed").join("a is owed \\^A")
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_scripts.answer(status: 200, body: "{}"), issue_scripts.back(e: e, number: 7)]
+    )
+    assert repaired(@s, entries: [e], gh: gh_of([held])) == 0
+    asked = s.world.requests
+    assert asked.len() == 2
+    assert asked[0].method == "PATCH"
+    assert asked[0].path == "/repos/heroes-lang/heroes/issues/7"
+    assert asked[0].body == "{\"body\":" + issue_json.quoted(e.r.body) + "}"
+    assert asked[1].method == "GET"
+    assert asked[1].path == "/repos/heroes-lang/heroes/issues/7"
+    assert s.out == ["repaired " + e.r.path + " " + ADDRESS + ": body", "repair: 1 issues compared, 1 repaired, 0 still differing or unread, 0 holding a day otherwise than their card, reported and never changed"]
+    assert s.err.len() == 0
+
+test "an issue GitHub still holds otherwise after its repair is told on stderr and counted, and the run answers 1"
+    e = open_entry()
+    held: issue_github.Held @= issue_scripts.held_issue(e: e, number: 7)
+    held.title @ "another title"
+    again = issue_scripts.answer(
+        status: 200,
+        body: strings.split_text(text: issue_scripts.held(e: e, number: 7), separator: "\"title\":\"a is owed\"").join("\"title\":\"another title\"")
+    )
+    s: issue_pace.Session @= issue_pace.scripted([issue_scripts.answer(status: 200, body: "{}"), again])
+    assert repaired(@s, entries: [e], gh: gh_of([held])) == 1
+    assert s.world.requests[0].body == "{\"title\":\"a is owed\"}"
+    assert s.err == ["still differs " + e.r.path + " " + ADDRESS + ": title"]
+    assert strings.contains(text: s.out[1], needle: "0 repaired, 1 still differing or unread")
+    unread: issue_pace.Session @= issue_pace.scripted(
+        [issue_scripts.answer(status: 200, body: "{}"), issue_scripts.answer(status: 404, body: "{\"message\":\"Not Found\"}")]
+    )
+    assert repaired(@unread, entries: [e], gh: gh_of([held])) == 1
+    assert strings.contains(text: unread.err[0], needle: "was repaired and could not be read back")
+
+test "a card closed after its import closes its issue, completed, and posts its comment, both dated today, which is said"
+    e = closed_entry()
+    assert e.r.closed
+    assert e.r.comment == "Settled by " + issue_scripts.SETTLED
+    held: issue_github.Held @= issue_scripts.held_issue(e: e, number: 7)
+    held.state @ "open"
+    held.closed @ ""
+    closed_today = strings.split_text(text: strings.split_text(text: issue_scripts.held(e: e, number: 7), separator: "\"comments\":0}").join("\"comments\":1}"), separator: issue_render.instant(e.r.closed_day) + "\",\"comments\"").join(
+        "2026-10-12T13:00:00Z\",\"comments\""
+    )
+    replies = [
+        issue_scripts.answer(status: 200, body: "{}")
+        issue_scripts.answer(status: 201, body: "{}")
+        issue_scripts.answer(status: 200, body: closed_today)
+    ]
+    s: issue_pace.Session @= issue_pace.scripted(replies)
+    assert repaired(@s, entries: [e], gh: gh_of([held])) == 0
+    asked = s.world.requests
+    assert asked[0].method == "PATCH"
+    assert asked[0].body == "{\"state\":\"closed\",\"state_reason\":\"completed\"}"
+    assert asked[1].method == "POST"
+    assert asked[1].path == "/repos/heroes-lang/heroes/issues/7/comments"
+    assert asked[1].body == "{\"body\":\"Settled by " + issue_scripts.SETTLED + "\"}"
+    assert asked[2].method == "GET"
+    assert s.world.waits == [1]
+    assert s.out[0] == "repaired " + e.r.path + " " + ADDRESS + ": state closed, closing comment; closed or commented today, the REST route setting no day of the card's"
+    assert s.err.len() == 0
+
+test "a card opened again opens its issue, and an issue that matches its card asks nothing"
+    e = open_entry()
+    held: issue_github.Held @= issue_scripts.held_issue(e: e, number: 7)
+    held.state @ "closed"
+    held.closed @ "2026-10-02T12:00:00Z"
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_scripts.answer(status: 200, body: "{}"), issue_scripts.back(e: e, number: 7)]
+    )
+    assert repaired(@s, entries: [e], gh: gh_of([held])) == 0
+    assert s.world.requests[0].body == "{\"state\":\"open\"}"
+    same: issue_pace.Session @= issue_pace.scripted([])
+    assert repaired(@same, entries: [e], gh: gh_of([issue_scripts.held_issue(e: e, number: 7)])) == 0
+    assert same.world.requests.len() == 0
+    assert same.out == ["repair: 1 issues compared, 0 repaired, 0 still differing or unread, 0 holding a day otherwise than their card, reported and never changed"]
+
+test "a day GitHub holds otherwise is reported and never changed"
+    e = closed_entry()
+    held: issue_github.Held @= issue_scripts.held_issue(e: e, number: 7)
+    held.created @ "2026-10-12T13:00:00Z"
+    held.comments @ 1
+    s: issue_pace.Session @= issue_pace.scripted([])
+    assert repaired(@s, entries: [e], gh: gh_of([held])) == 0
+    assert s.world.requests.len() == 0
+    assert s.out[0] == "day differs " + e.r.path + " " + ADDRESS + ": created_at 2026-10-12T13:00:00Z where the card says 2026-10-01T12:00:00Z; reported, never changed"
+    assert strings.contains(text: s.out[1], needle: "1 holding a day otherwise than their card")
+
+test "labels, milestone and title that differ go in one PATCH, and a milestone GitHub lacks refuses the run before any write"
+    e = open_entry()
+    held: issue_github.Held @= issue_scripts.held_issue(e: e, number: 7)
+    held.title @ "t"
+    held.labels @ ["kind:defect"]
+    held.milestone @ ""
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_scripts.answer(status: 200, body: "{}"), issue_scripts.back(e: e, number: 7)]
+    )
+    assert repaired(@s, entries: [e], gh: gh_of([held])) == 0
+    assert s.world.requests[0].body == "{\"title\":\"a is owed\",\"labels\":[\"kind:task\"],\"milestone\":1}"
+    assert s.out[0] == "repaired " + e.r.path + " " + ADDRESS + ": title, labels, milestone"
+    lacking_gh = issue_match.Github(
+        milestones: [],
+        labels: ["kind:task"],
+        limit: issue_github.Limit(limit: "", expires: "", origin: ""),
+        held: [held],
+        listing: ""
+    )
+    t: issue_pace.Session @= issue_pace.scripted([])
+    assert repaired(@t, entries: [e], gh: lacking_gh) == 1
+    assert t.world.requests.len() == 0
+    assert t.err == ["GitHub has no milestone `M-issue-files`, which the repair of " + e.r.path + " writes"]
+
+test "a PATCH GitHub refuses stops the run, and an address the list does not hold is told and counted"
+    e = open_entry()
+    held: issue_github.Held @= issue_scripts.held_issue(e: e, number: 7)
+    held.body @ "x"
+    s: issue_pace.Session @= issue_pace.scripted(
+        [issue_scripts.answer(status: 422, body: "{\"message\":\"Validation Failed\"}")]
+    )
+    assert repaired(@s, entries: [e], gh: gh_of([held])) == 2
+    assert s.err == ["the issue " + ADDRESS + " of " + e.r.path + " was not repaired: GitHub answered 422: Validation Failed"]
+    t: issue_pace.Session @= issue_pace.scripted([])
+    assert repaired(@t, entries: [e], gh: gh_of([])) == 1
+    assert strings.contains(text: t.err[0], needle: "which GitHub's list of the repository's issues does not hold")
+
+test "a card is rendered at the pin its issue's Record line names, else at the run's"
+    e = open_entry()
+    held = issue_scripts.held_issue(e: e, number: 7)
+    assert pin_of(held: ok(held), fallback: "f") == issue_scripts.PIN
+    bare: issue_github.Held @= held
+    bare.body @ "no record"
+    assert pin_of(held: ok(bare), fallback: "f") == "f"
+    gone: issue_github.Held? = fail(code: "missing", msg: "none")
+    assert pin_of(held: gone, fallback: "f") == "f"
+    assert number_of(ADDRESS) == 7
+    assert number_of("none") == 0
+    card = issue_scripts.card(filed: "2026-10-01", name: "a", milestone: "M-issue-files", github: ADDRESS)
+    other = issue_scripts.card(
+        filed: "2026-10-02",
+        name: "b",
+        milestone: "M-issue-files",
+        github: "https://github.com/heroes-lang/heroes/issues/9"
+    )
+    pins = pins_of(chosen: [card, other], held: [held], fallback: "f")
+    assert pins[card.path].must() == issue_scripts.PIN
+    assert pins[other.path].must() == "f"

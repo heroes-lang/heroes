@@ -373,7 +373,15 @@ bytes:
   the moment it exists and the second notifies an account; a link to another
   project's issue or pull request is written with `redirect.github.com`, which
   leaves no backlink (GitHub's documentation, and measured on the REST route,
-  041). **The oracle** is `POST /markdown`, mode `gfm`, context
+  041); and **a literal backslash and `u` followed by the four digits of a C0
+  or C1 control character** (`0000` to `001f`, `0080` to `009f`) is written
+  with its backslash as `&#92;`, a code span holding one becoming an HTML
+  `<code>` element whose text is escaped as HTML, since GitHub stores such a
+  sequence in caret notation on the import route and on the REST route alike
+  (measured 2026-10-12: issues 1354 and 1643 held `\^A` and `\^[` for
+  `\u0001` and `\u009b` after their import and again after a PATCH, while
+  `\u007f` and `\u200b` stood as written; defect 675), and the oracle shows
+  `<code>&#92;u0001</code>` displayed as the code span is. **The oracle** is `POST /markdown`, mode `gfm`, context
   `heroes-lang/heroes`, which writes nothing: no rendered body may hold an
   `issue-link` or a `user-mention` anchor;
 - a closed issue whose card names a commit takes one comment, `Fixed by
@@ -395,8 +403,20 @@ bytes:
   issues, a list and not a search, matched on the `Record:` permalink, an import
   that answered `pending` being read first (R5);
 - `github:` in the file is the truth of the mapping, and **an issue that
-  differs from its file is reported by `plan` and never edited** (R10); how one
-  is corrected is a question of its own;
+  differs from its file is reported by `plan` and made to match it by `repair
+  --yes`**, never the reverse (R10, amended by the author's answer of
+  2026-10-12, `issues/2026-10/12/2026-10-12-1320-the-author-answers-four-the-repair-word-the-limit-the-two.md`):
+  its title, body, labels and milestone rewritten where they differ, the body
+  beyond its `Record:` pin, which stays the one it was imported with; its state
+  made its card's, a card closed after its import closing the issue with its
+  closing comment, dated the day `repair` runs, since the REST route sets no
+  day; through the REST route, one request per change, paced as `push`; and
+  every repaired issue read back, one GitHub still holds otherwise told and
+  never asked again in silence. A day GitHub holds (`created_at`, `closed_at`)
+  is reported and never changed, the REST route having no field for it. The
+  first issues it met: two bodies the import stored otherwise than they were
+  sent, `\^A` and `\^[` for a card's literal `\u0001` and `\u009b`
+  (issues 1354 and 1643, defect 675);
 - **a question of comprehension is not transcribed**, and since the author's
   *1a 2a* of 2026-10-05 it is not an issue at all (the *5a* of the same day had
   kept it out of GitHub: none is ever ticked, so on a public tracker each would
