@@ -1,0 +1,22 @@
+> command script import editors/lldb/heroes_lldb.py
+> breakpoint set --file formatter-fallible.hero --line 41
+!resolved: formatter-fallible.hero:41
+> run
+!stop: breakpoint at formatter-fallible.hero:41
+> frame variable h0_good h1_bad h2_done h3_refused h15_e
+!shows: (h_0opt_e201354) h0_good = ok(4)
+!shows: (h_0opt_e201354) h1_bad = fail(code: "odd", msg: "not even")
+!shows: (h_0opt_a8ea2) h2_done = ok()
+!shows: (h_0opt_a8ea2) h3_refused = fail(code: "positive", msg: "more than zero")
+!shows: (HeroFailure) h15_e = (code: "odd", msg: "not even")
+> frame variable h0_good.ok h1_bad.code h1_bad.msg
+!shows: (int64_t) h0_good.ok = 4
+!shows: (HeroStr) h1_bad.code = "odd"
+!shows: (HeroStr) h1_bad.msg = "not even"
+> frame variable h4_bytes h5_nul h6_marks
+!shows: (HeroArrayHeader *) h4_bytes = [97, 0, 98]
+!shows: (h_0opt_f87774a) h5_nul = ok("a\u{0}b")
+!shows: (HeroStr) h6_marks = "tab\there \"q\" back\\ nl\n\u{1b}"
+> frame variable h7_long
+!shows: (HeroStr) h7_long = "abababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababab" ... 16 more bytes
+> continue

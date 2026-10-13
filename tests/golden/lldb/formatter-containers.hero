@@ -1,0 +1,40 @@
+# The formatter `editors/lldb/heroes_lldb.py` shows an array as
+# `[e0, e1, ...]` and a map as `{k: v, ...}`, each element typed by the
+# array's own descriptor (`h_m_Point_desc` names `h_m_Point`), and the row
+# without the C pointer; the children under `frame variable -P 1` are `[0]`,
+# `[1]` and a map's keys, `["ada"]` (panel 213). A summary writes sixteen
+# elements, then `... N more`; the children are all there. A `u8` is a number,
+# a function value its name, and a constant's array its static block, whose
+# count is -1. A map shows in bucket order, the order `keys(m)` gives.
+
+constant PRIMES: [i64]
+    [2, 3, 5, 7]
+
+record Point
+    x: i64
+    y: i64
+
+variant Token
+    num
+        v: i64
+    plus
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    names = ["ada", "grace"]
+    empty: [i64] = []
+    grid = [[1, 2], [3]]
+    points = [Point(x: 1, y: 2), Point(x: 5, y: 6)]
+    toks: [Token] = [.num(v: 1), .plus]
+    ages = {"ada": 36, "grace": 85}
+    groups = {"a": ["x", "y"], "b": []}
+    flags = [true, false]
+    xs = [1.5, 2.25]
+    bytes: [u8] = [104, 105]
+    fs = [twice]
+    primes = PRIMES
+    big = range(from: 0, to: 40)
+    counted = names.len() + empty.len() + grid.len() + points.len() + toks.len() + ages.len() + groups.len()
+    print(counted + flags.len() + xs.len() + bytes.len() + fs.len() + primes.len() + big.len())

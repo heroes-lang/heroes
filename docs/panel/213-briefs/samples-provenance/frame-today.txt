@@ -1,0 +1,53 @@
+stopped at program.hero:12, in h_program_best, called from h_program_main
+
+(HeroArrayHeader *) h0_players = 0x00000001005c9860
+(int64_t) h1_top = 9
+(HeroStr) h2_winner = (ptr = "alan", len = 4)
+(HeroArrayHeader *) h3_xs0 = 0x00000001005c9860
+(int64_t) h4_i0 = 3
+(h_program_Player) h5_p = {
+  f_name = (ptr = "alan", len = 4)
+  f_score = 4
+}
+(int64_t) t1 = 0
+(HeroStr) t2 = (ptr = "", len = 0)
+(HeroArrayHeader *) t3 = 0x00000001005c9860
+(int64_t) t4 = 0
+(int64_t) t5 = 3
+(HeroArrayHeader *) t6 = 0x00000001005c9860
+(int64_t) t7 = 3
+(bool) t8 = false
+(HeroArrayHeader *) t9 = 0x00000001005c9860
+(int64_t) t10 = 2
+(h_program_Player) t11 = {
+  f_name = (ptr = "alan", len = 4)
+  f_score = 4
+}
+(h_program_Player) t12 = {
+  f_name = (ptr = "alan", len = 4)
+  f_score = 4
+}
+(int64_t) t13 = 4
+(int64_t) t14 = 9
+(bool) t15 = false
+(h_program_Player) t16 = {
+  f_name = (ptr = "grace", len = 5)
+  f_score = 9
+}
+(int64_t) t17 = 9
+(h_program_Player) t18 = {
+  f_name = (ptr = "alan", len = 4)
+  f_score = 4
+}
+(HeroStr) t19 = (ptr = "alan", len = 4)
+(int64_t) t20 = 2
+(int64_t) t21 = 1
+(int64_t) t22 = 3
+(HeroStr) t23 = (ptr = "", len = 1)
+(HeroStr) t24 = (ptr = 0x0000000000000000, len = 0)
+(HeroArrayHeader *) t25 = NULL
+(h_program_Player) t26 = {
+  f_name = (ptr = "grace", len = 5)
+  f_score = 9
+}
+(HeroStr) t27 = (ptr = "grace", len = 5)

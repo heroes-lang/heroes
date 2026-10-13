@@ -1,0 +1,62 @@
+(lldb) target create "build/s/shapes"
+Current executable set to '<copy>/build/s/shapes' (arm64).
+(lldb) command source -s 0 'build/s/cmds5.txt'
+Executing commands in '<copy>/build/s/cmds5.txt'.
+(lldb) command script import build/s/heroes_lldb.py
+(lldb) breakpoint set --file shapes.hero --line 30
+Breakpoint 1: where = shapes`h_shapes_main + 1488 at shapes.hero:30:11, address = 0x000000010001641c
+(lldb) run
+Process 8146 launched: '<copy>/build/s/shapes' (arm64)
+Process 8146 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x000000010001641c shapes`h_shapes_main at shapes.hero:30:11
+   27  	    good = half(8)
+   28  	    bad = half(7)
+   29  	    room = Room(name: "lab", corner: Point(x: 9, y: 10))
+-> 30  	    print(count)
+    	          ^
+   31  	    print(name)
+   32  	    print(p.x + names.len() + points.len() + ages.len())
+   33  	    print(good.default(0) + bad.default(0))
+Target 0: (shapes) stopped.
+(lldb) frame variable h0_count h1_name h2_p h3_t h4_names h5_points h6_ages h7_good h8_bad h9_room
+(int64_t) h0_count = 7
+(HeroStr) h1_name = "ada"
+(h_shapes_Point) h2_p = Point(x: 3, y: 4) {
+  x = 3
+  y = 4
+}
+(h_shapes_Token) h3_t = .num {
+  v = 42
+}
+(HeroArrayHeader *) h4_names = 0x00000001005f98a0 ["ada", "grace"]
+(HeroArrayHeader *) h5_points = 0x00000001005f98e0 [Point(x: 1, y: 2), Point(x: 5, y: 6)]
+(HeroMapHeader *) h6_ages = 0x00000001005f9920 {"ada": 36, "grace": 85}
+(h_0opt_e201354) h7_good = ok(4) {
+  ok = 4
+}
+(h_0opt_e201354) h8_bad = fail(code: "odd", msg: "not even") {
+  err = (code = "odd", msg = "not even")
+}
+(h_shapes_Room) h9_room = Room(name: "lab", corner: Point(x: 9, y: 10)) {
+  name = "lab"
+  corner = Point(x: 9, y: 10) {
+    x = 9
+    y = 10
+  }
+}
+(lldb) frame variable -P 1 h5_points h6_ages
+(HeroArrayHeader *) h5_points = 0x00000001005f98e0 [Point(x: 1, y: 2), Point(x: 5, y: 6)] {
+  [0] = Point(x: 1, y: 2) {
+    x = 1
+    y = 2
+  }
+  [1] = Point(x: 5, y: 6) {
+    x = 5
+    y = 6
+  }
+}
+(HeroMapHeader *) h6_ages = 0x00000001005f9920 {"ada": 36, "grace": 85} {
+  ["ada"] = 36
+  ["grace"] = 85
+}

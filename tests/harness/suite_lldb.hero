@@ -63,16 +63,21 @@ constant LLDB: str
     "lldb"
 
 # Three cases on 2026-10-12, the day the suite landed: the hit, the stepping
-# and the locals; five on 2026-10-13, with the bindings alone and a lookup's
-# block (panel 213's R1).
+# and the locals; ten on 2026-10-13: the bindings alone and a lookup's block
+# (panel 213's R1), and the five `formatter-` cases that came with
+# `editors/lldb/heroes_lldb.py` (R2).
 constant LEAST: i64
-    5
+    10
 
 # What the skip says on Windows, where the machine can be asked and answers
 # nothing: the reason recorded on the CI's leg, and where the mapping is judged
 # instead.
 constant WINDOWS_LLDB: str
     "on Windows LLVM's `lldb.exe` exits 0xC0000135 (STATUS_DLL_NOT_FOUND, the Python DLL it links) before running a command, measured on the CI's leg on 2026-08-16 and recorded in `.github/workflows/ci.yml`; the `#line` mapping is judged there by `lines`, which reads the emitted C and needs no debugger"
+
+# What the first line of a Python traceback says, on any lldb's Python.
+constant TRACEBACK: str
+    "Traceback (most recent call last)"
 
 # `only` narrows the suite to the cases whose name holds it, its floor then
 # left to the whole suite.
@@ -163,7 +168,15 @@ function one_case(@r: report.Report, scratch: str, compiler: str, binaries: str,
     if said.is_err()
         report.keep_failure(@r, label: label, detail: "  lldb over " + binary + ": " + shell.refusal(said))
         return
-    wrong = lldb_session.unmet(steps: steps.must(), out: said.must().out, err: said.must().err, code: said.must().code)
+    wrong: [str] @= lldb_session.unmet(
+        steps: steps.must(),
+        out: said.must().out,
+        err: said.must().err,
+        code: said.must().code
+    )
+
+    for raised in tracebacks(out: said.must().out, err: said.must().err)
+        wrong @ wrong.push(raised)
 
     if wrong.len() == 0
         report.keep_pass(@r)
@@ -185,6 +198,36 @@ function words(steps: [lldb_session.Step], binary: str) -> [str]
         out @ out.push(step.command)
 
     return out.push(binary)
+
+# Every Python traceback lldb printed, on either stream, each told with its
+# lines: a formatter or a `script` command of the case raised. lldb writes one
+# on stderr and goes on at exit 0, so no claim and no exit code sees it
+# (measured 2026-10-13 on lldb-2103 with a summary that raises), and the
+# formatter the cases import promises that nothing reaches the console
+# (`editors/lldb/heroes_lldb.py`, panel 213). So a traceback fails the case
+# whatever its session claims, as silence and a pending breakpoint do.
+function tracebacks(out: str, err: str) -> [str]
+    rows = strings.lines(err + "\n" + out)
+    told: [str] @= []
+    k: i64 @= 0
+
+    while k < rows.len()
+        if strings.contains(text: rows[k], needle: TRACEBACK)
+            end: i64 @= k + 1
+
+            while end < rows.len() && strings.starts_with(text: rows[end], prefix: " ")
+                end @ end + 1
+
+            if end < rows.len()
+                end @ end + 1
+            told @ told.push(
+                "lldb printed a Python traceback, raised by a formatter or a `script` of the case, and went on at exit 0:\n      " + rows.slice(from: k, to: end).join("\n      ")
+            )
+            k @ end
+        else
+            k @ k + 1
+
+    return told
 
 function unread(got: [lldb_session.Step]?) -> str
     return match got
@@ -212,6 +255,15 @@ test "a machine that cannot run lldb is told why, and Windows by the code its ll
     here: shell.Run? = ok(shell.Run(code: 0, out: "lldb-2103.0.34.103\n", err: "", started: true, why: 0))
     assert absence(said: here, windows: false) == ""
     assert absence(said: here, windows: true) == ""
+
+test "a Python traceback on either stream is told with its lines, and a transcript with none is not"
+    raised = "Traceback (most recent call last):\n  File \"heroes_lldb.py\", line 3, in summary\n    raise ValueError(\"boom\")\nValueError: boom\n(HeroStr) h1_name = \"ada\"\n"
+    got = tracebacks(out: "", err: raised)
+    assert got.len() == 1
+    assert strings.contains(text: got[0], needle: "      ValueError: boom")
+    assert !strings.contains(text: got[0], needle: "h1_name")
+    assert tracebacks(out: raised + raised, err: "").len() == 2
+    assert tracebacks(out: "(lldb) frame variable\n(HeroStr) h1_name = \"ada\"\n", err: "").len() == 0
 
 # Every session of the tree reads, and claims only lines its program holds:
 # asked here without lldb, so a slip in a case is found on any machine, the

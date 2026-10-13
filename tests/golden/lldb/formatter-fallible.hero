@@ -1,0 +1,41 @@
+# The formatter `editors/lldb/heroes_lldb.py` shows a `T?` as its live arm
+# alone, `ok(4)` or `fail(code: "odd", msg: "not even")`, where lldb shows
+# both arms and the dead one's bytes; a `()?` as `ok()`; and a failure bound
+# by `.err e` as its two fields. A `str` is a string literal read by its
+# length, never to its NUL, with the spec's escapes: a NUL inside it is
+# `\u{0}`, and a long one stops at 1,024 bytes with what it leaves out
+# (panel 213; spec § 2, § 6).
+
+function half(n: i64) -> i64?
+    if n % 2 != 0
+        return fail(code: "odd", msg: "not even")
+    return ok(n / 2)
+
+function check(n: i64) -> ()?
+    if n > 0
+        return fail(code: "positive", msg: "more than zero")
+    return ok()
+
+function main()
+    good = half(8)
+    bad = half(7)
+    done = check(0)
+    refused = check(1)
+    bytes: [u8] = [97, 0, 98]
+    nul = bytes.validated_bytes()
+    marks = "tab\there \"q\" back\\ nl\n\u{1b}"
+    long = repeat("ab", 520)
+    print(good.default(0) + nul.must().len() + marks.len() + long.len())
+
+    match done
+        .ok _  => print(0)
+        .err _ => print(1)
+
+    match refused
+        .ok _  => print(0)
+        .err _ => print(1)
+
+    match bad
+        .ok v => print(v)
+        .err e =>
+            print(e.code)

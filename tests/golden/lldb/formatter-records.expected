@@ -1,0 +1,17 @@
+> command script import editors/lldb/heroes_lldb.py
+> breakpoint set --file formatter-records.hero --line 50
+!resolved: formatter-records.hero:50
+> run
+!stop: breakpoint at formatter-records.hero:50
+> frame variable h0_p h1_room h2_w h3_pl h4_light h8_wd
+!shows: (h_formatterrecords_Point) h0_p = Point(x: 3, y: 4)
+!shows: (h_formatterrecords_Room) h1_room = Room(name: "lab", corner: Point(x: 9, y: 10))
+!shows: (h_formatterrecords_Token) h2_w = .word(text: "hi", at: Point(x: 1, y: 1))
+!shows: (h_formatterrecords_Token) h3_pl = .plus
+!shows: (h_formatterrecords_Light) h4_light = .green
+!shows: (h_formatterrecords_Token_c_word) h8_wd = .word(text: "hi", at: Point(x: 1, y: 1))
+> frame variable h1_room.corner.x h8_wd.text h2_w.at
+!shows: (int64_t) h1_room.corner.x = 9
+!shows: (HeroStr) h8_wd.text = "hi"
+!shows: (h_formatterrecords_Point) h2_w.at = Point(x: 1, y: 1)
+> continue

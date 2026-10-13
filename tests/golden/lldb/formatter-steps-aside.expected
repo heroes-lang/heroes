@@ -1,0 +1,51 @@
+> command script import editors/lldb/heroes_lldb.py
+> breakpoint set --file formatter-steps-aside.hero --line 37
+!resolved: formatter-steps-aside.hero:37
+> run
+!stop: breakpoint at formatter-steps-aside.hero:37
+> frame variable h0_names h1_ages h2_name h3_good h4_t
+!shows: (HeroArrayHeader *) h0_names = ["ada", "grace"]
+!shows: (HeroMapHeader *) h1_ages = {"ada": 36, "grace": 85}
+!shows: (HeroStr) h2_name = "ada"
+!shows: (h_0opt_e201354) h3_good = ok(4)
+!shows: (h_formatterstepsaside_Token) h4_t = .num(v: 42)
+> frame variable h5_holder.vfs.f_bsize h5_holder.label
+!shows: (unsigned long) h5_holder.vfs.f_bsize = 7
+!shows: (HeroStr) h5_holder.label = "disk"
+> expression -- h0_names->len = 3
+> frame variable -P 1 h0_names
+!shows: len = 3
+!shows: cap = 2
+> expression -- h0_names->len = 2
+> expression -- h0_names->elem = (const HeroDesc *)((char *)h0_names->elem + 8)
+> frame variable -P 1 h0_names
+!shows: len = 2
+!shows: cap = 2
+> expression -- h0_names->elem = (const HeroDesc *)((char *)h0_names->elem - 8)
+> expression -- h1_ages->len = 3
+> frame variable -P 1 h1_ages
+!shows: len = 3
+!shows: cap = 8
+> expression -- h1_ages->len = 2
+> expression -- h2_name.len = 99999999999
+> frame variable h2_name
+!shows: len = 99999999999
+> expression -- h2_name.len = 2
+> frame variable h2_name
+!shows: len = 2
+> expression -- h2_name.len = 3
+> expression -- h3_good.tag = 7
+> frame variable h3_good
+!shows: tag = 7
+> expression -- h3_good.tag = 0
+> expression -- h4_t.tag = (h_formatterstepsaside_Token_tag)9
+> frame variable h4_t
+!shows: tag = h_formatterstepsaside_Token_tag_plus | 0x8
+> expression -- h4_t.tag = (h_formatterstepsaside_Token_tag)0
+> frame variable h0_names h1_ages h2_name h3_good h4_t
+!shows: (HeroArrayHeader *) h0_names = ["ada", "grace"]
+!shows: (HeroMapHeader *) h1_ages = {"ada": 36, "grace": 85}
+!shows: (HeroStr) h2_name = "ada"
+!shows: (h_0opt_e201354) h3_good = ok(4)
+!shows: (h_formatterstepsaside_Token) h4_t = .num(v: 42)
+> continue

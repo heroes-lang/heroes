@@ -11,7 +11,9 @@
 //   project's debug adapter, through its own extension. The emitted C carries
 //   `#line` back to the `.hero` file, so the breakpoints, the stack and the
 //   stepping are Heroes source. This project writes no debug adapter
-//   (docs/roadmap/milestones/M-vscode-extension.md, the Debugging bullet).
+//   (docs/roadmap/milestones/M-vscode-extension.md, the Debugging bullet);
+//   it hands lldb one fixed formatter, `lldb/heroes_lldb.py` beside this
+//   script, which shows the values in Heroes' own syntax (panel 213).
 // - **the `heroes` task type**, which runs the compiler on a file with the
 //   problem matchers attached, so its diagnostics land in the Problems view.
 //
@@ -160,6 +162,7 @@ class HeroesLaunch {
         if (launch.enableAutoVariableSummaries === undefined && !userChose("enableAutoVariableSummaries", folder)) {
             launch.enableAutoVariableSummaries = true;
         }
+        launch.initCommands = withFormatter(launch.initCommands);
         const commands = await vscode.commands.getCommands(true);
 
         for (const command of LLDB_DAP_RESOLVERS) {
@@ -302,6 +305,29 @@ function isExecutable(candidate) {
     } catch (_) {
         return false;
     }
+}
+
+// The formatter that shows Heroes values in the Variables view, `Point(x: 3,
+// y: 4)`, `["ada", "grace"]`, `ok(4)`, where lldb alone shows the emitted C's
+// structs and an array's address (editors/lldb/heroes_lldb.py, panel 213). The
+// packaging copies it beside this script, so the import comes first and the
+// user's own `initCommands` run after it, unchanged. Where the file is not
+// there, a package made before it, the launch goes on as it did and the output
+// channel says why the values are C; where `initCommands` is not a list, it is
+// left for lldb-dap to refuse in its own words.
+function withFormatter(initCommands) {
+    const formatter = path.join(__dirname, "lldb", "heroes_lldb.py");
+
+    if (initCommands !== undefined && !Array.isArray(initCommands)) {
+        return initCommands;
+    }
+
+    if (!isFile(formatter)) {
+        output.appendLine("(no " + formatter + " in this package, so lldb shows the values as C: package the extension again, editors/README.md § Install)");
+        return initCommands;
+    }
+    const quoted = '"' + formatter.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+    return ["command script import " + quoted].concat(initCommands || []);
 }
 
 // Whether the user set one of lldb-dap's own settings anywhere.
