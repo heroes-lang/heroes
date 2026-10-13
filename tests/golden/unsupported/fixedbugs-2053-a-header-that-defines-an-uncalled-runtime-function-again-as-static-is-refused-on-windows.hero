@@ -1,0 +1,18 @@
+# fixedbugs, defect 2053, 2026-10-13, the function never called, its words
+# the Windows target's: judged there alone
+# (`tests/harness/platform_skips.hero`), and its mark on every platform.
+#
+# SYMPTOM: on the Windows box (clang 23.1.1, MSVC target) a header of the
+# program's own defining `hero_str_len` again as `static` built and ran at
+# exit 0 where the program never calls it, a unit giving one name both
+# linkages, which C11 6.2.2p7 leaves undefined.
+#
+# FIX: `-Wmicrosoft-redeclare-static` is an error in the header's region
+# (`emit/header_region.hero`'s `EXTENDED`), so Windows refuses the header at
+# its line 5, exit 1, its note told as the Heroes runtime's own name.
+
+extern "fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

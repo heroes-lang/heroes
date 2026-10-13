@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -99,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4a02223e, "opened");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 103 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 105 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -146,7 +148,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 152 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b);
@@ -225,7 +227,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
     return;
-#line 229 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
+#line 231 "fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_Stream_eq(st * const *a, st * const *b) {
     return hero_handle_eq(*a, *b);
