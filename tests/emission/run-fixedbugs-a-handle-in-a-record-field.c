@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -55,7 +60,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 _Static_assert(_Generic(&((Slot *)0)->handle, Thing * *: 1, default: 0) && sizeof(((Slot *)0)->handle) == sizeof(Thing *), "heroes-ffi-field Slot handle");
 _Static_assert(_Generic(&((Slot *)0)->ratio, double *: 1, default: 0) && sizeof(((Slot *)0)->ratio) == sizeof(double), "heroes-ffi-field Slot ratio");
 _Static_assert(__builtin_classify_type(((Slot *)0)->count) == 1 && sizeof(((Slot *)0)->count) == sizeof(int64_t) && (_Generic(((Slot *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot count");
-#line 59 "fixedbugsahandleinarecordfield.c"
+#line 64 "fixedbugsahandleinarecordfield.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -139,7 +144,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 143 "fixedbugsahandleinarecordfield.c"
+#line 148 "fixedbugsahandleinarecordfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b);
@@ -198,7 +203,7 @@ bb0:
     hero_print_end();
 #line 57 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
     return;
-#line 202 "fixedbugsahandleinarecordfield.c"
+#line 207 "fixedbugsahandleinarecordfield.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsahandleinarecordfield_Thing_eq(Thing * const *a, Thing * const *b) {
     return hero_handle_eq(*a, *b);

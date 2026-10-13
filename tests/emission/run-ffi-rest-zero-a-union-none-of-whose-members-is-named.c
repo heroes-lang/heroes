@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -58,7 +63,7 @@ _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x
 #line 19 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
 _Static_assert(__builtin_classify_type(((UD *)0)->c) == 1 && sizeof(((UD *)0)->c) == sizeof(int8_t) && (_Generic(((UD *)0)->c, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field UD c");
 _Static_assert(_Generic(&((UD *)0)->d, double *: 1, default: 0) && sizeof(((UD *)0)->d) == sizeof(double), "heroes-ffi-field UD d");
-#line 62 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 67 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -146,7 +151,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 155 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffirestzeroaunionnoneofwhosemembersisnamed_SA_eq(const SA *a, const SA *b);
@@ -182,7 +187,7 @@ bb0:
     t2.kind = t1;
 #line 27 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t2;
-#line 186 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 191 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -196,7 +201,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 30 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t1;
-#line 200 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 205 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 32 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -210,7 +215,7 @@ bb0:
     __builtin_memset(&t1, 0, sizeof t1);
 #line 33 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return t1;
-#line 214 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 219 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 
 #line 35 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
@@ -316,7 +321,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_s);
 #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
     return;
-#line 320 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+#line 325 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
 }
 #undef h0_s
 #undef h1_u

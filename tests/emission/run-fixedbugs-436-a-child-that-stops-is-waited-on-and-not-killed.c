@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -100,7 +105,7 @@ HERO_STR_STATIC(hero_str_57d8beb1, "child");
 HERO_STR_STATIC(hero_str_0, "");
 HERO_STR_STATIC(hero_str_408405b7, "a child that stopped itself was waited on until its watchdog ended it: ");
 
-#line 104 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 109 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -149,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 158 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -168,7 +173,7 @@ HeroArrayHeader * h_library_args(void);
 
 #line 20 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 int32_t h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(void) {
-#line 172 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 177 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     return SIGSTOP;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -211,7 +216,7 @@ bb0:
     h2_own2 = t3;
 #line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     hero_str_decref(t4);
-#line 215 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 220 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -329,7 +334,7 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 bb4:
-#line 333 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 338 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_release_at(&h0_program);
     hero_array_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -398,7 +403,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 402 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 407 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

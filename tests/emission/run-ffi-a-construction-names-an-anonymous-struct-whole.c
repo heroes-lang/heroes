@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -56,11 +61,11 @@ _Static_assert(__builtin_classify_type(((SB *)0)->kind) == 1 && sizeof(((SB *)0)
 _Static_assert(__builtin_classify_type(((SB *)0)->i) == 1 && sizeof(((SB *)0)->i) == sizeof(int32_t) && (_Generic(((SB *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SB i");
 _Static_assert(__builtin_classify_type(((SB *)0)->lo) == 1 && sizeof(((SB *)0)->lo) == sizeof(int16_t) && (_Generic(((SB *)0)->lo, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SB lo");
 _Static_assert(__builtin_classify_type(((SB *)0)->hi) == 1 && sizeof(((SB *)0)->hi) == sizeof(int16_t) && (_Generic(((SB *)0)->hi, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SB hi");
-#line 60 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 65 "ffiaconstructionnamesananonymousstructwhole.c"
 
 #line 12 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
 _Static_assert(__builtin_classify_type(*(SB *)0) != 13, "heroes-ffi-union SB kind i lo hi");
-#line 64 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 69 "ffiaconstructionnamesananonymousstructwhole.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -145,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 154 "ffiaconstructionnamesananonymousstructwhole.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamesananonymousstructwhole_SB_eq(const SB *a, const SB *b);
@@ -213,7 +218,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/ffi-a-construction-names-an-anonymous-struct-whole.hero"
     return;
-#line 217 "ffiaconstructionnamesananonymousstructwhole.c"
+#line 222 "ffiaconstructionnamesananonymousstructwhole.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesananonymousstructwhole_SB_eq(const SB *a, const SB *b) {
     if (!(a->kind == b->kind)) return false;

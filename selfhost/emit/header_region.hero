@@ -41,6 +41,15 @@
 # warnings header by header, measured that morning beside the landing. The
 # repair was written at 2067ec87 on a branch never merged and landed with
 # defect 2034, 2026-10-12, which found it unmerged.
+#
+# **Kept as a group, it refused what C defines** (defect 2036, 2026-10-13):
+# a pragma on a group reaches each of its parts, so a header's
+# `printf("%d\n", 7, 8)` was refused for `-Wformat-extra-args` and its
+# `printf(m)` for `-Wformat-security`, and on Linux its `snprintf` cut at its
+# size for `-Wformat-truncation`. A pragma on a part written after the one on
+# its group decides that part, so the parts whose construct C defines are
+# passed over after `KEPT`, as `-Wall` is (`FORMAT_DEFINED`), and the rest of
+# the group stays an error.
 
 use emit/checks_raised
 
@@ -61,7 +70,51 @@ constant KEPT: [str]
         "-Wconditional-uninitialized"
     ]
 
-# The lines before the groups' includes: the push, the ignores, the kept.
+# The parts of `-Wformat` whose construct C defines, passed over after `KEPT`
+# raised the group (defect 2036). The parts are clang's own: `diagtool tree
+# -Wformat` of clang 22.1.8 lists nine, and clang 18.1.3's
+# `DiagnosticGroups.td`, the floor's, the same nine. Each is here, or kept, for
+# its construct:
+#
+# - `-Wformat-extra-args`, an argument past the format's last conversion:
+#   C11 7.21.6.1p2 evaluates it and otherwise ignores it;
+# - `-Wformat-zero-length`, an empty format handed an argument: the same
+#   paragraph, every argument an excess one;
+# - `-Wformat-security`, a format that is no literal and takes no argument:
+#   C defines the call for whatever string it holds, which clang cannot see;
+#   a literal is still judged whole;
+# - `-Wformat-truncation`, with its `-non-kprintf` part, `snprintf` handed
+#   less room than its output: 7.21.6.5p2 writes the first n-1 characters and
+#   returns how many the whole would take; told by glibc's headers, never by
+#   this Mac's, whose `snprintf` clang does not judge;
+# - `-Wformat-y2k`, which holds no diagnostic in clang: GCC's, a `strftime`
+#   format giving a two-digit year, is defined.
+#
+# Kept, by the same reading: `-Wformat-insufficient-args` (p2, too few
+# arguments), `-Wformat-invalid-specifier` (p9, an invalid conversion),
+# `-Wformat-overflow` (`sprintf` written past its array), `-Wnonnull` (a null
+# where the declaration forbids one; 7.1.4p1 for the library's own), and the
+# diagnostics the group holds itself, a conversion its argument does not
+# match first among them (p9). **No pragma reaches one of those alone**, so a
+# few constructs C defines are refused with them, measured on this Mac and
+# Linux arm64: a flag p6 says is ignored (`%+ d`, `%-05d`), a `bool` for
+# `%c`, a `\0` inside the format, a wide literal cast to `const char *`.
+# **They stay refused, a known cost by the author's ruling of 2026-10-13**:
+# robustness first (design.md §1.12), since passing them over would pass the
+# mismatch that reads the wrong bytes; revisit if clang gives them a flag of
+# their own. Each is pinned by a case of `tests/golden/unsupported/` named
+# `fixedbugs-2036-...-is-a-known-cost`, which moves when it can be passed.
+constant FORMAT_DEFINED: [str]
+    [
+        "-Wformat-extra-args"
+        "-Wformat-zero-length"
+        "-Wformat-security"
+        "-Wformat-truncation"
+        "-Wformat-y2k"
+    ]
+
+# The lines before the groups' includes: the push, the ignores, the kept,
+# then the parts of a kept group passed over again.
 function opening() -> [str]
     out: [str] @= ["#pragma clang diagnostic push"]
 
@@ -70,6 +123,9 @@ function opening() -> [str]
 
     for word in KEPT
         out @ out.push("#pragma clang diagnostic error \"" + word + "\"")
+
+    for word in FORMAT_DEFINED
+        out @ out.push("#pragma clang diagnostic ignored \"" + word + "\"")
 
     return out
 
@@ -88,7 +144,16 @@ test "a header's own code is quiet of -Wall and sign conversion alone, a missing
     assert got[2] == "#pragma clang diagnostic ignored \"-Wsign-conversion\""
     assert got[3] == "#pragma clang diagnostic error \"-Wreturn-type\""
     assert got[5] == "#pragma clang diagnostic error \"-Wformat\""
-    assert got.len() == 1 + QUIETED.len() + KEPT.len()
+    assert got.len() == 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len()
+
+    # A part of `-Wformat` C defines is passed over after the group is raised,
+    # since the later pragma decides the part (defect 2036); written before
+    # it, the group's `error` would take it back.
+    index: i64 @= 1 + QUIETED.len() + KEPT.len()
+
+    for part in FORMAT_DEFINED
+        assert got[index] == "#pragma clang diagnostic ignored \"" + part + "\""
+        index @ index + 1
 
     # Each kept warning is a check the build raises after the region too.
     for word in KEPT

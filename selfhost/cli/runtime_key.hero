@@ -61,6 +61,20 @@ function each_file(runtime: str) -> str?
 
     return ok(each.join(""))
 
+# The runtime's files by their paths, the ones `each_file` keys: `runtime.c`
+# and every file it includes by a quoted name. What the runtime IS, wherever
+# its directory stands, so a file a program keeps under that directory is not
+# taken for one of the compiler's (defect 2035, `cli/group_file.hero`).
+function made_of(runtime: str) -> [str]?
+    entry = runtime + "/runtime.c"
+    root = reading.keyed(entry)?
+    out: [str] @= [entry]
+
+    for name in included_names(text: root.text)
+        out @ out.push(runtime + "/" + name)
+
+    return ok(out)
+
 # Every `#include "…"` target in the text, in the order written. The
 # quoted form only: `<stdio.h>` is the platform's and is not ours to
 # hash.

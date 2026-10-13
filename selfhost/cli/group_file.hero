@@ -20,18 +20,53 @@ record Group
     span: token.Span
     header: str
 
-# Whether a file clang names is the compiler's: under the runtime's directory
-# or the build's, as clang was given them, either separator read as `/`.
-function compilers(path: str, runtime: str, build: str) -> bool
-    return beneath(path: path, dir: runtime) || beneath(path: path, dir: build)
+# Whether a file clang names is the compiler's: `compiled`, the file clang
+# compiled, which the compiler wrote and every include stack clang prints
+# opens with (`cli/clang_first.hero`), or one of `runtime`, the runtime's
+# own files (`runtime_key.made_of`), each read by its segments.
+#
+# **Decided by those files, never by a folder** (defect 2035, 2026-10-13).
+# It was any file under the runtime's directory or the build's, so a program
+# kept under a relative `build/`, or under the `runtime/` the compiler had
+# found in the working directory, whose header clang refused, was told
+# *internal error: compiling the generated C failed* at exit 2, where the
+# same two files anywhere else are told `ffi_header_refused` at exit 1.
+# Nothing else of the compiler's can be named: a unit includes the runtime's
+# files and the groups' headers alone (`cli/order_trial.hero`'s test, 2035).
+function compilers(path: str, compiled: str, runtime: [str]) -> bool
+    p = settled(path)
 
-function beneath(path: str, dir: str) -> bool
-    p = plain(path)
-    d = plain(dir)
+    if p == settled(compiled)
+        return true
 
-    if d.len() == 0
-        return false
-    return strings.starts_with(text: p, prefix: d + "/")
+    for own in runtime
+        if p == settled(own)
+            return true
+
+    return false
+
+# A path as its segments, either separator a `/`, an empty or a `.` segment
+# dropped, a leading `/` kept: clang prints a header found through `-I rt/`
+# or `-I rt//` as `rt/h.h` and through `-I ./rt` as `./rt/h.h` (Apple clang
+# 21, measured 2026-10-13), one file each time.
+function settled(path: str) -> str
+    p = clang_place.slashed(path)
+    kept: [str] @= []
+    segment: [str] @= []
+
+    for ch in (p + "/").chars()
+        if ch != "/"
+            segment @ segment.push(ch)
+            continue
+        word = segment.join("")
+
+        if word.len() > 0 && word != "."
+            kept @ kept.push(word)
+        segment @ []
+
+    if strings.starts_with(text: p, prefix: "/")
+        return "/" + kept.join("/")
+    return kept.join("/")
 
 # A path slashed, without a leading `./`, which clang writes where it was
 # given the directory `.`.
@@ -66,17 +101,28 @@ function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
 
 # The group a note's file arrives through, and the directory its header was
 # found in: the innermost file of the note's own includes a group names
-# (`clang_place.stack`).
+# (`clang_place.stack`), never one of the compiler's own (`compilers`).
+#
+# **A file the runtime entered first is no group's** (defect 2040,
+# 2026-10-13): the runtime reads `<stddef.h>` and `<stdbool.h>` before the
+# groups, so a note in one, `NULL`'s definition or `size_t`'s, has
+# `heroes_runtime.h` among its includes, which a group of the Heroes library
+# names; it was read as that header refused beside the program's, and told
+# *a diagnostic landed inside the Heroes library* where the program's own
+# header was at fault.
 record Reached
     group: Group
     directory: str
 
-function arriving(stderr: str, row: str, s: source.Source, decls: [ast.Decl]) -> Reached?
+function arriving(stderr: str, row: str, s: source.Source, decls: [ast.Decl], compiled: str, runtime: [str]) -> Reached?
     steps = clang_place.stack(stderr: stderr, line: row)
     at: i64 @= steps.len() - 1
 
     while at >= 0
-        found = group_of(s, decls, path: steps[at].path)
+        found: Group? @= fail(code: "none", msg: "a file of the compiler's own")
+
+        if !compilers(path: steps[at].path, compiled: compiled, runtime: runtime)
+            found @ group_of(s, decls, path: steps[at].path)
 
         if !found.is_err()
             return ok(

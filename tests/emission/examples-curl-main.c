@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -108,7 +113,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 112 "main.c"
+#line 117 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -162,7 +167,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 166 "main.c"
+#line 171 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Curl_eq(CURL * const *a, CURL * const *b);
@@ -189,7 +194,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 39 "examples/curl/main.hero"
 int32_t h_main_CURLOPT_URL(void) {
-#line 193 "main.c"
+#line 198 "main.c"
     return CURLOPT_URL;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -207,7 +212,7 @@ int32_t h_main_CURLOPT_URL(void) {
 
 #line 40 "examples/curl/main.hero"
 int64_t h_main_CURLE_OK(void) {
-#line 211 "main.c"
+#line 216 "main.c"
     return CURLE_OK;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -225,7 +230,7 @@ int64_t h_main_CURLE_OK(void) {
 
 #line 41 "examples/curl/main.hero"
 int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
-#line 229 "main.c"
+#line 234 "main.c"
     return CURLE_UNSUPPORTED_PROTOCOL;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -393,7 +398,7 @@ bb5:
     t22 = h4_f1;
 #line 78 "examples/curl/main.hero"
     t23 = t22.as.err;
-#line 397 "main.c"
+#line 402 "main.c"
     hero_panic_must(t23);
     hero_unreachable();
 bb6:
@@ -524,7 +529,7 @@ bb10:
     t39 = h6_f2;
 #line 84 "examples/curl/main.hero"
     t40 = t39.as.err;
-#line 528 "main.c"
+#line 533 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb11:
@@ -608,7 +613,7 @@ bb15:
     t60 = h9_f4;
 #line 90 "examples/curl/main.hero"
     t61 = t60.as.err;
-#line 612 "main.c"
+#line 617 "main.c"
     hero_panic_must(t61);
     hero_unreachable();
 bb16:
@@ -664,7 +669,7 @@ bb18:
     if (hero_handle_ended(t74, hero_life_0_0) && h2_handle == t74) h2_handle = hero_handle_dead();
 #line 92 "examples/curl/main.hero"
     }
-#line 668 "main.c"
+#line 673 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_r0);
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f1));
@@ -685,7 +690,7 @@ bb18:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 689 "main.c"
+#line 694 "main.c"
     return HERO_STR_OK;
 }
 
@@ -808,7 +813,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 812 "main.c"
+#line 817 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

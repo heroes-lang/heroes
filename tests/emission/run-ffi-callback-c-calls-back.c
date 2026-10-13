@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -90,7 +95,7 @@ HERO_STR_STATIC(hero_str_19e7c2, "bye");
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_7bcd5f24, "atexit refused the handler");
 
-#line 94 "fficallbackccallsback.c"
+#line 99 "fficallbackccallsback.c"
 typedef void (*h_0fn_294870dd)(void);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -135,7 +140,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "fficallbackccallsback.c"
+#line 144 "fficallbackccallsback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -170,7 +175,7 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/ffi-callback-c-calls-back.hero"
     return;
-#line 174 "fficallbackccallsback.c"
+#line 179 "fficallbackccallsback.c"
 }
 
 void h_0cb_fficallbackccallsback_bye(void) {
@@ -215,7 +220,7 @@ bb2:
 bb3:
 #line 33 "tests/golden/run/ffi-callback-c-calls-back.hero"
     goto bb1;
-#line 219 "fficallbackccallsback.c"
+#line 224 "fficallbackccallsback.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {
