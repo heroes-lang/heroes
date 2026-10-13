@@ -50,6 +50,18 @@
 # its group decides that part, so the parts whose construct C defines are
 # passed over after `KEPT`, as `-Wall` is (`FORMAT_DEFINED`), and the rest of
 # the group stays an error.
+#
+# **A call to a function nobody declared went with `-Wall`** (defect 2052,
+# 2026-10-13): `-Wimplicit-function-declaration` is one of `-Wall`'s, so the
+# region's ignore turned clang's default error off, and a header's
+# `(int)hero_str_le(8)` built as a call to a function C11 has no declaration
+# of (6.5.1p2: an identifier is an expression only where it is declared),
+# its result read as an `int` nobody promised; the link then stopped at
+# exit 2, `internal error: linking failed`. A function of C's library the
+# header never included, `abs(-8)` with no `<stdlib.h>`, built and printed 8
+# at exit 0, clang declaring it itself. Kept, the header is refused at the
+# call's line before any link, as the program's own lines are; of the 1,576
+# tracked programs with an `extern`, none moved (measured at the repair).
 
 use emit/checks_raised
 
@@ -61,13 +73,15 @@ constant QUIETED: [str]
     ]
 
 # What it still is, which `-Wall`'s ignore would otherwise turn off: each an
-# error on the build's command line too (`cli/flags.hero`).
+# error on the build's command line too, by `cli/flags.hero` or by clang's
+# own default (`emit/checks_raised.hero`'s `DEFAULT_ERRORS`).
 constant KEPT: [str]
     [
         "-Wreturn-type"
         "-Wuninitialized"
         "-Wformat"
         "-Wconditional-uninitialized"
+        "-Wimplicit-function-declaration"
     ]
 
 # The parts of `-Wformat` whose construct C defines, passed over after `KEPT`
@@ -144,6 +158,7 @@ test "a header's own code is quiet of -Wall and sign conversion alone, a missing
     assert got[2] == "#pragma clang diagnostic ignored \"-Wsign-conversion\""
     assert got[3] == "#pragma clang diagnostic error \"-Wreturn-type\""
     assert got[5] == "#pragma clang diagnostic error \"-Wformat\""
+    assert got[7] == "#pragma clang diagnostic error \"-Wimplicit-function-declaration\""
     assert got.len() == 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len()
 
     # A part of `-Wformat` C defines is passed over after the group is raised,

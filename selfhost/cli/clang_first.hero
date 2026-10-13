@@ -113,12 +113,14 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
         suggested: no_name
     )
     notes: [Attached] @= []
+    under = attached(rows, after: first.row)
+    said = at_error(first, notes: under)
 
     # A note in a file of the compiler's own makes the refusal the compiler's,
     # save one the header's own line explains (`explaining`).
-    for note in attached(rows, after: first.row)
+    for note in under
         if group_file.compilers(path: note.path, compiled: compiled, runtime: own)
-            explained = explaining(rows: rows, first: first, note: note, runtime: own)
+            explained = explaining(rows: rows, first: first, said: said, note: note, runtime: own)
 
             if explained.is_err()
                 return fail(code: "none", msg: "a note in a file of the compiler's own")
@@ -174,8 +176,10 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
 # every unit before any group's header. And a function of the runtime's the
 # line calls, or a name of the runtime's clang suggests for one the line
 # misspells (defect 2049): the line uses a name of the runtime's that every
-# unit declares before any group's header (`cli/runtime_name.hero`).
-function explaining(rows: [str], first: First, note: Attached, runtime: [str]) -> Attached?
+# unit declares before any group's header (`cli/runtime_name.hero`); the
+# suggestion read in `said`, what clang wrote at the error's own place
+# (`at_error`).
+function explaining(rows: [str], first: First, said: [str], note: Attached, runtime: [str]) -> Attached?
     out: Attached @= note
     out.standard @ standard_name.declared(path: note.path, row: note.row, runtime: runtime)
 
@@ -198,7 +202,7 @@ function explaining(rows: [str], first: First, note: Attached, runtime: [str]) -
         return ok(out)
     out.suggested @ runtime_name.suggested(
         rows: rows,
-        message: first.message,
+        said: said,
         note: note.index,
         path: note.path,
         row: note.row,
@@ -208,6 +212,19 @@ function explaining(rows: [str], first: First, note: Attached, runtime: [str]) -
     if !out.suggested.is_err()
         return ok(out)
     return fail(code: "none", msg: "a note no reading of the header's line explains")
+
+# What clang wrote of the error at the error's own place: its message, then
+# the text of each of its notes at the error's file and line, where clang
+# writes `did you mean '<name>'?` for a call to a function nobody declared
+# (defect 2052); a note elsewhere is not the error's own words.
+function at_error(first: First, notes: [Attached]) -> [str]
+    out: [str] @= [first.message]
+
+    for note in notes
+        if note.path == first.place.path && note.row == first.place.row
+            out @ out.push(note.text)
+
+    return out
 
 # The first row clang wrote as an error with a place, `path:row:col: error:`
 # or `fatal error:`. A row its excerpt quotes begins with a space, and a
@@ -287,3 +304,29 @@ function attached(rows: [str], after: i64) -> [Attached]
         index @ index + 1
 
     return out
+
+## Tests
+
+# DEFECT 2052: clang's words as Apple clang 21 wrote them on 2026-10-13 for a
+# header calling `hero_str_le`, a function nobody declared: the suggestion is
+# a note at the error's own file and line, the runtime's declaration a note
+# elsewhere, and only the first is the error's own words.
+test "what clang wrote at the error's own place is its message and the notes there (defect 2052)"
+    rows = [
+        "./imp.h:1:45: error: call to undeclared function 'hero_str_le'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]"
+        "    1 | static inline int eight(void) { return (int)hero_str_le(8); }"
+        "      |                                             ^"
+        "./imp.h:1:45: note: did you mean 'hero_str_len'?"
+        "In file included from build/tu-1/imp.c:2:"
+        "runtime/heroes_runtime.h:278:9: note: 'hero_str_len' declared here"
+        "  278 | int64_t hero_str_len(HeroStr s);"
+        "      |         ^"
+        "./imp.h:2:1: note: a note at another line"
+    ]
+    first = first_error(rows).must()
+    notes = attached(rows, after: first.row)
+    assert notes.len() == 3
+    said = at_error(first, notes: notes)
+    assert said.len() == 2
+    assert said[0] == first.message
+    assert said[1] == "did you mean 'hero_str_len'?"

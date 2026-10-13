@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `fixedbugs-2052-a-header-that-calls-a-function-nobody-declared-is-refused.h`, the header this group names, does not compile: clang refuses it at line 3: call to undeclared function 'undeclared_eight'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  at tests/golden/unsupported/fixedbugs-2052-a-header-that-calls-a-function-nobody-declared-is-refused.hero:11:8
+     |
+  11 | extern "fixedbugs-2052-a-header-that-calls-a-function-nobody-declared-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2052-a-header-that-calls-a-function-nobody-declared-is-refused.h` line 3 reads `static inline int eight(void) { return undeclared_eight(8); }`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

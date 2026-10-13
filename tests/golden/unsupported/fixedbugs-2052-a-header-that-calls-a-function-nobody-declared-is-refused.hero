@@ -1,0 +1,15 @@
+# fixedbugs, defect 2052, 2026-10-13, a name clang can suggest nothing for.
+#
+# SYMPTOM: a header of the program's own calling `undeclared_eight`, which
+# nothing declares or defines, built, and the link stopped at exit 2,
+# `internal error: linking failed`, as the reproducer did.
+#
+# FIX: `-Wimplicit-function-declaration` stays an error in the region
+# (`emit/header_region.hero`'s `KEPT`), the header refused at the call's
+# line 3, exit 1, before any link.
+
+extern "fixedbugs-2052-a-header-that-calls-a-function-nobody-declared-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())
