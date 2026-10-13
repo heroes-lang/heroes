@@ -242,3 +242,14 @@ from the binary but cannot make an element at an address, which only the unrelea
 `lldb.exe` dies without its Python DLL), with three answers: LLVM 23 with the arrays' contents after, LLVM
 24's development line, or Python kept. **The author chose to keep Python**: R2 and R3 stand as written.
 The rest of the ratification stays pending on the issue above.
+
+## Scored at M-typed-inspection's close, 2026-10-13
+
+Each by the command named, on the milestone's closing tree.
+
+- **compiler-engineer**: with R1, `describe` lists exactly 3 locals and 042's `shapes.hero` at :30 exactly 11: **held**, 3 and 11 (step 4's agent, `c6f4d0157`; measurement 043 read 11, 10 and 7 over the three census frames). The seed grows at most 8%, at most 4% with the macro: **falsified**, 52,126,543 to 56,650,897 bytes at step 4 alone (+8.7%, `wc -c`), the macro written 347,570 times; the seed is one fused unit, where declarations weigh more than in the per-unit build, whose C grew 3.8%. Its E prediction is not scorable: E did not land.
+- **ffi-pragmatist**: `HERO_RUNTIME_ABI` stays 30 and `HeroDesc` gains no field: **held** (`grep -n "define HERO_RUNTIME_ABI" runtime/heroes_runtime.h` reads 30; `git diff a9be36dc5..` over the header is empty; `HeroDesc` holds its five members). Its lldb-dap prediction was about C: not scorable.
+- **spec-warden**: no milestone commit touches `spec/heroes-spec.md`: **held for the milestone's own steps**; the spec's opening line did move the same night, by the author's instruction to change the claim everywhere, not by this milestone (`7bb804f4b`, ledger row 111). `grep -c "Command(" selfhost/cli/table.hero` stays 13: **held**. `build`'s and `run`'s flags unchanged: **held**. The `lldb` suite shows the record with `x` and `y`: **held in the five `formatter-` cases**, which import the formatter; the `locals` case imports nothing and still shows `f_x`, as R3 leaves lldb's own prompt.
+- **historian**: about C: not scorable.
+- **llm-ergonomist**: needs a task set this milestone did not build: not scored.
+- **the sitting's own**: the `lldb` suite's new cases pass on this Mac and on both Linux legs of the CI: **held** on this Mac, on the Linux arm64 image's lldb 22.1.8 and on Ubuntu 24.04's lldb 18.1.3 in a container (step 5's agent), and on the CI's four legs at `0c7eae194` (run 38350572891, all four green), the Windows leg skipping the suite by name as before.
