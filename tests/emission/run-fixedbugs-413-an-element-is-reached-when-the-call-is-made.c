@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -47,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 51 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 56 "fixedbugs413anelementisreachedwhenthecallismade.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -77,7 +82,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 81 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 86 "fixedbugs413anelementisreachedwhenthecallismade.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -97,7 +102,7 @@ void h_fixedbugs413anelementisreachedwhenthecallismade_main(void);
 #line 12 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 void h_fixedbugs413anelementisreachedwhenthecallismade_add(int64_t *ph0_n, int64_t h1_k) {
 #line 12 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 bb0:
     t1 = (*ph0_n);
@@ -109,13 +114,13 @@ bb0:
     (*ph0_n) = t3;
 #line 13 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     return;
-#line 113 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 118 "fixedbugs413anelementisreachedwhenthecallismade.c"
 }
 
 #line 15 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 int64_t h_fixedbugs413anelementisreachedwhenthecallismade_grow(HeroArrayHeader * *ph0_xs) {
 #line 15 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t6; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 bb0:
     t1 = INT64_C(0);
@@ -129,13 +134,13 @@ bb0:
     t6 = INT64_C(1);
 #line 18 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     return t6;
-#line 133 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 138 "fixedbugs413anelementisreachedwhenthecallismade.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 int64_t h_fixedbugs413anelementisreachedwhenthecallismade_hundred(int64_t *ph0_n) {
 #line 20 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 bb0:
     t1 = INT64_C(100);
@@ -144,13 +149,13 @@ bb0:
     t2 = INT64_C(1);
 #line 22 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     return t2;
-#line 148 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 153 "fixedbugs413anelementisreachedwhenthecallismade.c"
 }
 
 #line 24 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 void h_fixedbugs413anelementisreachedwhenthecallismade_main(void) {
 #line 24 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    HeroArrayHeader * h0_xs = {0}; int64_t h1_n; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; int64_t h1_n; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 bb0:
     t1 = INT64_C(1);
@@ -209,7 +214,7 @@ bb0:
     hero_print_int(t13);
 #line 30 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
     hero_print_end();
-#line 213 "fixedbugs413anelementisreachedwhenthecallismade.c"
+#line 218 "fixedbugs413anelementisreachedwhenthecallismade.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;

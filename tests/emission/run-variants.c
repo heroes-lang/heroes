@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -55,7 +60,7 @@ HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 
-#line 59 "variants.c"
+#line 64 "variants.c"
 typedef enum h_variants_Token_tag {
     h_variants_Token_tag_num = 0,
     h_variants_Token_tag_word = 1,
@@ -107,7 +112,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "variants.c"
+#line 116 "variants.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_variants_Token_c_num_eq(const h_variants_Token_c_num *a, const h_variants_Token_c_num *b);
@@ -136,7 +141,7 @@ void h_variants_main(void);
 #line 19 "tests/golden/run/variants.hero"
 int64_t h_variants_size(h_variants_Token h0_t) {
 #line 19 "tests/golden/run/variants.hero"
-    HERO_NODEBUG h_variants_Token h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_variants_Token_c_num h3_n; h_variants_Token_c_word h4_w = {0}; HERO_NODEBUG h_variants_Token t1; HERO_NODEBUG h_variants_Token t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_variants_Token t4; HERO_NODEBUG h_variants_Token_c_num t5; HERO_NODEBUG h_variants_Token_c_num t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_variants_Token t8; HERO_NODEBUG h_variants_Token_c_word t9; HERO_NODEBUG h_variants_Token_c_word t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_variants_Token t15; HERO_NODEBUG h_variants_Token_c_word t16; goto bb0;
+    HERO_NODEBUG h_variants_Token h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_variants_Token_c_num h3_n; h_variants_Token_c_word h4_w = {0}; HERO_NODEBUG h_variants_Token t1; HERO_NODEBUG h_variants_Token t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_variants_Token t4; HERO_NODEBUG h_variants_Token_c_num t5; HERO_NODEBUG h_variants_Token_c_num t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_variants_Token t8; HERO_NODEBUG h_variants_Token_c_word t9; HERO_NODEBUG h_variants_Token_c_word t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_variants_Token t15; HERO_NODEBUG h_variants_Token_c_word t16; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/variants.hero"
 bb0:
     t1 = h0_t;
@@ -168,7 +173,7 @@ bb0:
 bb1:
 #line 20 "tests/golden/run/variants.hero"
     t14 = h2_r0;
-#line 172 "variants.c"
+#line 177 "variants.c"
     h_variants_Token_release(hero_slot_escape(&h1_s0));
     h_variants_Token_c_word_release(hero_slot_escape(&h4_w));
     return t14;
@@ -219,13 +224,13 @@ bb4:
     h2_r0 = t13;
 #line 20 "tests/golden/run/variants.hero"
     goto bb1;
-#line 223 "variants.c"
+#line 228 "variants.c"
 }
 
 #line 25 "tests/golden/run/variants.hero"
 HeroStr h_variants_label(h_variants_Token h0_t) {
 #line 25 "tests/golden/run/variants.hero"
-    HERO_NODEBUG h_variants_Token h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; h_variants_Token_c_word h3_w = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_variants_Token t1; HERO_NODEBUG h_variants_Token t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_variants_Token t5; HERO_NODEBUG h_variants_Token_c_word t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_variants_Token_c_word t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_variants_Token t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_variants_Token_c_word t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; goto bb0;
+    HERO_NODEBUG h_variants_Token h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; h_variants_Token_c_word h3_w = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_variants_Token t1; HERO_NODEBUG h_variants_Token t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_variants_Token t5; HERO_NODEBUG h_variants_Token_c_word t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_variants_Token_c_word t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_variants_Token t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_variants_Token_c_word t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/variants.hero"
 bb0:
     t1 = h0_t;
@@ -257,7 +262,7 @@ bb0:
 bb1:
 #line 26 "tests/golden/run/variants.hero"
     t12 = h2_r0;
-#line 261 "variants.c"
+#line 266 "variants.c"
     hero_str_incref(t12);
     h_variants_Token_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -329,13 +334,13 @@ bb4:
     hero_str_decref(t18);
 #line 26 "tests/golden/run/variants.hero"
     goto bb1;
-#line 333 "variants.c"
+#line 338 "variants.c"
 }
 
 #line 31 "tests/golden/run/variants.hero"
 void h_variants_main(void) {
 #line 31 "tests/golden/run/variants.hero"
-    h_variants_Token h0_a = {0}; h_variants_Token h1_b = {0}; h_variants_Token h2_c = {0}; h_variants_Token h3_d = {0}; h_variants_Token h4_w1 = {0}; h_variants_Token h5_w2 = {0}; HERO_NODEBUG h_variants_Token h6_own6 = {0}; HERO_NODEBUG h_variants_Token h7_own7 = {0}; HERO_NODEBUG h_variants_Token h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_variants_Token h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG h_variants_Token h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_variants_Token h14_own14 = {0}; HERO_NODEBUG h_variants_Token h15_own15 = {0}; HERO_NODEBUG h_variants_Token h16_own16 = {0}; HERO_NODEBUG h_variants_Token h17_own17 = {0}; HERO_NODEBUG h_variants_Token h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_variants_Token h20_own20 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_variants_Token t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_variants_Token t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_variants_Token t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_variants_Token t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_variants_Token t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_variants_Token t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_variants_Token t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_variants_Token t21; HERO_NODEBUG h_variants_Token t22; HERO_NODEBUG h_variants_Token t23; HERO_NODEBUG h_variants_Token t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_variants_Token t26; HERO_NODEBUG h_variants_Token t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_variants_Token t29; HERO_NODEBUG h_variants_Token t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_variants_Token t32; HERO_NODEBUG h_variants_Token t33; HERO_NODEBUG bool t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_variants_Token t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG h_variants_Token t40; HERO_NODEBUG h_variants_Token t41; HERO_NODEBUG h_variants_Token t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_variants_Token t44; HERO_NODEBUG h_variants_Token t45; HERO_NODEBUG h_variants_Token t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG h_variants_Token t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_variants_Token t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_variants_Token t52; HERO_NODEBUG h_variants_Token t53; HERO_NODEBUG h_variants_Token t54; HERO_NODEBUG h_variants_Token t55; HERO_NODEBUG h_variants_Token t56; HERO_NODEBUG h_variants_Token t57; HERO_NODEBUG h_variants_Token t58; HERO_NODEBUG h_variants_Token t59; HERO_NODEBUG h_variants_Token t60; HERO_NODEBUG h_variants_Token t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_variants_Token t63; HERO_NODEBUG h_variants_Token t64; goto bb0;
+    h_variants_Token h0_a = {0}; h_variants_Token h1_b = {0}; h_variants_Token h2_c = {0}; h_variants_Token h3_d = {0}; h_variants_Token h4_w1 = {0}; h_variants_Token h5_w2 = {0}; HERO_NODEBUG h_variants_Token h6_own6 = {0}; HERO_NODEBUG h_variants_Token h7_own7 = {0}; HERO_NODEBUG h_variants_Token h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_variants_Token h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG h_variants_Token h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_variants_Token h14_own14 = {0}; HERO_NODEBUG h_variants_Token h15_own15 = {0}; HERO_NODEBUG h_variants_Token h16_own16 = {0}; HERO_NODEBUG h_variants_Token h17_own17 = {0}; HERO_NODEBUG h_variants_Token h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_variants_Token h20_own20 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_variants_Token t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_variants_Token t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_variants_Token t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_variants_Token t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_variants_Token t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_variants_Token t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_variants_Token t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_variants_Token t21; HERO_NODEBUG h_variants_Token t22; HERO_NODEBUG h_variants_Token t23; HERO_NODEBUG h_variants_Token t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_variants_Token t26; HERO_NODEBUG h_variants_Token t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_variants_Token t29; HERO_NODEBUG h_variants_Token t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_variants_Token t32; HERO_NODEBUG h_variants_Token t33; HERO_NODEBUG bool t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_variants_Token t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG h_variants_Token t40; HERO_NODEBUG h_variants_Token t41; HERO_NODEBUG h_variants_Token t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_variants_Token t44; HERO_NODEBUG h_variants_Token t45; HERO_NODEBUG h_variants_Token t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG h_variants_Token t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_variants_Token t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_variants_Token t52; HERO_NODEBUG h_variants_Token t53; HERO_NODEBUG h_variants_Token t54; HERO_NODEBUG h_variants_Token t55; HERO_NODEBUG h_variants_Token t56; HERO_NODEBUG h_variants_Token t57; HERO_NODEBUG h_variants_Token t58; HERO_NODEBUG h_variants_Token t59; HERO_NODEBUG h_variants_Token t60; HERO_NODEBUG h_variants_Token t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_variants_Token t63; HERO_NODEBUG h_variants_Token t64; HERO_ENTRY_STOP; goto bb0;
 #line 31 "tests/golden/run/variants.hero"
 bb0:
     t1 = INT64_C(7);
@@ -596,7 +601,7 @@ bb0:
     hero_print_bool(t43);
 #line 52 "tests/golden/run/variants.hero"
     hero_print_end();
-#line 600 "variants.c"
+#line 605 "variants.c"
     h_variants_Token_release(hero_slot_escape(&h0_a));
     h_variants_Token_release(hero_slot_escape(&h1_b));
     h_variants_Token_release(hero_slot_escape(&h2_c));

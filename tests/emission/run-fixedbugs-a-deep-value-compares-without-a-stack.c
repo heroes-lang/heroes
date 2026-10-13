@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 54 "fixedbugsadeepvaluecompareswithoutastack.c"
 typedef struct h_fixedbugsadeepvaluecompareswithoutastack_Node {
     int64_t f_label;
     HeroArrayHeader * f_children;
@@ -80,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 89 "fixedbugsadeepvaluecompareswithoutastack.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(const h_fixedbugsadeepvaluecompareswithoutastack_Node *v);
@@ -120,7 +125,7 @@ void h_fixedbugsadeepvaluecompareswithoutastack_main(void);
 #line 37 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
 h_fixedbugsadeepvaluecompareswithoutastack_Node h_fixedbugsadeepvaluecompareswithoutastack_chain(int64_t h0_depth, int64_t h1_tip) {
 #line 37 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    h_fixedbugsadeepvaluecompareswithoutastack_Node h2_n = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t17; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t20; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t21; goto bb0;
+    h_fixedbugsadeepvaluecompareswithoutastack_Node h2_n = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t17; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t20; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t21; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
 bb0:
     t1 = h1_tip;
@@ -211,7 +216,7 @@ bb2:
 bb3:
 #line 45 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     t15 = h2_n;
-#line 215 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 220 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_retain(&t15);
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h2_n));
     hero_array_release_at(&h4_own4);
@@ -224,7 +229,7 @@ bb3:
 #line 47 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
 void h_fixedbugsadeepvaluecompareswithoutastack_main(void) {
 #line 47 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
-    h_fixedbugsadeepvaluecompareswithoutastack_Node h0_a = {0}; h_fixedbugsadeepvaluecompareswithoutastack_Node h1_b = {0}; h_fixedbugsadeepvaluecompareswithoutastack_Node h2_c = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h3_own3 = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h4_own4 = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t6; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t7; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t12; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t13; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG bool t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t42; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t43; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t44; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t45; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t46; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t47; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroArrayHeader * t59; goto bb0;
+    h_fixedbugsadeepvaluecompareswithoutastack_Node h0_a = {0}; h_fixedbugsadeepvaluecompareswithoutastack_Node h1_b = {0}; h_fixedbugsadeepvaluecompareswithoutastack_Node h2_c = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h3_own3 = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h4_own4 = {0}; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t6; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t7; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t12; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t13; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG bool t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t42; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t43; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t44; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t45; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t46; HERO_NODEBUG h_fixedbugsadeepvaluecompareswithoutastack_Node t47; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_ENTRY_STOP; goto bb0;
 #line 47 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
 bb0:
     t1 = INT64_C(60000);
@@ -472,7 +477,7 @@ bb0:
     hero_print_bool(t41);
 #line 54 "tests/golden/run/fixedbugs-a-deep-value-compares-without-a-stack.hero"
     hero_print_end();
-#line 476 "fixedbugsadeepvaluecompareswithoutastack.c"
+#line 481 "fixedbugsadeepvaluecompareswithoutastack.c"
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h0_a));
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h1_b));
     h_fixedbugsadeepvaluecompareswithoutastack_Node_release(hero_slot_escape(&h2_c));

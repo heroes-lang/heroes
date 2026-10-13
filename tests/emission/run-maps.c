@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -59,7 +64,7 @@ HERO_STR_STATIC(hero_str_fca7be4, "unit");
 HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_79, "y");
 
-#line 63 "maps.c"
+#line 68 "maps.c"
 typedef struct h_maps_Point {
     int64_t f_x;
     int64_t f_y;
@@ -110,7 +115,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "maps.c"
+#line 119 "maps.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_maps_Point_eq(const h_maps_Point *a, const h_maps_Point *b);
@@ -154,7 +159,7 @@ void h_maps_main(void);
 #line 34 "tests/golden/run/maps.hero"
 void h_maps_main(void) {
 #line 34 "tests/golden/run/maps.hero"
-    HeroMapHeader * h0_m = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h3_f2 = {0}; HERO_NODEBUG int64_t h4_r0; HERO_NODEBUG h_0opt_e201354 h5_f3 = {0}; HERO_NODEBUG int64_t h6_r1; HERO_NODEBUG h_0opt_e201354 h7_f4 = {0}; HeroMapHeader * h8_d = {0}; HERO_NODEBUG h_0opt_e201354 h9_f5 = {0}; HERO_NODEBUG int64_t h10_r2; HeroMapHeader * h11_ns = {0}; HERO_NODEBUG h_0opt_f87774a h12_f6 = {0}; HERO_NODEBUG HeroStr h13_r3 = {0}; HERO_NODEBUG h_0opt_f87774a h14_f7 = {0}; HERO_NODEBUG HeroStr h15_r4 = {0}; HeroMapHeader * h16_ps = {0}; h_0opt_23a6fed9 h17_got = {0}; HERO_NODEBUG h_0opt_23a6fed9 h18_f8 = {0}; HERO_NODEBUG h_maps_Point h19_r5; HeroMapHeader * h20_e = {0}; HERO_NODEBUG h_0opt_e201354 h21_f9 = {0}; HeroMapHeader * h22_w = {0}; HERO_NODEBUG h_0opt_e201354 h23_f10 = {0}; HERO_NODEBUG int64_t h24_r6; HERO_NODEBUG h_0opt_e201354 h25_f11 = {0}; HERO_NODEBUG int64_t h26_r7; HeroMapHeader * h27_big = {0}; int64_t h28_i; int64_t h29_total; HERO_NODEBUG HeroArrayHeader * h30_xs0 = {0}; HERO_NODEBUG int64_t h31_i0; HeroStr h32_k = {0}; HERO_NODEBUG h_0opt_e201354 h33_f12 = {0}; HERO_NODEBUG int64_t h34_r8; HERO_NODEBUG HeroMapHeader * h35_own35 = {0}; HERO_NODEBUG h_0opt_e201354 h36_own36 = {0}; HERO_NODEBUG h_0opt_e201354 h37_own37 = {0}; HERO_NODEBUG h_0opt_e201354 h38_own38 = {0}; HERO_NODEBUG h_0opt_e201354 h39_own39 = {0}; HERO_NODEBUG h_0opt_e201354 h40_own40 = {0}; HERO_NODEBUG HeroMapHeader * h41_own41 = {0}; HERO_NODEBUG HeroMapHeader * h42_own42 = {0}; HERO_NODEBUG HeroMapHeader * h43_own43 = {0}; HERO_NODEBUG HeroMapHeader * h44_own44 = {0}; HERO_NODEBUG h_0opt_e201354 h45_own45 = {0}; HERO_NODEBUG HeroStr h46_own46 = {0}; HERO_NODEBUG HeroStr h47_own47 = {0}; HERO_NODEBUG HeroMapHeader * h48_own48 = {0}; HERO_NODEBUG h_0opt_f87774a h49_own49 = {0}; HERO_NODEBUG h_0opt_f87774a h50_own50 = {0}; HERO_NODEBUG HeroMapHeader * h51_own51 = {0}; HERO_NODEBUG h_0opt_23a6fed9 h52_own52 = {0}; HERO_NODEBUG HeroMapHeader * h53_own53 = {0}; HERO_NODEBUG HeroMapHeader * h54_own54 = {0}; HERO_NODEBUG h_0opt_e201354 h55_own55 = {0}; HERO_NODEBUG HeroMapHeader * h56_own56 = {0}; HERO_NODEBUG HeroMapHeader * h57_own57 = {0}; HERO_NODEBUG h_0opt_e201354 h58_own58 = {0}; HERO_NODEBUG h_0opt_e201354 h59_own59 = {0}; HERO_NODEBUG HeroMapHeader * h60_own60 = {0}; HERO_NODEBUG HeroStr h61_own61 = {0}; HERO_NODEBUG HeroStr h62_own62 = {0}; HERO_NODEBUG HeroArrayHeader * h63_own63 = {0}; HERO_NODEBUG h_0opt_e201354 h64_own64 = {0}; HERO_NODEBUG HeroArrayHeader * h65_own65 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroMapHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroMapHeader * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroMapHeader * t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroMapHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e201354 t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroMapHeader * t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_0opt_e201354 t50; HERO_NODEBUG h_0opt_e201354 t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG bool t54; HERO_NODEBUG HeroMapHeader * t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroMapHeader * t62; HERO_NODEBUG bool t63; HERO_NODEBUG HeroMapHeader * t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroMapHeader * t69; HERO_NODEBUG bool t70; HERO_NODEBUG HeroMapHeader * t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG HeroMapHeader * t78; HERO_NODEBUG bool t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG HeroMapHeader * t84; HERO_NODEBUG HeroMapHeader * t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG HeroMapHeader * t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG h_0opt_e201354 t89; HERO_NODEBUG h_0opt_e201354 t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG bool t93; HERO_NODEBUG h_0opt_e201354 t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroStr t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG HeroMapHeader * t106; HERO_NODEBUG HeroMapHeader * t107; HERO_NODEBUG int64_t t108; HERO_NODEBUG h_0opt_f87774a t109; HERO_NODEBUG h_0opt_f87774a t110; HERO_NODEBUG int64_t t111; HERO_NODEBUG int64_t t112; HERO_NODEBUG bool t113; HERO_NODEBUG h_0opt_f87774a t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG HeroStr t117; HERO_NODEBUG HeroMapHeader * t118; HERO_NODEBUG int64_t t119; HERO_NODEBUG h_0opt_f87774a t120; HERO_NODEBUG h_0opt_f87774a t121; HERO_NODEBUG int64_t t122; HERO_NODEBUG int64_t t123; HERO_NODEBUG bool t124; HERO_NODEBUG h_0opt_f87774a t125; HERO_NODEBUG HeroStr t126; HERO_NODEBUG HeroStr t127; HERO_NODEBUG HeroStr t128; HERO_NODEBUG HeroStr t129; HERO_NODEBUG int64_t t130; HERO_NODEBUG int64_t t131; HERO_NODEBUG h_maps_Point t132; HERO_NODEBUG HeroStr t133; HERO_NODEBUG int64_t t134; HERO_NODEBUG int64_t t135; HERO_NODEBUG h_maps_Point t136; HERO_NODEBUG HeroMapHeader * t137; HERO_NODEBUG HeroMapHeader * t138; HERO_NODEBUG HeroStr t139; HERO_NODEBUG h_0opt_23a6fed9 t140; HERO_NODEBUG h_0opt_23a6fed9 t141; HERO_NODEBUG h_0opt_23a6fed9 t142; HERO_NODEBUG int64_t t143; HERO_NODEBUG int64_t t144; HERO_NODEBUG bool t145; HERO_NODEBUG h_0opt_23a6fed9 t146; HERO_NODEBUG h_maps_Point t147; HERO_NODEBUG int64_t t148; HERO_NODEBUG int64_t t149; HERO_NODEBUG h_maps_Point t150; HERO_NODEBUG h_maps_Point t151; HERO_NODEBUG int64_t t152; HERO_NODEBUG HeroMapHeader * t153; HERO_NODEBUG HeroStr t154; HERO_NODEBUG int64_t t155; HERO_NODEBUG int64_t t156; HERO_NODEBUG h_maps_Point t157; HERO_NODEBUG HeroStr t158; HERO_NODEBUG int64_t t159; HERO_NODEBUG int64_t t160; HERO_NODEBUG h_maps_Point t161; HERO_NODEBUG HeroMapHeader * t162; HERO_NODEBUG bool t163; HERO_NODEBUG HeroMapHeader * t164; HERO_NODEBUG HeroMapHeader * t165; HERO_NODEBUG int64_t t166; HERO_NODEBUG HeroMapHeader * t167; HERO_NODEBUG HeroStr t168; HERO_NODEBUG h_0opt_e201354 t169; HERO_NODEBUG h_0opt_e201354 t170; HERO_NODEBUG int64_t t171; HERO_NODEBUG int64_t t172; HERO_NODEBUG bool t173; HERO_NODEBUG HeroMapHeader * t174; HERO_NODEBUG HeroMapHeader * t175; HERO_NODEBUG bool t176; HERO_NODEBUG HeroMapHeader * t177; HERO_NODEBUG HeroStr t178; HERO_NODEBUG int64_t t179; HERO_NODEBUG HeroStr t180; HERO_NODEBUG int64_t t181; HERO_NODEBUG HeroStr t182; HERO_NODEBUG int64_t t183; HERO_NODEBUG HeroMapHeader * t184; HERO_NODEBUG int64_t t185; HERO_NODEBUG HeroMapHeader * t186; HERO_NODEBUG HeroStr t187; HERO_NODEBUG h_0opt_e201354 t188; HERO_NODEBUG h_0opt_e201354 t189; HERO_NODEBUG int64_t t190; HERO_NODEBUG int64_t t191; HERO_NODEBUG bool t192; HERO_NODEBUG h_0opt_e201354 t193; HERO_NODEBUG int64_t t194; HERO_NODEBUG int64_t t195; HERO_NODEBUG int64_t t196; HERO_NODEBUG HeroMapHeader * t197; HERO_NODEBUG HeroStr t198; HERO_NODEBUG h_0opt_e201354 t199; HERO_NODEBUG h_0opt_e201354 t200; HERO_NODEBUG int64_t t201; HERO_NODEBUG int64_t t202; HERO_NODEBUG bool t203; HERO_NODEBUG h_0opt_e201354 t204; HERO_NODEBUG int64_t t205; HERO_NODEBUG int64_t t206; HERO_NODEBUG int64_t t207; HERO_NODEBUG HeroMapHeader * t208; HERO_NODEBUG int64_t t209; HERO_NODEBUG int64_t t210; HERO_NODEBUG int64_t t211; HERO_NODEBUG bool t212; HERO_NODEBUG HeroStr t213; HERO_NODEBUG int64_t t214; HERO_NODEBUG HeroStr t215; HERO_NODEBUG HeroStr t216; HERO_NODEBUG int64_t t217; HERO_NODEBUG int64_t t218; HERO_NODEBUG int64_t t219; HERO_NODEBUG int64_t t220; HERO_NODEBUG int64_t t221; HERO_NODEBUG HeroMapHeader * t222; HERO_NODEBUG HeroArrayHeader * t223; HERO_NODEBUG int64_t t224; HERO_NODEBUG int64_t t225; HERO_NODEBUG HeroArrayHeader * t226; HERO_NODEBUG int64_t t227; HERO_NODEBUG bool t228; HERO_NODEBUG HeroArrayHeader * t229; HERO_NODEBUG int64_t t230; HERO_NODEBUG HeroStr t231; HERO_NODEBUG int64_t t232; HERO_NODEBUG HeroMapHeader * t233; HERO_NODEBUG HeroStr t234; HERO_NODEBUG h_0opt_e201354 t235; HERO_NODEBUG h_0opt_e201354 t236; HERO_NODEBUG int64_t t237; HERO_NODEBUG int64_t t238; HERO_NODEBUG bool t239; HERO_NODEBUG h_0opt_e201354 t240; HERO_NODEBUG int64_t t241; HERO_NODEBUG int64_t t242; HERO_NODEBUG int64_t t243; HERO_NODEBUG int64_t t244; HERO_NODEBUG int64_t t245; HERO_NODEBUG int64_t t246; HERO_NODEBUG int64_t t247; HERO_NODEBUG HeroMapHeader * t248; HERO_NODEBUG int64_t t249; HERO_NODEBUG HeroMapHeader * t250; HERO_NODEBUG HeroArrayHeader * t251; HERO_NODEBUG int64_t t252; HERO_NODEBUG int64_t t253; HERO_NODEBUG HeroMapHeader * t254; HERO_NODEBUG HeroMapHeader * t255; HERO_NODEBUG h_0opt_e201354 t256; HERO_NODEBUG h_0opt_e201354 t257; HERO_NODEBUG h_0opt_e201354 t258; HERO_NODEBUG h_0opt_e201354 t259; HERO_NODEBUG h_0opt_e201354 t260; HERO_NODEBUG h_0opt_e201354 t261; HERO_NODEBUG h_0opt_e201354 t262; HERO_NODEBUG h_0opt_e201354 t263; HERO_NODEBUG h_0opt_e201354 t264; HERO_NODEBUG h_0opt_e201354 t265; HERO_NODEBUG HeroMapHeader * t266; HERO_NODEBUG HeroMapHeader * t267; HERO_NODEBUG HeroMapHeader * t268; HERO_NODEBUG HeroMapHeader * t269; HERO_NODEBUG HeroMapHeader * t270; HERO_NODEBUG h_0opt_e201354 t271; HERO_NODEBUG h_0opt_e201354 t272; HERO_NODEBUG HeroStr t273; HERO_NODEBUG HeroStr t274; HERO_NODEBUG HeroMapHeader * t275; HERO_NODEBUG HeroMapHeader * t276; HERO_NODEBUG h_0opt_f87774a t277; HERO_NODEBUG h_0opt_f87774a t278; HERO_NODEBUG HeroStr t279; HERO_NODEBUG HeroStr t280; HERO_NODEBUG h_0opt_f87774a t281; HERO_NODEBUG h_0opt_f87774a t282; HERO_NODEBUG HeroStr t283; HERO_NODEBUG HeroStr t284; HERO_NODEBUG HeroMapHeader * t285; HERO_NODEBUG HeroMapHeader * t286; HERO_NODEBUG h_0opt_23a6fed9 t287; HERO_NODEBUG h_0opt_23a6fed9 t288; HERO_NODEBUG h_0opt_23a6fed9 t289; HERO_NODEBUG HeroMapHeader * t290; HERO_NODEBUG HeroMapHeader * t291; HERO_NODEBUG HeroMapHeader * t292; HERO_NODEBUG h_0opt_e201354 t293; HERO_NODEBUG h_0opt_e201354 t294; HERO_NODEBUG HeroMapHeader * t295; HERO_NODEBUG HeroMapHeader * t296; HERO_NODEBUG HeroMapHeader * t297; HERO_NODEBUG h_0opt_e201354 t298; HERO_NODEBUG h_0opt_e201354 t299; HERO_NODEBUG h_0opt_e201354 t300; HERO_NODEBUG h_0opt_e201354 t301; HERO_NODEBUG HeroMapHeader * t302; HERO_NODEBUG HeroMapHeader * t303; HERO_NODEBUG HeroStr t304; HERO_NODEBUG HeroStr t305; HERO_NODEBUG HeroArrayHeader * t306; HERO_NODEBUG HeroArrayHeader * t307; HERO_NODEBUG HeroStr t308; HERO_NODEBUG h_0opt_e201354 t309; HERO_NODEBUG h_0opt_e201354 t310; HERO_NODEBUG HeroArrayHeader * t311; goto bb0;
+    HeroMapHeader * h0_m = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h3_f2 = {0}; HERO_NODEBUG int64_t h4_r0; HERO_NODEBUG h_0opt_e201354 h5_f3 = {0}; HERO_NODEBUG int64_t h6_r1; HERO_NODEBUG h_0opt_e201354 h7_f4 = {0}; HeroMapHeader * h8_d = {0}; HERO_NODEBUG h_0opt_e201354 h9_f5 = {0}; HERO_NODEBUG int64_t h10_r2; HeroMapHeader * h11_ns = {0}; HERO_NODEBUG h_0opt_f87774a h12_f6 = {0}; HERO_NODEBUG HeroStr h13_r3 = {0}; HERO_NODEBUG h_0opt_f87774a h14_f7 = {0}; HERO_NODEBUG HeroStr h15_r4 = {0}; HeroMapHeader * h16_ps = {0}; h_0opt_23a6fed9 h17_got = {0}; HERO_NODEBUG h_0opt_23a6fed9 h18_f8 = {0}; HERO_NODEBUG h_maps_Point h19_r5; HeroMapHeader * h20_e = {0}; HERO_NODEBUG h_0opt_e201354 h21_f9 = {0}; HeroMapHeader * h22_w = {0}; HERO_NODEBUG h_0opt_e201354 h23_f10 = {0}; HERO_NODEBUG int64_t h24_r6; HERO_NODEBUG h_0opt_e201354 h25_f11 = {0}; HERO_NODEBUG int64_t h26_r7; HeroMapHeader * h27_big = {0}; int64_t h28_i; int64_t h29_total; HERO_NODEBUG HeroArrayHeader * h30_xs0 = {0}; HERO_NODEBUG int64_t h31_i0; HeroStr h32_k = {0}; HERO_NODEBUG h_0opt_e201354 h33_f12 = {0}; HERO_NODEBUG int64_t h34_r8; HERO_NODEBUG HeroMapHeader * h35_own35 = {0}; HERO_NODEBUG h_0opt_e201354 h36_own36 = {0}; HERO_NODEBUG h_0opt_e201354 h37_own37 = {0}; HERO_NODEBUG h_0opt_e201354 h38_own38 = {0}; HERO_NODEBUG h_0opt_e201354 h39_own39 = {0}; HERO_NODEBUG h_0opt_e201354 h40_own40 = {0}; HERO_NODEBUG HeroMapHeader * h41_own41 = {0}; HERO_NODEBUG HeroMapHeader * h42_own42 = {0}; HERO_NODEBUG HeroMapHeader * h43_own43 = {0}; HERO_NODEBUG HeroMapHeader * h44_own44 = {0}; HERO_NODEBUG h_0opt_e201354 h45_own45 = {0}; HERO_NODEBUG HeroStr h46_own46 = {0}; HERO_NODEBUG HeroStr h47_own47 = {0}; HERO_NODEBUG HeroMapHeader * h48_own48 = {0}; HERO_NODEBUG h_0opt_f87774a h49_own49 = {0}; HERO_NODEBUG h_0opt_f87774a h50_own50 = {0}; HERO_NODEBUG HeroMapHeader * h51_own51 = {0}; HERO_NODEBUG h_0opt_23a6fed9 h52_own52 = {0}; HERO_NODEBUG HeroMapHeader * h53_own53 = {0}; HERO_NODEBUG HeroMapHeader * h54_own54 = {0}; HERO_NODEBUG h_0opt_e201354 h55_own55 = {0}; HERO_NODEBUG HeroMapHeader * h56_own56 = {0}; HERO_NODEBUG HeroMapHeader * h57_own57 = {0}; HERO_NODEBUG h_0opt_e201354 h58_own58 = {0}; HERO_NODEBUG h_0opt_e201354 h59_own59 = {0}; HERO_NODEBUG HeroMapHeader * h60_own60 = {0}; HERO_NODEBUG HeroStr h61_own61 = {0}; HERO_NODEBUG HeroStr h62_own62 = {0}; HERO_NODEBUG HeroArrayHeader * h63_own63 = {0}; HERO_NODEBUG h_0opt_e201354 h64_own64 = {0}; HERO_NODEBUG HeroArrayHeader * h65_own65 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroMapHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroMapHeader * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroMapHeader * t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroMapHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e201354 t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroMapHeader * t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_0opt_e201354 t50; HERO_NODEBUG h_0opt_e201354 t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG bool t54; HERO_NODEBUG HeroMapHeader * t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroMapHeader * t62; HERO_NODEBUG bool t63; HERO_NODEBUG HeroMapHeader * t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroMapHeader * t69; HERO_NODEBUG bool t70; HERO_NODEBUG HeroMapHeader * t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG HeroMapHeader * t78; HERO_NODEBUG bool t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG HeroMapHeader * t84; HERO_NODEBUG HeroMapHeader * t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG HeroMapHeader * t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG h_0opt_e201354 t89; HERO_NODEBUG h_0opt_e201354 t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG bool t93; HERO_NODEBUG h_0opt_e201354 t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroStr t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG HeroMapHeader * t106; HERO_NODEBUG HeroMapHeader * t107; HERO_NODEBUG int64_t t108; HERO_NODEBUG h_0opt_f87774a t109; HERO_NODEBUG h_0opt_f87774a t110; HERO_NODEBUG int64_t t111; HERO_NODEBUG int64_t t112; HERO_NODEBUG bool t113; HERO_NODEBUG h_0opt_f87774a t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG HeroStr t117; HERO_NODEBUG HeroMapHeader * t118; HERO_NODEBUG int64_t t119; HERO_NODEBUG h_0opt_f87774a t120; HERO_NODEBUG h_0opt_f87774a t121; HERO_NODEBUG int64_t t122; HERO_NODEBUG int64_t t123; HERO_NODEBUG bool t124; HERO_NODEBUG h_0opt_f87774a t125; HERO_NODEBUG HeroStr t126; HERO_NODEBUG HeroStr t127; HERO_NODEBUG HeroStr t128; HERO_NODEBUG HeroStr t129; HERO_NODEBUG int64_t t130; HERO_NODEBUG int64_t t131; HERO_NODEBUG h_maps_Point t132; HERO_NODEBUG HeroStr t133; HERO_NODEBUG int64_t t134; HERO_NODEBUG int64_t t135; HERO_NODEBUG h_maps_Point t136; HERO_NODEBUG HeroMapHeader * t137; HERO_NODEBUG HeroMapHeader * t138; HERO_NODEBUG HeroStr t139; HERO_NODEBUG h_0opt_23a6fed9 t140; HERO_NODEBUG h_0opt_23a6fed9 t141; HERO_NODEBUG h_0opt_23a6fed9 t142; HERO_NODEBUG int64_t t143; HERO_NODEBUG int64_t t144; HERO_NODEBUG bool t145; HERO_NODEBUG h_0opt_23a6fed9 t146; HERO_NODEBUG h_maps_Point t147; HERO_NODEBUG int64_t t148; HERO_NODEBUG int64_t t149; HERO_NODEBUG h_maps_Point t150; HERO_NODEBUG h_maps_Point t151; HERO_NODEBUG int64_t t152; HERO_NODEBUG HeroMapHeader * t153; HERO_NODEBUG HeroStr t154; HERO_NODEBUG int64_t t155; HERO_NODEBUG int64_t t156; HERO_NODEBUG h_maps_Point t157; HERO_NODEBUG HeroStr t158; HERO_NODEBUG int64_t t159; HERO_NODEBUG int64_t t160; HERO_NODEBUG h_maps_Point t161; HERO_NODEBUG HeroMapHeader * t162; HERO_NODEBUG bool t163; HERO_NODEBUG HeroMapHeader * t164; HERO_NODEBUG HeroMapHeader * t165; HERO_NODEBUG int64_t t166; HERO_NODEBUG HeroMapHeader * t167; HERO_NODEBUG HeroStr t168; HERO_NODEBUG h_0opt_e201354 t169; HERO_NODEBUG h_0opt_e201354 t170; HERO_NODEBUG int64_t t171; HERO_NODEBUG int64_t t172; HERO_NODEBUG bool t173; HERO_NODEBUG HeroMapHeader * t174; HERO_NODEBUG HeroMapHeader * t175; HERO_NODEBUG bool t176; HERO_NODEBUG HeroMapHeader * t177; HERO_NODEBUG HeroStr t178; HERO_NODEBUG int64_t t179; HERO_NODEBUG HeroStr t180; HERO_NODEBUG int64_t t181; HERO_NODEBUG HeroStr t182; HERO_NODEBUG int64_t t183; HERO_NODEBUG HeroMapHeader * t184; HERO_NODEBUG int64_t t185; HERO_NODEBUG HeroMapHeader * t186; HERO_NODEBUG HeroStr t187; HERO_NODEBUG h_0opt_e201354 t188; HERO_NODEBUG h_0opt_e201354 t189; HERO_NODEBUG int64_t t190; HERO_NODEBUG int64_t t191; HERO_NODEBUG bool t192; HERO_NODEBUG h_0opt_e201354 t193; HERO_NODEBUG int64_t t194; HERO_NODEBUG int64_t t195; HERO_NODEBUG int64_t t196; HERO_NODEBUG HeroMapHeader * t197; HERO_NODEBUG HeroStr t198; HERO_NODEBUG h_0opt_e201354 t199; HERO_NODEBUG h_0opt_e201354 t200; HERO_NODEBUG int64_t t201; HERO_NODEBUG int64_t t202; HERO_NODEBUG bool t203; HERO_NODEBUG h_0opt_e201354 t204; HERO_NODEBUG int64_t t205; HERO_NODEBUG int64_t t206; HERO_NODEBUG int64_t t207; HERO_NODEBUG HeroMapHeader * t208; HERO_NODEBUG int64_t t209; HERO_NODEBUG int64_t t210; HERO_NODEBUG int64_t t211; HERO_NODEBUG bool t212; HERO_NODEBUG HeroStr t213; HERO_NODEBUG int64_t t214; HERO_NODEBUG HeroStr t215; HERO_NODEBUG HeroStr t216; HERO_NODEBUG int64_t t217; HERO_NODEBUG int64_t t218; HERO_NODEBUG int64_t t219; HERO_NODEBUG int64_t t220; HERO_NODEBUG int64_t t221; HERO_NODEBUG HeroMapHeader * t222; HERO_NODEBUG HeroArrayHeader * t223; HERO_NODEBUG int64_t t224; HERO_NODEBUG int64_t t225; HERO_NODEBUG HeroArrayHeader * t226; HERO_NODEBUG int64_t t227; HERO_NODEBUG bool t228; HERO_NODEBUG HeroArrayHeader * t229; HERO_NODEBUG int64_t t230; HERO_NODEBUG HeroStr t231; HERO_NODEBUG int64_t t232; HERO_NODEBUG HeroMapHeader * t233; HERO_NODEBUG HeroStr t234; HERO_NODEBUG h_0opt_e201354 t235; HERO_NODEBUG h_0opt_e201354 t236; HERO_NODEBUG int64_t t237; HERO_NODEBUG int64_t t238; HERO_NODEBUG bool t239; HERO_NODEBUG h_0opt_e201354 t240; HERO_NODEBUG int64_t t241; HERO_NODEBUG int64_t t242; HERO_NODEBUG int64_t t243; HERO_NODEBUG int64_t t244; HERO_NODEBUG int64_t t245; HERO_NODEBUG int64_t t246; HERO_NODEBUG int64_t t247; HERO_NODEBUG HeroMapHeader * t248; HERO_NODEBUG int64_t t249; HERO_NODEBUG HeroMapHeader * t250; HERO_NODEBUG HeroArrayHeader * t251; HERO_NODEBUG int64_t t252; HERO_NODEBUG int64_t t253; HERO_NODEBUG HeroMapHeader * t254; HERO_NODEBUG HeroMapHeader * t255; HERO_NODEBUG h_0opt_e201354 t256; HERO_NODEBUG h_0opt_e201354 t257; HERO_NODEBUG h_0opt_e201354 t258; HERO_NODEBUG h_0opt_e201354 t259; HERO_NODEBUG h_0opt_e201354 t260; HERO_NODEBUG h_0opt_e201354 t261; HERO_NODEBUG h_0opt_e201354 t262; HERO_NODEBUG h_0opt_e201354 t263; HERO_NODEBUG h_0opt_e201354 t264; HERO_NODEBUG h_0opt_e201354 t265; HERO_NODEBUG HeroMapHeader * t266; HERO_NODEBUG HeroMapHeader * t267; HERO_NODEBUG HeroMapHeader * t268; HERO_NODEBUG HeroMapHeader * t269; HERO_NODEBUG HeroMapHeader * t270; HERO_NODEBUG h_0opt_e201354 t271; HERO_NODEBUG h_0opt_e201354 t272; HERO_NODEBUG HeroStr t273; HERO_NODEBUG HeroStr t274; HERO_NODEBUG HeroMapHeader * t275; HERO_NODEBUG HeroMapHeader * t276; HERO_NODEBUG h_0opt_f87774a t277; HERO_NODEBUG h_0opt_f87774a t278; HERO_NODEBUG HeroStr t279; HERO_NODEBUG HeroStr t280; HERO_NODEBUG h_0opt_f87774a t281; HERO_NODEBUG h_0opt_f87774a t282; HERO_NODEBUG HeroStr t283; HERO_NODEBUG HeroStr t284; HERO_NODEBUG HeroMapHeader * t285; HERO_NODEBUG HeroMapHeader * t286; HERO_NODEBUG h_0opt_23a6fed9 t287; HERO_NODEBUG h_0opt_23a6fed9 t288; HERO_NODEBUG h_0opt_23a6fed9 t289; HERO_NODEBUG HeroMapHeader * t290; HERO_NODEBUG HeroMapHeader * t291; HERO_NODEBUG HeroMapHeader * t292; HERO_NODEBUG h_0opt_e201354 t293; HERO_NODEBUG h_0opt_e201354 t294; HERO_NODEBUG HeroMapHeader * t295; HERO_NODEBUG HeroMapHeader * t296; HERO_NODEBUG HeroMapHeader * t297; HERO_NODEBUG h_0opt_e201354 t298; HERO_NODEBUG h_0opt_e201354 t299; HERO_NODEBUG h_0opt_e201354 t300; HERO_NODEBUG h_0opt_e201354 t301; HERO_NODEBUG HeroMapHeader * t302; HERO_NODEBUG HeroMapHeader * t303; HERO_NODEBUG HeroStr t304; HERO_NODEBUG HeroStr t305; HERO_NODEBUG HeroArrayHeader * t306; HERO_NODEBUG HeroArrayHeader * t307; HERO_NODEBUG HeroStr t308; HERO_NODEBUG h_0opt_e201354 t309; HERO_NODEBUG h_0opt_e201354 t310; HERO_NODEBUG HeroArrayHeader * t311; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/maps.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_61);
@@ -203,7 +208,7 @@ bb0:
 #line 37 "tests/golden/run/maps.hero"
     {
 #line 37 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t10, &t11);
+      HERO_NODEBUG const void *found = hero_map_find(t10, &t11);
 #line 37 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 37 "tests/golden/run/maps.hero"
@@ -249,7 +254,7 @@ bb0:
 #line 37 "tests/golden/run/maps.hero"
     {
 #line 37 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t18, &t19);
+      HERO_NODEBUG const void *found = hero_map_find(t18, &t19);
 #line 37 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 37 "tests/golden/run/maps.hero"
@@ -300,7 +305,7 @@ bb0:
 #line 38 "tests/golden/run/maps.hero"
     {
 #line 38 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t26, &t27);
+      HERO_NODEBUG const void *found = hero_map_find(t26, &t27);
 #line 38 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 38 "tests/golden/run/maps.hero"
@@ -371,7 +376,7 @@ bb3:
 #line 39 "tests/golden/run/maps.hero"
     {
 #line 39 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t37, &t38);
+      HERO_NODEBUG const void *found = hero_map_find(t37, &t38);
 #line 39 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 39 "tests/golden/run/maps.hero"
@@ -442,7 +447,7 @@ bb6:
 #line 40 "tests/golden/run/maps.hero"
     {
 #line 40 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t48, &t49);
+      HERO_NODEBUG const void *found = hero_map_find(t48, &t49);
 #line 40 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 40 "tests/golden/run/maps.hero"
@@ -615,7 +620,7 @@ bb6:
 #line 49 "tests/golden/run/maps.hero"
     {
 #line 49 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t87, &t88);
+      HERO_NODEBUG const void *found = hero_map_find(t87, &t88);
 #line 49 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 49 "tests/golden/run/maps.hero"
@@ -736,7 +741,7 @@ bb9:
 #line 53 "tests/golden/run/maps.hero"
     {
 #line 53 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t107, &t108);
+      HERO_NODEBUG const void *found = hero_map_find(t107, &t108);
 #line 53 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 53 "tests/golden/run/maps.hero"
@@ -819,7 +824,7 @@ bb12:
 #line 54 "tests/golden/run/maps.hero"
     {
 #line 54 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t118, &t119);
+      HERO_NODEBUG const void *found = hero_map_find(t118, &t119);
 #line 54 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 54 "tests/golden/run/maps.hero"
@@ -938,7 +943,7 @@ bb15:
 #line 58 "tests/golden/run/maps.hero"
     {
 #line 58 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t138, &t139);
+      HERO_NODEBUG const void *found = hero_map_find(t138, &t139);
 #line 58 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 58 "tests/golden/run/maps.hero"
@@ -1079,7 +1084,7 @@ bb18:
 #line 64 "tests/golden/run/maps.hero"
     {
 #line 64 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t167, &t168);
+      HERO_NODEBUG const void *found = hero_map_find(t167, &t168);
 #line 64 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 64 "tests/golden/run/maps.hero"
@@ -1178,7 +1183,7 @@ bb18:
 #line 73 "tests/golden/run/maps.hero"
     {
 #line 73 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t186, &t187);
+      HERO_NODEBUG const void *found = hero_map_find(t186, &t187);
 #line 73 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 73 "tests/golden/run/maps.hero"
@@ -1246,7 +1251,7 @@ bb21:
 #line 73 "tests/golden/run/maps.hero"
     {
 #line 73 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t197, &t198);
+      HERO_NODEBUG const void *found = hero_map_find(t197, &t198);
 #line 73 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 73 "tests/golden/run/maps.hero"
@@ -1446,7 +1451,7 @@ bb29:
 #line 87 "tests/golden/run/maps.hero"
     {
 #line 87 "tests/golden/run/maps.hero"
-      const void *found = hero_map_find(t233, &t234);
+      HERO_NODEBUG const void *found = hero_map_find(t233, &t234);
 #line 87 "tests/golden/run/maps.hero"
       if (found == NULL) {
 #line 87 "tests/golden/run/maps.hero"
@@ -1525,7 +1530,7 @@ bb31:
     hero_print_int(t253);
 #line 89 "tests/golden/run/maps.hero"
     hero_print_end();
-#line 1529 "maps.c"
+#line 1534 "maps.c"
     hero_map_release_at(&h0_m);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
@@ -1610,7 +1615,7 @@ bb34:
     h29_total = t244;
 #line 87 "tests/golden/run/maps.hero"
     goto bb30;
-#line 1614 "maps.c"
+#line 1619 "maps.c"
 }
 HERO_TU_LOCAL bool h_maps_Point_eq(const h_maps_Point *a, const h_maps_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

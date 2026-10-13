@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -54,7 +59,7 @@ HERO_STR_STATIC(hero_str_f1e77ee, "plus");
 HERO_STR_STATIC(hero_str_dc6a73a, "five");
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 
-#line 58 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 63 "fixedbugs429amapindexliteraltakesthekeytype.c"
 typedef enum h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag {
     h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag_plus = 0,
     h_fixedbugs429amapindexliteraltakesthekeytype_Op_tag_minus = 1,
@@ -97,7 +102,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 106 "fixedbugs429amapindexliteraltakesthekeytype.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs429amapindexliteraltakesthekeytype_Op_eq(const h_fixedbugs429amapindexliteraltakesthekeytype_Op *a, const h_fixedbugs429amapindexliteraltakesthekeytype_Op *b);
@@ -137,7 +142,7 @@ void h_fixedbugs429amapindexliteraltakesthekeytype_main(void);
 #line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 void h_fixedbugs429amapindexliteraltakesthekeytype_main(void) {
 #line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-    HeroMapHeader * h0_names = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}; HERO_NODEBUG h_0opt_f87774a h3_f2 = {0}; HERO_NODEBUG HeroStr h4_r0 = {0}; HeroMapHeader * h5_low = {0}; HERO_NODEBUG h_0opt_f87774a h6_f3 = {0}; h_fixedbugs429amapindexliteraltakesthekeytype_Holder h7_h = {0}; HERO_NODEBUG h_0opt_f87774a h8_f4 = {0}; HeroMapHeader * h9_ops = {0}; HERO_NODEBUG h_0opt_f87774a h10_f5 = {0}; HERO_NODEBUG h_0opt_f87774a h11_f6 = {0}; HeroMapHeader * h12_wide = {0}; HERO_NODEBUG h_0opt_f87774a h13_f7 = {0}; HeroArrayHeader * h14_xs = {0}; HeroStr h15_s = {0}; HERO_NODEBUG HeroMapHeader * h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG h_0opt_f87774a h18_own18 = {0}; HERO_NODEBUG h_0opt_f87774a h19_own19 = {0}; HERO_NODEBUG HeroMapHeader * h20_own20 = {0}; HERO_NODEBUG h_0opt_f87774a h21_own21 = {0}; HERO_NODEBUG HeroMapHeader * h22_own22 = {0}; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder h23_own23 = {0}; HERO_NODEBUG h_0opt_f87774a h24_own24 = {0}; HERO_NODEBUG HeroMapHeader * h25_own25 = {0}; HERO_NODEBUG h_0opt_f87774a h26_own26 = {0}; HERO_NODEBUG h_0opt_f87774a h27_own27 = {0}; HERO_NODEBUG HeroMapHeader * h28_own28 = {0}; HERO_NODEBUG h_0opt_f87774a h29_own29 = {0}; HERO_NODEBUG HeroArrayHeader * h30_own30 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroMapHeader * t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroMapHeader * t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG HeroFailure t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroMapHeader * t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG int8_t t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroMapHeader * t41; HERO_NODEBUG HeroMapHeader * t42; HERO_NODEBUG int8_t t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_NODEBUG HeroFailure t50; HERO_NODEBUG h_0opt_f87774a t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG uint16_t t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroMapHeader * t55; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder t56; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder t57; HERO_NODEBUG HeroMapHeader * t58; HERO_NODEBUG uint16_t t59; HERO_NODEBUG h_0opt_f87774a t60; HERO_NODEBUG h_0opt_f87774a t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG bool t64; HERO_NODEBUG h_0opt_f87774a t65; HERO_NODEBUG HeroFailure t66; HERO_NODEBUG h_0opt_f87774a t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroMapHeader * t71; HERO_NODEBUG HeroMapHeader * t72; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t73; HERO_NODEBUG h_0opt_f87774a t74; HERO_NODEBUG h_0opt_f87774a t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG bool t78; HERO_NODEBUG h_0opt_f87774a t79; HERO_NODEBUG HeroFailure t80; HERO_NODEBUG h_0opt_f87774a t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroMapHeader * t83; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t84; HERO_NODEBUG h_0opt_f87774a t85; HERO_NODEBUG h_0opt_f87774a t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG bool t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroMapHeader * t92; HERO_NODEBUG HeroMapHeader * t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG h_0opt_f87774a t95; HERO_NODEBUG h_0opt_f87774a t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG bool t99; HERO_NODEBUG h_0opt_f87774a t100; HERO_NODEBUG HeroFailure t101; HERO_NODEBUG h_0opt_f87774a t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG uint8_t t104; HERO_NODEBUG uint8_t t105; HERO_NODEBUG uint8_t t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG uint8_t t110; HERO_NODEBUG HeroStr t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG int64_t t113; HERO_NODEBUG uint8_t t114; HERO_NODEBUG HeroMapHeader * t115; HERO_NODEBUG HeroMapHeader * t116; HERO_NODEBUG h_0opt_f87774a t117; HERO_NODEBUG h_0opt_f87774a t118; HERO_NODEBUG h_0opt_f87774a t119; HERO_NODEBUG h_0opt_f87774a t120; HERO_NODEBUG h_0opt_f87774a t121; HERO_NODEBUG h_0opt_f87774a t122; HERO_NODEBUG HeroStr t123; HERO_NODEBUG HeroStr t124; HERO_NODEBUG HeroMapHeader * t125; HERO_NODEBUG HeroMapHeader * t126; HERO_NODEBUG h_0opt_f87774a t127; HERO_NODEBUG h_0opt_f87774a t128; HERO_NODEBUG HeroMapHeader * t129; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder t130; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder t131; HERO_NODEBUG h_0opt_f87774a t132; HERO_NODEBUG h_0opt_f87774a t133; HERO_NODEBUG HeroMapHeader * t134; HERO_NODEBUG HeroMapHeader * t135; HERO_NODEBUG h_0opt_f87774a t136; HERO_NODEBUG h_0opt_f87774a t137; HERO_NODEBUG h_0opt_f87774a t138; HERO_NODEBUG h_0opt_f87774a t139; HERO_NODEBUG HeroMapHeader * t140; HERO_NODEBUG HeroMapHeader * t141; HERO_NODEBUG h_0opt_f87774a t142; HERO_NODEBUG h_0opt_f87774a t143; HERO_NODEBUG HeroArrayHeader * t144; HERO_NODEBUG HeroArrayHeader * t145; HERO_NODEBUG HeroStr t146; goto bb0;
+    HeroMapHeader * h0_names = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}; HERO_NODEBUG h_0opt_f87774a h3_f2 = {0}; HERO_NODEBUG HeroStr h4_r0 = {0}; HeroMapHeader * h5_low = {0}; HERO_NODEBUG h_0opt_f87774a h6_f3 = {0}; h_fixedbugs429amapindexliteraltakesthekeytype_Holder h7_h = {0}; HERO_NODEBUG h_0opt_f87774a h8_f4 = {0}; HeroMapHeader * h9_ops = {0}; HERO_NODEBUG h_0opt_f87774a h10_f5 = {0}; HERO_NODEBUG h_0opt_f87774a h11_f6 = {0}; HeroMapHeader * h12_wide = {0}; HERO_NODEBUG h_0opt_f87774a h13_f7 = {0}; HeroArrayHeader * h14_xs = {0}; HeroStr h15_s = {0}; HERO_NODEBUG HeroMapHeader * h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG h_0opt_f87774a h18_own18 = {0}; HERO_NODEBUG h_0opt_f87774a h19_own19 = {0}; HERO_NODEBUG HeroMapHeader * h20_own20 = {0}; HERO_NODEBUG h_0opt_f87774a h21_own21 = {0}; HERO_NODEBUG HeroMapHeader * h22_own22 = {0}; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder h23_own23 = {0}; HERO_NODEBUG h_0opt_f87774a h24_own24 = {0}; HERO_NODEBUG HeroMapHeader * h25_own25 = {0}; HERO_NODEBUG h_0opt_f87774a h26_own26 = {0}; HERO_NODEBUG h_0opt_f87774a h27_own27 = {0}; HERO_NODEBUG HeroMapHeader * h28_own28 = {0}; HERO_NODEBUG h_0opt_f87774a h29_own29 = {0}; HERO_NODEBUG HeroArrayHeader * h30_own30 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroMapHeader * t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroMapHeader * t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG HeroFailure t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroMapHeader * t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG int8_t t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroMapHeader * t41; HERO_NODEBUG HeroMapHeader * t42; HERO_NODEBUG int8_t t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_NODEBUG HeroFailure t50; HERO_NODEBUG h_0opt_f87774a t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG uint16_t t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroMapHeader * t55; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder t56; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder t57; HERO_NODEBUG HeroMapHeader * t58; HERO_NODEBUG uint16_t t59; HERO_NODEBUG h_0opt_f87774a t60; HERO_NODEBUG h_0opt_f87774a t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG bool t64; HERO_NODEBUG h_0opt_f87774a t65; HERO_NODEBUG HeroFailure t66; HERO_NODEBUG h_0opt_f87774a t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroMapHeader * t71; HERO_NODEBUG HeroMapHeader * t72; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t73; HERO_NODEBUG h_0opt_f87774a t74; HERO_NODEBUG h_0opt_f87774a t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG bool t78; HERO_NODEBUG h_0opt_f87774a t79; HERO_NODEBUG HeroFailure t80; HERO_NODEBUG h_0opt_f87774a t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroMapHeader * t83; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Op t84; HERO_NODEBUG h_0opt_f87774a t85; HERO_NODEBUG h_0opt_f87774a t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG bool t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroMapHeader * t92; HERO_NODEBUG HeroMapHeader * t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG h_0opt_f87774a t95; HERO_NODEBUG h_0opt_f87774a t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG bool t99; HERO_NODEBUG h_0opt_f87774a t100; HERO_NODEBUG HeroFailure t101; HERO_NODEBUG h_0opt_f87774a t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG uint8_t t104; HERO_NODEBUG uint8_t t105; HERO_NODEBUG uint8_t t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG uint8_t t110; HERO_NODEBUG HeroStr t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG int64_t t113; HERO_NODEBUG uint8_t t114; HERO_NODEBUG HeroMapHeader * t115; HERO_NODEBUG HeroMapHeader * t116; HERO_NODEBUG h_0opt_f87774a t117; HERO_NODEBUG h_0opt_f87774a t118; HERO_NODEBUG h_0opt_f87774a t119; HERO_NODEBUG h_0opt_f87774a t120; HERO_NODEBUG h_0opt_f87774a t121; HERO_NODEBUG h_0opt_f87774a t122; HERO_NODEBUG HeroStr t123; HERO_NODEBUG HeroStr t124; HERO_NODEBUG HeroMapHeader * t125; HERO_NODEBUG HeroMapHeader * t126; HERO_NODEBUG h_0opt_f87774a t127; HERO_NODEBUG h_0opt_f87774a t128; HERO_NODEBUG HeroMapHeader * t129; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder t130; HERO_NODEBUG h_fixedbugs429amapindexliteraltakesthekeytype_Holder t131; HERO_NODEBUG h_0opt_f87774a t132; HERO_NODEBUG h_0opt_f87774a t133; HERO_NODEBUG HeroMapHeader * t134; HERO_NODEBUG HeroMapHeader * t135; HERO_NODEBUG h_0opt_f87774a t136; HERO_NODEBUG h_0opt_f87774a t137; HERO_NODEBUG h_0opt_f87774a t138; HERO_NODEBUG h_0opt_f87774a t139; HERO_NODEBUG HeroMapHeader * t140; HERO_NODEBUG HeroMapHeader * t141; HERO_NODEBUG h_0opt_f87774a t142; HERO_NODEBUG h_0opt_f87774a t143; HERO_NODEBUG HeroArrayHeader * t144; HERO_NODEBUG HeroArrayHeader * t145; HERO_NODEBUG HeroStr t146; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
 bb0:
     t1 = UINT64_C(11);
@@ -167,7 +172,7 @@ bb0:
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      const void *found = hero_map_find(t4, &t5);
+      HERO_NODEBUG const void *found = hero_map_find(t4, &t5);
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -229,7 +234,7 @@ bb1:
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      const void *found = hero_map_find(t17, &t18);
+      HERO_NODEBUG const void *found = hero_map_find(t17, &t18);
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -274,7 +279,7 @@ bb2:
     t11 = h1_f0;
 #line 23 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t12 = t11.as.err;
-#line 278 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 283 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb3:
@@ -292,7 +297,7 @@ bb3:
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      const void *found = hero_map_find(t28, &t29);
+      HERO_NODEBUG const void *found = hero_map_find(t28, &t29);
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 26 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -337,7 +342,7 @@ bb4:
     t24 = h2_f1;
 #line 25 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t25 = t24.as.err;
-#line 341 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 346 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t25);
     hero_unreachable();
 bb5:
@@ -404,7 +409,7 @@ bb7:
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      const void *found = hero_map_find(t42, &t43);
+      HERO_NODEBUG const void *found = hero_map_find(t42, &t43);
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -492,7 +497,7 @@ bb8:
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      const void *found = hero_map_find(t58, &t59);
+      HERO_NODEBUG const void *found = hero_map_find(t58, &t59);
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -537,7 +542,7 @@ bb9:
     t49 = h6_f3;
 #line 28 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t50 = t49.as.err;
-#line 541 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 546 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t50);
     hero_unreachable();
 bb10:
@@ -576,7 +581,7 @@ bb10:
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      const void *found = hero_map_find(t72, &t73);
+      HERO_NODEBUG const void *found = hero_map_find(t72, &t73);
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -621,7 +626,7 @@ bb11:
     t65 = h8_f4;
 #line 30 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t66 = t65.as.err;
-#line 625 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 630 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t66);
     hero_unreachable();
 bb12:
@@ -639,7 +644,7 @@ bb12:
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      const void *found = hero_map_find(t83, &t84);
+      HERO_NODEBUG const void *found = hero_map_find(t83, &t84);
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 33 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -707,7 +712,7 @@ bb12:
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     {
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
-      const void *found = hero_map_find(t93, &t94);
+      HERO_NODEBUG const void *found = hero_map_find(t93, &t94);
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
       if (found == NULL) {
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
@@ -752,7 +757,7 @@ bb13:
     t79 = h10_f5;
 #line 32 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t80 = t79.as.err;
-#line 756 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 761 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t80);
     hero_unreachable();
 bb14:
@@ -818,7 +823,7 @@ bb14:
     hero_print_int(t114);
 #line 39 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     hero_print_end();
-#line 822 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 827 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_map_release_at(&h0_names);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
@@ -856,7 +861,7 @@ bb15:
     t100 = h13_f7;
 #line 35 "tests/golden/run/fixedbugs-429-a-map-index-literal-takes-the-key-type.hero"
     t101 = t100.as.err;
-#line 860 "fixedbugs429amapindexliteraltakesthekeytype.c"
+#line 865 "fixedbugs429amapindexliteraltakesthekeytype.c"
     hero_panic_must(t101);
     hero_unreachable();
 }

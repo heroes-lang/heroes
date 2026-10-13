@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -97,7 +102,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 101 "main.c"
+#line 106 "main.c"
 typedef struct h_assemble_Assembled {
     HeroArrayHeader * f_code;
     HeroMapHeader * f_labels;
@@ -185,7 +190,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 189 "main.c"
+#line 194 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_assemble_Assembled_retain(const h_assemble_Assembled *v);
@@ -323,19 +328,19 @@ void h_library_exit(int64_t h0_code);
 #line 21 "examples/assembler/main.hero"
 int64_t h_main_FUEL(void) {
 #line 21 "examples/assembler/main.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 21 "examples/assembler/main.hero"
 bb0:
     t1 = INT64_C(10000);
 #line 22 "examples/assembler/main.hero"
     return t1;
-#line 333 "main.c"
+#line 338 "main.c"
 }
 
 #line 24 "examples/assembler/main.hero"
 void h_main_main(void) {
 #line 24 "examples/assembler/main.hero"
-    HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; goto bb0;
+    HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_ENTRY_STOP; goto bb0;
 #line 24 "examples/assembler/main.hero"
 bb0:
     t1 = h_library_args();
@@ -422,7 +427,7 @@ bb3:
     goto bb1;
 #line 29 "examples/assembler/main.hero"
 bb4:
-#line 426 "main.c"
+#line 431 "main.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -509,13 +514,13 @@ bb6:
     h_main_build(t28, t29);
 #line 33 "examples/assembler/main.hero"
     goto bb4;
-#line 513 "main.c"
+#line 518 "main.c"
 }
 
 #line 35 "examples/assembler/main.hero"
 void h_main_stop(HeroStr h0_message) {
 #line 35 "examples/assembler/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 35 "examples/assembler/main.hero"
 bb0:
     t1 = h0_message;
@@ -530,13 +535,13 @@ bb0:
     hero_unreachable();
 #line 37 "examples/assembler/main.hero"
     return;
-#line 534 "main.c"
+#line 539 "main.c"
 }
 
 #line 39 "examples/assembler/main.hero"
 void h_main_build(HeroStr h0_text, HeroArrayHeader * h1_given) {
 #line 39 "examples/assembler/main.hero"
-    HERO_NODEBUG h_0opt_40eff9f5 h2_s0 = {0}; HeroFailure h3_e = {0}; h_assemble_Assembled h4_out = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0opt_40eff9f5 t3; HERO_NODEBUG h_0opt_40eff9f5 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_40eff9f5 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_40eff9f5 t15; HERO_NODEBUG h_assemble_Assembled t16; HERO_NODEBUG h_assemble_Assembled t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG h_0opt_40eff9f5 t20; HERO_NODEBUG h_0opt_40eff9f5 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_assemble_Assembled t25; goto bb0;
+    HERO_NODEBUG h_0opt_40eff9f5 h2_s0 = {0}; HeroFailure h3_e = {0}; h_assemble_Assembled h4_out = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0opt_40eff9f5 t3; HERO_NODEBUG h_0opt_40eff9f5 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_40eff9f5 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_40eff9f5 t15; HERO_NODEBUG h_assemble_Assembled t16; HERO_NODEBUG h_assemble_Assembled t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG h_0opt_40eff9f5 t20; HERO_NODEBUG h_0opt_40eff9f5 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_assemble_Assembled t25; HERO_ENTRY_STOP; goto bb0;
 #line 39 "examples/assembler/main.hero"
 bb0:
     t1 = h0_text;
@@ -580,7 +585,7 @@ bb0:
     }
 #line 40 "examples/assembler/main.hero"
 bb1:
-#line 584 "main.c"
+#line 589 "main.c"
     h_0opt_40eff9f5_release(hero_slot_escape(&h2_s0));
     hero_failure_release(&h3_e);
     h_assemble_Assembled_release(hero_slot_escape(&h4_out));
@@ -653,13 +658,13 @@ bb3:
     h_main_show(t17, t18);
 #line 42 "examples/assembler/main.hero"
     goto bb1;
-#line 657 "main.c"
+#line 662 "main.c"
 }
 
 #line 44 "examples/assembler/main.hero"
 void h_main_show(h_assemble_Assembled h0_out, HeroArrayHeader * h1_given) {
 #line 44 "examples/assembler/main.hero"
-    HERO_NODEBUG bool h2_b0; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_line = {0}; HERO_NODEBUG h_0opt_5a58f2ca h6_s0 = {0}; HeroFailure h7_e = {0}; HeroArrayHeader * h8_output = {0}; HERO_NODEBUG HeroArrayHeader * h9_xs1 = {0}; HERO_NODEBUG int64_t h10_i1; HeroStr h11_line = {0}; HERO_NODEBUG h_0opt_5a58f2ca h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_assemble_Assembled t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_assemble_Assembled t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_0opt_5a58f2ca t29; HERO_NODEBUG h_0opt_5a58f2ca t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG h_0opt_5a58f2ca t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroFailure t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_5a58f2ca t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG h_assemble_Assembled t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG h_0opt_5a58f2ca t65; HERO_NODEBUG h_0opt_5a58f2ca t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroFailure t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroStr t75; goto bb0;
+    HERO_NODEBUG bool h2_b0; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_line = {0}; HERO_NODEBUG h_0opt_5a58f2ca h6_s0 = {0}; HeroFailure h7_e = {0}; HeroArrayHeader * h8_output = {0}; HERO_NODEBUG HeroArrayHeader * h9_xs1 = {0}; HERO_NODEBUG int64_t h10_i1; HeroStr h11_line = {0}; HERO_NODEBUG h_0opt_5a58f2ca h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_assemble_Assembled t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_assemble_Assembled t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_0opt_5a58f2ca t29; HERO_NODEBUG h_0opt_5a58f2ca t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG h_0opt_5a58f2ca t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroFailure t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_5a58f2ca t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG h_assemble_Assembled t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG h_0opt_5a58f2ca t65; HERO_NODEBUG h_0opt_5a58f2ca t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroFailure t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroStr t75; HERO_ENTRY_STOP; goto bb0;
 #line 44 "examples/assembler/main.hero"
 bb0:
     t1 = h1_given;
@@ -976,7 +981,7 @@ bb16:
     goto bb10;
 #line 57 "examples/assembler/main.hero"
 bb17:
-#line 980 "main.c"
+#line 985 "main.c"
     hero_array_release_at(&h3_xs0);
     hero_str_release_at(&h5_line);
     h_0opt_5a58f2ca_release(hero_slot_escape(&h6_s0));
@@ -994,7 +999,7 @@ bb17:
 #line 61 "examples/assembler/main.hero"
 HeroArrayHeader * h_main_listing(HeroArrayHeader * h0_code) {
 #line 61 "examples/assembler/main.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_at; HeroArrayHeader * h3_row = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroStr t47; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_at; HeroArrayHeader * h3_row = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroStr t47; HERO_ENTRY_STOP; goto bb0;
 #line 61 "examples/assembler/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1152,7 +1157,7 @@ bb2:
 bb3:
 #line 70 "examples/assembler/main.hero"
     t38 = h1_out;
-#line 1156 "main.c"
+#line 1161 "main.c"
     hero_array_incref(t38);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_row);
@@ -1169,7 +1174,7 @@ bb3:
 #line 72 "examples/assembler/main.hero"
 HeroStr h_main_name_of(int64_t h0_opcode) {
 #line 72 "examples/assembler/main.hero"
-    HERO_NODEBUG HeroStr h1_ret0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; goto bb0;
+    HERO_NODEBUG HeroStr h1_ret0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_ENTRY_STOP; goto bb0;
 #line 72 "examples/assembler/main.hero"
 bb0:
     t1 = h0_opcode;
@@ -1355,7 +1360,7 @@ bb24:
     goto bb22;
 #line 95 "examples/assembler/main.hero"
 bb25:
-#line 1359 "main.c"
+#line 1364 "main.c"
     t34 = h1_ret0;
     hero_str_incref(t34);
     return t34;
@@ -1364,11 +1369,11 @@ bb25:
 #line 19 "examples/assembler/assemble.hero"
 HeroStr h_assemble_ERR_BAD_OPERAND_COUNT(void) {
 #line 19 "examples/assembler/assemble.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 19 "examples/assembler/assemble.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6ddca0c8);
-#line 1372 "main.c"
+#line 1377 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1376,11 +1381,11 @@ bb0:
 #line 22 "examples/assembler/assemble.hero"
 HeroStr h_assemble_ERR_DUPLICATE_LABEL(void) {
 #line 22 "examples/assembler/assemble.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 22 "examples/assembler/assemble.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_4348b026);
-#line 1384 "main.c"
+#line 1389 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1388,11 +1393,11 @@ bb0:
 #line 25 "examples/assembler/assemble.hero"
 HeroStr h_assemble_ERR_UNKNOWN_INSTRUCTION(void) {
 #line 25 "examples/assembler/assemble.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 25 "examples/assembler/assemble.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_4261e33);
-#line 1396 "main.c"
+#line 1401 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1400,11 +1405,11 @@ bb0:
 #line 28 "examples/assembler/assemble.hero"
 HeroStr h_assemble_ERR_UNKNOWN_LABEL(void) {
 #line 28 "examples/assembler/assemble.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 28 "examples/assembler/assemble.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6ee9eb5a);
-#line 1408 "main.c"
+#line 1413 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1412,7 +1417,7 @@ bb0:
 #line 37 "examples/assembler/assemble.hero"
 h_0opt_7e3a44cc h_assemble_label_table(HeroArrayHeader * h0_lines) {
 #line 37 "examples/assembler/assemble.hero"
-    HeroMapHeader * h1_labels = {0}; int64_t h2_at; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; h_program_Line h5_line = {0}; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h7_ret0 = {0}; HERO_NODEBUG HeroMapHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h17_own17 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_program_Line t11; HERO_NODEBUG h_program_Line t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroMapHeader * t16; HERO_NODEBUG h_program_Line t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG bool t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_program_Line t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_program_Line t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_0opt_7e3a44cc t38; HERO_NODEBUG h_program_Line t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG h_program_Line t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG bool t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG h_0opt_7e3a44cc t53; HERO_NODEBUG h_0opt_7e3a44cc t54; HERO_NODEBUG HeroMapHeader * t55; HERO_NODEBUG HeroMapHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG h_program_Line t58; HERO_NODEBUG h_0opt_7e3a44cc t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG h_0opt_7e3a44cc t68; goto bb0;
+    HeroMapHeader * h1_labels = {0}; int64_t h2_at; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; h_program_Line h5_line = {0}; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h7_ret0 = {0}; HERO_NODEBUG HeroMapHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h17_own17 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_program_Line t11; HERO_NODEBUG h_program_Line t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroMapHeader * t16; HERO_NODEBUG h_program_Line t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG bool t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_program_Line t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_program_Line t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_0opt_7e3a44cc t38; HERO_NODEBUG h_program_Line t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG h_program_Line t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG bool t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG h_0opt_7e3a44cc t53; HERO_NODEBUG h_0opt_7e3a44cc t54; HERO_NODEBUG HeroMapHeader * t55; HERO_NODEBUG HeroMapHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG h_program_Line t58; HERO_NODEBUG h_0opt_7e3a44cc t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG h_0opt_7e3a44cc t68; HERO_ENTRY_STOP; goto bb0;
 #line 37 "examples/assembler/assemble.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
@@ -1539,7 +1544,7 @@ bb6:
 #line 43 "examples/assembler/assemble.hero"
     {
 #line 43 "examples/assembler/assemble.hero"
-      const void *found = hero_map_find(t16, &t18);
+      HERO_NODEBUG const void *found = hero_map_find(t16, &t18);
 #line 43 "examples/assembler/assemble.hero"
       if (found == NULL) {
 #line 43 "examples/assembler/assemble.hero"
@@ -1701,7 +1706,7 @@ bb13:
     goto bb11;
 #line 51 "examples/assembler/assemble.hero"
 bb14:
-#line 1705 "main.c"
+#line 1710 "main.c"
     t54 = h7_ret0;
     h_0opt_7e3a44cc_retain(&t54);
     hero_map_release_at(&h1_labels);
@@ -1724,7 +1729,7 @@ bb14:
 #line 57 "examples/assembler/assemble.hero"
 h_0opt_40eff9f5 h_assemble_assemble(HeroArrayHeader * h0_lines) {
 #line 57 "examples/assembler/assemble.hero"
-    HERO_NODEBUG h_0opt_7e3a44cc h1_f0 = {0}; HeroMapHeader * h2_labels = {0}; HeroArrayHeader * h3_code = {0}; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; h_program_Line h6_line = {0}; HERO_NODEBUG h_0opt_2270cbe7 h7_f1 = {0}; HERO_NODEBUG HeroArrayHeader * h8_xs1 = {0}; HERO_NODEBUG int64_t h9_i1; int64_t h10_word; HERO_NODEBUG h_0opt_40eff9f5 h11_ret0 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h14_own14 = {0}; HERO_NODEBUG h_assemble_Assembled h15_own15 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h16_own16 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h17_own17 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_0opt_7e3a44cc t2; HERO_NODEBUG h_0opt_7e3a44cc t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_7e3a44cc t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_40eff9f5 t9; HERO_NODEBUG h_0opt_7e3a44cc t10; HERO_NODEBUG HeroMapHeader * t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_program_Line t21; HERO_NODEBUG h_program_Line t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_program_Line t26; HERO_NODEBUG HeroMapHeader * t27; HERO_NODEBUG h_0opt_2270cbe7 t28; HERO_NODEBUG h_0opt_2270cbe7 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_2270cbe7 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_40eff9f5 t35; HERO_NODEBUG h_0opt_2270cbe7 t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroMapHeader * t56; HERO_NODEBUG h_assemble_Assembled t57; HERO_NODEBUG h_0opt_40eff9f5 t58; HERO_NODEBUG h_0opt_40eff9f5 t59; HERO_NODEBUG h_0opt_7e3a44cc t60; HERO_NODEBUG h_0opt_7e3a44cc t61; HERO_NODEBUG HeroMapHeader * t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG HeroArrayHeader * t65; HERO_NODEBUG h_0opt_40eff9f5 t66; HERO_NODEBUG h_program_Line t67; HERO_NODEBUG h_assemble_Assembled t68; HERO_NODEBUG h_0opt_40eff9f5 t69; HERO_NODEBUG h_0opt_2270cbe7 t70; HERO_NODEBUG h_0opt_2270cbe7 t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG h_0opt_40eff9f5 t73; goto bb0;
+    HERO_NODEBUG h_0opt_7e3a44cc h1_f0 = {0}; HeroMapHeader * h2_labels = {0}; HeroArrayHeader * h3_code = {0}; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; h_program_Line h6_line = {0}; HERO_NODEBUG h_0opt_2270cbe7 h7_f1 = {0}; HERO_NODEBUG HeroArrayHeader * h8_xs1 = {0}; HERO_NODEBUG int64_t h9_i1; int64_t h10_word; HERO_NODEBUG h_0opt_40eff9f5 h11_ret0 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h14_own14 = {0}; HERO_NODEBUG h_assemble_Assembled h15_own15 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h16_own16 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h17_own17 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_0opt_7e3a44cc t2; HERO_NODEBUG h_0opt_7e3a44cc t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_7e3a44cc t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_40eff9f5 t9; HERO_NODEBUG h_0opt_7e3a44cc t10; HERO_NODEBUG HeroMapHeader * t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_program_Line t21; HERO_NODEBUG h_program_Line t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_program_Line t26; HERO_NODEBUG HeroMapHeader * t27; HERO_NODEBUG h_0opt_2270cbe7 t28; HERO_NODEBUG h_0opt_2270cbe7 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_2270cbe7 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_40eff9f5 t35; HERO_NODEBUG h_0opt_2270cbe7 t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroMapHeader * t56; HERO_NODEBUG h_assemble_Assembled t57; HERO_NODEBUG h_0opt_40eff9f5 t58; HERO_NODEBUG h_0opt_40eff9f5 t59; HERO_NODEBUG h_0opt_7e3a44cc t60; HERO_NODEBUG h_0opt_7e3a44cc t61; HERO_NODEBUG HeroMapHeader * t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG HeroArrayHeader * t65; HERO_NODEBUG h_0opt_40eff9f5 t66; HERO_NODEBUG h_program_Line t67; HERO_NODEBUG h_assemble_Assembled t68; HERO_NODEBUG h_0opt_40eff9f5 t69; HERO_NODEBUG h_0opt_2270cbe7 t70; HERO_NODEBUG h_0opt_2270cbe7 t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG h_0opt_40eff9f5 t73; HERO_ENTRY_STOP; goto bb0;
 #line 57 "examples/assembler/assemble.hero"
 bb0:
     t1 = h0_lines;
@@ -2025,7 +2030,7 @@ bb15:
     goto bb5;
 #line 65 "examples/assembler/assemble.hero"
 bb16:
-#line 2029 "main.c"
+#line 2034 "main.c"
     t59 = h11_ret0;
     h_0opt_40eff9f5_retain(&t59);
     h_0opt_7e3a44cc_release(hero_slot_escape(&h1_f0));
@@ -2048,7 +2053,7 @@ bb16:
 #line 73 "examples/assembler/assemble.hero"
 h_0opt_2270cbe7 h_assemble_encode(h_program_Line h0_line, HeroMapHeader * h1_labels) {
 #line 73 "examples/assembler/assemble.hero"
-    HeroStr h2_m = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h4_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h5_f2 = {0}; HERO_NODEBUG bool h6_b0; HERO_NODEBUG bool h7_b1; HERO_NODEBUG h_0opt_e201354 h8_f3 = {0}; HERO_NODEBUG h_0opt_e201354 h9_f4 = {0}; HERO_NODEBUG h_0opt_e201354 h10_f5 = {0}; HERO_NODEBUG h_0opt_e201354 h11_f6 = {0}; HERO_NODEBUG h_0opt_e201354 h12_f7 = {0}; HERO_NODEBUG h_0opt_e201354 h13_f8 = {0}; HERO_NODEBUG h_0opt_e201354 h14_f9 = {0}; HERO_NODEBUG h_0opt_e201354 h15_f10 = {0}; HERO_NODEBUG h_0opt_e201354 h16_f11 = {0}; HERO_NODEBUG h_0opt_e201354 h17_f12 = {0}; HERO_NODEBUG h_0opt_e201354 h18_f13 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h19_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h22_own22 = {0}; HERO_NODEBUG h_0opt_e201354 h23_own23 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h24_own24 = {0}; HERO_NODEBUG HeroArrayHeader * h25_own25 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h26_own26 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h27_own27 = {0}; HERO_NODEBUG h_0opt_e201354 h28_own28 = {0}; HERO_NODEBUG h_0opt_e201354 h29_own29 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h30_own30 = {0}; HERO_NODEBUG h_0opt_e201354 h31_own31 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h32_own32 = {0}; HERO_NODEBUG HeroArrayHeader * h33_own33 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h34_own34 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h35_own35 = {0}; HERO_NODEBUG h_0opt_e201354 h36_own36 = {0}; HERO_NODEBUG h_0opt_e201354 h37_own37 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h38_own38 = {0}; HERO_NODEBUG HeroArrayHeader * h39_own39 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h40_own40 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h41_own41 = {0}; HERO_NODEBUG h_0opt_e201354 h42_own42 = {0}; HERO_NODEBUG h_0opt_e201354 h43_own43 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h44_own44 = {0}; HERO_NODEBUG h_0opt_e201354 h45_own45 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h46_own46 = {0}; HERO_NODEBUG HeroArrayHeader * h47_own47 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h48_own48 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h49_own49 = {0}; HERO_NODEBUG h_0opt_e201354 h50_own50 = {0}; HERO_NODEBUG h_0opt_e201354 h51_own51 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h52_own52 = {0}; HERO_NODEBUG HeroArrayHeader * h53_own53 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h54_own54 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h55_own55 = {0}; HERO_NODEBUG HeroStr h56_own56 = {0}; HERO_NODEBUG HeroStr h57_own57 = {0}; HERO_NODEBUG HeroStr h58_own58 = {0}; HERO_NODEBUG HeroStr h59_own59 = {0}; HERO_NODEBUG HeroStr h60_own60 = {0}; HERO_NODEBUG HeroStr h61_own61 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h62_own62 = {0}; HERO_NODEBUG h_0opt_e201354 h63_own63 = {0}; HERO_NODEBUG HeroArrayHeader * h64_own64 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h65_own65 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h66_own66 = {0}; HERO_NODEBUG h_program_Line t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_program_Line t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_0opt_2270cbe7 t15; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_program_Line t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_program_Line t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG h_0opt_e201354 t30; HERO_NODEBUG HeroFailure t31; HERO_NODEBUG h_0opt_2270cbe7 t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_program_Line t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_program_Line t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG h_0opt_e201354 t46; HERO_NODEBUG HeroFailure t47; HERO_NODEBUG h_0opt_2270cbe7 t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG h_0opt_2270cbe7 t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG bool t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG bool t58; HERO_NODEBUG bool t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG bool t62; HERO_NODEBUG bool t63; HERO_NODEBUG h_program_Line t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG h_0opt_e201354 t66; HERO_NODEBUG h_0opt_e201354 t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG bool t70; HERO_NODEBUG h_0opt_e201354 t71; HERO_NODEBUG HeroFailure t72; HERO_NODEBUG h_0opt_2270cbe7 t73; HERO_NODEBUG HeroStr t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG h_program_Line t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_program_Line t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG h_0opt_e201354 t84; HERO_NODEBUG h_0opt_e201354 t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG bool t88; HERO_NODEBUG h_0opt_e201354 t89; HERO_NODEBUG HeroFailure t90; HERO_NODEBUG h_0opt_2270cbe7 t91; HERO_NODEBUG h_0opt_e201354 t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG h_program_Line t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG h_program_Line t98; HERO_NODEBUG int64_t t99; HERO_NODEBUG h_0opt_e201354 t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG int64_t t103; HERO_NODEBUG bool t104; HERO_NODEBUG h_0opt_e201354 t105; HERO_NODEBUG HeroFailure t106; HERO_NODEBUG h_0opt_2270cbe7 t107; HERO_NODEBUG h_0opt_e201354 t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG h_0opt_2270cbe7 t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG bool t114; HERO_NODEBUG h_program_Line t115; HERO_NODEBUG int64_t t116; HERO_NODEBUG h_0opt_e201354 t117; HERO_NODEBUG h_0opt_e201354 t118; HERO_NODEBUG int64_t t119; HERO_NODEBUG int64_t t120; HERO_NODEBUG bool t121; HERO_NODEBUG h_0opt_e201354 t122; HERO_NODEBUG HeroFailure t123; HERO_NODEBUG h_0opt_2270cbe7 t124; HERO_NODEBUG int64_t t127; HERO_NODEBUG h_program_Line t128; HERO_NODEBUG HeroArrayHeader * t129; HERO_NODEBUG int64_t t130; HERO_NODEBUG HeroStr t131; HERO_NODEBUG h_program_Line t132; HERO_NODEBUG int64_t t133; HERO_NODEBUG h_0opt_e201354 t134; HERO_NODEBUG h_0opt_e201354 t135; HERO_NODEBUG int64_t t136; HERO_NODEBUG int64_t t137; HERO_NODEBUG bool t138; HERO_NODEBUG h_0opt_e201354 t139; HERO_NODEBUG HeroFailure t140; HERO_NODEBUG h_0opt_2270cbe7 t141; HERO_NODEBUG h_0opt_e201354 t142; HERO_NODEBUG int64_t t143; HERO_NODEBUG int64_t t144; HERO_NODEBUG HeroArrayHeader * t145; HERO_NODEBUG h_0opt_2270cbe7 t146; HERO_NODEBUG HeroStr t147; HERO_NODEBUG HeroStr t148; HERO_NODEBUG bool t149; HERO_NODEBUG h_program_Line t150; HERO_NODEBUG int64_t t151; HERO_NODEBUG h_0opt_e201354 t152; HERO_NODEBUG h_0opt_e201354 t153; HERO_NODEBUG int64_t t154; HERO_NODEBUG int64_t t155; HERO_NODEBUG bool t156; HERO_NODEBUG h_0opt_e201354 t157; HERO_NODEBUG HeroFailure t158; HERO_NODEBUG h_0opt_2270cbe7 t159; HERO_NODEBUG int64_t t162; HERO_NODEBUG h_program_Line t163; HERO_NODEBUG HeroArrayHeader * t164; HERO_NODEBUG int64_t t165; HERO_NODEBUG HeroStr t166; HERO_NODEBUG h_program_Line t167; HERO_NODEBUG int64_t t168; HERO_NODEBUG h_0opt_e201354 t169; HERO_NODEBUG h_0opt_e201354 t170; HERO_NODEBUG int64_t t171; HERO_NODEBUG int64_t t172; HERO_NODEBUG bool t173; HERO_NODEBUG h_0opt_e201354 t174; HERO_NODEBUG HeroFailure t175; HERO_NODEBUG h_0opt_2270cbe7 t176; HERO_NODEBUG h_0opt_e201354 t177; HERO_NODEBUG int64_t t178; HERO_NODEBUG h_program_Line t179; HERO_NODEBUG HeroArrayHeader * t180; HERO_NODEBUG int64_t t181; HERO_NODEBUG HeroStr t182; HERO_NODEBUG HeroMapHeader * t183; HERO_NODEBUG h_program_Line t184; HERO_NODEBUG int64_t t185; HERO_NODEBUG h_0opt_e201354 t186; HERO_NODEBUG h_0opt_e201354 t187; HERO_NODEBUG int64_t t188; HERO_NODEBUG int64_t t189; HERO_NODEBUG bool t190; HERO_NODEBUG h_0opt_e201354 t191; HERO_NODEBUG HeroFailure t192; HERO_NODEBUG h_0opt_2270cbe7 t193; HERO_NODEBUG h_0opt_e201354 t194; HERO_NODEBUG int64_t t195; HERO_NODEBUG HeroArrayHeader * t196; HERO_NODEBUG h_0opt_2270cbe7 t197; HERO_NODEBUG HeroStr t198; HERO_NODEBUG HeroStr t199; HERO_NODEBUG bool t200; HERO_NODEBUG h_program_Line t201; HERO_NODEBUG int64_t t202; HERO_NODEBUG h_0opt_e201354 t203; HERO_NODEBUG h_0opt_e201354 t204; HERO_NODEBUG int64_t t205; HERO_NODEBUG int64_t t206; HERO_NODEBUG bool t207; HERO_NODEBUG h_0opt_e201354 t208; HERO_NODEBUG HeroFailure t209; HERO_NODEBUG h_0opt_2270cbe7 t210; HERO_NODEBUG int64_t t213; HERO_NODEBUG h_program_Line t214; HERO_NODEBUG HeroArrayHeader * t215; HERO_NODEBUG int64_t t216; HERO_NODEBUG HeroStr t217; HERO_NODEBUG HeroMapHeader * t218; HERO_NODEBUG h_program_Line t219; HERO_NODEBUG int64_t t220; HERO_NODEBUG h_0opt_e201354 t221; HERO_NODEBUG h_0opt_e201354 t222; HERO_NODEBUG int64_t t223; HERO_NODEBUG int64_t t224; HERO_NODEBUG bool t225; HERO_NODEBUG h_0opt_e201354 t226; HERO_NODEBUG HeroFailure t227; HERO_NODEBUG h_0opt_2270cbe7 t228; HERO_NODEBUG h_0opt_e201354 t229; HERO_NODEBUG int64_t t230; HERO_NODEBUG int64_t t231; HERO_NODEBUG HeroArrayHeader * t232; HERO_NODEBUG h_0opt_2270cbe7 t233; HERO_NODEBUG HeroStr t234; HERO_NODEBUG HeroStr t235; HERO_NODEBUG bool t236; HERO_NODEBUG h_program_Line t237; HERO_NODEBUG int64_t t238; HERO_NODEBUG h_0opt_e201354 t239; HERO_NODEBUG h_0opt_e201354 t240; HERO_NODEBUG int64_t t241; HERO_NODEBUG int64_t t242; HERO_NODEBUG bool t243; HERO_NODEBUG h_0opt_e201354 t244; HERO_NODEBUG HeroFailure t245; HERO_NODEBUG h_0opt_2270cbe7 t246; HERO_NODEBUG int64_t t249; HERO_NODEBUG int64_t t250; HERO_NODEBUG int64_t t251; HERO_NODEBUG HeroArrayHeader * t252; HERO_NODEBUG h_0opt_2270cbe7 t253; HERO_NODEBUG HeroStr t254; HERO_NODEBUG HeroStr t255; HERO_NODEBUG h_program_Line t256; HERO_NODEBUG int64_t t257; HERO_NODEBUG HeroStr t258; HERO_NODEBUG HeroStr t259; HERO_NODEBUG HeroStr t260; HERO_NODEBUG HeroStr t261; HERO_NODEBUG HeroStr t262; HERO_NODEBUG HeroStr t263; HERO_NODEBUG HeroStr t264; HERO_NODEBUG HeroStr t265; HERO_NODEBUG h_0opt_2270cbe7 t266; HERO_NODEBUG h_0opt_2270cbe7 t267; HERO_NODEBUG HeroStr t268; HERO_NODEBUG h_0opt_e201354 t269; HERO_NODEBUG h_0opt_e201354 t270; HERO_NODEBUG h_0opt_e201354 t271; HERO_NODEBUG h_0opt_e201354 t272; HERO_NODEBUG h_0opt_2270cbe7 t273; HERO_NODEBUG h_0opt_e201354 t274; HERO_NODEBUG h_0opt_e201354 t275; HERO_NODEBUG h_0opt_2270cbe7 t276; HERO_NODEBUG HeroArrayHeader * t277; HERO_NODEBUG h_0opt_2270cbe7 t278; HERO_NODEBUG h_0opt_2270cbe7 t279; HERO_NODEBUG h_0opt_e201354 t280; HERO_NODEBUG h_0opt_e201354 t281; HERO_NODEBUG h_0opt_e201354 t282; HERO_NODEBUG h_0opt_e201354 t283; HERO_NODEBUG h_0opt_2270cbe7 t284; HERO_NODEBUG h_0opt_e201354 t285; HERO_NODEBUG h_0opt_e201354 t286; HERO_NODEBUG h_0opt_2270cbe7 t287; HERO_NODEBUG HeroArrayHeader * t288; HERO_NODEBUG h_0opt_2270cbe7 t289; HERO_NODEBUG h_0opt_2270cbe7 t290; HERO_NODEBUG h_0opt_e201354 t291; HERO_NODEBUG h_0opt_e201354 t292; HERO_NODEBUG h_0opt_e201354 t293; HERO_NODEBUG h_0opt_e201354 t294; HERO_NODEBUG h_0opt_2270cbe7 t295; HERO_NODEBUG HeroArrayHeader * t296; HERO_NODEBUG h_0opt_2270cbe7 t297; HERO_NODEBUG h_0opt_2270cbe7 t298; HERO_NODEBUG h_0opt_e201354 t299; HERO_NODEBUG h_0opt_e201354 t300; HERO_NODEBUG h_0opt_e201354 t301; HERO_NODEBUG h_0opt_e201354 t302; HERO_NODEBUG h_0opt_2270cbe7 t303; HERO_NODEBUG h_0opt_e201354 t304; HERO_NODEBUG h_0opt_e201354 t305; HERO_NODEBUG h_0opt_2270cbe7 t306; HERO_NODEBUG HeroArrayHeader * t307; HERO_NODEBUG h_0opt_2270cbe7 t308; HERO_NODEBUG h_0opt_2270cbe7 t309; HERO_NODEBUG h_0opt_e201354 t310; HERO_NODEBUG h_0opt_e201354 t311; HERO_NODEBUG h_0opt_e201354 t312; HERO_NODEBUG h_0opt_e201354 t313; HERO_NODEBUG h_0opt_2270cbe7 t314; HERO_NODEBUG HeroArrayHeader * t315; HERO_NODEBUG h_0opt_2270cbe7 t316; HERO_NODEBUG h_0opt_2270cbe7 t317; HERO_NODEBUG HeroStr t318; HERO_NODEBUG HeroStr t319; HERO_NODEBUG HeroStr t320; HERO_NODEBUG HeroStr t321; HERO_NODEBUG HeroStr t322; HERO_NODEBUG HeroStr t323; HERO_NODEBUG h_0opt_2270cbe7 t324; HERO_NODEBUG h_0opt_e201354 t325; HERO_NODEBUG h_0opt_e201354 t326; HERO_NODEBUG HeroArrayHeader * t327; HERO_NODEBUG h_0opt_2270cbe7 t328; HERO_NODEBUG h_0opt_2270cbe7 t329; goto bb0;
+    HeroStr h2_m = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h4_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h5_f2 = {0}; HERO_NODEBUG bool h6_b0; HERO_NODEBUG bool h7_b1; HERO_NODEBUG h_0opt_e201354 h8_f3 = {0}; HERO_NODEBUG h_0opt_e201354 h9_f4 = {0}; HERO_NODEBUG h_0opt_e201354 h10_f5 = {0}; HERO_NODEBUG h_0opt_e201354 h11_f6 = {0}; HERO_NODEBUG h_0opt_e201354 h12_f7 = {0}; HERO_NODEBUG h_0opt_e201354 h13_f8 = {0}; HERO_NODEBUG h_0opt_e201354 h14_f9 = {0}; HERO_NODEBUG h_0opt_e201354 h15_f10 = {0}; HERO_NODEBUG h_0opt_e201354 h16_f11 = {0}; HERO_NODEBUG h_0opt_e201354 h17_f12 = {0}; HERO_NODEBUG h_0opt_e201354 h18_f13 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h19_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h22_own22 = {0}; HERO_NODEBUG h_0opt_e201354 h23_own23 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h24_own24 = {0}; HERO_NODEBUG HeroArrayHeader * h25_own25 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h26_own26 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h27_own27 = {0}; HERO_NODEBUG h_0opt_e201354 h28_own28 = {0}; HERO_NODEBUG h_0opt_e201354 h29_own29 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h30_own30 = {0}; HERO_NODEBUG h_0opt_e201354 h31_own31 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h32_own32 = {0}; HERO_NODEBUG HeroArrayHeader * h33_own33 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h34_own34 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h35_own35 = {0}; HERO_NODEBUG h_0opt_e201354 h36_own36 = {0}; HERO_NODEBUG h_0opt_e201354 h37_own37 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h38_own38 = {0}; HERO_NODEBUG HeroArrayHeader * h39_own39 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h40_own40 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h41_own41 = {0}; HERO_NODEBUG h_0opt_e201354 h42_own42 = {0}; HERO_NODEBUG h_0opt_e201354 h43_own43 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h44_own44 = {0}; HERO_NODEBUG h_0opt_e201354 h45_own45 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h46_own46 = {0}; HERO_NODEBUG HeroArrayHeader * h47_own47 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h48_own48 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h49_own49 = {0}; HERO_NODEBUG h_0opt_e201354 h50_own50 = {0}; HERO_NODEBUG h_0opt_e201354 h51_own51 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h52_own52 = {0}; HERO_NODEBUG HeroArrayHeader * h53_own53 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h54_own54 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h55_own55 = {0}; HERO_NODEBUG HeroStr h56_own56 = {0}; HERO_NODEBUG HeroStr h57_own57 = {0}; HERO_NODEBUG HeroStr h58_own58 = {0}; HERO_NODEBUG HeroStr h59_own59 = {0}; HERO_NODEBUG HeroStr h60_own60 = {0}; HERO_NODEBUG HeroStr h61_own61 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h62_own62 = {0}; HERO_NODEBUG h_0opt_e201354 h63_own63 = {0}; HERO_NODEBUG HeroArrayHeader * h64_own64 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h65_own65 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h66_own66 = {0}; HERO_NODEBUG h_program_Line t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_program_Line t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_0opt_2270cbe7 t15; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_program_Line t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_program_Line t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG h_0opt_e201354 t30; HERO_NODEBUG HeroFailure t31; HERO_NODEBUG h_0opt_2270cbe7 t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_program_Line t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_program_Line t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG h_0opt_e201354 t46; HERO_NODEBUG HeroFailure t47; HERO_NODEBUG h_0opt_2270cbe7 t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG h_0opt_2270cbe7 t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG bool t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG bool t58; HERO_NODEBUG bool t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG bool t62; HERO_NODEBUG bool t63; HERO_NODEBUG h_program_Line t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG h_0opt_e201354 t66; HERO_NODEBUG h_0opt_e201354 t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG bool t70; HERO_NODEBUG h_0opt_e201354 t71; HERO_NODEBUG HeroFailure t72; HERO_NODEBUG h_0opt_2270cbe7 t73; HERO_NODEBUG HeroStr t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG h_program_Line t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_program_Line t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG h_0opt_e201354 t84; HERO_NODEBUG h_0opt_e201354 t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG bool t88; HERO_NODEBUG h_0opt_e201354 t89; HERO_NODEBUG HeroFailure t90; HERO_NODEBUG h_0opt_2270cbe7 t91; HERO_NODEBUG h_0opt_e201354 t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG h_program_Line t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG h_program_Line t98; HERO_NODEBUG int64_t t99; HERO_NODEBUG h_0opt_e201354 t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG int64_t t103; HERO_NODEBUG bool t104; HERO_NODEBUG h_0opt_e201354 t105; HERO_NODEBUG HeroFailure t106; HERO_NODEBUG h_0opt_2270cbe7 t107; HERO_NODEBUG h_0opt_e201354 t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG h_0opt_2270cbe7 t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG bool t114; HERO_NODEBUG h_program_Line t115; HERO_NODEBUG int64_t t116; HERO_NODEBUG h_0opt_e201354 t117; HERO_NODEBUG h_0opt_e201354 t118; HERO_NODEBUG int64_t t119; HERO_NODEBUG int64_t t120; HERO_NODEBUG bool t121; HERO_NODEBUG h_0opt_e201354 t122; HERO_NODEBUG HeroFailure t123; HERO_NODEBUG h_0opt_2270cbe7 t124; HERO_NODEBUG int64_t t127; HERO_NODEBUG h_program_Line t128; HERO_NODEBUG HeroArrayHeader * t129; HERO_NODEBUG int64_t t130; HERO_NODEBUG HeroStr t131; HERO_NODEBUG h_program_Line t132; HERO_NODEBUG int64_t t133; HERO_NODEBUG h_0opt_e201354 t134; HERO_NODEBUG h_0opt_e201354 t135; HERO_NODEBUG int64_t t136; HERO_NODEBUG int64_t t137; HERO_NODEBUG bool t138; HERO_NODEBUG h_0opt_e201354 t139; HERO_NODEBUG HeroFailure t140; HERO_NODEBUG h_0opt_2270cbe7 t141; HERO_NODEBUG h_0opt_e201354 t142; HERO_NODEBUG int64_t t143; HERO_NODEBUG int64_t t144; HERO_NODEBUG HeroArrayHeader * t145; HERO_NODEBUG h_0opt_2270cbe7 t146; HERO_NODEBUG HeroStr t147; HERO_NODEBUG HeroStr t148; HERO_NODEBUG bool t149; HERO_NODEBUG h_program_Line t150; HERO_NODEBUG int64_t t151; HERO_NODEBUG h_0opt_e201354 t152; HERO_NODEBUG h_0opt_e201354 t153; HERO_NODEBUG int64_t t154; HERO_NODEBUG int64_t t155; HERO_NODEBUG bool t156; HERO_NODEBUG h_0opt_e201354 t157; HERO_NODEBUG HeroFailure t158; HERO_NODEBUG h_0opt_2270cbe7 t159; HERO_NODEBUG int64_t t162; HERO_NODEBUG h_program_Line t163; HERO_NODEBUG HeroArrayHeader * t164; HERO_NODEBUG int64_t t165; HERO_NODEBUG HeroStr t166; HERO_NODEBUG h_program_Line t167; HERO_NODEBUG int64_t t168; HERO_NODEBUG h_0opt_e201354 t169; HERO_NODEBUG h_0opt_e201354 t170; HERO_NODEBUG int64_t t171; HERO_NODEBUG int64_t t172; HERO_NODEBUG bool t173; HERO_NODEBUG h_0opt_e201354 t174; HERO_NODEBUG HeroFailure t175; HERO_NODEBUG h_0opt_2270cbe7 t176; HERO_NODEBUG h_0opt_e201354 t177; HERO_NODEBUG int64_t t178; HERO_NODEBUG h_program_Line t179; HERO_NODEBUG HeroArrayHeader * t180; HERO_NODEBUG int64_t t181; HERO_NODEBUG HeroStr t182; HERO_NODEBUG HeroMapHeader * t183; HERO_NODEBUG h_program_Line t184; HERO_NODEBUG int64_t t185; HERO_NODEBUG h_0opt_e201354 t186; HERO_NODEBUG h_0opt_e201354 t187; HERO_NODEBUG int64_t t188; HERO_NODEBUG int64_t t189; HERO_NODEBUG bool t190; HERO_NODEBUG h_0opt_e201354 t191; HERO_NODEBUG HeroFailure t192; HERO_NODEBUG h_0opt_2270cbe7 t193; HERO_NODEBUG h_0opt_e201354 t194; HERO_NODEBUG int64_t t195; HERO_NODEBUG HeroArrayHeader * t196; HERO_NODEBUG h_0opt_2270cbe7 t197; HERO_NODEBUG HeroStr t198; HERO_NODEBUG HeroStr t199; HERO_NODEBUG bool t200; HERO_NODEBUG h_program_Line t201; HERO_NODEBUG int64_t t202; HERO_NODEBUG h_0opt_e201354 t203; HERO_NODEBUG h_0opt_e201354 t204; HERO_NODEBUG int64_t t205; HERO_NODEBUG int64_t t206; HERO_NODEBUG bool t207; HERO_NODEBUG h_0opt_e201354 t208; HERO_NODEBUG HeroFailure t209; HERO_NODEBUG h_0opt_2270cbe7 t210; HERO_NODEBUG int64_t t213; HERO_NODEBUG h_program_Line t214; HERO_NODEBUG HeroArrayHeader * t215; HERO_NODEBUG int64_t t216; HERO_NODEBUG HeroStr t217; HERO_NODEBUG HeroMapHeader * t218; HERO_NODEBUG h_program_Line t219; HERO_NODEBUG int64_t t220; HERO_NODEBUG h_0opt_e201354 t221; HERO_NODEBUG h_0opt_e201354 t222; HERO_NODEBUG int64_t t223; HERO_NODEBUG int64_t t224; HERO_NODEBUG bool t225; HERO_NODEBUG h_0opt_e201354 t226; HERO_NODEBUG HeroFailure t227; HERO_NODEBUG h_0opt_2270cbe7 t228; HERO_NODEBUG h_0opt_e201354 t229; HERO_NODEBUG int64_t t230; HERO_NODEBUG int64_t t231; HERO_NODEBUG HeroArrayHeader * t232; HERO_NODEBUG h_0opt_2270cbe7 t233; HERO_NODEBUG HeroStr t234; HERO_NODEBUG HeroStr t235; HERO_NODEBUG bool t236; HERO_NODEBUG h_program_Line t237; HERO_NODEBUG int64_t t238; HERO_NODEBUG h_0opt_e201354 t239; HERO_NODEBUG h_0opt_e201354 t240; HERO_NODEBUG int64_t t241; HERO_NODEBUG int64_t t242; HERO_NODEBUG bool t243; HERO_NODEBUG h_0opt_e201354 t244; HERO_NODEBUG HeroFailure t245; HERO_NODEBUG h_0opt_2270cbe7 t246; HERO_NODEBUG int64_t t249; HERO_NODEBUG int64_t t250; HERO_NODEBUG int64_t t251; HERO_NODEBUG HeroArrayHeader * t252; HERO_NODEBUG h_0opt_2270cbe7 t253; HERO_NODEBUG HeroStr t254; HERO_NODEBUG HeroStr t255; HERO_NODEBUG h_program_Line t256; HERO_NODEBUG int64_t t257; HERO_NODEBUG HeroStr t258; HERO_NODEBUG HeroStr t259; HERO_NODEBUG HeroStr t260; HERO_NODEBUG HeroStr t261; HERO_NODEBUG HeroStr t262; HERO_NODEBUG HeroStr t263; HERO_NODEBUG HeroStr t264; HERO_NODEBUG HeroStr t265; HERO_NODEBUG h_0opt_2270cbe7 t266; HERO_NODEBUG h_0opt_2270cbe7 t267; HERO_NODEBUG HeroStr t268; HERO_NODEBUG h_0opt_e201354 t269; HERO_NODEBUG h_0opt_e201354 t270; HERO_NODEBUG h_0opt_e201354 t271; HERO_NODEBUG h_0opt_e201354 t272; HERO_NODEBUG h_0opt_2270cbe7 t273; HERO_NODEBUG h_0opt_e201354 t274; HERO_NODEBUG h_0opt_e201354 t275; HERO_NODEBUG h_0opt_2270cbe7 t276; HERO_NODEBUG HeroArrayHeader * t277; HERO_NODEBUG h_0opt_2270cbe7 t278; HERO_NODEBUG h_0opt_2270cbe7 t279; HERO_NODEBUG h_0opt_e201354 t280; HERO_NODEBUG h_0opt_e201354 t281; HERO_NODEBUG h_0opt_e201354 t282; HERO_NODEBUG h_0opt_e201354 t283; HERO_NODEBUG h_0opt_2270cbe7 t284; HERO_NODEBUG h_0opt_e201354 t285; HERO_NODEBUG h_0opt_e201354 t286; HERO_NODEBUG h_0opt_2270cbe7 t287; HERO_NODEBUG HeroArrayHeader * t288; HERO_NODEBUG h_0opt_2270cbe7 t289; HERO_NODEBUG h_0opt_2270cbe7 t290; HERO_NODEBUG h_0opt_e201354 t291; HERO_NODEBUG h_0opt_e201354 t292; HERO_NODEBUG h_0opt_e201354 t293; HERO_NODEBUG h_0opt_e201354 t294; HERO_NODEBUG h_0opt_2270cbe7 t295; HERO_NODEBUG HeroArrayHeader * t296; HERO_NODEBUG h_0opt_2270cbe7 t297; HERO_NODEBUG h_0opt_2270cbe7 t298; HERO_NODEBUG h_0opt_e201354 t299; HERO_NODEBUG h_0opt_e201354 t300; HERO_NODEBUG h_0opt_e201354 t301; HERO_NODEBUG h_0opt_e201354 t302; HERO_NODEBUG h_0opt_2270cbe7 t303; HERO_NODEBUG h_0opt_e201354 t304; HERO_NODEBUG h_0opt_e201354 t305; HERO_NODEBUG h_0opt_2270cbe7 t306; HERO_NODEBUG HeroArrayHeader * t307; HERO_NODEBUG h_0opt_2270cbe7 t308; HERO_NODEBUG h_0opt_2270cbe7 t309; HERO_NODEBUG h_0opt_e201354 t310; HERO_NODEBUG h_0opt_e201354 t311; HERO_NODEBUG h_0opt_e201354 t312; HERO_NODEBUG h_0opt_e201354 t313; HERO_NODEBUG h_0opt_2270cbe7 t314; HERO_NODEBUG HeroArrayHeader * t315; HERO_NODEBUG h_0opt_2270cbe7 t316; HERO_NODEBUG h_0opt_2270cbe7 t317; HERO_NODEBUG HeroStr t318; HERO_NODEBUG HeroStr t319; HERO_NODEBUG HeroStr t320; HERO_NODEBUG HeroStr t321; HERO_NODEBUG HeroStr t322; HERO_NODEBUG HeroStr t323; HERO_NODEBUG h_0opt_2270cbe7 t324; HERO_NODEBUG h_0opt_e201354 t325; HERO_NODEBUG h_0opt_e201354 t326; HERO_NODEBUG HeroArrayHeader * t327; HERO_NODEBUG h_0opt_2270cbe7 t328; HERO_NODEBUG h_0opt_2270cbe7 t329; HERO_ENTRY_STOP; goto bb0;
 #line 73 "examples/assembler/assemble.hero"
 bb0:
     t1 = h0_line;
@@ -3284,7 +3289,7 @@ bb50:
     goto bb51;
 #line 103 "examples/assembler/assemble.hero"
 bb51:
-#line 3288 "main.c"
+#line 3293 "main.c"
     t267 = h19_ret0;
     h_0opt_2270cbe7_retain(&t267);
     hero_str_release_at(&h2_m);
@@ -3355,7 +3360,7 @@ bb51:
 #line 110 "examples/assembler/assemble.hero"
 int64_t h_assemble_opcode_of(HeroStr h0_m) {
 #line 110 "examples/assembler/assemble.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
 #line 110 "examples/assembler/assemble.hero"
 bb0:
     t1 = h0_m;
@@ -3409,7 +3414,7 @@ bb6:
     goto bb4;
 #line 115 "examples/assembler/assemble.hero"
 bb7:
-#line 3413 "main.c"
+#line 3418 "main.c"
     t10 = h1_ret0;
     return t10;
 }
@@ -3417,7 +3422,7 @@ bb7:
 #line 118 "examples/assembler/assemble.hero"
 h_0opt_e201354 h_assemble_expect(h_program_Line h0_line, int64_t h1_wanted) {
 #line 118 "examples/assembler/assemble.hero"
-    HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG h_program_Line t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_program_Line t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_program_Line t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_program_Line t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_0opt_e201354 t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_0opt_e201354 t45; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG h_program_Line t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_program_Line t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_program_Line t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_program_Line t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_0opt_e201354 t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_ENTRY_STOP; goto bb0;
 #line 118 "examples/assembler/assemble.hero"
 bb0:
     t1 = h0_line;
@@ -3582,7 +3587,7 @@ bb3:
     goto bb1;
 #line 120 "examples/assembler/assemble.hero"
 bb4:
-#line 3586 "main.c"
+#line 3591 "main.c"
     t32 = h2_ret0;
     h_0opt_e201354_retain(&t32);
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
@@ -3604,7 +3609,7 @@ bb4:
 #line 128 "examples/assembler/assemble.hero"
 h_0opt_e201354 h_assemble_target_of(HeroStr h0_name, HeroMapHeader * h1_labels, int64_t h2_number) {
 #line 128 "examples/assembler/assemble.hero"
-    HERO_NODEBUG h_0opt_e201354 h3_s0 = {0}; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_0opt_e201354 t34; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h3_s0 = {0}; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_ENTRY_STOP; goto bb0;
 #line 128 "examples/assembler/assemble.hero"
 bb0:
     t1 = h1_labels;
@@ -3613,7 +3618,7 @@ bb0:
 #line 129 "examples/assembler/assemble.hero"
     {
 #line 129 "examples/assembler/assemble.hero"
-      const void *found = hero_map_find(t1, &t2);
+      HERO_NODEBUG const void *found = hero_map_find(t1, &t2);
 #line 129 "examples/assembler/assemble.hero"
       if (found == NULL) {
 #line 129 "examples/assembler/assemble.hero"
@@ -3758,7 +3763,7 @@ bb3:
     goto bb4;
 #line 131 "examples/assembler/assemble.hero"
 bb4:
-#line 3762 "main.c"
+#line 3767 "main.c"
     t24 = h5_ret0;
     h_0opt_e201354_retain(&t24);
     h_0opt_e201354_release(hero_slot_escape(&h3_s0));
@@ -3777,7 +3782,7 @@ bb4:
 #line 165 "examples/assembler/assemble.hero"
 HeroStr h_assemble_code_of(HeroStr h0_text) {
 #line 165 "examples/assembler/assemble.hero"
-    HERO_NODEBUG h_0opt_40eff9f5 h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0opt_40eff9f5 t3; HERO_NODEBUG h_0opt_40eff9f5 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_40eff9f5 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG h_0opt_40eff9f5 t13; HERO_NODEBUG h_0opt_40eff9f5 t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG HeroStr t17; goto bb0;
+    HERO_NODEBUG h_0opt_40eff9f5 h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0opt_40eff9f5 t3; HERO_NODEBUG h_0opt_40eff9f5 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_40eff9f5 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG h_0opt_40eff9f5 t13; HERO_NODEBUG h_0opt_40eff9f5 t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG HeroStr t17; HERO_ENTRY_STOP; goto bb0;
 #line 165 "examples/assembler/assemble.hero"
 bb0:
     t1 = h0_text;
@@ -3823,7 +3828,7 @@ bb0:
 bb1:
 #line 166 "examples/assembler/assemble.hero"
     t11 = h2_r0;
-#line 3827 "main.c"
+#line 3832 "main.c"
     hero_str_incref(t11);
     h_0opt_40eff9f5_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -3872,17 +3877,17 @@ bb3:
     hero_str_decref(t17);
 #line 166 "examples/assembler/assemble.hero"
     goto bb1;
-#line 3876 "main.c"
+#line 3881 "main.c"
 }
 
 #line 20 "examples/assembler/machine.hero"
 HeroStr h_machine_ERR_BAD_OPCODE(void) {
 #line 20 "examples/assembler/machine.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 20 "examples/assembler/machine.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_37102433);
-#line 3886 "main.c"
+#line 3891 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3890,11 +3895,11 @@ bb0:
 #line 23 "examples/assembler/machine.hero"
 HeroStr h_machine_ERR_OUT_OF_FUEL(void) {
 #line 23 "examples/assembler/machine.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 23 "examples/assembler/machine.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_2ba30e4);
-#line 3898 "main.c"
+#line 3903 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3902,11 +3907,11 @@ bb0:
 #line 26 "examples/assembler/machine.hero"
 HeroStr h_machine_ERR_RAN_OFF_THE_END(void) {
 #line 26 "examples/assembler/machine.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 26 "examples/assembler/machine.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5eb0412c);
-#line 3910 "main.c"
+#line 3915 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3914,7 +3919,7 @@ bb0:
 #line 34 "examples/assembler/machine.hero"
 h_0opt_5a58f2ca h_machine_run(HeroArrayHeader * h0_code, int64_t h1_fuel) {
 #line 34 "examples/assembler/machine.hero"
-    h_machine_Machine h2_m = {0}; int64_t h3_left; HERO_NODEBUG bool h4_b0; int64_t h5_opcode; int64_t h6_a; int64_t h7_b; HERO_NODEBUG h_0opt_e201354 h8_f0 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h9_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_machine_Machine h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h21_own21 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h22_own22 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG h_machine_Machine t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_machine_Machine t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_machine_Machine t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_5a58f2ca t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_machine_Machine t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_machine_Machine t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG h_machine_Machine t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG bool t49; HERO_NODEBUG h_machine_Machine t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG h_0opt_5a58f2ca t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG h_0opt_e201354 t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG HeroFailure t62; HERO_NODEBUG h_0opt_5a58f2ca t63; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG h_0opt_5a58f2ca t73; HERO_NODEBUG h_0opt_5a58f2ca t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG h_machine_Machine t77; HERO_NODEBUG h_machine_Machine t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG h_0opt_5a58f2ca t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG h_0opt_5a58f2ca t85; HERO_NODEBUG h_0opt_e201354 t86; HERO_NODEBUG h_0opt_e201354 t87; HERO_NODEBUG h_0opt_5a58f2ca t88; HERO_NODEBUG h_0opt_5a58f2ca t89; goto bb0;
+    h_machine_Machine h2_m = {0}; int64_t h3_left; HERO_NODEBUG bool h4_b0; int64_t h5_opcode; int64_t h6_a; int64_t h7_b; HERO_NODEBUG h_0opt_e201354 h8_f0 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h9_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_machine_Machine h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h21_own21 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h22_own22 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG h_machine_Machine t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_machine_Machine t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_machine_Machine t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_5a58f2ca t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_machine_Machine t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_machine_Machine t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG h_machine_Machine t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG bool t49; HERO_NODEBUG h_machine_Machine t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG h_0opt_5a58f2ca t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG h_0opt_e201354 t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG HeroFailure t62; HERO_NODEBUG h_0opt_5a58f2ca t63; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG h_0opt_5a58f2ca t73; HERO_NODEBUG h_0opt_5a58f2ca t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG h_machine_Machine t77; HERO_NODEBUG h_machine_Machine t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG h_0opt_5a58f2ca t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG h_0opt_5a58f2ca t85; HERO_NODEBUG h_0opt_e201354 t86; HERO_NODEBUG h_0opt_e201354 t87; HERO_NODEBUG h_0opt_5a58f2ca t88; HERO_NODEBUG h_0opt_5a58f2ca t89; HERO_ENTRY_STOP; goto bb0;
 #line 34 "examples/assembler/machine.hero"
 bb0:
     t1 = INT64_C(0);
@@ -4248,7 +4253,7 @@ bb13:
     goto bb14;
 #line 49 "examples/assembler/machine.hero"
 bb14:
-#line 4252 "main.c"
+#line 4257 "main.c"
     t74 = h9_ret0;
     h_0opt_5a58f2ca_retain(&t74);
     h_machine_Machine_release(hero_slot_escape(&h2_m));
@@ -4272,7 +4277,7 @@ bb14:
 #line 55 "examples/assembler/machine.hero"
 h_0opt_e201354 h_machine_step(h_machine_Machine *ph0_m, int64_t h1_opcode, int64_t h2_a, int64_t h3_b) {
 #line 55 "examples/assembler/machine.hero"
-    HERO_NODEBUG h_0opt_e201354 h4_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_e201354 h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_machine_Machine t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_machine_Machine t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_machine_Machine t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_machine_Machine t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_machine_Machine t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG h_machine_Machine t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG h_machine_Machine t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG bool t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG h_0opt_e201354 t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG h_machine_Machine t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG bool t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG h_0opt_e201354 t76; HERO_NODEBUG h_machine_Machine t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG h_0opt_e201354 t82; HERO_NODEBUG h_0opt_e201354 t83; HERO_NODEBUG h_0opt_e201354 t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG h_0opt_e201354 t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG h_0opt_e201354 t93; HERO_NODEBUG h_0opt_e201354 t94; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h4_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_e201354 h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_machine_Machine t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_machine_Machine t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_machine_Machine t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_machine_Machine t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_machine_Machine t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG h_machine_Machine t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG h_machine_Machine t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG bool t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG h_0opt_e201354 t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG h_machine_Machine t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG bool t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG h_0opt_e201354 t76; HERO_NODEBUG h_machine_Machine t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG h_0opt_e201354 t82; HERO_NODEBUG h_0opt_e201354 t83; HERO_NODEBUG h_0opt_e201354 t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG h_0opt_e201354 t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG h_0opt_e201354 t93; HERO_NODEBUG h_0opt_e201354 t94; HERO_ENTRY_STOP; goto bb0;
 #line 55 "examples/assembler/machine.hero"
 bb0:
     t1 = h1_opcode;
@@ -4593,7 +4598,7 @@ bb18:
     goto bb16;
 #line 72 "examples/assembler/machine.hero"
 bb19:
-#line 4597 "main.c"
+#line 4602 "main.c"
     t83 = h4_ret0;
     h_0opt_e201354_retain(&t83);
     h_0opt_e201354_release(hero_slot_escape(&h5_own5));
@@ -4612,7 +4617,7 @@ bb19:
 #line 81 "examples/assembler/machine.hero"
 h_0opt_5a58f2ca h_machine_execute(HeroStr h0_text, int64_t h1_fuel) {
 #line 81 "examples/assembler/machine.hero"
-    HERO_NODEBUG h_0opt_40eff9f5 h2_f0 = {0}; h_assemble_Assembled h3_out = {0}; HERO_NODEBUG h_0opt_5a58f2ca h4_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h6_own6 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h7_own7 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0opt_40eff9f5 t3; HERO_NODEBUG h_0opt_40eff9f5 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_40eff9f5 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_5a58f2ca t10; HERO_NODEBUG h_0opt_40eff9f5 t11; HERO_NODEBUG h_assemble_Assembled t12; HERO_NODEBUG h_assemble_Assembled t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_0opt_5a58f2ca t16; HERO_NODEBUG h_0opt_5a58f2ca t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG h_0opt_40eff9f5 t19; HERO_NODEBUG h_0opt_40eff9f5 t20; HERO_NODEBUG h_assemble_Assembled t21; HERO_NODEBUG h_0opt_5a58f2ca t22; HERO_NODEBUG h_0opt_5a58f2ca t23; goto bb0;
+    HERO_NODEBUG h_0opt_40eff9f5 h2_f0 = {0}; h_assemble_Assembled h3_out = {0}; HERO_NODEBUG h_0opt_5a58f2ca h4_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_0opt_40eff9f5 h6_own6 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h7_own7 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0opt_40eff9f5 t3; HERO_NODEBUG h_0opt_40eff9f5 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_40eff9f5 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_5a58f2ca t10; HERO_NODEBUG h_0opt_40eff9f5 t11; HERO_NODEBUG h_assemble_Assembled t12; HERO_NODEBUG h_assemble_Assembled t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_0opt_5a58f2ca t16; HERO_NODEBUG h_0opt_5a58f2ca t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG h_0opt_40eff9f5 t19; HERO_NODEBUG h_0opt_40eff9f5 t20; HERO_NODEBUG h_assemble_Assembled t21; HERO_NODEBUG h_0opt_5a58f2ca t22; HERO_NODEBUG h_0opt_5a58f2ca t23; HERO_ENTRY_STOP; goto bb0;
 #line 81 "examples/assembler/machine.hero"
 bb0:
     t1 = h0_text;
@@ -4703,7 +4708,7 @@ bb2:
     goto bb3;
 #line 82 "examples/assembler/machine.hero"
 bb3:
-#line 4707 "main.c"
+#line 4712 "main.c"
     t17 = h4_ret0;
     h_0opt_5a58f2ca_retain(&t17);
     h_0opt_40eff9f5_release(hero_slot_escape(&h2_f0));
@@ -4718,7 +4723,7 @@ bb3:
 #line 105 "examples/assembler/machine.hero"
 HeroStr h_machine_code_of(HeroStr h0_text, int64_t h1_fuel) {
 #line 105 "examples/assembler/machine.hero"
-    HERO_NODEBUG h_0opt_5a58f2ca h2_s0 = {0}; HERO_NODEBUG HeroStr h3_r0 = {0}; HeroFailure h4_e = {0}; HERO_NODEBUG h_0opt_5a58f2ca h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_5a58f2ca t3; HERO_NODEBUG h_0opt_5a58f2ca t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_5a58f2ca t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_5a58f2ca t12; HERO_NODEBUG h_0opt_5a58f2ca t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG HeroStr t16; goto bb0;
+    HERO_NODEBUG h_0opt_5a58f2ca h2_s0 = {0}; HERO_NODEBUG HeroStr h3_r0 = {0}; HeroFailure h4_e = {0}; HERO_NODEBUG h_0opt_5a58f2ca h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_5a58f2ca t3; HERO_NODEBUG h_0opt_5a58f2ca t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_5a58f2ca t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_5a58f2ca t12; HERO_NODEBUG h_0opt_5a58f2ca t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
 #line 105 "examples/assembler/machine.hero"
 bb0:
     t1 = h0_text;
@@ -4758,7 +4763,7 @@ bb0:
 bb1:
 #line 106 "examples/assembler/machine.hero"
     t11 = h3_r0;
-#line 4762 "main.c"
+#line 4767 "main.c"
     hero_str_incref(t11);
     h_0opt_5a58f2ca_release(hero_slot_escape(&h2_s0));
     hero_str_release_at(&h3_r0);
@@ -4806,17 +4811,17 @@ bb3:
     hero_str_decref(t16);
 #line 106 "examples/assembler/machine.hero"
     goto bb1;
-#line 4810 "main.c"
+#line 4815 "main.c"
 }
 
 #line 29 "examples/assembler/program.hero"
 HeroStr h_program_ERR_BAD_NUMBER(void) {
 #line 29 "examples/assembler/program.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 29 "examples/assembler/program.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_14a4096d);
-#line 4820 "main.c"
+#line 4825 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -4824,11 +4829,11 @@ bb0:
 #line 32 "examples/assembler/program.hero"
 HeroStr h_program_ERR_BAD_REGISTER(void) {
 #line 32 "examples/assembler/program.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 32 "examples/assembler/program.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_52629714);
-#line 4832 "main.c"
+#line 4837 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -4836,127 +4841,127 @@ bb0:
 #line 35 "examples/assembler/program.hero"
 int64_t h_program_OP_LOAD(void) {
 #line 35 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 35 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(0);
 #line 36 "examples/assembler/program.hero"
     return t1;
-#line 4846 "main.c"
+#line 4851 "main.c"
 }
 
 #line 38 "examples/assembler/program.hero"
 int64_t h_program_OP_COPY(void) {
 #line 38 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 38 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(1);
 #line 39 "examples/assembler/program.hero"
     return t1;
-#line 4858 "main.c"
+#line 4863 "main.c"
 }
 
 #line 41 "examples/assembler/program.hero"
 int64_t h_program_OP_ADD(void) {
 #line 41 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 41 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(2);
 #line 42 "examples/assembler/program.hero"
     return t1;
-#line 4870 "main.c"
+#line 4875 "main.c"
 }
 
 #line 44 "examples/assembler/program.hero"
 int64_t h_program_OP_SUB(void) {
 #line 44 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 44 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(3);
 #line 45 "examples/assembler/program.hero"
     return t1;
-#line 4882 "main.c"
+#line 4887 "main.c"
 }
 
 #line 47 "examples/assembler/program.hero"
 int64_t h_program_OP_PRINT(void) {
 #line 47 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 47 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(4);
 #line 48 "examples/assembler/program.hero"
     return t1;
-#line 4894 "main.c"
+#line 4899 "main.c"
 }
 
 #line 50 "examples/assembler/program.hero"
 int64_t h_program_OP_JMPZ(void) {
 #line 50 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 50 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(5);
 #line 51 "examples/assembler/program.hero"
     return t1;
-#line 4906 "main.c"
+#line 4911 "main.c"
 }
 
 #line 53 "examples/assembler/program.hero"
 int64_t h_program_OP_JMP(void) {
 #line 53 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 53 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(6);
 #line 54 "examples/assembler/program.hero"
     return t1;
-#line 4918 "main.c"
+#line 4923 "main.c"
 }
 
 #line 56 "examples/assembler/program.hero"
 int64_t h_program_OP_HALT(void) {
 #line 56 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 56 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(7);
 #line 57 "examples/assembler/program.hero"
     return t1;
-#line 4930 "main.c"
+#line 4935 "main.c"
 }
 
 #line 59 "examples/assembler/program.hero"
 int64_t h_program_WORDS(void) {
 #line 59 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 59 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(3);
 #line 60 "examples/assembler/program.hero"
     return t1;
-#line 4942 "main.c"
+#line 4947 "main.c"
 }
 
 #line 62 "examples/assembler/program.hero"
 int64_t h_program_REGISTERS(void) {
 #line 62 "examples/assembler/program.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 62 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(4);
 #line 63 "examples/assembler/program.hero"
     return t1;
-#line 4954 "main.c"
+#line 4959 "main.c"
 }
 
 #line 73 "examples/assembler/program.hero"
 bool h_program_is_space(uint8_t h0_c) {
 #line 73 "examples/assembler/program.hero"
-    HERO_NODEBUG bool h1_b0; HERO_NODEBUG bool h2_b1; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG bool h2_b1; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 73 "examples/assembler/program.hero"
 bb0:
     t1 = h0_c;
@@ -5006,13 +5011,13 @@ bb4:
     t11 = h1_b0;
 #line 74 "examples/assembler/program.hero"
     return t11;
-#line 5010 "main.c"
+#line 5015 "main.c"
 }
 
 #line 76 "examples/assembler/program.hero"
 HeroStr h_program_trimmed(HeroStr h0_line) {
 #line 76 "examples/assembler/program.hero"
-    int64_t h1_from; HERO_NODEBUG bool h2_b0; int64_t h3_to; HERO_NODEBUG bool h4_b1; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG bool t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; goto bb0;
+    int64_t h1_from; HERO_NODEBUG bool h2_b0; int64_t h3_to; HERO_NODEBUG bool h4_b1; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG bool t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_ENTRY_STOP; goto bb0;
 #line 76 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(0);
@@ -5114,7 +5119,7 @@ bb8:
     h5_own5 = t32;
 #line 87 "examples/assembler/program.hero"
     hero_str_decref(t33);
-#line 5118 "main.c"
+#line 5123 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
@@ -5141,13 +5146,13 @@ bb10:
     t25 = h4_b1;
 #line 84 "examples/assembler/program.hero"
     if (t25) goto bb7; else goto bb8;
-#line 5145 "main.c"
+#line 5150 "main.c"
 }
 
 #line 89 "examples/assembler/program.hero"
 HeroArrayHeader * h_program_split_lines(HeroStr h0_text) {
 #line 89 "examples/assembler/program.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_ENTRY_STOP; goto bb0;
 #line 89 "examples/assembler/program.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -5257,7 +5262,7 @@ bb6:
 bb7:
 #line 102 "examples/assembler/program.hero"
     t36 = h1_out;
-#line 5261 "main.c"
+#line 5266 "main.c"
     hero_array_incref(t36);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h4_own4);
@@ -5289,13 +5294,13 @@ bb8:
 bb9:
 #line 101 "examples/assembler/program.hero"
     goto bb7;
-#line 5293 "main.c"
+#line 5298 "main.c"
 }
 
 #line 104 "examples/assembler/program.hero"
 int64_t h_program_index_of(HeroStr h0_text, uint8_t h1_c) {
 #line 104 "examples/assembler/program.hero"
-    int64_t h2_i; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; goto bb0;
+    int64_t h2_i; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_ENTRY_STOP; goto bb0;
 #line 104 "examples/assembler/program.hero"
 bb0:
     t1 = INT64_C(0);
@@ -5366,7 +5371,7 @@ bb6:
     goto bb4;
 #line 109 "examples/assembler/program.hero"
 bb7:
-#line 5370 "main.c"
+#line 5375 "main.c"
     t18 = h3_ret0;
     return t18;
 }
@@ -5374,7 +5379,7 @@ bb7:
 #line 116 "examples/assembler/program.hero"
 HeroArrayHeader * h_program_split_on(HeroStr h0_text, uint8_t h1_c) {
 #line 116 "examples/assembler/program.hero"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_start; int64_t h4_i; HERO_NODEBUG bool h5_b0; HeroStr h6_piece = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_start; int64_t h4_i; HERO_NODEBUG bool h5_b0; HeroStr h6_piece = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_ENTRY_STOP; goto bb0;
 #line 116 "examples/assembler/program.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -5429,7 +5434,7 @@ bb2:
 bb3:
 #line 130 "examples/assembler/program.hero"
     t35 = h2_out;
-#line 5433 "main.c"
+#line 5438 "main.c"
     hero_array_incref(t35);
     hero_array_release_at(&h2_out);
     hero_str_release_at(&h6_piece);
@@ -5537,13 +5542,13 @@ bb10:
 bb11:
 #line 126 "examples/assembler/program.hero"
     goto bb9;
-#line 5541 "main.c"
+#line 5546 "main.c"
 }
 
 #line 137 "examples/assembler/program.hero"
 h_program_Line h_program_read_line(HeroStr h0_text, int64_t h1_number) {
 #line 137 "examples/assembler/program.hero"
-    HeroStr h2_body = {0}; int64_t h3_at; HeroStr h4_label = {0}; int64_t h5_colon; int64_t h6_space; HeroStr h7_mnemonic = {0}; HeroStr h8_rest = {0}; HERO_NODEBUG h_program_Line h9_ret0 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_program_Line h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG h_program_Line h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG h_program_Line h23_own23 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG bool t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_program_Line t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG uint8_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG bool t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG h_program_Line t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG uint8_t t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG h_program_Line t70; HERO_NODEBUG h_program_Line t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG h_program_Line t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG h_program_Line t91; HERO_NODEBUG HeroArrayHeader * t92; HERO_NODEBUG h_program_Line t93; goto bb0;
+    HeroStr h2_body = {0}; int64_t h3_at; HeroStr h4_label = {0}; int64_t h5_colon; int64_t h6_space; HeroStr h7_mnemonic = {0}; HeroStr h8_rest = {0}; HERO_NODEBUG h_program_Line h9_ret0 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_program_Line h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG h_program_Line h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG h_program_Line h23_own23 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG bool t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_program_Line t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG uint8_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG bool t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG h_program_Line t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG uint8_t t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG h_program_Line t70; HERO_NODEBUG h_program_Line t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG h_program_Line t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG h_program_Line t91; HERO_NODEBUG HeroArrayHeader * t92; HERO_NODEBUG h_program_Line t93; HERO_ENTRY_STOP; goto bb0;
 #line 137 "examples/assembler/program.hero"
 bb0:
     t1 = h0_text;
@@ -5909,7 +5914,7 @@ bb12:
     goto bb10;
 #line 156 "examples/assembler/program.hero"
 bb13:
-#line 5913 "main.c"
+#line 5918 "main.c"
     t71 = h9_ret0;
     h_program_Line_retain(&t71);
     hero_str_release_at(&h2_body);
@@ -5936,7 +5941,7 @@ bb13:
 #line 161 "examples/assembler/program.hero"
 HeroArrayHeader * h_program_read(HeroStr h0_text) {
 #line 161 "examples/assembler/program.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_number; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_line = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_program_Line h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_program_Line t19; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_program_Line t30; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_number; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_line = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_program_Line h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_program_Line t19; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_program_Line t30; HERO_ENTRY_STOP; goto bb0;
 #line 161 "examples/assembler/program.hero"
 bb0:
     t1 = hero_array_new(&h_program_Line_desc, 1);
@@ -6047,7 +6052,7 @@ bb3:
 bb4:
 #line 169 "examples/assembler/program.hero"
     t24 = h1_out;
-#line 6051 "main.c"
+#line 6056 "main.c"
     hero_array_incref(t24);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_xs0);
@@ -6061,7 +6066,7 @@ bb4:
 #line 175 "examples/assembler/program.hero"
 h_0opt_e201354 h_program_register_of(HeroStr h0_word, int64_t h1_number) {
 #line 175 "examples/assembler/program.hero"
-    HERO_NODEBUG bool h2_b0; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; int64_t h4_n; HERO_NODEBUG bool h5_b1; HERO_NODEBUG h_0opt_e201354 h6_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG h_0opt_e201354 h22_own22 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG uint8_t t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG bool t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG h_0opt_e201354 t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_e201354 t75; goto bb0;
+    HERO_NODEBUG bool h2_b0; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; int64_t h4_n; HERO_NODEBUG bool h5_b1; HERO_NODEBUG h_0opt_e201354 h6_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG h_0opt_e201354 h22_own22 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG uint8_t t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG bool t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG h_0opt_e201354 t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_ENTRY_STOP; goto bb0;
 #line 175 "examples/assembler/program.hero"
 bb0:
     t1 = h0_word;
@@ -6238,7 +6243,7 @@ bb7:
     t33 = h3_f0;
 #line 181 "examples/assembler/program.hero"
     t34 = t33.as.err;
-#line 6242 "main.c"
+#line 6247 "main.c"
     hero_panic_must(t34);
     hero_unreachable();
 bb8:
@@ -6355,7 +6360,7 @@ bb12:
     goto bb8;
 #line 184 "examples/assembler/program.hero"
 bb13:
-#line 6359 "main.c"
+#line 6364 "main.c"
     t58 = h6_ret0;
     h_0opt_e201354_retain(&t58);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -6381,7 +6386,7 @@ bb13:
 #line 190 "examples/assembler/program.hero"
 h_0opt_e201354 h_program_number_of(HeroStr h0_word, int64_t h1_number) {
 #line 190 "examples/assembler/program.hero"
-    HeroStr h2_body = {0}; bool h3_negative; HERO_NODEBUG bool h4_b0; int64_t h5_v; HERO_NODEBUG HeroArrayHeader * h6_xs0 = {0}; HERO_NODEBUG int64_t h7_i0; int64_t h8_i; HERO_NODEBUG bool h9_b1; HERO_NODEBUG h_0opt_e201354 h10_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h11_ret0 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG HeroStr h26_own26 = {0}; HERO_NODEBUG HeroStr h27_own27 = {0}; HERO_NODEBUG h_0opt_e201354 h28_own28 = {0}; HERO_NODEBUG h_0opt_e201354 h29_own29 = {0}; HERO_NODEBUG h_0opt_e201354 h30_own30 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG uint8_t t50; HERO_NODEBUG uint8_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG uint8_t t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG bool t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_e201354 t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG uint8_t t76; HERO_NODEBUG uint8_t t77; HERO_NODEBUG uint8_t t78; HERO_NODEBUG h_0opt_e201354 t79; HERO_NODEBUG h_0opt_e201354 t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG bool t83; HERO_NODEBUG h_0opt_e201354 t84; HERO_NODEBUG HeroFailure t85; HERO_NODEBUG h_0opt_e201354 t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG bool t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG h_0opt_e201354 t97; HERO_NODEBUG h_0opt_e201354 t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroStr t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG HeroStr t106; HERO_NODEBUG HeroStr t107; HERO_NODEBUG HeroStr t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG h_0opt_e201354 t110; HERO_NODEBUG h_0opt_e201354 t111; HERO_NODEBUG h_0opt_e201354 t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG HeroStr t117; HERO_NODEBUG HeroStr t118; HERO_NODEBUG h_0opt_e201354 t119; HERO_NODEBUG h_0opt_e201354 t120; HERO_NODEBUG h_0opt_e201354 t121; goto bb0;
+    HeroStr h2_body = {0}; bool h3_negative; HERO_NODEBUG bool h4_b0; int64_t h5_v; HERO_NODEBUG HeroArrayHeader * h6_xs0 = {0}; HERO_NODEBUG int64_t h7_i0; int64_t h8_i; HERO_NODEBUG bool h9_b1; HERO_NODEBUG h_0opt_e201354 h10_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h11_ret0 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG HeroStr h26_own26 = {0}; HERO_NODEBUG HeroStr h27_own27 = {0}; HERO_NODEBUG h_0opt_e201354 h28_own28 = {0}; HERO_NODEBUG h_0opt_e201354 h29_own29 = {0}; HERO_NODEBUG h_0opt_e201354 h30_own30 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG uint8_t t50; HERO_NODEBUG uint8_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG uint8_t t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG bool t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_e201354 t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG uint8_t t76; HERO_NODEBUG uint8_t t77; HERO_NODEBUG uint8_t t78; HERO_NODEBUG h_0opt_e201354 t79; HERO_NODEBUG h_0opt_e201354 t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG bool t83; HERO_NODEBUG h_0opt_e201354 t84; HERO_NODEBUG HeroFailure t85; HERO_NODEBUG h_0opt_e201354 t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG bool t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG h_0opt_e201354 t97; HERO_NODEBUG h_0opt_e201354 t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroStr t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG HeroStr t106; HERO_NODEBUG HeroStr t107; HERO_NODEBUG HeroStr t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG h_0opt_e201354 t110; HERO_NODEBUG h_0opt_e201354 t111; HERO_NODEBUG h_0opt_e201354 t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG HeroStr t117; HERO_NODEBUG HeroStr t118; HERO_NODEBUG h_0opt_e201354 t119; HERO_NODEBUG h_0opt_e201354 t120; HERO_NODEBUG h_0opt_e201354 t121; HERO_ENTRY_STOP; goto bb0;
 #line 190 "examples/assembler/program.hero"
 bb0:
     t1 = h0_word;
@@ -6805,7 +6810,7 @@ bb19:
     t84 = h10_f0;
 #line 205 "examples/assembler/program.hero"
     t85 = t84.as.err;
-#line 6809 "main.c"
+#line 6814 "main.c"
     hero_panic_must(t85);
     hero_unreachable();
 bb20:
@@ -6847,7 +6852,7 @@ bb22:
     goto bb20;
 #line 208 "examples/assembler/program.hero"
 bb23:
-#line 6851 "main.c"
+#line 6856 "main.c"
     t98 = h11_ret0;
     h_0opt_e201354_retain(&t98);
     hero_str_release_at(&h2_body);
@@ -6878,7 +6883,7 @@ bb23:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -6927,7 +6932,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 6931 "main.c"
+#line 6936 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -6936,25 +6941,25 @@ bb3:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 6940 "main.c"
+#line 6945 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 6946 "main.c"
+#line 6951 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 6952 "main.c"
+#line 6957 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 6958 "main.c"
+#line 6963 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -6963,7 +6968,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_ENTRY_STOP; goto bb0;
 #line 167 "<heroes library>"
 bb0:
     t1 = INT64_C(0);
@@ -7189,7 +7194,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 7193 "main.c"
+#line 7198 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -7211,7 +7216,7 @@ bb13:
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -7268,7 +7273,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 7272 "main.c"
+#line 7277 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -7279,7 +7284,7 @@ bb3:
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
 #line 227 "<heroes library>"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 227 "<heroes library>"
 bb0:
     t1 = h0_code;
@@ -7287,7 +7292,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 7291 "main.c"
+#line 7296 "main.c"
 }
 HERO_TU_LOCAL void h_assemble_Assembled_retain(const h_assemble_Assembled *v) {
     hero_array_incref(v->f_code);

@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -86,7 +91,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 90 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 95 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
 typedef struct h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held {
     Cell * f_h;
     HeroStr f_name;
@@ -137,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 141 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 146 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs419ahandleoveraunioncomparesasanaddress_Cell_eq(Cell * const *a, Cell * const *b);
@@ -177,7 +182,7 @@ void h_fixedbugs419ahandleoveraunioncomparesasanaddress_main(void);
 #line 33 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
 void h_fixedbugs419ahandleoveraunioncomparesasanaddress_main(void) {
 #line 33 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
-    Cell * h0_a; Cell * h1_b; Cell * h2_n; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held h3_own3 = {0}; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held h4_own4 = {0}; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held h5_own5 = {0}; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG Cell * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG Cell * t4; HERO_NODEBUG Cell * t5; HERO_NODEBUG Cell * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG Cell * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG Cell * t10; HERO_NODEBUG Cell * t11; HERO_NODEBUG bool t12; HERO_NODEBUG Cell * t13; HERO_NODEBUG Cell * t14; HERO_NODEBUG bool t15; HERO_NODEBUG Cell * t16; HERO_NODEBUG Cell * t17; HERO_NODEBUG bool t18; HERO_NODEBUG Cell * t19; HERO_NODEBUG Cell * t20; HERO_NODEBUG bool t21; HERO_NODEBUG Cell * t22; HERO_NODEBUG Cell * t23; HERO_NODEBUG bool t24; HERO_NODEBUG Cell * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t27; HERO_NODEBUG Cell * t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t30; HERO_NODEBUG bool t31; HERO_NODEBUG Cell * t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t34; HERO_NODEBUG Cell * t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t37; HERO_NODEBUG bool t38; HERO_NODEBUG Cell * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG Cell * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG bool t43; HERO_NODEBUG Cell * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG Cell * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t49; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t50; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t51; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; goto bb0;
+    Cell * h0_a; Cell * h1_b; Cell * h2_n; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held h3_own3 = {0}; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held h4_own4 = {0}; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held h5_own5 = {0}; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG Cell * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG Cell * t4; HERO_NODEBUG Cell * t5; HERO_NODEBUG Cell * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG Cell * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG Cell * t10; HERO_NODEBUG Cell * t11; HERO_NODEBUG bool t12; HERO_NODEBUG Cell * t13; HERO_NODEBUG Cell * t14; HERO_NODEBUG bool t15; HERO_NODEBUG Cell * t16; HERO_NODEBUG Cell * t17; HERO_NODEBUG bool t18; HERO_NODEBUG Cell * t19; HERO_NODEBUG Cell * t20; HERO_NODEBUG bool t21; HERO_NODEBUG Cell * t22; HERO_NODEBUG Cell * t23; HERO_NODEBUG bool t24; HERO_NODEBUG Cell * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t27; HERO_NODEBUG Cell * t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t30; HERO_NODEBUG bool t31; HERO_NODEBUG Cell * t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t34; HERO_NODEBUG Cell * t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t37; HERO_NODEBUG bool t38; HERO_NODEBUG Cell * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG Cell * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG bool t43; HERO_NODEBUG Cell * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG Cell * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t49; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t50; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t51; HERO_NODEBUG h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
 bb0:
     t1 = INT64_C(0);
@@ -382,7 +387,7 @@ bb0:
     hero_print_bool(t48);
 #line 50 "tests/golden/run/fixedbugs-419-a-handle-over-a-union-compares-as-an-address.hero"
     hero_print_end();
-#line 386 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
+#line 391 "fixedbugs419ahandleoveraunioncomparesasanaddress.c"
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h3_own3));
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h4_own4));
     h_fixedbugs419ahandleoveraunioncomparesasanaddress_Held_release(hero_slot_escape(&h5_own5));

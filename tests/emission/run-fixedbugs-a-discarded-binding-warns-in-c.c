@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -47,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
 
-#line 51 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 56 "fixedbugsadiscardedbindingwarnsinc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -77,7 +82,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 81 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 86 "fixedbugsadiscardedbindingwarnsinc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +100,7 @@ void h_fixedbugsadiscardedbindingwarnsinc_main(void);
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 int64_t h_fixedbugsadiscardedbindingwarnsinc_twice(int64_t h0_n) {
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 bb0:
     t1 = h0_n;
@@ -105,13 +110,13 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 30 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     return t3;
-#line 109 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 114 "fixedbugsadiscardedbindingwarnsinc.c"
 }
 
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 void h_fixedbugsadiscardedbindingwarnsinc_main(void) {
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
-    __attribute__((unused)) int64_t h0_v; HeroStr h1_s = {0}; int64_t h2_kept; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; goto bb0;
+    __attribute__((unused)) int64_t h0_v; HeroStr h1_s = {0}; int64_t h2_kept; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 bb0:
 #line 34 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
@@ -143,7 +148,7 @@ bb0:
     hero_print_int(t9);
 #line 46 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
     hero_print_end();
-#line 147 "fixedbugsadiscardedbindingwarnsinc.c"
+#line 152 "fixedbugsadiscardedbindingwarnsinc.c"
     hero_str_release_at(&h1_s);
     return;
 }

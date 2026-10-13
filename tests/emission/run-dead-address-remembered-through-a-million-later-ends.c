@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -87,7 +92,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_11c935bc, "ends after the target: ");
 HERO_STR_STATIC(hero_str_eb0c0ab, "the target reads: ");
 
-#line 91 "deadaddressrememberedthroughamillionlaterends.c"
+#line 96 "deadaddressrememberedthroughamillionlaterends.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -132,7 +137,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "deadaddressrememberedthroughamillionlaterends.c"
+#line 141 "deadaddressrememberedthroughamillionlaterends.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b);
@@ -151,7 +156,7 @@ void h_deadaddressrememberedthroughamillionlaterends_main(void);
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
 void h_deadaddressrememberedthroughamillionlaterends_main(void) {
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; HERO_NODEBUG big * t1; HERO_NODEBUG big * t2; HERO_NODEBUG big * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG big * t8; HERO_NODEBUG big * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG big * t16; HERO_NODEBUG int64_t t17; goto bb0;
+    big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; HERO_NODEBUG big * t1; HERO_NODEBUG big * t2; HERO_NODEBUG big * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG big * t8; HERO_NODEBUG big * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG big * t16; HERO_NODEBUG int64_t t17; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
 bb0:
     t1 = big_new();
@@ -168,7 +173,7 @@ bb0:
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     hero_handle_alive(t3, "the argument `n` of `big_free`");
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t3, "big_free", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "big_free", NULL);
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     (void)big_free(t3);
 #line 22 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
@@ -203,7 +208,7 @@ bb2:
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     hero_handle_alive(t9, "the argument `n` of `big_free`");
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t9, "big_free", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "big_free", NULL);
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     (void)big_free(t9);
 #line 27 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
@@ -246,7 +251,7 @@ bb3:
     hero_print_end();
 #line 31 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
     return;
-#line 250 "deadaddressrememberedthroughamillionlaterends.c"
+#line 255 "deadaddressrememberedthroughamillionlaterends.c"
 }
 HERO_TU_LOCAL bool h_deadaddressrememberedthroughamillionlaterends_Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);

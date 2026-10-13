@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 54 "fixedbugsafieldwinsthedotoverafreefunction.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugsafieldwinsthedotoverafreefunction_Holder {
     int64_t f_tag;
@@ -97,7 +102,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 106 "fixedbugsafieldwinsthedotoverafreefunction.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b);
@@ -122,7 +127,7 @@ void h_fixedbugsafieldwinsthedotoverafreefunction_main(void);
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_double_it(int64_t h0_n) {
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb0:
     t1 = h0_n;
@@ -132,13 +137,13 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     return t3;
-#line 136 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 141 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_g(h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_h, int64_t h1_n) {
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb0:
     t1 = h1_n;
@@ -154,13 +159,13 @@ bb0:
     if (__builtin_add_overflow(t3, t5, &t6)) hero_panic_overflow();
 #line 49 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     return t6;
-#line 158 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 163 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 void h_fixedbugsafieldwinsthedotoverafreefunction_main(void) {
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_s; h_fixedbugsafieldwinsthedotoverafreefunction_Step h1_v; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step h2_s0; h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply h3_a; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t3; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t4; HERO_NODEBUG h_0fn_48ac9712 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_48ac9712 t11; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t12; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t13; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t16; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply t17; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply t18; HERO_NODEBUG h_0fn_48ac9712 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; goto bb0;
+    h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_s; h_fixedbugsafieldwinsthedotoverafreefunction_Step h1_v; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step h2_s0; h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply h3_a; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t3; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t4; HERO_NODEBUG h_0fn_48ac9712 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_48ac9712 t11; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t12; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t13; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t16; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply t17; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply t18; HERO_NODEBUG h_0fn_48ac9712 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb0:
     t1 = INT64_C(7);
@@ -247,7 +252,7 @@ bb3:
     hero_print_end();
 #line 59 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
     goto bb1;
-#line 251 "fixedbugsafieldwinsthedotoverafreefunction.c"
+#line 256 "fixedbugsafieldwinsthedotoverafreefunction.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafieldwinsthedotoverafreefunction_Holder_eq(const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *a, const h_fixedbugsafieldwinsthedotoverafreefunction_Holder *b) {
     if (!(a->f_tag == b->f_tag)) return false;

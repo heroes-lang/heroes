@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 54 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -75,7 +80,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 79 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 84 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +103,7 @@ HERO_TU_LOCAL uint8_t h_fixedbugs564theoperandsofanoperatortakethetypeitspositio
 #line 24 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_show(uint8_t h0_v) {
 #line 24 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
-    HERO_NODEBUG uint8_t t1; goto bb0;
+    HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 bb0:
     t1 = h0_v;
@@ -108,13 +113,13 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
     return;
-#line 112 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 117 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 27 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_wide(float h0_v) {
 #line 27 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
-    HERO_NODEBUG float t1; goto bb0;
+    HERO_NODEBUG float t1; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 bb0:
     t1 = h0_v;
@@ -124,13 +129,13 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
     return;
-#line 128 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 133 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 30 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_annotated(void) {
 #line 30 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
-    uint8_t h0_y; uint8_t h1_e; float h2_d; int8_t h3_n; uint8_t h4_p; uint8_t h5_g; HeroArrayHeader * h6_xs = {0}; uint64_t h7_top; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG float t14; HERO_NODEBUG float t15; HERO_NODEBUG float t16; HERO_NODEBUG float t17; HERO_NODEBUG float t18; HERO_NODEBUG float t19; HERO_NODEBUG float t20; HERO_NODEBUG int8_t t21; HERO_NODEBUG int8_t t22; HERO_NODEBUG int8_t t23; HERO_NODEBUG int8_t t24; HERO_NODEBUG int8_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG uint8_t t27; HERO_NODEBUG uint8_t t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG uint8_t t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG uint8_t t33; HERO_NODEBUG uint8_t t34; HERO_NODEBUG uint8_t t35; HERO_NODEBUG uint8_t t36; HERO_NODEBUG uint8_t t37; HERO_NODEBUG uint8_t t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG uint8_t t40; HERO_NODEBUG uint8_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG uint8_t t44; HERO_NODEBUG uint8_t t45; HERO_NODEBUG uint8_t t46; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG uint64_t t50; HERO_NODEBUG uint64_t t51; HERO_NODEBUG uint64_t t52; HERO_NODEBUG uint64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; goto bb0;
+    uint8_t h0_y; uint8_t h1_e; float h2_d; int8_t h3_n; uint8_t h4_p; uint8_t h5_g; HeroArrayHeader * h6_xs = {0}; uint64_t h7_top; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG float t14; HERO_NODEBUG float t15; HERO_NODEBUG float t16; HERO_NODEBUG float t17; HERO_NODEBUG float t18; HERO_NODEBUG float t19; HERO_NODEBUG float t20; HERO_NODEBUG int8_t t21; HERO_NODEBUG int8_t t22; HERO_NODEBUG int8_t t23; HERO_NODEBUG int8_t t24; HERO_NODEBUG int8_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG uint8_t t27; HERO_NODEBUG uint8_t t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG uint8_t t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG uint8_t t33; HERO_NODEBUG uint8_t t34; HERO_NODEBUG uint8_t t35; HERO_NODEBUG uint8_t t36; HERO_NODEBUG uint8_t t37; HERO_NODEBUG uint8_t t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG uint8_t t40; HERO_NODEBUG uint8_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG uint8_t t44; HERO_NODEBUG uint8_t t45; HERO_NODEBUG uint8_t t46; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG uint64_t t50; HERO_NODEBUG uint64_t t51; HERO_NODEBUG uint64_t t52; HERO_NODEBUG uint64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 bb0:
     t1 = UINT64_C(2);
@@ -282,7 +287,7 @@ bb0:
     hero_print_uint(t53);
 #line 49 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
     hero_print_end();
-#line 286 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 291 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
     hero_array_release_at(&h6_xs);
     hero_array_release_at(&h8_own8);
     return;
@@ -291,7 +296,7 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_branches(void) {
 #line 51 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
-    bool h0_c; int64_t h1_k; HERO_NODEBUG uint8_t h2_r0; uint8_t h3_y; HERO_NODEBUG int64_t h4_s0; HERO_NODEBUG uint8_t h5_r1; uint8_t h6_z; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG uint8_t t21; goto bb0;
+    bool h0_c; int64_t h1_k; HERO_NODEBUG uint8_t h2_r0; uint8_t h3_y; HERO_NODEBUG int64_t h4_s0; HERO_NODEBUG uint8_t h5_r1; uint8_t h6_z; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG uint8_t t21; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 bb0:
     t1 = true;
@@ -389,13 +394,13 @@ bb7:
     h5_r1 = t19;
 #line 61 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
     goto bb4;
-#line 393 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 398 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 67 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_beside(void) {
 #line 67 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
-    uint8_t h0_b8; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG uint8_t t21; HERO_NODEBUG uint8_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG uint8_t t26; goto bb0;
+    uint8_t h0_b8; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG uint8_t t21; HERO_NODEBUG uint8_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG uint8_t t26; HERO_ENTRY_STOP; goto bb0;
 #line 67 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 bb0:
     t1 = UINT64_C(2);
@@ -468,13 +473,13 @@ bb0:
     hero_print_end();
 #line 73 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
     return;
-#line 472 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 477 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 75 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 void h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_main(void) {
 #line 75 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
-    goto bb0;
+    HERO_ENTRY_STOP; goto bb0;
 #line 75 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 bb0:
     h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_annotated();
@@ -482,7 +487,7 @@ bb0:
     h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_beside();
 #line 78 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
     return;
-#line 486 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 491 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
@@ -490,7 +495,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 HERO_TU_LOCAL uint8_t h_fixedbugs564theoperandsofanoperatortakethetypeitspositionasks_first_3c17(uint8_t h0_a, uint8_t h1_b) {
 #line 20 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
 bb0:
     t1 = h0_a;
@@ -521,7 +526,7 @@ bb0:
     t5 = INT64_C(0);
 #line 22 "tests/golden/run/fixedbugs-564-the-operands-of-an-operator-take-the-type-its-position-asks.hero"
     t6 = ((void)((t4 == NULL || t5 < 0 || t5 >= t4->len) ? ((void)hero_array_at(t4, t5), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t4 + 1))[t5]);
-#line 525 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
+#line 530 "fixedbugs564theoperandsofanoperatortakethetypeitspositionasks.c"
     hero_array_release_at(&h2_pair);
     hero_array_release_at(&h3_own3);
     return t6;

@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -52,7 +57,7 @@ HERO_STR_STATIC(hero_str_724db1e1, "start");
 HERO_STR_STATIC(hero_str_6e02d4d4, "more text");
 HERO_STR_STATIC(hero_str_3498eaad, "again");
 
-#line 56 "fixedbugsacontextboundstrisreleased.c"
+#line 61 "fixedbugsacontextboundstrisreleased.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -82,7 +87,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "fixedbugsacontextboundstrisreleased.c"
+#line 91 "fixedbugsacontextboundstrisreleased.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -100,7 +105,7 @@ HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundstrisreleased_wanted_1e58d9
 #line 12 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
 void h_fixedbugsacontextboundstrisreleased_main(void) {
 #line 12 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
-    h_0opt_f87774a h0_s = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_cell = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG h_0opt_f87774a h4_f2 = {0}; HERO_NODEBUG h_0opt_f87774a h5_f3 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG h_0opt_f87774a h9_own9 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_f87774a t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_0opt_f87774a t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG h_0opt_f87774a t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG h_0opt_f87774a t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG h_0opt_f87774a t47; HERO_NODEBUG h_0opt_f87774a t48; goto bb0;
+    h_0opt_f87774a h0_s = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_cell = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG h_0opt_f87774a h4_f2 = {0}; HERO_NODEBUG h_0opt_f87774a h5_f3 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG h_0opt_f87774a h9_own9 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_f87774a t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_0opt_f87774a t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG h_0opt_f87774a t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG h_0opt_f87774a t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG h_0opt_f87774a t47; HERO_NODEBUG h_0opt_f87774a t48; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_fa5daa5);
@@ -271,7 +276,7 @@ bb2:
     t15 = h3_f1;
 #line 16 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     t16 = t15.as.err;
-#line 275 "fixedbugsacontextboundstrisreleased.c"
+#line 280 "fixedbugsacontextboundstrisreleased.c"
     hero_panic_must(t16);
     hero_unreachable();
 bb3:
@@ -283,7 +288,7 @@ bb3:
     hero_print_str(t36);
 #line 20 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     hero_print_end();
-#line 287 "fixedbugsacontextboundstrisreleased.c"
+#line 292 "fixedbugsacontextboundstrisreleased.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_s));
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_cell));
@@ -300,7 +305,7 @@ bb4:
     t33 = h5_f3;
 #line 20 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     t34 = t33.as.err;
-#line 304 "fixedbugsacontextboundstrisreleased.c"
+#line 309 "fixedbugsacontextboundstrisreleased.c"
     hero_panic_must(t34);
     hero_unreachable();
 }
@@ -310,7 +315,7 @@ bb4:
 #line 9 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
 HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsacontextboundstrisreleased_wanted_1e58d9(HeroStr h0_what) {
 #line 9 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_0opt_f87774a h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_f87774a t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_f87774a t7; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_0opt_f87774a h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_f87774a t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332);
@@ -338,7 +343,7 @@ bb0:
     h2_own2 = t5;
 #line 10 "tests/golden/run/fixedbugs-a-context-bound-str-is-released.hero"
     h_0opt_f87774a_release(&t7);
-#line 342 "fixedbugsacontextboundstrisreleased.c"
+#line 347 "fixedbugsacontextboundstrisreleased.c"
     h_0opt_f87774a_retain(&t5);
     hero_str_release_at(&h1_own1);
     h_0opt_f87774a_release(hero_slot_escape(&h2_own2));

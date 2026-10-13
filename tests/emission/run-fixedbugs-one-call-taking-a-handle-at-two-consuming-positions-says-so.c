@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -89,7 +94,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3d501326, "one bio, two positions");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 93 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
+#line 98 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -136,7 +141,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 140 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
+#line 145 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_Bio_eq(bio * const *a, bio * const *b);
@@ -157,7 +162,7 @@ void h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_main(void);
 #line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
 void h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_main(void) {
 #line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    ssl * h0_s; bio * h1_b; HERO_NODEBUG ssl * t1; HERO_NODEBUG bio * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG ssl * t4; HERO_NODEBUG bio * t5; HERO_NODEBUG bio * t6; HERO_NODEBUG ssl * t7; HERO_NODEBUG HeroStr t8; goto bb0;
+    ssl * h0_s; bio * h1_b; HERO_NODEBUG ssl * t1; HERO_NODEBUG bio * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG ssl * t4; HERO_NODEBUG bio * t5; HERO_NODEBUG bio * t6; HERO_NODEBUG ssl * t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
 bb0:
     t1 = ssl_new();
@@ -189,9 +194,9 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     hero_handle_alive(t6, "the argument `wbio` of `ssl_set_bio`");
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    uint64_t hero_life_1_0 = hero_handle_transferring(t5, "bio_free");
+    HERO_NODEBUG uint64_t hero_life_1_0 = hero_handle_transferring(t5, "bio_free");
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    uint64_t hero_life_2_0 = hero_handle_transferring(t6, "bio_free");
+    HERO_NODEBUG uint64_t hero_life_2_0 = hero_handle_transferring(t6, "bio_free");
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     (void)ssl_set_bio(t4, t5, t6);
 #line 25 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
@@ -206,7 +211,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     hero_handle_alive(t7, "the argument `s` of `ssl_free`");
 #line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t7, "ssl_free", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t7, "ssl_free", NULL);
 #line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     (void)ssl_free(t7);
 #line 26 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
@@ -220,7 +225,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
     return;
-#line 224 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
+#line 229 "fixedbugsonecalltakingahandleattwoconsumingpositionssaysso.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_Bio_eq(bio * const *a, bio * const *b) {
     return hero_handle_eq(*a, *b);

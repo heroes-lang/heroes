@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -88,7 +93,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3294dee, "released: ");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 92 "handlesuccessvalueatthewidthoftheresult.c"
+#line 97 "handlesuccessvalueatthewidthoftheresult.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -134,7 +139,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "handlesuccessvalueatthewidthoftheresult.c"
+#line 143 "handlesuccessvalueatthewidthoftheresult.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b);
@@ -153,7 +158,7 @@ void h_handlesuccessvalueatthewidthoftheresult_main(void);
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
 void h_handlesuccessvalueatthewidthoftheresult_main(void) {
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    ob * h0_a; ob * h1_b; uint64_t h2_total; bool h3_done; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG ob * t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG ob * t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG uint64_t t8; HERO_NODEBUG uint64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t12; goto bb0;
+    ob * h0_a; ob * h1_b; uint64_t h2_total; bool h3_done; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG ob * t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG ob * t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG uint64_t t8; HERO_NODEBUG uint64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t12; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
 bb0:
     t1 = ob_new();
@@ -172,7 +177,7 @@ bb0:
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     hero_handle_alive(t3, "the argument `o` of `ob_release_all`");
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t3, "ob_release_all", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "ob_release_all", NULL);
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     t4 = ob_release_all(t3);
 #line 16 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
@@ -195,7 +200,7 @@ bb0:
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     hero_handle_alive(t5, "the argument `o` of `ob_try_put`");
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t5, "ob_try_put", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t5, "ob_try_put", NULL);
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     t6 = ob_try_put(t5);
 #line 17 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
@@ -235,7 +240,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
     return;
-#line 239 "handlesuccessvalueatthewidthoftheresult.c"
+#line 244 "handlesuccessvalueatthewidthoftheresult.c"
 }
 HERO_TU_LOCAL bool h_handlesuccessvalueatthewidthoftheresult_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

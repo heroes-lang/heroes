@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -50,7 +55,7 @@ HERO_STR_STATIC(hero_str_2c, ",");
 HERO_STR_STATIC(hero_str_354737bc, "all: ");
 HERO_STR_STATIC(hero_str_12cd9df2, "stopped: ");
 
-#line 54 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 59 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -96,7 +101,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 105 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -133,7 +138,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 #line 13 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 h_0opt_e201354 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_half(int64_t h0_n) {
 #line 13 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = h0_n;
@@ -203,7 +208,7 @@ bb3:
     goto bb1;
 #line 15 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb4:
-#line 207 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 212 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -214,7 +219,7 @@ bb4:
 #line 18 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_must(int64_t h0_n) {
 #line 18 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_at; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_at; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -284,7 +289,7 @@ bb2:
 bb3:
 #line 26 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = h1_out;
-#line 288 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 293 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t23);
     hero_array_release_at(&h1_out);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -313,7 +318,7 @@ bb5:
     t15 = h3_f0;
 #line 23 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t16 = t15.as.err;
-#line 317 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 322 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_panic_must(t16);
     hero_unreachable();
 }
@@ -321,7 +326,7 @@ bb5:
 #line 28 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_default(int64_t h0_n) {
 #line 28 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG int64_t h6_r0; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG int64_t h6_r0; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -430,7 +435,7 @@ bb3:
 bb4:
 #line 34 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t30 = h1_out;
-#line 434 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 439 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t30);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -468,13 +473,13 @@ bb7:
     hero_array_push_owned(&h1_out, &t25);
 #line 32 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 472 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 477 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 h_0opt_2270cbe7 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_question(int64_t h0_n) {
 #line 36 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h10_own10 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_2270cbe7 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_0opt_2270cbe7 t32; HERO_NODEBUG h_0opt_2270cbe7 t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_2270cbe7 t40; HERO_NODEBUG h_0opt_2270cbe7 t41; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h10_own10 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_2270cbe7 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_0opt_2270cbe7 t32; HERO_NODEBUG h_0opt_2270cbe7 t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_2270cbe7 t40; HERO_NODEBUG h_0opt_2270cbe7 t41; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -633,7 +638,7 @@ bb6:
     goto bb7;
 #line 40 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb7:
-#line 637 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 642 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t33 = h6_ret0;
     h_0opt_2270cbe7_retain(&t33);
     hero_array_release_at(&h1_out);
@@ -650,7 +655,7 @@ bb7:
 #line 44 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 h_0opt_2270cbe7 h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_stops_at_question(int64_t h0_n) {
 #line 44 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h10_own10 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_0opt_2270cbe7 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG h_0opt_2270cbe7 t30; HERO_NODEBUG h_0opt_2270cbe7 t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_2270cbe7 t38; HERO_NODEBUG h_0opt_2270cbe7 t39; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h10_own10 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_0opt_2270cbe7 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG h_0opt_2270cbe7 t30; HERO_NODEBUG h_0opt_2270cbe7 t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_2270cbe7 t38; HERO_NODEBUG h_0opt_2270cbe7 t39; HERO_ENTRY_STOP; goto bb0;
 #line 44 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -805,7 +810,7 @@ bb6:
     goto bb7;
 #line 48 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb7:
-#line 809 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 814 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     t31 = h6_ret0;
     h_0opt_2270cbe7_retain(&t31);
     hero_array_release_at(&h1_out);
@@ -822,7 +827,7 @@ bb7:
 #line 52 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_and(int64_t h0_n) {
 #line 52 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG bool h5_b0; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG bool h5_b0; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_ENTRY_STOP; goto bb0;
 #line 52 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_bool, 1);
@@ -913,7 +918,7 @@ bb3:
 bb4:
 #line 58 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t25 = h1_out;
-#line 917 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 922 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t25);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -939,13 +944,13 @@ bb6:
     hero_array_push_owned(&h1_out, &t20);
 #line 56 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 943 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 948 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 60 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_or(int64_t h0_n) {
 #line 60 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG bool h5_b0; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG bool h5_b0; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_ENTRY_STOP; goto bb0;
 #line 60 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_bool, 1);
@@ -1036,7 +1041,7 @@ bb3:
 bb4:
 #line 66 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t25 = h1_out;
-#line 1040 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1045 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t25);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -1062,13 +1067,13 @@ bb6:
     hero_array_push_owned(&h1_out, &t20);
 #line 64 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 1066 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1071 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 68 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_two(int64_t h0_n) {
 #line 68 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h6_f1 = {0}; HERO_NODEBUG int64_t h7_r0; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG h_0opt_e201354 h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG h_0opt_e201354 t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG h_0opt_e201354 t48; HERO_NODEBUG h_0opt_e201354 t49; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h6_f1 = {0}; HERO_NODEBUG int64_t h7_r0; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG h_0opt_e201354 h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG h_0opt_e201354 t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG h_0opt_e201354 t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_ENTRY_STOP; goto bb0;
 #line 68 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -1181,7 +1186,7 @@ bb3:
 bb4:
 #line 74 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t41 = h1_out;
-#line 1185 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1190 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -1231,7 +1236,7 @@ bb6:
     t22 = h5_f0;
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = t22.as.err;
-#line 1235 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1240 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_panic_must(t23);
     hero_unreachable();
 bb7:
@@ -1261,13 +1266,13 @@ bb9:
     hero_array_push_owned(&h1_out, &t36);
 #line 72 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 1265 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1270 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 76 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroArrayHeader * h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_through_a_call(int64_t h0_n) {
 #line 76 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG HeroStr t38; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_at; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG HeroStr t38; HERO_ENTRY_STOP; goto bb0;
 #line 76 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1380,7 +1385,7 @@ bb3:
 bb4:
 #line 82 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t31 = h1_out;
-#line 1384 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1389 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t31);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -1413,7 +1418,7 @@ bb6:
     t22 = h5_f0;
 #line 80 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t23 = t22.as.err;
-#line 1417 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1422 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_panic_must(t23);
     hero_unreachable();
 }
@@ -1421,7 +1426,7 @@ bb6:
 #line 84 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_shown(HeroArrayHeader * h0_xs) {
 #line 84 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; goto bb0;
+    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_ENTRY_STOP; goto bb0;
 #line 84 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1516,7 +1521,7 @@ bb4:
     h7_own7 = t20;
 #line 90 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_str_decref(t25);
-#line 1520 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1525 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_incref(t20);
     hero_array_release_at(&h1_parts);
     hero_array_release_at(&h2_xs0);
@@ -1529,7 +1534,7 @@ bb4:
 #line 92 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 HeroStr h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_said(HeroArrayHeader * h0_xs) {
 #line 92 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; bool h4_x; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; goto bb0;
+    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; bool h4_x; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_ENTRY_STOP; goto bb0;
 #line 92 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1624,7 +1629,7 @@ bb4:
     h7_own7 = t20;
 #line 98 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_str_decref(t25);
-#line 1628 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1633 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_str_incref(t20);
     hero_array_release_at(&h1_parts);
     hero_array_release_at(&h2_xs0);
@@ -1637,7 +1642,7 @@ bb4:
 #line 100 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 void h_fixedbugs381eachbranchingpushedvaluekeepsitsvalues_main(void) {
 #line 100 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
-    HERO_NODEBUG h_0opt_2270cbe7 h0_f0 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h1_s0 = {0}; HeroArrayHeader * h2_xs = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_2270cbe7 t8; HERO_NODEBUG h_0opt_2270cbe7 t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_0opt_2270cbe7 t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_0opt_2270cbe7 t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_0opt_2270cbe7 t19; HERO_NODEBUG h_0opt_2270cbe7 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_0opt_2270cbe7 t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG h_0opt_2270cbe7 t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroFailure t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_2270cbe7 t49; HERO_NODEBUG h_0opt_2270cbe7 t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_0opt_2270cbe7 t52; HERO_NODEBUG h_0opt_2270cbe7 t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG HeroFailure t63; goto bb0;
+    HERO_NODEBUG h_0opt_2270cbe7 h0_f0 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h1_s0 = {0}; HeroArrayHeader * h2_xs = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_2270cbe7 t8; HERO_NODEBUG h_0opt_2270cbe7 t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_0opt_2270cbe7 t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_0opt_2270cbe7 t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_0opt_2270cbe7 t19; HERO_NODEBUG h_0opt_2270cbe7 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_0opt_2270cbe7 t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG h_0opt_2270cbe7 t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroFailure t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_2270cbe7 t49; HERO_NODEBUG h_0opt_2270cbe7 t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_0opt_2270cbe7 t52; HERO_NODEBUG h_0opt_2270cbe7 t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG HeroFailure t63; HERO_ENTRY_STOP; goto bb0;
 #line 100 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
 bb0:
     t1 = INT64_C(5);
@@ -1765,7 +1770,7 @@ bb2:
     t13 = h0_f0;
 #line 103 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     t14 = t13.as.err;
-#line 1769 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1774 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_panic_must(t14);
     hero_unreachable();
 bb3:
@@ -1856,7 +1861,7 @@ bb3:
     hero_print_str(t44);
 #line 112 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     hero_print_end();
-#line 1860 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1865 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     h_0opt_2270cbe7_release(hero_slot_escape(&h0_f0));
     h_0opt_2270cbe7_release(hero_slot_escape(&h1_s0));
     hero_array_release_at(&h2_xs);
@@ -1931,13 +1936,13 @@ bb5:
     hero_print_end();
 #line 107 "tests/golden/run/fixedbugs-381-each-branching-pushed-value-keeps-its-values.hero"
     goto bb3;
-#line 1935 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1940 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -1986,7 +1991,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 1990 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
+#line 1995 "fixedbugs381eachbranchingpushedvaluekeepsitsvalues.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

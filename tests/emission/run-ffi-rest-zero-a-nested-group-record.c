@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #line 8 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 _Static_assert(__builtin_classify_type(((SA *)0)->kind) == 1 && sizeof(((SA *)0)->kind) == sizeof(int32_t) && (_Generic(((SA *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA kind");
@@ -53,11 +58,11 @@ _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x
 #line 13 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 _Static_assert(__builtin_classify_type(((struct outer *)0)->k) == 1 && sizeof(((struct outer *)0)->k) == sizeof(int32_t) && (_Generic(((struct outer *)0)->k, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Outer k");
 _Static_assert(_Generic(&((struct outer *)0)->inner, SA *: 1, default: 0) && sizeof(((struct outer *)0)->inner) == sizeof(SA), "heroes-ffi-field Outer inner");
-#line 57 "ffirestzeroanestedgrouprecord.c"
+#line 62 "ffirestzeroanestedgrouprecord.c"
 
 #line 12 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer k inner");
-#line 61 "ffirestzeroanestedgrouprecord.c"
+#line 66 "ffirestzeroanestedgrouprecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -143,7 +148,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "ffirestzeroanestedgrouprecord.c"
+#line 152 "ffirestzeroanestedgrouprecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffirestzeroanestedgrouprecord_SA_eq(const SA *a, const SA *b);
@@ -166,7 +171,7 @@ void h_ffirestzeroanestedgrouprecord_main(void);
 #line 18 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 struct outer h_ffirestzeroanestedgrouprecord_left_out(void) {
 #line 18 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG struct outer t2; goto bb0;
+    HERO_NODEBUG int32_t t1; HERO_NODEBUG struct outer t2; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 bb0:
     t1 = INT64_C(1);
@@ -178,13 +183,13 @@ bb0:
     t2.k = t1;
 #line 19 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return t2;
-#line 182 "ffirestzeroanestedgrouprecord.c"
+#line 187 "ffirestzeroanestedgrouprecord.c"
 }
 
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 struct outer h_ffirestzeroanestedgrouprecord_built(void) {
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG SA t3; HERO_NODEBUG struct outer t4; goto bb0;
+    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG SA t3; HERO_NODEBUG struct outer t4; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 bb0:
     t1 = INT64_C(2);
@@ -206,7 +211,7 @@ bb0:
     t4.inner = t3;
 #line 22 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return t4;
-#line 210 "ffirestzeroanestedgrouprecord.c"
+#line 215 "ffirestzeroanestedgrouprecord.c"
 }
 
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
@@ -216,7 +221,7 @@ void h_ffirestzeroanestedgrouprecord_main(void) {
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    struct outer *const hero_lend_h0_a = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "a"); struct outer *const hero_lend_h1_b = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "b"); HERO_NODEBUG struct outer t1; HERO_NODEBUG struct outer t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG struct outer t5; HERO_NODEBUG SA t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG struct outer t10; HERO_NODEBUG struct outer t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG struct outer t14; HERO_NODEBUG SA t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; goto bb0;
+    struct outer *const hero_lend_h0_a = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "a"); struct outer *const hero_lend_h1_b = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "b"); HERO_NODEBUG struct outer t1; HERO_NODEBUG struct outer t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG struct outer t5; HERO_NODEBUG SA t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG struct outer t10; HERO_NODEBUG struct outer t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG struct outer t14; HERO_NODEBUG SA t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 bb0:
     (void)dirty();
@@ -291,7 +296,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
     return;
-#line 295 "ffirestzeroanestedgrouprecord.c"
+#line 300 "ffirestzeroanestedgrouprecord.c"
 }
 #undef h0_a
 #undef h1_b

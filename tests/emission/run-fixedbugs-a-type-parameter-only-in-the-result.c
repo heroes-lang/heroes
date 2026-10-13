@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -56,7 +61,7 @@ HERO_STR_STATIC(hero_str_1dce, ": ");
 HERO_STR_STATIC(hero_str_70509edc, "seven");
 HERO_STR_STATIC(hero_str_75469e46, "a float");
 
-#line 60 "fixedbugsatypeparameteronlyintheresult.c"
+#line 65 "fixedbugsatypeparameteronlyintheresult.c"
 typedef enum h_fixedbugsatypeparameteronlyintheresult_Value_tag {
     h_fixedbugsatypeparameteronlyintheresult_Value_tag_number = 0,
     h_fixedbugsatypeparameteronlyintheresult_Value_tag_text = 1,
@@ -131,7 +136,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "fixedbugsatypeparameteronlyintheresult.c"
+#line 140 "fixedbugsatypeparameteronlyintheresult.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsatypeparameteronlyintheresult_Value_c_number_eq(const h_fixedbugsatypeparameteronlyintheresult_Value_c_number *a, const h_fixedbugsatypeparameteronlyintheresult_Value_c_number *b);
@@ -178,7 +183,7 @@ HERO_TU_LOCAL h_0opt_db92a83 h_fixedbugsatypeparameteronlyintheresult_wanted_1ad
 #line 18 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_number_of(h_fixedbugsatypeparameteronlyintheresult_Value h0_v) {
 #line 18 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h1_s0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_r0 = {0}; h_fixedbugsatypeparameteronlyintheresult_Value_c_number h3_n; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t1; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t4; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_number t5; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_number t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; goto bb0;
+    HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h1_s0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_r0 = {0}; h_fixedbugsatypeparameteronlyintheresult_Value_c_number h3_n; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t1; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t4; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_number t5; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_number t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = h0_v;
@@ -208,7 +213,7 @@ bb0:
 bb1:
 #line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     t11 = h2_r0;
-#line 212 "fixedbugsatypeparameteronlyintheresult.c"
+#line 217 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_retain(&t11);
     h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h1_s0));
     h_0opt_e201354_release(hero_slot_escape(&h2_r0));
@@ -266,13 +271,13 @@ bb3:
     h_0opt_e201354_release(&t16);
 #line 19 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     goto bb1;
-#line 270 "fixedbugsatypeparameteronlyintheresult.c"
+#line 275 "fixedbugsatypeparameteronlyintheresult.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 h_0opt_f87774a h_fixedbugsatypeparameteronlyintheresult_text_of(h_fixedbugsatypeparameteronlyintheresult_Value h0_v) {
 #line 23 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h1_s0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}; h_fixedbugsatypeparameteronlyintheresult_Value_c_text h3_t = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t1; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t4; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_text t5; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_text t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t12; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_text t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG h_0opt_f87774a t17; goto bb0;
+    HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h1_s0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}; h_fixedbugsatypeparameteronlyintheresult_Value_c_text h3_t = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t1; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t4; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_text t5; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_text t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t12; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value_c_text t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = h0_v;
@@ -302,7 +307,7 @@ bb0:
 bb1:
 #line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     t11 = h2_r0;
-#line 306 "fixedbugsatypeparameteronlyintheresult.c"
+#line 311 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_f87774a_retain(&t11);
     h_fixedbugsatypeparameteronlyintheresult_Value_release(hero_slot_escape(&h1_s0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
@@ -369,13 +374,13 @@ bb3:
     h_0opt_f87774a_release(&t17);
 #line 24 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     goto bb1;
-#line 373 "fixedbugsatypeparameteronlyintheresult.c"
+#line 378 "fixedbugsatypeparameteronlyintheresult.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_as_return(bool h0_flag) {
 #line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG h_0opt_e201354 t8; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = h0_flag;
@@ -419,7 +424,7 @@ bb3:
     goto bb1;
 #line 30 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb4:
-#line 423 "fixedbugsatypeparameteronlyintheresult.c"
+#line 428 "fixedbugsatypeparameteronlyintheresult.c"
     t6 = h1_ret0;
     h_0opt_e201354_retain(&t6);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -430,7 +435,7 @@ bb4:
 #line 34 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 h_0opt_473cb9ae h_fixedbugsatypeparameteronlyintheresult_via_ufcs(void) {
 #line 34 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_473cb9ae h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_473cb9ae t2; HERO_NODEBUG h_0opt_473cb9ae t3; goto bb0;
+    HERO_NODEBUG h_0opt_473cb9ae h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_473cb9ae t2; HERO_NODEBUG h_0opt_473cb9ae t3; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6bd6043b);
@@ -442,7 +447,7 @@ bb0:
     h0_own0 = t2;
 #line 35 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     h_0opt_473cb9ae_release(&t3);
-#line 446 "fixedbugsatypeparameteronlyintheresult.c"
+#line 451 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_473cb9ae_retain(&t2);
     h_0opt_473cb9ae_release(hero_slot_escape(&h0_own0));
     return t2;
@@ -451,7 +456,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 void h_fixedbugsatypeparameteronlyintheresult_main(void) {
 #line 37 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h1_s0 = {0}; HeroFailure h2_e = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG h_0opt_f87774a h4_f2 = {0}; HERO_NODEBUG h_0opt_e201354 h5_f3 = {0}; h_0opt_db92a83 h6_annotated = {0}; HERO_NODEBUG h_0opt_db92a83 h7_f4 = {0}; HERO_NODEBUG h_0opt_473cb9ae h8_f5 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h11_own11 = {0}; HERO_NODEBUG h_0opt_e201354 h12_own12 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h15_own15 = {0}; HERO_NODEBUG h_0opt_f87774a h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG h_0opt_db92a83 h18_own18 = {0}; HERO_NODEBUG h_0opt_473cb9ae h19_own19 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG h_0opt_f87774a t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e201354 t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_0opt_db92a83 t50; HERO_NODEBUG h_0opt_db92a83 t51; HERO_NODEBUG h_0opt_db92a83 t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG bool t55; HERO_NODEBUG h_0opt_473cb9ae t56; HERO_NODEBUG h_0opt_473cb9ae t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t61; HERO_NODEBUG h_0opt_e201354 t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t64; HERO_NODEBUG h_0opt_e201354 t65; HERO_NODEBUG h_0opt_e201354 t66; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t67; HERO_NODEBUG h_0opt_f87774a t68; HERO_NODEBUG h_0opt_f87774a t69; HERO_NODEBUG HeroFailure t70; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t71; HERO_NODEBUG h_0opt_f87774a t72; HERO_NODEBUG h_0opt_f87774a t73; HERO_NODEBUG h_0opt_e201354 t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_NODEBUG h_0opt_db92a83 t76; HERO_NODEBUG h_0opt_db92a83 t77; HERO_NODEBUG h_0opt_db92a83 t78; HERO_NODEBUG h_0opt_473cb9ae t79; HERO_NODEBUG h_0opt_473cb9ae t80; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h1_s0 = {0}; HeroFailure h2_e = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG h_0opt_f87774a h4_f2 = {0}; HERO_NODEBUG h_0opt_e201354 h5_f3 = {0}; h_0opt_db92a83 h6_annotated = {0}; HERO_NODEBUG h_0opt_db92a83 h7_f4 = {0}; HERO_NODEBUG h_0opt_473cb9ae h8_f5 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h11_own11 = {0}; HERO_NODEBUG h_0opt_e201354 h12_own12 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value h15_own15 = {0}; HERO_NODEBUG h_0opt_f87774a h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG h_0opt_db92a83 h18_own18 = {0}; HERO_NODEBUG h_0opt_473cb9ae h19_own19 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG h_0opt_f87774a t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e201354 t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_0opt_db92a83 t50; HERO_NODEBUG h_0opt_db92a83 t51; HERO_NODEBUG h_0opt_db92a83 t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG bool t55; HERO_NODEBUG h_0opt_473cb9ae t56; HERO_NODEBUG h_0opt_473cb9ae t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t61; HERO_NODEBUG h_0opt_e201354 t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t64; HERO_NODEBUG h_0opt_e201354 t65; HERO_NODEBUG h_0opt_e201354 t66; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t67; HERO_NODEBUG h_0opt_f87774a t68; HERO_NODEBUG h_0opt_f87774a t69; HERO_NODEBUG HeroFailure t70; HERO_NODEBUG h_fixedbugsatypeparameteronlyintheresult_Value t71; HERO_NODEBUG h_0opt_f87774a t72; HERO_NODEBUG h_0opt_f87774a t73; HERO_NODEBUG h_0opt_e201354 t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_NODEBUG h_0opt_db92a83 t76; HERO_NODEBUG h_0opt_db92a83 t77; HERO_NODEBUG h_0opt_db92a83 t78; HERO_NODEBUG h_0opt_473cb9ae t79; HERO_NODEBUG h_0opt_473cb9ae t80; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = INT64_C(7);
@@ -547,7 +552,7 @@ bb2:
     t8 = h0_f0;
 #line 38 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     t9 = t8.as.err;
-#line 551 "fixedbugsatypeparameteronlyintheresult.c"
+#line 556 "fixedbugsatypeparameteronlyintheresult.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -773,7 +778,7 @@ bb6:
     hero_print_bool(t60);
 #line 49 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     hero_print_end();
-#line 777 "fixedbugsatypeparameteronlyintheresult.c"
+#line 782 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_e201354_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -800,7 +805,7 @@ bb7:
     t32 = h3_f1;
 #line 44 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     t33 = t32.as.err;
-#line 804 "fixedbugsatypeparameteronlyintheresult.c"
+#line 809 "fixedbugsatypeparameteronlyintheresult.c"
     hero_panic_must(t33);
     hero_unreachable();
 }
@@ -810,7 +815,7 @@ bb7:
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 HERO_TU_LOCAL h_0opt_e201354 h_fixedbugsatypeparameteronlyintheresult_wanted_1b9a87(HeroStr h0_what) {
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332);
@@ -828,7 +833,7 @@ bb0:
     h1_own1 = t3;
 #line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     h_0opt_e201354_release(&t4);
-#line 832 "fixedbugsatypeparameteronlyintheresult.c"
+#line 837 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_e201354_retain(&t3);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
@@ -839,7 +844,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 HERO_TU_LOCAL h_0opt_f87774a h_fixedbugsatypeparameteronlyintheresult_wanted_1e58d9(HeroStr h0_what) {
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_0opt_f87774a t4; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_0opt_f87774a t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332);
@@ -857,7 +862,7 @@ bb0:
     h1_own1 = t3;
 #line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     h_0opt_f87774a_release(&t4);
-#line 861 "fixedbugsatypeparameteronlyintheresult.c"
+#line 866 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_f87774a_retain(&t3);
     h_0opt_f87774a_release(hero_slot_escape(&h1_own1));
     return t3;
@@ -868,7 +873,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 HERO_TU_LOCAL h_0opt_473cb9ae h_fixedbugsatypeparameteronlyintheresult_wanted_d3eff76(HeroStr h0_what) {
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_473cb9ae h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_473cb9ae t3; HERO_NODEBUG h_0opt_473cb9ae t4; goto bb0;
+    HERO_NODEBUG h_0opt_473cb9ae h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_473cb9ae t3; HERO_NODEBUG h_0opt_473cb9ae t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332);
@@ -886,7 +891,7 @@ bb0:
     h1_own1 = t3;
 #line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     h_0opt_473cb9ae_release(&t4);
-#line 890 "fixedbugsatypeparameteronlyintheresult.c"
+#line 895 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_473cb9ae_retain(&t3);
     h_0opt_473cb9ae_release(hero_slot_escape(&h1_own1));
     return t3;
@@ -897,7 +902,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 HERO_TU_LOCAL h_0opt_db92a83 h_fixedbugsatypeparameteronlyintheresult_wanted_1ad16c(HeroStr h0_what) {
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
-    HERO_NODEBUG h_0opt_db92a83 h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_db92a83 t3; HERO_NODEBUG h_0opt_db92a83 t4; goto bb0;
+    HERO_NODEBUG h_0opt_db92a83 h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_db92a83 t3; HERO_NODEBUG h_0opt_db92a83 t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332);
@@ -915,7 +920,7 @@ bb0:
     h1_own1 = t3;
 #line 16 "tests/golden/run/fixedbugs-a-type-parameter-only-in-the-result.hero"
     h_0opt_db92a83_release(&t4);
-#line 919 "fixedbugsatypeparameteronlyintheresult.c"
+#line 924 "fixedbugsatypeparameteronlyintheresult.c"
     h_0opt_db92a83_retain(&t3);
     h_0opt_db92a83_release(hero_slot_escape(&h1_own1));
     return t3;

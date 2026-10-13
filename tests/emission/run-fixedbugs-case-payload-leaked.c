@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +54,7 @@ HERO_STR_STATIC(hero_str_334014a4, "alphabet");
 HERO_STR_STATIC(hero_str_68e7bae0, "betamax");
 HERO_STR_STATIC(hero_str_1d7a5355, "alphabetical");
 
-#line 53 "fixedbugscasepayloadleaked.c"
+#line 58 "fixedbugscasepayloadleaked.c"
 typedef enum h_fixedbugscasepayloadleaked_Token_tag {
     h_fixedbugscasepayloadleaked_Token_tag_num = 0,
     h_fixedbugscasepayloadleaked_Token_tag_name = 1,
@@ -100,7 +105,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 104 "fixedbugscasepayloadleaked.c"
+#line 109 "fixedbugscasepayloadleaked.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugscasepayloadleaked_Token_c_num_eq(const h_fixedbugscasepayloadleaked_Token_c_num *a, const h_fixedbugscasepayloadleaked_Token_c_num *b);
@@ -146,7 +151,7 @@ void h_fixedbugscasepayloadleaked_main(void);
 #line 34 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 h_fixedbugscasepayloadleaked_Token h_fixedbugscasepayloadleaked_label(HeroStr h0_text, int64_t h1_from, int64_t h2_to) {
 #line 34 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t7; goto bb0;
+    HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t7; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 bb0:
     t1 = h0_text;
@@ -172,7 +177,7 @@ bb0:
     h4_own4 = t5;
 #line 35 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     h_fixedbugscasepayloadleaked_Token_release(&t7);
-#line 176 "fixedbugscasepayloadleaked.c"
+#line 181 "fixedbugscasepayloadleaked.c"
     h_fixedbugscasepayloadleaked_Token_retain(&t5);
     hero_str_release_at(&h3_own3);
     h_fixedbugscasepayloadleaked_Token_release(hero_slot_escape(&h4_own4));
@@ -182,7 +187,7 @@ bb0:
 #line 37 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 void h_fixedbugscasepayloadleaked_main(void) {
 #line 37 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
-    HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_copy = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h3_own3 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h4_own4 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h5_own5 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h6_own6 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t6; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t10; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t17; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t29; HERO_NODEBUG bool t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t35; HERO_NODEBUG bool t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t39; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t42; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t43; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t44; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_copy = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h3_own3 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h4_own4 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h5_own5 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h6_own6 = {0}; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t6; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t10; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t17; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t29; HERO_NODEBUG bool t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t35; HERO_NODEBUG bool t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t39; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t42; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t43; HERO_NODEBUG h_fixedbugscasepayloadleaked_Token t44; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
 bb0:
     t1 = hero_array_new(&h_fixedbugscasepayloadleaked_Token_desc, 1);
@@ -313,7 +318,7 @@ bb0:
     hero_print_bool(t36);
 #line 53 "tests/golden/run/fixedbugs-case-payload-leaked.hero"
     hero_print_end();
-#line 317 "fixedbugscasepayloadleaked.c"
+#line 322 "fixedbugscasepayloadleaked.c"
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h1_copy);
     hero_array_release_at(&h2_own2);

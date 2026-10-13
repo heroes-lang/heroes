@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -89,7 +94,7 @@ HERO_STR_STATIC(hero_str_19c449f6, "busy close: ");
 HERO_STR_STATIC(hero_str_79302ff3, " statements still open: ");
 HERO_STR_STATIC(hero_str_68312d6c, "closed: ");
 
-#line 93 "handlealiveunderwhenafterafailedend.c"
+#line 98 "handlealiveunderwhenafterafailedend.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -135,7 +140,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "handlealiveunderwhenafterafailedend.c"
+#line 144 "handlealiveunderwhenafterafailedend.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveunderwhenafterafailedend_Db_eq(db * const *a, db * const *b);
@@ -154,7 +159,7 @@ void h_handlealiveunderwhenafterafailedend_main(void);
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
 void h_handlealiveunderwhenafterafailedend_main(void) {
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db * t1; HERO_NODEBUG db * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG db * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG db * t9; HERO_NODEBUG db * t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int32_t t13; goto bb0;
+    db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db * t1; HERO_NODEBUG db * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG db * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG db * t9; HERO_NODEBUG db * t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
 bb0:
     t1 = db_open();
@@ -168,7 +173,7 @@ bb0:
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     hero_handle_alive(t2, "the argument `d` of `db_close`");
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t2, "db_close", NULL);
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     t3 = db_close(t2);
 #line 16 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
@@ -217,7 +222,7 @@ bb0:
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     hero_handle_alive(t10, "the argument `d` of `db_close`");
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t10, "db_close", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t10, "db_close", NULL);
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     t11 = db_close(t10);
 #line 19 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
@@ -245,7 +250,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
     return;
-#line 249 "handlealiveunderwhenafterafailedend.c"
+#line 254 "handlealiveunderwhenafterafailedend.c"
 }
 HERO_TU_LOCAL bool h_handlealiveunderwhenafterafailedend_Db_eq(db * const *a, db * const *b) {
     return hero_handle_eq(*a, *b);

@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +54,7 @@ HERO_STR_STATIC(hero_str_21, "!");
 HERO_STR_STATIC(hero_str_e0a312d, "held");
 HERO_STR_STATIC(hero_str_572f22bc, "built four shapes and called none of them");
 
-#line 53 "functiontypedfieldnevercalledthrough.c"
+#line 58 "functiontypedfieldnevercalledthrough.c"
 typedef int64_t (*h_0fn_1fe2350b)(int64_t);
 typedef struct h_functiontypedfieldnevercalledthrough_Direct {
     h_0fn_1fe2350b f_f;
@@ -112,7 +117,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 116 "functiontypedfieldnevercalledthrough.c"
+#line 121 "functiontypedfieldnevercalledthrough.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_functiontypedfieldnevercalledthrough_Direct_eq(const h_functiontypedfieldnevercalledthrough_Direct *a, const h_functiontypedfieldnevercalledthrough_Direct *b);
@@ -162,7 +167,7 @@ void h_functiontypedfieldnevercalledthrough_main(void);
 #line 54 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 int64_t h_functiontypedfieldnevercalledthrough_twice(int64_t h0_v) {
 #line 54 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 54 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 bb0:
     t1 = h0_v;
@@ -172,13 +177,13 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 55 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     return t3;
-#line 176 "functiontypedfieldnevercalledthrough.c"
+#line 181 "functiontypedfieldnevercalledthrough.c"
 }
 
 #line 57 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 HeroStr h_functiontypedfieldnevercalledthrough_shout(HeroStr h0_a) {
 #line 57 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
 #line 57 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 bb0:
     t1 = h0_a;
@@ -192,7 +197,7 @@ bb0:
     h1_own1 = t3;
 #line 58 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     hero_str_decref(t4);
-#line 196 "functiontypedfieldnevercalledthrough.c"
+#line 201 "functiontypedfieldnevercalledthrough.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -201,7 +206,7 @@ bb0:
 #line 60 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 void h_functiontypedfieldnevercalledthrough_main(void) {
 #line 60 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-    __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Direct h0_direct; h_functiontypedfieldnevercalledthrough_Outer h1_outer = {0}; h_functiontypedfieldnevercalledthrough_Held h2_held = {0}; __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Either h3_either; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held h6_own6 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t2; HERO_NODEBUG h_0fn_48ac9712 t3; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t6; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t10; HERO_NODEBUG h_0fn_6f1dc5d7 t11; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Either t12; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t18; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t21; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t22; goto bb0;
+    __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Direct h0_direct; h_functiontypedfieldnevercalledthrough_Outer h1_outer = {0}; h_functiontypedfieldnevercalledthrough_Held h2_held = {0}; __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Either h3_either; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held h6_own6 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t2; HERO_NODEBUG h_0fn_48ac9712 t3; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t6; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t10; HERO_NODEBUG h_0fn_6f1dc5d7 t11; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Either t12; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t18; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t21; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t22; HERO_ENTRY_STOP; goto bb0;
 #line 60 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 bb0:
     t1 = h_functiontypedfieldnevercalledthrough_twice;
@@ -274,7 +279,7 @@ bb0:
     hero_print_str(t17);
 #line 73 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
     hero_print_end();
-#line 278 "functiontypedfieldnevercalledthrough.c"
+#line 283 "functiontypedfieldnevercalledthrough.c"
     h_functiontypedfieldnevercalledthrough_Outer_release(hero_slot_escape(&h1_outer));
     h_functiontypedfieldnevercalledthrough_Held_release(hero_slot_escape(&h2_held));
     h_functiontypedfieldnevercalledthrough_Outer_release(hero_slot_escape(&h4_own4));

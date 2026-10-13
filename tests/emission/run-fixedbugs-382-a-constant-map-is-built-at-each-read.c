@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -52,7 +57,7 @@ HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_2c, ",");
 
-#line 56 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 61 "fixedbugs382aconstantmapisbuiltateachread.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -98,7 +103,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 107 "fixedbugs382aconstantmapisbuiltateachread.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -127,19 +132,19 @@ void h_fixedbugs382aconstantmapisbuiltateachread_main(void);
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 int64_t h_fixedbugs382aconstantmapisbuiltateachread_BASE(void) {
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 bb0:
     t1 = INT64_C(40);
 #line 9 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     return t1;
-#line 137 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 142 "fixedbugs382aconstantmapisbuiltateachread.c"
 }
 
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 HeroMapHeader * h_fixedbugs382aconstantmapisbuiltateachread_AGES(void) {
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroMapHeader * t6; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroMapHeader * t6; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
@@ -161,7 +166,7 @@ bb0:
     h0_own0 = t5;
 #line 12 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     hero_map_decref(t6);
-#line 165 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 170 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_incref(t5);
     hero_map_release_at(&h0_own0);
     return t5;
@@ -170,7 +175,7 @@ bb0:
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 HeroMapHeader * h_fixedbugs382aconstantmapisbuiltateachread_COMPUTED(void) {
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroMapHeader * t8; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroMapHeader * t8; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
@@ -196,7 +201,7 @@ bb0:
     h0_own0 = t7;
 #line 15 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     hero_map_decref(t8);
-#line 200 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 205 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_incref(t7);
     hero_map_release_at(&h0_own0);
     return t7;
@@ -205,7 +210,7 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 HeroMapHeader * h_fixedbugs382aconstantmapisbuiltateachread_LISTS(void) {
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroMapHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroMapHeader * t10; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroMapHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroMapHeader * t10; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_61);
@@ -247,7 +252,7 @@ bb0:
     h2_own2 = t7;
 #line 18 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     hero_map_decref(t10);
-#line 251 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 256 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_map_incref(t7);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -258,7 +263,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 void h_fixedbugs382aconstantmapisbuiltateachread_main(void) {
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-    int64_t h0_total; int64_t h1_at; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG h_0opt_e201354 h4_f1 = {0}; HERO_NODEBUG int64_t h5_r1; HERO_NODEBUG h_0opt_2270cbe7 h6_f2 = {0}; HERO_NODEBUG h_0opt_e201354 h7_f3 = {0}; HERO_NODEBUG int64_t h8_r2; HeroMapHeader * h9_copy = {0}; HERO_NODEBUG h_0opt_e201354 h10_f4 = {0}; HERO_NODEBUG int64_t h11_r3; HERO_NODEBUG h_0opt_e201354 h12_f5 = {0}; HERO_NODEBUG int64_t h13_r4; HERO_NODEBUG h_0opt_2270cbe7 h14_f6 = {0}; HERO_NODEBUG HeroMapHeader * h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG HeroMapHeader * h17_own17 = {0}; HERO_NODEBUG h_0opt_e201354 h18_own18 = {0}; HERO_NODEBUG HeroMapHeader * h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG HeroMapHeader * h21_own21 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h22_own22 = {0}; HERO_NODEBUG HeroMapHeader * h23_own23 = {0}; HERO_NODEBUG HeroMapHeader * h24_own24 = {0}; HERO_NODEBUG HeroMapHeader * h25_own25 = {0}; HERO_NODEBUG HeroArrayHeader * h26_own26 = {0}; HERO_NODEBUG HeroArrayHeader * h27_own27 = {0}; HERO_NODEBUG HeroStr h28_own28 = {0}; HERO_NODEBUG HeroMapHeader * h29_own29 = {0}; HERO_NODEBUG h_0opt_e201354 h30_own30 = {0}; HERO_NODEBUG HeroMapHeader * h31_own31 = {0}; HERO_NODEBUG h_0opt_e201354 h32_own32 = {0}; HERO_NODEBUG HeroMapHeader * h33_own33 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h34_own34 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroMapHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_2270cbe7 t33; HERO_NODEBUG h_0opt_2270cbe7 t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG bool t37; HERO_NODEBUG h_0opt_2270cbe7 t38; HERO_NODEBUG HeroFailure t39; HERO_NODEBUG h_0opt_2270cbe7 t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG bool t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroMapHeader * t64; HERO_NODEBUG HeroMapHeader * t65; HERO_NODEBUG bool t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroMapHeader * t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG HeroMapHeader * t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG h_0opt_e201354 t78; HERO_NODEBUG h_0opt_e201354 t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG bool t82; HERO_NODEBUG h_0opt_e201354 t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroMapHeader * t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG h_0opt_e201354 t90; HERO_NODEBUG h_0opt_e201354 t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG bool t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroMapHeader * t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG h_0opt_2270cbe7 t102; HERO_NODEBUG h_0opt_2270cbe7 t103; HERO_NODEBUG int64_t t104; HERO_NODEBUG int64_t t105; HERO_NODEBUG bool t106; HERO_NODEBUG h_0opt_2270cbe7 t107; HERO_NODEBUG HeroFailure t108; HERO_NODEBUG h_0opt_2270cbe7 t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG int64_t t111; HERO_NODEBUG HeroMapHeader * t112; HERO_NODEBUG h_0opt_e201354 t113; HERO_NODEBUG h_0opt_e201354 t114; HERO_NODEBUG HeroMapHeader * t115; HERO_NODEBUG h_0opt_e201354 t116; HERO_NODEBUG h_0opt_e201354 t117; HERO_NODEBUG HeroMapHeader * t118; HERO_NODEBUG h_0opt_e201354 t119; HERO_NODEBUG h_0opt_e201354 t120; HERO_NODEBUG HeroMapHeader * t121; HERO_NODEBUG h_0opt_2270cbe7 t122; HERO_NODEBUG h_0opt_2270cbe7 t123; HERO_NODEBUG HeroMapHeader * t124; HERO_NODEBUG HeroMapHeader * t125; HERO_NODEBUG HeroMapHeader * t126; HERO_NODEBUG HeroArrayHeader * t127; HERO_NODEBUG HeroArrayHeader * t128; HERO_NODEBUG HeroStr t129; HERO_NODEBUG HeroMapHeader * t130; HERO_NODEBUG HeroMapHeader * t131; HERO_NODEBUG h_0opt_e201354 t132; HERO_NODEBUG h_0opt_e201354 t133; HERO_NODEBUG HeroMapHeader * t134; HERO_NODEBUG h_0opt_e201354 t135; HERO_NODEBUG h_0opt_e201354 t136; HERO_NODEBUG HeroMapHeader * t137; HERO_NODEBUG h_0opt_2270cbe7 t138; HERO_NODEBUG h_0opt_2270cbe7 t139; goto bb0;
+    int64_t h0_total; int64_t h1_at; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG h_0opt_e201354 h4_f1 = {0}; HERO_NODEBUG int64_t h5_r1; HERO_NODEBUG h_0opt_2270cbe7 h6_f2 = {0}; HERO_NODEBUG h_0opt_e201354 h7_f3 = {0}; HERO_NODEBUG int64_t h8_r2; HeroMapHeader * h9_copy = {0}; HERO_NODEBUG h_0opt_e201354 h10_f4 = {0}; HERO_NODEBUG int64_t h11_r3; HERO_NODEBUG h_0opt_e201354 h12_f5 = {0}; HERO_NODEBUG int64_t h13_r4; HERO_NODEBUG h_0opt_2270cbe7 h14_f6 = {0}; HERO_NODEBUG HeroMapHeader * h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG HeroMapHeader * h17_own17 = {0}; HERO_NODEBUG h_0opt_e201354 h18_own18 = {0}; HERO_NODEBUG HeroMapHeader * h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG HeroMapHeader * h21_own21 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h22_own22 = {0}; HERO_NODEBUG HeroMapHeader * h23_own23 = {0}; HERO_NODEBUG HeroMapHeader * h24_own24 = {0}; HERO_NODEBUG HeroMapHeader * h25_own25 = {0}; HERO_NODEBUG HeroArrayHeader * h26_own26 = {0}; HERO_NODEBUG HeroArrayHeader * h27_own27 = {0}; HERO_NODEBUG HeroStr h28_own28 = {0}; HERO_NODEBUG HeroMapHeader * h29_own29 = {0}; HERO_NODEBUG h_0opt_e201354 h30_own30 = {0}; HERO_NODEBUG HeroMapHeader * h31_own31 = {0}; HERO_NODEBUG h_0opt_e201354 h32_own32 = {0}; HERO_NODEBUG HeroMapHeader * h33_own33 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h34_own34 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroMapHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_2270cbe7 t33; HERO_NODEBUG h_0opt_2270cbe7 t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG bool t37; HERO_NODEBUG h_0opt_2270cbe7 t38; HERO_NODEBUG HeroFailure t39; HERO_NODEBUG h_0opt_2270cbe7 t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG bool t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroMapHeader * t64; HERO_NODEBUG HeroMapHeader * t65; HERO_NODEBUG bool t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroMapHeader * t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG HeroMapHeader * t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG h_0opt_e201354 t78; HERO_NODEBUG h_0opt_e201354 t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG bool t82; HERO_NODEBUG h_0opt_e201354 t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroMapHeader * t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG h_0opt_e201354 t90; HERO_NODEBUG h_0opt_e201354 t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG bool t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroMapHeader * t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG h_0opt_2270cbe7 t102; HERO_NODEBUG h_0opt_2270cbe7 t103; HERO_NODEBUG int64_t t104; HERO_NODEBUG int64_t t105; HERO_NODEBUG bool t106; HERO_NODEBUG h_0opt_2270cbe7 t107; HERO_NODEBUG HeroFailure t108; HERO_NODEBUG h_0opt_2270cbe7 t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG int64_t t111; HERO_NODEBUG HeroMapHeader * t112; HERO_NODEBUG h_0opt_e201354 t113; HERO_NODEBUG h_0opt_e201354 t114; HERO_NODEBUG HeroMapHeader * t115; HERO_NODEBUG h_0opt_e201354 t116; HERO_NODEBUG h_0opt_e201354 t117; HERO_NODEBUG HeroMapHeader * t118; HERO_NODEBUG h_0opt_e201354 t119; HERO_NODEBUG h_0opt_e201354 t120; HERO_NODEBUG HeroMapHeader * t121; HERO_NODEBUG h_0opt_2270cbe7 t122; HERO_NODEBUG h_0opt_2270cbe7 t123; HERO_NODEBUG HeroMapHeader * t124; HERO_NODEBUG HeroMapHeader * t125; HERO_NODEBUG HeroMapHeader * t126; HERO_NODEBUG HeroArrayHeader * t127; HERO_NODEBUG HeroArrayHeader * t128; HERO_NODEBUG HeroStr t129; HERO_NODEBUG HeroMapHeader * t130; HERO_NODEBUG HeroMapHeader * t131; HERO_NODEBUG h_0opt_e201354 t132; HERO_NODEBUG h_0opt_e201354 t133; HERO_NODEBUG HeroMapHeader * t134; HERO_NODEBUG h_0opt_e201354 t135; HERO_NODEBUG h_0opt_e201354 t136; HERO_NODEBUG HeroMapHeader * t137; HERO_NODEBUG h_0opt_2270cbe7 t138; HERO_NODEBUG h_0opt_2270cbe7 t139; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
 bb0:
     t1 = INT64_C(0);
@@ -295,7 +300,7 @@ bb2:
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     {
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-      const void *found = hero_map_find(t7, &t8);
+      HERO_NODEBUG const void *found = hero_map_find(t7, &t8);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
       if (found == NULL) {
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
@@ -353,7 +358,7 @@ bb3:
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     {
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-      const void *found = hero_map_find(t52, &t53);
+      HERO_NODEBUG const void *found = hero_map_find(t52, &t53);
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
       if (found == NULL) {
 #line 28 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
@@ -429,7 +434,7 @@ bb6:
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     {
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-      const void *found = hero_map_find(t19, &t20);
+      HERO_NODEBUG const void *found = hero_map_find(t19, &t20);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
       if (found == NULL) {
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
@@ -505,7 +510,7 @@ bb9:
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     {
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-      const void *found = hero_map_find(t31, &t32);
+      HERO_NODEBUG const void *found = hero_map_find(t31, &t32);
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
       if (found == NULL) {
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
@@ -581,7 +586,7 @@ bb11:
     t38 = h6_f2;
 #line 25 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     t39 = t38.as.err;
-#line 585 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 590 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_panic_must(t39);
     hero_unreachable();
 bb12:
@@ -703,7 +708,7 @@ bb14:
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     {
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-      const void *found = hero_map_find(t76, &t77);
+      HERO_NODEBUG const void *found = hero_map_find(t76, &t77);
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
       if (found == NULL) {
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
@@ -779,7 +784,7 @@ bb17:
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     {
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-      const void *found = hero_map_find(t88, &t89);
+      HERO_NODEBUG const void *found = hero_map_find(t88, &t89);
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
       if (found == NULL) {
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
@@ -855,7 +860,7 @@ bb20:
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     {
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
-      const void *found = hero_map_find(t100, &t101);
+      HERO_NODEBUG const void *found = hero_map_find(t100, &t101);
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
       if (found == NULL) {
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
@@ -914,7 +919,7 @@ bb21:
     hero_print_int(t111);
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     hero_print_end();
-#line 918 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 923 "fixedbugs382aconstantmapisbuiltateachread.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_f1));
     h_0opt_2270cbe7_release(hero_slot_escape(&h6_f2));
@@ -949,7 +954,7 @@ bb22:
     t107 = h14_f6;
 #line 31 "tests/golden/run/fixedbugs-382-a-constant-map-is-built-at-each-read.hero"
     t108 = t107.as.err;
-#line 953 "fixedbugs382aconstantmapisbuiltateachread.c"
+#line 958 "fixedbugs382aconstantmapisbuiltateachread.c"
     hero_panic_must(t108);
     hero_unreachable();
 }

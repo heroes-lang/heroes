@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "adversarialdivergingarms.c"
+#line 54 "adversarialdivergingarms.c"
 typedef enum h_adversarialdivergingarms_Step_tag {
     h_adversarialdivergingarms_Step_tag_stop = 0,
     h_adversarialdivergingarms_Step_tag_skip = 1,
@@ -84,7 +89,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "adversarialdivergingarms.c"
+#line 93 "adversarialdivergingarms.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_adversarialdivergingarms_Step_eq(const h_adversarialdivergingarms_Step *a, const h_adversarialdivergingarms_Step *b);
@@ -103,7 +108,7 @@ int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) {
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
-    int64_t h1_seen; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_adversarialdivergingarms_Step h4_s; HERO_NODEBUG h_adversarialdivergingarms_Step h5_s0; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_adversarialdivergingarms_Step t10; HERO_NODEBUG h_adversarialdivergingarms_Step t11; HERO_NODEBUG h_adversarialdivergingarms_Step t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; goto bb0;
+    int64_t h1_seen; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_adversarialdivergingarms_Step h4_s; HERO_NODEBUG h_adversarialdivergingarms_Step h5_s0; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_adversarialdivergingarms_Step t10; HERO_NODEBUG h_adversarialdivergingarms_Step t11; HERO_NODEBUG h_adversarialdivergingarms_Step t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 bb0:
     t1 = INT64_C(0);
@@ -180,7 +185,7 @@ bb3:
 bb4:
 #line 21 "tests/golden/ir/adversarial-diverging-arms.hero"
     t17 = h1_seen;
-#line 184 "adversarialdivergingarms.c"
+#line 189 "adversarialdivergingarms.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 bb6:

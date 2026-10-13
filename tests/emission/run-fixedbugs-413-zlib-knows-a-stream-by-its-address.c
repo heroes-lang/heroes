@@ -44,11 +44,16 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #line 20 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 _Static_assert(__builtin_classify_type(((struct z_stream_s *)0)->avail_in) == 1 && sizeof(((struct z_stream_s *)0)->avail_in) == sizeof(uint32_t) && (_Generic(((struct z_stream_s *)0)->avail_in, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field ZStream avail_in");
 _Static_assert(__builtin_classify_type(((struct z_stream_s *)0)->avail_out) == 1 && sizeof(((struct z_stream_s *)0)->avail_out) == sizeof(uint32_t) && (_Generic(((struct z_stream_s *)0)->avail_out, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field ZStream avail_out");
-#line 52 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 57 "fixedbugs413zlibknowsastreambyitsaddress.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -136,7 +141,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 140 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 145 "fixedbugs413zlibknowsastreambyitsaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs413zlibknowsastreambyitsaddress_ZStream_eq(const struct z_stream_s *a, const struct z_stream_s *b);
@@ -173,7 +178,7 @@ void h_fixedbugs413zlibknowsastreambyitsaddress_main(void);
 #line 27 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 int32_t h_fixedbugs413zlibknowsastreambyitsaddress_init(struct z_stream_s *ph0_s) {
 #line 27 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG const char * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; goto bb0;
+    HERO_NODEBUG int32_t t1; HERO_NODEBUG const char * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 bb0:
     t1 = INT64_C(-1);
@@ -187,7 +192,7 @@ bb0:
     t4 = deflateInit_(&(*ph0_s), t1, hero_cstr_nonnull(t2), t3);
 #line 28 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     return t4;
-#line 191 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 196 "fixedbugs413zlibknowsastreambyitsaddress.c"
 }
 
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
@@ -197,7 +202,7 @@ void h_fixedbugs413zlibknowsastreambyitsaddress_main(void) {
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 #define h8_t (*hero_lend_h8_t)
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
-    struct z_stream_s *const hero_lend_h0_s = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "s"); int32_t h1_a; int32_t h2_b; int32_t h3_c; HeroArrayHeader * h4_zs = {0}; int32_t h5_d; int32_t h6_e; int32_t h7_f; struct z_stream_s *const hero_lend_h8_t = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "t"); int32_t h9_g; int32_t h10_h; int32_t h11_i; int32_t h12_j; int32_t h13_k; int32_t h14_l; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG struct z_stream_s t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG struct z_stream_s t13; HERO_NODEBUG struct z_stream_s t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG const char * t18; HERO_NODEBUG int32_t t19; HERO_NODEBUG int32_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG int32_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int32_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int32_t t29; HERO_NODEBUG struct z_stream_s t30; HERO_NODEBUG int32_t t31; HERO_NODEBUG int32_t t32; HERO_NODEBUG int32_t t33; HERO_NODEBUG int32_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG int32_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG int32_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int32_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int32_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int32_t t44; HERO_NODEBUG int32_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int32_t t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG int32_t t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; goto bb0;
+    struct z_stream_s *const hero_lend_h0_s = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "s"); int32_t h1_a; int32_t h2_b; int32_t h3_c; HeroArrayHeader * h4_zs = {0}; int32_t h5_d; int32_t h6_e; int32_t h7_f; struct z_stream_s *const hero_lend_h8_t = (struct z_stream_s *)hero_lend_local(sizeof(struct z_stream_s), "fixedbugs413zlibknowsastreambyitsaddress.main", "t"); int32_t h9_g; int32_t h10_h; int32_t h11_i; int32_t h12_j; int32_t h13_k; int32_t h14_l; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG struct z_stream_s t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG struct z_stream_s t13; HERO_NODEBUG struct z_stream_s t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG const char * t18; HERO_NODEBUG int32_t t19; HERO_NODEBUG int32_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG int32_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int32_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int32_t t29; HERO_NODEBUG struct z_stream_s t30; HERO_NODEBUG int32_t t31; HERO_NODEBUG int32_t t32; HERO_NODEBUG int32_t t33; HERO_NODEBUG int32_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG int32_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG int32_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int32_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int32_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int32_t t44; HERO_NODEBUG int32_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int32_t t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG int32_t t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
 bb0:
     t1 = (struct z_stream_s){0};
@@ -403,7 +408,7 @@ bb0:
     hero_print_int(t49);
 #line 49 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
     hero_print_end();
-#line 407 "fixedbugs413zlibknowsastreambyitsaddress.c"
+#line 412 "fixedbugs413zlibknowsastreambyitsaddress.c"
     hero_array_release_at(&h4_zs);
     hero_array_release_at(&h15_own15);
     hero_lend_local_give(hero_lend_h8_t);

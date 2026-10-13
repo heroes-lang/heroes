@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -83,7 +88,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 87 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
+#line 92 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -127,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
+#line 136 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -144,7 +149,7 @@ void h_fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown_main(void);
 #line 16 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero"
 void h_fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown_main(void) {
 #line 16 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero"
-    float h0_big; float h1_one; float h2_three; HERO_NODEBUG float t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG double t4; HERO_NODEBUG float t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG double t8; HERO_NODEBUG float t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG float t13; HERO_NODEBUG float t14; HERO_NODEBUG float t15; HERO_NODEBUG float t16; HERO_NODEBUG float t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG float t19; HERO_NODEBUG float t20; HERO_NODEBUG float t21; goto bb0;
+    float h0_big; float h1_one; float h2_three; HERO_NODEBUG float t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG double t4; HERO_NODEBUG float t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG double t8; HERO_NODEBUG float t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG float t13; HERO_NODEBUG float t14; HERO_NODEBUG float t15; HERO_NODEBUG float t16; HERO_NODEBUG float t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG float t19; HERO_NODEBUG float t20; HERO_NODEBUG float t21; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero"
 bb0:
     t1 = 0x1p+24;
@@ -205,7 +210,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero"
     return;
-#line 209 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
+#line 214 "fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

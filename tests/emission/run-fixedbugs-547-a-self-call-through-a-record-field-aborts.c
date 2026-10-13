@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
+#line 54 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugs547aselfcallthrougharecordfieldaborts_Box {
     h_0fn_48ac9712 f_f;
@@ -80,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
+#line 89 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs547aselfcallthrougharecordfieldaborts_Box_eq(const h_fixedbugs547aselfcallthrougharecordfieldaborts_Box *a, const h_fixedbugs547aselfcallthrougharecordfieldaborts_Box *b);
@@ -100,7 +105,7 @@ void h_fixedbugs547aselfcallthrougharecordfieldaborts_main(void);
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
 int64_t h_fixedbugs547aselfcallthrougharecordfieldaborts_step(int64_t h0_n) {
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    h_fixedbugs547aselfcallthrougharecordfieldaborts_Box h1_b; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t2; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t3; HERO_NODEBUG h_0fn_48ac9712 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
+    h_fixedbugs547aselfcallthrougharecordfieldaborts_Box h1_b; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t2; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t3; HERO_NODEBUG h_0fn_48ac9712 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
 bb0:
     t1 = h_fixedbugs547aselfcallthrougharecordfieldaborts_step;
@@ -117,13 +122,13 @@ bb0:
     t6 = t4(t5);
 #line 15 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
     return t6;
-#line 121 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
+#line 126 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
 void h_fixedbugs547aselfcallthrougharecordfieldaborts_main(void) {
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
 bb0:
     t1 = INT64_C(1);
@@ -135,7 +140,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
     return;
-#line 139 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
+#line 144 "fixedbugs547aselfcallthrougharecordfieldaborts.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs547aselfcallthrougharecordfieldaborts_Box_eq(const h_fixedbugs547aselfcallthrougharecordfieldaborts_Box *a, const h_fixedbugs547aselfcallthrougharecordfieldaborts_Box *b) {
     if (!(a->f_f == b->f_f)) return false;

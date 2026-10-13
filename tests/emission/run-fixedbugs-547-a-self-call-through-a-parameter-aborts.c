@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs547aselfcallthroughaparameteraborts.c"
+#line 54 "fixedbugs547aselfcallthroughaparameteraborts.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -76,7 +81,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "fixedbugs547aselfcallthroughaparameteraborts.c"
+#line 85 "fixedbugs547aselfcallthroughaparameteraborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +100,7 @@ void h_fixedbugs547aselfcallthroughaparameteraborts_main(void);
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 int64_t h_fixedbugs547aselfcallthroughaparameteraborts_go(int64_t h0_n, h_0fn_48ac9712 h1_f) {
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
     t1 = h1_f;
@@ -105,13 +110,13 @@ bb0:
     t3 = t1(t2);
 #line 14 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     return t3;
-#line 109 "fixedbugs547aselfcallthroughaparameteraborts.c"
+#line 114 "fixedbugs547aselfcallthroughaparameteraborts.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 int64_t h_fixedbugs547aselfcallthroughaparameteraborts_step(int64_t h0_n) {
 #line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -121,13 +126,13 @@ bb0:
     t3 = h_fixedbugs547aselfcallthroughaparameteraborts_go(t1, t2);
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     return t3;
-#line 125 "fixedbugs547aselfcallthroughaparameteraborts.c"
+#line 130 "fixedbugs547aselfcallthroughaparameteraborts.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 void h_fixedbugs547aselfcallthroughaparameteraborts_main(void) {
 #line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
     t1 = INT64_C(1);
@@ -139,7 +144,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
     return;
-#line 143 "fixedbugs547aselfcallthroughaparameteraborts.c"
+#line 148 "fixedbugs547aselfcallthroughaparameteraborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #line 35 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, nsap) != 0, "heroes-ffi-flex Slot nsap");
@@ -53,11 +58,11 @@ _Static_assert(sizeof(Slot) - __builtin_offsetof(Slot, tag) != 0, "heroes-ffi-fl
 #line 36 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(_Generic(&((Slot *)0)->tag, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Slot tag");
 _Static_assert(__builtin_classify_type(((Slot *)0)->id) == 1 && sizeof(((Slot *)0)->id) == sizeof(int64_t) && (_Generic(((Slot *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Slot id");
-#line 57 "ffiabytefieldcrossestoc.c"
+#line 62 "ffiabytefieldcrossestoc.c"
 
 #line 34 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 _Static_assert(__builtin_classify_type(*(Slot *)0) != 13, "heroes-ffi-union Slot nsap tag id");
-#line 61 "ffiabytefieldcrossestoc.c"
+#line 66 "ffiabytefieldcrossestoc.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -150,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 154 "ffiabytefieldcrossestoc.c"
+#line 159 "ffiabytefieldcrossestoc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiabytefieldcrossestoc_Slot_eq(const Slot *a, const Slot *b);
@@ -173,7 +178,7 @@ void h_ffiabytefieldcrossestoc_main(void);
 #line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 void h_ffiabytefieldcrossestoc_main(void) {
 #line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-    Slot h0_s; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; Slot h2_t; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG int8_t t10; HERO_NODEBUG int8_t t11; HERO_NODEBUG int8_t t12; HERO_NODEBUG int8_t t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG Slot t16; HERO_NODEBUG void * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG void * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG void * t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG void * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG Slot t36; HERO_NODEBUG int64_t t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG HeroFailure t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG uint8_t t49; HERO_NODEBUG uint8_t t50; HERO_NODEBUG uint8_t t51; HERO_NODEBUG uint8_t t52; HERO_NODEBUG uint8_t t53; HERO_NODEBUG uint8_t t54; HERO_NODEBUG uint8_t t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG int8_t t58; HERO_NODEBUG int8_t t59; HERO_NODEBUG int8_t t60; HERO_NODEBUG int8_t t61; HERO_NODEBUG int64_t t63; HERO_NODEBUG Slot t64; HERO_NODEBUG Slot t65; HERO_NODEBUG h_0opt_f87774a t67; HERO_NODEBUG h_0opt_f87774a t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG bool t71; HERO_NODEBUG h_0opt_f87774a t72; HERO_NODEBUG HeroFailure t73; HERO_NODEBUG h_0opt_f87774a t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG h_0opt_e201354 t76; HERO_NODEBUG h_0opt_e201354 t77; HERO_NODEBUG h_0opt_f87774a t78; HERO_NODEBUG h_0opt_f87774a t79; goto bb0;
+    Slot h0_s; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; Slot h2_t; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG int8_t t10; HERO_NODEBUG int8_t t11; HERO_NODEBUG int8_t t12; HERO_NODEBUG int8_t t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG Slot t16; HERO_NODEBUG void * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG void * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG void * t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG void * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG Slot t36; HERO_NODEBUG int64_t t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG HeroFailure t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG uint8_t t49; HERO_NODEBUG uint8_t t50; HERO_NODEBUG uint8_t t51; HERO_NODEBUG uint8_t t52; HERO_NODEBUG uint8_t t53; HERO_NODEBUG uint8_t t54; HERO_NODEBUG uint8_t t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG int8_t t58; HERO_NODEBUG int8_t t59; HERO_NODEBUG int8_t t60; HERO_NODEBUG int8_t t61; HERO_NODEBUG int64_t t63; HERO_NODEBUG Slot t64; HERO_NODEBUG Slot t65; HERO_NODEBUG h_0opt_f87774a t67; HERO_NODEBUG h_0opt_f87774a t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG bool t71; HERO_NODEBUG h_0opt_f87774a t72; HERO_NODEBUG HeroFailure t73; HERO_NODEBUG h_0opt_f87774a t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG h_0opt_e201354 t76; HERO_NODEBUG h_0opt_e201354 t77; HERO_NODEBUG h_0opt_f87774a t78; HERO_NODEBUG h_0opt_f87774a t79; HERO_ENTRY_STOP; goto bb0;
 #line 41 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
 bb0:
     t1 = UINT64_C(1);
@@ -331,9 +336,9 @@ bb1:
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     {
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-        int64_t hero_vb_status = 0;
+        HERO_NODEBUG int64_t hero_vb_status = 0;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
-        HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t65.nsap), INT64_C(8), &hero_vb_status);
+        HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t65.nsap), INT64_C(8), &hero_vb_status);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
         if (hero_vb_status == HERO_STR_OK) {
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
@@ -376,7 +381,7 @@ bb2:
     t45 = h1_f0;
 #line 56 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t46 = t45.as.err;
-#line 380 "ffiabytefieldcrossestoc.c"
+#line 385 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb3:
@@ -388,7 +393,7 @@ bb3:
     hero_print_str(t75);
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     hero_print_end();
-#line 392 "ffiabytefieldcrossestoc.c"
+#line 397 "ffiabytefieldcrossestoc.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f1));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
@@ -399,7 +404,7 @@ bb4:
     t72 = h3_f1;
 #line 61 "tests/golden/run/ffi-a-byte-field-crosses-to-c.hero"
     t73 = t72.as.err;
-#line 403 "ffiabytefieldcrossestoc.c"
+#line 408 "ffiabytefieldcrossestoc.c"
     hero_panic_must(t73);
     hero_unreachable();
 }

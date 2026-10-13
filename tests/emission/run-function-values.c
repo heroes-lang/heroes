@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -48,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_fa6dc01, "tick");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 52 "functionvalues.c"
+#line 57 "functionvalues.c"
 typedef int64_t (*h_0fn_2e6a42a3)(int64_t, int64_t);
 typedef void (*h_0fn_294870dd)(void);
 typedef struct h_0opt_f87774a {
@@ -80,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "functionvalues.c"
+#line 89 "functionvalues.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -102,7 +107,7 @@ void h_functionvalues_main(void);
 #line 35 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_add(int64_t h0_a, int64_t h1_b) {
 #line 35 "tests/golden/run/function-values.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/function-values.hero"
 bb0:
     t1 = h0_a;
@@ -112,13 +117,13 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 36 "tests/golden/run/function-values.hero"
     return t3;
-#line 116 "functionvalues.c"
+#line 121 "functionvalues.c"
 }
 
 #line 38 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_mul(int64_t h0_a, int64_t h1_b) {
 #line 38 "tests/golden/run/function-values.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 38 "tests/golden/run/function-values.hero"
 bb0:
     t1 = h0_a;
@@ -128,13 +133,13 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 39 "tests/golden/run/function-values.hero"
     return t3;
-#line 132 "functionvalues.c"
+#line 137 "functionvalues.c"
 }
 
 #line 41 "tests/golden/run/function-values.hero"
 int64_t h_functionvalues_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int64_t h2_y) {
 #line 41 "tests/golden/run/function-values.hero"
-    HERO_NODEBUG h_0fn_2e6a42a3 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; goto bb0;
+    HERO_NODEBUG h_0fn_2e6a42a3 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 41 "tests/golden/run/function-values.hero"
 bb0:
     t1 = h0_f;
@@ -146,13 +151,13 @@ bb0:
     t4 = t1(t2, t3);
 #line 42 "tests/golden/run/function-values.hero"
     return t4;
-#line 150 "functionvalues.c"
+#line 155 "functionvalues.c"
 }
 
 #line 44 "tests/golden/run/function-values.hero"
 void h_functionvalues_tick(void) {
 #line 44 "tests/golden/run/function-values.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 44 "tests/golden/run/function-values.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_fa6dc01);
@@ -162,13 +167,13 @@ bb0:
     hero_print_end();
 #line 45 "tests/golden/run/function-values.hero"
     return;
-#line 166 "functionvalues.c"
+#line 171 "functionvalues.c"
 }
 
 #line 47 "tests/golden/run/function-values.hero"
 void h_functionvalues_twice(h_0fn_294870dd h0_f) {
 #line 47 "tests/golden/run/function-values.hero"
-    HERO_NODEBUG h_0fn_294870dd t1; HERO_NODEBUG h_0fn_294870dd t2; goto bb0;
+    HERO_NODEBUG h_0fn_294870dd t1; HERO_NODEBUG h_0fn_294870dd t2; HERO_ENTRY_STOP; goto bb0;
 #line 47 "tests/golden/run/function-values.hero"
 bb0:
     t1 = h0_f;
@@ -179,13 +184,13 @@ bb0:
     t2();
 #line 49 "tests/golden/run/function-values.hero"
     return;
-#line 183 "functionvalues.c"
+#line 188 "functionvalues.c"
 }
 
 #line 51 "tests/golden/run/function-values.hero"
 void h_functionvalues_main(void) {
 #line 51 "tests/golden/run/function-values.hero"
-    h_0fn_2e6a42a3 h0_g; HeroArrayHeader * h1_ops = {0}; h_0fn_2e6a42a3 h2_h; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG h_0fn_2e6a42a3 t1; HERO_NODEBUG h_0fn_2e6a42a3 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0fn_2e6a42a3 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0fn_2e6a42a3 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_0fn_294870dd t16; HERO_NODEBUG h_0fn_2e6a42a3 t17; HERO_NODEBUG h_0fn_2e6a42a3 t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_0fn_2e6a42a3 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_0fn_2e6a42a3 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG h_0fn_2e6a42a3 t36; HERO_NODEBUG h_0fn_2e6a42a3 t37; HERO_NODEBUG h_0fn_2e6a42a3 t38; HERO_NODEBUG bool t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0fn_2e6a42a3 t41; HERO_NODEBUG h_0fn_2e6a42a3 t42; HERO_NODEBUG bool t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; goto bb0;
+    h_0fn_2e6a42a3 h0_g; HeroArrayHeader * h1_ops = {0}; h_0fn_2e6a42a3 h2_h; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG h_0fn_2e6a42a3 t1; HERO_NODEBUG h_0fn_2e6a42a3 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0fn_2e6a42a3 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0fn_2e6a42a3 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_0fn_294870dd t16; HERO_NODEBUG h_0fn_2e6a42a3 t17; HERO_NODEBUG h_0fn_2e6a42a3 t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_0fn_2e6a42a3 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_0fn_2e6a42a3 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG h_0fn_2e6a42a3 t36; HERO_NODEBUG h_0fn_2e6a42a3 t37; HERO_NODEBUG h_0fn_2e6a42a3 t38; HERO_NODEBUG bool t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0fn_2e6a42a3 t41; HERO_NODEBUG h_0fn_2e6a42a3 t42; HERO_NODEBUG bool t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/function-values.hero"
 bb0:
     t1 = h_functionvalues_add;
@@ -326,7 +331,7 @@ bb0:
     hero_print_bool(t43);
 #line 64 "tests/golden/run/function-values.hero"
     hero_print_end();
-#line 330 "functionvalues.c"
+#line 335 "functionvalues.c"
     hero_array_release_at(&h1_ops);
     hero_array_release_at(&h3_own3);
     return;

@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "neverreboundelementandfieldwrites.c"
+#line 54 "neverreboundelementandfieldwrites.c"
 typedef struct h_neverreboundelementandfieldwrites_Pair {
     int64_t f_a;
     int64_t f_b;
@@ -80,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "neverreboundelementandfieldwrites.c"
+#line 89 "neverreboundelementandfieldwrites.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_neverreboundelementandfieldwrites_Pair_eq(const h_neverreboundelementandfieldwrites_Pair *a, const h_neverreboundelementandfieldwrites_Pair *b);
@@ -99,7 +104,7 @@ void h_neverreboundelementandfieldwrites_main(void);
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
 void h_neverreboundelementandfieldwrites_main(void) {
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    HeroArrayHeader * h0_xs = {0}; h_neverreboundelementandfieldwrites_Pair h1_p; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; h_neverreboundelementandfieldwrites_Pair h1_p; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
 bb0:
     t1 = INT64_C(1);
@@ -155,7 +160,7 @@ bb0:
     hero_print_int(t15);
 #line 13 "tests/golden/run/never-rebound-element-and-field-writes.hero"
     hero_print_end();
-#line 159 "neverreboundelementandfieldwrites.c"
+#line 164 "neverreboundelementandfieldwrites.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;

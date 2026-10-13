@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -116,7 +121,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 120 "main.c"
+#line 125 "main.c"
 typedef struct h_parse_Reader {
     HeroStr f_text;
     int64_t f_pos;
@@ -215,7 +220,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 219 "main.c"
+#line 224 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_parse_Reader_retain(const h_parse_Reader *v);
@@ -342,7 +347,7 @@ void h_library_exit(int64_t h0_code);
 #line 23 "examples/json/main.hero"
 void h_main_main(void) {
 #line 23 "examples/json/main.hero"
-    HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; goto bb0;
+    HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_ENTRY_STOP; goto bb0;
 #line 23 "examples/json/main.hero"
 bb0:
     t1 = h_library_args();
@@ -429,7 +434,7 @@ bb3:
     goto bb1;
 #line 28 "examples/json/main.hero"
 bb4:
-#line 433 "main.c"
+#line 438 "main.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -516,13 +521,13 @@ bb6:
     h_main_report(t28, t29);
 #line 32 "examples/json/main.hero"
     goto bb4;
-#line 520 "main.c"
+#line 525 "main.c"
 }
 
 #line 35 "examples/json/main.hero"
 void h_main_stop(HeroStr h0_message) {
 #line 35 "examples/json/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 35 "examples/json/main.hero"
 bb0:
     t1 = h0_message;
@@ -537,13 +542,13 @@ bb0:
     hero_unreachable();
 #line 37 "examples/json/main.hero"
     return;
-#line 541 "main.c"
+#line 546 "main.c"
 }
 
 #line 39 "examples/json/main.hero"
 void h_main_report(HeroStr h0_text, HeroArrayHeader * h1_given) {
 #line 39 "examples/json/main.hero"
-    HERO_NODEBUG h_0opt_2e71b378 h2_s0 = {0}; HeroFailure h3_e = {0}; h_value_Json h4_doc = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_2e71b378 t2; HERO_NODEBUG h_0opt_2e71b378 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_0opt_2e71b378 t5; HERO_NODEBUG HeroFailure t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_2e71b378 t14; HERO_NODEBUG h_value_Json t15; HERO_NODEBUG h_value_Json t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG h_0opt_2e71b378 t18; HERO_NODEBUG h_0opt_2e71b378 t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_value_Json t23; goto bb0;
+    HERO_NODEBUG h_0opt_2e71b378 h2_s0 = {0}; HeroFailure h3_e = {0}; h_value_Json h4_doc = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_2e71b378 t2; HERO_NODEBUG h_0opt_2e71b378 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_0opt_2e71b378 t5; HERO_NODEBUG HeroFailure t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_2e71b378 t14; HERO_NODEBUG h_value_Json t15; HERO_NODEBUG h_value_Json t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG h_0opt_2e71b378 t18; HERO_NODEBUG h_0opt_2e71b378 t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_value_Json t23; HERO_ENTRY_STOP; goto bb0;
 #line 39 "examples/json/main.hero"
 bb0:
     t1 = h0_text;
@@ -579,7 +584,7 @@ bb0:
     }
 #line 40 "examples/json/main.hero"
 bb1:
-#line 583 "main.c"
+#line 588 "main.c"
     h_0opt_2e71b378_release(hero_slot_escape(&h2_s0));
     hero_failure_release(&h3_e);
     h_value_Json_release(hero_slot_escape(&h4_doc));
@@ -651,13 +656,13 @@ bb3:
     h_main_describe(t16, t17);
 #line 42 "examples/json/main.hero"
     goto bb1;
-#line 655 "main.c"
+#line 660 "main.c"
 }
 
 #line 44 "examples/json/main.hero"
 void h_main_describe(h_value_Json h0_doc, HeroArrayHeader * h1_given) {
 #line 44 "examples/json/main.hero"
-    HERO_NODEBUG h_0opt_2e71b378 h2_s0 = {0}; HeroFailure h3_e = {0}; h_value_Json h4_got = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_2e71b378 h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_value_Json t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_value_Json t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_value_Json t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_2e71b378 t17; HERO_NODEBUG h_0opt_2e71b378 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0opt_2e71b378 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroFailure t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_2e71b378 t29; HERO_NODEBUG h_value_Json t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_value_Json t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_0opt_2e71b378 t39; HERO_NODEBUG h_0opt_2e71b378 t40; HERO_NODEBUG HeroFailure t41; HERO_NODEBUG h_value_Json t42; HERO_NODEBUG HeroStr t43; goto bb0;
+    HERO_NODEBUG h_0opt_2e71b378 h2_s0 = {0}; HeroFailure h3_e = {0}; h_value_Json h4_got = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_2e71b378 h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_value_Json t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_value_Json t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_value_Json t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_2e71b378 t17; HERO_NODEBUG h_0opt_2e71b378 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0opt_2e71b378 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroFailure t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_2e71b378 t29; HERO_NODEBUG h_value_Json t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_value_Json t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_0opt_2e71b378 t39; HERO_NODEBUG h_0opt_2e71b378 t40; HERO_NODEBUG HeroFailure t41; HERO_NODEBUG h_value_Json t42; HERO_NODEBUG HeroStr t43; HERO_ENTRY_STOP; goto bb0;
 #line 44 "examples/json/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_31fd2fcf);
@@ -707,7 +712,7 @@ bb0:
     if (t12) goto bb2; else goto bb3;
 #line 49 "examples/json/main.hero"
 bb1:
-#line 711 "main.c"
+#line 716 "main.c"
     h_0opt_2e71b378_release(hero_slot_escape(&h2_s0));
     hero_failure_release(&h3_e);
     h_value_Json_release(hero_slot_escape(&h4_got));
@@ -846,17 +851,17 @@ bb6:
     hero_print_end();
 #line 52 "examples/json/main.hero"
     goto bb4;
-#line 850 "main.c"
+#line 855 "main.c"
 }
 
 #line 19 "examples/json/parse.hero"
 HeroStr h_parse_ERR_BAD_ESCAPE(void) {
 #line 19 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 19 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_188aaf9b);
-#line 860 "main.c"
+#line 865 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -864,11 +869,11 @@ bb0:
 #line 22 "examples/json/parse.hero"
 HeroStr h_parse_ERR_BAD_NUMBER(void) {
 #line 22 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 22 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_14a4096d);
-#line 872 "main.c"
+#line 877 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -876,11 +881,11 @@ bb0:
 #line 25 "examples/json/parse.hero"
 HeroStr h_parse_ERR_EXPECTED_COLON(void) {
 #line 25 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 25 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5cd4d44d);
-#line 884 "main.c"
+#line 889 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -888,11 +893,11 @@ bb0:
 #line 28 "examples/json/parse.hero"
 HeroStr h_parse_ERR_EXPECTED_KEY(void) {
 #line 28 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 28 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_93f5a93);
-#line 896 "main.c"
+#line 901 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -900,11 +905,11 @@ bb0:
 #line 31 "examples/json/parse.hero"
 HeroStr h_parse_ERR_EXPECTED_SEPARATOR(void) {
 #line 31 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 31 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_38bd265d);
-#line 908 "main.c"
+#line 913 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -912,11 +917,11 @@ bb0:
 #line 34 "examples/json/parse.hero"
 HeroStr h_parse_ERR_EXPONENT_OUT_OF_RANGE(void) {
 #line 34 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 34 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_677e95a4);
-#line 920 "main.c"
+#line 925 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -924,11 +929,11 @@ bb0:
 #line 37 "examples/json/parse.hero"
 HeroStr h_parse_ERR_TRAILING_INPUT(void) {
 #line 37 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 37 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1ab4f50e);
-#line 932 "main.c"
+#line 937 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -936,11 +941,11 @@ bb0:
 #line 40 "examples/json/parse.hero"
 HeroStr h_parse_ERR_UNCLOSED_ARRAY(void) {
 #line 40 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 40 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7604c7c8);
-#line 944 "main.c"
+#line 949 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -948,11 +953,11 @@ bb0:
 #line 43 "examples/json/parse.hero"
 HeroStr h_parse_ERR_UNCLOSED_OBJECT(void) {
 #line 43 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 43 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_bc18c82);
-#line 956 "main.c"
+#line 961 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -960,11 +965,11 @@ bb0:
 #line 46 "examples/json/parse.hero"
 HeroStr h_parse_ERR_UNEXPECTED_CHARACTER(void) {
 #line 46 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 46 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_70ef3fbe);
-#line 968 "main.c"
+#line 973 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -972,11 +977,11 @@ bb0:
 #line 49 "examples/json/parse.hero"
 HeroStr h_parse_ERR_UNEXPECTED_END(void) {
 #line 49 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 49 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7423baed);
-#line 980 "main.c"
+#line 985 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -984,11 +989,11 @@ bb0:
 #line 52 "examples/json/parse.hero"
 HeroStr h_parse_ERR_UNSUPPORTED_ESCAPE(void) {
 #line 52 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 52 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1f8e9994);
-#line 992 "main.c"
+#line 997 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -996,11 +1001,11 @@ bb0:
 #line 55 "examples/json/parse.hero"
 HeroStr h_parse_ERR_UNTERMINATED_STRING(void) {
 #line 55 "examples/json/parse.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 55 "examples/json/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1aa1c6e8);
-#line 1004 "main.c"
+#line 1009 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1008,7 +1013,7 @@ bb0:
 #line 62 "examples/json/parse.hero"
 bool h_parse_at_end(h_parse_Reader h0_r) {
 #line 62 "examples/json/parse.hero"
-    HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_parse_Reader t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; goto bb0;
+    HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_parse_Reader t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 62 "examples/json/parse.hero"
 bb0:
     t1 = h0_r;
@@ -1024,13 +1029,13 @@ bb0:
     t6 = t2 >= t5;
 #line 63 "examples/json/parse.hero"
     return t6;
-#line 1028 "main.c"
+#line 1033 "main.c"
 }
 
 #line 65 "examples/json/parse.hero"
 uint8_t h_parse_here(h_parse_Reader h0_r) {
 #line 65 "examples/json/parse.hero"
-    HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_parse_Reader t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG uint8_t t5; goto bb0;
+    HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_parse_Reader t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG uint8_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 65 "examples/json/parse.hero"
 bb0:
     t1 = h0_r;
@@ -1044,13 +1049,13 @@ bb0:
     t5 = ((void)((t2.ptr == NULL || t4 < 0 || t4 >= t2.len) ? ((void)hero_str_byte(t2, t4), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t4]);
 #line 66 "examples/json/parse.hero"
     return t5;
-#line 1048 "main.c"
+#line 1053 "main.c"
 }
 
 #line 68 "examples/json/parse.hero"
 void h_parse_advance(h_parse_Reader *ph0_r) {
 #line 68 "examples/json/parse.hero"
-    HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; goto bb0;
+    HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 68 "examples/json/parse.hero"
 bb0:
     t1 = (*ph0_r);
@@ -1064,13 +1069,13 @@ bb0:
     (*ph0_r).f_pos = t4;
 #line 69 "examples/json/parse.hero"
     return;
-#line 1068 "main.c"
+#line 1073 "main.c"
 }
 
 #line 71 "examples/json/parse.hero"
 bool h_parse_is_digit(uint8_t h0_c) {
 #line 71 "examples/json/parse.hero"
-    HERO_NODEBUG bool h1_b0; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 71 "examples/json/parse.hero"
 bb0:
     t1 = h0_c;
@@ -1100,13 +1105,13 @@ bb2:
     t7 = h1_b0;
 #line 72 "examples/json/parse.hero"
     return t7;
-#line 1104 "main.c"
+#line 1109 "main.c"
 }
 
 #line 74 "examples/json/parse.hero"
 int64_t h_parse_digit_of(uint8_t h0_c) {
 #line 74 "examples/json/parse.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_ENTRY_STOP; goto bb0;
 #line 74 "examples/json/parse.hero"
 bb0:
     t1 = h0_c;
@@ -1146,7 +1151,7 @@ bb1:
     t11 = h1_f0;
 #line 75 "examples/json/parse.hero"
     t12 = t11.as.ok;
-#line 1150 "main.c"
+#line 1155 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -1155,7 +1160,7 @@ bb2:
     t9 = h1_f0;
 #line 75 "examples/json/parse.hero"
     t10 = t9.as.err;
-#line 1159 "main.c"
+#line 1164 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -1163,7 +1168,7 @@ bb2:
 #line 77 "examples/json/parse.hero"
 void h_parse_skip_space(h_parse_Reader *ph0_r) {
 #line 77 "examples/json/parse.hero"
-    HERO_NODEBUG bool h1_b0; HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG bool t2; HERO_NODEBUG bool t3; HERO_NODEBUG h_parse_Reader t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG bool t2; HERO_NODEBUG bool t3; HERO_NODEBUG h_parse_Reader t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 77 "examples/json/parse.hero"
 bb0:
 #line 77 "examples/json/parse.hero"
@@ -1206,13 +1211,13 @@ bb5:
     t7 = h1_b0;
 #line 78 "examples/json/parse.hero"
     if (t7) goto bb2; else goto bb3;
-#line 1210 "main.c"
+#line 1215 "main.c"
 }
 
 #line 81 "examples/json/parse.hero"
 bool h_parse_is_space(uint8_t h0_c) {
 #line 81 "examples/json/parse.hero"
-    HERO_NODEBUG bool h1_b0; HERO_NODEBUG bool h2_b1; HERO_NODEBUG bool h3_b2; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG bool h2_b1; HERO_NODEBUG bool h3_b2; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_ENTRY_STOP; goto bb0;
 #line 81 "examples/json/parse.hero"
 bb0:
     t1 = h0_c;
@@ -1282,13 +1287,13 @@ bb6:
     t15 = h1_b0;
 #line 82 "examples/json/parse.hero"
     return t15;
-#line 1286 "main.c"
+#line 1291 "main.c"
 }
 
 #line 87 "examples/json/parse.hero"
 bool h_parse_has_word(h_parse_Reader h0_r, HeroStr h1_spelling) {
 #line 87 "examples/json/parse.hero"
-    int64_t h2_stop; HERO_NODEBUG bool h3_ret0; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_parse_Reader t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_parse_Reader t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_parse_Reader t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; goto bb0;
+    int64_t h2_stop; HERO_NODEBUG bool h3_ret0; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_parse_Reader t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_parse_Reader t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_parse_Reader t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_ENTRY_STOP; goto bb0;
 #line 87 "examples/json/parse.hero"
 bb0:
     t1 = h0_r;
@@ -1356,7 +1361,7 @@ bb3:
     goto bb1;
 #line 91 "examples/json/parse.hero"
 bb4:
-#line 1360 "main.c"
+#line 1365 "main.c"
     t20 = h3_ret0;
     hero_str_release_at(&h4_own4);
     return t20;
@@ -1365,7 +1370,7 @@ bb4:
 #line 94 "examples/json/parse.hero"
 void h_parse_skip(h_parse_Reader *ph0_r, int64_t h1_n) {
 #line 94 "examples/json/parse.hero"
-    HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; goto bb0;
+    HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 94 "examples/json/parse.hero"
 bb0:
     t1 = (*ph0_r);
@@ -1379,13 +1384,13 @@ bb0:
     (*ph0_r).f_pos = t4;
 #line 95 "examples/json/parse.hero"
     return;
-#line 1383 "main.c"
+#line 1388 "main.c"
 }
 
 #line 101 "examples/json/parse.hero"
 h_0opt_2e71b378 h_parse_read_value(h_parse_Reader *ph0_r) {
 #line 101 "examples/json/parse.hero"
-    uint8_t h1_c; HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}; HERO_NODEBUG bool h3_b0; HERO_NODEBUG h_0opt_db92a83 h4_f1 = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_ret0 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_2e71b378 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_2e71b378 h11_own11 = {0}; HERO_NODEBUG h_0opt_2e71b378 h12_own12 = {0}; HERO_NODEBUG h_0opt_2e71b378 h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG h_value_Json h15_own15 = {0}; HERO_NODEBUG h_0opt_2e71b378 h16_own16 = {0}; HERO_NODEBUG h_0opt_2e71b378 h17_own17 = {0}; HERO_NODEBUG h_0opt_db92a83 h18_own18 = {0}; HERO_NODEBUG h_value_Json h19_own19 = {0}; HERO_NODEBUG h_0opt_2e71b378 h20_own20 = {0}; HERO_NODEBUG h_0opt_2e71b378 h21_own21 = {0}; HERO_NODEBUG h_value_Json h22_own22 = {0}; HERO_NODEBUG h_0opt_2e71b378 h23_own23 = {0}; HERO_NODEBUG h_value_Json h24_own24 = {0}; HERO_NODEBUG h_0opt_2e71b378 h25_own25 = {0}; HERO_NODEBUG h_value_Json h26_own26 = {0}; HERO_NODEBUG h_0opt_2e71b378 h27_own27 = {0}; HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_2e71b378 t5; HERO_NODEBUG h_parse_Reader t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_2e71b378 t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_2e71b378 t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG HeroFailure t25; HERO_NODEBUG h_0opt_2e71b378 t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_value_Json t29; HERO_NODEBUG h_0opt_2e71b378 t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG uint8_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_0opt_db92a83 t37; HERO_NODEBUG h_0opt_db92a83 t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_0opt_db92a83 t42; HERO_NODEBUG HeroFailure t43; HERO_NODEBUG h_0opt_2e71b378 t44; HERO_NODEBUG h_0opt_db92a83 t45; HERO_NODEBUG double t46; HERO_NODEBUG h_value_Json t47; HERO_NODEBUG h_0opt_2e71b378 t48; HERO_NODEBUG h_parse_Reader t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG bool t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG bool t53; HERO_NODEBUG h_value_Json t54; HERO_NODEBUG h_0opt_2e71b378 t55; HERO_NODEBUG h_parse_Reader t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG bool t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG h_value_Json t61; HERO_NODEBUG h_0opt_2e71b378 t62; HERO_NODEBUG h_parse_Reader t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG bool t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG h_value_Json t67; HERO_NODEBUG h_0opt_2e71b378 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG h_parse_Reader t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_2e71b378 t75; HERO_NODEBUG h_0opt_2e71b378 t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG h_0opt_2e71b378 t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_0opt_2e71b378 t82; HERO_NODEBUG h_0opt_2e71b378 t83; HERO_NODEBUG h_0opt_2e71b378 t84; HERO_NODEBUG h_0opt_f87774a t85; HERO_NODEBUG h_0opt_f87774a t86; HERO_NODEBUG h_value_Json t87; HERO_NODEBUG h_0opt_2e71b378 t88; HERO_NODEBUG h_0opt_2e71b378 t89; HERO_NODEBUG h_0opt_db92a83 t90; HERO_NODEBUG h_0opt_db92a83 t91; HERO_NODEBUG h_value_Json t92; HERO_NODEBUG h_0opt_2e71b378 t93; HERO_NODEBUG h_0opt_2e71b378 t94; HERO_NODEBUG h_value_Json t95; HERO_NODEBUG h_0opt_2e71b378 t96; HERO_NODEBUG h_value_Json t97; HERO_NODEBUG h_0opt_2e71b378 t98; HERO_NODEBUG h_value_Json t99; HERO_NODEBUG h_0opt_2e71b378 t100; goto bb0;
+    uint8_t h1_c; HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}; HERO_NODEBUG bool h3_b0; HERO_NODEBUG h_0opt_db92a83 h4_f1 = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_ret0 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_2e71b378 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_2e71b378 h11_own11 = {0}; HERO_NODEBUG h_0opt_2e71b378 h12_own12 = {0}; HERO_NODEBUG h_0opt_2e71b378 h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG h_value_Json h15_own15 = {0}; HERO_NODEBUG h_0opt_2e71b378 h16_own16 = {0}; HERO_NODEBUG h_0opt_2e71b378 h17_own17 = {0}; HERO_NODEBUG h_0opt_db92a83 h18_own18 = {0}; HERO_NODEBUG h_value_Json h19_own19 = {0}; HERO_NODEBUG h_0opt_2e71b378 h20_own20 = {0}; HERO_NODEBUG h_0opt_2e71b378 h21_own21 = {0}; HERO_NODEBUG h_value_Json h22_own22 = {0}; HERO_NODEBUG h_0opt_2e71b378 h23_own23 = {0}; HERO_NODEBUG h_value_Json h24_own24 = {0}; HERO_NODEBUG h_0opt_2e71b378 h25_own25 = {0}; HERO_NODEBUG h_value_Json h26_own26 = {0}; HERO_NODEBUG h_0opt_2e71b378 h27_own27 = {0}; HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_2e71b378 t5; HERO_NODEBUG h_parse_Reader t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_2e71b378 t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_2e71b378 t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG HeroFailure t25; HERO_NODEBUG h_0opt_2e71b378 t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_value_Json t29; HERO_NODEBUG h_0opt_2e71b378 t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG uint8_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_0opt_db92a83 t37; HERO_NODEBUG h_0opt_db92a83 t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_0opt_db92a83 t42; HERO_NODEBUG HeroFailure t43; HERO_NODEBUG h_0opt_2e71b378 t44; HERO_NODEBUG h_0opt_db92a83 t45; HERO_NODEBUG double t46; HERO_NODEBUG h_value_Json t47; HERO_NODEBUG h_0opt_2e71b378 t48; HERO_NODEBUG h_parse_Reader t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG bool t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG bool t53; HERO_NODEBUG h_value_Json t54; HERO_NODEBUG h_0opt_2e71b378 t55; HERO_NODEBUG h_parse_Reader t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG bool t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG h_value_Json t61; HERO_NODEBUG h_0opt_2e71b378 t62; HERO_NODEBUG h_parse_Reader t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG bool t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG h_value_Json t67; HERO_NODEBUG h_0opt_2e71b378 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG h_parse_Reader t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_2e71b378 t75; HERO_NODEBUG h_0opt_2e71b378 t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG h_0opt_2e71b378 t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_0opt_2e71b378 t82; HERO_NODEBUG h_0opt_2e71b378 t83; HERO_NODEBUG h_0opt_2e71b378 t84; HERO_NODEBUG h_0opt_f87774a t85; HERO_NODEBUG h_0opt_f87774a t86; HERO_NODEBUG h_value_Json t87; HERO_NODEBUG h_0opt_2e71b378 t88; HERO_NODEBUG h_0opt_2e71b378 t89; HERO_NODEBUG h_0opt_db92a83 t90; HERO_NODEBUG h_0opt_db92a83 t91; HERO_NODEBUG h_value_Json t92; HERO_NODEBUG h_0opt_2e71b378 t93; HERO_NODEBUG h_0opt_2e71b378 t94; HERO_NODEBUG h_value_Json t95; HERO_NODEBUG h_0opt_2e71b378 t96; HERO_NODEBUG h_value_Json t97; HERO_NODEBUG h_0opt_2e71b378 t98; HERO_NODEBUG h_value_Json t99; HERO_NODEBUG h_0opt_2e71b378 t100; HERO_ENTRY_STOP; goto bb0;
 #line 101 "examples/json/parse.hero"
 bb0:
     h_parse_skip_space(&(*ph0_r));
@@ -1830,7 +1835,7 @@ bb24:
     goto bb4;
 #line 124 "examples/json/parse.hero"
 bb25:
-#line 1834 "main.c"
+#line 1839 "main.c"
     t76 = h5_ret0;
     h_0opt_2e71b378_retain(&t76);
     h_0opt_f87774a_release(hero_slot_escape(&h2_f0));
@@ -1863,7 +1868,7 @@ bb25:
 #line 132 "examples/json/parse.hero"
 h_0opt_f87774a h_parse_read_string(h_parse_Reader *ph0_r) {
 #line 132 "examples/json/parse.hero"
-    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG bool h2_b0; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h4_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_f87774a h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG h_0opt_f87774a h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_parse_Reader t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG h_parse_Reader t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_parse_Reader t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG h_parse_Reader t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroFailure t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_parse_Reader t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_parse_Reader t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG h_parse_Reader t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG h_parse_Reader t43; HERO_NODEBUG bool t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_0opt_f87774a t47; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG h_0opt_f87774a t51; HERO_NODEBUG h_0opt_f87774a t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_0opt_f87774a t56; HERO_NODEBUG h_0opt_f87774a t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG h_0opt_f87774a t59; HERO_NODEBUG h_0opt_f87774a t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG h_0opt_f87774a t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG h_0opt_f87774a t64; goto bb0;
+    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG bool h2_b0; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h4_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_f87774a h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG h_0opt_f87774a h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_parse_Reader t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG h_parse_Reader t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_parse_Reader t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG h_parse_Reader t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroFailure t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_parse_Reader t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_parse_Reader t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG h_parse_Reader t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG h_parse_Reader t43; HERO_NODEBUG bool t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_0opt_f87774a t47; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG h_0opt_f87774a t51; HERO_NODEBUG h_0opt_f87774a t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_0opt_f87774a t56; HERO_NODEBUG h_0opt_f87774a t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG h_0opt_f87774a t59; HERO_NODEBUG h_0opt_f87774a t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG h_0opt_f87774a t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG h_0opt_f87774a t64; HERO_ENTRY_STOP; goto bb0;
 #line 132 "examples/json/parse.hero"
 bb0:
     h_parse_advance(&(*ph0_r));
@@ -2135,7 +2140,7 @@ bb16:
     goto bb14;
 #line 149 "examples/json/parse.hero"
 bb17:
-#line 2139 "main.c"
+#line 2144 "main.c"
     t52 = h4_ret0;
     h_0opt_f87774a_retain(&t52);
     hero_array_release_at(&h1_parts);
@@ -2156,7 +2161,7 @@ bb17:
 #line 162 "examples/json/parse.hero"
 h_0opt_f87774a h_parse_escape_at(h_parse_Reader h0_r) {
 #line 162 "examples/json/parse.hero"
-    uint8_t h1_c; HERO_NODEBUG bool h2_b0; HERO_NODEBUG bool h3_b1; HERO_NODEBUG bool h4_b2; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG h_0opt_f87774a h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG h_0opt_f87774a h15_own15 = {0}; HERO_NODEBUG h_0opt_f87774a h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG h_0opt_f87774a h24_own24 = {0}; HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG uint8_t t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG bool t34; HERO_NODEBUG uint8_t t35; HERO_NODEBUG uint8_t t36; HERO_NODEBUG bool t37; HERO_NODEBUG bool t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG uint8_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG bool t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_parse_Reader t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_parse_Reader t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG h_parse_Reader t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG h_parse_Reader t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG h_0opt_f87774a t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG h_parse_Reader t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG h_parse_Reader t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_parse_Reader t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG h_parse_Reader t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG h_0opt_f87774a t80; HERO_NODEBUG h_0opt_f87774a t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG h_0opt_f87774a t88; HERO_NODEBUG h_0opt_f87774a t89; HERO_NODEBUG h_0opt_f87774a t90; HERO_NODEBUG h_0opt_f87774a t91; HERO_NODEBUG h_0opt_f87774a t92; HERO_NODEBUG h_0opt_f87774a t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG HeroStr t95; HERO_NODEBUG HeroStr t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG HeroStr t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG h_0opt_f87774a t100; goto bb0;
+    uint8_t h1_c; HERO_NODEBUG bool h2_b0; HERO_NODEBUG bool h3_b1; HERO_NODEBUG bool h4_b2; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG h_0opt_f87774a h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG h_0opt_f87774a h15_own15 = {0}; HERO_NODEBUG h_0opt_f87774a h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG h_0opt_f87774a h24_own24 = {0}; HERO_NODEBUG h_parse_Reader t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG uint8_t t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG bool t34; HERO_NODEBUG uint8_t t35; HERO_NODEBUG uint8_t t36; HERO_NODEBUG bool t37; HERO_NODEBUG bool t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG uint8_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG bool t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_parse_Reader t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_parse_Reader t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG h_parse_Reader t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG h_parse_Reader t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG h_0opt_f87774a t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG h_parse_Reader t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG h_parse_Reader t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_parse_Reader t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG h_parse_Reader t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG h_0opt_f87774a t80; HERO_NODEBUG h_0opt_f87774a t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG h_0opt_f87774a t88; HERO_NODEBUG h_0opt_f87774a t89; HERO_NODEBUG h_0opt_f87774a t90; HERO_NODEBUG h_0opt_f87774a t91; HERO_NODEBUG h_0opt_f87774a t92; HERO_NODEBUG h_0opt_f87774a t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG HeroStr t95; HERO_NODEBUG HeroStr t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG HeroStr t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG h_0opt_f87774a t100; HERO_ENTRY_STOP; goto bb0;
 #line 162 "examples/json/parse.hero"
 bb0:
     t1 = h0_r;
@@ -2547,7 +2552,7 @@ bb19:
     goto bb1;
 #line 176 "examples/json/parse.hero"
 bb20:
-#line 2551 "main.c"
+#line 2556 "main.c"
     t81 = h5_ret0;
     h_0opt_f87774a_retain(&t81);
     hero_str_release_at(&h6_own6);
@@ -2575,7 +2580,7 @@ bb20:
 #line 188 "examples/json/parse.hero"
 h_0opt_db92a83 h_parse_read_number(h_parse_Reader *ph0_r) {
 #line 188 "examples/json/parse.hero"
-    bool h1_negative; double h2_whole; int64_t h3_digits; HERO_NODEBUG bool h4_b0; HERO_NODEBUG bool h5_b1; double h6_scale; int64_t h7_after; HERO_NODEBUG bool h8_b2; HERO_NODEBUG bool h9_b3; HERO_NODEBUG bool h10_b4; HERO_NODEBUG h_0opt_e201354 h11_f0 = {0}; HERO_NODEBUG h_0opt_db92a83 h12_ret0 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG h_0opt_db92a83 h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_db92a83 h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG h_0opt_db92a83 h22_own22 = {0}; HERO_NODEBUG h_0opt_db92a83 h23_own23 = {0}; HERO_NODEBUG bool t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG double t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_parse_Reader t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_parse_Reader t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG double t16; HERO_NODEBUG double t17; HERO_NODEBUG double t18; HERO_NODEBUG h_parse_Reader t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG double t22; HERO_NODEBUG double t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_parse_Reader t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_db92a83 t36; HERO_NODEBUG h_parse_Reader t37; HERO_NODEBUG bool t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_parse_Reader t40; HERO_NODEBUG uint8_t t41; HERO_NODEBUG uint8_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG bool t44; HERO_NODEBUG double t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG h_parse_Reader t47; HERO_NODEBUG bool t48; HERO_NODEBUG bool t49; HERO_NODEBUG h_parse_Reader t50; HERO_NODEBUG uint8_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG bool t53; HERO_NODEBUG double t54; HERO_NODEBUG double t55; HERO_NODEBUG double t56; HERO_NODEBUG double t57; HERO_NODEBUG h_parse_Reader t58; HERO_NODEBUG uint8_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG double t61; HERO_NODEBUG double t62; HERO_NODEBUG double t63; HERO_NODEBUG double t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG bool t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG h_parse_Reader t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG h_0opt_db92a83 t77; HERO_NODEBUG h_parse_Reader t78; HERO_NODEBUG bool t79; HERO_NODEBUG bool t80; HERO_NODEBUG h_parse_Reader t81; HERO_NODEBUG uint8_t t82; HERO_NODEBUG uint8_t t83; HERO_NODEBUG bool t84; HERO_NODEBUG h_parse_Reader t85; HERO_NODEBUG uint8_t t86; HERO_NODEBUG uint8_t t87; HERO_NODEBUG bool t88; HERO_NODEBUG bool t89; HERO_NODEBUG bool t90; HERO_NODEBUG double t91; HERO_NODEBUG h_0opt_e201354 t92; HERO_NODEBUG h_0opt_e201354 t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG bool t96; HERO_NODEBUG h_0opt_e201354 t97; HERO_NODEBUG HeroFailure t98; HERO_NODEBUG h_0opt_db92a83 t99; HERO_NODEBUG h_0opt_e201354 t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG double t102; HERO_NODEBUG double t103; HERO_NODEBUG bool t104; HERO_NODEBUG double t105; HERO_NODEBUG double t106; HERO_NODEBUG double t107; HERO_NODEBUG h_0opt_db92a83 t108; HERO_NODEBUG h_0opt_db92a83 t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG HeroStr t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG h_0opt_db92a83 t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG h_0opt_db92a83 t117; HERO_NODEBUG h_0opt_e201354 t118; HERO_NODEBUG h_0opt_e201354 t119; HERO_NODEBUG h_0opt_db92a83 t120; HERO_NODEBUG h_0opt_db92a83 t121; goto bb0;
+    bool h1_negative; double h2_whole; int64_t h3_digits; HERO_NODEBUG bool h4_b0; HERO_NODEBUG bool h5_b1; double h6_scale; int64_t h7_after; HERO_NODEBUG bool h8_b2; HERO_NODEBUG bool h9_b3; HERO_NODEBUG bool h10_b4; HERO_NODEBUG h_0opt_e201354 h11_f0 = {0}; HERO_NODEBUG h_0opt_db92a83 h12_ret0 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG h_0opt_db92a83 h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_db92a83 h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG h_0opt_db92a83 h22_own22 = {0}; HERO_NODEBUG h_0opt_db92a83 h23_own23 = {0}; HERO_NODEBUG bool t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG double t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_parse_Reader t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_parse_Reader t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG double t16; HERO_NODEBUG double t17; HERO_NODEBUG double t18; HERO_NODEBUG h_parse_Reader t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG double t22; HERO_NODEBUG double t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_parse_Reader t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_db92a83 t36; HERO_NODEBUG h_parse_Reader t37; HERO_NODEBUG bool t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_parse_Reader t40; HERO_NODEBUG uint8_t t41; HERO_NODEBUG uint8_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG bool t44; HERO_NODEBUG double t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG h_parse_Reader t47; HERO_NODEBUG bool t48; HERO_NODEBUG bool t49; HERO_NODEBUG h_parse_Reader t50; HERO_NODEBUG uint8_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG bool t53; HERO_NODEBUG double t54; HERO_NODEBUG double t55; HERO_NODEBUG double t56; HERO_NODEBUG double t57; HERO_NODEBUG h_parse_Reader t58; HERO_NODEBUG uint8_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG double t61; HERO_NODEBUG double t62; HERO_NODEBUG double t63; HERO_NODEBUG double t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG bool t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG h_parse_Reader t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG h_0opt_db92a83 t77; HERO_NODEBUG h_parse_Reader t78; HERO_NODEBUG bool t79; HERO_NODEBUG bool t80; HERO_NODEBUG h_parse_Reader t81; HERO_NODEBUG uint8_t t82; HERO_NODEBUG uint8_t t83; HERO_NODEBUG bool t84; HERO_NODEBUG h_parse_Reader t85; HERO_NODEBUG uint8_t t86; HERO_NODEBUG uint8_t t87; HERO_NODEBUG bool t88; HERO_NODEBUG bool t89; HERO_NODEBUG bool t90; HERO_NODEBUG double t91; HERO_NODEBUG h_0opt_e201354 t92; HERO_NODEBUG h_0opt_e201354 t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG bool t96; HERO_NODEBUG h_0opt_e201354 t97; HERO_NODEBUG HeroFailure t98; HERO_NODEBUG h_0opt_db92a83 t99; HERO_NODEBUG h_0opt_e201354 t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG double t102; HERO_NODEBUG double t103; HERO_NODEBUG bool t104; HERO_NODEBUG double t105; HERO_NODEBUG double t106; HERO_NODEBUG double t107; HERO_NODEBUG h_0opt_db92a83 t108; HERO_NODEBUG h_0opt_db92a83 t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG HeroStr t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG h_0opt_db92a83 t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG h_0opt_db92a83 t117; HERO_NODEBUG h_0opt_e201354 t118; HERO_NODEBUG h_0opt_e201354 t119; HERO_NODEBUG h_0opt_db92a83 t120; HERO_NODEBUG h_0opt_db92a83 t121; HERO_ENTRY_STOP; goto bb0;
 #line 188 "examples/json/parse.hero"
 bb0:
     t1 = false;
@@ -3075,7 +3080,7 @@ bb36:
     goto bb34;
 #line 224 "examples/json/parse.hero"
 bb37:
-#line 3079 "main.c"
+#line 3084 "main.c"
     t109 = h12_ret0;
     h_0opt_db92a83_retain(&t109);
     h_0opt_e201354_release(hero_slot_escape(&h11_f0));
@@ -3096,7 +3101,7 @@ bb37:
 #line 230 "examples/json/parse.hero"
 h_0opt_e201354 h_parse_read_exponent(h_parse_Reader *ph0_r) {
 #line 230 "examples/json/parse.hero"
-    bool h1_negative; HERO_NODEBUG bool h2_b0; HERO_NODEBUG bool h3_b1; int64_t h4_exponent; int64_t h5_digits; HERO_NODEBUG bool h6_b2; HERO_NODEBUG h_0opt_e201354 h7_ret0 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_e201354 h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG bool t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_parse_Reader t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_parse_Reader t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_parse_Reader t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_parse_Reader t21; HERO_NODEBUG bool t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_parse_Reader t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG bool t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_parse_Reader t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG h_parse_Reader t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG bool t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_parse_Reader t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG bool t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG h_0opt_e201354 t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG h_0opt_e201354 t72; HERO_NODEBUG h_0opt_e201354 t73; HERO_NODEBUG h_0opt_e201354 t74; goto bb0;
+    bool h1_negative; HERO_NODEBUG bool h2_b0; HERO_NODEBUG bool h3_b1; int64_t h4_exponent; int64_t h5_digits; HERO_NODEBUG bool h6_b2; HERO_NODEBUG h_0opt_e201354 h7_ret0 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_e201354 h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG bool t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_parse_Reader t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_parse_Reader t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_parse_Reader t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_parse_Reader t21; HERO_NODEBUG bool t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_parse_Reader t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG bool t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_parse_Reader t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG h_parse_Reader t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG bool t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_parse_Reader t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG bool t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG h_0opt_e201354 t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG h_0opt_e201354 t72; HERO_NODEBUG h_0opt_e201354 t73; HERO_NODEBUG h_0opt_e201354 t74; HERO_ENTRY_STOP; goto bb0;
 #line 230 "examples/json/parse.hero"
 bb0:
     t1 = false;
@@ -3411,7 +3416,7 @@ bb21:
     goto bb19;
 #line 251 "examples/json/parse.hero"
 bb22:
-#line 3415 "main.c"
+#line 3420 "main.c"
     t64 = h7_ret0;
     h_0opt_e201354_retain(&t64);
     hero_str_release_at(&h8_own8);
@@ -3430,7 +3435,7 @@ bb22:
 #line 254 "examples/json/parse.hero"
 double h_parse_power_of_ten(int64_t h0_n) {
 #line 254 "examples/json/parse.hero"
-    double h1_out; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HERO_NODEBUG HeroArrayHeader * h4_xs1 = {0}; HERO_NODEBUG int64_t h5_i1; HERO_NODEBUG double h6_ret0; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG double t13; HERO_NODEBUG double t14; HERO_NODEBUG double t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG double t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG double t28; HERO_NODEBUG double t29; HERO_NODEBUG double t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG double t34; HERO_NODEBUG double t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; goto bb0;
+    double h1_out; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HERO_NODEBUG HeroArrayHeader * h4_xs1 = {0}; HERO_NODEBUG int64_t h5_i1; HERO_NODEBUG double h6_ret0; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG double t13; HERO_NODEBUG double t14; HERO_NODEBUG double t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG double t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG double t28; HERO_NODEBUG double t29; HERO_NODEBUG double t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG double t34; HERO_NODEBUG double t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_ENTRY_STOP; goto bb0;
 #line 254 "examples/json/parse.hero"
 bb0:
     t1 = 0x1p+0;
@@ -3592,7 +3597,7 @@ bb11:
     goto bb12;
 #line 266 "examples/json/parse.hero"
 bb12:
-#line 3596 "main.c"
+#line 3601 "main.c"
     t35 = h6_ret0;
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h4_xs1);
@@ -3604,7 +3609,7 @@ bb12:
 #line 272 "examples/json/parse.hero"
 h_0opt_2e71b378 h_parse_read_array(h_parse_Reader *ph0_r) {
 #line 272 "examples/json/parse.hero"
-    HeroArrayHeader * h1_items = {0}; bool h2_more; HERO_NODEBUG h_0opt_2e71b378 h3_f0 = {0}; HERO_NODEBUG h_0opt_2e71b378 h4_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_2e71b378 h7_own7 = {0}; HERO_NODEBUG h_value_Json h8_own8 = {0}; HERO_NODEBUG h_0opt_2e71b378 h9_own9 = {0}; HERO_NODEBUG h_0opt_2e71b378 h10_own10 = {0}; HERO_NODEBUG h_value_Json h11_own11 = {0}; HERO_NODEBUG h_0opt_2e71b378 h12_own12 = {0}; HERO_NODEBUG h_0opt_2e71b378 h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_2e71b378 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_0opt_2e71b378 h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_2e71b378 t6; HERO_NODEBUG h_parse_Reader t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG h_value_Json t12; HERO_NODEBUG h_0opt_2e71b378 t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_0opt_2e71b378 t17; HERO_NODEBUG h_0opt_2e71b378 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_2e71b378 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_2e71b378 t24; HERO_NODEBUG h_0opt_2e71b378 t25; HERO_NODEBUG h_value_Json t26; HERO_NODEBUG h_parse_Reader t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_2e71b378 t32; HERO_NODEBUG h_parse_Reader t33; HERO_NODEBUG uint8_t t34; HERO_NODEBUG uint8_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_parse_Reader t37; HERO_NODEBUG uint8_t t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG bool t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_parse_Reader t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG h_0opt_2e71b378 t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG h_value_Json t50; HERO_NODEBUG h_0opt_2e71b378 t51; HERO_NODEBUG h_0opt_2e71b378 t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_0opt_2e71b378 t56; HERO_NODEBUG h_value_Json t57; HERO_NODEBUG h_0opt_2e71b378 t58; HERO_NODEBUG h_0opt_2e71b378 t59; HERO_NODEBUG h_0opt_2e71b378 t60; HERO_NODEBUG h_value_Json t61; HERO_NODEBUG h_0opt_2e71b378 t62; HERO_NODEBUG h_0opt_2e71b378 t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG h_0opt_2e71b378 t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG h_0opt_2e71b378 t69; goto bb0;
+    HeroArrayHeader * h1_items = {0}; bool h2_more; HERO_NODEBUG h_0opt_2e71b378 h3_f0 = {0}; HERO_NODEBUG h_0opt_2e71b378 h4_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_2e71b378 h7_own7 = {0}; HERO_NODEBUG h_value_Json h8_own8 = {0}; HERO_NODEBUG h_0opt_2e71b378 h9_own9 = {0}; HERO_NODEBUG h_0opt_2e71b378 h10_own10 = {0}; HERO_NODEBUG h_value_Json h11_own11 = {0}; HERO_NODEBUG h_0opt_2e71b378 h12_own12 = {0}; HERO_NODEBUG h_0opt_2e71b378 h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_2e71b378 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_0opt_2e71b378 h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_2e71b378 t6; HERO_NODEBUG h_parse_Reader t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG h_value_Json t12; HERO_NODEBUG h_0opt_2e71b378 t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_0opt_2e71b378 t17; HERO_NODEBUG h_0opt_2e71b378 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_2e71b378 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_2e71b378 t24; HERO_NODEBUG h_0opt_2e71b378 t25; HERO_NODEBUG h_value_Json t26; HERO_NODEBUG h_parse_Reader t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_2e71b378 t32; HERO_NODEBUG h_parse_Reader t33; HERO_NODEBUG uint8_t t34; HERO_NODEBUG uint8_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_parse_Reader t37; HERO_NODEBUG uint8_t t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG bool t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_parse_Reader t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG h_0opt_2e71b378 t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG h_value_Json t50; HERO_NODEBUG h_0opt_2e71b378 t51; HERO_NODEBUG h_0opt_2e71b378 t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_0opt_2e71b378 t56; HERO_NODEBUG h_value_Json t57; HERO_NODEBUG h_0opt_2e71b378 t58; HERO_NODEBUG h_0opt_2e71b378 t59; HERO_NODEBUG h_0opt_2e71b378 t60; HERO_NODEBUG h_value_Json t61; HERO_NODEBUG h_0opt_2e71b378 t62; HERO_NODEBUG h_0opt_2e71b378 t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG h_0opt_2e71b378 t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG h_0opt_2e71b378 t69; HERO_ENTRY_STOP; goto bb0;
 #line 272 "examples/json/parse.hero"
 bb0:
     h_parse_advance(&(*ph0_r));
@@ -3934,7 +3939,7 @@ bb19:
     goto bb20;
 #line 298 "examples/json/parse.hero"
 bb20:
-#line 3938 "main.c"
+#line 3943 "main.c"
     t52 = h4_ret0;
     h_0opt_2e71b378_retain(&t52);
     hero_array_release_at(&h1_items);
@@ -3960,7 +3965,7 @@ bb20:
 #line 304 "examples/json/parse.hero"
 h_0opt_2e71b378 h_parse_read_object(h_parse_Reader *ph0_r) {
 #line 304 "examples/json/parse.hero"
-    HeroMapHeader * h1_fields = {0}; bool h2_more; HERO_NODEBUG bool h3_b0; HERO_NODEBUG h_0opt_f87774a h4_f0 = {0}; HeroStr h5_key = {0}; HERO_NODEBUG bool h6_b1; HERO_NODEBUG h_0opt_2e71b378 h7_f1 = {0}; HERO_NODEBUG h_0opt_2e71b378 h8_ret0 = {0}; HERO_NODEBUG HeroMapHeader * h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_2e71b378 h11_own11 = {0}; HERO_NODEBUG h_value_Json h12_own12 = {0}; HERO_NODEBUG h_0opt_2e71b378 h13_own13 = {0}; HERO_NODEBUG h_value_Json h14_own14 = {0}; HERO_NODEBUG h_0opt_2e71b378 h15_own15 = {0}; HERO_NODEBUG h_0opt_f87774a h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_2e71b378 h20_own20 = {0}; HERO_NODEBUG h_0opt_2e71b378 h21_own21 = {0}; HERO_NODEBUG h_0opt_2e71b378 h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG h_0opt_2e71b378 h26_own26 = {0}; HERO_NODEBUG h_0opt_2e71b378 h27_own27 = {0}; HERO_NODEBUG HeroStr h28_own28 = {0}; HERO_NODEBUG h_0opt_2e71b378 h29_own29 = {0}; HERO_NODEBUG HeroStr h30_own30 = {0}; HERO_NODEBUG HeroStr h31_own31 = {0}; HERO_NODEBUG HeroStr h32_own32 = {0}; HERO_NODEBUG h_0opt_2e71b378 h33_own33 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_2e71b378 t6; HERO_NODEBUG h_parse_Reader t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroMapHeader * t11; HERO_NODEBUG h_value_Json t12; HERO_NODEBUG h_0opt_2e71b378 t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_parse_Reader t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_parse_Reader t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_parse_Reader t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_2e71b378 t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG HeroFailure t36; HERO_NODEBUG h_0opt_2e71b378 t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG h_parse_Reader t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_parse_Reader t42; HERO_NODEBUG uint8_t t43; HERO_NODEBUG uint8_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG bool t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_parse_Reader t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_0opt_2e71b378 t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_0opt_2e71b378 t55; HERO_NODEBUG h_0opt_2e71b378 t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG h_0opt_2e71b378 t60; HERO_NODEBUG HeroFailure t61; HERO_NODEBUG h_0opt_2e71b378 t62; HERO_NODEBUG h_0opt_2e71b378 t63; HERO_NODEBUG h_value_Json t64; HERO_NODEBUG h_parse_Reader t65; HERO_NODEBUG bool t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG h_0opt_2e71b378 t69; HERO_NODEBUG h_parse_Reader t70; HERO_NODEBUG uint8_t t71; HERO_NODEBUG uint8_t t72; HERO_NODEBUG bool t73; HERO_NODEBUG h_parse_Reader t74; HERO_NODEBUG uint8_t t75; HERO_NODEBUG uint8_t t76; HERO_NODEBUG bool t77; HERO_NODEBUG bool t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG h_parse_Reader t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG h_0opt_2e71b378 t85; HERO_NODEBUG HeroMapHeader * t86; HERO_NODEBUG h_value_Json t87; HERO_NODEBUG h_0opt_2e71b378 t88; HERO_NODEBUG h_0opt_2e71b378 t89; HERO_NODEBUG HeroMapHeader * t90; HERO_NODEBUG HeroMapHeader * t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG h_0opt_2e71b378 t93; HERO_NODEBUG h_value_Json t94; HERO_NODEBUG h_0opt_2e71b378 t95; HERO_NODEBUG h_value_Json t96; HERO_NODEBUG h_0opt_2e71b378 t97; HERO_NODEBUG h_0opt_f87774a t98; HERO_NODEBUG h_0opt_f87774a t99; HERO_NODEBUG HeroStr t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG HeroStr t102; HERO_NODEBUG h_0opt_2e71b378 t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG h_0opt_2e71b378 t105; HERO_NODEBUG h_0opt_2e71b378 t106; HERO_NODEBUG h_0opt_2e71b378 t107; HERO_NODEBUG HeroStr t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG h_0opt_2e71b378 t111; HERO_NODEBUG h_0opt_2e71b378 t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG h_0opt_2e71b378 t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG HeroStr t117; HERO_NODEBUG h_0opt_2e71b378 t118; goto bb0;
+    HeroMapHeader * h1_fields = {0}; bool h2_more; HERO_NODEBUG bool h3_b0; HERO_NODEBUG h_0opt_f87774a h4_f0 = {0}; HeroStr h5_key = {0}; HERO_NODEBUG bool h6_b1; HERO_NODEBUG h_0opt_2e71b378 h7_f1 = {0}; HERO_NODEBUG h_0opt_2e71b378 h8_ret0 = {0}; HERO_NODEBUG HeroMapHeader * h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_2e71b378 h11_own11 = {0}; HERO_NODEBUG h_value_Json h12_own12 = {0}; HERO_NODEBUG h_0opt_2e71b378 h13_own13 = {0}; HERO_NODEBUG h_value_Json h14_own14 = {0}; HERO_NODEBUG h_0opt_2e71b378 h15_own15 = {0}; HERO_NODEBUG h_0opt_f87774a h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_2e71b378 h20_own20 = {0}; HERO_NODEBUG h_0opt_2e71b378 h21_own21 = {0}; HERO_NODEBUG h_0opt_2e71b378 h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG h_0opt_2e71b378 h26_own26 = {0}; HERO_NODEBUG h_0opt_2e71b378 h27_own27 = {0}; HERO_NODEBUG HeroStr h28_own28 = {0}; HERO_NODEBUG h_0opt_2e71b378 h29_own29 = {0}; HERO_NODEBUG HeroStr h30_own30 = {0}; HERO_NODEBUG HeroStr h31_own31 = {0}; HERO_NODEBUG HeroStr h32_own32 = {0}; HERO_NODEBUG h_0opt_2e71b378 h33_own33 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG h_parse_Reader t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_2e71b378 t6; HERO_NODEBUG h_parse_Reader t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroMapHeader * t11; HERO_NODEBUG h_value_Json t12; HERO_NODEBUG h_0opt_2e71b378 t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_parse_Reader t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_parse_Reader t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_parse_Reader t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_2e71b378 t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG HeroFailure t36; HERO_NODEBUG h_0opt_2e71b378 t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG h_parse_Reader t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_parse_Reader t42; HERO_NODEBUG uint8_t t43; HERO_NODEBUG uint8_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG bool t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_parse_Reader t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_0opt_2e71b378 t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_0opt_2e71b378 t55; HERO_NODEBUG h_0opt_2e71b378 t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG h_0opt_2e71b378 t60; HERO_NODEBUG HeroFailure t61; HERO_NODEBUG h_0opt_2e71b378 t62; HERO_NODEBUG h_0opt_2e71b378 t63; HERO_NODEBUG h_value_Json t64; HERO_NODEBUG h_parse_Reader t65; HERO_NODEBUG bool t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG h_0opt_2e71b378 t69; HERO_NODEBUG h_parse_Reader t70; HERO_NODEBUG uint8_t t71; HERO_NODEBUG uint8_t t72; HERO_NODEBUG bool t73; HERO_NODEBUG h_parse_Reader t74; HERO_NODEBUG uint8_t t75; HERO_NODEBUG uint8_t t76; HERO_NODEBUG bool t77; HERO_NODEBUG bool t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG h_parse_Reader t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG h_0opt_2e71b378 t85; HERO_NODEBUG HeroMapHeader * t86; HERO_NODEBUG h_value_Json t87; HERO_NODEBUG h_0opt_2e71b378 t88; HERO_NODEBUG h_0opt_2e71b378 t89; HERO_NODEBUG HeroMapHeader * t90; HERO_NODEBUG HeroMapHeader * t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG h_0opt_2e71b378 t93; HERO_NODEBUG h_value_Json t94; HERO_NODEBUG h_0opt_2e71b378 t95; HERO_NODEBUG h_value_Json t96; HERO_NODEBUG h_0opt_2e71b378 t97; HERO_NODEBUG h_0opt_f87774a t98; HERO_NODEBUG h_0opt_f87774a t99; HERO_NODEBUG HeroStr t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG HeroStr t102; HERO_NODEBUG h_0opt_2e71b378 t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG h_0opt_2e71b378 t105; HERO_NODEBUG h_0opt_2e71b378 t106; HERO_NODEBUG h_0opt_2e71b378 t107; HERO_NODEBUG HeroStr t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG h_0opt_2e71b378 t111; HERO_NODEBUG h_0opt_2e71b378 t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG h_0opt_2e71b378 t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG HeroStr t117; HERO_NODEBUG h_0opt_2e71b378 t118; HERO_ENTRY_STOP; goto bb0;
 #line 304 "examples/json/parse.hero"
 bb0:
     h_parse_advance(&(*ph0_r));
@@ -4519,7 +4524,7 @@ bb31:
     goto bb32;
 #line 340 "examples/json/parse.hero"
 bb32:
-#line 4523 "main.c"
+#line 4528 "main.c"
     t89 = h8_ret0;
     h_0opt_2e71b378_retain(&t89);
     hero_map_release_at(&h1_fields);
@@ -4557,7 +4562,7 @@ bb32:
 #line 348 "examples/json/parse.hero"
 h_0opt_2e71b378 h_parse_read(HeroStr h0_text) {
 #line 348 "examples/json/parse.hero"
-    h_parse_Reader h1_r = {0}; HERO_NODEBUG h_0opt_2e71b378 h2_f0 = {0}; h_value_Json h3_j = {0}; HERO_NODEBUG h_0opt_2e71b378 h4_ret0 = {0}; HERO_NODEBUG h_parse_Reader h5_own5 = {0}; HERO_NODEBUG h_0opt_2e71b378 h6_own6 = {0}; HERO_NODEBUG h_0opt_2e71b378 h7_own7 = {0}; HERO_NODEBUG h_0opt_2e71b378 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_2e71b378 h13_own13 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_parse_Reader t3; HERO_NODEBUG h_0opt_2e71b378 t4; HERO_NODEBUG h_0opt_2e71b378 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_2e71b378 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_2e71b378 t11; HERO_NODEBUG h_0opt_2e71b378 t12; HERO_NODEBUG h_value_Json t13; HERO_NODEBUG h_parse_Reader t14; HERO_NODEBUG bool t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG h_parse_Reader t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_0opt_2e71b378 t25; HERO_NODEBUG h_value_Json t26; HERO_NODEBUG h_0opt_2e71b378 t27; HERO_NODEBUG h_0opt_2e71b378 t28; HERO_NODEBUG h_parse_Reader t29; HERO_NODEBUG h_parse_Reader t30; HERO_NODEBUG h_0opt_2e71b378 t31; HERO_NODEBUG h_0opt_2e71b378 t32; HERO_NODEBUG h_value_Json t33; HERO_NODEBUG h_0opt_2e71b378 t34; HERO_NODEBUG h_0opt_2e71b378 t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG h_0opt_2e71b378 t40; goto bb0;
+    h_parse_Reader h1_r = {0}; HERO_NODEBUG h_0opt_2e71b378 h2_f0 = {0}; h_value_Json h3_j = {0}; HERO_NODEBUG h_0opt_2e71b378 h4_ret0 = {0}; HERO_NODEBUG h_parse_Reader h5_own5 = {0}; HERO_NODEBUG h_0opt_2e71b378 h6_own6 = {0}; HERO_NODEBUG h_0opt_2e71b378 h7_own7 = {0}; HERO_NODEBUG h_0opt_2e71b378 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_2e71b378 h13_own13 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_parse_Reader t3; HERO_NODEBUG h_0opt_2e71b378 t4; HERO_NODEBUG h_0opt_2e71b378 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_2e71b378 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_2e71b378 t11; HERO_NODEBUG h_0opt_2e71b378 t12; HERO_NODEBUG h_value_Json t13; HERO_NODEBUG h_parse_Reader t14; HERO_NODEBUG bool t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG h_parse_Reader t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_0opt_2e71b378 t25; HERO_NODEBUG h_value_Json t26; HERO_NODEBUG h_0opt_2e71b378 t27; HERO_NODEBUG h_0opt_2e71b378 t28; HERO_NODEBUG h_parse_Reader t29; HERO_NODEBUG h_parse_Reader t30; HERO_NODEBUG h_0opt_2e71b378 t31; HERO_NODEBUG h_0opt_2e71b378 t32; HERO_NODEBUG h_value_Json t33; HERO_NODEBUG h_0opt_2e71b378 t34; HERO_NODEBUG h_0opt_2e71b378 t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG h_0opt_2e71b378 t40; HERO_ENTRY_STOP; goto bb0;
 #line 348 "examples/json/parse.hero"
 bb0:
     t1 = h0_text;
@@ -4731,7 +4736,7 @@ bb5:
     goto bb3;
 #line 354 "examples/json/parse.hero"
 bb6:
-#line 4735 "main.c"
+#line 4740 "main.c"
     t28 = h4_ret0;
     h_0opt_2e71b378_retain(&t28);
     h_parse_Reader_release(hero_slot_escape(&h1_r));
@@ -4752,7 +4757,7 @@ bb6:
 #line 360 "examples/json/parse.hero"
 HeroStr h_parse_code_of(HeroStr h0_text) {
 #line 360 "examples/json/parse.hero"
-    HERO_NODEBUG h_0opt_2e71b378 h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG h_0opt_2e71b378 h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_2e71b378 t2; HERO_NODEBUG h_0opt_2e71b378 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_2e71b378 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_2e71b378 t11; HERO_NODEBUG h_0opt_2e71b378 t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG HeroStr t15; goto bb0;
+    HERO_NODEBUG h_0opt_2e71b378 h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG h_0opt_2e71b378 h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_2e71b378 t2; HERO_NODEBUG h_0opt_2e71b378 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_2e71b378 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_2e71b378 t11; HERO_NODEBUG h_0opt_2e71b378 t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG HeroStr t15; HERO_ENTRY_STOP; goto bb0;
 #line 360 "examples/json/parse.hero"
 bb0:
     t1 = h0_text;
@@ -4790,7 +4795,7 @@ bb0:
 bb1:
 #line 361 "examples/json/parse.hero"
     t10 = h2_r0;
-#line 4794 "main.c"
+#line 4799 "main.c"
     hero_str_incref(t10);
     h_0opt_2e71b378_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -4838,13 +4843,13 @@ bb3:
     hero_str_decref(t15);
 #line 361 "examples/json/parse.hero"
     goto bb1;
-#line 4842 "main.c"
+#line 4847 "main.c"
 }
 
 #line 368 "examples/json/parse.hero"
 HeroStr h_parse_shape_of(HeroStr h0_text) {
 #line 368 "examples/json/parse.hero"
-    HERO_NODEBUG h_0opt_2e71b378 h1_f0 = {0}; HERO_NODEBUG h_0opt_2e71b378 h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_2e71b378 t2; HERO_NODEBUG h_0opt_2e71b378 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_2e71b378 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_2e71b378 t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_2e71b378 t12; HERO_NODEBUG h_0opt_2e71b378 t13; HERO_NODEBUG HeroStr t14; goto bb0;
+    HERO_NODEBUG h_0opt_2e71b378 h1_f0 = {0}; HERO_NODEBUG h_0opt_2e71b378 h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_2e71b378 t2; HERO_NODEBUG h_0opt_2e71b378 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_2e71b378 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_2e71b378 t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_2e71b378 t12; HERO_NODEBUG h_0opt_2e71b378 t13; HERO_NODEBUG HeroStr t14; HERO_ENTRY_STOP; goto bb0;
 #line 368 "examples/json/parse.hero"
 bb0:
     t1 = h0_text;
@@ -4888,7 +4893,7 @@ bb1:
     h3_own3 = t11;
 #line 369 "examples/json/parse.hero"
     hero_str_decref(t14);
-#line 4892 "main.c"
+#line 4897 "main.c"
     hero_str_incref(t11);
     h_0opt_2e71b378_release(hero_slot_escape(&h1_f0));
     h_0opt_2e71b378_release(hero_slot_escape(&h2_own2));
@@ -4899,7 +4904,7 @@ bb2:
     t7 = h1_f0;
 #line 369 "examples/json/parse.hero"
     t8 = t7.as.err;
-#line 4903 "main.c"
+#line 4908 "main.c"
     hero_panic_must(t8);
     hero_unreachable();
 }
@@ -4907,11 +4912,11 @@ bb2:
 #line 18 "examples/json/value.hero"
 HeroStr h_value_ERR_NOT_AN_OBJECT(void) {
 #line 18 "examples/json/value.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 18 "examples/json/value.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5bfaae18);
-#line 4915 "main.c"
+#line 4920 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -4919,7 +4924,7 @@ bb0:
 #line 47 "examples/json/value.hero"
 HeroStr h_value_render(h_value_Json h0_j) {
 #line 47 "examples/json/value.hero"
-    HERO_NODEBUG h_value_Json h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; h_value_Json_c_boolean h3_b; h_value_Json_c_number h4_n; h_value_Json_c_text h5_t = {0}; h_value_Json_c_array h6_a = {0}; h_value_Json_c_object h7_o = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_value_Json t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_value_Json t5; HERO_NODEBUG h_value_Json_c_boolean t6; HERO_NODEBUG h_value_Json_c_boolean t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG h_value_Json_c_number t11; HERO_NODEBUG h_value_Json_c_number t12; HERO_NODEBUG double t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_value_Json t15; HERO_NODEBUG h_value_Json_c_text t16; HERO_NODEBUG h_value_Json_c_text t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_value_Json t20; HERO_NODEBUG h_value_Json_c_array t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_value_Json_c_array t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_value_Json t31; HERO_NODEBUG h_value_Json_c_object t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_value_Json_c_object t34; HERO_NODEBUG HeroMapHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG h_value_Json t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_value_Json_c_text t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_value_Json_c_array t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG h_value_Json_c_object t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; goto bb0;
+    HERO_NODEBUG h_value_Json h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; h_value_Json_c_boolean h3_b; h_value_Json_c_number h4_n; h_value_Json_c_text h5_t = {0}; h_value_Json_c_array h6_a = {0}; h_value_Json_c_object h7_o = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_value_Json t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_value_Json t5; HERO_NODEBUG h_value_Json_c_boolean t6; HERO_NODEBUG h_value_Json_c_boolean t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG h_value_Json_c_number t11; HERO_NODEBUG h_value_Json_c_number t12; HERO_NODEBUG double t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_value_Json t15; HERO_NODEBUG h_value_Json_c_text t16; HERO_NODEBUG h_value_Json_c_text t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_value_Json t20; HERO_NODEBUG h_value_Json_c_array t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_value_Json_c_array t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_value_Json t31; HERO_NODEBUG h_value_Json_c_object t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_value_Json_c_object t34; HERO_NODEBUG HeroMapHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG h_value_Json t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_value_Json_c_text t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_value_Json_c_array t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG h_value_Json_c_object t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_ENTRY_STOP; goto bb0;
 #line 47 "examples/json/value.hero"
 bb0:
     t1 = h0_j;
@@ -4957,7 +4962,7 @@ bb0:
 bb1:
 #line 48 "examples/json/value.hero"
     t42 = h2_r0;
-#line 4961 "main.c"
+#line 4966 "main.c"
     hero_str_incref(t42);
     h_value_Json_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -5217,13 +5222,13 @@ bb7:
     hero_str_decref(t63);
 #line 48 "examples/json/value.hero"
     goto bb1;
-#line 5221 "main.c"
+#line 5226 "main.c"
 }
 
 #line 58 "examples/json/value.hero"
 HeroArrayHeader * h_value_rendered(HeroArrayHeader * h0_items) {
 #line 58 "examples/json/value.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_value_Json h4_item = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG h_value_Json t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG h_value_Json t22; HERO_NODEBUG HeroStr t23; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_value_Json h4_item = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG h_value_Json t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG h_value_Json t22; HERO_NODEBUG HeroStr t23; HERO_ENTRY_STOP; goto bb0;
 #line 58 "examples/json/value.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -5314,7 +5319,7 @@ bb3:
 bb4:
 #line 64 "examples/json/value.hero"
     t18 = h1_out;
-#line 5318 "main.c"
+#line 5323 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -5327,7 +5332,7 @@ bb4:
 #line 66 "examples/json/value.hero"
 HeroArrayHeader * h_value_pairs(HeroMapHeader * h0_fields) {
 #line 66 "examples/json/value.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_2e71b378 h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_2e71b378 t20; HERO_NODEBUG h_0opt_2e71b378 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_0opt_2e71b378 t25; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG h_0opt_2e71b378 t27; HERO_NODEBUG h_value_Json t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_2e71b378 t44; HERO_NODEBUG h_0opt_2e71b378 t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_2e71b378 h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_2e71b378 t20; HERO_NODEBUG h_0opt_2e71b378 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_0opt_2e71b378 t25; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG h_0opt_2e71b378 t27; HERO_NODEBUG h_value_Json t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_2e71b378 t44; HERO_NODEBUG h_0opt_2e71b378 t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_ENTRY_STOP; goto bb0;
 #line 66 "examples/json/value.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -5431,7 +5436,7 @@ bb2:
 #line 70 "examples/json/value.hero"
     {
 #line 70 "examples/json/value.hero"
-      const void *found = hero_map_find(t18, &t19);
+      HERO_NODEBUG const void *found = hero_map_find(t18, &t19);
 #line 70 "examples/json/value.hero"
       if (found == NULL) {
 #line 70 "examples/json/value.hero"
@@ -5486,7 +5491,7 @@ bb3:
 bb4:
 #line 72 "examples/json/value.hero"
     t35 = h1_out;
-#line 5490 "main.c"
+#line 5495 "main.c"
     hero_array_incref(t35);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -5532,7 +5537,7 @@ bb6:
     t25 = h5_f0;
 #line 70 "examples/json/value.hero"
     t26 = t25.as.err;
-#line 5536 "main.c"
+#line 5541 "main.c"
     hero_panic_must(t26);
     hero_unreachable();
 }
@@ -5540,7 +5545,7 @@ bb6:
 #line 79 "examples/json/value.hero"
 HeroStr h_value_quote(HeroStr h0_s) {
 #line 79 "examples/json/value.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_c = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG bool t33; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t38; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_c = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG bool t33; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t38; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_ENTRY_STOP; goto bb0;
 #line 79 "examples/json/value.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_22);
@@ -5650,7 +5655,7 @@ bb4:
     h7_own7 = t48;
 #line 95 "examples/json/value.hero"
     hero_str_decref(t54);
-#line 5654 "main.c"
+#line 5659 "main.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -5724,13 +5729,13 @@ bb13:
     hero_array_push_owned(&h1_out, &t38);
 #line 92 "examples/json/value.hero"
     goto bb5;
-#line 5728 "main.c"
+#line 5733 "main.c"
 }
 
 #line 100 "examples/json/value.hero"
 int64_t h_value_size(h_value_Json h0_j) {
 #line 100 "examples/json/value.hero"
-    HERO_NODEBUG h_value_Json h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_value_Json_c_array h3_a = {0}; h_value_Json_c_object h4_o = {0}; HERO_NODEBUG h_value_Json t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_value_Json t8; HERO_NODEBUG h_value_Json_c_array t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_value_Json_c_array t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_value_Json t15; HERO_NODEBUG h_value_Json_c_object t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_value_Json_c_object t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG h_value_Json t23; HERO_NODEBUG h_value_Json_c_array t24; HERO_NODEBUG h_value_Json_c_object t25; goto bb0;
+    HERO_NODEBUG h_value_Json h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_value_Json_c_array h3_a = {0}; h_value_Json_c_object h4_o = {0}; HERO_NODEBUG h_value_Json t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_value_Json t8; HERO_NODEBUG h_value_Json_c_array t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_value_Json_c_array t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_value_Json t15; HERO_NODEBUG h_value_Json_c_object t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_value_Json_c_object t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG h_value_Json t23; HERO_NODEBUG h_value_Json_c_array t24; HERO_NODEBUG h_value_Json_c_object t25; HERO_ENTRY_STOP; goto bb0;
 #line 100 "examples/json/value.hero"
 bb0:
     t1 = h0_j;
@@ -5768,7 +5773,7 @@ bb0:
 bb1:
 #line 101 "examples/json/value.hero"
     t22 = h2_r0;
-#line 5772 "main.c"
+#line 5777 "main.c"
     h_value_Json_release(hero_slot_escape(&h1_s0));
     h_value_Json_c_array_release(hero_slot_escape(&h3_a));
     h_value_Json_c_object_release(hero_slot_escape(&h4_o));
@@ -5860,13 +5865,13 @@ bb7:
     h2_r0 = t21;
 #line 101 "examples/json/value.hero"
     goto bb1;
-#line 5864 "main.c"
+#line 5869 "main.c"
 }
 
 #line 109 "examples/json/value.hero"
 int64_t h_value_size_of_all(HeroArrayHeader * h0_items) {
 #line 109 "examples/json/value.hero"
-    int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_value_Json h4_item = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_value_Json t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG h_value_Json t20; goto bb0;
+    int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_value_Json h4_item = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_value_Json t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG h_value_Json t20; HERO_ENTRY_STOP; goto bb0;
 #line 109 "examples/json/value.hero"
 bb0:
     t1 = INT64_C(0);
@@ -5943,7 +5948,7 @@ bb3:
 bb4:
 #line 115 "examples/json/value.hero"
     t18 = h1_total;
-#line 5947 "main.c"
+#line 5952 "main.c"
     hero_array_release_at(&h2_xs0);
     h_value_Json_release(hero_slot_escape(&h4_item));
     return t18;
@@ -5952,7 +5957,7 @@ bb4:
 #line 117 "examples/json/value.hero"
 int64_t h_value_size_of_fields(HeroMapHeader * h0_fields) {
 #line 117 "examples/json/value.hero"
-    int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_0opt_2e71b378 h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_2e71b378 t15; HERO_NODEBUG h_0opt_2e71b378 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_2e71b378 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_0opt_2e71b378 t22; HERO_NODEBUG h_value_Json t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_2e71b378 t33; HERO_NODEBUG h_0opt_2e71b378 t34; goto bb0;
+    int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_0opt_2e71b378 h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_2e71b378 t15; HERO_NODEBUG h_0opt_2e71b378 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_2e71b378 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_0opt_2e71b378 t22; HERO_NODEBUG h_value_Json t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_2e71b378 t33; HERO_NODEBUG h_0opt_2e71b378 t34; HERO_ENTRY_STOP; goto bb0;
 #line 117 "examples/json/value.hero"
 bb0:
     t1 = INT64_C(0);
@@ -6018,7 +6023,7 @@ bb2:
 #line 121 "examples/json/value.hero"
     {
 #line 121 "examples/json/value.hero"
-      const void *found = hero_map_find(t13, &t14);
+      HERO_NODEBUG const void *found = hero_map_find(t13, &t14);
 #line 121 "examples/json/value.hero"
       if (found == NULL) {
 #line 121 "examples/json/value.hero"
@@ -6073,7 +6078,7 @@ bb3:
 bb4:
 #line 123 "examples/json/value.hero"
     t29 = h1_total;
-#line 6077 "main.c"
+#line 6082 "main.c"
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_k);
     h_0opt_2e71b378_release(hero_slot_escape(&h5_f0));
@@ -6099,7 +6104,7 @@ bb6:
     t20 = h5_f0;
 #line 121 "examples/json/value.hero"
     t21 = t20.as.err;
-#line 6103 "main.c"
+#line 6108 "main.c"
     hero_panic_must(t21);
     hero_unreachable();
 }
@@ -6107,7 +6112,7 @@ bb6:
 #line 126 "examples/json/value.hero"
 int64_t h_value_depth(h_value_Json h0_j) {
 #line 126 "examples/json/value.hero"
-    HERO_NODEBUG h_value_Json h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_value_Json_c_array h3_a = {0}; h_value_Json_c_object h4_o = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_value_Json t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_value_Json t8; HERO_NODEBUG h_value_Json_c_array t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_value_Json_c_array t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_value_Json t15; HERO_NODEBUG h_value_Json_c_object t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_value_Json_c_object t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_value_Json t24; HERO_NODEBUG h_value_Json_c_array t25; HERO_NODEBUG h_value_Json_c_object t26; HERO_NODEBUG HeroArrayHeader * t27; goto bb0;
+    HERO_NODEBUG h_value_Json h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_value_Json_c_array h3_a = {0}; h_value_Json_c_object h4_o = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_value_Json t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_value_Json t8; HERO_NODEBUG h_value_Json_c_array t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_value_Json_c_array t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_value_Json t15; HERO_NODEBUG h_value_Json_c_object t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_value_Json_c_object t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_value_Json t24; HERO_NODEBUG h_value_Json_c_array t25; HERO_NODEBUG h_value_Json_c_object t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_ENTRY_STOP; goto bb0;
 #line 126 "examples/json/value.hero"
 bb0:
     t1 = h0_j;
@@ -6145,7 +6150,7 @@ bb0:
 bb1:
 #line 127 "examples/json/value.hero"
     t23 = h2_r0;
-#line 6149 "main.c"
+#line 6154 "main.c"
     h_value_Json_release(hero_slot_escape(&h1_s0));
     h_value_Json_c_array_release(hero_slot_escape(&h3_a));
     h_value_Json_c_object_release(hero_slot_escape(&h4_o));
@@ -6246,13 +6251,13 @@ bb7:
     h2_r0 = t22;
 #line 127 "examples/json/value.hero"
     goto bb1;
-#line 6250 "main.c"
+#line 6255 "main.c"
 }
 
 #line 135 "examples/json/value.hero"
 int64_t h_value_deepest(HeroArrayHeader * h0_items) {
 #line 135 "examples/json/value.hero"
-    int64_t h1_best; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_value_Json h4_item = {0}; int64_t h5_d; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG h_value_Json t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG h_value_Json t22; goto bb0;
+    int64_t h1_best; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_value_Json h4_item = {0}; int64_t h5_d; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_value_Json t10; HERO_NODEBUG h_value_Json t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG h_value_Json t22; HERO_ENTRY_STOP; goto bb0;
 #line 135 "examples/json/value.hero"
 bb0:
     t1 = INT64_C(0);
@@ -6331,7 +6336,7 @@ bb3:
 bb4:
 #line 144 "examples/json/value.hero"
     t20 = h1_best;
-#line 6335 "main.c"
+#line 6340 "main.c"
     hero_array_release_at(&h2_xs0);
     h_value_Json_release(hero_slot_escape(&h4_item));
     return t20;
@@ -6348,13 +6353,13 @@ bb6:
 bb7:
 #line 142 "examples/json/value.hero"
     goto bb5;
-#line 6352 "main.c"
+#line 6357 "main.c"
 }
 
 #line 146 "examples/json/value.hero"
 HeroArrayHeader * h_value_fields_of(HeroMapHeader * h0_fields) {
 #line 146 "examples/json/value.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_2e71b378 h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroMapHeader * t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_2e71b378 t16; HERO_NODEBUG h_0opt_2e71b378 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_2e71b378 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG h_0opt_2e71b378 t23; HERO_NODEBUG h_value_Json t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_2e71b378 t36; HERO_NODEBUG h_0opt_2e71b378 t37; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_k = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_2e71b378 h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroMapHeader * t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_2e71b378 t16; HERO_NODEBUG h_0opt_2e71b378 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_2e71b378 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG h_0opt_2e71b378 t23; HERO_NODEBUG h_value_Json t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_2e71b378 t36; HERO_NODEBUG h_0opt_2e71b378 t37; HERO_ENTRY_STOP; goto bb0;
 #line 146 "examples/json/value.hero"
 bb0:
     t1 = hero_array_new(&h_value_Json_desc, 1);
@@ -6438,7 +6443,7 @@ bb2:
 #line 150 "examples/json/value.hero"
     {
 #line 150 "examples/json/value.hero"
-      const void *found = hero_map_find(t14, &t15);
+      HERO_NODEBUG const void *found = hero_map_find(t14, &t15);
 #line 150 "examples/json/value.hero"
       if (found == NULL) {
 #line 150 "examples/json/value.hero"
@@ -6493,7 +6498,7 @@ bb3:
 bb4:
 #line 152 "examples/json/value.hero"
     t29 = h1_out;
-#line 6497 "main.c"
+#line 6502 "main.c"
     hero_array_incref(t29);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -6519,7 +6524,7 @@ bb6:
     t21 = h5_f0;
 #line 150 "examples/json/value.hero"
     t22 = t21.as.err;
-#line 6523 "main.c"
+#line 6528 "main.c"
     hero_panic_must(t22);
     hero_unreachable();
 }
@@ -6527,7 +6532,7 @@ bb6:
 #line 162 "examples/json/value.hero"
 h_0opt_2e71b378 h_value_field(h_value_Json h0_j, HeroStr h1_key) {
 #line 162 "examples/json/value.hero"
-    HERO_NODEBUG h_value_Json h2_s0 = {0}; HERO_NODEBUG h_0opt_2e71b378 h3_r0 = {0}; h_value_Json_c_object h4_o = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_2e71b378 h9_own9 = {0}; HERO_NODEBUG h_value_Json t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_value_Json t4; HERO_NODEBUG h_value_Json_c_object t5; HERO_NODEBUG h_value_Json_c_object t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_2e71b378 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_2e71b378 t16; HERO_NODEBUG h_0opt_2e71b378 t17; HERO_NODEBUG h_value_Json t18; HERO_NODEBUG h_value_Json_c_object t19; HERO_NODEBUG h_0opt_2e71b378 t20; HERO_NODEBUG h_0opt_2e71b378 t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_0opt_2e71b378 t25; HERO_NODEBUG h_0opt_2e71b378 t26; goto bb0;
+    HERO_NODEBUG h_value_Json h2_s0 = {0}; HERO_NODEBUG h_0opt_2e71b378 h3_r0 = {0}; h_value_Json_c_object h4_o = {0}; HERO_NODEBUG h_0opt_2e71b378 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_2e71b378 h9_own9 = {0}; HERO_NODEBUG h_value_Json t1; HERO_NODEBUG h_value_Json t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_value_Json t4; HERO_NODEBUG h_value_Json_c_object t5; HERO_NODEBUG h_value_Json_c_object t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_2e71b378 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_2e71b378 t16; HERO_NODEBUG h_0opt_2e71b378 t17; HERO_NODEBUG h_value_Json t18; HERO_NODEBUG h_value_Json_c_object t19; HERO_NODEBUG h_0opt_2e71b378 t20; HERO_NODEBUG h_0opt_2e71b378 t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_0opt_2e71b378 t25; HERO_NODEBUG h_0opt_2e71b378 t26; HERO_ENTRY_STOP; goto bb0;
 #line 162 "examples/json/value.hero"
 bb0:
     t1 = h0_j;
@@ -6565,7 +6570,7 @@ bb0:
 bb1:
 #line 163 "examples/json/value.hero"
     t17 = h3_r0;
-#line 6569 "main.c"
+#line 6574 "main.c"
     h_0opt_2e71b378_retain(&t17);
     h_value_Json_release(hero_slot_escape(&h2_s0));
     h_0opt_2e71b378_release(hero_slot_escape(&h3_r0));
@@ -6598,7 +6603,7 @@ bb2:
 #line 164 "examples/json/value.hero"
     {
 #line 164 "examples/json/value.hero"
-      const void *found = hero_map_find(t7, &t8);
+      HERO_NODEBUG const void *found = hero_map_find(t7, &t8);
 #line 164 "examples/json/value.hero"
       if (found == NULL) {
 #line 164 "examples/json/value.hero"
@@ -6683,13 +6688,13 @@ bb3:
     h_0opt_2e71b378_release(&t26);
 #line 163 "examples/json/value.hero"
     goto bb1;
-#line 6687 "main.c"
+#line 6692 "main.c"
 }
 
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -6738,7 +6743,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 6742 "main.c"
+#line 6747 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -6747,25 +6752,25 @@ bb3:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 6751 "main.c"
+#line 6756 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 6757 "main.c"
+#line 6762 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 6763 "main.c"
+#line 6768 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 6769 "main.c"
+#line 6774 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -6774,7 +6779,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_ENTRY_STOP; goto bb0;
 #line 167 "<heroes library>"
 bb0:
     t1 = INT64_C(0);
@@ -7000,7 +7005,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 7004 "main.c"
+#line 7009 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -7022,7 +7027,7 @@ bb13:
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -7079,7 +7084,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 7083 "main.c"
+#line 7088 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -7090,7 +7095,7 @@ bb3:
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
 #line 227 "<heroes library>"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 227 "<heroes library>"
 bb0:
     t1 = h0_code;
@@ -7098,7 +7103,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 7102 "main.c"
+#line 7107 "main.c"
 }
 HERO_TU_LOCAL void h_parse_Reader_retain(const h_parse_Reader *v) {
     hero_str_incref(v->f_text);

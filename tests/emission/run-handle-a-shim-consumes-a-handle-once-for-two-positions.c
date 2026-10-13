@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -90,7 +95,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1fadc951, "refs before: ");
 HERO_STR_STATIC(hero_str_4fad0733, "freed through the ssl");
 
-#line 94 "handleashimconsumesahandleoncefortwopositions.c"
+#line 99 "handleashimconsumesahandleoncefortwopositions.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -138,7 +143,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 142 "handleashimconsumesahandleoncefortwopositions.c"
+#line 147 "handleashimconsumesahandleoncefortwopositions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_Bio_eq(bio * const *a, bio * const *b);
@@ -159,7 +164,7 @@ void h_handleashimconsumesahandleoncefortwopositions_main(void);
 #line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
 void h_handleashimconsumesahandleoncefortwopositions_main(void) {
 #line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
-    ssl * h0_s; bio * h1_b; HERO_NODEBUG ssl * t1; HERO_NODEBUG bio * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bio * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG ssl * t6; HERO_NODEBUG bio * t7; HERO_NODEBUG ssl * t8; HERO_NODEBUG HeroStr t9; goto bb0;
+    ssl * h0_s; bio * h1_b; HERO_NODEBUG ssl * t1; HERO_NODEBUG bio * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bio * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG ssl * t6; HERO_NODEBUG bio * t7; HERO_NODEBUG ssl * t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
 bb0:
     t1 = ssl_new();
@@ -195,7 +200,7 @@ bb0:
 #line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     hero_handle_alive(t7, "the argument `b` of `ssl_set_one_bio`");
 #line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
-    uint64_t hero_life_1_0 = hero_handle_transferring(t7, "bio_free");
+    HERO_NODEBUG uint64_t hero_life_1_0 = hero_handle_transferring(t7, "bio_free");
 #line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     (void)ssl_set_one_bio(t6, t7);
 #line 19 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
@@ -208,7 +213,7 @@ bb0:
 #line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     hero_handle_alive(t8, "the argument `s` of `ssl_free`");
 #line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t8, "ssl_free", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "ssl_free", NULL);
 #line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     (void)ssl_free(t8);
 #line 20 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
@@ -222,7 +227,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
     return;
-#line 226 "handleashimconsumesahandleoncefortwopositions.c"
+#line 231 "handleashimconsumesahandleoncefortwopositions.c"
 }
 HERO_TU_LOCAL bool h_handleashimconsumesahandleoncefortwopositions_Bio_eq(bio * const *a, bio * const *b) {
     return hero_handle_eq(*a, *b);

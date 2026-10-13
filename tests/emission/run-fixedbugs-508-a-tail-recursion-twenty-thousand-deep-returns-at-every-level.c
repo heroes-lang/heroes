@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
+#line 54 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -75,7 +80,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 79 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
+#line 84 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,7 +98,7 @@ void h_fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel_main(void
 #line 13 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
 int64_t h_fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel_sum_to(int64_t h0_n, int64_t h1_acc) {
 #line 13 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
-    HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; goto bb0;
+    HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
 bb0:
     t1 = h0_n;
@@ -137,7 +142,7 @@ bb3:
     goto bb1;
 #line 15 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
 bb4:
-#line 141 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
+#line 146 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
     t12 = h2_ret0;
     return t12;
 }
@@ -145,7 +150,7 @@ bb4:
 #line 18 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
 void h_fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel_main(void) {
 #line 18 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
 bb0:
     t1 = INT64_C(20000);
@@ -159,7 +164,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-508-a-tail-recursion-twenty-thousand-deep-returns-at-every-level.hero"
     return;
-#line 163 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
+#line 168 "fixedbugs508atailrecursiontwentythousanddeepreturnsateverylevel.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
+#line 54 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -75,7 +80,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 79 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
+#line 84 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +99,7 @@ void h_fixedbugs520acyclewithawayoutitnevertakesaborts_main(void);
 #line 9 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 int64_t h_fixedbugs520acyclewithawayoutitnevertakesaborts_ping(int64_t h0_n) {
 #line 9 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -128,7 +133,7 @@ bb3:
     goto bb1;
 #line 11 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 bb4:
-#line 132 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
+#line 137 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
     t7 = h1_ret0;
     return t7;
 }
@@ -136,7 +141,7 @@ bb4:
 #line 14 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 int64_t h_fixedbugs520acyclewithawayoutitnevertakesaborts_pong(int64_t h0_n) {
 #line 14 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -144,13 +149,13 @@ bb0:
     t2 = h_fixedbugs520acyclewithawayoutitnevertakesaborts_ping(t1);
 #line 15 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
     return t2;
-#line 148 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
+#line 153 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 void h_fixedbugs520acyclewithawayoutitnevertakesaborts_main(void) {
 #line 17 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 bb0:
     t1 = INT64_C(1);
@@ -162,7 +167,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
     return;
-#line 166 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
+#line 171 "fixedbugs520acyclewithawayoutitnevertakesaborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

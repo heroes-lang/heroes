@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -100,7 +105,7 @@ HERO_STR_STATIC(hero_str_4a7e2e7, "select count(*) from note");
 HERO_STR_STATIC(hero_str_31daf47e, "longest: ");
 HERO_STR_STATIC(hero_str_4ea48131, "select max(length(body)) from note");
 
-#line 104 "main.c"
+#line 109 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -151,7 +156,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 155 "main.c"
+#line 160 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b);
@@ -175,7 +180,7 @@ void h_main_main(void);
 
 #line 32 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_OK(void) {
-#line 179 "main.c"
+#line 184 "main.c"
     return SQLITE_OK;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -193,7 +198,7 @@ int64_t h_main_SQLITE_OK(void) {
 
 #line 33 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_ROW(void) {
-#line 197 "main.c"
+#line 202 "main.c"
     return SQLITE_ROW;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -212,7 +217,7 @@ int64_t h_main_SQLITE_ROW(void) {
 #line 76 "examples/sqlite/main.hero"
 int64_t h_main_run(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 76 "examples/sqlite/main.hero"
-    HERO_NODEBUG sqlite3 * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG void * t4; HERO_NODEBUG void * t5; HERO_NODEBUG void * t6; HERO_NODEBUG int64_t t7; goto bb0;
+    HERO_NODEBUG sqlite3 * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG void * t4; HERO_NODEBUG void * t5; HERO_NODEBUG void * t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
 #line 76 "examples/sqlite/main.hero"
 bb0:
     t1 = h0_db;
@@ -232,7 +237,7 @@ bb0:
     t7 = sqlite3_exec(t1, hero_cstr_nonnull(t3), t4, t5, t6);
 #line 77 "examples/sqlite/main.hero"
     return t7;
-#line 236 "main.c"
+#line 241 "main.c"
 }
 
 #line 80 "examples/sqlite/main.hero"
@@ -242,7 +247,7 @@ int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 80 "examples/sqlite/main.hero"
 #define h3_tail (*hero_lend_h3_tail)
 #line 80 "examples/sqlite/main.hero"
-    sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "main.first_int", "statement"); const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "main.first_int", "tail"); int64_t h4_rc; int64_t h5_value; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG sqlite3_stmt * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG sqlite3 * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG sqlite3_stmt * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG sqlite3_stmt * t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG sqlite3_stmt * t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; goto bb0;
+    sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "main.first_int", "statement"); const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "main.first_int", "tail"); int64_t h4_rc; int64_t h5_value; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG sqlite3_stmt * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG sqlite3 * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG sqlite3_stmt * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG sqlite3_stmt * t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG sqlite3_stmt * t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_ENTRY_STOP; goto bb0;
 #line 80 "examples/sqlite/main.hero"
 bb0:
     t1 = ((void *)0);
@@ -324,7 +329,7 @@ bb4:
 #line 97 "examples/sqlite/main.hero"
     hero_handle_alive(t24, "the argument `statement` of `sqlite3_finalize`");
 #line 97 "examples/sqlite/main.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t24, "sqlite3_finalize", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "sqlite3_finalize", NULL);
 #line 97 "examples/sqlite/main.hero"
     (void)sqlite3_finalize(t24);
 #line 97 "examples/sqlite/main.hero"
@@ -356,7 +361,7 @@ bb6:
     goto bb4;
 #line 96 "examples/sqlite/main.hero"
 bb7:
-#line 360 "main.c"
+#line 365 "main.c"
     t27 = h6_ret0;
     hero_lend_local_give(hero_lend_h3_tail);
     hero_lend_local_give(hero_lend_h2_statement);
@@ -370,7 +375,7 @@ void h_main_main(void) {
 #line 100 "examples/sqlite/main.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 100 "examples/sqlite/main.hero"
-    sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "main.main", "db"); HERO_NODEBUG sqlite3 * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG sqlite3 * t8; HERO_NODEBUG sqlite3 * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG sqlite3 * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t16; HERO_NODEBUG sqlite3 * t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG sqlite3 * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG sqlite3 * t24; goto bb0;
+    sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "main.main", "db"); HERO_NODEBUG sqlite3 * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG sqlite3 * t8; HERO_NODEBUG sqlite3 * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG sqlite3 * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t16; HERO_NODEBUG sqlite3 * t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG sqlite3 * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG sqlite3 * t24; HERO_ENTRY_STOP; goto bb0;
 #line 100 "examples/sqlite/main.hero"
 bb0:
     t1 = ((void *)0);
@@ -437,7 +442,7 @@ bb1:
 #line 119 "examples/sqlite/main.hero"
     hero_handle_alive(t24, "the argument `db` of `sqlite3_close`");
 #line 119 "examples/sqlite/main.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t24, "sqlite3_close", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t24, "sqlite3_close", NULL);
 #line 119 "examples/sqlite/main.hero"
     (void)sqlite3_close(t24);
 #line 119 "examples/sqlite/main.hero"
@@ -460,7 +465,7 @@ bb2:
 #line 113 "examples/sqlite/main.hero"
     hero_handle_alive(t8, "the argument `db` of `sqlite3_close`");
 #line 113 "examples/sqlite/main.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t8, "sqlite3_close", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "sqlite3_close", NULL);
 #line 113 "examples/sqlite/main.hero"
     (void)sqlite3_close(t8);
 #line 113 "examples/sqlite/main.hero"
@@ -479,7 +484,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 113 "examples/sqlite/main.hero"
     return;
-#line 483 "main.c"
+#line 488 "main.c"
 }
 #undef h0_db
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b) {
