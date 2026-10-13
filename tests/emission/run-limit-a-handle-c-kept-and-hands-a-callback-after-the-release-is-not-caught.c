@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -88,7 +89,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_12576dd3, "the callback read after the release: ");
 
-#line 92 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 93 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 typedef int64_t (*h_0fn_7a996e48)(node *);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -136,7 +137,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 140 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 141 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_Node_eq(node * const *a, node * const *b);
@@ -163,7 +164,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 int64_t h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
-    hero_thread_guard("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen"); node * t1; int64_t t2; goto bb0;
+    hero_thread_guard("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen"); HERO_NODEBUG node * t1; HERO_NODEBUG int64_t t2; goto bb0;
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 bb0:
     t1 = h0_n;
@@ -173,7 +174,7 @@ bb0:
     t2 = node_value(t1);
 #line 25 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return t2;
-#line 177 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 178 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 
 int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
@@ -185,7 +186,7 @@ int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(
 #line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 void h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_main(void) {
 #line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
-    node * h0_a; node * t1; h_0fn_7a996e48 t2; node * t3; node * t4; HeroStr t5; int64_t t6; goto bb0;
+    node * h0_a; HERO_NODEBUG node * t1; HERO_NODEBUG h_0fn_7a996e48 t2; HERO_NODEBUG node * t3; HERO_NODEBUG node * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 bb0:
     t1 = node_new();
@@ -225,7 +226,7 @@ bb0:
     hero_print_end();
 #line 32 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
     return;
-#line 229 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
+#line 230 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

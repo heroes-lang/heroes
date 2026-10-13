@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -82,7 +83,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 86 "fixedbugscwritesoverastringsheader.c"
+#line 87 "fixedbugscwritesoverastringsheader.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -126,7 +127,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "fixedbugscwritesoverastringsheader.c"
+#line 131 "fixedbugscwritesoverastringsheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -143,7 +144,7 @@ void h_fixedbugscwritesoverastringsheader_main(void);
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 void h_fixedbugscwritesoverastringsheader_main(void) {
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    HeroStr h0_word = {0}; HeroStr h1_own1 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; HeroStr t4; const char * t5; HeroStr t6; HeroStr t7; HeroStr t8; goto bb0;
+    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3205);
@@ -175,7 +176,7 @@ bb0:
     hero_print_str(t6);
 #line 33 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
     hero_print_end();
-#line 179 "fixedbugscwritesoverastringsheader.c"
+#line 180 "fixedbugscwritesoverastringsheader.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;

@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -50,7 +51,7 @@ HERO_STR_STATIC(hero_str_2e771ab1, "twelve");
 HERO_STR_STATIC(hero_str_14ab8a64, "seventeen");
 HERO_STR_STATIC(hero_str_368d30e9, "fifteen");
 
-#line 54 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 55 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder {
     h_0fn_48ac9712 f_f;
@@ -96,7 +97,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 100 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 101 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder_eq(const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *a, const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *b);
@@ -131,7 +132,7 @@ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextna
 #line 23 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_twice(int64_t h0_x) {
 #line 23 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
 #line 23 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h0_x;
@@ -141,13 +142,13 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 24 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     return t3;
-#line 145 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 146 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_apply(h_0fn_48ac9712 h0_f, int64_t h1_v) {
 #line 31 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    h_0fn_48ac9712 t1; int64_t t2; int64_t t3; goto bb0;
+    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
 #line 31 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h0_f;
@@ -157,25 +158,25 @@ bb0:
     t3 = t1(t2);
 #line 32 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     return t3;
-#line 161 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 162 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 h_0fn_6f1dc5d7 h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_shout(void) {
 #line 34 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    h_0fn_6f1dc5d7 t1; goto bb0;
+    HERO_NODEBUG h_0fn_6f1dc5d7 t1; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1e58d9;
 #line 35 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     return t1;
-#line 173 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 174 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(h_0opt_30514ebf h0_f) {
 #line 37 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    h_0opt_30514ebf h1_s0 = {0}; h_0fn_48ac9712 h2_g; HeroFailure h3_e = {0}; int64_t h4_ret0; h_0opt_30514ebf t1; h_0opt_30514ebf t2; int64_t t3; h_0opt_30514ebf t4; h_0fn_48ac9712 t5; h_0fn_48ac9712 t6; int64_t t7; int64_t t8; h_0opt_30514ebf t9; HeroFailure t10; HeroFailure t11; HeroStr t12; int64_t t13; int64_t t14; h_0opt_30514ebf t15; HeroFailure t16; goto bb0;
+    HERO_NODEBUG h_0opt_30514ebf h1_s0 = {0}; h_0fn_48ac9712 h2_g; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG h_0opt_30514ebf t1; HERO_NODEBUG h_0opt_30514ebf t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0opt_30514ebf t4; HERO_NODEBUG h_0fn_48ac9712 t5; HERO_NODEBUG h_0fn_48ac9712 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_30514ebf t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_30514ebf t15; HERO_NODEBUG HeroFailure t16; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h0_f;
@@ -243,7 +244,7 @@ bb3:
     goto bb4;
 #line 40 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb4:
-#line 247 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 248 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     t14 = h4_ret0;
     h_0opt_30514ebf_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h3_e);
@@ -253,7 +254,7 @@ bb4:
 #line 51 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 void h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_main(void) {
 #line 51 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    h_0fn_48ac9712 h0_f; h_0fn_6f1dc5d7 h1_g; h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder h2_h; HeroArrayHeader * h3_fs = {0}; HeroArrayHeader * h4_mixed = {0}; HeroArrayHeader * h5_grown = {0}; h_0fn_48ac9712 h6_cell; h_0fn_48ac9712 h7_r0; h_0fn_48ac9712 h8_chosen; h_0fn_643113a0 h9_pair; h_0fn_1fb9aa18 h10_other; HeroStr h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; h_0opt_30514ebf h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; h_0fn_48ac9712 t1; h_0fn_48ac9712 t2; int64_t t3; int64_t t4; h_0fn_48ac9712 t5; int64_t t6; int64_t t7; h_0fn_6f1dc5d7 t8; h_0fn_6f1dc5d7 t9; HeroStr t10; HeroStr t11; h_0fn_48ac9712 t12; h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder t13; h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder t14; h_0fn_48ac9712 t15; int64_t t16; int64_t t17; h_0fn_48ac9712 t18; h_0fn_48ac9712 t19; HeroArrayHeader * t20; HeroArrayHeader * t21; int64_t t22; h_0fn_48ac9712 t23; int64_t t24; int64_t t25; HeroArrayHeader * t26; int64_t t27; h_0fn_48ac9712 t28; int64_t t29; int64_t t30; int64_t t31; h_0fn_48ac9712 t32; h_0fn_48ac9712 t33; HeroArrayHeader * t34; HeroArrayHeader * t35; int64_t t36; h_0fn_48ac9712 t37; int64_t t38; int64_t t39; HeroArrayHeader * t40; h_0fn_48ac9712 t42; HeroArrayHeader * t44; int64_t t45; h_0fn_48ac9712 t46; int64_t t47; int64_t t48; h_0fn_48ac9712 t49; h_0fn_48ac9712 t50; h_0fn_48ac9712 t51; int64_t t52; int64_t t53; HeroArrayHeader * t54; int64_t t55; int64_t t56; bool t57; h_0fn_48ac9712 t58; h_0fn_48ac9712 t59; h_0fn_48ac9712 t60; h_0fn_48ac9712 t61; int64_t t62; int64_t t63; h_0fn_48ac9712 t64; h_0opt_30514ebf t65; int64_t t66; h_0fn_643113a0 t67; h_0fn_643113a0 t68; int64_t t69; int64_t t70; int64_t t71; h_0fn_1fb9aa18 t72; h_0fn_1fb9aa18 t73; HeroStr t74; int64_t t75; HeroStr t76; int64_t t77; int64_t t78; HeroStr t79; HeroStr t80; int64_t t81; int64_t t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroArrayHeader * t86; HeroArrayHeader * t87; HeroArrayHeader * t88; HeroArrayHeader * t89; HeroArrayHeader * t90; HeroArrayHeader * t91; HeroArrayHeader * t92; h_0opt_30514ebf t93; HeroStr t94; HeroStr t95; HeroStr t96; goto bb0;
+    h_0fn_48ac9712 h0_f; h_0fn_6f1dc5d7 h1_g; h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder h2_h; HeroArrayHeader * h3_fs = {0}; HeroArrayHeader * h4_mixed = {0}; HeroArrayHeader * h5_grown = {0}; h_0fn_48ac9712 h6_cell; HERO_NODEBUG h_0fn_48ac9712 h7_r0; h_0fn_48ac9712 h8_chosen; h_0fn_643113a0 h9_pair; h_0fn_1fb9aa18 h10_other; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG h_0opt_30514ebf h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_0fn_48ac9712 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0fn_6f1dc5d7 t8; HERO_NODEBUG h_0fn_6f1dc5d7 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_NODEBUG h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder t13; HERO_NODEBUG h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder t14; HERO_NODEBUG h_0fn_48ac9712 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_0fn_48ac9712 t18; HERO_NODEBUG h_0fn_48ac9712 t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG h_0fn_48ac9712 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_0fn_48ac9712 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG h_0fn_48ac9712 t32; HERO_NODEBUG h_0fn_48ac9712 t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG h_0fn_48ac9712 t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG h_0fn_48ac9712 t42; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG h_0fn_48ac9712 t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG h_0fn_48ac9712 t49; HERO_NODEBUG h_0fn_48ac9712 t50; HERO_NODEBUG h_0fn_48ac9712 t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG h_0fn_48ac9712 t58; HERO_NODEBUG h_0fn_48ac9712 t59; HERO_NODEBUG h_0fn_48ac9712 t60; HERO_NODEBUG h_0fn_48ac9712 t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG h_0fn_48ac9712 t64; HERO_NODEBUG h_0opt_30514ebf t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG h_0fn_643113a0 t67; HERO_NODEBUG h_0fn_643113a0 t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG h_0fn_1fb9aa18 t72; HERO_NODEBUG h_0fn_1fb9aa18 t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG HeroArrayHeader * t92; HERO_NODEBUG h_0opt_30514ebf t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG HeroStr t95; HERO_NODEBUG HeroStr t96; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1b9a87;
@@ -562,7 +563,7 @@ bb1:
     hero_print_str(t84);
 #line 83 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_end();
-#line 566 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 567 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_release_at(&h3_fs);
     hero_array_release_at(&h4_mixed);
     hero_array_release_at(&h5_grown);
@@ -591,13 +592,13 @@ bb3:
     h7_r0 = t59;
 #line 70 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     goto bb1;
-#line 595 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 596 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; HeroStr t8; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -654,7 +655,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 658 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 659 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -667,11 +668,11 @@ bb3:
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1e58d9(HeroStr h0_x) {
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h0_x;
-#line 675 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 676 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -681,13 +682,13 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1b9a87(int64_t h0_x) {
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h0_x;
 #line 21 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     return t1;
-#line 691 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 692 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -695,7 +696,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_first_37f8817a(int64_t h0_x, int64_t h1_y) {
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    HeroArrayHeader * h2_kept = {0}; HeroArrayHeader * h3_own3 = {0}; int64_t t1; HeroArrayHeader * t2; HeroStr t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; bool t7; int64_t t8; HeroArrayHeader * t9; HeroArrayHeader * t10; goto bb0;
+    HeroArrayHeader * h2_kept = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroArrayHeader * t10; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h1_y;
@@ -731,7 +732,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb1:
     t8 = h0_x;
-#line 735 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 736 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h3_own3);
     return t8;
@@ -745,7 +746,7 @@ bb2:
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_first_f6f4f7b(HeroStr h0_x, int64_t h1_y) {
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    HeroArrayHeader * h2_kept = {0}; HeroArrayHeader * h3_own3 = {0}; int64_t t1; HeroArrayHeader * t2; HeroStr t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; bool t7; HeroStr t8; HeroArrayHeader * t9; HeroArrayHeader * t10; goto bb0;
+    HeroArrayHeader * h2_kept = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroArrayHeader * t10; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h1_y;
@@ -781,7 +782,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb1:
     t8 = h0_x;
-#line 785 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 786 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t8);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h3_own3);
@@ -796,7 +797,7 @@ bb2:
 #line 42 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_counted_1e58d9(HeroStr h0_x) {
 #line 42 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    h_0fn_48ac9712 h1_f; h_0fn_48ac9712 t1; h_0fn_48ac9712 t2; int64_t t3; int64_t t4; HeroStr t5; goto bb0;
+    h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1b9a87;
@@ -812,7 +813,7 @@ bb0:
 #line 44 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_print_end();
     t5 = h0_x;
-#line 816 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 817 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t5);
     return t5;
 }
@@ -822,7 +823,7 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_outer_1b9a87(int64_t h0_x) {
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    h_0fn_48ac9712 h1_f; h_0fn_48ac9712 t1; h_0fn_48ac9712 t2; int64_t t3; int64_t t4; goto bb0;
+    h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; goto bb0;
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1b9a87;
@@ -835,7 +836,7 @@ bb0:
     t4 = t2(t3);
 #line 49 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     return t4;
-#line 839 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 840 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
@@ -843,7 +844,7 @@ bb0:
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_outer_1e58d9(HeroStr h0_x) {
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-    h_0fn_6f1dc5d7 h1_f; HeroStr h2_own2 = {0}; h_0fn_6f1dc5d7 t1; h_0fn_6f1dc5d7 t2; HeroStr t3; HeroStr t4; HeroStr t5; goto bb0;
+    h_0fn_6f1dc5d7 h1_f; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG h_0fn_6f1dc5d7 t1; HERO_NODEBUG h_0fn_6f1dc5d7 t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; goto bb0;
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
 bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_ident_1e58d9;
@@ -860,7 +861,7 @@ bb0:
     h2_own2 = t4;
 #line 49 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     hero_str_decref(t5);
-#line 864 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
+#line 865 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t4);
     hero_str_release_at(&h2_own2);
     return t4;

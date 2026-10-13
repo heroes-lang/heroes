@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -99,7 +100,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 103 "main.c"
+#line 104 "main.c"
 typedef struct h_game_Game {
     HeroStr f_here;
     HeroArrayHeader * f_carrying;
@@ -170,7 +171,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 174 "main.c"
+#line 175 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_game_Game_retain(const h_game_Game *v);
@@ -261,7 +262,7 @@ HeroArrayHeader * h_library_args(void);
 #line 25 "examples/adventure/main.hero"
 void h_main_main(void) {
 #line 25 "examples/adventure/main.hero"
-    HeroArrayHeader * h0_given = {0}; h_0opt_f87774a h1_s0 = {0}; HeroFailure h2_e = {0}; HeroStr h3_script = {0}; HeroArrayHeader * h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; HeroArrayHeader * t7; int64_t t8; HeroStr t9; h_0opt_f87774a t10; h_0opt_f87774a t11; int64_t t12; h_0opt_f87774a t13; HeroFailure t14; HeroStr t15; HeroArrayHeader * t16; int64_t t17; HeroStr t18; HeroStr t19; HeroFailure t20; HeroStr t21; h_0opt_f87774a t22; HeroStr t23; HeroStr t24; HeroArrayHeader * t25; HeroArrayHeader * t26; h_0opt_f87774a t27; h_0opt_f87774a t28; HeroFailure t29; HeroStr t30; goto bb0;
+    HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}; HeroFailure h2_e = {0}; HeroStr h3_script = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG HeroFailure t29; HERO_NODEBUG HeroStr t30; goto bb0;
 #line 25 "examples/adventure/main.hero"
 bb0:
     t1 = h_library_args();
@@ -406,7 +407,7 @@ bb6:
     goto bb4;
 #line 34 "examples/adventure/main.hero"
 bb7:
-#line 410 "main.c"
+#line 411 "main.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -419,7 +420,7 @@ bb7:
 #line 36 "examples/adventure/main.hero"
 void h_main_run(HeroStr h0_script) {
 #line 36 "examples/adventure/main.hero"
-    h_world_World h1_w = {0}; HeroArrayHeader * h2_lines = {0}; h_game_Turn h3_turn = {0}; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; HeroStr h6_said = {0}; h_world_World h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; h_game_Turn h9_own9 = {0}; HeroStr h10_own10 = {0}; h_world_World t1; HeroStr t2; HeroArrayHeader * t3; h_world_World t4; HeroArrayHeader * t5; h_game_Turn t6; h_game_Turn t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; int64_t t12; bool t13; HeroArrayHeader * t14; int64_t t15; HeroStr t16; HeroStr t17; int64_t t18; int64_t t19; int64_t t20; HeroStr t21; h_game_Turn t22; h_game_Game t23; int64_t t24; HeroStr t25; h_game_Turn t26; h_game_Game t27; HeroStr t28; h_world_World t29; h_world_World t30; HeroArrayHeader * t31; HeroArrayHeader * t32; h_game_Turn t33; h_game_Turn t34; HeroArrayHeader * t35; HeroStr t36; HeroStr t37; goto bb0;
+    h_world_World h1_w = {0}; HeroArrayHeader * h2_lines = {0}; h_game_Turn h3_turn = {0}; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; HeroStr h6_said = {0}; HERO_NODEBUG h_world_World h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_game_Turn h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_world_World t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG h_world_World t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG h_game_Turn t6; HERO_NODEBUG h_game_Turn t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_game_Turn t22; HERO_NODEBUG h_game_Game t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_game_Turn t26; HERO_NODEBUG h_game_Game t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_world_World t29; HERO_NODEBUG h_world_World t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG h_game_Turn t33; HERO_NODEBUG h_game_Turn t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; goto bb0;
 #line 36 "examples/adventure/main.hero"
 bb0:
     t1 = h_world_make();
@@ -573,7 +574,7 @@ bb4:
     hero_print_str(t28);
 #line 45 "examples/adventure/main.hero"
     hero_print_end();
-#line 577 "main.c"
+#line 578 "main.c"
     h_world_World_release(hero_slot_escape(&h1_w));
     hero_array_release_at(&h2_lines);
     h_game_Turn_release(hero_slot_escape(&h3_turn));
@@ -589,7 +590,7 @@ bb4:
 #line 47 "examples/adventure/main.hero"
 HeroStr h_main_ending_of(h_game_Game h0_g) {
 #line 47 "examples/adventure/main.hero"
-    HeroStr h1_ret0 = {0}; h_game_Game t1; bool t2; HeroStr t3; HeroStr t4; HeroStr t5; goto bb0;
+    HERO_NODEBUG HeroStr h1_ret0 = {0}; HERO_NODEBUG h_game_Game t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; goto bb0;
 #line 47 "examples/adventure/main.hero"
 bb0:
     t1 = h0_g;
@@ -619,7 +620,7 @@ bb3:
     goto bb1;
 #line 49 "examples/adventure/main.hero"
 bb4:
-#line 623 "main.c"
+#line 624 "main.c"
     t5 = h1_ret0;
     hero_str_incref(t5);
     return t5;
@@ -628,7 +629,7 @@ bb4:
 #line 55 "examples/adventure/main.hero"
 HeroArrayHeader * h_main_commands(HeroStr h0_script) {
 #line 55 "examples/adventure/main.hero"
-    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_line = {0}; HeroStr h5_head = {0}; bool h6_b0; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroArrayHeader * t1; HeroStr t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; bool t16; HeroStr t17; int64_t t18; uint8_t t19; uint8_t t20; bool t21; bool t22; HeroStr t24; int64_t t26; int64_t t27; int64_t t28; HeroArrayHeader * t29; HeroArrayHeader * t30; HeroArrayHeader * t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroStr t34; HeroStr t35; HeroStr t36; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_line = {0}; HeroStr h5_head = {0}; HERO_NODEBUG bool h6_b0; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; goto bb0;
 #line 55 "examples/adventure/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -741,7 +742,7 @@ bb3:
 bb4:
 #line 65 "examples/adventure/main.hero"
     t29 = h1_out;
-#line 745 "main.c"
+#line 746 "main.c"
     hero_array_incref(t29);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -788,13 +789,13 @@ bb8:
 bb9:
 #line 61 "examples/adventure/main.hero"
     goto bb5;
-#line 792 "main.c"
+#line 793 "main.c"
 }
 
 #line 67 "examples/adventure/main.hero"
 bool h_main_is_space(uint8_t h0_c) {
 #line 67 "examples/adventure/main.hero"
-    bool h1_b0; bool h2_b1; uint8_t t1; uint8_t t2; bool t3; uint8_t t4; uint8_t t5; bool t6; bool t7; uint8_t t8; uint8_t t9; bool t10; bool t11; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG bool h2_b1; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; goto bb0;
 #line 67 "examples/adventure/main.hero"
 bb0:
     t1 = h0_c;
@@ -844,13 +845,13 @@ bb4:
     t11 = h1_b0;
 #line 68 "examples/adventure/main.hero"
     return t11;
-#line 848 "main.c"
+#line 849 "main.c"
 }
 
 #line 70 "examples/adventure/main.hero"
 HeroStr h_main_trimmed(HeroStr h0_line) {
 #line 70 "examples/adventure/main.hero"
-    int64_t h1_from; bool h2_b0; int64_t h3_to; bool h4_b1; HeroStr h5_own5 = {0}; int64_t t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; HeroStr t6; int64_t t7; uint8_t t8; bool t9; bool t10; int64_t t11; int64_t t12; int64_t t13; HeroStr t14; int64_t t15; int64_t t16; int64_t t17; bool t18; HeroStr t19; int64_t t20; int64_t t21; int64_t t22; uint8_t t23; bool t24; bool t25; int64_t t26; int64_t t27; int64_t t28; HeroStr t29; int64_t t30; int64_t t31; HeroStr t32; HeroStr t33; goto bb0;
+    int64_t h1_from; HERO_NODEBUG bool h2_b0; int64_t h3_to; HERO_NODEBUG bool h4_b1; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG bool t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; goto bb0;
 #line 70 "examples/adventure/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -952,7 +953,7 @@ bb8:
     h5_own5 = t32;
 #line 81 "examples/adventure/main.hero"
     hero_str_decref(t33);
-#line 956 "main.c"
+#line 957 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
@@ -979,13 +980,13 @@ bb10:
     t25 = h4_b1;
 #line 78 "examples/adventure/main.hero"
     if (t25) goto bb7; else goto bb8;
-#line 983 "main.c"
+#line 984 "main.c"
 }
 
 #line 83 "examples/adventure/main.hero"
 HeroArrayHeader * h_main_split_lines(HeroStr h0_text) {
 #line 83 "examples/adventure/main.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; bool t7; HeroStr t8; int64_t t9; uint8_t t10; uint8_t t11; bool t12; HeroStr t14; int64_t t15; int64_t t16; HeroStr t17; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; HeroStr t26; int64_t t27; bool t28; HeroStr t30; int64_t t31; HeroStr t32; int64_t t33; HeroStr t34; HeroArrayHeader * t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroStr t39; HeroStr t40; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; goto bb0;
 #line 83 "examples/adventure/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1095,7 +1096,7 @@ bb6:
 bb7:
 #line 96 "examples/adventure/main.hero"
     t36 = h1_out;
-#line 1099 "main.c"
+#line 1100 "main.c"
     hero_array_incref(t36);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h4_own4);
@@ -1127,13 +1128,13 @@ bb8:
 bb9:
 #line 95 "examples/adventure/main.hero"
     goto bb7;
-#line 1131 "main.c"
+#line 1132 "main.c"
 }
 
 #line 23 "examples/adventure/game.hero"
 h_game_Game h_game_begin(h_world_World h0_w) {
 #line 23 "examples/adventure/game.hero"
-    HeroArrayHeader * h1_own1 = {0}; HeroMapHeader * h2_own2 = {0}; h_game_Game h3_own3 = {0}; h_world_World t1; HeroStr t2; HeroArrayHeader * t3; HeroMapHeader * t4; int64_t t5; bool t6; h_game_Game t7; HeroArrayHeader * t8; HeroMapHeader * t9; h_game_Game t10; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroMapHeader * h2_own2 = {0}; HERO_NODEBUG h_game_Game h3_own3 = {0}; HERO_NODEBUG h_world_World t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroMapHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_game_Game t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroMapHeader * t9; HERO_NODEBUG h_game_Game t10; goto bb0;
 #line 23 "examples/adventure/game.hero"
 bb0:
     t1 = h0_w;
@@ -1173,7 +1174,7 @@ bb0:
     h3_own3 = t7;
 #line 24 "examples/adventure/game.hero"
     h_game_Game_release(&t10);
-#line 1177 "main.c"
+#line 1178 "main.c"
     h_game_Game_retain(&t7);
     hero_array_release_at(&h1_own1);
     hero_map_release_at(&h2_own2);
@@ -1184,7 +1185,7 @@ bb0:
 #line 26 "examples/adventure/game.hero"
 bool h_game_is_space(uint8_t h0_c) {
 #line 26 "examples/adventure/game.hero"
-    bool h1_b0; bool h2_b1; uint8_t t1; uint8_t t2; bool t3; uint8_t t4; uint8_t t5; bool t6; bool t7; uint8_t t8; uint8_t t9; bool t10; bool t11; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG bool h2_b1; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; goto bb0;
 #line 26 "examples/adventure/game.hero"
 bb0:
     t1 = h0_c;
@@ -1234,13 +1235,13 @@ bb4:
     t11 = h1_b0;
 #line 27 "examples/adventure/game.hero"
     return t11;
-#line 1238 "main.c"
+#line 1239 "main.c"
 }
 
 #line 29 "examples/adventure/game.hero"
 HeroStr h_game_trimmed(HeroStr h0_line) {
 #line 29 "examples/adventure/game.hero"
-    int64_t h1_from; bool h2_b0; int64_t h3_to; bool h4_b1; HeroStr h5_own5 = {0}; int64_t t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; HeroStr t6; int64_t t7; uint8_t t8; bool t9; bool t10; int64_t t11; int64_t t12; int64_t t13; HeroStr t14; int64_t t15; int64_t t16; int64_t t17; bool t18; HeroStr t19; int64_t t20; int64_t t21; int64_t t22; uint8_t t23; bool t24; bool t25; int64_t t26; int64_t t27; int64_t t28; HeroStr t29; int64_t t30; int64_t t31; HeroStr t32; HeroStr t33; goto bb0;
+    int64_t h1_from; HERO_NODEBUG bool h2_b0; int64_t h3_to; HERO_NODEBUG bool h4_b1; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG bool t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; goto bb0;
 #line 29 "examples/adventure/game.hero"
 bb0:
     t1 = INT64_C(0);
@@ -1342,7 +1343,7 @@ bb8:
     h5_own5 = t32;
 #line 40 "examples/adventure/game.hero"
     hero_str_decref(t33);
-#line 1346 "main.c"
+#line 1347 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
@@ -1369,13 +1370,13 @@ bb10:
     t25 = h4_b1;
 #line 37 "examples/adventure/game.hero"
     if (t25) goto bb7; else goto bb8;
-#line 1373 "main.c"
+#line 1374 "main.c"
 }
 
 #line 42 "examples/adventure/game.hero"
 HeroStr h_game_first_word(HeroStr h0_line) {
 #line 42 "examples/adventure/game.hero"
-    int64_t h1_i; bool h2_b0; HeroStr h3_own3 = {0}; int64_t t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; HeroStr t6; int64_t t7; uint8_t t8; uint8_t t9; bool t10; bool t11; int64_t t12; int64_t t13; int64_t t14; HeroStr t15; int64_t t16; int64_t t17; HeroStr t18; HeroStr t19; goto bb0;
+    int64_t h1_i; HERO_NODEBUG bool h2_b0; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; goto bb0;
 #line 42 "examples/adventure/game.hero"
 bb0:
     t1 = INT64_C(0);
@@ -1424,7 +1425,7 @@ bb3:
     h3_own3 = t18;
 #line 48 "examples/adventure/game.hero"
     hero_str_decref(t19);
-#line 1428 "main.c"
+#line 1429 "main.c"
     hero_str_incref(t18);
     hero_str_release_at(&h3_own3);
     return t18;
@@ -1449,13 +1450,13 @@ bb5:
     t11 = h2_b0;
 #line 45 "examples/adventure/game.hero"
     if (t11) goto bb2; else goto bb3;
-#line 1453 "main.c"
+#line 1454 "main.c"
 }
 
 #line 50 "examples/adventure/game.hero"
 HeroStr h_game_rest_after(HeroStr h0_line, HeroStr h1_word) {
 #line 50 "examples/adventure/game.hero"
-    HeroStr h2_ret0 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; HeroStr t10; int64_t t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; goto bb0;
+    HERO_NODEBUG HeroStr h2_ret0 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; goto bb0;
 #line 50 "examples/adventure/game.hero"
 bb0:
     t1 = h1_word;
@@ -1515,7 +1516,7 @@ bb3:
     goto bb1;
 #line 52 "examples/adventure/game.hero"
 bb4:
-#line 1519 "main.c"
+#line 1520 "main.c"
     t14 = h2_ret0;
     hero_str_incref(t14);
     hero_str_release_at(&h3_own3);
@@ -1526,7 +1527,7 @@ bb4:
 #line 55 "examples/adventure/game.hero"
 bool h_game_carrying(h_game_Game h0_g, HeroStr h1_what) {
 #line 55 "examples/adventure/game.hero"
-    HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_one = {0}; bool h5_ret0; h_game_Game t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; HeroStr t10; HeroStr t11; HeroStr t12; bool t13; bool t14; int64_t t15; int64_t t16; int64_t t17; bool t18; bool t19; HeroArrayHeader * t20; HeroStr t21; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_one = {0}; HERO_NODEBUG bool h5_ret0; HERO_NODEBUG h_game_Game t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG bool t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroStr t21; goto bb0;
 #line 55 "examples/adventure/game.hero"
 bb0:
     t1 = h0_g;
@@ -1619,7 +1620,7 @@ bb7:
     goto bb5;
 #line 58 "examples/adventure/game.hero"
 bb8:
-#line 1623 "main.c"
+#line 1624 "main.c"
     t19 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_one);
@@ -1629,7 +1630,7 @@ bb8:
 #line 64 "examples/adventure/game.hero"
 h_game_Turn h_game_play(h_world_World h0_w, h_game_Game h1_g, HeroStr h2_line) {
 #line 64 "examples/adventure/game.hero"
-    HeroStr h3_command = {0}; HeroStr h4_verb = {0}; h_game_Turn h5_ret0 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; h_game_Turn h9_own9 = {0}; HeroStr h10_own10 = {0}; h_game_Turn h11_own11 = {0}; h_game_Turn h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; h_game_Turn h15_own15 = {0}; h_game_Turn h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; h_game_Turn h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; h_game_Turn h22_own22 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; bool t7; h_game_Game t8; h_world_World t9; h_game_Game t10; HeroArrayHeader * t11; h_game_Turn t12; HeroStr t13; HeroStr t14; bool t15; h_world_World t16; h_game_Game t17; HeroStr t18; HeroStr t19; HeroStr t20; h_game_Turn t21; HeroStr t22; HeroStr t23; bool t24; h_world_World t25; h_game_Game t26; h_game_Turn t27; HeroStr t28; HeroStr t29; bool t30; h_game_Game t31; h_game_Game t32; HeroStr t33; HeroArrayHeader * t34; h_game_Turn t35; HeroStr t36; HeroStr t37; bool t38; h_game_Game t39; h_game_Turn t40; HeroStr t41; HeroStr t42; bool t43; h_game_Game t44; HeroArrayHeader * t45; h_game_Turn t46; h_game_Game t47; HeroStr t48; HeroStr t49; HeroStr t50; HeroStr t51; HeroStr t52; HeroArrayHeader * t53; h_game_Turn t54; h_game_Turn t55; HeroStr t56; HeroStr t57; HeroStr t58; HeroStr t59; HeroArrayHeader * t60; h_game_Turn t61; HeroStr t62; h_game_Turn t63; h_game_Turn t64; HeroStr t65; HeroArrayHeader * t66; h_game_Turn t67; h_game_Turn t68; HeroStr t69; HeroStr t70; HeroArrayHeader * t71; h_game_Turn t72; HeroArrayHeader * t73; h_game_Turn t74; goto bb0;
+    HeroStr h3_command = {0}; HeroStr h4_verb = {0}; HERO_NODEBUG h_game_Turn h5_ret0 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_game_Turn h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_game_Turn h11_own11 = {0}; HERO_NODEBUG h_game_Turn h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG h_game_Turn h15_own15 = {0}; HERO_NODEBUG h_game_Turn h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG h_game_Turn h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG h_game_Turn h22_own22 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_game_Game t8; HERO_NODEBUG h_world_World t9; HERO_NODEBUG h_game_Game t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG h_game_Turn t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_world_World t16; HERO_NODEBUG h_game_Game t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_game_Turn t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_world_World t25; HERO_NODEBUG h_game_Game t26; HERO_NODEBUG h_game_Turn t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG bool t30; HERO_NODEBUG h_game_Game t31; HERO_NODEBUG h_game_Game t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG h_game_Turn t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG bool t38; HERO_NODEBUG h_game_Game t39; HERO_NODEBUG h_game_Turn t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_game_Game t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG h_game_Turn t46; HERO_NODEBUG h_game_Game t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG h_game_Turn t54; HERO_NODEBUG h_game_Turn t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG h_game_Turn t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_game_Turn t63; HERO_NODEBUG h_game_Turn t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG h_game_Turn t67; HERO_NODEBUG h_game_Turn t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG h_game_Turn t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG h_game_Turn t74; goto bb0;
 #line 64 "examples/adventure/game.hero"
 bb0:
     t1 = h2_line;
@@ -1950,7 +1951,7 @@ bb18:
     goto bb16;
 #line 84 "examples/adventure/game.hero"
 bb19:
-#line 1954 "main.c"
+#line 1955 "main.c"
     t55 = h5_ret0;
     h_game_Turn_retain(&t55);
     hero_str_release_at(&h3_command);
@@ -1978,7 +1979,7 @@ bb19:
 #line 87 "examples/adventure/game.hero"
 h_game_Turn h_game_same(h_game_Game h0_g, HeroArrayHeader * h1_said) {
 #line 87 "examples/adventure/game.hero"
-    h_game_Turn h2_own2 = {0}; HeroArrayHeader * t1; h_game_Game t2; h_game_Turn t3; h_game_Turn t4; goto bb0;
+    HERO_NODEBUG h_game_Turn h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_game_Game t2; HERO_NODEBUG h_game_Turn t3; HERO_NODEBUG h_game_Turn t4; goto bb0;
 #line 87 "examples/adventure/game.hero"
 bb0:
     t1 = h1_said;
@@ -1996,7 +1997,7 @@ bb0:
     h2_own2 = t3;
 #line 88 "examples/adventure/game.hero"
     h_game_Turn_release(&t4);
-#line 2000 "main.c"
+#line 2001 "main.c"
     h_game_Turn_retain(&t3);
     h_game_Turn_release(hero_slot_escape(&h2_own2));
     return t3;
@@ -2005,7 +2006,7 @@ bb0:
 #line 90 "examples/adventure/game.hero"
 HeroArrayHeader * h_game_describe(h_world_World h0_w, h_game_Game h1_g) {
 #line 90 "examples/adventure/game.hero"
-    h_0opt_5e724113 h2_s0 = {0}; h_world_Room h3_room = {0}; HeroArrayHeader * h4_lines = {0}; bool h5_b0; h_0opt_473cb9ae h6_f0 = {0}; HeroArrayHeader * h7_ret0 = {0}; h_0opt_5e724113 h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; h_0opt_473cb9ae h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; h_world_World t1; h_game_Game t2; HeroStr t3; h_0opt_5e724113 t4; h_0opt_5e724113 t5; int64_t t6; HeroStr t7; HeroArrayHeader * t8; h_0opt_5e724113 t9; h_world_Room t10; h_world_Room t11; HeroStr t12; HeroArrayHeader * t13; h_world_Room t14; HeroStr t15; HeroStr t16; bool t17; h_game_Game t18; HeroMapHeader * t19; h_world_Room t20; HeroStr t21; h_0opt_473cb9ae t22; h_0opt_473cb9ae t23; int64_t t24; int64_t t25; bool t26; bool t27; HeroStr t29; h_world_Room t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; HeroArrayHeader * t36; HeroArrayHeader * t37; h_0opt_5e724113 t38; h_0opt_5e724113 t39; HeroArrayHeader * t40; h_world_Room t41; HeroArrayHeader * t42; HeroArrayHeader * t43; h_0opt_473cb9ae t44; h_0opt_473cb9ae t45; HeroStr t46; HeroStr t47; goto bb0;
+    HERO_NODEBUG h_0opt_5e724113 h2_s0 = {0}; h_world_Room h3_room = {0}; HeroArrayHeader * h4_lines = {0}; HERO_NODEBUG bool h5_b0; HERO_NODEBUG h_0opt_473cb9ae h6_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h7_ret0 = {0}; HERO_NODEBUG h_0opt_5e724113 h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG h_0opt_473cb9ae h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_world_World t1; HERO_NODEBUG h_game_Game t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_0opt_5e724113 t4; HERO_NODEBUG h_0opt_5e724113 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG h_0opt_5e724113 t9; HERO_NODEBUG h_world_Room t10; HERO_NODEBUG h_world_Room t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG h_world_Room t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_game_Game t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG h_world_Room t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_473cb9ae t22; HERO_NODEBUG h_0opt_473cb9ae t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_world_Room t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG h_0opt_5e724113 t38; HERO_NODEBUG h_0opt_5e724113 t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG h_world_Room t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG h_0opt_473cb9ae t44; HERO_NODEBUG h_0opt_473cb9ae t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; goto bb0;
 #line 90 "examples/adventure/game.hero"
 bb0:
     t1 = h0_w;
@@ -2209,7 +2210,7 @@ bb8:
     goto bb4;
 #line 97 "examples/adventure/game.hero"
 bb9:
-#line 2213 "main.c"
+#line 2214 "main.c"
     t37 = h7_ret0;
     hero_array_incref(t37);
     h_0opt_5e724113_release(hero_slot_escape(&h2_s0));
@@ -2228,7 +2229,7 @@ bb9:
 #line 100 "examples/adventure/game.hero"
 h_game_Turn h_game_go(h_world_World h0_w, h_game_Game h1_g, HeroStr h2_direction) {
 #line 100 "examples/adventure/game.hero"
-    h_0opt_f87774a h3_s0 = {0}; HeroFailure h4_e = {0}; HeroStr h5_there = {0}; h_game_Game h6_moved = {0}; h_game_Turn h7_ret0 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; h_game_Turn h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; h_game_Turn h12_own12 = {0}; h_game_Game h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; h_game_Turn h15_own15 = {0}; HeroStr t1; HeroStr t2; bool t3; h_game_Game t4; HeroStr t5; HeroArrayHeader * t6; h_game_Turn t7; h_world_World t8; h_game_Game t9; HeroStr t10; HeroStr t11; h_0opt_f87774a t12; h_0opt_f87774a t13; int64_t t14; h_0opt_f87774a t15; HeroFailure t16; h_game_Game t17; HeroFailure t18; HeroStr t19; HeroArrayHeader * t20; h_game_Turn t21; h_0opt_f87774a t22; HeroStr t23; HeroStr t24; h_game_Game t25; HeroArrayHeader * t26; h_game_Game t27; HeroMapHeader * t28; h_game_Game t29; int64_t t30; int64_t t31; int64_t t32; h_game_Game t33; bool t34; h_game_Game t35; h_world_World t36; h_game_Game t37; HeroArrayHeader * t38; h_game_Game t39; h_game_Turn t40; h_game_Turn t41; h_0opt_f87774a t42; h_0opt_f87774a t43; HeroArrayHeader * t44; h_game_Turn t45; HeroFailure t46; HeroArrayHeader * t47; h_game_Turn t48; HeroStr t49; h_game_Game t50; h_game_Game t51; HeroArrayHeader * t52; h_game_Turn t53; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h3_s0 = {0}; HeroFailure h4_e = {0}; HeroStr h5_there = {0}; h_game_Game h6_moved = {0}; HERO_NODEBUG h_game_Turn h7_ret0 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_game_Turn h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_game_Turn h12_own12 = {0}; HERO_NODEBUG h_game_Game h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG h_game_Turn h15_own15 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_NODEBUG h_game_Game t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG h_game_Turn t7; HERO_NODEBUG h_world_World t8; HERO_NODEBUG h_game_Game t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG HeroFailure t16; HERO_NODEBUG h_game_Game t17; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_game_Turn t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_game_Game t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG h_game_Game t27; HERO_NODEBUG HeroMapHeader * t28; HERO_NODEBUG h_game_Game t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_game_Game t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_game_Game t35; HERO_NODEBUG h_world_World t36; HERO_NODEBUG h_game_Game t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_game_Game t39; HERO_NODEBUG h_game_Turn t40; HERO_NODEBUG h_game_Turn t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG h_0opt_f87774a t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG h_game_Turn t45; HERO_NODEBUG HeroFailure t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG h_game_Turn t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_game_Game t50; HERO_NODEBUG h_game_Game t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG h_game_Turn t53; goto bb0;
 #line 100 "examples/adventure/game.hero"
 bb0:
     t1 = h2_direction;
@@ -2437,7 +2438,7 @@ bb6:
     goto bb7;
 #line 114 "examples/adventure/game.hero"
 bb7:
-#line 2441 "main.c"
+#line 2442 "main.c"
     t41 = h7_ret0;
     h_game_Turn_retain(&t41);
     h_0opt_f87774a_release(hero_slot_escape(&h3_s0));
@@ -2458,7 +2459,7 @@ bb7:
 #line 116 "examples/adventure/game.hero"
 h_game_Turn h_game_take(h_world_World h0_w, h_game_Game h1_g) {
 #line 116 "examples/adventure/game.hero"
-    h_0opt_5e724113 h2_s0 = {0}; h_world_Room h3_room = {0}; bool h4_b0; h_0opt_473cb9ae h5_f0 = {0}; h_game_Game h6_picked = {0}; h_game_Turn h7_ret0 = {0}; h_0opt_5e724113 h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; h_game_Turn h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroMapHeader * h12_own12 = {0}; h_game_Game h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; h_game_Turn h17_own17 = {0}; h_0opt_473cb9ae h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; h_game_Turn h20_own20 = {0}; h_world_World t1; h_game_Game t2; HeroStr t3; h_0opt_5e724113 t4; h_0opt_5e724113 t5; int64_t t6; h_game_Game t7; HeroStr t8; HeroArrayHeader * t9; h_game_Turn t10; h_0opt_5e724113 t11; h_world_Room t12; h_world_Room t13; HeroStr t14; HeroStr t15; bool t16; h_game_Game t17; HeroMapHeader * t18; h_world_Room t19; HeroStr t20; h_0opt_473cb9ae t21; h_0opt_473cb9ae t22; int64_t t23; int64_t t24; bool t25; bool t26; bool t27; h_game_Game t28; HeroStr t29; HeroArrayHeader * t30; h_game_Turn t31; h_game_Game t32; HeroStr t33; h_game_Game t34; HeroArrayHeader * t35; h_world_Room t36; HeroStr t37; HeroArrayHeader * t38; h_game_Game t39; HeroMapHeader * t40; h_world_Room t41; HeroStr t42; HeroMapHeader * t43; h_game_Game t44; int64_t t45; int64_t t46; int64_t t47; h_game_Game t48; bool t49; h_game_Game t50; HeroStr t51; h_world_Room t52; HeroStr t53; HeroStr t54; HeroStr t55; HeroStr t56; HeroArrayHeader * t57; h_game_Game t58; h_game_Turn t59; h_game_Turn t60; h_0opt_5e724113 t61; h_0opt_5e724113 t62; HeroArrayHeader * t63; h_game_Turn t64; h_world_Room t65; HeroArrayHeader * t66; HeroMapHeader * t67; h_game_Game t68; h_game_Game t69; HeroStr t70; HeroStr t71; HeroArrayHeader * t72; h_game_Turn t73; h_0opt_473cb9ae t74; h_0opt_473cb9ae t75; HeroArrayHeader * t76; h_game_Turn t77; goto bb0;
+    HERO_NODEBUG h_0opt_5e724113 h2_s0 = {0}; h_world_Room h3_room = {0}; HERO_NODEBUG bool h4_b0; HERO_NODEBUG h_0opt_473cb9ae h5_f0 = {0}; h_game_Game h6_picked = {0}; HERO_NODEBUG h_game_Turn h7_ret0 = {0}; HERO_NODEBUG h_0opt_5e724113 h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_game_Turn h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroMapHeader * h12_own12 = {0}; HERO_NODEBUG h_game_Game h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_game_Turn h17_own17 = {0}; HERO_NODEBUG h_0opt_473cb9ae h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG h_game_Turn h20_own20 = {0}; HERO_NODEBUG h_world_World t1; HERO_NODEBUG h_game_Game t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_0opt_5e724113 t4; HERO_NODEBUG h_0opt_5e724113 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_game_Game t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG h_game_Turn t10; HERO_NODEBUG h_0opt_5e724113 t11; HERO_NODEBUG h_world_Room t12; HERO_NODEBUG h_world_Room t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_game_Game t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG h_world_Room t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_473cb9ae t21; HERO_NODEBUG h_0opt_473cb9ae t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG bool t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_game_Game t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG h_game_Turn t31; HERO_NODEBUG h_game_Game t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_game_Game t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_world_Room t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_game_Game t39; HERO_NODEBUG HeroMapHeader * t40; HERO_NODEBUG h_world_Room t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroMapHeader * t43; HERO_NODEBUG h_game_Game t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG h_game_Game t48; HERO_NODEBUG bool t49; HERO_NODEBUG h_game_Game t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_world_Room t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG h_game_Game t58; HERO_NODEBUG h_game_Turn t59; HERO_NODEBUG h_game_Turn t60; HERO_NODEBUG h_0opt_5e724113 t61; HERO_NODEBUG h_0opt_5e724113 t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG h_game_Turn t64; HERO_NODEBUG h_world_Room t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG HeroMapHeader * t67; HERO_NODEBUG h_game_Game t68; HERO_NODEBUG h_game_Game t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG h_game_Turn t73; HERO_NODEBUG h_0opt_473cb9ae t74; HERO_NODEBUG h_0opt_473cb9ae t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG h_game_Turn t77; goto bb0;
 #line 116 "examples/adventure/game.hero"
 bb0:
     t1 = h0_w;
@@ -2762,7 +2763,7 @@ bb8:
     goto bb4;
 #line 121 "examples/adventure/game.hero"
 bb9:
-#line 2766 "main.c"
+#line 2767 "main.c"
     t60 = h7_ret0;
     h_game_Turn_retain(&t60);
     h_0opt_5e724113_release(hero_slot_escape(&h2_s0));
@@ -2788,7 +2789,7 @@ bb9:
 #line 131 "examples/adventure/game.hero"
 HeroMapHeader * h_game_with_taken(HeroMapHeader * h0_taken, HeroStr h1_item) {
 #line 131 "examples/adventure/game.hero"
-    HeroMapHeader * h2_out = {0}; HeroMapHeader * t1; HeroStr t2; bool t3; HeroMapHeader * t4; HeroMapHeader * t5; goto bb0;
+    HeroMapHeader * h2_out = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroMapHeader * t4; HERO_NODEBUG HeroMapHeader * t5; goto bb0;
 #line 131 "examples/adventure/game.hero"
 bb0:
     t1 = h0_taken;
@@ -2806,7 +2807,7 @@ bb0:
 #line 133 "examples/adventure/game.hero"
     hero_map_set(&(h2_out), &t2, &t3);
     t4 = h2_out;
-#line 2810 "main.c"
+#line 2811 "main.c"
     hero_map_incref(t4);
     hero_map_release_at(&h2_out);
     return t4;
@@ -2815,7 +2816,7 @@ bb0:
 #line 136 "examples/adventure/game.hero"
 HeroStr h_game_bag_of(h_game_Game h0_g) {
 #line 136 "examples/adventure/game.hero"
-    HeroStr h1_ret0 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; h_game_Game t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; HeroStr t7; h_game_Game t8; HeroArrayHeader * t9; HeroArrayHeader * t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroArrayHeader * t17; HeroStr t18; HeroStr t19; HeroStr t20; goto bb0;
+    HERO_NODEBUG HeroStr h1_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_game_Game t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_game_Game t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; goto bb0;
 #line 136 "examples/adventure/game.hero"
 bb0:
     t1 = h0_g;
@@ -2891,7 +2892,7 @@ bb3:
     goto bb1;
 #line 138 "examples/adventure/game.hero"
 bb4:
-#line 2895 "main.c"
+#line 2896 "main.c"
     t16 = h1_ret0;
     hero_str_incref(t16);
     hero_array_release_at(&h2_own2);
@@ -2904,7 +2905,7 @@ bb4:
 #line 143 "examples/adventure/game.hero"
 h_game_Turn h_game_open(h_game_Game h0_g) {
 #line 143 "examples/adventure/game.hero"
-    h_game_Game h1_won = {0}; h_game_Turn h2_ret0 = {0}; HeroArrayHeader * h3_own3 = {0}; h_game_Turn h4_own4 = {0}; h_game_Game h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; h_game_Turn h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; h_game_Turn h9_own9 = {0}; h_game_Game t1; HeroStr t2; HeroStr t3; bool t4; h_game_Game t5; HeroStr t6; HeroArrayHeader * t7; h_game_Turn t8; h_game_Game t9; HeroStr t10; bool t11; bool t12; h_game_Game t13; HeroStr t14; HeroArrayHeader * t15; h_game_Turn t16; h_game_Game t17; HeroStr t18; h_game_Game t19; HeroArrayHeader * t20; h_game_Game t21; HeroMapHeader * t22; h_game_Game t23; int64_t t24; int64_t t25; int64_t t26; bool t27; h_game_Game t28; HeroStr t29; HeroArrayHeader * t30; h_game_Game t31; h_game_Turn t32; h_game_Turn t33; HeroArrayHeader * t34; h_game_Turn t35; h_game_Game t36; h_game_Game t37; HeroArrayHeader * t38; h_game_Turn t39; HeroArrayHeader * t40; h_game_Turn t41; goto bb0;
+    h_game_Game h1_won = {0}; HERO_NODEBUG h_game_Turn h2_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG h_game_Turn h4_own4 = {0}; HERO_NODEBUG h_game_Game h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_game_Turn h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_game_Turn h9_own9 = {0}; HERO_NODEBUG h_game_Game t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_game_Game t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG h_game_Turn t8; HERO_NODEBUG h_game_Game t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_game_Game t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG h_game_Turn t16; HERO_NODEBUG h_game_Game t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG h_game_Game t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_game_Game t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG h_game_Game t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_game_Game t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG h_game_Game t31; HERO_NODEBUG h_game_Turn t32; HERO_NODEBUG h_game_Turn t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG h_game_Turn t35; HERO_NODEBUG h_game_Game t36; HERO_NODEBUG h_game_Game t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_game_Turn t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG h_game_Turn t41; goto bb0;
 #line 143 "examples/adventure/game.hero"
 bb0:
     t1 = h0_g;
@@ -3066,7 +3067,7 @@ bb6:
     goto bb4;
 #line 148 "examples/adventure/game.hero"
 bb7:
-#line 3070 "main.c"
+#line 3071 "main.c"
     t33 = h2_ret0;
     h_game_Turn_retain(&t33);
     h_game_Game_release(hero_slot_escape(&h1_won));
@@ -3083,7 +3084,7 @@ bb7:
 #line 160 "examples/adventure/game.hero"
 h_game_Turn h_game_play_all(h_world_World h0_w, HeroArrayHeader * h1_lines) {
 #line 160 "examples/adventure/game.hero"
-    h_game_Game h2_g = {0}; HeroArrayHeader * h3_said = {0}; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; HeroStr h6_line = {0}; h_game_Turn h7_turn = {0}; HeroArrayHeader * h8_xs1 = {0}; int64_t h9_i1; HeroStr h10_one = {0}; h_game_Game h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; h_game_Turn h13_own13 = {0}; h_game_Turn h14_own14 = {0}; h_world_World t1; h_game_Game t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; HeroStr t12; h_world_World t13; h_game_Game t14; HeroStr t15; h_game_Turn t16; h_game_Turn t17; HeroArrayHeader * t18; int64_t t19; int64_t t20; HeroArrayHeader * t21; int64_t t22; bool t23; HeroArrayHeader * t24; int64_t t25; HeroStr t26; HeroStr t28; int64_t t30; int64_t t31; int64_t t32; h_game_Turn t33; h_game_Game t34; int64_t t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; h_game_Game t39; h_game_Turn t40; h_game_Game t41; h_game_Game t42; HeroArrayHeader * t43; HeroArrayHeader * t44; HeroArrayHeader * t45; HeroStr t46; h_game_Turn t47; h_game_Turn t48; HeroArrayHeader * t49; h_game_Turn t50; HeroStr t51; h_game_Game t52; goto bb0;
+    h_game_Game h2_g = {0}; HeroArrayHeader * h3_said = {0}; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; HeroStr h6_line = {0}; h_game_Turn h7_turn = {0}; HERO_NODEBUG HeroArrayHeader * h8_xs1 = {0}; HERO_NODEBUG int64_t h9_i1; HeroStr h10_one = {0}; HERO_NODEBUG h_game_Game h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG h_game_Turn h13_own13 = {0}; HERO_NODEBUG h_game_Turn h14_own14 = {0}; HERO_NODEBUG h_world_World t1; HERO_NODEBUG h_game_Game t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_world_World t13; HERO_NODEBUG h_game_Game t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_game_Turn t16; HERO_NODEBUG h_game_Turn t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_game_Turn t33; HERO_NODEBUG h_game_Game t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_game_Game t39; HERO_NODEBUG h_game_Turn t40; HERO_NODEBUG h_game_Game t41; HERO_NODEBUG h_game_Game t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_game_Turn t47; HERO_NODEBUG h_game_Turn t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG h_game_Turn t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_game_Game t52; goto bb0;
 #line 160 "examples/adventure/game.hero"
 bb0:
     t1 = h0_w;
@@ -3231,7 +3232,7 @@ bb4:
     h14_own14 = t40;
 #line 172 "examples/adventure/game.hero"
     h_game_Turn_release(&t50);
-#line 3235 "main.c"
+#line 3236 "main.c"
     h_game_Turn_retain(&t40);
     h_game_Game_release(hero_slot_escape(&h2_g));
     hero_array_release_at(&h3_said);
@@ -3305,17 +3306,17 @@ bb8:
     h_game_Game_release(&t52);
 #line 170 "examples/adventure/game.hero"
     goto bb3;
-#line 3309 "main.c"
+#line 3310 "main.c"
 }
 
 #line 17 "examples/adventure/world.hero"
 HeroStr h_world_ERR_NO_WAY(void) {
 #line 17 "examples/adventure/world.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 17 "examples/adventure/world.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3c24a820);
-#line 3319 "main.c"
+#line 3320 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3323,7 +3324,7 @@ bb0:
 #line 30 "examples/adventure/world.hero"
 h_world_World h_world_make(void) {
 #line 30 "examples/adventure/world.hero"
-    HeroMapHeader * h0_rooms = {0}; HeroMapHeader * h1_own1 = {0}; HeroMapHeader * h2_own2 = {0}; h_world_Room h3_own3 = {0}; HeroMapHeader * h4_own4 = {0}; h_world_Room h5_own5 = {0}; HeroMapHeader * h6_own6 = {0}; h_world_Room h7_own7 = {0}; HeroMapHeader * h8_own8 = {0}; h_world_Room h9_own9 = {0}; HeroMapHeader * h10_own10 = {0}; h_world_Room h11_own11 = {0}; h_world_World h12_own12 = {0}; HeroMapHeader * t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroMapHeader * t7; HeroStr t8; h_world_Room t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroMapHeader * t19; HeroStr t20; h_world_Room t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroMapHeader * t27; HeroStr t28; h_world_Room t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; HeroMapHeader * t37; HeroStr t38; h_world_Room t39; HeroStr t40; HeroStr t41; HeroStr t42; HeroStr t43; HeroStr t44; HeroMapHeader * t45; HeroStr t46; h_world_Room t47; HeroMapHeader * t48; HeroStr t49; h_world_World t50; HeroMapHeader * t51; HeroMapHeader * t52; HeroMapHeader * t53; h_world_Room t54; HeroMapHeader * t55; h_world_Room t56; HeroMapHeader * t57; h_world_Room t58; HeroMapHeader * t59; h_world_Room t60; HeroMapHeader * t61; h_world_Room t62; h_world_World t63; goto bb0;
+    HeroMapHeader * h0_rooms = {0}; HERO_NODEBUG HeroMapHeader * h1_own1 = {0}; HERO_NODEBUG HeroMapHeader * h2_own2 = {0}; HERO_NODEBUG h_world_Room h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * h4_own4 = {0}; HERO_NODEBUG h_world_Room h5_own5 = {0}; HERO_NODEBUG HeroMapHeader * h6_own6 = {0}; HERO_NODEBUG h_world_Room h7_own7 = {0}; HERO_NODEBUG HeroMapHeader * h8_own8 = {0}; HERO_NODEBUG h_world_Room h9_own9 = {0}; HERO_NODEBUG HeroMapHeader * h10_own10 = {0}; HERO_NODEBUG h_world_Room h11_own11 = {0}; HERO_NODEBUG h_world_World h12_own12 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_world_Room t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_world_Room t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroMapHeader * t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_world_Room t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroMapHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_world_Room t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroMapHeader * t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_world_Room t47; HERO_NODEBUG HeroMapHeader * t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_world_World t50; HERO_NODEBUG HeroMapHeader * t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG HeroMapHeader * t53; HERO_NODEBUG h_world_Room t54; HERO_NODEBUG HeroMapHeader * t55; HERO_NODEBUG h_world_Room t56; HERO_NODEBUG HeroMapHeader * t57; HERO_NODEBUG h_world_Room t58; HERO_NODEBUG HeroMapHeader * t59; HERO_NODEBUG h_world_Room t60; HERO_NODEBUG HeroMapHeader * t61; HERO_NODEBUG h_world_Room t62; HERO_NODEBUG h_world_World t63; goto bb0;
 #line 30 "examples/adventure/world.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &h_world_Room_desc, 0);
@@ -3564,7 +3565,7 @@ bb0:
     h12_own12 = t50;
 #line 62 "examples/adventure/world.hero"
     h_world_World_release(&t63);
-#line 3568 "main.c"
+#line 3569 "main.c"
     h_world_World_retain(&t50);
     hero_map_release_at(&h0_rooms);
     hero_map_release_at(&h1_own1);
@@ -3585,7 +3586,7 @@ bb0:
 #line 64 "examples/adventure/world.hero"
 h_0opt_5e724113 h_world_room_at(h_world_World h0_w, HeroStr h1_name) {
 #line 64 "examples/adventure/world.hero"
-    h_0opt_5e724113 h2_own2 = {0}; h_world_World t1; HeroMapHeader * t2; HeroStr t3; h_0opt_5e724113 t4; h_0opt_5e724113 t5; goto bb0;
+    HERO_NODEBUG h_0opt_5e724113 h2_own2 = {0}; HERO_NODEBUG h_world_World t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_0opt_5e724113 t4; HERO_NODEBUG h_0opt_5e724113 t5; goto bb0;
 #line 64 "examples/adventure/world.hero"
 bb0:
     t1 = h0_w;
@@ -3617,7 +3618,7 @@ bb0:
     h2_own2 = t4;
 #line 65 "examples/adventure/world.hero"
     h_0opt_5e724113_release(&t5);
-#line 3621 "main.c"
+#line 3622 "main.c"
     h_0opt_5e724113_retain(&t4);
     h_0opt_5e724113_release(hero_slot_escape(&h2_own2));
     return t4;
@@ -3626,7 +3627,7 @@ bb0:
 #line 69 "examples/adventure/world.hero"
 h_0opt_f87774a h_world_through(h_world_World h0_w, HeroStr h1_here, HeroStr h2_direction) {
 #line 69 "examples/adventure/world.hero"
-    h_0opt_5e724113 h3_f0 = {0}; h_world_Room h4_room = {0}; h_0opt_f87774a h5_s0 = {0}; HeroStr h6_there = {0}; h_0opt_f87774a h7_ret0 = {0}; h_0opt_5e724113 h8_own8 = {0}; h_0opt_f87774a h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; h_0opt_f87774a h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; h_0opt_f87774a h19_own19 = {0}; h_world_World t1; HeroStr t2; h_0opt_5e724113 t3; h_0opt_5e724113 t4; int64_t t5; int64_t t6; bool t7; h_0opt_5e724113 t8; HeroFailure t9; h_0opt_f87774a t10; h_0opt_5e724113 t11; h_world_Room t12; h_world_Room t13; HeroMapHeader * t14; HeroStr t15; h_0opt_f87774a t16; h_0opt_f87774a t17; int64_t t18; h_0opt_f87774a t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; h_world_Room t29; HeroMapHeader * t30; HeroArrayHeader * t31; HeroArrayHeader * t32; HeroStr t33; HeroStr t34; HeroStr t35; h_0opt_f87774a t36; h_0opt_f87774a t37; h_0opt_5e724113 t38; h_0opt_5e724113 t39; h_world_Room t40; h_0opt_f87774a t41; h_0opt_f87774a t42; h_0opt_f87774a t43; HeroStr t44; h_0opt_f87774a t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroArrayHeader * t49; HeroArrayHeader * t50; HeroStr t51; HeroStr t52; h_0opt_f87774a t53; goto bb0;
+    HERO_NODEBUG h_0opt_5e724113 h3_f0 = {0}; h_world_Room h4_room = {0}; HERO_NODEBUG h_0opt_f87774a h5_s0 = {0}; HeroStr h6_there = {0}; HERO_NODEBUG h_0opt_f87774a h7_ret0 = {0}; HERO_NODEBUG h_0opt_5e724113 h8_own8 = {0}; HERO_NODEBUG h_0opt_f87774a h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG h_0opt_f87774a h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_0opt_f87774a h19_own19 = {0}; HERO_NODEBUG h_world_World t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_5e724113 t3; HERO_NODEBUG h_0opt_5e724113 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_5e724113 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_5e724113 t11; HERO_NODEBUG h_world_Room t12; HERO_NODEBUG h_world_Room t13; HERO_NODEBUG HeroMapHeader * t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_world_Room t29; HERO_NODEBUG HeroMapHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_f87774a t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_5e724113 t38; HERO_NODEBUG h_0opt_5e724113 t39; HERO_NODEBUG h_world_Room t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG h_0opt_f87774a t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_0opt_f87774a t53; goto bb0;
 #line 69 "examples/adventure/world.hero"
 bb0:
     t1 = h0_w;
@@ -3861,7 +3862,7 @@ bb5:
     goto bb6;
 #line 74 "examples/adventure/world.hero"
 bb6:
-#line 3865 "main.c"
+#line 3866 "main.c"
     t37 = h7_ret0;
     h_0opt_f87774a_retain(&t37);
     h_0opt_5e724113_release(hero_slot_escape(&h3_f0));
@@ -3886,7 +3887,7 @@ bb6:
 #line 112 "examples/adventure/world.hero"
 HeroArrayHeader * h_world_reachable(h_world_World h0_w) {
 #line 112 "examples/adventure/world.hero"
-    HeroMapHeader * h1_seen = {0}; HeroArrayHeader * h2_queue = {0}; int64_t h3_head; HeroStr h4_here = {0}; h_0opt_5e724113 h5_s0 = {0}; h_world_Room h6_room = {0}; HeroArrayHeader * h7_xs0 = {0}; int64_t h8_i0; HeroStr h9_direction = {0}; h_0opt_f87774a h10_f0 = {0}; HeroStr h11_there = {0}; h_0opt_473cb9ae h12_f1 = {0}; HeroMapHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; h_0opt_5e724113 h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; h_0opt_f87774a h20_own20 = {0}; h_0opt_473cb9ae h21_own21 = {0}; HeroMapHeader * t1; h_world_World t2; HeroStr t3; bool t4; h_world_World t5; HeroStr t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; HeroArrayHeader * t10; int64_t t11; bool t12; HeroArrayHeader * t13; int64_t t14; HeroStr t15; int64_t t16; int64_t t17; int64_t t18; h_world_World t19; HeroStr t20; h_0opt_5e724113 t21; h_0opt_5e724113 t22; int64_t t23; h_0opt_5e724113 t24; h_world_Room t25; h_world_Room t26; HeroMapHeader * t27; HeroArrayHeader * t28; HeroArrayHeader * t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; int64_t t33; bool t34; HeroArrayHeader * t35; int64_t t36; HeroStr t37; h_world_Room t38; HeroMapHeader * t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; int64_t t43; int64_t t44; bool t45; h_0opt_f87774a t46; HeroFailure t47; h_0opt_f87774a t48; HeroStr t49; HeroMapHeader * t50; HeroStr t51; h_0opt_473cb9ae t52; h_0opt_473cb9ae t53; int64_t t54; int64_t t55; bool t56; HeroStr t57; bool t58; HeroStr t60; int64_t t62; int64_t t63; int64_t t64; HeroMapHeader * t65; HeroArrayHeader * t66; HeroArrayHeader * t67; HeroMapHeader * t68; HeroMapHeader * t69; HeroArrayHeader * t70; HeroArrayHeader * t71; HeroStr t72; h_0opt_5e724113 t73; h_0opt_5e724113 t74; HeroArrayHeader * t75; HeroArrayHeader * t76; h_world_Room t77; HeroArrayHeader * t78; HeroArrayHeader * t79; HeroArrayHeader * t80; HeroStr t81; h_0opt_f87774a t82; h_0opt_f87774a t83; HeroStr t84; h_0opt_473cb9ae t85; h_0opt_473cb9ae t86; goto bb0;
+    HeroMapHeader * h1_seen = {0}; HeroArrayHeader * h2_queue = {0}; int64_t h3_head; HeroStr h4_here = {0}; HERO_NODEBUG h_0opt_5e724113 h5_s0 = {0}; h_world_Room h6_room = {0}; HERO_NODEBUG HeroArrayHeader * h7_xs0 = {0}; HERO_NODEBUG int64_t h8_i0; HeroStr h9_direction = {0}; HERO_NODEBUG h_0opt_f87774a h10_f0 = {0}; HeroStr h11_there = {0}; HERO_NODEBUG h_0opt_473cb9ae h12_f1 = {0}; HERO_NODEBUG HeroMapHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG h_0opt_5e724113 h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG h_0opt_f87774a h20_own20 = {0}; HERO_NODEBUG h_0opt_473cb9ae h21_own21 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG h_world_World t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_world_World t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_world_World t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_5e724113 t21; HERO_NODEBUG h_0opt_5e724113 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_0opt_5e724113 t24; HERO_NODEBUG h_world_Room t25; HERO_NODEBUG h_world_Room t26; HERO_NODEBUG HeroMapHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_world_Room t38; HERO_NODEBUG HeroMapHeader * t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroFailure t47; HERO_NODEBUG h_0opt_f87774a t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroMapHeader * t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_0opt_473cb9ae t52; HERO_NODEBUG h_0opt_473cb9ae t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG bool t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG bool t58; HERO_NODEBUG HeroStr t60; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG HeroMapHeader * t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroMapHeader * t68; HERO_NODEBUG HeroMapHeader * t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG h_0opt_5e724113 t73; HERO_NODEBUG h_0opt_5e724113 t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG h_world_Room t77; HERO_NODEBUG HeroArrayHeader * t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_0opt_f87774a t82; HERO_NODEBUG h_0opt_f87774a t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG h_0opt_473cb9ae t85; HERO_NODEBUG h_0opt_473cb9ae t86; goto bb0;
 #line 112 "examples/adventure/world.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
@@ -4025,7 +4026,7 @@ bb3:
     h17_own17 = t67;
 #line 132 "examples/adventure/world.hero"
     hero_array_decref(t76);
-#line 4029 "main.c"
+#line 4030 "main.c"
     hero_array_incref(t67);
     hero_map_release_at(&h1_seen);
     hero_array_release_at(&h2_queue);
@@ -4253,7 +4254,7 @@ bb12:
     t46 = h10_f0;
 #line 126 "examples/adventure/world.hero"
     t47 = t46.as.err;
-#line 4257 "main.c"
+#line 4258 "main.c"
     hero_panic_must(t47);
     hero_unreachable();
 bb13:
@@ -4274,30 +4275,30 @@ bb14:
 bb15:
 #line 130 "examples/adventure/world.hero"
     goto bb13;
-#line 4278 "main.c"
+#line 4279 "main.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 4283 "main.c"
+#line 4284 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 4289 "main.c"
+#line 4290 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 4295 "main.c"
+#line 4296 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 4301 "main.c"
+#line 4302 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -4306,7 +4307,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_f87774a t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; h_0opt_f87774a t38; HeroStr t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; HeroStr t43; h_0opt_f87774a t44; HeroStr t45; h_0opt_f87774a t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; goto bb0;
 #line 167 "<heroes library>"
 bb0:
     t1 = INT64_C(0);
@@ -4532,7 +4533,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 4536 "main.c"
+#line 4537 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -4554,7 +4555,7 @@ bb13:
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; HeroStr t8; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -4611,7 +4612,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 4615 "main.c"
+#line 4616 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

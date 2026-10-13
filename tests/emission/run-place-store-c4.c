@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -46,7 +47,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 50 "placestorec4.c"
+#line 51 "placestorec4.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -76,7 +77,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "placestorec4.c"
+#line 81 "placestorec4.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -93,7 +94,7 @@ void h_placestorec4_main(void);
 #line 15 "tests/golden/run/place-store-c4.hero"
 void h_placestorec4_main(void) {
 #line 15 "tests/golden/run/place-store-c4.hero"
-    HeroArrayHeader * h0_xs = {0}; int64_t h1_i; int64_t h2_total; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_v; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; int64_t t16; HeroStr t17; HeroArrayHeader * t18; int64_t t19; int64_t t20; HeroArrayHeader * t22; int64_t t23; HeroArrayHeader * t25; int64_t t26; int64_t t27; int64_t t28; HeroArrayHeader * t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; int64_t t33; bool t34; HeroArrayHeader * t35; int64_t t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; int64_t t42; int64_t t43; int64_t t44; HeroArrayHeader * t45; HeroArrayHeader * t46; HeroArrayHeader * t47; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_v; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroArrayHeader * t47; goto bb0;
 #line 15 "tests/golden/run/place-store-c4.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -256,7 +257,7 @@ bb7:
     hero_print_int(t44);
 #line 35 "tests/golden/run/place-store-c4.hero"
     hero_print_end();
-#line 260 "placestorec4.c"
+#line 261 "placestorec4.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);

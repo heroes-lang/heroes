@@ -45,15 +45,16 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 12 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
 _Static_assert(__builtin_classify_type(((Packed582 *)0)->a) == 1 && sizeof(((Packed582 *)0)->a) == sizeof(uint8_t) && (_Generic(((Packed582 *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Packed582 a");
 _Static_assert(__builtin_classify_type(((Packed582 *)0)->b) == 1 && sizeof(((Packed582 *)0)->b) == sizeof(int64_t) && (_Generic(((Packed582 *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Packed582 b");
-#line 53 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 54 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 
 #line 11 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
 _Static_assert(__builtin_classify_type(*(Packed582 *)0) != 13, "heroes-ffi-union Packed582 a b");
-#line 57 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 58 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -178,7 +179,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 182 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 183 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout_Packed582_eq(const Packed582 *a, const Packed582 *b);
@@ -213,7 +214,7 @@ int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s);
 #line 18 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
 void h_fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout_main(void) {
 #line 18 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
-    Packed582 h0_made; h_fixedbugs582pair_Pair h1_p; int64_t t1; Packed582 t2; int64_t t3; HeroStr t4; Packed582 t5; uint8_t t6; HeroStr t7; Packed582 t8; int64_t t9; HeroStr t10; uint8_t t11; int64_t t12; Packed582 t13; int64_t t14; Packed582 t15; int64_t t16; h_fixedbugs582pair_Pair t17; h_fixedbugs582pair_Pair t18; int64_t t19; HeroStr t20; h_fixedbugs582pair_Pair t21; int64_t t22; goto bb0;
+    Packed582 h0_made; h_fixedbugs582pair_Pair h1_p; HERO_NODEBUG int64_t t1; HERO_NODEBUG Packed582 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG Packed582 t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG Packed582 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG Packed582 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG Packed582 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_fixedbugs582pair_Pair t17; HERO_NODEBUG h_fixedbugs582pair_Pair t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_fixedbugs582pair_Pair t21; HERO_NODEBUG int64_t t22; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
 bb0:
     t1 = INT64_C(123456789);
@@ -286,13 +287,13 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-582-a-record-bound-from-a-packing-header-keeps-the-header-s-layout.hero"
     return;
-#line 290 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 291 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n) {
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
-    uint8_t t1; int64_t t2; h_fixedbugs582pair_Pair t3; goto bb0;
+    HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; goto bb0;
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = UINT64_C(1);
@@ -302,13 +303,13 @@ bb0:
     t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2};
 #line 18 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 306 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 307 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) {
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
-    h_fixedbugs582pair_Pair t1; int64_t t2; goto bb0;
+    HERO_NODEBUG h_fixedbugs582pair_Pair t1; HERO_NODEBUG int64_t t2; goto bb0;
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_p;
@@ -316,13 +317,13 @@ bb0:
     t2 = t1.f_b;
 #line 21 "tests/golden/run/fixedbugs582/pair.hero"
     return t2;
-#line 320 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 321 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) {
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
-    int64_t t1; int64_t t2; h_fixedbugs582pair_Shape t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; goto bb0;
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_n;
@@ -332,13 +333,13 @@ bb0:
     t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}};
 #line 24 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 336 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 337 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) {
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
-    h_fixedbugs582pair_Shape h1_s0; h_fixedbugs582pair_Shape_c_flag h2_f; h_0opt_e201354 h3_f0 = {0}; h_fixedbugs582pair_Shape_c_rect h4_r; int64_t h5_ret0; h_0opt_e201354 h6_own6 = {0}; h_fixedbugs582pair_Shape t1; h_fixedbugs582pair_Shape t2; int64_t t3; int64_t t4; h_fixedbugs582pair_Shape t5; h_fixedbugs582pair_Shape_c_flag t6; h_fixedbugs582pair_Shape_c_flag t7; uint8_t t8; h_0opt_e201354 t9; h_0opt_e201354 t10; int64_t t11; int64_t t12; bool t13; h_0opt_e201354 t14; HeroFailure t15; h_0opt_e201354 t16; int64_t t17; h_fixedbugs582pair_Shape t18; h_fixedbugs582pair_Shape_c_rect t19; h_fixedbugs582pair_Shape_c_rect t20; int64_t t21; h_fixedbugs582pair_Shape_c_rect t22; int64_t t23; int64_t t24; int64_t t25; h_0opt_e201354 t26; h_0opt_e201354 t27; goto bb0;
+    HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_fixedbugs582pair_Shape t1; HERO_NODEBUG h_fixedbugs582pair_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs582pair_Shape t5; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugs582pair_Shape t18; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t19; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; goto bb0;
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_s;
@@ -441,7 +442,7 @@ bb6:
     t14 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     t15 = t14.as.err;
-#line 445 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
+#line 446 "fixedbugs582arecordboundfromapackingheaderkeepstheheaderslayout.c"
     hero_panic_must(t15);
     hero_unreachable();
 bb7:

@@ -43,11 +43,12 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 10 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int32_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 51 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 52 "fixedbugs094designatedinitialisersleavetherestzero.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -125,7 +126,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 129 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 130 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094designatedinitialisersleavetherestzero_Pt_eq(const struct pt *a, const struct pt *b);
@@ -145,7 +146,7 @@ void h_fixedbugs094designatedinitialisersleavetherestzero_main(void);
 
 #line 12 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y(void) {
-#line 149 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 150 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -157,7 +158,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 12 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     struct pt hero_constant_value = PT_Y;
-#line 161 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 162 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -176,7 +177,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y(void) {
 
 #line 13 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
-#line 180 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 181 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -188,7 +189,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 13 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     struct pt hero_constant_value = PT_TWICE;
-#line 192 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 193 "fixedbugs094designatedinitialisersleavetherestzero.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -208,7 +209,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 void h_fixedbugs094designatedinitialisersleavetherestzero_main(void) {
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    struct pt h0_p; struct pt h1_t; struct pt t1; struct pt t2; int32_t t3; struct pt t4; int32_t t5; struct pt t6; struct pt t7; int32_t t8; struct pt t9; int32_t t10; goto bb0;
+    struct pt h0_p; struct pt h1_t; HERO_NODEBUG struct pt t1; HERO_NODEBUG struct pt t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG struct pt t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG struct pt t6; HERO_NODEBUG struct pt t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG struct pt t9; HERO_NODEBUG int32_t t10; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 bb0:
     t1 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y();
@@ -247,7 +248,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
     return;
-#line 251 "fixedbugs094designatedinitialisersleavetherestzero.c"
+#line 252 "fixedbugs094designatedinitialisersleavetherestzero.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094designatedinitialisersleavetherestzero_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;

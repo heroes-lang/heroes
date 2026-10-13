@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -46,7 +47,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_21, "!");
 
-#line 50 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 51 "fixedbugs540areleaseinsidealinekeepstheline.c"
 typedef struct h_fixedbugs540areleaseinsidealinekeepstheline_Box {
     HeroStr f_s;
 } h_fixedbugs540areleaseinsidealinekeepstheline_Box;
@@ -80,7 +81,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 85 "fixedbugs540areleaseinsidealinekeepstheline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(const h_fixedbugs540areleaseinsidealinekeepstheline_Box *v);
@@ -103,7 +104,7 @@ void h_fixedbugs540areleaseinsidealinekeepstheline_main(void);
 #line 17 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 HeroStr h_fixedbugs540areleaseinsidealinekeepstheline_greet(int64_t h0_n) {
 #line 17 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    HeroStr h1_a = {0}; HeroStr h2_b = {0}; HeroStr h3_ret0 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; int64_t t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; int64_t t6; int64_t t7; bool t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; goto bb0;
+    HeroStr h1_a = {0}; HeroStr h2_b = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; goto bb0;
 #line 17 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 bb0:
     t1 = h0_n;
@@ -172,7 +173,7 @@ bb3:
     goto bb1;
 #line 22 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 bb4:
-#line 176 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 177 "fixedbugs540areleaseinsidealinekeepstheline.c"
     t11 = h3_ret0;
     hero_str_incref(t11);
     hero_str_release_at(&h1_a);
@@ -185,7 +186,7 @@ bb4:
 #line 25 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 h_fixedbugs540areleaseinsidealinekeepstheline_Box h_fixedbugs540areleaseinsidealinekeepstheline_keep(HeroStr h0_s) {
 #line 25 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    h_fixedbugs540areleaseinsidealinekeepstheline_Box h1_b = {0}; h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}; HeroStr t1; h_fixedbugs540areleaseinsidealinekeepstheline_Box t2; h_fixedbugs540areleaseinsidealinekeepstheline_Box t3; h_fixedbugs540areleaseinsidealinekeepstheline_Box t4; h_fixedbugs540areleaseinsidealinekeepstheline_Box t5; goto bb0;
+    h_fixedbugs540areleaseinsidealinekeepstheline_Box h1_b = {0}; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box t2; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box t3; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box t4; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box t5; goto bb0;
 #line 25 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 bb0:
     t1 = h0_s;
@@ -208,7 +209,7 @@ bb0:
 #line 26 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(&t5);
     t3 = h1_b;
-#line 212 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 213 "fixedbugs540areleaseinsidealinekeepstheline.c"
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_retain(&t3);
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h1_b));
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h2_own2));
@@ -218,7 +219,7 @@ bb0:
 #line 29 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 void h_fixedbugs540areleaseinsidealinekeepstheline_main(void) {
 #line 29 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
-    HeroStr h0_s = {0}; HeroStr h1_own1 = {0}; h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}; int64_t t1; HeroStr t2; HeroStr t3; HeroStr t4; h_fixedbugs540areleaseinsidealinekeepstheline_Box t5; HeroStr t6; HeroStr t7; HeroStr t8; h_fixedbugs540areleaseinsidealinekeepstheline_Box t9; goto bb0;
+    HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_fixedbugs540areleaseinsidealinekeepstheline_Box t9; goto bb0;
 #line 29 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
 bb0:
     t1 = INT64_C(3);
@@ -257,7 +258,7 @@ bb0:
     hero_print_str(t6);
 #line 31 "tests/golden/emit/fixedbugs-540-a-release-inside-a-line-keeps-the-line.hero"
     hero_print_end();
-#line 261 "fixedbugs540areleaseinsidealinekeepstheline.c"
+#line 262 "fixedbugs540areleaseinsidealinekeepstheline.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     h_fixedbugs540areleaseinsidealinekeepstheline_Box_release(hero_slot_escape(&h2_own2));

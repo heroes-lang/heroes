@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -55,7 +56,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_dc838fa, "four");
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 59 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 60 "fixedbugs335everywayoutkeepsitsreturnsline.c"
 typedef struct h_fixedbugs335everywayoutkeepsitsreturnsline_Tally {
     int64_t f_n;
 } h_fixedbugs335everywayoutkeepsitsreturnsline_Tally;
@@ -97,7 +98,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 101 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 102 "fixedbugs335everywayoutkeepsitsreturnsline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs335everywayoutkeepsitsreturnsline_Tally_eq(const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *a, const h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *b);
@@ -126,7 +127,7 @@ void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void);
 #line 17 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_pick(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) {
 #line 17 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HeroStr h2_found = {0}; HeroStr h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; int64_t t13; int64_t t14; bool t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; goto bb0;
+    HeroStr h2_found = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; goto bb0;
 #line 17 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb0:
     t1 = (*ph0_t);
@@ -213,7 +214,7 @@ bb6:
     goto bb4;
 #line 23 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb7:
-#line 217 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 218 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t19 = h3_ret0;
     hero_str_incref(t19);
     hero_str_release_at(&h2_found);
@@ -224,7 +225,7 @@ bb7:
 #line 27 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_half(int64_t h0_n) {
 #line 27 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354 h1_ret0 = {0}; h_0opt_e201354 h2_own2 = {0}; h_0opt_e201354 h3_own3 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; HeroStr t7; h_0opt_e201354 t8; int64_t t9; int64_t t10; int64_t t11; h_0opt_e201354 t12; h_0opt_e201354 t13; h_0opt_e201354 t14; h_0opt_e201354 t15; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; goto bb0;
 #line 27 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb0:
     t1 = h0_n;
@@ -294,7 +295,7 @@ bb3:
     goto bb1;
 #line 29 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb4:
-#line 298 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 299 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -305,7 +306,7 @@ bb4:
 #line 32 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 h_0opt_e201354 h_fixedbugs335everywayoutkeepsitsreturnsline_halves(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, int64_t h1_n) {
 #line 32 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_0opt_e201354 h2_f0 = {0}; int64_t h3_h; h_0opt_e201354 h4_ret0 = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; h_0opt_e201354 h7_own7 = {0}; int64_t t1; h_0opt_e201354 t2; h_0opt_e201354 t3; int64_t t4; int64_t t5; bool t6; h_0opt_e201354 t7; HeroFailure t8; h_0opt_e201354 t9; h_0opt_e201354 t10; int64_t t11; h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; h_0opt_e201354 t17; h_0opt_e201354 t18; h_0opt_e201354 t19; h_0opt_e201354 t20; h_0opt_e201354 t21; h_0opt_e201354 t22; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; int64_t h3_h; HERO_NODEBUG h_0opt_e201354 h4_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; goto bb0;
 #line 32 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb0:
     t1 = h1_n;
@@ -387,7 +388,7 @@ bb2:
     goto bb3;
 #line 33 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb3:
-#line 391 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 392 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     t18 = h4_ret0;
     h_0opt_e201354_retain(&t18);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -400,7 +401,7 @@ bb3:
 #line 37 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 void h_fixedbugs335everywayoutkeepsitsreturnsline_count(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) {
 #line 37 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HeroStr h2_shout = {0}; HeroStr h3_own3 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; bool t6; h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; HeroStr t12; HeroStr t13; goto bb0;
+    HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; goto bb0;
 #line 37 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb0:
     t1 = h1_word;
@@ -456,7 +457,7 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb4:
-#line 460 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 461 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     hero_str_release_at(&h2_shout);
     hero_str_release_at(&h3_own3);
     return;
@@ -465,7 +466,7 @@ bb4:
 #line 44 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 void h_fixedbugs335everywayoutkeepsitsreturnsline_grow(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) {
 #line 44 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HeroStr h2_shout = {0}; HeroStr h3_own3 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t4; int64_t t5; HeroStr t6; int64_t t7; int64_t t8; HeroStr t9; HeroStr t10; goto bb0;
+    HeroStr h2_shout = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; goto bb0;
 #line 44 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb0:
     t1 = h1_word;
@@ -498,7 +499,7 @@ bb0:
     if (__builtin_add_overflow(t5, t7, &t8)) hero_panic_overflow();
 #line 46 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
     (*ph0_t).f_n = t8;
-#line 502 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 503 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     hero_str_release_at(&h2_shout);
     hero_str_release_at(&h3_own3);
     return;
@@ -507,7 +508,7 @@ bb0:
 #line 48 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 HeroStr h_fixedbugs335everywayoutkeepsitsreturnsline_only(h_fixedbugs335everywayoutkeepsitsreturnsline_Tally *ph0_t, HeroStr h1_word) {
 #line 48 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    HeroStr h2_own2 = {0}; h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; goto bb0;
 #line 48 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb0:
     t1 = (*ph0_t);
@@ -530,7 +531,7 @@ bb0:
     h2_own2 = t7;
 #line 50 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
     hero_str_decref(t8);
-#line 534 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 535 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     hero_str_incref(t7);
     hero_str_release_at(&h2_own2);
     return t7;
@@ -539,7 +540,7 @@ bb0:
 #line 52 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 void h_fixedbugs335everywayoutkeepsitsreturnsline_main(void) {
 #line 52 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
-    h_fixedbugs335everywayoutkeepsitsreturnsline_Tally h0_t; h_0opt_e201354 h1_f0 = {0}; int64_t h2_r0; h_0opt_e201354 h3_f1 = {0}; int64_t h4_r1; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_e201354 h8_own8 = {0}; h_0opt_e201354 h9_own9 = {0}; HeroStr h10_own10 = {0}; int64_t t1; h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; h_0opt_e201354 t10; h_0opt_e201354 t11; int64_t t12; int64_t t13; bool t14; h_0opt_e201354 t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; h_0opt_e201354 t20; h_0opt_e201354 t21; int64_t t22; int64_t t23; bool t24; h_0opt_e201354 t25; int64_t t26; int64_t t27; int64_t t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t34; int64_t t35; HeroStr t36; HeroStr t37; HeroStr t38; h_0opt_e201354 t39; h_0opt_e201354 t40; h_0opt_e201354 t41; h_0opt_e201354 t42; HeroStr t43; goto bb0;
+    h_fixedbugs335everywayoutkeepsitsreturnsline_Tally h0_t; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HERO_NODEBUG int64_t h4_r1; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_fixedbugs335everywayoutkeepsitsreturnsline_Tally t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG HeroStr t43; goto bb0;
 #line 52 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
 bb0:
     t1 = INT64_C(0);
@@ -717,7 +718,7 @@ bb6:
     hero_print_int(t35);
 #line 59 "tests/golden/emit/fixedbugs-335-every-way-out-keeps-its-return-s-line.hero"
     hero_print_end();
-#line 721 "fixedbugs335everywayoutkeepsitsreturnsline.c"
+#line 722 "fixedbugs335everywayoutkeepsitsreturnsline.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
     hero_str_release_at(&h5_own5);

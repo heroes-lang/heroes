@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -89,7 +90,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 93 "main.c"
+#line 94 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -131,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "main.c"
+#line 136 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -150,7 +151,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 #line 52 "examples/sdl/main.hero"
 void h_main_main(void) {
 #line 52 "examples/sdl/main.hero"
-    h_0opt_f87774a h0_f0 = {0}; HeroStr h1_r0 = {0}; h_0opt_f87774a h2_own2 = {0}; HeroStr t1; const char * t2; h_0opt_f87774a t3; h_0opt_f87774a t4; int64_t t5; int64_t t6; bool t7; h_0opt_f87774a t8; HeroStr t9; HeroStr t10; HeroStr t11; int64_t t12; int64_t t13; bool t14; HeroStr t15; int32_t t16; int32_t t17; bool t18; h_0opt_f87774a t19; h_0opt_f87774a t20; HeroStr t21; HeroStr t22; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}; HERO_NODEBUG HeroStr h1_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_0opt_f87774a t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; goto bb0;
 #line 52 "examples/sdl/main.hero"
 bb0:
 #line 56 "examples/sdl/main.hero"
@@ -243,7 +244,7 @@ bb3:
     hero_print_bool(t18);
 #line 61 "examples/sdl/main.hero"
     hero_print_end();
-#line 247 "main.c"
+#line 248 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h2_own2));
@@ -252,7 +253,7 @@ bb3:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 256 "main.c"
+#line 257 "main.c"
     return HERO_STR_OK;
 }
 
@@ -261,7 +262,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
 #line 153 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 153 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; h_0opt_f87774a h7_own7 = {0}; const char * t1; const char * t2; bool t3; HeroStr t4; HeroStr t5; h_0opt_f87774a t6; int64_t t7; const char * t8; HeroStr t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; h_0opt_f87774a t17; h_0opt_f87774a t18; HeroStr t19; HeroStr t20; h_0opt_f87774a t21; h_0opt_f87774a t22; h_0opt_f87774a t23; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG const char * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG h_0opt_f87774a t23; goto bb0;
 #line 153 "<heroes library>"
 bb0:
     t1 = h0_c;
@@ -375,7 +376,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 379 "main.c"
+#line 380 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

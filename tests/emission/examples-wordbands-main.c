@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -56,7 +57,7 @@ HERO_STR_STATIC(hero_str_0, "");
 HERO_STR_STATIC(hero_str_64ba1395, "epsilons across ");
 HERO_STR_STATIC(hero_str_7f3b381d, " bands: ");
 
-#line 60 "main.c"
+#line 61 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_e201354 {
     int64_t tag;
@@ -98,7 +99,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "main.c"
+#line 103 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -133,31 +134,31 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 27 "examples/wordbands/main.hero"
 int64_t h_main_BANDS(void) {
 #line 27 "examples/wordbands/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 27 "examples/wordbands/main.hero"
 bb0:
     t1 = INT64_C(8);
 #line 28 "examples/wordbands/main.hero"
     return t1;
-#line 143 "main.c"
+#line 144 "main.c"
 }
 
 #line 30 "examples/wordbands/main.hero"
 int64_t h_main_LINES(void) {
 #line 30 "examples/wordbands/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 30 "examples/wordbands/main.hero"
 bb0:
     t1 = INT64_C(300);
 #line 31 "examples/wordbands/main.hero"
     return t1;
-#line 155 "main.c"
+#line 156 "main.c"
 }
 
 #line 35 "examples/wordbands/main.hero"
 HeroStr h_main_text_of(int64_t h0_index) {
 #line 35 "examples/wordbands/main.hero"
-    HeroArrayHeader * h1_pieces = {0}; int64_t h2_n; int64_t h3_which; int64_t h4_s0; HeroStr h5_r0 = {0}; HeroStr h6_word = {0}; HeroArrayHeader * h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; bool t16; int64_t t17; int64_t t18; bool t19; int64_t t20; int64_t t21; bool t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t33; int64_t t35; int64_t t36; int64_t t37; HeroArrayHeader * t38; HeroStr t39; HeroStr t40; HeroArrayHeader * t41; HeroArrayHeader * t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroStr t49; goto bb0;
+    HeroArrayHeader * h1_pieces = {0}; int64_t h2_n; int64_t h3_which; HERO_NODEBUG int64_t h4_s0; HERO_NODEBUG HeroStr h5_r0 = {0}; HeroStr h6_word = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t33; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; goto bb0;
 #line 35 "examples/wordbands/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -236,7 +237,7 @@ bb3:
     h8_own8 = t40;
 #line 52 "examples/wordbands/main.hero"
     hero_str_decref(t43);
-#line 240 "main.c"
+#line 241 "main.c"
     hero_str_incref(t40);
     hero_array_release_at(&h1_pieces);
     hero_str_release_at(&h5_r0);
@@ -372,13 +373,13 @@ bb13:
     hero_str_decref(t49);
 #line 42 "examples/wordbands/main.hero"
     goto bb4;
-#line 376 "main.c"
+#line 377 "main.c"
 }
 
 #line 56 "examples/wordbands/main.hero"
 int64_t h_main_longest_word_count(int64_t h0_index) {
 #line 56 "examples/wordbands/main.hero"
-    hero_thread_guard("main.longest_word_count"); HeroMapHeader * h1_counts = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_word = {0}; h_0opt_e201354 h5_f0 = {0}; int64_t h6_r0; HeroStr h7_best = {0}; int64_t h8_seen; HeroArrayHeader * h9_xs1 = {0}; int64_t h10_i1; HeroStr h11_key = {0}; h_0opt_e201354 h12_f1 = {0}; int64_t h13_r1; HeroMapHeader * h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; h_0opt_e201354 h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; h_0opt_e201354 h20_own20 = {0}; HeroMapHeader * t1; int64_t t2; HeroStr t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; HeroStr t12; HeroStr t13; HeroMapHeader * t14; HeroStr t15; h_0opt_e201354 t16; h_0opt_e201354 t17; int64_t t18; int64_t t19; bool t20; h_0opt_e201354 t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; HeroStr t30; int64_t t31; HeroMapHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; int64_t t35; int64_t t36; HeroArrayHeader * t37; int64_t t38; bool t39; HeroArrayHeader * t40; int64_t t41; HeroStr t42; HeroStr t43; int64_t t44; HeroStr t45; int64_t t46; bool t47; HeroStr t48; HeroMapHeader * t49; HeroStr t50; h_0opt_e201354 t51; h_0opt_e201354 t52; int64_t t53; int64_t t54; bool t55; h_0opt_e201354 t56; int64_t t57; int64_t t58; int64_t t59; int64_t t60; int64_t t61; int64_t t62; int64_t t63; HeroMapHeader * t64; HeroMapHeader * t65; HeroStr t66; HeroArrayHeader * t67; HeroArrayHeader * t68; HeroStr t69; h_0opt_e201354 t70; h_0opt_e201354 t71; HeroStr t72; HeroArrayHeader * t73; HeroArrayHeader * t74; HeroArrayHeader * t75; HeroStr t76; HeroStr t77; h_0opt_e201354 t78; h_0opt_e201354 t79; goto bb0;
+    hero_thread_guard("main.longest_word_count"); HeroMapHeader * h1_counts = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_word = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG int64_t h6_r0; HeroStr h7_best = {0}; int64_t h8_seen; HERO_NODEBUG HeroArrayHeader * h9_xs1 = {0}; HERO_NODEBUG int64_t h10_i1; HeroStr h11_key = {0}; HERO_NODEBUG h_0opt_e201354 h12_f1 = {0}; HERO_NODEBUG int64_t h13_r1; HERO_NODEBUG HeroMapHeader * h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroMapHeader * t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroMapHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG bool t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroMapHeader * t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG h_0opt_e201354 t51; HERO_NODEBUG h_0opt_e201354 t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG bool t55; HERO_NODEBUG h_0opt_e201354 t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG HeroMapHeader * t64; HERO_NODEBUG HeroMapHeader * t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_e201354 t70; HERO_NODEBUG h_0opt_e201354 t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG h_0opt_e201354 t78; HERO_NODEBUG h_0opt_e201354 t79; goto bb0;
 #line 56 "examples/wordbands/main.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
@@ -647,7 +648,7 @@ bb10:
 bb11:
 #line 70 "examples/wordbands/main.hero"
     t63 = h8_seen;
-#line 651 "main.c"
+#line 652 "main.c"
     hero_map_release_at(&h1_counts);
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_word);
@@ -752,7 +753,7 @@ bb17:
     h8_seen = t59;
 #line 68 "examples/wordbands/main.hero"
     goto bb12;
-#line 756 "main.c"
+#line 757 "main.c"
 }
 
 int64_t h_0cb_main_longest_word_count(int64_t h0_index) {
@@ -763,7 +764,7 @@ int64_t h_0cb_main_longest_word_count(int64_t h0_index) {
 #line 74 "examples/wordbands/main.hero"
 HeroArrayHeader * h_main_split_words(HeroStr h0_text) {
 #line 74 "examples/wordbands/main.hero"
-    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_current = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; HeroStr h5_ch = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; HeroStr t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; HeroStr t12; HeroStr t13; HeroStr t14; bool t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; bool t19; HeroArrayHeader * t21; HeroStr t22; HeroStr t23; HeroArrayHeader * t25; HeroStr t27; int64_t t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; int64_t t33; int64_t t34; bool t35; HeroArrayHeader * t37; HeroStr t38; HeroStr t39; HeroArrayHeader * t41; HeroArrayHeader * t42; HeroArrayHeader * t43; HeroArrayHeader * t44; HeroArrayHeader * t45; HeroArrayHeader * t46; HeroArrayHeader * t47; HeroStr t48; HeroStr t49; HeroArrayHeader * t50; HeroArrayHeader * t51; HeroStr t52; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_current = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_ch = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroStr t52; goto bb0;
 #line 74 "examples/wordbands/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -948,7 +949,7 @@ bb10:
 bb11:
 #line 89 "examples/wordbands/main.hero"
     t41 = h1_out;
-#line 952 "main.c"
+#line 953 "main.c"
     hero_array_incref(t41);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_current);
@@ -982,13 +983,13 @@ bb12:
 bb13:
 #line 87 "examples/wordbands/main.hero"
     goto bb11;
-#line 986 "main.c"
+#line 987 "main.c"
 }
 
 #line 91 "examples/wordbands/main.hero"
 int64_t h_main_together(void) {
 #line 91 "examples/wordbands/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_h; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; h_0fn_48ac9712 t7; int64_t t8; int64_t t9; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; goto bb0;
 #line 91 "examples/wordbands/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -1110,7 +1111,7 @@ bb6:
 bb7:
 #line 104 "examples/wordbands/main.hero"
     t31 = h2_total;
-#line 1114 "main.c"
+#line 1115 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -1120,7 +1121,7 @@ bb7:
 #line 106 "examples/wordbands/main.hero"
 int64_t h_main_alone(void) {
 #line 106 "examples/wordbands/main.hero"
-    int64_t h0_total; int64_t h1_i; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; goto bb0;
+    int64_t h0_total; int64_t h1_i; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; goto bb0;
 #line 106 "examples/wordbands/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -1167,13 +1168,13 @@ bb3:
     t13 = h0_total;
 #line 114 "examples/wordbands/main.hero"
     return t13;
-#line 1171 "main.c"
+#line 1172 "main.c"
 }
 
 #line 116 "examples/wordbands/main.hero"
 void h_main_main(void) {
 #line 116 "examples/wordbands/main.hero"
-    HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; goto bb0;
 #line 116 "examples/wordbands/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_64ba1395);
@@ -1195,7 +1196,7 @@ bb0:
     hero_print_end();
 #line 117 "examples/wordbands/main.hero"
     return;
-#line 1199 "main.c"
+#line 1200 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
     if (v->tag == INT64_C(0)) {

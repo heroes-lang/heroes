@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -69,7 +70,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_3f5d7cc3, " err ");
 HERO_STR_STATIC(hero_str_2c, ",");
 
-#line 73 "fixedbugs231everywayoutofmanyistaken.c"
+#line 74 "fixedbugs231everywayoutofmanyistaken.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -107,7 +108,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 111 "fixedbugs231everywayoutofmanyistaken.c"
+#line 112 "fixedbugs231everywayoutofmanyistaken.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -132,7 +133,7 @@ void h_fixedbugs231everywayoutofmanyistaken_main(void);
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 HeroStr h_fixedbugs231everywayoutofmanyistaken_ladder(int64_t h0_x) {
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-    HeroStr h1_s0 = {0}; HeroStr h2_s1 = {0}; HeroStr h3_s2 = {0}; HeroStr h4_s3 = {0}; HeroStr h5_s4 = {0}; HeroStr h6_s5 = {0}; HeroStr h7_s6 = {0}; HeroStr h8_s7 = {0}; HeroStr h9_s8 = {0}; HeroStr h10_s9 = {0}; HeroStr h11_s10 = {0}; HeroStr h12_s11 = {0}; HeroStr h13_ret0 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; HeroStr h26_own26 = {0}; HeroStr h27_own27 = {0}; int64_t t1; HeroStr t2; HeroStr t3; HeroStr t4; int64_t t5; int64_t t6; bool t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; int64_t t12; int64_t t13; bool t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; int64_t t19; int64_t t20; bool t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; int64_t t26; int64_t t27; bool t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; int64_t t33; int64_t t34; bool t35; HeroStr t36; HeroStr t37; HeroStr t38; HeroStr t39; int64_t t40; int64_t t41; bool t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; int64_t t47; int64_t t48; bool t49; HeroStr t50; HeroStr t51; HeroStr t52; HeroStr t53; int64_t t54; int64_t t55; bool t56; HeroStr t57; HeroStr t58; HeroStr t59; HeroStr t60; int64_t t61; int64_t t62; bool t63; HeroStr t64; HeroStr t65; HeroStr t66; HeroStr t67; int64_t t68; int64_t t69; bool t70; HeroStr t71; HeroStr t72; HeroStr t73; HeroStr t74; int64_t t75; int64_t t76; bool t77; HeroStr t78; HeroStr t79; HeroStr t80; HeroStr t81; int64_t t82; int64_t t83; bool t84; HeroStr t85; HeroStr t86; HeroStr t87; HeroStr t88; HeroStr t89; HeroStr t90; HeroStr t91; HeroStr t92; HeroStr t93; HeroStr t94; HeroStr t95; HeroStr t96; HeroStr t97; HeroStr t98; HeroStr t99; HeroStr t100; HeroStr t101; HeroStr t102; HeroStr t103; HeroStr t104; HeroStr t105; HeroStr t106; HeroStr t107; HeroStr t108; HeroStr t109; HeroStr t110; HeroStr t111; HeroStr t112; HeroStr t113; HeroStr t114; HeroStr t115; goto bb0;
+    HeroStr h1_s0 = {0}; HeroStr h2_s1 = {0}; HeroStr h3_s2 = {0}; HeroStr h4_s3 = {0}; HeroStr h5_s4 = {0}; HeroStr h6_s5 = {0}; HeroStr h7_s6 = {0}; HeroStr h8_s7 = {0}; HeroStr h9_s8 = {0}; HeroStr h10_s9 = {0}; HeroStr h11_s10 = {0}; HeroStr h12_s11 = {0}; HERO_NODEBUG HeroStr h13_ret0 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG HeroStr h26_own26 = {0}; HERO_NODEBUG HeroStr h27_own27 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG bool t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG bool t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG bool t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG bool t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG bool t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG bool t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG HeroStr t95; HERO_NODEBUG HeroStr t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG HeroStr t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroStr t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG HeroStr t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG HeroStr t106; HERO_NODEBUG HeroStr t107; HERO_NODEBUG HeroStr t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG HeroStr t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG HeroStr t115; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb0:
     t1 = h0_x;
@@ -664,7 +665,7 @@ bb36:
     goto bb34;
 #line 62 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb37:
-#line 668 "fixedbugs231everywayoutofmanyistaken.c"
+#line 669 "fixedbugs231everywayoutofmanyistaken.c"
     t89 = h13_ret0;
     hero_str_incref(t89);
     hero_str_release_at(&h1_s0);
@@ -699,7 +700,7 @@ bb37:
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 h_0opt_f87774a h_fixedbugs231everywayoutofmanyistaken_pick(int64_t h0_x, int64_t *ph1_count) {
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-    HeroStr h2_s0 = {0}; HeroStr h3_s1 = {0}; HeroStr h4_s2 = {0}; HeroStr h5_s3 = {0}; h_0opt_e201354 h6_f0 = {0}; int64_t h7_n; HeroStr h8_s4 = {0}; HeroStr h9_s5 = {0}; HeroStr h10_s6 = {0}; h_0opt_f87774a h11_ret0 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; h_0opt_f87774a h15_own15 = {0}; HeroStr h16_own16 = {0}; h_0opt_f87774a h17_own17 = {0}; HeroStr h18_own18 = {0}; h_0opt_f87774a h19_own19 = {0}; h_0opt_e201354 h20_own20 = {0}; HeroStr h21_own21 = {0}; h_0opt_f87774a h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; h_0opt_f87774a h25_own25 = {0}; HeroStr h26_own26 = {0}; h_0opt_f87774a h27_own27 = {0}; HeroArrayHeader * h28_own28 = {0}; HeroStr h29_own29 = {0}; HeroStr h30_own30 = {0}; h_0opt_f87774a h31_own31 = {0}; HeroStr h32_own32 = {0}; HeroStr h33_own33 = {0}; h_0opt_f87774a h34_own34 = {0}; h_0opt_f87774a h35_own35 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroStr t4; int64_t t5; HeroStr t6; HeroStr t7; int64_t t8; int64_t t9; bool t10; HeroStr t11; h_0opt_f87774a t12; HeroStr t13; HeroStr t14; HeroStr t15; int64_t t16; int64_t t17; bool t18; HeroStr t19; h_0opt_f87774a t20; HeroStr t21; HeroStr t22; HeroStr t23; int64_t t24; int64_t t25; bool t26; HeroStr t27; HeroStr t28; h_0opt_f87774a t29; HeroStr t30; HeroStr t31; HeroStr t32; int64_t t33; int64_t t34; bool t35; HeroStr t36; HeroStr t37; HeroStr t38; h_0opt_f87774a t39; int64_t t40; h_0opt_e201354 t41; h_0opt_e201354 t42; int64_t t43; int64_t t44; bool t45; h_0opt_e201354 t46; HeroFailure t47; h_0opt_f87774a t48; h_0opt_e201354 t49; int64_t t50; HeroStr t51; int64_t t52; HeroStr t53; HeroStr t54; int64_t t55; int64_t t56; bool t57; HeroStr t58; h_0opt_f87774a t59; HeroStr t60; HeroStr t61; HeroStr t62; int64_t t63; int64_t t64; bool t65; HeroStr t66; int64_t t67; int64_t t68; HeroStr t69; h_0opt_f87774a t70; HeroStr t71; HeroStr t72; HeroStr t73; HeroArrayHeader * t74; HeroStr t75; HeroStr t76; int64_t t77; int64_t t78; bool t79; HeroStr t80; h_0opt_f87774a t81; HeroStr t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroStr t86; h_0opt_f87774a t87; h_0opt_f87774a t88; HeroStr t89; HeroStr t90; HeroStr t91; HeroStr t92; HeroStr t93; h_0opt_f87774a t94; HeroStr t95; HeroStr t96; h_0opt_f87774a t97; HeroStr t98; HeroStr t99; h_0opt_f87774a t100; h_0opt_e201354 t101; h_0opt_e201354 t102; HeroStr t103; h_0opt_f87774a t104; HeroStr t105; HeroStr t106; HeroStr t107; h_0opt_f87774a t108; HeroStr t109; HeroStr t110; h_0opt_f87774a t111; HeroArrayHeader * t112; HeroStr t113; HeroStr t114; HeroStr t115; h_0opt_f87774a t116; HeroStr t117; HeroStr t118; h_0opt_f87774a t119; h_0opt_f87774a t120; goto bb0;
+    HeroStr h2_s0 = {0}; HeroStr h3_s1 = {0}; HeroStr h4_s2 = {0}; HeroStr h5_s3 = {0}; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}; int64_t h7_n; HeroStr h8_s4 = {0}; HeroStr h9_s5 = {0}; HeroStr h10_s6 = {0}; HERO_NODEBUG h_0opt_f87774a h11_ret0 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_f87774a h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_0opt_f87774a h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG h_0opt_f87774a h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG h_0opt_f87774a h25_own25 = {0}; HERO_NODEBUG HeroStr h26_own26 = {0}; HERO_NODEBUG h_0opt_f87774a h27_own27 = {0}; HERO_NODEBUG HeroArrayHeader * h28_own28 = {0}; HERO_NODEBUG HeroStr h29_own29 = {0}; HERO_NODEBUG HeroStr h30_own30 = {0}; HERO_NODEBUG h_0opt_f87774a h31_own31 = {0}; HERO_NODEBUG HeroStr h32_own32 = {0}; HERO_NODEBUG HeroStr h33_own33 = {0}; HERO_NODEBUG h_0opt_f87774a h34_own34 = {0}; HERO_NODEBUG h_0opt_f87774a h35_own35 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG h_0opt_e201354 t46; HERO_NODEBUG HeroFailure t47; HERO_NODEBUG h_0opt_f87774a t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG h_0opt_f87774a t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG bool t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG bool t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG h_0opt_f87774a t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG h_0opt_f87774a t87; HERO_NODEBUG h_0opt_f87774a t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG h_0opt_f87774a t94; HERO_NODEBUG HeroStr t95; HERO_NODEBUG HeroStr t96; HERO_NODEBUG h_0opt_f87774a t97; HERO_NODEBUG HeroStr t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG h_0opt_f87774a t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG h_0opt_e201354 t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG h_0opt_f87774a t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG HeroStr t106; HERO_NODEBUG HeroStr t107; HERO_NODEBUG h_0opt_f87774a t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG h_0opt_f87774a t111; HERO_NODEBUG HeroArrayHeader * t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG h_0opt_f87774a t116; HERO_NODEBUG HeroStr t117; HERO_NODEBUG HeroStr t118; HERO_NODEBUG h_0opt_f87774a t119; HERO_NODEBUG h_0opt_f87774a t120; goto bb0;
 #line 67 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb0:
     t1 = (*ph1_count);
@@ -1224,7 +1225,7 @@ bb23:
     goto bb21;
 #line 97 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb24:
-#line 1228 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1229 "fixedbugs231everywayoutofmanyistaken.c"
     t88 = h11_ret0;
     h_0opt_f87774a_retain(&t88);
     hero_str_release_at(&h2_s0);
@@ -1265,7 +1266,7 @@ bb24:
 #line 100 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 h_0opt_e201354 h_fixedbugs231everywayoutofmanyistaken_tens(int64_t h0_x) {
 #line 100 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-    h_0opt_e201354 h1_ret0 = {0}; h_0opt_e201354 h2_own2 = {0}; h_0opt_e201354 h3_own3 = {0}; int64_t t1; int64_t t2; bool t3; HeroStr t4; HeroStr t5; h_0opt_e201354 t6; int64_t t7; int64_t t8; int64_t t9; h_0opt_e201354 t10; h_0opt_e201354 t11; h_0opt_e201354 t12; h_0opt_e201354 t13; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; goto bb0;
 #line 100 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb0:
     t1 = h0_x;
@@ -1323,7 +1324,7 @@ bb3:
     goto bb1;
 #line 102 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb4:
-#line 1327 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1328 "fixedbugs231everywayoutofmanyistaken.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -1334,7 +1335,7 @@ bb4:
 #line 107 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 void h_fixedbugs231everywayoutofmanyistaken_tally(int64_t h0_x, HeroArrayHeader * *ph1_seen) {
 #line 107 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-    HeroStr t2; int64_t t4; int64_t t5; int64_t t6; int64_t t7; bool t8; HeroStr t10; int64_t t12; int64_t t13; int64_t t14; int64_t t15; bool t16; HeroStr t18; goto bb0;
+    HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t10; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t18; goto bb0;
 #line 107 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb0:
     t2 = HERO_STR_LIT(hero_str_3629);
@@ -1406,13 +1407,13 @@ bb6:
 bb7:
 #line 116 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     return;
-#line 1410 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1411 "fixedbugs231everywayoutofmanyistaken.c"
 }
 
 #line 118 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 void h_fixedbugs231everywayoutofmanyistaken_main(void) {
 #line 118 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
-    int64_t h0_x; int64_t h1_count; HeroArrayHeader * h2_seen = {0}; h_0opt_f87774a h3_s0 = {0}; HeroStr h4_s = {0}; HeroFailure h5_e = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; int64_t t1; int64_t t2; int64_t t3; bool t4; int64_t t5; HeroStr t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; int64_t t14; bool t15; int64_t t16; h_0opt_f87774a t17; h_0opt_f87774a t18; int64_t t19; h_0opt_f87774a t20; HeroStr t21; int64_t t22; HeroStr t23; HeroStr t24; HeroStr t25; int64_t t26; h_0opt_f87774a t27; HeroFailure t28; int64_t t29; HeroStr t30; HeroFailure t31; HeroStr t32; HeroStr t33; HeroFailure t34; HeroStr t35; HeroStr t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; HeroArrayHeader * t42; int64_t t43; HeroStr t44; HeroArrayHeader * t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroArrayHeader * t49; HeroArrayHeader * t50; h_0opt_f87774a t51; h_0opt_f87774a t52; HeroStr t53; HeroStr t54; HeroFailure t55; goto bb0;
+    int64_t h0_x; int64_t h1_count; HeroArrayHeader * h2_seen = {0}; HERO_NODEBUG h_0opt_f87774a h3_s0 = {0}; HeroStr h4_s = {0}; HeroFailure h5_e = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroFailure t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG h_0opt_f87774a t51; HERO_NODEBUG h_0opt_f87774a t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroFailure t55; goto bb0;
 #line 118 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
 bb0:
     t1 = INT64_C(0);
@@ -1551,7 +1552,7 @@ bb6:
     hero_print_str(t47);
 #line 137 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     hero_print_end();
-#line 1555 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1556 "fixedbugs231everywayoutofmanyistaken.c"
     hero_array_release_at(&h2_seen);
     h_0opt_f87774a_release(hero_slot_escape(&h3_s0));
     hero_str_release_at(&h4_s);
@@ -1662,7 +1663,7 @@ bb9:
     hero_print_end();
 #line 132 "tests/golden/run/fixedbugs-231-every-way-out-of-many-is-taken.hero"
     goto bb7;
-#line 1666 "fixedbugs231everywayoutofmanyistaken.c"
+#line 1667 "fixedbugs231everywayoutofmanyistaken.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

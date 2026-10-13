@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -87,7 +88,7 @@ HERO_STR_STATIC(hero_str_41b4cad0, ":memory:");
 HERO_STR_STATIC(hero_str_353a8d65, "no database");
 HERO_STR_STATIC(hero_str_5689c81, "select 1");
 
-#line 91 "ffioutparameterguard.c"
+#line 92 "ffioutparameterguard.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -132,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "ffioutparameterguard.c"
+#line 137 "ffioutparameterguard.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -149,7 +150,7 @@ void h_ffioutparameterguard_main(void);
 
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 int64_t h_ffioutparameterguard_SQLITE_OK(void) {
-#line 153 "ffioutparameterguard.c"
+#line 154 "ffioutparameterguard.c"
     return SQLITE_OK;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -174,7 +175,7 @@ void h_ffioutparameterguard_main(void) {
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 #define h2_tail (*hero_lend_h2_tail)
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    void * *const hero_lend_h0_db = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "db"); void * *const hero_lend_h1_stmt = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "stmt"); const char * *const hero_lend_h2_tail = (const char * *)hero_lend_local(sizeof(const char *), "ffioutparameterguard.main", "tail"); int64_t h3_rc; void * t1; HeroStr t2; const char * t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; void * t8; const char * t9; void * t10; HeroStr t11; const char * t12; int32_t t13; int64_t t14; int64_t t15; int64_t t16; bool t17; goto bb0;
+    void * *const hero_lend_h0_db = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "db"); void * *const hero_lend_h1_stmt = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "stmt"); const char * *const hero_lend_h2_tail = (const char * *)hero_lend_local(sizeof(const char *), "ffioutparameterguard.main", "tail"); int64_t h3_rc; HERO_NODEBUG void * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG void * t8; HERO_NODEBUG const char * t9; HERO_NODEBUG void * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG const char * t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; goto bb0;
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 bb0:
     t1 = ((void *)0);
@@ -253,7 +254,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return;
-#line 257 "ffioutparameterguard.c"
+#line 258 "ffioutparameterguard.c"
 }
 #undef h0_db
 #undef h1_stmt

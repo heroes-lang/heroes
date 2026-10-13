@@ -45,6 +45,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 26 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 _Static_assert(__builtin_classify_type(((SDL_CommonEvent *)0)->type) == 1 && sizeof(((SDL_CommonEvent *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_CommonEvent *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_CommonEvent type");
@@ -62,11 +63,11 @@ _Static_assert(__builtin_classify_type(((SDL_UserEvent *)0)->data2) == 5 && _Gen
 _Static_assert(__builtin_classify_type(((SDL_Event *)0)->type) == 1 && sizeof(((SDL_Event *)0)->type) == sizeof(uint32_t) && (_Generic(((SDL_Event *)0)->type, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field SDL_Event type");
 _Static_assert(_Generic(&((SDL_Event *)0)->common, SDL_CommonEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->common) == sizeof(SDL_CommonEvent), "heroes-ffi-field SDL_Event common");
 _Static_assert(_Generic(&((SDL_Event *)0)->user, SDL_UserEvent *: 1, default: 0) && sizeof(((SDL_Event *)0)->user) == sizeof(SDL_UserEvent), "heroes-ffi-field SDL_Event user");
-#line 66 "ffiaconstructionpollsansdl3event.c"
+#line 67 "ffiaconstructionpollsansdl3event.c"
 
 #line 29 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 _Static_assert(__builtin_classify_type(*(SDL_UserEvent *)0) != 13, "heroes-ffi-union SDL_UserEvent type reserved timestamp windowID code data1 data2");
-#line 70 "ffiaconstructionpollsansdl3event.c"
+#line 71 "ffiaconstructionpollsansdl3event.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -154,7 +155,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 158 "ffiaconstructionpollsansdl3event.c"
+#line 159 "ffiaconstructionpollsansdl3event.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionpollsansdl3event_SDL_CommonEvent_eq(const SDL_CommonEvent *a, const SDL_CommonEvent *b);
@@ -181,7 +182,7 @@ void h_ffiaconstructionpollsansdl3event_main(void) {
 #line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 #define h6_got (*hero_lend_h6_got)
 #line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
-    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent"); bool h1_found; int32_t h2_code; uint32_t h3_keyed; int64_t h4_tries; bool h5_b0; SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got"); bool h7_b1; uint32_t t1; bool t2; uint32_t t3; uint32_t t4; uint64_t t5; uint32_t t6; int32_t t7; void * t8; void * t9; SDL_UserEvent t10; SDL_Event t11; bool t12; bool t13; int32_t t14; uint32_t t15; int64_t t16; bool t17; bool t18; int64_t t19; int64_t t20; bool t21; bool t22; uint32_t t23; SDL_Event t24; bool t25; SDL_Event t26; uint32_t t27; uint32_t t28; bool t29; bool t30; bool t31; SDL_Event t32; SDL_UserEvent t33; int32_t t34; SDL_Event t35; SDL_CommonEvent t36; uint32_t t37; int64_t t38; int64_t t39; int64_t t40; bool t41; int32_t t42; uint32_t t43; uint32_t t44; bool t45; goto bb0;
+    SDL_Event *const hero_lend_h0_sent = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "sent"); bool h1_found; int32_t h2_code; uint32_t h3_keyed; int64_t h4_tries; HERO_NODEBUG bool h5_b0; SDL_Event *const hero_lend_h6_got = (SDL_Event *)hero_lend_local(sizeof(SDL_Event), "ffiaconstructionpollsansdl3event.main", "got"); HERO_NODEBUG bool h7_b1; HERO_NODEBUG uint32_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG uint32_t t3; HERO_NODEBUG uint32_t t4; HERO_NODEBUG uint64_t t5; HERO_NODEBUG uint32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG void * t8; HERO_NODEBUG void * t9; HERO_NODEBUG SDL_UserEvent t10; HERO_NODEBUG SDL_Event t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG uint32_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG bool t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG uint32_t t23; HERO_NODEBUG SDL_Event t24; HERO_NODEBUG bool t25; HERO_NODEBUG SDL_Event t26; HERO_NODEBUG uint32_t t27; HERO_NODEBUG uint32_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG bool t30; HERO_NODEBUG bool t31; HERO_NODEBUG SDL_Event t32; HERO_NODEBUG SDL_UserEvent t33; HERO_NODEBUG int32_t t34; HERO_NODEBUG SDL_Event t35; HERO_NODEBUG SDL_CommonEvent t36; HERO_NODEBUG uint32_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG int32_t t42; HERO_NODEBUG uint32_t t43; HERO_NODEBUG uint32_t t44; HERO_NODEBUG bool t45; goto bb0;
 #line 46 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
 bb0:
     t1 = UINT64_C(16384);
@@ -362,7 +363,7 @@ bb9:
 bb10:
 #line 63 "tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero"
     goto bb6;
-#line 366 "ffiaconstructionpollsansdl3event.c"
+#line 367 "ffiaconstructionpollsansdl3event.c"
 }
 #undef h0_sent
 #undef h6_got

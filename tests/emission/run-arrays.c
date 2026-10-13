@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +50,7 @@ HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_63, "c");
 HERO_STR_STATIC(hero_str_64, "d");
 
-#line 53 "arrays.c"
+#line 54 "arrays.c"
 typedef struct h_arrays_Point {
     int64_t f_x;
     int64_t f_y;
@@ -84,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "arrays.c"
+#line 89 "arrays.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_arrays_Point_eq(const h_arrays_Point *a, const h_arrays_Point *b);
@@ -121,7 +122,7 @@ void h_arrays_main(void);
 #line 25 "tests/golden/run/arrays.hero"
 int64_t h_arrays_total(HeroArrayHeader * h0_xs) {
 #line 25 "tests/golden/run/arrays.hero"
-    int64_t h1_sum; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_n; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; goto bb0;
+    int64_t h1_sum; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_n; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; goto bb0;
 #line 25 "tests/golden/run/arrays.hero"
 bb0:
     t1 = INT64_C(0);
@@ -190,7 +191,7 @@ bb3:
 bb4:
 #line 31 "tests/golden/run/arrays.hero"
     t17 = h1_sum;
-#line 194 "arrays.c"
+#line 195 "arrays.c"
     hero_array_release_at(&h2_xs0);
     return t17;
 }
@@ -198,7 +199,7 @@ bb4:
 #line 33 "tests/golden/run/arrays.hero"
 void h_arrays_main(void) {
 #line 33 "tests/golden/run/arrays.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_words = {0}; HeroArrayHeader * h2_ps = {0}; HeroArrayHeader * h3_grid = {0}; HeroArrayHeader * h4_more = {0}; HeroArrayHeader * h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; HeroArrayHeader * h19_own19 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; HeroArrayHeader * t6; int64_t t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroArrayHeader * t14; HeroArrayHeader * t15; int64_t t16; HeroStr t17; HeroArrayHeader * t18; int64_t t19; HeroStr t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t24; h_arrays_Point t25; int64_t t26; int64_t t27; h_arrays_Point t28; HeroArrayHeader * t29; HeroArrayHeader * t30; int64_t t31; h_arrays_Point t32; int64_t t33; HeroArrayHeader * t34; int64_t t35; int64_t t36; h_arrays_Point t37; int64_t t38; int64_t t39; h_arrays_Point t40; HeroArrayHeader * t41; bool t42; HeroArrayHeader * t43; int64_t t44; int64_t t45; h_arrays_Point t46; HeroArrayHeader * t47; bool t48; int64_t t49; int64_t t50; HeroArrayHeader * t51; int64_t t52; int64_t t53; HeroArrayHeader * t54; HeroArrayHeader * t55; HeroArrayHeader * t56; int64_t t57; HeroArrayHeader * t58; int64_t t59; int64_t t60; HeroArrayHeader * t61; int64_t t62; int64_t t63; HeroArrayHeader * t64; int64_t t65; int64_t t66; HeroArrayHeader * t67; HeroArrayHeader * t68; bool t69; HeroArrayHeader * t70; int64_t t71; HeroArrayHeader * t72; HeroArrayHeader * t73; int64_t t74; HeroArrayHeader * t75; int64_t t76; HeroArrayHeader * t77; int64_t t78; int64_t t79; int64_t t80; int64_t t81; HeroArrayHeader * t82; bool t83; HeroArrayHeader * t84; HeroArrayHeader * t85; HeroStr t86; HeroStr t87; HeroArrayHeader * t88; HeroArrayHeader * t89; HeroArrayHeader * t90; HeroArrayHeader * t91; HeroArrayHeader * t92; HeroArrayHeader * t93; HeroArrayHeader * t94; HeroArrayHeader * t95; HeroArrayHeader * t96; HeroArrayHeader * t97; HeroArrayHeader * t98; HeroArrayHeader * t99; HeroArrayHeader * t100; HeroArrayHeader * t101; HeroArrayHeader * t102; HeroArrayHeader * t103; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_words = {0}; HeroArrayHeader * h2_ps = {0}; HeroArrayHeader * h3_grid = {0}; HeroArrayHeader * h4_more = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_arrays_Point t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_arrays_Point t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG h_arrays_Point t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG h_arrays_Point t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG h_arrays_Point t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG bool t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG h_arrays_Point t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG bool t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG bool t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG bool t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroArrayHeader * t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG HeroArrayHeader * t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG HeroArrayHeader * t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG HeroArrayHeader * t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG HeroArrayHeader * t98; HERO_NODEBUG HeroArrayHeader * t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG HeroArrayHeader * t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; goto bb0;
 #line 33 "tests/golden/run/arrays.hero"
 bb0:
     t1 = INT64_C(1);
@@ -584,7 +585,7 @@ bb0:
     hero_print_bool(t83);
 #line 56 "tests/golden/run/arrays.hero"
     hero_print_end();
-#line 588 "arrays.c"
+#line 589 "arrays.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_words);
     hero_array_release_at(&h2_ps);

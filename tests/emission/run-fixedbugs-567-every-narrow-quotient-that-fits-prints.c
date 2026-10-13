@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "fixedbugs567everynarrowquotientthatfitsprints.c"
+#line 49 "fixedbugs567everynarrowquotientthatfitsprints.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -74,7 +75,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 78 "fixedbugs567everynarrowquotientthatfitsprints.c"
+#line 79 "fixedbugs567everynarrowquotientthatfitsprints.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,7 +92,7 @@ void h_fixedbugs567everynarrowquotientthatfitsprints_main(void);
 #line 13 "tests/golden/run/fixedbugs-567-every-narrow-quotient-that-fits-prints.hero"
 void h_fixedbugs567everynarrowquotientthatfitsprints_main(void) {
 #line 13 "tests/golden/run/fixedbugs-567-every-narrow-quotient-that-fits-prints.hero"
-    int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; uint8_t h6_g; uint16_t h7_h; uint32_t h8_i; uint64_t h9_j; int8_t t1; int8_t t2; int8_t t3; int8_t t4; int8_t t5; int8_t t6; int8_t t7; int8_t t8; int8_t t9; int8_t t10; int8_t t11; int8_t t12; int8_t t13; int8_t t14; int8_t t15; int8_t t16; int8_t t17; int16_t t18; int16_t t19; int16_t t20; int16_t t21; int16_t t22; int16_t t23; int16_t t24; int16_t t25; int16_t t26; int16_t t27; int16_t t28; int16_t t29; int16_t t30; int16_t t31; int16_t t32; int16_t t33; int16_t t34; int32_t t35; int32_t t36; int32_t t37; int32_t t38; int32_t t39; int32_t t40; int32_t t41; int32_t t42; int32_t t43; int32_t t44; int32_t t45; int32_t t46; int32_t t47; int32_t t48; int32_t t49; int32_t t50; int32_t t51; uint8_t t52; uint16_t t53; uint32_t t54; uint64_t t55; uint8_t t56; uint8_t t57; uint8_t t58; uint8_t t59; uint8_t t60; uint8_t t61; uint16_t t62; uint16_t t63; uint16_t t64; uint16_t t65; uint16_t t66; uint16_t t67; uint32_t t68; uint32_t t69; uint32_t t70; uint32_t t71; uint32_t t72; uint32_t t73; uint64_t t74; uint64_t t75; uint64_t t76; uint64_t t77; uint64_t t78; uint64_t t79; goto bb0;
+    int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; uint8_t h6_g; uint16_t h7_h; uint32_t h8_i; uint64_t h9_j; HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int8_t t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int8_t t6; HERO_NODEBUG int8_t t7; HERO_NODEBUG int8_t t8; HERO_NODEBUG int8_t t9; HERO_NODEBUG int8_t t10; HERO_NODEBUG int8_t t11; HERO_NODEBUG int8_t t12; HERO_NODEBUG int8_t t13; HERO_NODEBUG int8_t t14; HERO_NODEBUG int8_t t15; HERO_NODEBUG int8_t t16; HERO_NODEBUG int8_t t17; HERO_NODEBUG int16_t t18; HERO_NODEBUG int16_t t19; HERO_NODEBUG int16_t t20; HERO_NODEBUG int16_t t21; HERO_NODEBUG int16_t t22; HERO_NODEBUG int16_t t23; HERO_NODEBUG int16_t t24; HERO_NODEBUG int16_t t25; HERO_NODEBUG int16_t t26; HERO_NODEBUG int16_t t27; HERO_NODEBUG int16_t t28; HERO_NODEBUG int16_t t29; HERO_NODEBUG int16_t t30; HERO_NODEBUG int16_t t31; HERO_NODEBUG int16_t t32; HERO_NODEBUG int16_t t33; HERO_NODEBUG int16_t t34; HERO_NODEBUG int32_t t35; HERO_NODEBUG int32_t t36; HERO_NODEBUG int32_t t37; HERO_NODEBUG int32_t t38; HERO_NODEBUG int32_t t39; HERO_NODEBUG int32_t t40; HERO_NODEBUG int32_t t41; HERO_NODEBUG int32_t t42; HERO_NODEBUG int32_t t43; HERO_NODEBUG int32_t t44; HERO_NODEBUG int32_t t45; HERO_NODEBUG int32_t t46; HERO_NODEBUG int32_t t47; HERO_NODEBUG int32_t t48; HERO_NODEBUG int32_t t49; HERO_NODEBUG int32_t t50; HERO_NODEBUG int32_t t51; HERO_NODEBUG uint8_t t52; HERO_NODEBUG uint16_t t53; HERO_NODEBUG uint32_t t54; HERO_NODEBUG uint64_t t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG uint8_t t57; HERO_NODEBUG uint8_t t58; HERO_NODEBUG uint8_t t59; HERO_NODEBUG uint8_t t60; HERO_NODEBUG uint8_t t61; HERO_NODEBUG uint16_t t62; HERO_NODEBUG uint16_t t63; HERO_NODEBUG uint16_t t64; HERO_NODEBUG uint16_t t65; HERO_NODEBUG uint16_t t66; HERO_NODEBUG uint16_t t67; HERO_NODEBUG uint32_t t68; HERO_NODEBUG uint32_t t69; HERO_NODEBUG uint32_t t70; HERO_NODEBUG uint32_t t71; HERO_NODEBUG uint32_t t72; HERO_NODEBUG uint32_t t73; HERO_NODEBUG uint64_t t74; HERO_NODEBUG uint64_t t75; HERO_NODEBUG uint64_t t76; HERO_NODEBUG uint64_t t77; HERO_NODEBUG uint64_t t78; HERO_NODEBUG uint64_t t79; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-567-every-narrow-quotient-that-fits-prints.hero"
 bb0:
     t1 = INT64_C(-128);
@@ -390,7 +391,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-567-every-narrow-quotient-that-fits-prints.hero"
     return;
-#line 394 "fixedbugs567everynarrowquotientthatfitsprints.c"
+#line 395 "fixedbugs567everynarrowquotientthatfitsprints.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

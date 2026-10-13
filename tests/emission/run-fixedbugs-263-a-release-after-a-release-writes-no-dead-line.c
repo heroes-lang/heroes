@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -48,7 +49,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_63, "c");
 
-#line 52 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 53 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -78,7 +79,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 83 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +97,7 @@ void h_fixedbugs263areleaseafterareleasewritesnodeadline_main(void);
 #line 11 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
 HeroStr h_fixedbugs263areleaseafterareleasewritesnodeadline_joined(int64_t h0_n) {
 #line 11 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
-    HeroStr h1_a = {0}; HeroStr h2_b = {0}; HeroStr h3_c = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr t1; int64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; int64_t t6; HeroStr t7; HeroStr t8; HeroStr t9; int64_t t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; goto bb0;
+    HeroStr h1_a = {0}; HeroStr h2_b = {0}; HeroStr h3_c = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_61);
@@ -201,7 +202,7 @@ bb0:
     h11_own11 = t17;
 #line 15 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_str_decref(t28);
-#line 205 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 206 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
     hero_str_incref(t17);
     hero_str_release_at(&h1_a);
     hero_str_release_at(&h2_b);
@@ -220,7 +221,7 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
 void h_fixedbugs263areleaseafterareleasewritesnodeadline_main(void) {
 #line 17 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
-    HeroStr h0_own0 = {0}; int64_t t1; HeroStr t2; HeroStr t3; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
 bb0:
     t1 = INT64_C(1);
@@ -236,7 +237,7 @@ bb0:
     hero_print_str(t2);
 #line 18 "tests/golden/run/fixedbugs-263-a-release-after-a-release-writes-no-dead-line.hero"
     hero_print_end();
-#line 240 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
+#line 241 "fixedbugs263areleaseafterareleasewritesnodeadline.c"
     hero_str_release_at(&h0_own0);
     return;
 }

@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -87,7 +88,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_63, "c");
 HERO_STR_STATIC(hero_str_1ca80789, "wrote into a deleted object");
 
-#line 91 "deadhandlereadafterconsumethroughonename.c"
+#line 92 "deadhandlereadafterconsumethroughonename.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -132,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "deadhandlereadafterconsumethroughonename.c"
+#line 137 "deadhandlereadafterconsumethroughonename.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_Json_eq(Obj * const *a, Obj * const *b);
@@ -151,7 +152,7 @@ void h_deadhandlereadafterconsumethroughonename_main(void);
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 void h_deadhandlereadafterconsumethroughonename_main(void) {
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    Obj * h0_b; Obj * h1_c; Obj * t1; int64_t t2; int64_t t3; bool t4; Obj * t5; Obj * t6; Obj * t7; HeroStr t8; const char * t9; Obj * t10; HeroStr t12; goto bb0;
+    Obj * h0_b; Obj * h1_c; HERO_NODEBUG Obj * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG Obj * t5; HERO_NODEBUG Obj * t6; HERO_NODEBUG Obj * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG const char * t9; HERO_NODEBUG Obj * t10; HERO_NODEBUG HeroStr t12; goto bb0;
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 bb0:
     t1 = obj_new();
@@ -225,7 +226,7 @@ bb2:
 bb3:
 #line 25 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
     goto bb1;
-#line 229 "deadhandlereadafterconsumethroughonename.c"
+#line 230 "deadhandlereadafterconsumethroughonename.c"
 }
 HERO_TU_LOCAL bool h_deadhandlereadafterconsumethroughonename_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

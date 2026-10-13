@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -80,7 +81,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 84 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 85 "fixedbugs163aplaincharpointeeboundasi8.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -124,7 +125,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 128 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 129 "fixedbugs163aplaincharpointeeboundasi8.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -143,7 +144,7 @@ void h_fixedbugs163aplaincharpointeeboundasi8_main(void) {
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 #define h0_v (*hero_lend_h0_v)
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
-    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v"); int8_t t1; int8_t t2; goto bb0;
+    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v"); HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 bb0:
     t1 = INT64_C(0);
@@ -161,7 +162,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_v);
 #line 18 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
     return;
-#line 165 "fixedbugs163aplaincharpointeeboundasi8.c"
+#line 166 "fixedbugs163aplaincharpointeeboundasi8.c"
 }
 #undef h0_v
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {

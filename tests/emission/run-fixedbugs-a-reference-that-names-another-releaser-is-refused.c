@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -87,7 +88,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_39c57242, "acquired");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 91 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
+#line 92 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -133,7 +134,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 137 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
+#line 138 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsareferencethatnamesanotherreleaserisrefused_Ob_eq(ob * const *a, ob * const *b);
@@ -152,7 +153,7 @@ void h_fixedbugsareferencethatnamesanotherreleaserisrefused_main(void);
 #line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
 void h_fixedbugsareferencethatnamesanotherreleaserisrefused_main(void) {
 #line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
-    ob * h0_a; ob * h1_b; ob * t1; HeroStr t2; ob * t3; ob * t4; ob * t5; ob * t6; HeroStr t7; goto bb0;
+    ob * h0_a; ob * h1_b; HERO_NODEBUG ob * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG ob * t3; HERO_NODEBUG ob * t4; HERO_NODEBUG ob * t5; HERO_NODEBUG ob * t6; HERO_NODEBUG HeroStr t7; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
 bb0:
     t1 = ob_new();
@@ -207,7 +208,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
     return;
-#line 211 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
+#line 212 "fixedbugsareferencethatnamesanotherreleaserisrefused.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareferencethatnamesanotherreleaserisrefused_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

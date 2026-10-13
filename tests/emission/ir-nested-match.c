@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +50,7 @@ HERO_STR_STATIC(hero_str_56e1b672, "blue dot");
 HERO_STR_STATIC(hero_str_77dba954, "red line");
 HERO_STR_STATIC(hero_str_769134a3, "blue line");
 
-#line 53 "nestedmatch.c"
+#line 54 "nestedmatch.c"
 typedef enum h_nestedmatch_Shape_tag {
     h_nestedmatch_Shape_tag_dot = 0,
     h_nestedmatch_Shape_tag_line = 1,
@@ -104,7 +105,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 108 "nestedmatch.c"
+#line 109 "nestedmatch.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_nestedmatch_Shape_c_line_eq(const h_nestedmatch_Shape_c_line *a, const h_nestedmatch_Shape_c_line *b);
@@ -127,7 +128,7 @@ HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1
 #line 21 "tests/golden/ir/nested-match.hero"
 HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c) {
 #line 21 "tests/golden/ir/nested-match.hero"
-    h_nestedmatch_Shape h2_s0; HeroStr h3_r0 = {0}; h_nestedmatch_Colour h4_s1; HeroStr h5_r1 = {0}; h_nestedmatch_Colour h6_s2; HeroStr h7_r2 = {0}; h_nestedmatch_Shape t1; h_nestedmatch_Shape t2; int64_t t3; h_nestedmatch_Colour t4; h_nestedmatch_Colour t5; int64_t t6; HeroStr t7; HeroStr t8; HeroStr t9; h_nestedmatch_Colour t10; h_nestedmatch_Colour t11; int64_t t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; goto bb0;
+    HERO_NODEBUG h_nestedmatch_Shape h2_s0; HERO_NODEBUG HeroStr h3_r0 = {0}; HERO_NODEBUG h_nestedmatch_Colour h4_s1; HERO_NODEBUG HeroStr h5_r1 = {0}; HERO_NODEBUG h_nestedmatch_Colour h6_s2; HERO_NODEBUG HeroStr h7_r2 = {0}; HERO_NODEBUG h_nestedmatch_Shape t1; HERO_NODEBUG h_nestedmatch_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_nestedmatch_Colour t4; HERO_NODEBUG h_nestedmatch_Colour t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_nestedmatch_Colour t10; HERO_NODEBUG h_nestedmatch_Colour t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; goto bb0;
 #line 21 "tests/golden/ir/nested-match.hero"
 bb0:
     t1 = h0_s;
@@ -151,7 +152,7 @@ bb0:
 bb1:
 #line 22 "tests/golden/ir/nested-match.hero"
     t16 = h3_r0;
-#line 155 "nestedmatch.c"
+#line 156 "nestedmatch.c"
     hero_str_incref(t16);
     hero_str_release_at(&h3_r0);
     hero_str_release_at(&h5_r1);
@@ -280,7 +281,7 @@ bb9:
     hero_str_decref(t22);
 #line 28 "tests/golden/ir/nested-match.hero"
     goto bb7;
-#line 284 "nestedmatch.c"
+#line 285 "nestedmatch.c"
 }
 HERO_TU_LOCAL bool h_nestedmatch_Shape_c_line_eq(const h_nestedmatch_Shape_c_line *a, const h_nestedmatch_Shape_c_line *b) {
     if (!(a->f_length == b->f_length)) return false;

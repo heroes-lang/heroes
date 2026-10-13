@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -84,7 +85,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 88 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 89 "fixedbugstwomarksononecallaretwoobligations.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -130,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 134 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 135 "fixedbugstwomarksononecallaretwoobligations.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstwomarksononecallaretwoobligations_Slot_eq(Slot * const *a, Slot * const *b);
@@ -155,7 +156,7 @@ void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a"); Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b"); Slot * t1; Conn * t2; int64_t t3; Slot * t4; Conn * t5; HeroStr t6; goto bb0;
+    Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a"); Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b"); HERO_NODEBUG Slot * t1; HERO_NODEBUG Conn * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG Slot * t4; HERO_NODEBUG Conn * t5; HERO_NODEBUG HeroStr t6; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 bb0:
     t1 = ((void *)0);
@@ -212,7 +213,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 31 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
     return;
-#line 216 "fixedbugstwomarksononecallaretwoobligations.c"
+#line 217 "fixedbugstwomarksononecallaretwoobligations.c"
 }
 #undef h0_a
 #undef h1_b

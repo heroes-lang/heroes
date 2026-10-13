@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -50,7 +51,7 @@ HERO_STR_STATIC(hero_str_45927d37, "iterations over a ");
 HERO_STR_STATIC(hero_str_4639add, " by ");
 HERO_STR_STATIC(hero_str_54040d35, " picture: ");
 
-#line 54 "main.c"
+#line 55 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -84,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "main.c"
+#line 89 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -117,55 +118,55 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 20 "examples/mandelbrot/main.hero"
 int64_t h_main_SCALE(void) {
 #line 20 "examples/mandelbrot/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 20 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(1000);
 #line 21 "examples/mandelbrot/main.hero"
     return t1;
-#line 127 "main.c"
+#line 128 "main.c"
 }
 
 #line 23 "examples/mandelbrot/main.hero"
 int64_t h_main_ROWS(void) {
 #line 23 "examples/mandelbrot/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 23 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(64);
 #line 24 "examples/mandelbrot/main.hero"
     return t1;
-#line 139 "main.c"
+#line 140 "main.c"
 }
 
 #line 26 "examples/mandelbrot/main.hero"
 int64_t h_main_COLS(void) {
 #line 26 "examples/mandelbrot/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 26 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(64);
 #line 27 "examples/mandelbrot/main.hero"
     return t1;
-#line 151 "main.c"
+#line 152 "main.c"
 }
 
 #line 29 "examples/mandelbrot/main.hero"
 int64_t h_main_LIMIT(void) {
 #line 29 "examples/mandelbrot/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 29 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(100);
 #line 30 "examples/mandelbrot/main.hero"
     return t1;
-#line 163 "main.c"
+#line 164 "main.c"
 }
 
 #line 34 "examples/mandelbrot/main.hero"
 int64_t h_main_escapes_at(int64_t h0_cx, int64_t h1_cy) {
 #line 34 "examples/mandelbrot/main.hero"
-    int64_t h2_zx; int64_t h3_zy; int64_t h4_n; int64_t h5_xx; int64_t h6_yy; int64_t h7_nx; int64_t h8_ret0; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; bool t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; bool t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; int64_t t34; int64_t t35; int64_t t36; int64_t t37; int64_t t38; int64_t t39; int64_t t40; int64_t t41; int64_t t42; int64_t t43; int64_t t44; goto bb0;
+    int64_t h2_zx; int64_t h3_zy; int64_t h4_n; int64_t h5_xx; int64_t h6_yy; int64_t h7_nx; HERO_NODEBUG int64_t h8_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; goto bb0;
 #line 34 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -308,7 +309,7 @@ bb6:
     goto bb4;
 #line 44 "examples/mandelbrot/main.hero"
 bb7:
-#line 312 "main.c"
+#line 313 "main.c"
     t44 = h8_ret0;
     return t44;
 }
@@ -316,7 +317,7 @@ bb7:
 #line 53 "examples/mandelbrot/main.hero"
 int64_t h_main_row_total(int64_t h0_row) {
 #line 53 "examples/mandelbrot/main.hero"
-    int64_t h1_total; int64_t h2_cy; int64_t h3_col; int64_t h4_cx; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; bool t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; int64_t t34; goto bb0;
+    int64_t h1_total; int64_t h2_cy; int64_t h3_col; int64_t h4_cx; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; goto bb0;
 #line 53 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -415,13 +416,13 @@ bb3:
     t34 = h1_total;
 #line 63 "examples/mandelbrot/main.hero"
     return t34;
-#line 419 "main.c"
+#line 420 "main.c"
 }
 
 #line 66 "examples/mandelbrot/main.hero"
 int64_t h_main_band(int64_t h0_index) {
 #line 66 "examples/mandelbrot/main.hero"
-    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_row; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; bool t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; goto bb0;
+    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_row; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; goto bb0;
 #line 66 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -480,7 +481,7 @@ bb3:
     t19 = h1_total;
 #line 74 "examples/mandelbrot/main.hero"
     return t19;
-#line 484 "main.c"
+#line 485 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
@@ -491,7 +492,7 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 #line 76 "examples/mandelbrot/main.hero"
 int64_t h_main_together(void) {
 #line 76 "examples/mandelbrot/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_h; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; bool t7; h_0fn_48ac9712 t9; int64_t t10; int64_t t11; int64_t t13; int64_t t14; int64_t t15; int64_t t16; HeroArrayHeader * t17; int64_t t18; int64_t t19; HeroArrayHeader * t20; int64_t t21; bool t22; HeroArrayHeader * t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; HeroArrayHeader * t34; HeroArrayHeader * t35; HeroArrayHeader * t36; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; goto bb0;
 #line 76 "examples/mandelbrot/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -621,7 +622,7 @@ bb6:
 bb7:
 #line 89 "examples/mandelbrot/main.hero"
     t33 = h2_total;
-#line 625 "main.c"
+#line 626 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -631,7 +632,7 @@ bb7:
 #line 91 "examples/mandelbrot/main.hero"
 int64_t h_main_alone(void) {
 #line 91 "examples/mandelbrot/main.hero"
-    int64_t h0_total; int64_t h1_row; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; goto bb0;
+    int64_t h0_total; int64_t h1_row; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; goto bb0;
 #line 91 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -678,13 +679,13 @@ bb3:
     t13 = h0_total;
 #line 99 "examples/mandelbrot/main.hero"
     return t13;
-#line 682 "main.c"
+#line 683 "main.c"
 }
 
 #line 101 "examples/mandelbrot/main.hero"
 void h_main_main(void) {
 #line 101 "examples/mandelbrot/main.hero"
-    HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; HeroStr t5; int64_t t6; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 101 "examples/mandelbrot/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_45927d37);
@@ -714,7 +715,7 @@ bb0:
     hero_print_end();
 #line 102 "examples/mandelbrot/main.hero"
     return;
-#line 718 "main.c"
+#line 719 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

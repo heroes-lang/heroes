@@ -43,14 +43,15 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 16 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 _Static_assert(__builtin_classify_type(((E *)0)->x) == 1 && sizeof(((E *)0)->x) == sizeof(int32_t) && (_Generic(((E *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field E x");
-#line 50 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 51 "fixedbugs168awholerecordbesideasamenamedheader.c"
 
 #line 15 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 _Static_assert(__builtin_classify_type(*(E *)0) != 13 || sizeof(((E *)0)->x) == sizeof(E), "heroes-ffi-union-narrow E x");
-#line 54 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 55 "fixedbugs168awholerecordbesideasamenamedheader.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -134,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 139 "fixedbugs168awholerecordbesideasamenamedheader.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(const E *a, const E *b);
@@ -153,7 +154,7 @@ void h_fixedbugs168awholerecordbesideasamenamedheader_main(void);
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) {
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    E h0_p; E h1_q; int32_t t1; E t2; int32_t t3; E t4; E t5; E t6; bool t7; E t8; int32_t t9; goto bb0;
+    E h0_p; E h1_q; HERO_NODEBUG int32_t t1; HERO_NODEBUG E t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG E t4; HERO_NODEBUG E t5; HERO_NODEBUG E t6; HERO_NODEBUG bool t7; HERO_NODEBUG E t8; HERO_NODEBUG int32_t t9; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 bb0:
     t1 = INT64_C(1);
@@ -184,7 +185,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
     return;
-#line 188 "fixedbugs168awholerecordbesideasamenamedheader.c"
+#line 189 "fixedbugs168awholerecordbesideasamenamedheader.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs168awholerecordbesideasamenamedheader_E_eq(const E *a, const E *b) {
     if (!(a->x == b->x)) return false;

@@ -44,6 +44,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 34 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, name) != 0, "heroes-ffi-flex Tag name");
@@ -53,11 +54,11 @@ _Static_assert(sizeof(Tag) - __builtin_offsetof(Tag, raw) != 0, "heroes-ffi-flex
 #line 35 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(_Generic(&((Tag *)0)->raw, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Tag raw");
 _Static_assert(__builtin_classify_type(((Tag *)0)->id) == 1 && sizeof(((Tag *)0)->id) == sizeof(int32_t) && (_Generic(((Tag *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Tag id");
-#line 57 "ffiacharfieldbecomestext.c"
+#line 58 "ffiacharfieldbecomestext.c"
 
 #line 33 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 _Static_assert(__builtin_classify_type(*(Tag *)0) != 13, "heroes-ffi-union Tag name raw id");
-#line 61 "ffiacharfieldbecomestext.c"
+#line 62 "ffiacharfieldbecomestext.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -152,7 +153,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "ffiacharfieldbecomestext.c"
+#line 157 "ffiacharfieldbecomestext.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacharfieldbecomestext_Tag_eq(const Tag *a, const Tag *b);
@@ -175,7 +176,7 @@ void h_ffiacharfieldbecomestext_main(void);
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 void h_ffiacharfieldbecomestext_main(void) {
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
-    Tag h0_t; h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_f1 = {0}; Tag h3_full; h_0opt_f87774a h4_f2 = {0}; h_0opt_f87774a h5_f3 = {0}; Tag h6_bad; h_0opt_f87774a h7_s0 = {0}; HeroStr h8_text = {0}; HeroFailure h9_e = {0}; h_0opt_e201354 h10_f4 = {0}; h_0opt_f87774a h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; h_0opt_f87774a h14_own14 = {0}; h_0opt_f87774a h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; int8_t t1; int8_t t2; int8_t t3; int8_t t4; int8_t t5; int8_t t6; int8_t t7; int8_t t8; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; uint8_t t17; int32_t t19; Tag t20; Tag t21; h_0opt_f87774a t23; h_0opt_f87774a t24; int64_t t25; int64_t t26; bool t27; h_0opt_f87774a t28; HeroFailure t29; h_0opt_f87774a t30; HeroStr t31; Tag t32; h_0opt_f87774a t34; h_0opt_f87774a t35; int64_t t36; int64_t t37; bool t38; h_0opt_f87774a t39; HeroFailure t40; h_0opt_f87774a t41; HeroStr t42; int8_t t43; int8_t t44; int8_t t45; int8_t t46; int8_t t47; int8_t t48; int8_t t49; int8_t t50; uint8_t t52; uint8_t t53; uint8_t t54; uint8_t t55; uint8_t t56; uint8_t t57; uint8_t t58; uint8_t t59; int32_t t61; Tag t62; Tag t63; h_0opt_f87774a t65; h_0opt_f87774a t66; int64_t t67; int64_t t68; bool t69; h_0opt_f87774a t70; HeroFailure t71; h_0opt_f87774a t72; HeroStr t73; HeroStr t74; Tag t75; h_0opt_f87774a t77; h_0opt_f87774a t78; int64_t t79; int64_t t80; bool t81; h_0opt_f87774a t82; HeroFailure t83; h_0opt_f87774a t84; HeroStr t85; HeroStr t86; int8_t t87; int8_t t88; int8_t t89; int8_t t90; int8_t t91; int8_t t92; int8_t t93; int8_t t94; uint8_t t96; uint8_t t97; uint8_t t98; uint8_t t99; uint8_t t100; uint8_t t101; uint8_t t102; uint8_t t103; int32_t t105; Tag t106; Tag t107; h_0opt_f87774a t109; h_0opt_f87774a t110; int64_t t111; h_0opt_f87774a t112; HeroStr t113; HeroStr t114; HeroStr t115; h_0opt_f87774a t116; HeroFailure t117; HeroFailure t118; HeroStr t119; Tag t120; int32_t t121; h_0opt_e201354 t122; h_0opt_e201354 t123; int64_t t124; int64_t t125; bool t126; h_0opt_e201354 t127; HeroFailure t128; h_0opt_e201354 t129; int64_t t130; h_0opt_f87774a t131; h_0opt_f87774a t132; h_0opt_f87774a t133; h_0opt_f87774a t134; h_0opt_f87774a t135; h_0opt_f87774a t136; h_0opt_f87774a t137; h_0opt_f87774a t138; h_0opt_f87774a t139; h_0opt_f87774a t140; h_0opt_e201354 t141; h_0opt_e201354 t142; HeroStr t143; HeroFailure t144; goto bb0;
+    Tag h0_t; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}; Tag h3_full; HERO_NODEBUG h_0opt_f87774a h4_f2 = {0}; HERO_NODEBUG h_0opt_f87774a h5_f3 = {0}; Tag h6_bad; HERO_NODEBUG h_0opt_f87774a h7_s0 = {0}; HeroStr h8_text = {0}; HeroFailure h9_e = {0}; HERO_NODEBUG h_0opt_e201354 h10_f4 = {0}; HERO_NODEBUG h_0opt_f87774a h11_own11 = {0}; HERO_NODEBUG h_0opt_f87774a h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG h_0opt_f87774a h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int8_t t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int8_t t6; HERO_NODEBUG int8_t t7; HERO_NODEBUG int8_t t8; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG int32_t t19; HERO_NODEBUG Tag t20; HERO_NODEBUG Tag t21; HERO_NODEBUG h_0opt_f87774a t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG HeroFailure t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG Tag t32; HERO_NODEBUG h_0opt_f87774a t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG HeroFailure t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG int8_t t43; HERO_NODEBUG int8_t t44; HERO_NODEBUG int8_t t45; HERO_NODEBUG int8_t t46; HERO_NODEBUG int8_t t47; HERO_NODEBUG int8_t t48; HERO_NODEBUG int8_t t49; HERO_NODEBUG int8_t t50; HERO_NODEBUG uint8_t t52; HERO_NODEBUG uint8_t t53; HERO_NODEBUG uint8_t t54; HERO_NODEBUG uint8_t t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG uint8_t t57; HERO_NODEBUG uint8_t t58; HERO_NODEBUG uint8_t t59; HERO_NODEBUG int32_t t61; HERO_NODEBUG Tag t62; HERO_NODEBUG Tag t63; HERO_NODEBUG h_0opt_f87774a t65; HERO_NODEBUG h_0opt_f87774a t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG bool t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG HeroFailure t71; HERO_NODEBUG h_0opt_f87774a t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG Tag t75; HERO_NODEBUG h_0opt_f87774a t77; HERO_NODEBUG h_0opt_f87774a t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG bool t81; HERO_NODEBUG h_0opt_f87774a t82; HERO_NODEBUG HeroFailure t83; HERO_NODEBUG h_0opt_f87774a t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG int8_t t87; HERO_NODEBUG int8_t t88; HERO_NODEBUG int8_t t89; HERO_NODEBUG int8_t t90; HERO_NODEBUG int8_t t91; HERO_NODEBUG int8_t t92; HERO_NODEBUG int8_t t93; HERO_NODEBUG int8_t t94; HERO_NODEBUG uint8_t t96; HERO_NODEBUG uint8_t t97; HERO_NODEBUG uint8_t t98; HERO_NODEBUG uint8_t t99; HERO_NODEBUG uint8_t t100; HERO_NODEBUG uint8_t t101; HERO_NODEBUG uint8_t t102; HERO_NODEBUG uint8_t t103; HERO_NODEBUG int32_t t105; HERO_NODEBUG Tag t106; HERO_NODEBUG Tag t107; HERO_NODEBUG h_0opt_f87774a t109; HERO_NODEBUG h_0opt_f87774a t110; HERO_NODEBUG int64_t t111; HERO_NODEBUG h_0opt_f87774a t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG h_0opt_f87774a t116; HERO_NODEBUG HeroFailure t117; HERO_NODEBUG HeroFailure t118; HERO_NODEBUG HeroStr t119; HERO_NODEBUG Tag t120; HERO_NODEBUG int32_t t121; HERO_NODEBUG h_0opt_e201354 t122; HERO_NODEBUG h_0opt_e201354 t123; HERO_NODEBUG int64_t t124; HERO_NODEBUG int64_t t125; HERO_NODEBUG bool t126; HERO_NODEBUG h_0opt_e201354 t127; HERO_NODEBUG HeroFailure t128; HERO_NODEBUG h_0opt_e201354 t129; HERO_NODEBUG int64_t t130; HERO_NODEBUG h_0opt_f87774a t131; HERO_NODEBUG h_0opt_f87774a t132; HERO_NODEBUG h_0opt_f87774a t133; HERO_NODEBUG h_0opt_f87774a t134; HERO_NODEBUG h_0opt_f87774a t135; HERO_NODEBUG h_0opt_f87774a t136; HERO_NODEBUG h_0opt_f87774a t137; HERO_NODEBUG h_0opt_f87774a t138; HERO_NODEBUG h_0opt_f87774a t139; HERO_NODEBUG h_0opt_f87774a t140; HERO_NODEBUG h_0opt_e201354 t141; HERO_NODEBUG h_0opt_e201354 t142; HERO_NODEBUG HeroStr t143; HERO_NODEBUG HeroFailure t144; goto bb0;
 #line 39 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
 bb0:
 #line 41 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
@@ -318,7 +319,7 @@ bb2:
     t28 = h1_f0;
 #line 47 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t29 = t28.as.err;
-#line 322 "ffiacharfieldbecomestext.c"
+#line 323 "ffiacharfieldbecomestext.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb3:
@@ -417,7 +418,7 @@ bb4:
     t39 = h2_f1;
 #line 51 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t40 = t39.as.err;
-#line 421 "ffiacharfieldbecomestext.c"
+#line 422 "ffiacharfieldbecomestext.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb5:
@@ -481,7 +482,7 @@ bb6:
     t70 = h4_f2;
 #line 56 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t71 = t70.as.err;
-#line 485 "ffiacharfieldbecomestext.c"
+#line 486 "ffiacharfieldbecomestext.c"
     hero_panic_must(t71);
     hero_unreachable();
 bb7:
@@ -591,7 +592,7 @@ bb8:
     t82 = h5_f3;
 #line 59 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t83 = t82.as.err;
-#line 595 "ffiacharfieldbecomestext.c"
+#line 596 "ffiacharfieldbecomestext.c"
     hero_panic_must(t83);
     hero_unreachable();
 bb9:
@@ -684,7 +685,7 @@ bb12:
     hero_print_int(t130);
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     hero_print_end();
-#line 688 "ffiacharfieldbecomestext.c"
+#line 689 "ffiacharfieldbecomestext.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f2));
@@ -705,7 +706,7 @@ bb13:
     t127 = h10_f4;
 #line 75 "tests/golden/run/ffi-a-char-field-becomes-text.hero"
     t128 = t127.as.err;
-#line 709 "ffiacharfieldbecomestext.c"
+#line 710 "ffiacharfieldbecomestext.c"
     hero_panic_must(t128);
     hero_unreachable();
 }

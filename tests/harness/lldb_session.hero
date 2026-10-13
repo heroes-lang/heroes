@@ -20,6 +20,13 @@
 #                           read in order, the frames of a backtrace that sit
 #                           in a `.hero` file: exactly these, and no more
 #   !shows: <line>          lldb wrote this line, its spaces at both ends aside
+#   !variables: 3           lldb listed exactly that many variables, a
+#                           variable being a line it writes at its left edge
+#                           as `(<type>) <name> = …`, a member of an aggregate
+#                           standing indented beneath it: with a `!shows:` for
+#                           each, the frame shows these and nothing else, a
+#                           temporary or a slot the lowering invented included
+#                           (panel 213's R1, provisional)
 #
 # Blank lines are free; any other line is a broken case, told by its number.
 #
@@ -70,6 +77,8 @@ variant Claim
         place: Place
     shows
         text: str
+    variables
+        count: i64
 
 record Step
     command: str
@@ -118,11 +127,12 @@ function session(text: str) -> [Step]?
     for step in steps
         for one in step.claims
             match one
-                .resolved _ => resolved @ resolved + 1
-                .stop _     => stops @ stops + 1
-                .at _       => _ = 0
-                .frame _    => _ = 0
-                .shows _    => _ = 0
+                .resolved _  => resolved @ resolved + 1
+                .stop _      => stops @ stops + 1
+                .at _        => _ = 0
+                .frame _     => _ = 0
+                .shows _     => _ = 0
+                .variables _ => _ = 0
 
     if resolved == 0 || stops == 0
         return fail(
@@ -149,9 +159,17 @@ function claim(line: str) -> Claim?
 
     if strings.starts_with(text: line, prefix: "!shows: ")
         return ok(.shows(text: strings.trimmed(strings.without_prefix(text: line, prefix: "!shows: "))))
+
+    if strings.starts_with(text: line, prefix: "!variables: ")
+        said = strings.trimmed(strings.without_prefix(text: line, prefix: "!variables: "))
+        count = strings.to_number(said)
+
+        if count.is_err() || count.must() < 0
+            return fail(code: "claim", msg: "`" + line + "` names no count of variables, a number from 0")
+        return ok(.variables(count: count.must()))
     return fail(
         code: "claim",
-        msg: "`" + line + "` is neither a command, `> <command>`, nor a claim, one of `!resolved:`, `!stop:`, `!at:`, `!frame:` and `!shows:`"
+        msg: "`" + line + "` is neither a command, `> <command>`, nor a claim, one of `!resolved:`, `!stop:`, `!at:`, `!frame:`, `!shows:` and `!variables:`"
     )
 
 function unread_claim(got: Claim?) -> str
@@ -358,11 +376,12 @@ function step_unmet(step: Step, rows: [str]) -> [str]
         why: str @= ""
 
         match one
-            .resolved r => why @ resolved_unmet(place: r.place, rows: rows)
-            .stop s     => why @ stop_unmet(why: s.why, place: s.place, rows: rows)
-            .at a       => why @ at_unmet(place: a.place, rows: rows)
-            .frame f    => claimed @ claimed.push(Frame(named: f.named, file: f.place.file, line: f.place.line))
-            .shows s    => why @ shows_unmet(text: s.text, rows: rows)
+            .resolved r  => why @ resolved_unmet(place: r.place, rows: rows)
+            .stop s      => why @ stop_unmet(why: s.why, place: s.place, rows: rows)
+            .at a        => why @ at_unmet(place: a.place, rows: rows)
+            .frame f     => claimed @ claimed.push(Frame(named: f.named, file: f.place.file, line: f.place.line))
+            .shows s     => why @ shows_unmet(text: s.text, rows: rows)
+            .variables v => why @ variables_unmet(count: v.count, rows: rows)
 
         if why.len() > 0
             wrong @ wrong.push(told(command: step.command, claimed: written(one), why: why, rows: rows))
@@ -425,6 +444,21 @@ function shows_unmet(text: str, rows: [str]) -> str
 
     return "no line of lldb's answer is `" + text + "`"
 
+# The variables lldb listed against the count claimed. A variable is a line
+# at the answer's left edge opening `(`, its type, and naming itself before
+# ` = `: a member of an aggregate stands indented beneath its parent and a
+# closing brace opens no `(`, so a record of three fields is one variable.
+function variables_unmet(count: i64, rows: [str]) -> str
+    found: i64 @= 0
+
+    for row in rows
+        if row.len() > 0 && row[0] == 40 && strings.contains(text: row, needle: ") ") && strings.contains(text: row, needle: " = ")
+            found @ found + 1
+
+    if found == count
+        return ""
+    return "lldb listed " + found.to_str() + " variables, and the case claims " + count.to_str() + ": a variable listed and not claimed is one the frame shows that the author did not write, a temporary or a slot the lowering invented"
+
 # The backtrace's frames in a `.hero` file against the claimed ones, in order
 # and all of them: a frame the case does not name is as much a change as one it
 # names wrongly.
@@ -468,11 +502,12 @@ function shown(place: Place) -> str
 # A claim as its `.expected` writes it, for a failure to quote.
 function written(one: Claim) -> str
     return match one
-        .resolved r => "!resolved: " + shown(r.place)
-        .stop s     => "!stop: " + s.why + " at " + shown(s.place)
-        .at a       => "!at: " + shown(a.place)
-        .frame f    => "!frame: " + f.named + " at " + shown(f.place)
-        .shows s    => "!shows: " + s.text
+        .resolved r  => "!resolved: " + shown(r.place)
+        .stop s      => "!stop: " + s.why + " at " + shown(s.place)
+        .at a        => "!at: " + shown(a.place)
+        .frame f     => "!frame: " + f.named + " at " + shown(f.place)
+        .shows s     => "!shows: " + s.text
+        .variables v => "!variables: " + v.count.to_str()
 
 # One failed claim: the command, the claim, why, and what lldb answered, or
 # that it answered nothing, a command it refused saying why on stderr alone.
@@ -531,11 +566,12 @@ function misplaced(steps: [Step], file: str, text: str) -> [str]
 
 function place_of(one: Claim) -> Place?
     return match one
-        .resolved r => ok(r.place)
-        .stop s     => ok(s.place)
-        .at a       => ok(a.place)
-        .frame f    => ok(f.place)
-        .shows _    => fail(code: "no_place", msg: "a `!shows:` names no place")
+        .resolved r  => ok(r.place)
+        .stop s      => ok(s.place)
+        .at a        => ok(a.place)
+        .frame f     => ok(f.place)
+        .shows _     => fail(code: "no_place", msg: "a `!shows:` names no place")
+        .variables _ => fail(code: "no_place", msg: "a `!variables:` names no place")
 
 ## Tests
 
@@ -684,6 +720,39 @@ test "a line lldb did not write is told, and a nonzero exit after the last comma
     # rather than quoting an empty answer.
     none: [str] = []
     assert told(command: "frame variable", claimed: "!shows: x", why: "w", rows: none) == "`> frame variable`, !shows: x: w; lldb answered nothing on stdout"
+
+# The frames below are lldb-2103.0.34.103's own lines on this Mac, 2026-10-13,
+# over `locals.hero` and 042's `shapes.hero` built at `-O0`: before panel
+# 213's R1 a temporary stood among the author's bindings; a record lldb
+# writes over several lines is one variable.
+test "a frame is held to the count of variables claimed, and one more is told"
+    steps = session(
+        "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n!stop: breakpoint at s.hero:6\n> frame variable\n!variables: 2\n!shows: (int64_t) h2_width = 6\n"
+    ).must()
+    head = "(lldb) breakpoint set --file s.hero --line 6\nBreakpoint 1: where = b`h_s_f + 24 at s.hero:6:10, address = 0x1\n(lldb) run\n* thread #1, stop reason = breakpoint 1.1\n    frame #0: 0x1 b`h_s_f at s.hero:6:10\n(lldb) frame variable\n"
+    room = "(h_shapes_Room) h9_room = {\n  f_name = (ptr = \"lab\", len = 3)\n  f_corner = (f_x = 9, f_y = 10)\n}\n"
+    assert unmet(steps: steps, out: head + room + "(int64_t) h2_width = 6\n", err: "", code: 0).len() == 0
+    got = unmet(
+        steps: steps,
+        out: head + room + "(int64_t) h2_width = 6\n(HeroStr) t5 = (ptr = \"\", len = 6806875720)\n",
+        err: "",
+        code: 0
+    )
+    assert got.len() == 1
+    assert strings.starts_with(
+        text: got[0],
+        prefix: "`> frame variable`, !variables: 2: lldb listed 3 variables, and the case claims 2: a variable listed and not claimed is one the frame shows that the author did not write"
+    )
+    assert strings.contains(text: got[0], needle: "(HeroStr) t5 = ")
+
+    # A frame that lists nothing meets a claim of none, and a count is a number.
+    none = session(
+        "> breakpoint set --file s.hero --line 6\n!resolved: s.hero:6\n> run\n!stop: breakpoint at s.hero:6\n> frame variable\n!variables: 0\n"
+    ).must()
+    assert unmet(steps: none, out: head, err: "", code: 0).len() == 0
+    assert strings.contains(text: unread_claim(claim("!variables: three")), needle: "names no count of variables")
+    assert strings.contains(text: unread_claim(claim("!variables: -1")), needle: "a number from 0")
+    assert written(steps[2].claims[0]) == "!variables: 2"
 
 test "a place a session claims must be a line the author wrote in the case's own file"
     steps = session(

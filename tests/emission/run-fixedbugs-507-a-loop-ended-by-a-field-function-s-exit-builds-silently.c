@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 49 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 typedef void (*h_0fn_47d100e5)(int64_t);
 typedef struct h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks {
     h_0fn_47d100e5 f_act;
@@ -79,7 +80,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 83 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 84 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks_eq(const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *a, const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *b);
@@ -101,7 +102,7 @@ void h_library_exit(int64_t h0_code);
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_stop_at_three(int64_t h0_n) {
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
-    int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 bb0:
     t1 = h0_n;
@@ -135,13 +136,13 @@ bb2:
 bb3:
 #line 13 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     goto bb1;
-#line 139 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 140 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(int64_t h0_n, h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks h1_h) {
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
-    h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t1; h_0fn_47d100e5 t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t7; goto bb0;
+    HERO_NODEBUG h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t1; HERO_NODEBUG h_0fn_47d100e5 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t7; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 bb0:
     t1 = h1_h;
@@ -162,13 +163,13 @@ bb0:
     h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(t6, t7);
 #line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     return;
-#line 166 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 167 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_main(void) {
 #line 20 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
-    int64_t t1; h_0fn_47d100e5 t2; h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_47d100e5 t2; HERO_NODEBUG h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t3; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 bb0:
     t1 = INT64_C(0);
@@ -180,13 +181,13 @@ bb0:
     h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(t1, t3);
 #line 21 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
     return;
-#line 184 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 185 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
 #line 227 "<heroes library>"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 227 "<heroes library>"
 bb0:
     t1 = h0_code;
@@ -194,7 +195,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 198 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
+#line 199 "fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks_eq(const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *a, const h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks *b) {
     if (!(a->f_act == b->f_act)) return false;

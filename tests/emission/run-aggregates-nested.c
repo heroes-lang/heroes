@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -50,7 +51,7 @@ HERO_STR_STATIC(hero_str_31, "1");
 HERO_STR_STATIC(hero_str_79, "y");
 HERO_STR_STATIC(hero_str_32, "2");
 
-#line 54 "aggregatesnested.c"
+#line 55 "aggregatesnested.c"
 typedef struct h_aggregatesnested_Name {
     HeroStr f_text;
 } h_aggregatesnested_Name;
@@ -111,7 +112,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 115 "aggregatesnested.c"
+#line 116 "aggregatesnested.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_aggregatesnested_Name_retain(const h_aggregatesnested_Name *v);
@@ -150,7 +151,7 @@ void h_aggregatesnested_main(void);
 #line 30 "tests/golden/run/aggregates-nested.hero"
 HeroStr h_aggregatesnested_label_of(h_aggregatesnested_Node h0_n) {
 #line 30 "tests/golden/run/aggregates-nested.hero"
-    h_aggregatesnested_Node h1_s0 = {0}; HeroStr h2_r0 = {0}; h_aggregatesnested_Node_c_leaf h3_l = {0}; h_aggregatesnested_Node_c_pair h4_p = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; h_aggregatesnested_Node t1; h_aggregatesnested_Node t2; int64_t t3; h_aggregatesnested_Node t4; h_aggregatesnested_Node_c_leaf t5; h_aggregatesnested_Node_c_leaf t6; h_aggregatesnested_Name t7; HeroStr t8; h_aggregatesnested_Node t9; h_aggregatesnested_Node_c_pair t10; h_aggregatesnested_Node_c_pair t11; h_aggregatesnested_Name t12; HeroStr t13; HeroStr t14; HeroStr t15; h_aggregatesnested_Node_c_pair t16; h_aggregatesnested_Name t17; HeroStr t18; HeroStr t19; HeroStr t20; h_aggregatesnested_Node t21; h_aggregatesnested_Node_c_leaf t22; HeroStr t23; h_aggregatesnested_Node_c_pair t24; HeroStr t25; HeroStr t26; HeroStr t27; goto bb0;
+    HERO_NODEBUG h_aggregatesnested_Node h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; h_aggregatesnested_Node_c_leaf h3_l = {0}; h_aggregatesnested_Node_c_pair h4_p = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_aggregatesnested_Node t1; HERO_NODEBUG h_aggregatesnested_Node t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_aggregatesnested_Node t4; HERO_NODEBUG h_aggregatesnested_Node_c_leaf t5; HERO_NODEBUG h_aggregatesnested_Node_c_leaf t6; HERO_NODEBUG h_aggregatesnested_Name t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_aggregatesnested_Node t9; HERO_NODEBUG h_aggregatesnested_Node_c_pair t10; HERO_NODEBUG h_aggregatesnested_Node_c_pair t11; HERO_NODEBUG h_aggregatesnested_Name t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_aggregatesnested_Node_c_pair t16; HERO_NODEBUG h_aggregatesnested_Name t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_aggregatesnested_Node t21; HERO_NODEBUG h_aggregatesnested_Node_c_leaf t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_aggregatesnested_Node_c_pair t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; goto bb0;
 #line 30 "tests/golden/run/aggregates-nested.hero"
 bb0:
     t1 = h0_n;
@@ -180,7 +181,7 @@ bb0:
 bb1:
 #line 31 "tests/golden/run/aggregates-nested.hero"
     t20 = h2_r0;
-#line 184 "aggregatesnested.c"
+#line 185 "aggregatesnested.c"
     hero_str_incref(t20);
     h_aggregatesnested_Node_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -272,13 +273,13 @@ bb3:
     hero_str_decref(t27);
 #line 31 "tests/golden/run/aggregates-nested.hero"
     goto bb1;
-#line 276 "aggregatesnested.c"
+#line 277 "aggregatesnested.c"
 }
 
 #line 35 "tests/golden/run/aggregates-nested.hero"
 void h_aggregatesnested_bump(h_aggregatesnested_Holder *ph0_h) {
 #line 35 "tests/golden/run/aggregates-nested.hero"
-    h_aggregatesnested_Holder h1_own1 = {0}; h_aggregatesnested_Holder t1; h_aggregatesnested_Node t2; h_aggregatesnested_Holder t3; int64_t t4; int64_t t5; int64_t t6; h_aggregatesnested_Holder t7; h_aggregatesnested_Holder t8; h_aggregatesnested_Holder t9; goto bb0;
+    HERO_NODEBUG h_aggregatesnested_Holder h1_own1 = {0}; HERO_NODEBUG h_aggregatesnested_Holder t1; HERO_NODEBUG h_aggregatesnested_Node t2; HERO_NODEBUG h_aggregatesnested_Holder t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_aggregatesnested_Holder t7; HERO_NODEBUG h_aggregatesnested_Holder t8; HERO_NODEBUG h_aggregatesnested_Holder t9; goto bb0;
 #line 35 "tests/golden/run/aggregates-nested.hero"
 bb0:
     t1 = (*ph0_h);
@@ -310,7 +311,7 @@ bb0:
     (*ph0_h) = t7;
 #line 36 "tests/golden/run/aggregates-nested.hero"
     h_aggregatesnested_Holder_release(&t9);
-#line 314 "aggregatesnested.c"
+#line 315 "aggregatesnested.c"
     h_aggregatesnested_Holder_release(hero_slot_escape(&h1_own1));
     return;
 }
@@ -318,7 +319,7 @@ bb0:
 #line 38 "tests/golden/run/aggregates-nested.hero"
 void h_aggregatesnested_main(void) {
 #line 38 "tests/golden/run/aggregates-nested.hero"
-    h_aggregatesnested_Node h0_n = {0}; h_aggregatesnested_Holder h1_h = {0}; HeroStr h2_own2 = {0}; h_aggregatesnested_Name h3_own3 = {0}; HeroStr h4_own4 = {0}; h_aggregatesnested_Name h5_own5 = {0}; h_aggregatesnested_Node h6_own6 = {0}; HeroStr h7_own7 = {0}; h_aggregatesnested_Holder h8_own8 = {0}; HeroStr h9_own9 = {0}; h_aggregatesnested_Holder h10_own10 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; h_aggregatesnested_Name t4; HeroStr t5; HeroStr t6; HeroStr t7; h_aggregatesnested_Name t8; h_aggregatesnested_Node t9; h_aggregatesnested_Node t10; HeroStr t11; h_aggregatesnested_Node t12; int64_t t13; h_aggregatesnested_Holder t14; h_aggregatesnested_Holder t15; int64_t t16; h_aggregatesnested_Holder t17; h_aggregatesnested_Node t18; HeroStr t19; h_aggregatesnested_Holder t20; h_aggregatesnested_Node t21; int64_t t22; h_aggregatesnested_Holder t23; bool t24; HeroStr t25; h_aggregatesnested_Name t26; HeroStr t27; h_aggregatesnested_Name t28; h_aggregatesnested_Node t29; h_aggregatesnested_Node t30; HeroStr t31; h_aggregatesnested_Holder t32; h_aggregatesnested_Holder t33; HeroStr t34; h_aggregatesnested_Holder t35; goto bb0;
+    h_aggregatesnested_Node h0_n = {0}; h_aggregatesnested_Holder h1_h = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG h_aggregatesnested_Name h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_aggregatesnested_Name h5_own5 = {0}; HERO_NODEBUG h_aggregatesnested_Node h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_aggregatesnested_Holder h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_aggregatesnested_Holder h10_own10 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_aggregatesnested_Name t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_aggregatesnested_Name t8; HERO_NODEBUG h_aggregatesnested_Node t9; HERO_NODEBUG h_aggregatesnested_Node t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_aggregatesnested_Node t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_aggregatesnested_Holder t14; HERO_NODEBUG h_aggregatesnested_Holder t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_aggregatesnested_Holder t17; HERO_NODEBUG h_aggregatesnested_Node t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_aggregatesnested_Holder t20; HERO_NODEBUG h_aggregatesnested_Node t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG h_aggregatesnested_Holder t23; HERO_NODEBUG bool t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_aggregatesnested_Name t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG h_aggregatesnested_Name t28; HERO_NODEBUG h_aggregatesnested_Node t29; HERO_NODEBUG h_aggregatesnested_Node t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_aggregatesnested_Holder t32; HERO_NODEBUG h_aggregatesnested_Holder t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_aggregatesnested_Holder t35; goto bb0;
 #line 38 "tests/golden/run/aggregates-nested.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_78);
@@ -463,7 +464,7 @@ bb0:
     hero_print_bool(t24);
 #line 46 "tests/golden/run/aggregates-nested.hero"
     hero_print_end();
-#line 467 "aggregatesnested.c"
+#line 468 "aggregatesnested.c"
     h_aggregatesnested_Node_release(hero_slot_escape(&h0_n));
     h_aggregatesnested_Holder_release(hero_slot_escape(&h1_h));
     hero_str_release_at(&h2_own2);

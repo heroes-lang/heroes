@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -84,7 +85,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_4c173d0e, "acquired and dropped");
 
-#line 88 "fixedbugsadiscardedacquisitionisowedatexit.c"
+#line 89 "fixedbugsadiscardedacquisitionisowedatexit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -128,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugsadiscardedacquisitionisowedatexit.c"
+#line 133 "fixedbugsadiscardedacquisitionisowedatexit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsadiscardedacquisitionisowedatexit_Ob_eq(ob * const *a, ob * const *b);
@@ -147,7 +148,7 @@ void h_fixedbugsadiscardedacquisitionisowedatexit_main(void);
 #line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
 void h_fixedbugsadiscardedacquisitionisowedatexit_main(void) {
 #line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
-    HeroStr t2; goto bb0;
+    HERO_NODEBUG HeroStr t2; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
 bb0:
     {
@@ -164,7 +165,7 @@ bb0:
     hero_print_end();
 #line 11 "tests/golden/run/fixedbugs-a-discarded-acquisition-is-owed-at-exit.hero"
     return;
-#line 168 "fixedbugsadiscardedacquisitionisowedatexit.c"
+#line 169 "fixedbugsadiscardedacquisitionisowedatexit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsadiscardedacquisitionisowedatexit_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -85,7 +86,7 @@ HERO_STR_STATIC(hero_str_79c9889a, "hello from C");
 HERO_STR_STATIC(hero_str_5cc08313, "computed");
 HERO_STR_STATIC(hero_str_6251eb62, "back in Heroes");
 
-#line 89 "fficstr.c"
+#line 90 "fficstr.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -129,7 +130,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 133 "fficstr.c"
+#line 134 "fficstr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -147,7 +148,7 @@ void h_fficstr_main(void);
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
 #line 15 "tests/golden/run/ffi-cstr.hero"
-    HeroStr h1_own1 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; goto bb0;
 #line 15 "tests/golden/run/ffi-cstr.hero"
 bb0:
     t1 = h0_text;
@@ -161,7 +162,7 @@ bb0:
     h1_own1 = t3;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     hero_str_decref(t4);
-#line 165 "fficstr.c"
+#line 166 "fficstr.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -170,7 +171,7 @@ bb0:
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
 #line 18 "tests/golden/run/ffi-cstr.hero"
-    HeroStr h0_own0 = {0}; HeroStr t1; const char * t2; HeroStr t4; HeroStr t5; const char * t6; HeroStr t8; HeroStr t9; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; goto bb0;
 #line 18 "tests/golden/run/ffi-cstr.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_79c9889a);
@@ -197,7 +198,7 @@ bb0:
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 201 "fficstr.c"
+#line 202 "fficstr.c"
     hero_str_release_at(&h0_own0);
     return;
 }

@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 41 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(_Generic(&((Matrix *)0)->m0, float *: 1, default: 0) && sizeof(((Matrix *)0)->m0) == sizeof(float), "heroes-ffi-field Matrix m0");
@@ -100,11 +101,11 @@ _Static_assert(_Generic(&((VrDeviceInfo *)0)->lensDistortionValues, float (*)[4]
 _Static_assert(sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) != 0, "heroes-ffi-flex VrDeviceInfo chromaAbCorrection");
 #line 77 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(_Generic(&((VrDeviceInfo *)0)->chromaAbCorrection, float (*)[4]: 1, default: 0) && sizeof(VrDeviceInfo) - __builtin_offsetof(VrDeviceInfo, chromaAbCorrection) >= sizeof(float[4]), "heroes-ffi-field VrDeviceInfo chromaAbCorrection");
-#line 104 "ffiacarraymember.c"
+#line 105 "ffiacarraymember.c"
 
 #line 68 "tests/golden/run/ffi-a-c-array-member.hero"
 _Static_assert(__builtin_classify_type(*(VrDeviceInfo *)0) != 13, "heroes-ffi-union VrDeviceInfo hResolution vResolution hScreenSize vScreenSize eyeToScreenDistance lensSeparationDistance interpupillaryDistance lensDistortionValues chromaAbCorrection");
-#line 108 "ffiacarraymember.c"
+#line 109 "ffiacarraymember.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -190,7 +191,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 194 "ffiacarraymember.c"
+#line 195 "ffiacarraymember.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b);
@@ -213,7 +214,7 @@ void h_ffiacarraymember_main(void);
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
-    VrDeviceInfo h0_device; VrStereoConfig h1_config; int32_t t1; int32_t t2; float t3; float t4; float t5; float t6; float t7; float t8; float t9; float t10; float t11; float t13; float t14; float t15; float t16; float t17; VrDeviceInfo t19; VrDeviceInfo t20; int64_t t22; float t23; VrDeviceInfo t24; VrStereoConfig t25; VrStereoConfig t26; int64_t t28; float t29; float t30; bool t31; VrStereoConfig t32; int64_t t34; float t35; float t36; bool t37; VrStereoConfig t38; goto bb0;
+    VrDeviceInfo h0_device; VrStereoConfig h1_config; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG float t3; HERO_NODEBUG float t4; HERO_NODEBUG float t5; HERO_NODEBUG float t6; HERO_NODEBUG float t7; HERO_NODEBUG float t8; HERO_NODEBUG float t9; HERO_NODEBUG float t10; HERO_NODEBUG float t11; HERO_NODEBUG float t13; HERO_NODEBUG float t14; HERO_NODEBUG float t15; HERO_NODEBUG float t16; HERO_NODEBUG float t17; HERO_NODEBUG VrDeviceInfo t19; HERO_NODEBUG VrDeviceInfo t20; HERO_NODEBUG int64_t t22; HERO_NODEBUG float t23; HERO_NODEBUG VrDeviceInfo t24; HERO_NODEBUG VrStereoConfig t25; HERO_NODEBUG VrStereoConfig t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG float t29; HERO_NODEBUG float t30; HERO_NODEBUG bool t31; HERO_NODEBUG VrStereoConfig t32; HERO_NODEBUG int64_t t34; HERO_NODEBUG float t35; HERO_NODEBUG float t36; HERO_NODEBUG bool t37; HERO_NODEBUG VrStereoConfig t38; goto bb0;
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 bb0:
 #line 85 "tests/golden/run/ffi-a-c-array-member.hero"
@@ -295,7 +296,7 @@ bb0:
     (void)UnloadVrStereoConfig(t38);
 #line 101 "tests/golden/run/ffi-a-c-array-member.hero"
     return;
-#line 299 "ffiacarraymember.c"
+#line 300 "ffiacarraymember.c"
 }
 HERO_TU_LOCAL bool h_ffiacarraymember_Matrix_eq(const Matrix *a, const Matrix *b) {
     if (!(a->m0 == b->m0)) return false;

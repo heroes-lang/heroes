@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "fixedbugsafloatwithadigitseparator.c"
+#line 49 "fixedbugsafloatwithadigitseparator.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -74,7 +75,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 78 "fixedbugsafloatwithadigitseparator.c"
+#line 79 "fixedbugsafloatwithadigitseparator.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,7 +92,7 @@ void h_fixedbugsafloatwithadigitseparator_main(void);
 #line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
 void h_fixedbugsafloatwithadigitseparator_main(void) {
 #line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    double h0_left; double h1_right; double h2_both; double h3_plain; double t1; double t2; double t3; double t4; double t5; double t6; double t7; double t8; double t9; double t10; bool t11; goto bb0;
+    double h0_left; double h1_right; double h2_both; double h3_plain; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG double t6; HERO_NODEBUG double t7; HERO_NODEBUG double t8; HERO_NODEBUG double t9; HERO_NODEBUG double t10; HERO_NODEBUG bool t11; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
 bb0:
     t1 = 0x1.5p+3;
@@ -137,7 +138,7 @@ bb0:
     hero_print_end();
 #line 38 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
     return;
-#line 141 "fixedbugsafloatwithadigitseparator.c"
+#line 142 "fixedbugsafloatwithadigitseparator.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

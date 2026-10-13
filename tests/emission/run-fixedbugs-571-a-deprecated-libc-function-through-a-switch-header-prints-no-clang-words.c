@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -80,7 +81,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 84 "fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords.c"
+#line 85 "fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -124,7 +125,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 128 "fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords.c"
+#line 129 "fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -141,7 +142,7 @@ void h_fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords
 #line 17 "tests/golden/run/fixedbugs-571-a-deprecated-libc-function-through-a-switch-header-prints-no-clang-words.hero"
 void h_fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords_main(void) {
 #line 17 "tests/golden/run/fixedbugs-571-a-deprecated-libc-function-through-a-switch-header-prints-no-clang-words.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-571-a-deprecated-libc-function-through-a-switch-header-prints-no-clang-words.hero"
 bb0:
     t1 = INT64_C(1);
@@ -151,7 +152,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-571-a-deprecated-libc-function-through-a-switch-header-prints-no-clang-words.hero"
     return;
-#line 155 "fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords.c"
+#line 156 "fixedbugs571adeprecatedlibcfunctionthroughaswitchheaderprintsnoclangwords.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

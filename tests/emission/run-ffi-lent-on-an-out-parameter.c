@@ -43,15 +43,16 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 8 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 _Static_assert(__builtin_classify_type(((struct span *)0)->lo) == 1 && sizeof(((struct span *)0)->lo) == sizeof(int64_t) && (_Generic(((struct span *)0)->lo, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Span lo");
 _Static_assert(__builtin_classify_type(((struct span *)0)->hi) == 1 && sizeof(((struct span *)0)->hi) == sizeof(int64_t) && (_Generic(((struct span *)0)->hi, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Span hi");
-#line 51 "ffilentonanoutparameter.c"
+#line 52 "ffilentonanoutparameter.c"
 
 #line 7 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 _Static_assert(__builtin_classify_type(*(struct span *)0) != 13, "heroes-ffi-union Span lo hi");
-#line 55 "ffilentonanoutparameter.c"
+#line 56 "ffilentonanoutparameter.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -138,7 +139,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 142 "ffilentonanoutparameter.c"
+#line 143 "ffilentonanoutparameter.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffilentonanoutparameter_Span_eq(const struct span *a, const struct span *b);
@@ -161,7 +162,7 @@ void h_ffilentonanoutparameter_main(void) {
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 #define h1_s (*hero_lend_h1_s)
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); int32_t t1; double t2; double t3; HeroStr t4; int32_t t5; int64_t t6; int64_t t7; struct span t8; struct span t9; int64_t t10; HeroStr t11; struct span t12; int64_t t13; goto bb0;
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG struct span t8; HERO_NODEBUG struct span t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG struct span t12; HERO_NODEBUG int64_t t13; goto bb0;
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 bb0:
     t1 = INT64_C(0);
@@ -217,7 +218,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_e);
 #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
     return;
-#line 221 "ffilentonanoutparameter.c"
+#line 222 "ffilentonanoutparameter.c"
 }
 #undef h0_e
 #undef h1_s

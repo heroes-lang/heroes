@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +50,7 @@ HERO_STR_STATIC(hero_str_75f7c07a, "line ");
 HERO_STR_STATIC(hero_str_1dce, ": ");
 HERO_STR_STATIC(hero_str_3ed33309, " and ");
 
-#line 53 "interpolationdesugar.c"
+#line 54 "interpolationdesugar.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -79,7 +80,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 83 "interpolationdesugar.c"
+#line 84 "interpolationdesugar.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +97,7 @@ void h_interpolationdesugar_main(void);
 #line 8 "tests/golden/ir/interpolation-desugar.hero"
 void h_interpolationdesugar_main(void) {
 #line 8 "tests/golden/ir/interpolation-desugar.hero"
-    int64_t h0_n; HeroStr h1_word = {0}; HeroStr h2_s = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; int64_t t1; HeroStr t2; int64_t t3; HeroStr t4; int64_t t5; int64_t t6; int64_t t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; goto bb0;
+    int64_t h0_n; HeroStr h1_word = {0}; HeroStr h2_s = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; goto bb0;
 #line 8 "tests/golden/ir/interpolation-desugar.hero"
 bb0:
     t1 = INT64_C(3);
@@ -195,7 +196,7 @@ bb0:
     hero_print_str(t18);
 #line 12 "tests/golden/ir/interpolation-desugar.hero"
     hero_print_end();
-#line 199 "interpolationdesugar.c"
+#line 200 "interpolationdesugar.c"
     hero_str_release_at(&h1_word);
     hero_str_release_at(&h2_s);
     hero_str_release_at(&h3_own3);

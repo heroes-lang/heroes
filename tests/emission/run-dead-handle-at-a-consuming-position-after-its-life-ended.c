@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -86,7 +87,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_62, "b");
 
-#line 90 "deadhandleataconsumingpositionafteritslifeended.c"
+#line 91 "deadhandleataconsumingpositionafteritslifeended.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -131,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "deadhandleataconsumingpositionafteritslifeended.c"
+#line 136 "deadhandleataconsumingpositionafteritslifeended.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandleataconsumingpositionafteritslifeended_Json_eq(Obj * const *a, Obj * const *b);
@@ -150,7 +151,7 @@ void h_deadhandleataconsumingpositionafteritslifeended_main(void);
 #line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
 void h_deadhandleataconsumingpositionafteritslifeended_main(void) {
 #line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
-    Obj * h0_a; Obj * h1_b; Obj * t1; Obj * t2; int64_t t3; int64_t t4; bool t5; Obj * t6; Obj * t7; HeroStr t8; const char * t9; Obj * t10; Obj * t12; goto bb0;
+    Obj * h0_a; Obj * h1_b; HERO_NODEBUG Obj * t1; HERO_NODEBUG Obj * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG Obj * t6; HERO_NODEBUG Obj * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG const char * t9; HERO_NODEBUG Obj * t10; HERO_NODEBUG Obj * t12; goto bb0;
 #line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
 bb0:
     t1 = obj_new();
@@ -232,7 +233,7 @@ bb2:
 bb3:
 #line 24 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
     goto bb1;
-#line 236 "deadhandleataconsumingpositionafteritslifeended.c"
+#line 237 "deadhandleataconsumingpositionafteritslifeended.c"
 }
 HERO_TU_LOCAL bool h_deadhandleataconsumingpositionafteritslifeended_Json_eq(Obj * const *a, Obj * const *b) {
     return hero_handle_eq(*a, *b);

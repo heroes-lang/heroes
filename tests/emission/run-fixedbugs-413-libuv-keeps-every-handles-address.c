@@ -43,10 +43,11 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 21 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 _Static_assert(__builtin_classify_type(((struct uv_timer_s *)0)->data) == 5 && _Generic(((struct uv_timer_s *)0)->data, __typeof__(((struct uv_timer_s *)0)->data): 1, default: 0) && sizeof(((struct uv_timer_s *)0)->data) == sizeof(void *), "heroes-ffi-field UvTimer data");
-#line 50 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 51 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -134,7 +135,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 139 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs413libuvkeepseveryhandlesaddress_UvTimer_eq(const struct uv_timer_s *a, const struct uv_timer_s *b);
@@ -181,7 +182,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 28 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 void h_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
 #line 28 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-    hero_thread_guard("fixedbugs413libuvkeepseveryhandlesaddress.seen"); struct uv_handle_s * t1; void * t2; void * t3; bool t4; goto bb0;
+    hero_thread_guard("fixedbugs413libuvkeepseveryhandlesaddress.seen"); HERO_NODEBUG struct uv_handle_s * t1; HERO_NODEBUG void * t2; HERO_NODEBUG void * t3; HERO_NODEBUG bool t4; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 bb0:
     t1 = h0_h;
@@ -199,7 +200,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return;
-#line 203 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 204 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
@@ -210,7 +211,7 @@ void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h
 #line 31 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 int32_t h_fixedbugs413libuvkeepseveryhandlesaddress_start(void * h0_loop, struct uv_timer_s *ph1_t) {
 #line 31 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-    void * t1; int32_t t2; goto bb0;
+    HERO_NODEBUG void * t1; HERO_NODEBUG int32_t t2; goto bb0;
 #line 31 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 bb0:
     t1 = h0_loop;
@@ -220,7 +221,7 @@ bb0:
     t2 = uv_timer_init(t1, &(*ph1_t));
 #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     return t2;
-#line 224 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 225 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
@@ -228,7 +229,7 @@ void h_fixedbugs413libuvkeepseveryhandlesaddress_main(void) {
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 #define h1_a (*hero_lend_h1_a)
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
-    void * h0_loop; struct uv_timer_s *const hero_lend_h1_a = (struct uv_timer_s *)hero_lend_local(sizeof(struct uv_timer_s), "fixedbugs413libuvkeepseveryhandlesaddress.main", "a"); HeroArrayHeader * h2_ts = {0}; HeroArrayHeader * h3_own3 = {0}; void * t1; struct uv_timer_s t2; void * t3; int32_t t4; void * t5; struct uv_timer_s t6; struct uv_timer_s t7; HeroArrayHeader * t8; void * t9; int64_t t10; int32_t t11; void * t12; int64_t t13; int32_t t14; int64_t t15; void * t16; int64_t t17; void * t18; void * t19; h_0fn_6939f663 t20; void * t21; HeroArrayHeader * t22; HeroArrayHeader * t23; goto bb0;
+    void * h0_loop; struct uv_timer_s *const hero_lend_h1_a = (struct uv_timer_s *)hero_lend_local(sizeof(struct uv_timer_s), "fixedbugs413libuvkeepseveryhandlesaddress.main", "a"); HeroArrayHeader * h2_ts = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG void * t1; HERO_NODEBUG struct uv_timer_s t2; HERO_NODEBUG void * t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG void * t5; HERO_NODEBUG struct uv_timer_s t6; HERO_NODEBUG struct uv_timer_s t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG void * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG void * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG void * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG void * t18; HERO_NODEBUG void * t19; HERO_NODEBUG h_0fn_6939f663 t20; HERO_NODEBUG void * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
 bb0:
     t1 = (void *)uv_default_loop();
@@ -319,7 +320,7 @@ bb0:
     t21 = h0_loop;
 #line 44 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
     (void)uv_walk(t19, (h_0fn_7d30c22)hero_callback_of((void (*)(void))t20), t21);
-#line 323 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+#line 324 "fixedbugs413libuvkeepseveryhandlesaddress.c"
     hero_array_release_at(&h2_ts);
     hero_array_release_at(&h3_own3);
     hero_lend_local_give(hero_lend_h1_a);

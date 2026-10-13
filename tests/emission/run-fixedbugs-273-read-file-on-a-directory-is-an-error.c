@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -60,7 +61,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 64 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 65 "fixedbugs273readfileonadirectoryisanerror.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,7 +91,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 95 "fixedbugs273readfileonadirectoryisanerror.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -112,7 +113,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path);
 #line 11 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
 void h_fixedbugs273readfileonadirectoryisanerror_main(void) {
 #line 11 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
-    h_0opt_f87774a h0_s0 = {0}; HeroStr h1_text = {0}; HeroFailure h2_e = {0}; h_0opt_f87774a h3_s1 = {0}; HeroFailure h4_e = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr t1; h_0opt_f87774a t2; h_0opt_f87774a t3; int64_t t4; h_0opt_f87774a t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; HeroStr t10; h_0opt_f87774a t11; HeroFailure t12; HeroStr t13; HeroFailure t14; HeroStr t15; HeroStr t16; h_0opt_f87774a t17; h_0opt_f87774a t18; int64_t t19; HeroStr t20; h_0opt_f87774a t21; HeroFailure t22; HeroStr t23; HeroFailure t24; HeroStr t25; h_0opt_f87774a t26; h_0opt_f87774a t27; h_0opt_f87774a t28; h_0opt_f87774a t29; HeroStr t30; HeroFailure t31; HeroFailure t32; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h0_s0 = {0}; HeroStr h1_text = {0}; HeroFailure h2_e = {0}; HERO_NODEBUG h_0opt_f87774a h3_s1 = {0}; HeroFailure h4_e = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_f87774a t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_0opt_f87774a t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroFailure t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroFailure t31; HERO_NODEBUG HeroFailure t32; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_4808f93f);
@@ -241,7 +242,7 @@ bb3:
     goto bb1;
 #line 14 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
 bb4:
-#line 245 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 246 "fixedbugs273readfileonadirectoryisanerror.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_s0));
     hero_str_release_at(&h1_text);
     hero_failure_release(&h2_e);
@@ -286,30 +287,30 @@ bb6:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-273-read-file-on-a-directory-is-an-error.hero"
     goto bb4;
-#line 290 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 291 "fixedbugs273readfileonadirectoryisanerror.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 295 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 296 "fixedbugs273readfileonadirectoryisanerror.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 301 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 302 "fixedbugs273readfileonadirectoryisanerror.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 307 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 308 "fixedbugs273readfileonadirectoryisanerror.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 313 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 314 "fixedbugs273readfileonadirectoryisanerror.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -318,7 +319,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_f87774a t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; h_0opt_f87774a t38; HeroStr t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; HeroStr t43; h_0opt_f87774a t44; HeroStr t45; h_0opt_f87774a t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; goto bb0;
 #line 167 "<heroes library>"
 bb0:
     t1 = INT64_C(0);
@@ -544,7 +545,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 548 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 549 "fixedbugs273readfileonadirectoryisanerror.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -47,7 +48,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1d4996, "one");
 HERO_STR_STATIC(hero_str_2f, "/");
 
-#line 51 "afunctiontypethatnamesitsownway.c"
+#line 52 "afunctiontypethatnamesitsownway.c"
 typedef HeroStr (*h_0fn_573f54ce)(HeroStr, int64_t);
 typedef HeroStr (*h_0fn_1fb9aa18)(HeroStr, int64_t);
 typedef struct h_0opt_f87774a {
@@ -79,7 +80,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 83 "afunctiontypethatnamesitsownway.c"
+#line 84 "afunctiontypethatnamesitsownway.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +99,7 @@ HeroStr h_afunctiontypethatnamesitsownway_pair(HeroStr h0_code, int64_t h1_at);
 #line 24 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 HeroStr h_afunctiontypethatnamesitsownway_relay(h_0fn_573f54ce h0_f) {
 #line 24 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-    HeroStr h1_own1 = {0}; h_0fn_573f54ce t1; HeroStr t2; int64_t t3; HeroStr t4; HeroStr t5; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_0fn_573f54ce t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; goto bb0;
 #line 24 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 bb0:
     t1 = h0_f;
@@ -114,7 +115,7 @@ bb0:
     h1_own1 = t4;
 #line 25 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_str_decref(t5);
-#line 118 "afunctiontypethatnamesitsownway.c"
+#line 119 "afunctiontypethatnamesitsownway.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_own1);
     return t4;
@@ -123,7 +124,7 @@ bb0:
 #line 27 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 void h_afunctiontypethatnamesitsownway_main(void) {
 #line 27 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-    HeroStr h0_own0 = {0}; h_0fn_1fb9aa18 t1; HeroStr t2; HeroStr t3; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG h_0fn_1fb9aa18 t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; goto bb0;
 #line 27 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 bb0:
     t1 = h_afunctiontypethatnamesitsownway_pair;
@@ -139,7 +140,7 @@ bb0:
     hero_print_str(t2);
 #line 28 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_print_end();
-#line 143 "afunctiontypethatnamesitsownway.c"
+#line 144 "afunctiontypethatnamesitsownway.c"
     hero_str_release_at(&h0_own0);
     return;
 }
@@ -147,7 +148,7 @@ bb0:
 #line 30 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 HeroStr h_afunctiontypethatnamesitsownway_pair(HeroStr h0_code, int64_t h1_at) {
 #line 30 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-    HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; int64_t t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; goto bb0;
 #line 30 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 bb0:
     t1 = h0_code;
@@ -179,7 +180,7 @@ bb0:
     h4_own4 = t6;
 #line 31 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
     hero_str_decref(t9);
-#line 183 "afunctiontypethatnamesitsownway.c"
+#line 184 "afunctiontypethatnamesitsownway.c"
     hero_str_incref(t6);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);

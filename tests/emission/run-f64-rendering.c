@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "f64rendering.c"
+#line 49 "f64rendering.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -74,7 +75,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 78 "f64rendering.c"
+#line 79 "f64rendering.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -91,7 +92,7 @@ void h_f64rendering_main(void);
 #line 19 "tests/golden/run/f64-rendering.hero"
 void h_f64rendering_main(void) {
 #line 19 "tests/golden/run/f64-rendering.hero"
-    HeroStr h0_own0 = {0}; double t1; double t2; double t3; double t4; double t5; double t6; double t7; double t8; double t9; double t10; double t11; double t12; double t13; double t14; double t15; HeroStr t16; HeroStr t17; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG double t6; HERO_NODEBUG double t7; HERO_NODEBUG double t8; HERO_NODEBUG double t9; HERO_NODEBUG double t10; HERO_NODEBUG double t11; HERO_NODEBUG double t12; HERO_NODEBUG double t13; HERO_NODEBUG double t14; HERO_NODEBUG double t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; goto bb0;
 #line 19 "tests/golden/run/f64-rendering.hero"
 bb0:
     t1 = 0x1.999999999999ap-4;
@@ -153,7 +154,7 @@ bb0:
     hero_print_str(t16);
 #line 26 "tests/golden/run/f64-rendering.hero"
     hero_print_end();
-#line 157 "f64rendering.c"
+#line 158 "f64rendering.c"
     hero_str_release_at(&h0_own0);
     return;
 }

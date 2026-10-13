@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "functions.c"
+#line 49 "functions.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -74,7 +75,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 78 "functions.c"
+#line 79 "functions.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +95,7 @@ int64_t h_functions_fib(int64_t h0_n);
 #line 6 "tests/golden/run/functions.hero"
 bool h_functions_is_even(int64_t h0_n) {
 #line 6 "tests/golden/run/functions.hero"
-    bool h1_ret0; int64_t t1; int64_t t2; bool t3; bool t4; int64_t t5; int64_t t6; int64_t t7; bool t8; bool t9; goto bb0;
+    HERO_NODEBUG bool h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; goto bb0;
 #line 6 "tests/golden/run/functions.hero"
 bb0:
     t1 = h0_n;
@@ -132,7 +133,7 @@ bb3:
     goto bb1;
 #line 8 "tests/golden/run/functions.hero"
 bb4:
-#line 136 "functions.c"
+#line 137 "functions.c"
     t9 = h1_ret0;
     return t9;
 }
@@ -140,7 +141,7 @@ bb4:
 #line 11 "tests/golden/run/functions.hero"
 bool h_functions_is_odd(int64_t h0_n) {
 #line 11 "tests/golden/run/functions.hero"
-    bool h1_ret0; int64_t t1; int64_t t2; bool t3; bool t4; int64_t t5; int64_t t6; int64_t t7; bool t8; bool t9; goto bb0;
+    HERO_NODEBUG bool h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; goto bb0;
 #line 11 "tests/golden/run/functions.hero"
 bb0:
     t1 = h0_n;
@@ -178,7 +179,7 @@ bb3:
     goto bb1;
 #line 13 "tests/golden/run/functions.hero"
 bb4:
-#line 182 "functions.c"
+#line 183 "functions.c"
     t9 = h1_ret0;
     return t9;
 }
@@ -186,7 +187,7 @@ bb4:
 #line 16 "tests/golden/run/functions.hero"
 void h_functions_main(void) {
 #line 16 "tests/golden/run/functions.hero"
-    int64_t t1; bool t2; int64_t t3; bool t4; int64_t t5; int64_t t6; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 16 "tests/golden/run/functions.hero"
 bb0:
     t1 = INT64_C(10);
@@ -212,13 +213,13 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/functions.hero"
     return;
-#line 216 "functions.c"
+#line 217 "functions.c"
 }
 
 #line 21 "tests/golden/run/functions.hero"
 int64_t h_functions_fib(int64_t h0_n) {
 #line 21 "tests/golden/run/functions.hero"
-    int64_t h1_ret0; int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; goto bb0;
 #line 21 "tests/golden/run/functions.hero"
 bb0:
     t1 = h0_n;
@@ -266,7 +267,7 @@ bb3:
     goto bb1;
 #line 23 "tests/golden/run/functions.hero"
 bb4:
-#line 270 "functions.c"
+#line 271 "functions.c"
     t14 = h1_ret0;
     return t14;
 }

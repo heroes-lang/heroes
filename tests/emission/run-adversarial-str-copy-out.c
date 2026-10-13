@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -48,7 +49,7 @@ HERO_STR_STATIC(hero_str_21, "!");
 HERO_STR_STATIC(hero_str_1b6fd0, "hey");
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 52 "adversarialstrcopyout.c"
+#line 53 "adversarialstrcopyout.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -78,7 +79,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "adversarialstrcopyout.c"
+#line 83 "adversarialstrcopyout.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +97,7 @@ void h_adversarialstrcopyout_main(void);
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
 void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times) {
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
-    int64_t h2_i; HeroStr h3_own3 = {0}; int64_t t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; HeroStr t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; bool t13; HeroStr t14; HeroStr t15; goto bb0;
+    int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; goto bb0;
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
 bb0:
     t1 = INT64_C(0);
@@ -168,7 +169,7 @@ bb6:
     goto bb4;
 #line 20 "tests/golden/run/adversarial-str-copy-out.hero"
 bb7:
-#line 172 "adversarialstrcopyout.c"
+#line 173 "adversarialstrcopyout.c"
     hero_str_release_at(&h3_own3);
     return;
 }
@@ -176,7 +177,7 @@ bb7:
 #line 23 "tests/golden/run/adversarial-str-copy-out.hero"
 void h_adversarialstrcopyout_main(void) {
 #line 23 "tests/golden/run/adversarial-str-copy-out.hero"
-    HeroStr h0_a = {0}; HeroStr h1_b = {0}; HeroStr t1; int64_t t2; HeroStr t3; HeroStr t4; int64_t t5; HeroStr t6; int64_t t7; HeroStr t8; HeroStr t9; int64_t t10; HeroStr t11; HeroStr t12; goto bb0;
+    HeroStr h0_a = {0}; HeroStr h1_b = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; goto bb0;
 #line 23 "tests/golden/run/adversarial-str-copy-out.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1b6fd0);
@@ -227,7 +228,7 @@ bb0:
     hero_print_int(t10);
 #line 31 "tests/golden/run/adversarial-str-copy-out.hero"
     hero_print_end();
-#line 231 "adversarialstrcopyout.c"
+#line 232 "adversarialstrcopyout.c"
     hero_str_release_at(&h0_a);
     hero_str_release_at(&h1_b);
     return;

@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -58,7 +59,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 62 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 63 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -92,7 +93,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 97 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
@@ -112,14 +113,14 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 14 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
 int64_t h_fixedbugs573alistingleftstandingistoldastheprograms_HERO_DIR_FILES(void) {
-#line 116 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 117 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     return HERO_DIR_FILES;
 }
 
 #line 16 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
 void h_fixedbugs573alistingleftstandingistoldastheprograms_main(void) {
 #line 16 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
-    HeroStr h0_dir = {0}; h_0opt_a8ea2 h1_f0 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; h_0opt_a8ea2 h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr t1; int64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; const char * t6; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; h_0opt_a8ea2 t12; h_0opt_a8ea2 t13; int64_t t14; int64_t t15; bool t16; HeroStr t17; HeroStr t18; const char * t19; int64_t t20; int64_t t21; int64_t t22; HeroStr t23; HeroStr t24; HeroStr t25; const char * t26; HeroStr t28; const char * t29; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; h_0opt_a8ea2 t35; h_0opt_a8ea2 t36; HeroStr t37; goto bb0;
+    HeroStr h0_dir = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_a8ea2 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_a8ea2 t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG const char * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG const char * t26; HERO_NODEBUG HeroStr t28; HERO_NODEBUG const char * t29; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_0opt_a8ea2 t35; HERO_NODEBUG h_0opt_a8ea2 t36; HERO_NODEBUG HeroStr t37; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_72fae086);
@@ -230,7 +231,7 @@ bb1:
     t29 = hero_str_lend(t28);
 #line 24 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
     (void)hero_fs_remove(hero_cstr_nonnull(t29));
-#line 234 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 235 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     hero_str_release_at(&h0_dir);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_own2);
@@ -252,25 +253,25 @@ bb2:
 bb3:
 #line 21 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
     goto bb1;
-#line 256 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 257 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 261 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 262 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     return HERO_OS_OK;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 267 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 268 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     return HERO_OS_BAD_NAME;
 }
 
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 186 "<heroes library>"
-    int64_t h2_wrote; h_0opt_a8ea2 h3_ret0 = {0}; h_0opt_a8ea2 h4_own4 = {0}; HeroStr h5_own5 = {0}; h_0opt_a8ea2 h6_own6 = {0}; h_0opt_a8ea2 h7_own7 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; int64_t t5; bool t6; h_0opt_a8ea2 t7; int64_t t8; int64_t t9; bool t10; HeroStr t11; HeroStr t12; h_0opt_a8ea2 t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; h_0opt_a8ea2 t18; h_0opt_a8ea2 t19; h_0opt_a8ea2 t20; HeroStr t21; h_0opt_a8ea2 t22; h_0opt_a8ea2 t23; goto bb0;
+    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_a8ea2 t18; HERO_NODEBUG h_0opt_a8ea2 t19; HERO_NODEBUG h_0opt_a8ea2 t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; goto bb0;
 #line 186 "<heroes library>"
 bb0:
     t1 = h0_path;
@@ -375,7 +376,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 379 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 380 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
