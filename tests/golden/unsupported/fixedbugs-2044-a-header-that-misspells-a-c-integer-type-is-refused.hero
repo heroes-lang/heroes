@@ -1,0 +1,16 @@
+# fixedbugs, defect 2044, 2026-10-13, a shape beside: a note at the same line
+# of the runtime that is no previous definition.
+#
+# SYMPTOM: `int46_t` in a header of the program's own was told `internal
+# error: compiling the generated C failed` at exit 2: clang's `did you mean
+# 'int16_t'?` notes `'int16_t' declared here` at `heroes_runtime.h`'s
+# `typedef __INT16_TYPE__ int16_t;`.
+#
+# FIX: that note is told as C's own `int16_t`, and the header is refused at
+# its line 3, exit 1 (`cli/standard_name.hero`).
+
+extern "fixedbugs-2044-a-header-that-misspells-a-c-integer-type-is-refused.h"  #~ ffi_header_refused
+    function seven() -> i64
+
+function main()
+    print(seven())

@@ -1,0 +1,174 @@
+# A line of the runtime that declares a name of C's `<stdint.h>` again, as
+# C's own header declares it (design.md §4.19, §4.17; CLAUDE.md §7's named
+# exception; defect 2044, 2026-10-13). `heroes_runtime.h` declares the
+# integer types before any group's header, each as `typedef __INT64_TYPE__
+# int64_t;`, clang's own type for the name, which C11 6.7p3 lets `<stdint.h>`
+# declare again identically after the groups. So a header of the program's
+# own that declares `int64_t` another way, `typedef long int64_t;` on this
+# Mac, is refused by C itself, beside any `<stdint.h>`; but clang's note
+# lands on the runtime's line, and defect 360's rule kept a note in the
+# runtime's files the compiler's: it was told *internal error: compiling the
+# generated C failed* at exit 2.
+#
+# **Asked of the line, never of a list of numbers.** The line, read from the
+# runtime's own file at the row clang names, is `typedef __<X>_TYPE__
+# <name>;`, where `<X>` is `<name>`'s own letters upper-cased without its
+# `_t`, the macro clang predefines for that type, and `<name>` has the shape
+# C11 7.20.1 gives the names `<stdint.h>` declares. Any other line of the
+# runtime, a function or a type of the Heroes library, stays the compiler's:
+# a header that compiles beside `<stdint.h>` and is refused beside the
+# runtime alone has met a name of the compiler's, which the spec does not
+# reserve.
+
+use bytes
+use emit/clang_place
+use emit/ffi_lookup
+use cli/group_file
+
+constant SUFFIX: str
+    "_t"
+
+# The name of `<stdint.h>` that the line at `row` of `path` declares again,
+# where `path` is one of `runtime`, the runtime's own files
+# (`runtime_key.made_of`), read as the compiler names it; absent for any
+# other line or file, the file clang compiled among them.
+function declared(path: str, row: i64, runtime: [str]) -> str?
+    for own in runtime
+        if group_file.settled(own) == group_file.settled(path)
+            text = read_file(own)?
+            rows = ffi_lookup.lines(text: text)
+
+            if row < 1 || row > rows.len()
+                return fail(code: "none", msg: "no such line")
+            return of_line(clang_place.without_return(rows[row - 1]))
+
+    return fail(code: "none", msg: "not a file of the runtime's")
+
+# The name a line declares as clang's own type for it, `typedef
+# __INT64_TYPE__ int64_t;`, where the name is one `<stdint.h>` declares.
+function of_line(line: str) -> str?
+    said = words(line)
+
+    if said.len() != 3 || said[0] != "typedef" || !ends_with(text: said[2], tail: ";")
+        return fail(code: "none", msg: "not a typedef of one name")
+    name = said[2].slice(from: 0, to: said[2].len() - 1)
+
+    if !ends_with(text: name, tail: SUFFIX) || !stdint_shape(name.slice(from: 0, to: name.len() - SUFFIX.len()))
+        return fail(code: "none", msg: "not a name <stdint.h> declares")
+
+    if !spells(macro: said[1], stem: name.slice(from: 0, to: name.len() - SUFFIX.len()))
+        return fail(code: "none", msg: "not clang's own type for the name")
+    return ok(name)
+
+# Whether a macro is the one clang predefines for a name of `<stdint.h>`,
+# spelled by the name's letters before its `_t`, upper-cased: `int64` is
+# `__INT64_TYPE__`.
+function spells(macro: str, stem: str) -> bool
+    if macro.len() != stem.len() + HEAD.len() + TAIL.len() || !starts(text: macro, head: HEAD) || !ends_with(text: macro, tail: TAIL)
+        return false
+
+    for at in range(from: 0, to: stem.len())
+        letter = macro[at + HEAD.len()]
+
+        if letter >= 'a' && letter <= 'z' || bytes.lower(letter) != stem[at]
+            return false
+
+    return true
+
+constant HEAD: str
+    "__"
+
+constant TAIL: str
+    "_TYPE__"
+
+# Whether a name before its `_t` has a shape of C11 7.20.1's: `int` or
+# `uint` followed by a width, by `_least` or `_fast` and a width, or by `ptr`
+# or `max`.
+function stdint_shape(stem: str) -> bool
+    rest: str @= stem
+
+    if starts(text: rest, head: "u")
+        rest @ rest.slice(from: 1, to: rest.len())
+
+    if !starts(text: rest, head: "int")
+        return false
+    rest @ rest.slice(from: 3, to: rest.len())
+
+    if rest == "ptr" || rest == "max"
+        return true
+
+    for head in ["_least", "_fast"]
+        if starts(text: rest, head: head)
+            rest @ rest.slice(from: head.len(), to: rest.len())
+
+    return width(rest)
+
+# Whether a text is a width, one digit or more and nothing else.
+function width(text: str) -> bool
+    if text.len() == 0
+        return false
+
+    for at in range(from: 0, to: text.len())
+        if !bytes.is_digit(text[at])
+            return false
+
+    return true
+
+function starts(text: str, head: str) -> bool
+    return bytes.bytes_at(text: text, at: 0, needle: head)
+
+function ends_with(text: str, tail: str) -> bool
+    return text.len() >= tail.len() && bytes.bytes_at(text: text, at: text.len() - tail.len(), needle: tail)
+
+# A line's words, split at spaces and tabs.
+function words(line: str) -> [str]
+    out: [str] @= []
+    run: [str] @= []
+
+    for ch in (line + " ").chars()
+        if ch == " " || ch == "\t"
+            if run.len() > 0
+                out @ out.push(run.join(""))
+            run @ []
+        else
+            run @ run.push(ch)
+
+    return out
+
+## Tests
+
+test "the runtime's integer types are each a name of <stdint.h> declared as clang's own type (defect 2044)"
+    for line in ["typedef __INT64_TYPE__ int64_t;", "typedef __UINT8_TYPE__ uint8_t;", "typedef __INTPTR_TYPE__ intptr_t;", "typedef __UINTMAX_TYPE__ uintmax_t;", "typedef __INT_LEAST16_TYPE__ int_least16_t;", "  typedef\t__UINT_FAST32_TYPE__   uint_fast32_t;\r"]
+        assert !of_line(clang_place.without_return(line)).is_err()
+
+    assert of_line("typedef __INT64_TYPE__ int64_t;").must() == "int64_t"
+
+    # A name of the Heroes library, a type another header declares, a macro
+    # that is not the name's own, or a line that is no typedef of one name.
+    for line in ["int64_t hero_str_len(HeroStr s);", "} HeroStr;", "typedef __SIZE_TYPE__ size_t;", "typedef __INT32_TYPE__ int64_t;", "typedef long long int64_t;", "typedef __INT64_TYPE__ hero_int64_t;", "typedef __INT_TYPE__ int_t;", "typedef __INT64_TYPE__ int64_t; /* again */", "typedef __INT64_TYPE__ int64_t", ""]
+        assert of_line(line).is_err()
+
+# Read from the runtime's own file at the line that holds it, found by its
+# text rather than by its number, and never from the file clang compiled.
+test "the line is read from the runtime's own file, wherever it stands (defect 2044)"
+    runtime = ["runtime/runtime.c", "runtime/heroes_runtime.h"]
+    text = read_file("runtime/heroes_runtime.h").must()
+    rows = ffi_lookup.lines(text: text)
+    at_int: i64 @= 0
+    at_len: i64 @= 0
+
+    for index in range(from: 0, to: rows.len())
+        if rows[index] == "typedef __INT64_TYPE__ int64_t;"
+            at_int @ index + 1
+
+        if rows[index] == "int64_t hero_str_len(HeroStr s);"
+            at_len @ index + 1
+
+    assert at_int > 0 && at_len > 0
+    assert declared(path: "runtime/heroes_runtime.h", row: at_int, runtime: runtime).must() == "int64_t"
+    assert declared(path: "./runtime//heroes_runtime.h", row: at_int, runtime: runtime).must() == "int64_t"
+    assert declared(path: "runtime\\heroes_runtime.h", row: at_int, runtime: runtime).must() == "int64_t"
+    assert declared(path: "runtime/heroes_runtime.h", row: at_len, runtime: runtime).is_err()
+    assert declared(path: "runtime/heroes_runtime.h", row: 0, runtime: runtime).is_err()
+    assert declared(path: "runtime/heroes_runtime.h", row: rows.len() + 1, runtime: runtime).is_err()
+    assert declared(path: "elsewhere/heroes_runtime.h", row: at_int, runtime: runtime).is_err()

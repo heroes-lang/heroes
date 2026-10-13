@@ -1,0 +1,15 @@
+# fixedbugs, defect 2044, 2026-10-13, a shape beside: an unsigned width.
+#
+# SYMPTOM: `typedef int uint8_t;` in a header of the program's own was told
+# `internal error: compiling the generated C failed` at exit 2, clang's
+# previous definition being `heroes_runtime.h`'s `typedef __UINT8_TYPE__
+# uint8_t;`.
+#
+# FIX: that note is told as C's own `uint8_t`, and the header is refused at
+# its line 1, exit 1 (`cli/standard_name.hero`).
+
+extern "fixedbugs-2044-a-header-that-declares-uint8-t-another-way-is-refused.h"  #~ ffi_header_refused
+    function seven() -> i32
+
+function main()
+    print(seven())

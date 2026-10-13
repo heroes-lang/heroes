@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-2044-a-header-that-declares-intptr-t-as-a-function-is-refused.h`, the header this group names, does not compile: clang refuses it at line 3: redefinition of 'intptr_t' as different kind of symbol
+  at tests/golden/unsupported/fixedbugs-2044-a-header-that-declares-intptr-t-as-a-function-is-refused.hero:13:8
+     |
+  13 | extern "fixedbugs-2044-a-header-that-declares-intptr-t-as-a-function-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2044-a-header-that-declares-intptr-t-as-a-function-is-refused.h` line 3 reads `static inline int intptr_t(void) { return 0; }`
+  note: clang adds, at C's own `intptr_t`, which every unit of this program declares as `<stdint.h>` does, before any group's header: previous definition is here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

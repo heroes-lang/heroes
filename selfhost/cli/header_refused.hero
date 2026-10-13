@@ -20,7 +20,11 @@
 # - a file of its stack, or a file one of its notes names, is the runtime's or
 #   the build's: a group naming `hero_os.h`, as this compiler's own source
 #   does, or a header a macro of the runtime broke, is the runtime's to answer
-#   for.
+#   for; save a note at the runtime's line declaring a name of C's
+#   `<stdint.h>` again as C does, `typedef __INT64_TYPE__ int64_t;`, which is
+#   C's own and told so (`cli/standard_name.hero`, defect 2044): a header
+#   declaring `int64_t` another way is refused beside any `<stdint.h>`, and a
+#   note at a function or a type of the Heroes library's own stays here.
 #
 # **Only the first error is read.** clang reads on past an error, and what it
 # says after one, about a header it could not read whole or about the
@@ -119,9 +123,7 @@ function refused_after(stderr: str, s: source.Source, decls: [ast.Decl], runtime
     added: [str] @= []
 
     for note in one.notes
-        added @ added.push(
-            "clang adds, at `" + clang_place.shown(path: note.path, directory: directory) + "` line " + note.row.to_str() + ": " + note.text
-        )
+        added @ added.push(adds(note, directory: directory))
 
     return [
         headers_together.after(s, refused: side, earlier: earlier.span, earlier_header: earlier.header, message: one.first.message, added: added)
@@ -163,9 +165,7 @@ function told(rows: [str], first: clang_first.First, steps: [clang_place.Place],
         d.notes @ d.notes.push("the includes clang followed: " + hops.join(", then "))
 
     for note in notes
-        d.notes @ d.notes.push(
-            "clang adds, at `" + clang_place.shown(path: note.path, directory: directory) + "` line " + note.row.to_str() + ": " + note.text
-        )
+        d.notes @ d.notes.push(adds(note, directory: directory))
 
     if !clang_place.offset_of(text: first.message, needle: AS_ERROR).is_err()
         d.notes @ d.notes.push(
@@ -212,11 +212,19 @@ function sides(read: clang_first.Reading) -> Sides?
 
     for each in read.notes
         if each.index != read.note.index
-            added @ added.push(
-                "clang adds, at `" + clang_place.shown(path: each.path, directory: directory) + "` line " + each.row.to_str() + ": " + each.text
-            )
+            added @ added.push(adds(each, directory: directory))
 
     return ok(Sides(one: one, other: other, added: added))
+
+# A note clang attached, as it is told: its file shown as the group's
+# directory would name it, and its line; or, at the runtime's line declaring
+# a name of C's `<stdint.h>` again (defect 2044), as C's own declaration of
+# that name, which every unit reads before any group's header, never as a
+# file of the compiler's.
+function adds(note: clang_first.Attached, directory: str) -> str
+    if !note.standard.is_err()
+        return "clang adds, at C's own `" + note.standard.must() + "`, which every unit of this program declares as `<stdint.h>` does, before any group's header: " + note.text
+    return "clang adds, at `" + clang_place.shown(path: note.path, directory: directory) + "` line " + note.row.to_str() + ": " + note.text
 
 ## Tests
 
@@ -393,6 +401,56 @@ test "a macro's expansion, or a file the runtime entered first, is no second hea
 
     noted = refused(stderr: nulled, s: s, decls: parsed.decls, runtime: "runtime")[0]
     assert has(noted.notes, needle: "expanded from macro 'NULL'")
+
+# DEFECT 2044: a note at the runtime's line declaring a name of `<stdint.h>`
+# again, as C does, is C's own, and the header's refusal stays its own. Clang's
+# words as Apple clang 21 wrote them on 2026-10-13 for `typedef long int64_t;`
+# and for `int46_t` misspelled, each line of the runtime's found by its text
+# and never by its number; a note at a line of the Heroes library's own,
+# `hero_str_len` declared again or `HeroStr`, stays the compiler's.
+test "a note at the runtime's re-declaration of a name of stdint.h is C's own (defect 2044)"
+    s = program()
+    decls = decls_of()
+    int64 = runtime_row("typedef __INT64_TYPE__ int64_t;")
+    int16 = runtime_row("typedef __INT16_TYPE__ int16_t;")
+    length = runtime_row("int64_t hero_str_len(HeroStr s);")
+    through = "In file included from build/tu-1/t.c:2:\nIn file included from runtime/heroes_unit.h:26:\n"
+    head = "In file included from build/tu-1/t.c:7:\n./bad.h:1:14: error: typedef redefinition with different types ('long' vs 'long long')\n    1 | typedef long int64_t;\n      |              ^\n"
+    redefined = head + through + "runtime/heroes_runtime.h:" + int64.to_str() + ":24: note: previous definition is here\n1 error generated.\n"
+    said = refused(stderr: redefined, s: s, decls: decls, runtime: "runtime")
+    assert said.len() == 1
+    assert said[0].code == "ffi_header_refused"
+    assert source.span_text(s, said[0].span) == "\"bad.h\""
+    assert said[0].message == "`bad.h`, the header this group names, does not compile: clang refuses it at line 1: typedef redefinition with different types ('long' vs 'long long')"
+    assert said[0].notes[1] == "clang adds, at C's own `int64_t`, which every unit of this program declares as `<stdint.h>` does, before any group's header: previous definition is here"
+    windows = head + through + "runtime\\heroes_runtime.h:" + int64.to_str() + ":24: note: previous definition is here\n"
+    assert refused(stderr: windows, s: s, decls: decls, runtime: "runtime")[0].notes == said[0].notes
+    misspelled = "In file included from build/tu-1/t.c:7:\n./bad.h:1:15: error: unknown type name 'int46_t'; did you mean 'int16_t'?\n" + through + "runtime/heroes_runtime.h:" + int16.to_str() + ":24: note: 'int16_t' declared here\n"
+    typo = refused(stderr: misspelled, s: s, decls: decls, runtime: "runtime")
+    assert typo.len() == 1
+    assert typo[0].notes[0] == "clang adds, at C's own `int16_t`, which every unit of this program declares as `<stdint.h>` does, before any group's header: 'int16_t' declared here"
+
+    # The compiler's: a line of the Heroes library's own, a line beside the
+    # type's, a second note in the runtime that is no such line, and the
+    # type's row in the file clang compiled.
+    static = "In file included from build/tu-1/t.c:7:\n./bad.h:2:19: error: static declaration of 'hero_str_len' follows non-static declaration\n" + through + "runtime/heroes_runtime.h:" + length.to_str() + ":9: note: previous declaration is here\n"
+    beside = head + through + "runtime/heroes_runtime.h:" + (runtime_row("typedef __INT8_TYPE__ int8_t;") - 1).to_str() + ":1: note: previous definition is here\n"
+    second = head + through + "runtime/heroes_runtime.h:" + int64.to_str() + ":24: note: previous definition is here\nruntime/heroes_runtime.h:10:9: note: expanded from macro 'HERO_X'\n"
+    compiled = head + "build/tu-1/t.c:" + int64.to_str() + ":24: note: previous definition is here\n"
+
+    for text in [static, beside, second, compiled]
+        assert refused(stderr: text, s: s, decls: decls, runtime: "runtime").len() == 0
+
+# The row of the runtime's header that reads `line`, found by its text.
+function runtime_row(line: str) -> i64
+    rows = ffi_lookup.lines(text: read_file("runtime/heroes_runtime.h").must())
+
+    for at in range(from: 0, to: rows.len())
+        if rows[at] == line
+            return at + 1
+
+    assert false
+    return 0
 
 function has(notes: [str], needle: str) -> bool
     for note in notes

@@ -1,0 +1,17 @@
+# fixedbugs, defect 2044, 2026-10-13, a shape beside: a pointer's width,
+# `long` on this Mac and on Linux and `long long` on Windows, so declared
+# here as a function and clang's words are the same on each.
+#
+# SYMPTOM: a header of the program's own declaring `intptr_t` another way was
+# told `internal error: compiling the generated C failed` at exit 2, clang's
+# previous definition being `heroes_runtime.h`'s `typedef __INTPTR_TYPE__
+# intptr_t;`.
+#
+# FIX: that note is told as C's own `intptr_t`, and the header is refused at
+# its line 3, exit 1 (`cli/standard_name.hero`).
+
+extern "fixedbugs-2044-a-header-that-declares-intptr-t-as-a-function-is-refused.h"  #~ ffi_header_refused
+    function seven() -> i32
+
+function main()
+    print(seven())

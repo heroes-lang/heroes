@@ -1,0 +1,16 @@
+# fixedbugs, defect 2044, 2026-10-13, the defect's own message on a type that
+# is `int` on every platform, so clang's words are the same on each.
+#
+# SYMPTOM: `typedef long int32_t;` in a header of the program's own was told
+# `internal error: compiling the generated C failed` at exit 2, clang's
+# previous definition being `heroes_runtime.h`'s `typedef __INT32_TYPE__
+# int32_t;`, C's own type declared again identically.
+#
+# FIX: that note is told as C's own `int32_t`, and the header is refused at
+# its line 1, exit 1 (`cli/standard_name.hero`).
+
+extern "fixedbugs-2044-a-header-that-declares-int32-t-another-way-is-refused.h"  #~ ffi_header_refused
+    function seven() -> i32
+
+function main()
+    print(seven())
