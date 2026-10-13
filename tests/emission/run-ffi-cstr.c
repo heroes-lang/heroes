@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -91,7 +96,7 @@ HERO_STR_STATIC(hero_str_79c9889a, "hello from C");
 HERO_STR_STATIC(hero_str_5cc08313, "computed");
 HERO_STR_STATIC(hero_str_6251eb62, "back in Heroes");
 
-#line 95 "fficstr.c"
+#line 100 "fficstr.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -135,7 +140,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "fficstr.c"
+#line 144 "fficstr.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -167,7 +172,7 @@ bb0:
     h1_own1 = t3;
 #line 16 "tests/golden/run/ffi-cstr.hero"
     hero_str_decref(t4);
-#line 171 "fficstr.c"
+#line 176 "fficstr.c"
     hero_str_incref(t3);
     hero_str_release_at(&h1_own1);
     return t3;
@@ -203,7 +208,7 @@ bb0:
     hero_print_str(t8);
 #line 25 "tests/golden/run/ffi-cstr.hero"
     hero_print_end();
-#line 207 "fficstr.c"
+#line 212 "fficstr.c"
     hero_str_release_at(&h0_own0);
     return;
 }

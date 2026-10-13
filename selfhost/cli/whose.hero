@@ -173,8 +173,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
         stderr: message,
         s: s,
         decls: art.decls,
-        runtime: t.runtime,
-        build: t.build
+        runtime: t.runtime
     )
 
     if refusal.len() == 0
@@ -182,7 +181,7 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
 
     # A header refused on its own that compiles alone is two headers'
     # refusal, the earlier named (defect 557).
-    alone = header_refused.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime, build: t.build)
+    alone = header_refused.refused_alone(stderr: message, s: s, decls: art.decls, runtime: t.runtime)
 
     if !alone.is_err()
         before = header_alone.earlier(t, under: under, header: alone.must().header, headers: unit_headers)
@@ -196,7 +195,6 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
                     s: s,
                     decls: art.decls,
                     runtime: t.runtime,
-                    build: t.build,
                     earlier: other.must()
                 )
 

@@ -1,0 +1,18 @@
+# fixedbugs, defect 2036, 2026-10-13, a shape beside defect 2034's repair.
+#
+# SYMPTOM: a header of the program's own whose `printf("%d\n", 7, 8)` passes
+# one argument more than its format names was refused `ffi_header_refused`
+# at exit 1, `data argument not used by format string
+# [-Werror,-Wformat-extra-args]`, since defect 2034 kept `-Wformat` an error
+# in the region as a group; C11 7.21.6.1p2 defines the call, the excess
+# argument evaluated and otherwise ignored.
+#
+# FIX: the parts of `-Wformat` whose construct C defines are passed over
+# after the group is raised (`emit/header_region.hero`'s `FORMAT_DEFINED`),
+# so the header builds and the call prints `7` and returns 2.
+
+extern "fixedbugs-2036-a-header-s-own-printf-with-an-argument-past-its-format-builds.h"
+    function fmt_extra() -> i32
+
+function main()
+    print(fmt_extra())
