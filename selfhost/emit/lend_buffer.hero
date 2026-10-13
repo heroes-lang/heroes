@@ -35,6 +35,7 @@ use emit/aggregate
 use emit/lend_count
 use emit/lend_extent
 use emit/probe_params
+use emit/nodebug
 use widths
 
 # The contract between this writer and `emit/ffi_extent.hero`'s reader.
@@ -200,10 +201,10 @@ function before(@w: writer.Writer, held: [Buffer], arguments: [str]) -> [str]
     for b in held
         if b.check != ""
             writer.line(@w, text: "    " + b.check)
-        writer.line(@w, text: "    int64_t " + b.extent_name + " = " + b.extent + ";")
+        writer.line(@w, text: "    " + nodebug.MARK + "int64_t " + b.extent_name + " = " + b.extent + ";")
         writer.line(
             @w,
-            text: "    void *" + b.name + " = hero_lend_take(" + b.place + ", " + b.extent_name + ", " + lend_count.quoted(b.callee) + ", " + lend_count.quoted(b.param) + ");"
+            text: "    " + nodebug.MARK + "void *" + b.name + " = hero_lend_take(" + b.place + ", " + b.extent_name + ", " + lend_count.quoted(b.callee) + ", " + lend_count.quoted(b.param) + ");"
         )
 
         if b.index < out.len()

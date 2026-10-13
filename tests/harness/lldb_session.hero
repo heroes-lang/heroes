@@ -25,8 +25,9 @@
 #                           as `(<type>) <name> = …`, a member of an aggregate
 #                           standing indented beneath it: with a `!shows:` for
 #                           each, the frame shows these and nothing else, a
-#                           temporary or a slot the lowering invented included
-#                           (panel 213's R1, provisional)
+#                           temporary, a slot the lowering invented or a local
+#                           the emitter declared included (panel 213's R1,
+#                           provisional)
 #
 # Blank lines are free; any other line is a broken case, told by its number.
 #
@@ -457,7 +458,7 @@ function variables_unmet(count: i64, rows: [str]) -> str
 
     if found == count
         return ""
-    return "lldb listed " + found.to_str() + " variables, and the case claims " + count.to_str() + ": a variable listed and not claimed is one the frame shows that the author did not write, a temporary or a slot the lowering invented"
+    return "lldb listed " + found.to_str() + " variables, and the case claims " + count.to_str() + ": a variable listed and not claimed is one the frame shows that the author did not write, a temporary, a slot the lowering invented or a local the emitter declared"
 
 # The backtrace's frames in a `.hero` file against the claimed ones, in order
 # and all of them: a frame the case does not name is as much a change as one it

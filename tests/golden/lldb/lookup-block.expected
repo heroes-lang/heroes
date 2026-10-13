@@ -1,0 +1,13 @@
+> breakpoint set --file lookup-block.hero --line 11
+!resolved: lookup-block.hero:11
+> run
+!stop: breakpoint at lookup-block.hero:11
+> breakpoint set --name hero_map_find
+> continue
+> up
+!at: lookup-block.hero:12
+> frame variable
+!variables: 4
+!shows: (HeroStr) h1_who = (ptr = "ada", len = 3)
+!shows: (int64_t) h2_base = 10
+> continue

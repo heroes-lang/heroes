@@ -36,6 +36,7 @@ use emit/aggregate
 use emit/places
 use emit/storageless
 use emit/array_read
+use emit/nodebug
 use parse
 use resolve
 use checker
@@ -307,7 +308,7 @@ function map_get(c: state.Checked, names: ctype.Names, f: containers.Function, m
     option = ctype.option_of(names, ty: result)
     lines: [str] @= ["{"]
     lines @ lines.push(
-        "  const void *found = hero_map_find(" + mangle.value(map_value) + ", &" + mangle.value(key) + ");"
+        "  " + nodebug.MARK + "const void *found = hero_map_find(" + mangle.value(map_value) + ", &" + mangle.value(key) + ");"
     )
     lines @ lines.push("  if (found == NULL) {")
     lines @ lines.push("    " + into + " = (" + option + "){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};")
