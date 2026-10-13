@@ -6469,8 +6469,8 @@ HERO_STR_STATIC(hero_str_1f33afc6, "| `-AsmLabelAttr ");
 HERO_STR_STATIC(hero_str_2e83a6e6, "  |-AsmLabelAttr ");
 HERO_STR_STATIC(hero_str_5a8e9e32, "  `-AsmLabelAttr ");
 HERO_STR_STATIC(hero_str_307ad4e3, "claude-opus-5");
-HERO_STR_STATIC(hero_str_278143e2, "2026-10-12");
-HERO_STR_STATIC(hero_str_3e797096, "59efcf130b5f15ec");
+HERO_STR_STATIC(hero_str_278143e3, "2026-10-13");
+HERO_STR_STATIC(hero_str_6bae14bb, "4f4809c805a9ed4e");
 HERO_STR_STATIC(hero_str_1728488e, "2026-09-29");
 HERO_STR_STATIC(hero_str_267c61a2, "error: `--refresh` refreshes the record for `");
 HERO_STR_STATIC(hero_str_7f402d41, "` has none \342\200\224 no ceiling judges it (panel 123 R5)");
@@ -1152728,7 +1152728,7 @@ int64_t h_measurepinned_SPEC_REAL_TOKENS(void) {
     HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 54 "selfhost/measure/pinned.hero"
 bb0:
-    t1 = INT64_C(10050);
+    t1 = INT64_C(10048);
 #line 55 "selfhost/measure/pinned.hero"
     return t1;
 #line 1152735 "main.c"
@@ -1152752,7 +1152752,7 @@ HeroStr h_measurepinned_SPEC_REAL_TAKEN(void) {
     HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 60 "selfhost/measure/pinned.hero"
 bb0:
-    t1 = HERO_STR_LIT(hero_str_278143e2);
+    t1 = HERO_STR_LIT(hero_str_278143e3);
 #line 1152757 "main.c"
     hero_str_incref(t1);
     return t1;
@@ -1152764,7 +1152764,7 @@ HeroStr h_measurepinned_SPEC_DIGEST(void) {
     HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 63 "selfhost/measure/pinned.hero"
 bb0:
-    t1 = HERO_STR_LIT(hero_str_3e797096);
+    t1 = HERO_STR_LIT(hero_str_6bae14bb);
 #line 1152769 "main.c"
     hero_str_incref(t1);
     return t1;
