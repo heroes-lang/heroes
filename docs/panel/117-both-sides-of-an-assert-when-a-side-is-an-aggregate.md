@@ -376,3 +376,7 @@ stand as ratified on 2026-09-07, and its part 3 is ratified as **withdrawn** on
 2026-09-11. `tests/harness/suite_special.hero`'s aggregate pin stays and stays
 correct, and the mechanism the defect is owed remains open, to be reached another
 way.
+
+## Scored at M-typed-inspection's close, 2026-10-13
+
+- **ffi-pragmatist** (*per-type generation gives every aggregate in `examples/sqlite/main.hero` its sides with the ABI still 21, `HeroDesc` still five members, and the seed still compiling*): **lapsed**. Per-type generation was not the route the author ratified on 2026-09-07; the leaf walk was, at M-reflection-verdict, so the prediction's premise never came to stand. Of its three clauses read anyway: the ABI is 30, moved since by sittings that had nothing to do with this one; `HeroDesc` still holds its five members; the seed compiles (its fixpoint verified by `cmp` at the close).

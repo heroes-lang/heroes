@@ -1,0 +1,1 @@
+- [ ] **M-typed-inspection** | `editors/lldb/heroes_lldb.py` finds a `[T]`'s element type without a field in `HeroDesc`. From what does it read the type, what does it check before trusting it, and what does it show where nothing resolves? | `editors/lldb/heroes_lldb.py`, `tests/golden/lldb/formatter-steps-aside.hero`, `docs/panel/213-reports/ffi-pragmatist.md` § Task 4
