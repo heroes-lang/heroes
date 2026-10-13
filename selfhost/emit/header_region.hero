@@ -99,6 +99,11 @@ constant KEPT: [str]
 # few constructs C defines are refused with them, measured on this Mac and
 # Linux arm64: a flag p6 says is ignored (`%+ d`, `%-05d`), a `bool` for
 # `%c`, a `\0` inside the format, a wide literal cast to `const char *`.
+# **They stay refused, a known cost by the author's ruling of 2026-10-13**:
+# robustness first (design.md §1.12), since passing them over would pass the
+# mismatch that reads the wrong bytes; revisit if clang gives them a flag of
+# their own. Each is pinned by a case of `tests/golden/unsupported/` named
+# `fixedbugs-2036-...-is-a-known-cost`, which moves when it can be passed.
 constant FORMAT_DEFINED: [str]
     [
         "-Wformat-extra-args"
