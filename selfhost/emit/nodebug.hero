@@ -1,0 +1,34 @@
+# What a debugger is not shown (design.md §3.1; panel 213's R1, provisional,
+# author ratification pending): the word the emitter writes before a C local
+# it invented, so that a frame stopped on an author's line lists the author's
+# parameters and bindings alone, and the line each unit defines it by.
+#
+# WHAT CARRIES IT. Every temporary, and every slot of kind `synthetic_slot`
+# or `return_slot`, which the prologue declares (`emit/prologue.hero` says
+# how the slot's kind decides). And every scratch local the emitter declares
+# inside a body, in the block of one instruction: a map lookup's `found`
+# (`emit/container.hero`), a text made of bytes' `hero_vb_status` and
+# `hero_vb_text` (`emit/bytes_text.hero`), a kept result's `hero_when`
+# (`emit/ops.hero`), a handle's `hero_life_<n>_<k>`
+# (`emit/handle_before.hero`), and a lent buffer's `hero_lend_b<tag>` and
+# `hero_lend_e<tag>` (`emit/lend_buffer.hero`). A frame stopped inside such a
+# block, `up` from the call the block makes, listed them beside the author's.
+# NOT the generated functions no author's line belongs to, a per-type
+# function, a callback's thunk, `hero_extern_refs` and the two `main`s: a
+# frame there holds no binding of the author's to keep apart from them.
+#
+# A HIDDEN DECLARATION CANNOT SHOW A WRONG VALUE: it has no entry in the debug
+# information at all, so the debugger has no name to print and no place to
+# read; what is lost is the variable, never the truth of one shown. The word
+# is the unit's own, defined beside `HERO_TU_LOCAL` (`emit/decls.hero`), so
+# neither the runtime's header nor its ABI stamp moves; clang honours the
+# attribute in DWARF and in CodeView (the sitting's critic: this Mac, Linux
+# arm64's clang 22.1.8, and a Windows target's object).
+
+# The word, and the space after it, written before a declaration.
+constant MARK: str
+    "HERO_NODEBUG "
+
+# The line each unit's preamble defines the word by.
+constant DEFINE: str
+    "#define HERO_NODEBUG __attribute__((nodebug))"

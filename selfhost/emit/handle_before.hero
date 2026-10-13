@@ -45,6 +45,7 @@ use check/state
 use check/reaches
 use emit/writer
 use emit/handle_text
+use emit/nodebug
 use parse
 
 function before_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], decl: i64, arguments: [str])
@@ -123,7 +124,7 @@ function announce(@w: writer.Writer, c: state.Checked, s: source.Source, decls: 
     for suffix in suffixes
         writer.line(
             @w,
-            text: "    uint64_t " + handle_text.life_c(at: at, k: k) + " = " + entry + "(" + value + suffix + tail + ");"
+            text: "    " + nodebug.MARK + "uint64_t " + handle_text.life_c(at: at, k: k) + " = " + entry + "(" + value + suffix + tail + ");"
         )
         k @ k + 1
 

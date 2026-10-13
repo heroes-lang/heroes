@@ -42,6 +42,7 @@ use emit/extern_assert
 use emit/writer
 use emit/c_text
 use emit/macro_guard
+use emit/nodebug
 use parse
 use resolve
 use checker
@@ -136,11 +137,11 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
         quiet_line @ quiet_line + " __attribute__((unused))"
     writer.line(@w, text: quiet_line)
 
-    # The word a declaration the debugger is not shown carries, a temporary or
-    # a slot the lowering invented (`emit/prologue.hero` says which and why;
-    # panel 213's R1, provisional): in the unit, so the runtime's header and
-    # its ABI stamp do not move, and in every unit alike.
-    writer.line(@w, text: "#define HERO_NODEBUG __attribute__((nodebug))")
+    # The word a declaration the debugger is not shown carries, a local the
+    # lowering or the emitter invented (`emit/nodebug.hero` says which and
+    # why; panel 213's R1, provisional): in the unit, so the runtime's header
+    # and its ABI stamp do not move, and in every unit alike.
+    writer.line(@w, text: nodebug.DEFINE)
     writer.line(@w, text: "")
 
     # The struct's fields before the signatures that pass one, so a

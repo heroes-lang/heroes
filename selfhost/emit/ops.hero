@@ -36,6 +36,7 @@ use emit/handle_text
 use emit/callback_thunk
 use emit/printing
 use emit/lend_type
+use emit/nodebug
 use token
 use parse
 use resolve
@@ -229,7 +230,10 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
 
             if keeps && assign.len() == 0
                 writer.line(@w, text: "    {")
-                writer.line(@w, text: "    __typeof__(" + invocation + ") hero_when = " + invocation + ";")
+                writer.line(
+                    @w,
+                    text: "    " + nodebug.MARK + "__typeof__(" + invocation + ") hero_when = " + invocation + ";"
+                )
                 result_name @ ok("hero_when")
             else
                 writer.line(@w, text: "    " + assign + cast + invocation + ";")

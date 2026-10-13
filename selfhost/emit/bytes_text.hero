@@ -43,6 +43,7 @@ use ir/containers
 use emit/ctype
 use emit/writer
 use emit/storageless
+use emit/nodebug
 use ast
 use source
 
@@ -108,8 +109,8 @@ function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
     # declares (CLAUDE.md §7), and this one is not a Heroes value — it is two
     # statements' worth of scratch that no other instruction may see.
     writer.line(@w, text: "    {")
-    writer.line(@w, text: "        int64_t hero_vb_status = 0;")
-    writer.line(@w, text: "        HeroStr hero_vb_text = " + call + ";")
+    writer.line(@w, text: "        " + nodebug.MARK + "int64_t hero_vb_status = 0;")
+    writer.line(@w, text: "        " + nodebug.MARK + "HeroStr hero_vb_text = " + call + ";")
     writer.line(@w, text: "        if (hero_vb_status == HERO_STR_OK) {")
     writer.line(@w, text: "            " + into + " = (" + union_name + "){.tag = INT64_C(0), .as.ok = hero_vb_text};")
     writer.line(@w, text: "        } else {")

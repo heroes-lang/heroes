@@ -63,9 +63,10 @@ constant LLDB: str
     "lldb"
 
 # Three cases on 2026-10-12, the day the suite landed: the hit, the stepping
-# and the locals; four on 2026-10-13, with the bindings alone (panel 213's R1).
+# and the locals; five on 2026-10-13, with the bindings alone and a lookup's
+# block (panel 213's R1).
 constant LEAST: i64
-    4
+    5
 
 # What the skip says on Windows, where the machine can be asked and answers
 # nothing: the reason recorded on the CI's leg, and where the mapping is judged
