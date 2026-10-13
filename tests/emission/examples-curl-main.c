@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -103,7 +108,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 107 "main.c"
+#line 112 "main.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -157,7 +162,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "main.c"
+#line 166 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Curl_eq(CURL * const *a, CURL * const *b);
@@ -184,7 +189,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 39 "examples/curl/main.hero"
 int32_t h_main_CURLOPT_URL(void) {
-#line 188 "main.c"
+#line 193 "main.c"
     return CURLOPT_URL;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -202,7 +207,7 @@ int32_t h_main_CURLOPT_URL(void) {
 
 #line 40 "examples/curl/main.hero"
 int64_t h_main_CURLE_OK(void) {
-#line 206 "main.c"
+#line 211 "main.c"
     return CURLE_OK;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -220,7 +225,7 @@ int64_t h_main_CURLE_OK(void) {
 
 #line 41 "examples/curl/main.hero"
 int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
-#line 224 "main.c"
+#line 229 "main.c"
     return CURLE_UNSUPPORTED_PROTOCOL;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -239,7 +244,7 @@ int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
 #line 55 "examples/curl/main.hero"
 void h_main_main(void) {
 #line 55 "examples/curl/main.hero"
-    HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}; HERO_NODEBUG HeroStr h1_r0 = {0}; CURL * h2_handle; const char * h3_url; HERO_NODEBUG h_0opt_fbaec77 h4_f1 = {0}; int64_t h5_rc; HERO_NODEBUG h_0opt_fbaec77 h6_f2 = {0}; HERO_NODEBUG h_0opt_f87774a h7_f3 = {0}; HERO_NODEBUG HeroStr h8_r1 = {0}; HERO_NODEBUG h_0opt_fbaec77 h9_f4 = {0}; HERO_NODEBUG h_0opt_f87774a h10_f5 = {0}; HERO_NODEBUG HeroStr h11_r2 = {0}; HERO_NODEBUG h_0opt_f87774a h12_own12 = {0}; HERO_NODEBUG h_0opt_fbaec77 h13_own13 = {0}; HERO_NODEBUG h_0opt_fbaec77 h14_own14 = {0}; HERO_NODEBUG h_0opt_fbaec77 h15_own15 = {0}; HERO_NODEBUG h_0opt_f87774a h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_0opt_f87774a t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG CURL * t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG const char * t14; HERO_NODEBUG CURL * t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG h_0opt_fbaec77 t17; HERO_NODEBUG h_0opt_fbaec77 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_fbaec77 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_fbaec77 t24; HERO_NODEBUG uint32_t t25; HERO_NODEBUG const char * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG h_0opt_fbaec77 t34; HERO_NODEBUG h_0opt_fbaec77 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG h_0opt_fbaec77 t39; HERO_NODEBUG HeroFailure t40; HERO_NODEBUG h_0opt_fbaec77 t41; HERO_NODEBUG uint32_t t42; HERO_NODEBUG const char * t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG h_0opt_fbaec77 t55; HERO_NODEBUG h_0opt_fbaec77 t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG h_0opt_fbaec77 t60; HERO_NODEBUG HeroFailure t61; HERO_NODEBUG h_0opt_fbaec77 t62; HERO_NODEBUG uint32_t t63; HERO_NODEBUG const char * t64; HERO_NODEBUG h_0opt_f87774a t65; HERO_NODEBUG h_0opt_f87774a t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG bool t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG CURL * t74; HERO_NODEBUG h_0opt_f87774a t75; HERO_NODEBUG h_0opt_f87774a t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG h_0opt_fbaec77 t79; HERO_NODEBUG h_0opt_fbaec77 t80; HERO_NODEBUG h_0opt_fbaec77 t81; HERO_NODEBUG h_0opt_fbaec77 t82; HERO_NODEBUG h_0opt_fbaec77 t83; HERO_NODEBUG h_0opt_fbaec77 t84; HERO_NODEBUG h_0opt_f87774a t85; HERO_NODEBUG h_0opt_f87774a t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG h_0opt_f87774a t89; HERO_NODEBUG h_0opt_f87774a t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroStr t92; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}; HERO_NODEBUG HeroStr h1_r0 = {0}; CURL * h2_handle; const char * h3_url; HERO_NODEBUG h_0opt_fbaec77 h4_f1 = {0}; int64_t h5_rc; HERO_NODEBUG h_0opt_fbaec77 h6_f2 = {0}; HERO_NODEBUG h_0opt_f87774a h7_f3 = {0}; HERO_NODEBUG HeroStr h8_r1 = {0}; HERO_NODEBUG h_0opt_fbaec77 h9_f4 = {0}; HERO_NODEBUG h_0opt_f87774a h10_f5 = {0}; HERO_NODEBUG HeroStr h11_r2 = {0}; HERO_NODEBUG h_0opt_f87774a h12_own12 = {0}; HERO_NODEBUG h_0opt_fbaec77 h13_own13 = {0}; HERO_NODEBUG h_0opt_fbaec77 h14_own14 = {0}; HERO_NODEBUG h_0opt_fbaec77 h15_own15 = {0}; HERO_NODEBUG h_0opt_f87774a h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_0opt_f87774a t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG CURL * t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG const char * t14; HERO_NODEBUG CURL * t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG h_0opt_fbaec77 t17; HERO_NODEBUG h_0opt_fbaec77 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_fbaec77 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_fbaec77 t24; HERO_NODEBUG uint32_t t25; HERO_NODEBUG const char * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG h_0opt_fbaec77 t34; HERO_NODEBUG h_0opt_fbaec77 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG h_0opt_fbaec77 t39; HERO_NODEBUG HeroFailure t40; HERO_NODEBUG h_0opt_fbaec77 t41; HERO_NODEBUG uint32_t t42; HERO_NODEBUG const char * t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG h_0opt_fbaec77 t55; HERO_NODEBUG h_0opt_fbaec77 t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG h_0opt_fbaec77 t60; HERO_NODEBUG HeroFailure t61; HERO_NODEBUG h_0opt_fbaec77 t62; HERO_NODEBUG uint32_t t63; HERO_NODEBUG const char * t64; HERO_NODEBUG h_0opt_f87774a t65; HERO_NODEBUG h_0opt_f87774a t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG bool t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG CURL * t74; HERO_NODEBUG h_0opt_f87774a t75; HERO_NODEBUG h_0opt_f87774a t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG h_0opt_fbaec77 t79; HERO_NODEBUG h_0opt_fbaec77 t80; HERO_NODEBUG h_0opt_fbaec77 t81; HERO_NODEBUG h_0opt_fbaec77 t82; HERO_NODEBUG h_0opt_fbaec77 t83; HERO_NODEBUG h_0opt_fbaec77 t84; HERO_NODEBUG h_0opt_f87774a t85; HERO_NODEBUG h_0opt_f87774a t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG h_0opt_f87774a t89; HERO_NODEBUG h_0opt_f87774a t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroStr t92; HERO_ENTRY_STOP; goto bb0;
 #line 55 "examples/curl/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_17a24f25);
@@ -388,7 +393,7 @@ bb5:
     t22 = h4_f1;
 #line 78 "examples/curl/main.hero"
     t23 = t22.as.err;
-#line 392 "main.c"
+#line 397 "main.c"
     hero_panic_must(t23);
     hero_unreachable();
 bb6:
@@ -519,7 +524,7 @@ bb10:
     t39 = h6_f2;
 #line 84 "examples/curl/main.hero"
     t40 = t39.as.err;
-#line 523 "main.c"
+#line 528 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb11:
@@ -603,7 +608,7 @@ bb15:
     t60 = h9_f4;
 #line 90 "examples/curl/main.hero"
     t61 = t60.as.err;
-#line 607 "main.c"
+#line 612 "main.c"
     hero_panic_must(t61);
     hero_unreachable();
 bb16:
@@ -652,14 +657,14 @@ bb18:
 #line 92 "examples/curl/main.hero"
     hero_handle_alive(t74, "the argument `handle` of `curl_easy_cleanup`");
 #line 92 "examples/curl/main.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t74, "curl_easy_cleanup", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t74, "curl_easy_cleanup", NULL);
 #line 92 "examples/curl/main.hero"
     (void)curl_easy_cleanup(t74);
 #line 92 "examples/curl/main.hero"
     if (hero_handle_ended(t74, hero_life_0_0) && h2_handle == t74) h2_handle = hero_handle_dead();
 #line 92 "examples/curl/main.hero"
     }
-#line 663 "main.c"
+#line 668 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_r0);
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f1));
@@ -680,7 +685,7 @@ bb18:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 684 "main.c"
+#line 689 "main.c"
     return HERO_STR_OK;
 }
 
@@ -689,7 +694,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
 #line 153 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 153 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG const char * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG h_0opt_f87774a t23; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG const char * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG h_0opt_f87774a t23; HERO_ENTRY_STOP; goto bb0;
 #line 153 "<heroes library>"
 bb0:
     t1 = h0_c;
@@ -803,7 +808,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 807 "main.c"
+#line 812 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

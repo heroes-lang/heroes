@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +54,7 @@ HERO_STR_STATIC(hero_str_2cf99681, "a\033[2J\342\200\256b\302\205c");
 HERO_STR_STATIC(hero_str_31d87148, "x == \"y\"");
 HERO_STR_STATIC(hero_str_79, "y");
 
-#line 53 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 58 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -79,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 83 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 88 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +101,7 @@ void h_fixedbugs355anassertwritesitssideswholeandbytheircode_main(void);
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
 void h_fixedbugs355anassertwritesitssideswholeandbytheircode_main(void) {
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-    HeroArrayHeader * h0_b = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HeroStr h2_x = {0}; HERO_NODEBUG HeroStr h3_assert0 = {0}; HERO_NODEBUG HeroStr h4_assert1 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; goto bb0;
+    HeroArrayHeader * h0_b = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HeroStr h2_x = {0}; HERO_NODEBUG HeroStr h3_assert0 = {0}; HERO_NODEBUG HeroStr h4_assert1 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
 bb0:
     t1 = UINT64_C(97);
@@ -132,9 +137,9 @@ bb0:
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     {
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-        int64_t hero_vb_status = 0;
+        HERO_NODEBUG int64_t hero_vb_status = 0;
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
-        HeroStr hero_vb_text = hero_str_try_from_array(t6, &hero_vb_status);
+        HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t6, &hero_vb_status);
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
         if (hero_vb_status == HERO_STR_OK) {
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
@@ -224,7 +229,7 @@ bb2:
     t12 = h1_f0;
 #line 9 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t13 = t12.as.err;
-#line 228 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 233 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_panic_must(t13);
     hero_unreachable();
 bb3:
@@ -242,7 +247,7 @@ bb4:
     t21 = h3_assert0;
 #line 10 "tests/golden/run/fixedbugs-355-an-assert-writes-its-sides-whole-and-by-their-code.hero"
     t22 = h4_assert1;
-#line 246 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
+#line 251 "fixedbugs355anassertwritesitssideswholeandbytheircode.c"
     hero_panic_assert_sides(t17, hero_str_identity(t21), hero_str_identity(t22));
     hero_unreachable();
 }

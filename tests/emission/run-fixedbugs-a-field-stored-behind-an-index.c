@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -57,7 +62,7 @@ HERO_STR_STATIC(hero_str_6185c9b, "rows[0].cells[0].n == 10");
 HERO_STR_STATIC(hero_str_7a, "z");
 HERO_STR_STATIC(hero_str_6b, "k");
 
-#line 61 "fixedbugsafieldstoredbehindanindex.c"
+#line 66 "fixedbugsafieldstoredbehindanindex.c"
 typedef struct h_fixedbugsafieldstoredbehindanindex_Cell {
     int64_t f_n;
     HeroStr f_tag;
@@ -105,7 +110,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 109 "fixedbugsafieldstoredbehindanindex.c"
+#line 114 "fixedbugsafieldstoredbehindanindex.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugsafieldstoredbehindanindex_Cell_retain(const h_fixedbugsafieldstoredbehindanindex_Cell *v);
@@ -170,7 +175,7 @@ void h_fixedbugsafieldstoredbehindanindex_main(void);
 #line 33 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 void h_fixedbugsafieldstoredbehindanindex_main(void) {
 #line 33 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-    HeroArrayHeader * h0_rows = {0}; HeroArrayHeader * h1_kept = {0}; HeroMapHeader * h2_m = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell h10_own10 = {0}; HERO_NODEBUG HeroMapHeader * h11_own11 = {0}; HERO_NODEBUG h_0opt_e201354 h12_own12 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG bool t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_NODEBUG h_0opt_e201354 t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG bool t79; HERO_NODEBUG h_0opt_e201354 t80; HERO_NODEBUG HeroFailure t81; HERO_NODEBUG h_0opt_e201354 t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t84; HERO_NODEBUG HeroArrayHeader * t85; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t92; HERO_NODEBUG HeroMapHeader * t93; HERO_NODEBUG HeroMapHeader * t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG h_0opt_e201354 t96; goto bb0;
+    HeroArrayHeader * h0_rows = {0}; HeroArrayHeader * h1_kept = {0}; HeroMapHeader * h2_m = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell h10_own10 = {0}; HERO_NODEBUG HeroMapHeader * h11_own11 = {0}; HERO_NODEBUG h_0opt_e201354 h12_own12 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG bool t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_NODEBUG h_0opt_e201354 t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG bool t79; HERO_NODEBUG h_0opt_e201354 t80; HERO_NODEBUG HeroFailure t81; HERO_NODEBUG h_0opt_e201354 t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t84; HERO_NODEBUG HeroArrayHeader * t85; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Row t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG h_fixedbugsafieldstoredbehindanindex_Cell t92; HERO_NODEBUG HeroMapHeader * t93; HERO_NODEBUG HeroMapHeader * t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG h_0opt_e201354 t96; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 bb0:
     t1 = INT64_C(1);
@@ -369,7 +374,7 @@ bb1:
     if (t46) goto bb3; else goto bb4;
 #line 49 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 bb2:
-#line 373 "fixedbugsafieldstoredbehindanindex.c"
+#line 378 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_assert_sides(t27, hero_int_to_str(t34), hero_int_to_str(t35));
     hero_unreachable();
 bb3:
@@ -459,7 +464,7 @@ bb3:
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     {
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
-      const void *found = hero_map_find(t73, &t74);
+      HERO_NODEBUG const void *found = hero_map_find(t73, &t74);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
       if (found == NULL) {
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
@@ -500,7 +505,7 @@ bb3:
     if (t79) goto bb5; else goto bb6;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
 bb4:
-#line 504 "fixedbugsafieldstoredbehindanindex.c"
+#line 509 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_assert_sides(t37, hero_int_to_str(t44), hero_int_to_str(t45));
     hero_unreachable();
 bb5:
@@ -518,7 +523,7 @@ bb5:
     hero_print_int(t83);
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     hero_print_end();
-#line 522 "fixedbugsafieldstoredbehindanindex.c"
+#line 527 "fixedbugsafieldstoredbehindanindex.c"
     hero_array_release_at(&h0_rows);
     hero_array_release_at(&h1_kept);
     hero_map_release_at(&h2_m);
@@ -538,7 +543,7 @@ bb6:
     t80 = h3_f0;
 #line 55 "tests/golden/run/fixedbugs-a-field-stored-behind-an-index.hero"
     t81 = t80.as.err;
-#line 542 "fixedbugsafieldstoredbehindanindex.c"
+#line 547 "fixedbugsafieldstoredbehindanindex.c"
     hero_panic_must(t81);
     hero_unreachable();
 }

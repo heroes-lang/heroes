@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +54,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_6b, "k");
 HERO_STR_STATIC(hero_str_61, "a");
 
-#line 53 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 58 "fixedbugsequalitywasdecidedbyanaddress.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -79,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 83 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 88 "fixedbugsequalitywasdecidedbyanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +101,7 @@ void h_fixedbugsequalitywasdecidedbyanaddress_main(void);
 #line 47 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
 void h_fixedbugsequalitywasdecidedbyanaddress_main(void) {
 #line 47 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
-    double h0_n; HeroArrayHeader * h1_a = {0}; HeroArrayHeader * h2_b = {0}; HeroArrayHeader * h3_c = {0}; HeroMapHeader * h4_ma = {0}; HeroMapHeader * h5_mb = {0}; HeroMapHeader * h6_mc = {0}; HeroArrayHeader * h7_xs = {0}; HeroArrayHeader * h8_ys = {0}; HeroArrayHeader * h9_zs = {0}; HeroMapHeader * h10_ns = {0}; HeroMapHeader * h11_os = {0}; HeroMapHeader * h12_ps = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroMapHeader * h15_own15 = {0}; HERO_NODEBUG HeroMapHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroMapHeader * h19_own19 = {0}; HERO_NODEBUG HeroMapHeader * h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG double t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG double t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG double t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG HeroMapHeader * t23; HERO_NODEBUG HeroMapHeader * t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroMapHeader * t27; HERO_NODEBUG HeroMapHeader * t28; HERO_NODEBUG bool t29; HERO_NODEBUG double t30; HERO_NODEBUG double t31; HERO_NODEBUG double t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG double t35; HERO_NODEBUG double t36; HERO_NODEBUG double t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG bool t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG bool t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroMapHeader * t48; HERO_NODEBUG HeroMapHeader * t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG HeroMapHeader * t53; HERO_NODEBUG HeroMapHeader * t54; HERO_NODEBUG bool t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroMapHeader * t57; HERO_NODEBUG HeroMapHeader * t58; HERO_NODEBUG bool t59; HERO_NODEBUG double t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG double t62; HERO_NODEBUG double t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG bool t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG HeroMapHeader * t71; HERO_NODEBUG HeroMapHeader * t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroMapHeader * t74; HERO_NODEBUG HeroMapHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG HeroArrayHeader * t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG HeroMapHeader * t81; HERO_NODEBUG HeroMapHeader * t82; HERO_NODEBUG HeroMapHeader * t83; HERO_NODEBUG HeroMapHeader * t84; HERO_NODEBUG HeroMapHeader * t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; goto bb0;
+    double h0_n; HeroArrayHeader * h1_a = {0}; HeroArrayHeader * h2_b = {0}; HeroArrayHeader * h3_c = {0}; HeroMapHeader * h4_ma = {0}; HeroMapHeader * h5_mb = {0}; HeroMapHeader * h6_mc = {0}; HeroArrayHeader * h7_xs = {0}; HeroArrayHeader * h8_ys = {0}; HeroArrayHeader * h9_zs = {0}; HeroMapHeader * h10_ns = {0}; HeroMapHeader * h11_os = {0}; HeroMapHeader * h12_ps = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroMapHeader * h15_own15 = {0}; HERO_NODEBUG HeroMapHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroMapHeader * h19_own19 = {0}; HERO_NODEBUG HeroMapHeader * h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG double t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG double t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG double t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG HeroMapHeader * t23; HERO_NODEBUG HeroMapHeader * t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroMapHeader * t27; HERO_NODEBUG HeroMapHeader * t28; HERO_NODEBUG bool t29; HERO_NODEBUG double t30; HERO_NODEBUG double t31; HERO_NODEBUG double t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG double t35; HERO_NODEBUG double t36; HERO_NODEBUG double t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG bool t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG bool t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroMapHeader * t48; HERO_NODEBUG HeroMapHeader * t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG HeroMapHeader * t53; HERO_NODEBUG HeroMapHeader * t54; HERO_NODEBUG bool t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroMapHeader * t57; HERO_NODEBUG HeroMapHeader * t58; HERO_NODEBUG bool t59; HERO_NODEBUG double t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG double t62; HERO_NODEBUG double t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG bool t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG HeroMapHeader * t71; HERO_NODEBUG HeroMapHeader * t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroMapHeader * t74; HERO_NODEBUG HeroMapHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG HeroArrayHeader * t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG HeroMapHeader * t81; HERO_NODEBUG HeroMapHeader * t82; HERO_NODEBUG HeroMapHeader * t83; HERO_NODEBUG HeroMapHeader * t84; HERO_NODEBUG HeroMapHeader * t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_ENTRY_STOP; goto bb0;
 #line 47 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
 bb0:
     t1 = 0x0p+0;
@@ -440,7 +445,7 @@ bb0:
     hero_print_bool(t65);
 #line 79 "tests/golden/run/fixedbugs-equality-was-decided-by-an-address.hero"
     hero_print_end();
-#line 444 "fixedbugsequalitywasdecidedbyanaddress.c"
+#line 449 "fixedbugsequalitywasdecidedbyanaddress.c"
     hero_array_release_at(&h1_a);
     hero_array_release_at(&h2_b);
     hero_array_release_at(&h3_c);

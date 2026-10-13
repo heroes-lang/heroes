@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -86,7 +91,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_78, "x");
 
-#line 90 "fixedbugsahandlecomparesasanaddress.c"
+#line 95 "fixedbugsahandlecomparesasanaddress.c"
 typedef struct h_fixedbugsahandlecomparesasanaddress_Held {
     Chunk * f_h;
     HeroStr f_name;
@@ -145,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "fixedbugsahandlecomparesasanaddress.c"
+#line 154 "fixedbugsahandlecomparesasanaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsahandlecomparesasanaddress_Chunk_eq(Chunk * const *a, Chunk * const *b);
@@ -189,7 +194,7 @@ void h_fixedbugsahandlecomparesasanaddress_main(void);
 #line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
 void h_fixedbugsahandlecomparesasanaddress_main(void) {
 #line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
-    Chunk * h0_a; Chunk * h1_b; Chunk * h2_n; h_0opt_2e1eec0d h3_oa = {0}; h_0opt_2e1eec0d h4_ob = {0}; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held h5_own5 = {0}; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held h6_own6 = {0}; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held h7_own7 = {0}; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG h_0opt_2e1eec0d h13_own13 = {0}; HERO_NODEBUG h_0opt_2e1eec0d h14_own14 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG Chunk * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG Chunk * t4; HERO_NODEBUG Chunk * t5; HERO_NODEBUG Chunk * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG Chunk * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG Chunk * t10; HERO_NODEBUG Chunk * t11; HERO_NODEBUG bool t12; HERO_NODEBUG Chunk * t13; HERO_NODEBUG Chunk * t14; HERO_NODEBUG bool t15; HERO_NODEBUG Chunk * t16; HERO_NODEBUG Chunk * t17; HERO_NODEBUG bool t18; HERO_NODEBUG Chunk * t19; HERO_NODEBUG Chunk * t20; HERO_NODEBUG bool t21; HERO_NODEBUG Chunk * t22; HERO_NODEBUG Chunk * t23; HERO_NODEBUG bool t24; HERO_NODEBUG Chunk * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t27; HERO_NODEBUG Chunk * t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t30; HERO_NODEBUG bool t31; HERO_NODEBUG Chunk * t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t34; HERO_NODEBUG Chunk * t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t37; HERO_NODEBUG bool t38; HERO_NODEBUG Chunk * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG Chunk * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG bool t43; HERO_NODEBUG Chunk * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG Chunk * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG bool t48; HERO_NODEBUG Chunk * t49; HERO_NODEBUG h_0opt_2e1eec0d t50; HERO_NODEBUG Chunk * t51; HERO_NODEBUG h_0opt_2e1eec0d t52; HERO_NODEBUG h_0opt_2e1eec0d t53; HERO_NODEBUG h_0opt_2e1eec0d t54; HERO_NODEBUG bool t55; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t56; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t57; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t58; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG h_0opt_2e1eec0d t64; HERO_NODEBUG h_0opt_2e1eec0d t65; HERO_NODEBUG h_0opt_2e1eec0d t66; HERO_NODEBUG h_0opt_2e1eec0d t67; goto bb0;
+    Chunk * h0_a; Chunk * h1_b; Chunk * h2_n; h_0opt_2e1eec0d h3_oa = {0}; h_0opt_2e1eec0d h4_ob = {0}; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held h5_own5 = {0}; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held h6_own6 = {0}; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held h7_own7 = {0}; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG h_0opt_2e1eec0d h13_own13 = {0}; HERO_NODEBUG h_0opt_2e1eec0d h14_own14 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG Chunk * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG Chunk * t4; HERO_NODEBUG Chunk * t5; HERO_NODEBUG Chunk * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG Chunk * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG Chunk * t10; HERO_NODEBUG Chunk * t11; HERO_NODEBUG bool t12; HERO_NODEBUG Chunk * t13; HERO_NODEBUG Chunk * t14; HERO_NODEBUG bool t15; HERO_NODEBUG Chunk * t16; HERO_NODEBUG Chunk * t17; HERO_NODEBUG bool t18; HERO_NODEBUG Chunk * t19; HERO_NODEBUG Chunk * t20; HERO_NODEBUG bool t21; HERO_NODEBUG Chunk * t22; HERO_NODEBUG Chunk * t23; HERO_NODEBUG bool t24; HERO_NODEBUG Chunk * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t27; HERO_NODEBUG Chunk * t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t30; HERO_NODEBUG bool t31; HERO_NODEBUG Chunk * t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t34; HERO_NODEBUG Chunk * t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t37; HERO_NODEBUG bool t38; HERO_NODEBUG Chunk * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG Chunk * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG bool t43; HERO_NODEBUG Chunk * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG Chunk * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG bool t48; HERO_NODEBUG Chunk * t49; HERO_NODEBUG h_0opt_2e1eec0d t50; HERO_NODEBUG Chunk * t51; HERO_NODEBUG h_0opt_2e1eec0d t52; HERO_NODEBUG h_0opt_2e1eec0d t53; HERO_NODEBUG h_0opt_2e1eec0d t54; HERO_NODEBUG bool t55; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t56; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t57; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t58; HERO_NODEBUG h_fixedbugsahandlecomparesasanaddress_Held t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG h_0opt_2e1eec0d t64; HERO_NODEBUG h_0opt_2e1eec0d t65; HERO_NODEBUG h_0opt_2e1eec0d t66; HERO_NODEBUG h_0opt_2e1eec0d t67; HERO_ENTRY_STOP; goto bb0;
 #line 61 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
 bb0:
     t1 = INT64_C(0);
@@ -438,7 +443,7 @@ bb0:
     hero_print_bool(t55);
 #line 86 "tests/golden/run/fixedbugs-a-handle-compares-as-an-address.hero"
     hero_print_end();
-#line 442 "fixedbugsahandlecomparesasanaddress.c"
+#line 447 "fixedbugsahandlecomparesasanaddress.c"
     h_0opt_2e1eec0d_release(hero_slot_escape(&h3_oa));
     h_0opt_2e1eec0d_release(hero_slot_escape(&h4_ob));
     h_fixedbugsahandlecomparesasanaddress_Held_release(hero_slot_escape(&h5_own5));

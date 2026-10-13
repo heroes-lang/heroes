@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -53,7 +58,7 @@ HERO_STR_STATIC(hero_str_2c, ",");
 HERO_STR_STATIC(hero_str_3205, "ab");
 HERO_STR_STATIC(hero_str_1998f2, "abc");
 
-#line 57 "closurelist.c"
+#line 62 "closurelist.c"
 typedef struct h_closurelist_Point {
     int64_t f_x;
     int64_t f_y;
@@ -113,7 +118,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 117 "closurelist.c"
+#line 122 "closurelist.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_closurelist_Point_eq(const h_closurelist_Point *a, const h_closurelist_Point *b);
@@ -146,7 +151,7 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, 
 #line 26 "tests/golden/run/closure-list.hero"
 int64_t h_closurelist_area(h_closurelist_Shape h0_s) {
 #line 26 "tests/golden/run/closure-list.hero"
-    HERO_NODEBUG h_closurelist_Shape h1_s0; HERO_NODEBUG int64_t h2_r0; h_closurelist_Shape_c_seg h3_g; HERO_NODEBUG h_closurelist_Shape t1; HERO_NODEBUG h_closurelist_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_closurelist_Shape t5; HERO_NODEBUG h_closurelist_Shape_c_seg t6; HERO_NODEBUG h_closurelist_Shape_c_seg t7; HERO_NODEBUG h_closurelist_Point t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; goto bb0;
+    HERO_NODEBUG h_closurelist_Shape h1_s0; HERO_NODEBUG int64_t h2_r0; h_closurelist_Shape_c_seg h3_g; HERO_NODEBUG h_closurelist_Shape t1; HERO_NODEBUG h_closurelist_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_closurelist_Shape t5; HERO_NODEBUG h_closurelist_Shape_c_seg t6; HERO_NODEBUG h_closurelist_Shape_c_seg t7; HERO_NODEBUG h_closurelist_Point t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/closure-list.hero"
 bb0:
     t1 = h0_s;
@@ -197,13 +202,13 @@ bb3:
     h2_r0 = t9;
 #line 27 "tests/golden/run/closure-list.hero"
     goto bb1;
-#line 201 "closurelist.c"
+#line 206 "closurelist.c"
 }
 
 #line 31 "tests/golden/run/closure-list.hero"
 void h_closurelist_shift(h_closurelist_Point *ph0_p, int64_t h1_by) {
 #line 31 "tests/golden/run/closure-list.hero"
-    HERO_NODEBUG h_closurelist_Point t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_closurelist_Point t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_closurelist_Point t7; goto bb0;
+    HERO_NODEBUG h_closurelist_Point t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_closurelist_Point t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_closurelist_Point t7; HERO_ENTRY_STOP; goto bb0;
 #line 31 "tests/golden/run/closure-list.hero"
 bb0:
     t1 = (*ph0_p);
@@ -223,13 +228,13 @@ bb0:
     (*ph0_p) = t7;
 #line 32 "tests/golden/run/closure-list.hero"
     return;
-#line 227 "closurelist.c"
+#line 232 "closurelist.c"
 }
 
 #line 34 "tests/golden/run/closure-list.hero"
 h_0opt_e201354 h_closurelist_halve(int64_t h0_n) {
 #line 34 "tests/golden/run/closure-list.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/closure-list.hero"
 bb0:
     t1 = h0_n;
@@ -299,7 +304,7 @@ bb3:
     goto bb1;
 #line 36 "tests/golden/run/closure-list.hero"
 bb4:
-#line 303 "closurelist.c"
+#line 308 "closurelist.c"
     t13 = h1_ret0;
     h_0opt_e201354_retain(&t13);
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
@@ -310,7 +315,7 @@ bb4:
 #line 39 "tests/golden/run/closure-list.hero"
 h_0opt_e201354 h_closurelist_chain(int64_t h0_n) {
 #line 39 "tests/golden/run/closure-list.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; int64_t h2_v; HERO_NODEBUG h_0opt_e201354 h3_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; int64_t h2_v; HERO_NODEBUG h_0opt_e201354 h3_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/closure-list.hero"
 bb0:
     t1 = h0_n;
@@ -387,7 +392,7 @@ bb2:
     goto bb3;
 #line 40 "tests/golden/run/closure-list.hero"
 bb3:
-#line 391 "closurelist.c"
+#line 396 "closurelist.c"
     t16 = h3_ret0;
     h_0opt_e201354_retain(&t16);
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
@@ -400,7 +405,7 @@ bb3:
 #line 43 "tests/golden/run/closure-list.hero"
 HeroStr h_closurelist_show(int64_t h0_n) {
 #line 43 "tests/golden/run/closure-list.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
 #line 43 "tests/golden/run/closure-list.hero"
 bb0:
     t1 = h0_n;
@@ -412,7 +417,7 @@ bb0:
     h1_own1 = t2;
 #line 44 "tests/golden/run/closure-list.hero"
     hero_str_decref(t3);
-#line 416 "closurelist.c"
+#line 421 "closurelist.c"
     hero_str_incref(t2);
     hero_str_release_at(&h1_own1);
     return t2;
@@ -421,7 +426,7 @@ bb0:
 #line 46 "tests/golden/run/closure-list.hero"
 void h_closurelist_main(void) {
 #line 46 "tests/golden/run/closure-list.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; h_closurelist_Point h2_p; int64_t h3_total; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; HeroStr h6_k = {0}; HERO_NODEBUG h_0opt_e201354 h7_f0 = {0}; int64_t h8_i; HERO_NODEBUG h_0opt_e201354 h9_f1 = {0}; HERO_NODEBUG int64_t h10_r0; HERO_NODEBUG h_0opt_e201354 h11_f2 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroMapHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG h_0opt_e201354 h22_own22 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_closurelist_Point t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroMapHeader * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG bool t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_closurelist_Point t63; HERO_NODEBUG h_closurelist_Shape t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG h_0opt_e201354 t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG bool t72; HERO_NODEBUG h_0opt_e201354 t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG h_0fn_4a13fb08 t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG double t95; HERO_NODEBUG h_0opt_e201354 t96; HERO_NODEBUG h_0opt_e201354 t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG int64_t t99; HERO_NODEBUG bool t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG HeroFailure t102; HERO_NODEBUG h_0opt_e201354 t103; HERO_NODEBUG int64_t t104; HERO_NODEBUG int64_t t105; HERO_NODEBUG double t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG HeroMapHeader * t109; HERO_NODEBUG HeroMapHeader * t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_NODEBUG HeroArrayHeader * t112; HERO_NODEBUG HeroArrayHeader * t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG h_0opt_e201354 t115; HERO_NODEBUG h_0opt_e201354 t116; HERO_NODEBUG h_0opt_e201354 t117; HERO_NODEBUG h_0opt_e201354 t118; HERO_NODEBUG HeroArrayHeader * t119; HERO_NODEBUG HeroStr t120; HERO_NODEBUG HeroArrayHeader * t121; HERO_NODEBUG HeroStr t122; HERO_NODEBUG h_0opt_e201354 t123; HERO_NODEBUG h_0opt_e201354 t124; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; h_closurelist_Point h2_p; int64_t h3_total; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; HeroStr h6_k = {0}; HERO_NODEBUG h_0opt_e201354 h7_f0 = {0}; int64_t h8_i; HERO_NODEBUG h_0opt_e201354 h9_f1 = {0}; HERO_NODEBUG int64_t h10_r0; HERO_NODEBUG h_0opt_e201354 h11_f2 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroMapHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG h_0opt_e201354 h22_own22 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_closurelist_Point t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroMapHeader * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG bool t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_closurelist_Point t63; HERO_NODEBUG h_closurelist_Shape t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG h_0opt_e201354 t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG bool t72; HERO_NODEBUG h_0opt_e201354 t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG h_0fn_4a13fb08 t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG double t95; HERO_NODEBUG h_0opt_e201354 t96; HERO_NODEBUG h_0opt_e201354 t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG int64_t t99; HERO_NODEBUG bool t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG HeroFailure t102; HERO_NODEBUG h_0opt_e201354 t103; HERO_NODEBUG int64_t t104; HERO_NODEBUG int64_t t105; HERO_NODEBUG double t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG HeroMapHeader * t109; HERO_NODEBUG HeroMapHeader * t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_NODEBUG HeroArrayHeader * t112; HERO_NODEBUG HeroArrayHeader * t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG h_0opt_e201354 t115; HERO_NODEBUG h_0opt_e201354 t116; HERO_NODEBUG h_0opt_e201354 t117; HERO_NODEBUG h_0opt_e201354 t118; HERO_NODEBUG HeroArrayHeader * t119; HERO_NODEBUG HeroStr t120; HERO_NODEBUG HeroArrayHeader * t121; HERO_NODEBUG HeroStr t122; HERO_NODEBUG h_0opt_e201354 t123; HERO_NODEBUG h_0opt_e201354 t124; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/run/closure-list.hero"
 bb0:
     t1 = INT64_C(1);
@@ -552,7 +557,7 @@ bb2:
 #line 55 "tests/golden/run/closure-list.hero"
     {
 #line 55 "tests/golden/run/closure-list.hero"
-      const void *found = hero_map_find(t25, &t26);
+      HERO_NODEBUG const void *found = hero_map_find(t25, &t26);
 #line 55 "tests/golden/run/closure-list.hero"
       if (found == NULL) {
 #line 55 "tests/golden/run/closure-list.hero"
@@ -629,7 +634,7 @@ bb6:
     t32 = h7_f0;
 #line 55 "tests/golden/run/closure-list.hero"
     t33 = t32.as.err;
-#line 633 "closurelist.c"
+#line 638 "closurelist.c"
     hero_panic_must(t33);
     hero_unreachable();
 bb7:
@@ -893,7 +898,7 @@ bb16:
     hero_print_f64(t106);
 #line 68 "tests/golden/run/closure-list.hero"
     hero_print_end();
-#line 897 "closurelist.c"
+#line 902 "closurelist.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h4_xs0);
@@ -918,7 +923,7 @@ bb17:
     t101 = h11_f2;
 #line 68 "tests/golden/run/closure-list.hero"
     t102 = t101.as.err;
-#line 922 "closurelist.c"
+#line 927 "closurelist.c"
     hero_panic_must(t102);
     hero_unreachable();
 }
@@ -928,7 +933,7 @@ bb17:
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f) {
 #line 36 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_4a13fb08 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroStr t23; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_4a13fb08 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroStr t23; HERO_ENTRY_STOP; goto bb0;
 #line 36 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1014,7 +1019,7 @@ bb3:
 bb4:
 #line 40 "<heroes library>"
     t19 = h2_out;
-#line 1018 "closurelist.c"
+#line 1023 "closurelist.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);

@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs139matchstatementsthatleave.c"
+#line 54 "fixedbugs139matchstatementsthatleave.c"
 typedef enum h_fixedbugs139matchstatementsthatleave_Color_tag {
     h_fixedbugs139matchstatementsthatleave_Color_tag_red = 0,
     h_fixedbugs139matchstatementsthatleave_Color_tag_blue = 1,
@@ -94,7 +99,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "fixedbugs139matchstatementsthatleave.c"
+#line 103 "fixedbugs139matchstatementsthatleave.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs139matchstatementsthatleave_Color_eq(const h_fixedbugs139matchstatementsthatleave_Color *a, const h_fixedbugs139matchstatementsthatleave_Color *b);
@@ -129,7 +134,7 @@ void h_fixedbugs139matchstatementsthatleave_main(void);
 #line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_all_return(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
 #line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
+    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_c;
@@ -165,7 +170,7 @@ bb3:
     goto bb4;
 #line 22 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb4:
-#line 169 "fixedbugs139matchstatementsthatleave.c"
+#line 174 "fixedbugs139matchstatementsthatleave.c"
     t6 = h2_ret0;
     return t6;
 }
@@ -173,7 +178,7 @@ bb4:
 #line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_block_arms(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
 #line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; goto bb0;
+    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_c;
@@ -221,7 +226,7 @@ bb3:
     goto bb4;
 #line 31 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb4:
-#line 225 "fixedbugs139matchstatementsthatleave.c"
+#line 230 "fixedbugs139matchstatementsthatleave.c"
     t8 = h2_ret0;
     return t8;
 }
@@ -229,7 +234,7 @@ bb4:
 #line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_arm_if_else(h_fixedbugs139matchstatementsthatleave_Color h0_c, int64_t h1_n) {
 #line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; goto bb0;
+    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_c;
@@ -285,7 +290,7 @@ bb6:
     goto bb7;
 #line 39 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb7:
-#line 289 "fixedbugs139matchstatementsthatleave.c"
+#line 294 "fixedbugs139matchstatementsthatleave.c"
     t10 = h3_ret0;
     return t10;
 }
@@ -293,7 +298,7 @@ bb7:
 #line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_both_branches(h_fixedbugs139matchstatementsthatleave_Color h0_c, bool h1_b) {
 #line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h3_s1; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG bool t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t7; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; goto bb0;
+    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h3_s1; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG bool t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t7; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h1_b;
@@ -370,7 +375,7 @@ bb9:
     goto bb10;
 #line 50 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb10:
-#line 374 "fixedbugs139matchstatementsthatleave.c"
+#line 379 "fixedbugs139matchstatementsthatleave.c"
     t12 = h4_ret0;
     return t12;
 }
@@ -378,7 +383,7 @@ bb10:
 #line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_else_if_chain(h_fixedbugs139matchstatementsthatleave_Color h0_c, int64_t h1_n) {
 #line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h3_s1; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t4; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t12; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; goto bb0;
+    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h3_s1; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t4; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t12; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_ENTRY_STOP; goto bb0;
 #line 52 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h1_n;
@@ -477,7 +482,7 @@ bb11:
     goto bb12;
 #line 60 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb12:
-#line 481 "fixedbugs139matchstatementsthatleave.c"
+#line 486 "fixedbugs139matchstatementsthatleave.c"
     t18 = h4_ret0;
     return t18;
 }
@@ -485,7 +490,7 @@ bb12:
 #line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_nested(h_fixedbugs139matchstatementsthatleave_Color h0_c, h_fixedbugs139matchstatementsthatleave_Color h1_d) {
 #line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h3_s1; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t4; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; goto bb0;
+    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h3_s1; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t4; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
 #line 64 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_c;
@@ -550,7 +555,7 @@ bb6:
     goto bb7;
 #line 69 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb7:
-#line 554 "fixedbugs139matchstatementsthatleave.c"
+#line 559 "fixedbugs139matchstatementsthatleave.c"
     t10 = h4_ret0;
     return t10;
 }
@@ -558,7 +563,7 @@ bb7:
 #line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_shades(h_fixedbugs139matchstatementsthatleave_Shade h0_c) {
 #line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
+    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 72 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_c;
@@ -596,7 +601,7 @@ bb3:
     goto bb4;
 #line 75 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb4:
-#line 600 "fixedbugs139matchstatementsthatleave.c"
+#line 605 "fixedbugs139matchstatementsthatleave.c"
     t6 = h2_ret0;
     return t6;
 }
@@ -604,7 +609,7 @@ bb4:
 #line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_on_an_i64(int64_t h0_n) {
 #line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; goto bb0;
+    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
 #line 77 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_n;
@@ -637,7 +642,7 @@ bb4:
     goto bb5;
 #line 80 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb5:
-#line 641 "fixedbugs139matchstatementsthatleave.c"
+#line 646 "fixedbugs139matchstatementsthatleave.c"
     t7 = h2_ret0;
     return t7;
 }
@@ -645,7 +650,7 @@ bb5:
 #line 82 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_in_a_loop(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
 #line 82 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    int64_t h1_n; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t8; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; goto bb0;
+    int64_t h1_n; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t8; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_ENTRY_STOP; goto bb0;
 #line 82 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = INT64_C(0);
@@ -704,13 +709,13 @@ bb5:
 bb6:
 #line 92 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb1;
-#line 708 "fixedbugs139matchstatementsthatleave.c"
+#line 713 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 94 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_in_a_for(HeroArrayHeader * h0_xs) {
 #line 94 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG int64_t h5_s0; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroArrayHeader * t27; goto bb0;
+    int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG int64_t h5_s0; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_ENTRY_STOP; goto bb0;
 #line 94 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = INT64_C(0);
@@ -827,7 +832,7 @@ bb10:
     goto bb5;
 #line 101 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb11:
-#line 831 "fixedbugs139matchstatementsthatleave.c"
+#line 836 "fixedbugs139matchstatementsthatleave.c"
     t26 = h6_ret0;
     hero_array_release_at(&h2_xs0);
     return t26;
@@ -836,7 +841,7 @@ bb11:
 #line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_two_in_sequence(h_fixedbugs139matchstatementsthatleave_Color h0_c) {
 #line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h1_s0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s1; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t6; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; goto bb0;
+    HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h1_s0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color h2_s1; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t6; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_ENTRY_STOP; goto bb0;
 #line 105 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_c;
@@ -912,7 +917,7 @@ bb6:
     goto bb7;
 #line 112 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb7:
-#line 916 "fixedbugs139matchstatementsthatleave.c"
+#line 921 "fixedbugs139matchstatementsthatleave.c"
     t11 = h3_ret0;
     return t11;
 }
@@ -920,7 +925,7 @@ bb7:
 #line 114 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_value_if(bool h0_b) {
 #line 114 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_s1; int64_t h4_x; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; goto bb0;
+    HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_s1; int64_t h4_x; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_ENTRY_STOP; goto bb0;
 #line 114 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_b;
@@ -1024,13 +1029,13 @@ bb11:
     hero_print_end();
 #line 124 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb8;
-#line 1028 "fixedbugs139matchstatementsthatleave.c"
+#line 1033 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 130 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_value_match(int64_t h0_k) {
 #line 130 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t h3_s1; HERO_NODEBUG int64_t h4_s2; int64_t h5_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; goto bb0;
+    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t h3_s1; HERO_NODEBUG int64_t h4_s2; int64_t h5_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_ENTRY_STOP; goto bb0;
 #line 130 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_k;
@@ -1145,13 +1150,13 @@ bb12:
     hero_print_end();
 #line 141 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     goto bb9;
-#line 1149 "fixedbugs139matchstatementsthatleave.c"
+#line 1154 "fixedbugs139matchstatementsthatleave.c"
 }
 
 #line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 int64_t h_fixedbugs139matchstatementsthatleave_checked_if_one_branch_returns(bool h0_b) {
 #line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG int64_t h1_r0; int64_t h2_x; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
+    HERO_NODEBUG int64_t h1_r0; int64_t h2_x; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 147 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = h0_b;
@@ -1187,7 +1192,7 @@ bb3:
     goto bb1;
 #line 148 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb4:
-#line 1191 "fixedbugs139matchstatementsthatleave.c"
+#line 1196 "fixedbugs139matchstatementsthatleave.c"
     t6 = h3_ret0;
     return t6;
 }
@@ -1195,7 +1200,7 @@ bb4:
 #line 155 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 void h_fixedbugs139matchstatementsthatleave_main(void) {
 #line 155 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t18; HERO_NODEBUG bool t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t21; HERO_NODEBUG bool t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t33; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t36; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG bool t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG bool t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG bool t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG bool t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t18; HERO_NODEBUG bool t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t21; HERO_NODEBUG bool t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t33; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t36; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Shade t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG h_fixedbugs139matchstatementsthatleave_Color t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG bool t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG bool t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG bool t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG bool t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_ENTRY_STOP; goto bb0;
 #line 155 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
 bb0:
     t1 = (h_fixedbugs139matchstatementsthatleave_Color){.tag = h_fixedbugs139matchstatementsthatleave_Color_tag_red};
@@ -1457,7 +1462,7 @@ bb0:
     hero_print_int(t74);
 #line 184 "tests/golden/run/fixedbugs-139-match-statements-that-leave.hero"
     hero_print_end();
-#line 1461 "fixedbugs139matchstatementsthatleave.c"
+#line 1466 "fixedbugs139matchstatementsthatleave.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     return;

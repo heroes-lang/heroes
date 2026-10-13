@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -53,7 +58,7 @@ HERO_STR_STATIC(hero_str_48e8a9b3, "no more words");
 HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_2d, "-");
 
-#line 57 "fixedbugs231oneexitcopiesoutonce.c"
+#line 62 "fixedbugs231oneexitcopiesoutonce.c"
 typedef struct h_fixedbugs231oneexitcopiesoutonce_Reader {
     HeroArrayHeader * f_words;
     int64_t f_pos;
@@ -88,7 +93,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugs231oneexitcopiesoutonce.c"
+#line 97 "fixedbugs231oneexitcopiesoutonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs231oneexitcopiesoutonce_Reader_retain(const h_fixedbugs231oneexitcopiesoutonce_Reader *v);
@@ -111,7 +116,7 @@ void h_fixedbugs231oneexitcopiesoutonce_main(void);
 #line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_known(HeroStr h0_word) {
 #line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_ret0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG h_0opt_f87774a t14; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h1_ret0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 bb0:
     t1 = h0_word;
@@ -177,7 +182,7 @@ bb3:
     goto bb1;
 #line 16 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 bb4:
-#line 181 "fixedbugs231oneexitcopiesoutonce.c"
+#line 186 "fixedbugs231oneexitcopiesoutonce.c"
     t11 = h1_ret0;
     h_0opt_f87774a_retain(&t11);
     hero_str_release_at(&h2_own2);
@@ -189,7 +194,7 @@ bb4:
 #line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 h_0opt_f87774a h_fixedbugs231oneexitcopiesoutonce_next(h_fixedbugs231oneexitcopiesoutonce_Reader *ph0_r) {
 #line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    HeroStr h1_word = {0}; HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG h_0opt_f87774a t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG h_0opt_f87774a t36; HERO_NODEBUG h_0opt_f87774a t37; goto bb0;
+    HeroStr h1_word = {0}; HERO_NODEBUG h_0opt_f87774a h2_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG h_0opt_f87774a t34; HERO_NODEBUG h_0opt_f87774a t35; HERO_NODEBUG h_0opt_f87774a t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 bb0:
     t1 = (*ph0_r);
@@ -329,7 +334,7 @@ bb5:
     goto bb6;
 #line 24 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 bb6:
-#line 333 "fixedbugs231oneexitcopiesoutonce.c"
+#line 338 "fixedbugs231oneexitcopiesoutonce.c"
     t31 = h3_ret0;
     h_0opt_f87774a_retain(&t31);
     hero_str_release_at(&h1_word);
@@ -344,7 +349,7 @@ bb6:
 #line 26 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 void h_fixedbugs231oneexitcopiesoutonce_main(void) {
 #line 26 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
-    h_fixedbugs231oneexitcopiesoutonce_Reader h0_r = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG HeroStr h4_r1 = {0}; HERO_NODEBUG h_0opt_f87774a h5_f2 = {0}; HERO_NODEBUG HeroStr h6_r2 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader h8_own8 = {0}; HERO_NODEBUG h_0opt_f87774a h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG h_0opt_f87774a h11_own11 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t36; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG h_0opt_f87774a t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG h_0opt_f87774a t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; goto bb0;
+    h_fixedbugs231oneexitcopiesoutonce_Reader h0_r = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG HeroStr h4_r1 = {0}; HERO_NODEBUG h_0opt_f87774a h5_f2 = {0}; HERO_NODEBUG HeroStr h6_r2 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader h8_own8 = {0}; HERO_NODEBUG h_0opt_f87774a h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG h_0opt_f87774a h11_own11 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t36; HERO_NODEBUG h_fixedbugs231oneexitcopiesoutonce_Reader t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG h_0opt_f87774a t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG h_0opt_f87774a t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_61);
@@ -575,7 +580,7 @@ bb9:
     hero_print_int(t34);
 #line 28 "tests/golden/ir/fixedbugs-231-one-exit-copies-out-once.hero"
     hero_print_end();
-#line 579 "fixedbugs231oneexitcopiesoutonce.c"
+#line 584 "fixedbugs231oneexitcopiesoutonce.c"
     h_fixedbugs231oneexitcopiesoutonce_Reader_release(hero_slot_escape(&h0_r));
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);

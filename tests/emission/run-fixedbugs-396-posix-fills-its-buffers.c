@@ -45,16 +45,21 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #line 24 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->fd) == 1 && sizeof(((struct pollfd *)0)->fd) == sizeof(int32_t) && (_Generic(((struct pollfd *)0)->fd, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd fd");
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->events) == 1 && sizeof(((struct pollfd *)0)->events) == sizeof(int16_t) && (_Generic(((struct pollfd *)0)->events, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd events");
 _Static_assert(__builtin_classify_type(((struct pollfd *)0)->revents) == 1 && sizeof(((struct pollfd *)0)->revents) == sizeof(int16_t) && (_Generic(((struct pollfd *)0)->revents, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field PollFd revents");
-#line 54 "fixedbugs396posixfillsitsbuffers.c"
+#line 59 "fixedbugs396posixfillsitsbuffers.c"
 
 #line 23 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 _Static_assert(__builtin_classify_type(*(struct pollfd *)0) != 13, "heroes-ffi-union PollFd fd events revents");
-#line 58 "fixedbugs396posixfillsitsbuffers.c"
+#line 63 "fixedbugs396posixfillsitsbuffers.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -163,7 +168,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 167 "fixedbugs396posixfillsitsbuffers.c"
+#line 172 "fixedbugs396posixfillsitsbuffers.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396posixfillsitsbuffers_PollFd_eq(const struct pollfd *a, const struct pollfd *b);
@@ -204,7 +209,7 @@ void h_fixedbugs396posixfillsitsbuffers_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
-#line 208 "fixedbugs396posixfillsitsbuffers.c"
+#line 213 "fixedbugs396posixfillsitsbuffers.c"
     return POLLIN;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -222,7 +227,7 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
 
 #line 22 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
-#line 226 "fixedbugs396posixfillsitsbuffers.c"
+#line 231 "fixedbugs396posixfillsitsbuffers.c"
     return POLLOUT;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -241,7 +246,7 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
 #line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 void h_fixedbugs396posixfillsitsbuffers_main(void) {
 #line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    HeroArrayHeader * h0_fds = {0}; HERO_NODEBUG h_0opt_e1ec52d h1_f0 = {0}; HERO_NODEBUG h_0opt_e1ec52d h2_f1 = {0}; HeroArrayHeader * h3_watched = {0}; HERO_NODEBUG h_0opt_e1ec52d h4_f2 = {0}; HERO_NODEBUG h_0opt_e1ec52d h5_f3 = {0}; HeroArrayHeader * h6_buf = {0}; HeroArrayHeader * h7_name = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_e1ec52d h9_own9 = {0}; HERO_NODEBUG h_0opt_e1ec52d h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_0opt_e1ec52d h12_own12 = {0}; HERO_NODEBUG h_0opt_e1ec52d h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG const char * t18; HERO_NODEBUG uint64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int32_t t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG h_0opt_e1ec52d t25; HERO_NODEBUG h_0opt_e1ec52d t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG h_0opt_e1ec52d t30; HERO_NODEBUG HeroFailure t31; HERO_NODEBUG h_0opt_e1ec52d t32; HERO_NODEBUG int16_t t33; HERO_NODEBUG int16_t t34; HERO_NODEBUG struct pollfd t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int32_t t38; HERO_NODEBUG int32_t t39; HERO_NODEBUG h_0opt_e1ec52d t40; HERO_NODEBUG h_0opt_e1ec52d t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG h_0opt_e1ec52d t45; HERO_NODEBUG HeroFailure t46; HERO_NODEBUG h_0opt_e1ec52d t47; HERO_NODEBUG int16_t t48; HERO_NODEBUG int16_t t49; HERO_NODEBUG struct pollfd t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG uint32_t t52; HERO_NODEBUG int32_t t53; HERO_NODEBUG int32_t t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG struct pollfd t61; HERO_NODEBUG int16_t t62; HERO_NODEBUG int32_t t63; HERO_NODEBUG h_0opt_e1ec52d t64; HERO_NODEBUG h_0opt_e1ec52d t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG bool t68; HERO_NODEBUG h_0opt_e1ec52d t69; HERO_NODEBUG HeroFailure t70; HERO_NODEBUG h_0opt_e1ec52d t71; HERO_NODEBUG int16_t t72; HERO_NODEBUG bool t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG struct pollfd t77; HERO_NODEBUG int16_t t78; HERO_NODEBUG int32_t t79; HERO_NODEBUG h_0opt_e1ec52d t80; HERO_NODEBUG h_0opt_e1ec52d t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG bool t84; HERO_NODEBUG h_0opt_e1ec52d t85; HERO_NODEBUG HeroFailure t86; HERO_NODEBUG h_0opt_e1ec52d t87; HERO_NODEBUG int16_t t88; HERO_NODEBUG bool t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG int32_t t93; HERO_NODEBUG uint64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG HeroStr t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG uint8_t t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG HeroArrayHeader * t104; HERO_NODEBUG int64_t t105; HERO_NODEBUG uint8_t t106; HERO_NODEBUG HeroStr t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG uint8_t t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_NODEBUG int64_t t112; HERO_NODEBUG int32_t t113; HERO_NODEBUG int32_t t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroArrayHeader * t116; HERO_NODEBUG int64_t t117; HERO_NODEBUG int32_t t118; HERO_NODEBUG int32_t t119; HERO_NODEBUG HeroArrayHeader * t120; HERO_NODEBUG uint64_t t121; HERO_NODEBUG int32_t t122; HERO_NODEBUG HeroStr t123; HERO_NODEBUG HeroArrayHeader * t124; HERO_NODEBUG int64_t t125; HERO_NODEBUG HeroStr t126; HERO_NODEBUG HeroArrayHeader * t127; HERO_NODEBUG int64_t t128; HERO_NODEBUG int8_t t129; HERO_NODEBUG int8_t t130; HERO_NODEBUG bool t131; HERO_NODEBUG HeroArrayHeader * t132; HERO_NODEBUG HeroArrayHeader * t133; HERO_NODEBUG h_0opt_e1ec52d t134; HERO_NODEBUG h_0opt_e1ec52d t135; HERO_NODEBUG h_0opt_e1ec52d t136; HERO_NODEBUG h_0opt_e1ec52d t137; HERO_NODEBUG HeroArrayHeader * t138; HERO_NODEBUG HeroArrayHeader * t139; HERO_NODEBUG h_0opt_e1ec52d t140; HERO_NODEBUG h_0opt_e1ec52d t141; HERO_NODEBUG h_0opt_e1ec52d t142; HERO_NODEBUG h_0opt_e1ec52d t143; HERO_NODEBUG HeroArrayHeader * t144; HERO_NODEBUG HeroArrayHeader * t145; HERO_NODEBUG HeroArrayHeader * t146; HERO_NODEBUG HeroArrayHeader * t147; goto bb0;
+    HeroArrayHeader * h0_fds = {0}; HERO_NODEBUG h_0opt_e1ec52d h1_f0 = {0}; HERO_NODEBUG h_0opt_e1ec52d h2_f1 = {0}; HeroArrayHeader * h3_watched = {0}; HERO_NODEBUG h_0opt_e1ec52d h4_f2 = {0}; HERO_NODEBUG h_0opt_e1ec52d h5_f3 = {0}; HeroArrayHeader * h6_buf = {0}; HeroArrayHeader * h7_name = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_e1ec52d h9_own9 = {0}; HERO_NODEBUG h_0opt_e1ec52d h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_0opt_e1ec52d h12_own12 = {0}; HERO_NODEBUG h_0opt_e1ec52d h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG const char * t18; HERO_NODEBUG uint64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int32_t t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG h_0opt_e1ec52d t25; HERO_NODEBUG h_0opt_e1ec52d t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG h_0opt_e1ec52d t30; HERO_NODEBUG HeroFailure t31; HERO_NODEBUG h_0opt_e1ec52d t32; HERO_NODEBUG int16_t t33; HERO_NODEBUG int16_t t34; HERO_NODEBUG struct pollfd t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int32_t t38; HERO_NODEBUG int32_t t39; HERO_NODEBUG h_0opt_e1ec52d t40; HERO_NODEBUG h_0opt_e1ec52d t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG h_0opt_e1ec52d t45; HERO_NODEBUG HeroFailure t46; HERO_NODEBUG h_0opt_e1ec52d t47; HERO_NODEBUG int16_t t48; HERO_NODEBUG int16_t t49; HERO_NODEBUG struct pollfd t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG uint32_t t52; HERO_NODEBUG int32_t t53; HERO_NODEBUG int32_t t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG struct pollfd t61; HERO_NODEBUG int16_t t62; HERO_NODEBUG int32_t t63; HERO_NODEBUG h_0opt_e1ec52d t64; HERO_NODEBUG h_0opt_e1ec52d t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG bool t68; HERO_NODEBUG h_0opt_e1ec52d t69; HERO_NODEBUG HeroFailure t70; HERO_NODEBUG h_0opt_e1ec52d t71; HERO_NODEBUG int16_t t72; HERO_NODEBUG bool t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG struct pollfd t77; HERO_NODEBUG int16_t t78; HERO_NODEBUG int32_t t79; HERO_NODEBUG h_0opt_e1ec52d t80; HERO_NODEBUG h_0opt_e1ec52d t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG bool t84; HERO_NODEBUG h_0opt_e1ec52d t85; HERO_NODEBUG HeroFailure t86; HERO_NODEBUG h_0opt_e1ec52d t87; HERO_NODEBUG int16_t t88; HERO_NODEBUG bool t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG int32_t t93; HERO_NODEBUG uint64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG HeroStr t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG uint8_t t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG HeroArrayHeader * t104; HERO_NODEBUG int64_t t105; HERO_NODEBUG uint8_t t106; HERO_NODEBUG HeroStr t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG uint8_t t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_NODEBUG int64_t t112; HERO_NODEBUG int32_t t113; HERO_NODEBUG int32_t t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroArrayHeader * t116; HERO_NODEBUG int64_t t117; HERO_NODEBUG int32_t t118; HERO_NODEBUG int32_t t119; HERO_NODEBUG HeroArrayHeader * t120; HERO_NODEBUG uint64_t t121; HERO_NODEBUG int32_t t122; HERO_NODEBUG HeroStr t123; HERO_NODEBUG HeroArrayHeader * t124; HERO_NODEBUG int64_t t125; HERO_NODEBUG HeroStr t126; HERO_NODEBUG HeroArrayHeader * t127; HERO_NODEBUG int64_t t128; HERO_NODEBUG int8_t t129; HERO_NODEBUG int8_t t130; HERO_NODEBUG bool t131; HERO_NODEBUG HeroArrayHeader * t132; HERO_NODEBUG HeroArrayHeader * t133; HERO_NODEBUG h_0opt_e1ec52d t134; HERO_NODEBUG h_0opt_e1ec52d t135; HERO_NODEBUG h_0opt_e1ec52d t136; HERO_NODEBUG h_0opt_e1ec52d t137; HERO_NODEBUG HeroArrayHeader * t138; HERO_NODEBUG HeroArrayHeader * t139; HERO_NODEBUG h_0opt_e1ec52d t140; HERO_NODEBUG h_0opt_e1ec52d t141; HERO_NODEBUG h_0opt_e1ec52d t142; HERO_NODEBUG h_0opt_e1ec52d t143; HERO_NODEBUG HeroArrayHeader * t144; HERO_NODEBUG HeroArrayHeader * t145; HERO_NODEBUG HeroArrayHeader * t146; HERO_NODEBUG HeroArrayHeader * t147; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_i32, 1);
@@ -263,9 +268,9 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(int *)0), signed char) && sizeof(signed char) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), short) && sizeof(short) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), int) && sizeof(int) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), long) && sizeof(long) == sizeof(int32_t)) || (__builtin_types_compatible_p(__typeof__(*(int *)0), long long) && sizeof(long long) == sizeof(int32_t)), "heroes-ffi-buffer pipe fds 863 866 i32 int *");
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    int64_t hero_lend_e0_0 = INT64_C(2);
+    HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(2);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    void *hero_lend_b0_0 = hero_lend_take(h0_fds, hero_lend_e0_0, "pipe", "fds");
+    HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take(h0_fds, hero_lend_e0_0, "pipe", "fds");
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t2 = pipe((void *)hero_lend_b0_0);
 #line 31 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -422,7 +427,7 @@ bb2:
     t30 = h1_f0;
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t31 = t30.as.err;
-#line 426 "fixedbugs396posixfillsitsbuffers.c"
+#line 431 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t31);
     hero_unreachable();
 bb3:
@@ -463,9 +468,9 @@ bb3:
 #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(struct pollfd *)0), struct pollfd) && sizeof(struct pollfd) == sizeof(struct pollfd)), "heroes-ffi-buffer poll fds 1324 1327 PollFd struct pollfd *");
 #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    int64_t hero_lend_e23_0 = INT64_C(2);
+    HERO_NODEBUG int64_t hero_lend_e23_0 = INT64_C(2);
 #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    void *hero_lend_b23_0 = hero_lend_take(h3_watched, hero_lend_e23_0, "poll", "fds");
+    HERO_NODEBUG void *hero_lend_b23_0 = hero_lend_take(h3_watched, hero_lend_e23_0, "poll", "fds");
 #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t54 = poll((void *)hero_lend_b23_0, t52, t53);
 #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -526,7 +531,7 @@ bb4:
     t45 = h2_f1;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t46 = t45.as.err;
-#line 530 "fixedbugs396posixfillsitsbuffers.c"
+#line 535 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb5:
@@ -586,7 +591,7 @@ bb6:
     t69 = h4_f2;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t70 = t69.as.err;
-#line 590 "fixedbugs396posixfillsitsbuffers.c"
+#line 595 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t70);
     hero_unreachable();
 bb7:
@@ -640,9 +645,9 @@ bb7:
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer read buf 988 991 u8 void *");
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    int64_t hero_lend_e38_1 = INT64_C(64);
+    HERO_NODEBUG int64_t hero_lend_e38_1 = INT64_C(64);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    void *hero_lend_b38_1 = hero_lend_take(h6_buf, hero_lend_e38_1, "read", "buf");
+    HERO_NODEBUG void *hero_lend_b38_1 = hero_lend_take(h6_buf, hero_lend_e38_1, "read", "buf");
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t95 = read(t93, (void *)hero_lend_b38_1, t94);
 #line 47 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -745,9 +750,9 @@ bb7:
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(char *)0), signed char) && sizeof(signed char) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), short) && sizeof(short) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), int) && sizeof(int) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long) && sizeof(long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), long long) && sizeof(long long) == sizeof(int8_t)) || (__builtin_types_compatible_p(__typeof__(*(char *)0), char) && (char)-1 < 0), "heroes-ffi-buffer gethostname name 1094 1098 i8 char *");
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    int64_t hero_lend_e56_0 = hero_lend_count_u64((uint64_t)(t121), "gethostname", "name");
+    HERO_NODEBUG int64_t hero_lend_e56_0 = hero_lend_count_u64((uint64_t)(t121), "gethostname", "name");
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
-    void *hero_lend_b56_0 = hero_lend_take(h7_name, hero_lend_e56_0, "gethostname", "name");
+    HERO_NODEBUG void *hero_lend_b56_0 = hero_lend_take(h7_name, hero_lend_e56_0, "gethostname", "name");
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t122 = gethostname((void *)hero_lend_b56_0, t121);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
@@ -784,7 +789,7 @@ bb7:
     hero_print_bool(t131);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 788 "fixedbugs396posixfillsitsbuffers.c"
+#line 793 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_release_at(&h0_fds);
     h_0opt_e1ec52d_release(hero_slot_escape(&h1_f0));
     h_0opt_e1ec52d_release(hero_slot_escape(&h2_f1));
@@ -807,7 +812,7 @@ bb8:
     t85 = h5_f3;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t86 = t85.as.err;
-#line 811 "fixedbugs396posixfillsitsbuffers.c"
+#line 816 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t86);
     hero_unreachable();
 }

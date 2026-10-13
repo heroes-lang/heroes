@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -87,7 +92,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_2f69e1a4, "the borrowed one was not given back");
 
-#line 91 "ffiborrowsowesnothing.c"
+#line 96 "ffiborrowsowesnothing.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -134,7 +139,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "ffiborrowsowesnothing.c"
+#line 143 "ffiborrowsowesnothing.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiborrowsowesnothing_Slot_eq(Slot * const *a, Slot * const *b);
@@ -153,7 +158,7 @@ void h_ffiborrowsowesnothing_main(void);
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
 void h_ffiborrowsowesnothing_main(void) {
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    Slot * h0_mine; Slot * h1_theirs; HERO_NODEBUG int64_t t1; HERO_NODEBUG Slot * t2; HERO_NODEBUG Slot * t3; HERO_NODEBUG Slot * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG Slot * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG Slot * t9; HERO_NODEBUG HeroStr t10; goto bb0;
+    Slot * h0_mine; Slot * h1_theirs; HERO_NODEBUG int64_t t1; HERO_NODEBUG Slot * t2; HERO_NODEBUG Slot * t3; HERO_NODEBUG Slot * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG Slot * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG Slot * t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
 bb0:
     t1 = INT64_C(3);
@@ -191,7 +196,7 @@ bb0:
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     hero_handle_alive(t9, "the argument `s` of `slot_close`");
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t9, "slot_close", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t9, "slot_close", NULL);
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     (void)slot_close(t9);
 #line 28 "tests/golden/run/ffi-borrows-owes-nothing.hero"
@@ -205,7 +210,7 @@ bb0:
     hero_print_end();
 #line 29 "tests/golden/run/ffi-borrows-owes-nothing.hero"
     return;
-#line 209 "ffiborrowsowesnothing.c"
+#line 214 "ffiborrowsowesnothing.c"
 }
 HERO_TU_LOCAL bool h_ffiborrowsowesnothing_Slot_eq(Slot * const *a, Slot * const *b) {
     return hero_handle_eq(*a, *b);

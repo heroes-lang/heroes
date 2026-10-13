@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -50,7 +55,7 @@ HERO_STR_STATIC(hero_str_1999f6, "ada");
 HERO_STR_STATIC(hero_str_21, "!");
 HERO_STR_STATIC(hero_str_1f648322, "grace");
 
-#line 54 "recordsownstrings.c"
+#line 59 "recordsownstrings.c"
 typedef struct h_recordsownstrings_Person {
     HeroStr f_name;
     int64_t f_age;
@@ -90,7 +95,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "recordsownstrings.c"
+#line 99 "recordsownstrings.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_recordsownstrings_Person_retain(const h_recordsownstrings_Person *v);
@@ -116,7 +121,7 @@ void h_recordsownstrings_main(void);
 #line 24 "tests/golden/run/records-own-strings.hero"
 HeroStr h_recordsownstrings_greet(h_recordsownstrings_Person h0_p) {
 #line 24 "tests/golden/run/records-own-strings.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_recordsownstrings_Person t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_recordsownstrings_Person t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/records-own-strings.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1a23a6da);
@@ -132,7 +137,7 @@ bb0:
     h1_own1 = t4;
 #line 25 "tests/golden/run/records-own-strings.hero"
     hero_str_decref(t5);
-#line 136 "recordsownstrings.c"
+#line 141 "recordsownstrings.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_own1);
     return t4;
@@ -141,7 +146,7 @@ bb0:
 #line 27 "tests/golden/run/records-own-strings.hero"
 void h_recordsownstrings_main(void) {
 #line 27 "tests/golden/run/records-own-strings.hero"
-    h_recordsownstrings_Person h0_p = {0}; h_recordsownstrings_Person h1_q = {0}; h_recordsownstrings_Pair h2_both = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG h_recordsownstrings_Person h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_recordsownstrings_Person h6_own6 = {0}; HERO_NODEBUG h_recordsownstrings_Pair h7_own7 = {0}; HERO_NODEBUG h_recordsownstrings_Pair h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_recordsownstrings_Person t5; HERO_NODEBUG h_recordsownstrings_Person t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_recordsownstrings_Person t8; HERO_NODEBUG h_recordsownstrings_Person t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_recordsownstrings_Person t13; HERO_NODEBUG h_recordsownstrings_Person t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_recordsownstrings_Person t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_recordsownstrings_Person t18; HERO_NODEBUG h_recordsownstrings_Person t19; HERO_NODEBUG h_recordsownstrings_Pair t20; HERO_NODEBUG h_recordsownstrings_Pair t21; HERO_NODEBUG h_recordsownstrings_Person t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_recordsownstrings_Pair t24; HERO_NODEBUG h_recordsownstrings_Person t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_recordsownstrings_Pair t27; HERO_NODEBUG h_recordsownstrings_Person t28; HERO_NODEBUG h_recordsownstrings_Person t29; HERO_NODEBUG h_recordsownstrings_Pair t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_recordsownstrings_Pair t32; HERO_NODEBUG h_recordsownstrings_Person t33; HERO_NODEBUG h_recordsownstrings_Pair t34; HERO_NODEBUG h_recordsownstrings_Person t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_recordsownstrings_Person t37; HERO_NODEBUG h_recordsownstrings_Person t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_recordsownstrings_Person t41; HERO_NODEBUG h_recordsownstrings_Person t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_recordsownstrings_Person t44; HERO_NODEBUG h_recordsownstrings_Person t45; HERO_NODEBUG h_recordsownstrings_Person t46; HERO_NODEBUG h_recordsownstrings_Pair t47; HERO_NODEBUG h_recordsownstrings_Pair t48; HERO_NODEBUG h_recordsownstrings_Pair t49; HERO_NODEBUG h_recordsownstrings_Person t50; goto bb0;
+    h_recordsownstrings_Person h0_p = {0}; h_recordsownstrings_Person h1_q = {0}; h_recordsownstrings_Pair h2_both = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG h_recordsownstrings_Person h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_recordsownstrings_Person h6_own6 = {0}; HERO_NODEBUG h_recordsownstrings_Pair h7_own7 = {0}; HERO_NODEBUG h_recordsownstrings_Pair h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_recordsownstrings_Person t5; HERO_NODEBUG h_recordsownstrings_Person t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_recordsownstrings_Person t8; HERO_NODEBUG h_recordsownstrings_Person t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_recordsownstrings_Person t13; HERO_NODEBUG h_recordsownstrings_Person t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_recordsownstrings_Person t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_recordsownstrings_Person t18; HERO_NODEBUG h_recordsownstrings_Person t19; HERO_NODEBUG h_recordsownstrings_Pair t20; HERO_NODEBUG h_recordsownstrings_Pair t21; HERO_NODEBUG h_recordsownstrings_Person t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_recordsownstrings_Pair t24; HERO_NODEBUG h_recordsownstrings_Person t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_recordsownstrings_Pair t27; HERO_NODEBUG h_recordsownstrings_Person t28; HERO_NODEBUG h_recordsownstrings_Person t29; HERO_NODEBUG h_recordsownstrings_Pair t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_recordsownstrings_Pair t32; HERO_NODEBUG h_recordsownstrings_Person t33; HERO_NODEBUG h_recordsownstrings_Pair t34; HERO_NODEBUG h_recordsownstrings_Person t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_recordsownstrings_Person t37; HERO_NODEBUG h_recordsownstrings_Person t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_recordsownstrings_Person t41; HERO_NODEBUG h_recordsownstrings_Person t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_recordsownstrings_Person t44; HERO_NODEBUG h_recordsownstrings_Person t45; HERO_NODEBUG h_recordsownstrings_Person t46; HERO_NODEBUG h_recordsownstrings_Pair t47; HERO_NODEBUG h_recordsownstrings_Pair t48; HERO_NODEBUG h_recordsownstrings_Pair t49; HERO_NODEBUG h_recordsownstrings_Person t50; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/records-own-strings.hero"
 bb0:
 #line 30 "tests/golden/run/records-own-strings.hero"
@@ -332,7 +337,7 @@ bb0:
     hero_print_str(t39);
 #line 44 "tests/golden/run/records-own-strings.hero"
     hero_print_end();
-#line 336 "recordsownstrings.c"
+#line 341 "recordsownstrings.c"
     h_recordsownstrings_Person_release(hero_slot_escape(&h0_p));
     h_recordsownstrings_Person_release(hero_slot_escape(&h1_q));
     h_recordsownstrings_Pair_release(hero_slot_escape(&h2_both));

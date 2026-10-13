@@ -35,6 +35,7 @@ use emit/writer
 use emit/lend_local
 use emit/prologue
 use emit/nodebug
+use emit/entry_stop
 use parse
 use resolve
 use checker
@@ -120,6 +121,10 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     for one in entry.lines
         statements @ statements.push(one)
 
+    # An instruction on the function's line for every architecture, which a
+    # `step` into the function stops on: x86-64's clang drops the jump to the
+    # block that follows (`emit/entry_stop.hero`, defect 2038).
+    statements @ statements.push(entry_stop.WORD)
     statements @ statements.push("goto " + mangle.block(0) + ";")
     writer.line(@w, text: "    " + statements.join(" "))
     released = lend_local.releases(c, names, f)
@@ -191,7 +196,7 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     # temporaries kept from the debugger (panel 213's R1).
     assert strings.holds(
         text: got,
-        needle: "{\n#line 1 \"t.hero\"\n    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;\n"
+        needle: "{\n#line 1 \"t.hero\"\n    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;\n"
     )
     assert strings.holds(text: got, needle: "bb0:")
     assert strings.holds(text: got, needle: "    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();")

@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -84,7 +89,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 88 "deadaddresscopymadebeforetheendreachesc.c"
+#line 93 "deadaddresscopymadebeforetheendreachesc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -129,7 +134,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 133 "deadaddresscopymadebeforetheendreachesc.c"
+#line 138 "deadaddresscopymadebeforetheendreachesc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadaddresscopymadebeforetheendreachesc_Node_eq(node * const *a, node * const *b);
@@ -148,7 +153,7 @@ void h_deadaddresscopymadebeforetheendreachesc_main(void);
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
 void h_deadaddresscopymadebeforetheendreachesc_main(void) {
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    node * h0_a; node * h1_keep; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG node * t3; HERO_NODEBUG node * t4; HERO_NODEBUG int64_t t5; goto bb0;
+    node * h0_a; node * h1_keep; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG node * t3; HERO_NODEBUG node * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
 bb0:
     t1 = node_new();
@@ -165,7 +170,7 @@ bb0:
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     hero_handle_alive(t3, "the argument `n` of `node_free`");
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "node_free", NULL);
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     (void)node_free(t3);
 #line 24 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
@@ -183,7 +188,7 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
     return;
-#line 187 "deadaddresscopymadebeforetheendreachesc.c"
+#line 192 "deadaddresscopymadebeforetheendreachesc.c"
 }
 HERO_TU_LOCAL bool h_deadaddresscopymadebeforetheendreachesc_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

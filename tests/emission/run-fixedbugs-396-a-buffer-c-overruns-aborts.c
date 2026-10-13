@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -84,7 +89,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 88 "fixedbugs396abuffercoverrunsaborts.c"
+#line 93 "fixedbugs396abuffercoverrunsaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -128,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugs396abuffercoverrunsaborts.c"
+#line 137 "fixedbugs396abuffercoverrunsaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -145,7 +150,7 @@ void h_fixedbugs396abuffercoverrunsaborts_main(void);
 #line 11 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
 void h_fixedbugs396abuffercoverrunsaborts_main(void) {
 #line 11 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
-    HeroArrayHeader * h0_md = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; goto bb0;
+    HeroArrayHeader * h0_md = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_u8, 1);
@@ -172,9 +177,9 @@ bb0:
 #line 14 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer digest32 md 528 530 u8 unsigned char *");
 #line 14 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
-    int64_t hero_lend_e1_0 = INT64_C(16);
+    HERO_NODEBUG int64_t hero_lend_e1_0 = INT64_C(16);
 #line 14 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
-    void *hero_lend_b1_0 = hero_lend_take(h0_md, hero_lend_e1_0, "digest32", "md");
+    HERO_NODEBUG void *hero_lend_b1_0 = hero_lend_take(h0_md, hero_lend_e1_0, "digest32", "md");
 #line 14 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     t3 = digest32((void *)hero_lend_b1_0);
 #line 14 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
@@ -196,7 +201,7 @@ bb0:
     hero_print_int(t6);
 #line 15 "tests/golden/run/fixedbugs-396-a-buffer-c-overruns-aborts.hero"
     hero_print_end();
-#line 200 "fixedbugs396abuffercoverrunsaborts.c"
+#line 205 "fixedbugs396abuffercoverrunsaborts.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_own1);
     return;

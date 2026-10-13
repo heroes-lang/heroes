@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "adversarialjoinslot.c"
+#line 54 "adversarialjoinslot.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -75,7 +80,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 79 "adversarialjoinslot.c"
+#line 84 "adversarialjoinslot.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +99,7 @@ void h_adversarialjoinslot_main(void);
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_pick(bool h0_c) {
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
-    HERO_NODEBUG int64_t h1_r0; int64_t h2_v; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; goto bb0;
+    HERO_NODEBUG int64_t h1_r0; int64_t h2_v; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
     t1 = h0_c;
@@ -126,13 +131,13 @@ bb3:
     h1_r0 = t3;
 #line 18 "tests/golden/run/adversarial-join-slot.hero"
     goto bb1;
-#line 130 "adversarialjoinslot.c"
+#line 135 "adversarialjoinslot.c"
 }
 
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b) {
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
-    HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t h3_r1; int64_t h4_v; HERO_NODEBUG bool t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; goto bb0;
+    HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t h3_r1; int64_t h4_v; HERO_NODEBUG bool t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
     t1 = h0_a;
@@ -185,13 +190,13 @@ bb6:
     h3_r1 = t4;
 #line 26 "tests/golden/run/adversarial-join-slot.hero"
     goto bb4;
-#line 189 "adversarialjoinslot.c"
+#line 194 "adversarialjoinslot.c"
 }
 
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
 void h_adversarialjoinslot_main(void) {
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
-    int64_t h0_i; int64_t h1_total; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; goto bb0;
+    int64_t h0_i; int64_t h1_total; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
     t1 = true;
@@ -292,7 +297,7 @@ bb3:
     hero_print_end();
 #line 44 "tests/golden/run/adversarial-join-slot.hero"
     return;
-#line 296 "adversarialjoinslot.c"
+#line 301 "adversarialjoinslot.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

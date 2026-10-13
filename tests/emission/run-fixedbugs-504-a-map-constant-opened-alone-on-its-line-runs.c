@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -52,7 +57,7 @@ HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_78, "x");
 HERO_STR_STATIC(hero_str_79, "y");
 
-#line 56 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 61 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -98,7 +103,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 102 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 107 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -134,7 +139,7 @@ void h_fixedbugs504amapconstantopenedaloneonitslineruns_main(void);
 #line 22 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_AGES(void) {
 #line 22 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroMapHeader * t6; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroMapHeader * t6; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
 #line 24 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -156,7 +161,7 @@ bb0:
     h0_own0 = t5;
 #line 23 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     hero_map_decref(t6);
-#line 160 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 165 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t5);
     hero_map_release_at(&h0_own0);
     return t5;
@@ -165,7 +170,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NESTED(void) {
 #line 28 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroMapHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroMapHeader * t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroMapHeader * t7; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroMapHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroMapHeader * t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroMapHeader * t7; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
 #line 30 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -194,7 +199,7 @@ bb0:
     h1_own1 = t5;
 #line 29 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     hero_map_decref(t7);
-#line 198 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 203 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t5);
     hero_map_release_at(&h0_own0);
     hero_map_release_at(&h1_own1);
@@ -204,7 +209,7 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_EMPTY(void) {
 #line 33 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroMapHeader * t2; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);
@@ -214,7 +219,7 @@ bb0:
     h0_own0 = t1;
 #line 34 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     hero_map_decref(t2);
-#line 218 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 223 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t1);
     hero_map_release_at(&h0_own0);
     return t1;
@@ -223,7 +228,7 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NOTED(void) {
 #line 36 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroMapHeader * t4; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroMapHeader * t4; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
 #line 39 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -240,7 +245,7 @@ bb0:
     h0_own0 = t3;
 #line 38 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     hero_map_decref(t4);
-#line 244 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 249 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t3);
     hero_map_release_at(&h0_own0);
     return t3;
@@ -249,7 +254,7 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_FIRST(void) {
 #line 42 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroMapHeader * t4; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroMapHeader * t4; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
 #line 45 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -266,7 +271,7 @@ bb0:
     h0_own0 = t3;
 #line 43 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     hero_map_decref(t4);
-#line 270 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 275 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t3);
     hero_map_release_at(&h0_own0);
     return t3;
@@ -275,11 +280,11 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroStr h_fixedbugs504amapconstantopenedaloneonitslineruns_K(void) {
 #line 48 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 283 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 288 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -287,7 +292,7 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_BY_NAME(void) {
 #line 51 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroMapHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroMapHeader * t7; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroMapHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroMapHeader * t7; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
 #line 53 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -315,7 +320,7 @@ bb0:
     h1_own1 = t5;
 #line 52 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     hero_map_decref(t7);
-#line 319 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 324 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t5);
     hero_str_release_at(&h0_own0);
     hero_map_release_at(&h1_own1);
@@ -325,7 +330,7 @@ bb0:
 #line 57 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_NEGATIVE(void) {
 #line 57 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroMapHeader * t6; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroMapHeader * t6; HERO_ENTRY_STOP; goto bb0;
 #line 57 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
 #line 59 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -347,7 +352,7 @@ bb0:
     h0_own0 = t5;
 #line 58 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     hero_map_decref(t6);
-#line 351 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 356 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t5);
     hero_map_release_at(&h0_own0);
     return t5;
@@ -356,11 +361,11 @@ bb0:
 #line 63 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroStr h_fixedbugs504amapconstantopenedaloneonitslineruns_name(void) {
 #line 63 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 63 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
-#line 364 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 369 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -368,7 +373,7 @@ bb0:
 #line 66 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_arm(int64_t h0_n) {
 #line 66 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG HeroMapHeader * h2_r0 = {0}; HERO_NODEBUG HeroMapHeader * h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * h4_own4 = {0}; HERO_NODEBUG HeroMapHeader * h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroMapHeader * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroMapHeader * t16; HERO_NODEBUG HeroMapHeader * t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroMapHeader * t20; HERO_NODEBUG HeroMapHeader * t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG HeroMapHeader * t23; goto bb0;
+    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG HeroMapHeader * h2_r0 = {0}; HERO_NODEBUG HeroMapHeader * h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * h4_own4 = {0}; HERO_NODEBUG HeroMapHeader * h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroMapHeader * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroMapHeader * t16; HERO_NODEBUG HeroMapHeader * t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroMapHeader * t20; HERO_NODEBUG HeroMapHeader * t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG HeroMapHeader * t23; HERO_ENTRY_STOP; goto bb0;
 #line 66 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
     t1 = h0_n;
@@ -385,7 +390,7 @@ bb0:
 bb1:
 #line 67 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     t17 = h2_r0;
-#line 389 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 394 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t17);
     hero_map_release_at(&h2_r0);
     hero_map_release_at(&h3_own3);
@@ -483,13 +488,13 @@ bb6:
     hero_map_decref(t23);
 #line 67 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     goto bb1;
-#line 487 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 492 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
 }
 
 #line 79 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 HeroMapHeader * h_fixedbugs504amapconstantopenedaloneonitslineruns_by_branch(int64_t h0_n) {
 #line 79 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG HeroMapHeader * h1_r0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroMapHeader * h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroMapHeader * t9; HERO_NODEBUG HeroMapHeader * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroMapHeader * t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroMapHeader * t14; HERO_NODEBUG HeroMapHeader * t15; goto bb0;
+    HERO_NODEBUG HeroMapHeader * h1_r0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroMapHeader * h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroMapHeader * t9; HERO_NODEBUG HeroMapHeader * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroMapHeader * t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroMapHeader * t14; HERO_NODEBUG HeroMapHeader * t15; HERO_ENTRY_STOP; goto bb0;
 #line 79 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
     t1 = h0_n;
@@ -503,7 +508,7 @@ bb0:
 bb1:
 #line 80 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     t10 = h1_r0;
-#line 507 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 512 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     hero_map_incref(t10);
     hero_map_release_at(&h1_r0);
     hero_str_release_at(&h2_own2);
@@ -567,13 +572,13 @@ bb3:
     hero_map_decref(t15);
 #line 80 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     goto bb1;
-#line 571 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 576 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
 }
 
 #line 87 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 void h_fixedbugs504amapconstantopenedaloneonitslineruns_main(void) {
 #line 87 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}; HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG h_0opt_7e3a44cc h2_f1 = {0}; HERO_NODEBUG HeroMapHeader * h3_r1 = {0}; HERO_NODEBUG h_0opt_e201354 h4_f2 = {0}; HERO_NODEBUG int64_t h5_r2; HERO_NODEBUG h_0opt_e201354 h6_f3 = {0}; HERO_NODEBUG int64_t h7_r3; HERO_NODEBUG h_0opt_e201354 h8_f4 = {0}; HERO_NODEBUG int64_t h9_r4; HERO_NODEBUG h_0opt_e201354 h10_f5 = {0}; HERO_NODEBUG int64_t h11_r5; HERO_NODEBUG h_0opt_e201354 h12_f6 = {0}; HERO_NODEBUG int64_t h13_r6; HERO_NODEBUG h_0opt_e201354 h14_f7 = {0}; HERO_NODEBUG int64_t h15_r7; HERO_NODEBUG h_0opt_e201354 h16_f8 = {0}; HERO_NODEBUG int64_t h17_r8; HERO_NODEBUG h_0opt_e201354 h18_f9 = {0}; HERO_NODEBUG int64_t h19_r9; HERO_NODEBUG HeroMapHeader * h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG HeroMapHeader * h22_own22 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h23_own23 = {0}; HERO_NODEBUG HeroMapHeader * h24_own24 = {0}; HERO_NODEBUG h_0opt_e201354 h25_own25 = {0}; HERO_NODEBUG HeroMapHeader * h26_own26 = {0}; HERO_NODEBUG HeroMapHeader * h27_own27 = {0}; HERO_NODEBUG h_0opt_e201354 h28_own28 = {0}; HERO_NODEBUG HeroMapHeader * h29_own29 = {0}; HERO_NODEBUG h_0opt_e201354 h30_own30 = {0}; HERO_NODEBUG HeroMapHeader * h31_own31 = {0}; HERO_NODEBUG h_0opt_e201354 h32_own32 = {0}; HERO_NODEBUG HeroMapHeader * h33_own33 = {0}; HERO_NODEBUG h_0opt_e201354 h34_own34 = {0}; HERO_NODEBUG HeroMapHeader * h35_own35 = {0}; HERO_NODEBUG h_0opt_e201354 h36_own36 = {0}; HERO_NODEBUG HeroMapHeader * h37_own37 = {0}; HERO_NODEBUG h_0opt_e201354 h38_own38 = {0}; HERO_NODEBUG HeroMapHeader * h39_own39 = {0}; HERO_NODEBUG h_0opt_e201354 h40_own40 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroMapHeader * t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_7e3a44cc t14; HERO_NODEBUG h_0opt_7e3a44cc t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_7e3a44cc t19; HERO_NODEBUG HeroMapHeader * t20; HERO_NODEBUG HeroMapHeader * t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroMapHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroMapHeader * t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroMapHeader * t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG h_0opt_e201354 t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG h_0opt_e201354 t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroMapHeader * t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG bool t63; HERO_NODEBUG h_0opt_e201354 t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG HeroMapHeader * t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG h_0opt_e201354 t70; HERO_NODEBUG h_0opt_e201354 t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG bool t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG HeroMapHeader * t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_0opt_e201354 t82; HERO_NODEBUG h_0opt_e201354 t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG bool t86; HERO_NODEBUG h_0opt_e201354 t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG HeroMapHeader * t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG h_0opt_e201354 t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG bool t98; HERO_NODEBUG h_0opt_e201354 t99; HERO_NODEBUG int64_t t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG int64_t t103; HERO_NODEBUG HeroMapHeader * t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG h_0opt_e201354 t106; HERO_NODEBUG h_0opt_e201354 t107; HERO_NODEBUG int64_t t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG bool t110; HERO_NODEBUG h_0opt_e201354 t111; HERO_NODEBUG int64_t t112; HERO_NODEBUG int64_t t113; HERO_NODEBUG int64_t t114; HERO_NODEBUG HeroMapHeader * t115; HERO_NODEBUG h_0opt_e201354 t116; HERO_NODEBUG h_0opt_e201354 t117; HERO_NODEBUG HeroMapHeader * t118; HERO_NODEBUG h_0opt_7e3a44cc t119; HERO_NODEBUG h_0opt_7e3a44cc t120; HERO_NODEBUG HeroMapHeader * t121; HERO_NODEBUG HeroMapHeader * t122; HERO_NODEBUG HeroMapHeader * t123; HERO_NODEBUG h_0opt_e201354 t124; HERO_NODEBUG h_0opt_e201354 t125; HERO_NODEBUG HeroMapHeader * t126; HERO_NODEBUG HeroMapHeader * t127; HERO_NODEBUG h_0opt_e201354 t128; HERO_NODEBUG h_0opt_e201354 t129; HERO_NODEBUG HeroMapHeader * t130; HERO_NODEBUG h_0opt_e201354 t131; HERO_NODEBUG h_0opt_e201354 t132; HERO_NODEBUG HeroMapHeader * t133; HERO_NODEBUG h_0opt_e201354 t134; HERO_NODEBUG h_0opt_e201354 t135; HERO_NODEBUG HeroMapHeader * t136; HERO_NODEBUG h_0opt_e201354 t137; HERO_NODEBUG h_0opt_e201354 t138; HERO_NODEBUG HeroMapHeader * t139; HERO_NODEBUG h_0opt_e201354 t140; HERO_NODEBUG h_0opt_e201354 t141; HERO_NODEBUG HeroMapHeader * t142; HERO_NODEBUG h_0opt_e201354 t143; HERO_NODEBUG h_0opt_e201354 t144; HERO_NODEBUG HeroMapHeader * t145; HERO_NODEBUG h_0opt_e201354 t146; HERO_NODEBUG h_0opt_e201354 t147; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}; HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG h_0opt_7e3a44cc h2_f1 = {0}; HERO_NODEBUG HeroMapHeader * h3_r1 = {0}; HERO_NODEBUG h_0opt_e201354 h4_f2 = {0}; HERO_NODEBUG int64_t h5_r2; HERO_NODEBUG h_0opt_e201354 h6_f3 = {0}; HERO_NODEBUG int64_t h7_r3; HERO_NODEBUG h_0opt_e201354 h8_f4 = {0}; HERO_NODEBUG int64_t h9_r4; HERO_NODEBUG h_0opt_e201354 h10_f5 = {0}; HERO_NODEBUG int64_t h11_r5; HERO_NODEBUG h_0opt_e201354 h12_f6 = {0}; HERO_NODEBUG int64_t h13_r6; HERO_NODEBUG h_0opt_e201354 h14_f7 = {0}; HERO_NODEBUG int64_t h15_r7; HERO_NODEBUG h_0opt_e201354 h16_f8 = {0}; HERO_NODEBUG int64_t h17_r8; HERO_NODEBUG h_0opt_e201354 h18_f9 = {0}; HERO_NODEBUG int64_t h19_r9; HERO_NODEBUG HeroMapHeader * h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG HeroMapHeader * h22_own22 = {0}; HERO_NODEBUG h_0opt_7e3a44cc h23_own23 = {0}; HERO_NODEBUG HeroMapHeader * h24_own24 = {0}; HERO_NODEBUG h_0opt_e201354 h25_own25 = {0}; HERO_NODEBUG HeroMapHeader * h26_own26 = {0}; HERO_NODEBUG HeroMapHeader * h27_own27 = {0}; HERO_NODEBUG h_0opt_e201354 h28_own28 = {0}; HERO_NODEBUG HeroMapHeader * h29_own29 = {0}; HERO_NODEBUG h_0opt_e201354 h30_own30 = {0}; HERO_NODEBUG HeroMapHeader * h31_own31 = {0}; HERO_NODEBUG h_0opt_e201354 h32_own32 = {0}; HERO_NODEBUG HeroMapHeader * h33_own33 = {0}; HERO_NODEBUG h_0opt_e201354 h34_own34 = {0}; HERO_NODEBUG HeroMapHeader * h35_own35 = {0}; HERO_NODEBUG h_0opt_e201354 h36_own36 = {0}; HERO_NODEBUG HeroMapHeader * h37_own37 = {0}; HERO_NODEBUG h_0opt_e201354 h38_own38 = {0}; HERO_NODEBUG HeroMapHeader * h39_own39 = {0}; HERO_NODEBUG h_0opt_e201354 h40_own40 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroMapHeader * t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_7e3a44cc t14; HERO_NODEBUG h_0opt_7e3a44cc t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_7e3a44cc t19; HERO_NODEBUG HeroMapHeader * t20; HERO_NODEBUG HeroMapHeader * t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroMapHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroMapHeader * t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroMapHeader * t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG h_0opt_e201354 t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG h_0opt_e201354 t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroMapHeader * t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG bool t63; HERO_NODEBUG h_0opt_e201354 t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG HeroMapHeader * t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG h_0opt_e201354 t70; HERO_NODEBUG h_0opt_e201354 t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG bool t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG HeroMapHeader * t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_0opt_e201354 t82; HERO_NODEBUG h_0opt_e201354 t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG bool t86; HERO_NODEBUG h_0opt_e201354 t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG HeroMapHeader * t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG h_0opt_e201354 t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG bool t98; HERO_NODEBUG h_0opt_e201354 t99; HERO_NODEBUG int64_t t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG int64_t t103; HERO_NODEBUG HeroMapHeader * t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG h_0opt_e201354 t106; HERO_NODEBUG h_0opt_e201354 t107; HERO_NODEBUG int64_t t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG bool t110; HERO_NODEBUG h_0opt_e201354 t111; HERO_NODEBUG int64_t t112; HERO_NODEBUG int64_t t113; HERO_NODEBUG int64_t t114; HERO_NODEBUG HeroMapHeader * t115; HERO_NODEBUG h_0opt_e201354 t116; HERO_NODEBUG h_0opt_e201354 t117; HERO_NODEBUG HeroMapHeader * t118; HERO_NODEBUG h_0opt_7e3a44cc t119; HERO_NODEBUG h_0opt_7e3a44cc t120; HERO_NODEBUG HeroMapHeader * t121; HERO_NODEBUG HeroMapHeader * t122; HERO_NODEBUG HeroMapHeader * t123; HERO_NODEBUG h_0opt_e201354 t124; HERO_NODEBUG h_0opt_e201354 t125; HERO_NODEBUG HeroMapHeader * t126; HERO_NODEBUG HeroMapHeader * t127; HERO_NODEBUG h_0opt_e201354 t128; HERO_NODEBUG h_0opt_e201354 t129; HERO_NODEBUG HeroMapHeader * t130; HERO_NODEBUG h_0opt_e201354 t131; HERO_NODEBUG h_0opt_e201354 t132; HERO_NODEBUG HeroMapHeader * t133; HERO_NODEBUG h_0opt_e201354 t134; HERO_NODEBUG h_0opt_e201354 t135; HERO_NODEBUG HeroMapHeader * t136; HERO_NODEBUG h_0opt_e201354 t137; HERO_NODEBUG h_0opt_e201354 t138; HERO_NODEBUG HeroMapHeader * t139; HERO_NODEBUG h_0opt_e201354 t140; HERO_NODEBUG h_0opt_e201354 t141; HERO_NODEBUG HeroMapHeader * t142; HERO_NODEBUG h_0opt_e201354 t143; HERO_NODEBUG h_0opt_e201354 t144; HERO_NODEBUG HeroMapHeader * t145; HERO_NODEBUG h_0opt_e201354 t146; HERO_NODEBUG h_0opt_e201354 t147; HERO_ENTRY_STOP; goto bb0;
 #line 87 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
 bb0:
     t1 = h_fixedbugs504amapconstantopenedaloneonitslineruns_AGES();
@@ -588,7 +593,7 @@ bb0:
 #line 88 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 88 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t1, &t2);
+      HERO_NODEBUG const void *found = hero_map_find(t1, &t2);
 #line 88 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 88 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -665,7 +670,7 @@ bb3:
 #line 89 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 89 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t12, &t13);
+      HERO_NODEBUG const void *found = hero_map_find(t12, &t13);
 #line 89 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 89 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -749,7 +754,7 @@ bb6:
 #line 89 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 89 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t22, &t23);
+      HERO_NODEBUG const void *found = hero_map_find(t22, &t23);
 #line 89 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 89 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -839,7 +844,7 @@ bb9:
 #line 91 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 91 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t35, &t36);
+      HERO_NODEBUG const void *found = hero_map_find(t35, &t36);
 #line 91 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 91 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -916,7 +921,7 @@ bb12:
 #line 92 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 92 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t46, &t47);
+      HERO_NODEBUG const void *found = hero_map_find(t46, &t47);
 #line 92 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 92 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -993,7 +998,7 @@ bb15:
 #line 93 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 93 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t57, &t58);
+      HERO_NODEBUG const void *found = hero_map_find(t57, &t58);
 #line 93 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 93 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -1070,7 +1075,7 @@ bb18:
 #line 94 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 94 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t68, &t69);
+      HERO_NODEBUG const void *found = hero_map_find(t68, &t69);
 #line 94 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 94 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -1149,7 +1154,7 @@ bb21:
 #line 95 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 95 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t80, &t81);
+      HERO_NODEBUG const void *found = hero_map_find(t80, &t81);
 #line 95 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 95 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -1228,7 +1233,7 @@ bb24:
 #line 96 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 96 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t92, &t93);
+      HERO_NODEBUG const void *found = hero_map_find(t92, &t93);
 #line 96 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 96 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -1307,7 +1312,7 @@ bb27:
 #line 97 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     {
 #line 97 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
-      const void *found = hero_map_find(t104, &t105);
+      HERO_NODEBUG const void *found = hero_map_find(t104, &t105);
 #line 97 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
       if (found == NULL) {
 #line 97 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
@@ -1372,7 +1377,7 @@ bb30:
     hero_print_int(t114);
 #line 97 "tests/golden/run/fixedbugs-504-a-map-constant-opened-alone-on-its-line-runs.hero"
     hero_print_end();
-#line 1376 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
+#line 1381 "fixedbugs504amapconstantopenedaloneonitslineruns.c"
     h_0opt_e201354_release(hero_slot_escape(&h0_f0));
     h_0opt_7e3a44cc_release(hero_slot_escape(&h2_f1));
     hero_map_release_at(&h3_r1);

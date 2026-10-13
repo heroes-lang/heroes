@@ -1,0 +1,38 @@
+# The instruction a `step` into a function stops on (design.md §3.1, as
+# panel 200's R4 amended it for defect 472; defect 2038): one `nop` on the
+# function's own line, at the end of the prologue's one physical line, before
+# the jump to the first block, and the lines each unit's preamble defines the
+# word by.
+#
+# WHY. A debugger's `step` into a function stops at the first instruction
+# after the frame's setup, the one the line table flags `prologue_end`, and
+# design.md §3.1 promises that this is on the function's `function` line. The
+# prologue's line ends `goto bb0;`, and `bb0` follows it at once. clang for
+# arm64 keeps that jump, a `b` on the function's line flagged
+# `prologue_end`; clang for x86-64 drops a jump to the next instruction, so
+# where nothing else on the line makes code, no zeroed slot and no thread
+# guard, its `prologue_end` is the first statement's, one line on, and every
+# later step is a line on too (the CI's Linux x86-64 leg, run 38317587830).
+# A `nop` is an instruction on the function's line for both: with the
+# `stepping` case's C, x86-64's `prologue_end` moved to its line 6 and
+# arm64's stayed there (the coordinator, `xcrun dwarfdump --debug-line` on
+# this Mac, 2026-10-13).
+#
+# ONLY UNOPTIMISED. Where `__OPTIMIZE__` is defined the word is `((void)0)`,
+# which makes no code: stepping and variables are the `-O0` build's (panel
+# 197), and an optimised function keeps no instruction it does not need.
+# `volatile`, so that no pass may take the `nop` away as having no effect.
+
+# The statement, as the prologue's line writes it before the jump.
+constant WORD: str
+    "HERO_ENTRY_STOP;"
+
+# The lines each unit's preamble defines the word by.
+constant DEFINE: [str]
+    [
+        "#ifdef __OPTIMIZE__"
+        "#define HERO_ENTRY_STOP ((void)0)"
+        "#else"
+        "#define HERO_ENTRY_STOP __asm__ volatile(\"nop\")"
+        "#endif"
+    ]

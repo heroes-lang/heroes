@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -81,7 +86,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 85 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
+#line 90 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -123,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 127 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
+#line 132 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -140,7 +145,7 @@ void h_fixedbugs568agroupsnarrowlimitsneverreachadivision_main(void);
 #line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
 void h_fixedbugs568agroupsnarrowlimitsneverreachadivision_main(void) {
 #line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; int32_t h6_x; HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int8_t t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int16_t t6; HERO_NODEBUG int16_t t7; HERO_NODEBUG int16_t t8; HERO_NODEBUG int16_t t9; HERO_NODEBUG int16_t t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG int32_t t18; HERO_NODEBUG int32_t t19; HERO_NODEBUG int32_t t20; goto bb0;
+    int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; int32_t h6_x; HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int8_t t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int16_t t6; HERO_NODEBUG int16_t t7; HERO_NODEBUG int16_t t8; HERO_NODEBUG int16_t t9; HERO_NODEBUG int16_t t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG int32_t t18; HERO_NODEBUG int32_t t19; HERO_NODEBUG int32_t t20; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
 bb0:
     t1 = INT64_C(0);
@@ -222,7 +227,7 @@ bb0:
     hero_print_end();
 #line 30 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
     return;
-#line 226 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
+#line 231 "fixedbugs568agroupsnarrowlimitsneverreachadivision.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

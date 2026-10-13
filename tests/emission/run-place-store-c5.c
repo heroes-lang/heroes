@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -48,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_61, "a");
 
-#line 52 "placestorec5.c"
+#line 57 "placestorec5.c"
 typedef struct h_placestorec5_Node {
     HeroArrayHeader * f_kids;
 } h_placestorec5_Node;
@@ -82,7 +87,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 86 "placestorec5.c"
+#line 91 "placestorec5.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_placestorec5_Node_retain(const h_placestorec5_Node *v);
@@ -122,7 +127,7 @@ void h_placestorec5_main(void);
 #line 26 "tests/golden/run/place-store-c5.hero"
 int64_t h_placestorec5_bump(HeroArrayHeader * *ph0_v) {
 #line 26 "tests/golden/run/place-store-c5.hero"
-    HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; goto bb0;
+    HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/place-store-c5.hero"
 bb0:
     t2 = INT64_C(99);
@@ -133,13 +138,13 @@ bb0:
     t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
 #line 28 "tests/golden/run/place-store-c5.hero"
     return t5;
-#line 137 "placestorec5.c"
+#line 142 "placestorec5.c"
 }
 
 #line 30 "tests/golden/run/place-store-c5.hero"
 void h_placestorec5_main(void) {
 #line 30 "tests/golden/run/place-store-c5.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_ys = {0}; HeroArrayHeader * h2_zs = {0}; HeroArrayHeader * h3_hs = {0}; h_placestorec5_Node h4_root = {0}; h_placestorec5_Node h5_holder = {0}; HeroArrayHeader * h6_ws = {0}; HeroArrayHeader * h7_qs = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_placestorec5_Node h12_own12 = {0}; HERO_NODEBUG h_placestorec5_Node h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG h_placestorec5_Node h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_placestorec5_Node h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * h23_own23 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG h_placestorec5_Node t28; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG h_placestorec5_Node t31; HERO_NODEBUG h_placestorec5_Node t33; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_placestorec5_Node t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG h_placestorec5_Node t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG h_placestorec5_Node t48; HERO_NODEBUG h_placestorec5_Node t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG h_placestorec5_Node t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG h_placestorec5_Node t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG h_placestorec5_Node t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG h_placestorec5_Node t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG h_placestorec5_Node t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG h_placestorec5_Node t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG int64_t t85; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG HeroArrayHeader * t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG HeroArrayHeader * t98; HERO_NODEBUG HeroArrayHeader * t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG HeroArrayHeader * t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG h_placestorec5_Node t104; HERO_NODEBUG h_placestorec5_Node t105; HERO_NODEBUG h_placestorec5_Node t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG h_placestorec5_Node t108; HERO_NODEBUG h_placestorec5_Node t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG h_placestorec5_Node t111; HERO_NODEBUG HeroArrayHeader * t112; HERO_NODEBUG HeroArrayHeader * t113; HERO_NODEBUG HeroArrayHeader * t114; HERO_NODEBUG HeroArrayHeader * t115; HERO_NODEBUG HeroArrayHeader * t116; HERO_NODEBUG HeroArrayHeader * t117; HERO_NODEBUG HeroArrayHeader * t118; HERO_NODEBUG HeroArrayHeader * t119; HERO_NODEBUG HeroArrayHeader * t120; HERO_NODEBUG HeroArrayHeader * t121; HERO_NODEBUG HeroArrayHeader * t122; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_ys = {0}; HeroArrayHeader * h2_zs = {0}; HeroArrayHeader * h3_hs = {0}; h_placestorec5_Node h4_root = {0}; h_placestorec5_Node h5_holder = {0}; HeroArrayHeader * h6_ws = {0}; HeroArrayHeader * h7_qs = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_placestorec5_Node h12_own12 = {0}; HERO_NODEBUG h_placestorec5_Node h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG h_placestorec5_Node h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_placestorec5_Node h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * h23_own23 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG h_placestorec5_Node t28; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG h_placestorec5_Node t31; HERO_NODEBUG h_placestorec5_Node t33; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_placestorec5_Node t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG h_placestorec5_Node t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG h_placestorec5_Node t48; HERO_NODEBUG h_placestorec5_Node t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG h_placestorec5_Node t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG h_placestorec5_Node t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG h_placestorec5_Node t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG h_placestorec5_Node t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG h_placestorec5_Node t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG h_placestorec5_Node t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG int64_t t85; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG HeroArrayHeader * t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG HeroArrayHeader * t98; HERO_NODEBUG HeroArrayHeader * t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG HeroArrayHeader * t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG h_placestorec5_Node t104; HERO_NODEBUG h_placestorec5_Node t105; HERO_NODEBUG h_placestorec5_Node t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG h_placestorec5_Node t108; HERO_NODEBUG h_placestorec5_Node t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG h_placestorec5_Node t111; HERO_NODEBUG HeroArrayHeader * t112; HERO_NODEBUG HeroArrayHeader * t113; HERO_NODEBUG HeroArrayHeader * t114; HERO_NODEBUG HeroArrayHeader * t115; HERO_NODEBUG HeroArrayHeader * t116; HERO_NODEBUG HeroArrayHeader * t117; HERO_NODEBUG HeroArrayHeader * t118; HERO_NODEBUG HeroArrayHeader * t119; HERO_NODEBUG HeroArrayHeader * t120; HERO_NODEBUG HeroArrayHeader * t121; HERO_NODEBUG HeroArrayHeader * t122; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/place-store-c5.hero"
 bb0:
 #line 32 "tests/golden/run/place-store-c5.hero"
@@ -543,7 +548,7 @@ bb0:
     hero_print_int(t95);
 #line 67 "tests/golden/run/place-store-c5.hero"
     hero_print_end();
-#line 547 "placestorec5.c"
+#line 552 "placestorec5.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h1_ys);
     hero_array_release_at(&h2_zs);

@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -169,7 +174,7 @@ HERO_STR_STATIC(hero_str_61f72f8, "float as f32: ");
 HERO_STR_STATIC(hero_str_686e1db, "float as f64: ");
 HERO_STR_STATIC(hero_str_61fadc34, "double as f64: ");
 
-#line 173 "fixedbugs144everywiderresultbuilds.c"
+#line 178 "fixedbugs144everywiderresultbuilds.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -211,7 +216,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 215 "fixedbugs144everywiderresultbuilds.c"
+#line 220 "fixedbugs144everywiderresultbuilds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -228,7 +233,7 @@ void h_fixedbugs144everywiderresultbuilds_main(void);
 #line 67 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
 void h_fixedbugs144everywiderresultbuilds_main(void) {
 #line 67 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int16_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG uint16_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG uint32_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG uint64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int8_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int16_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int8_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int16_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int32_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG int16_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG int32_t t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG int32_t t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG int16_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG int32_t t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG uint16_t t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG uint32_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG uint64_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG int32_t t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG uint16_t t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG uint32_t t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG uint64_t t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG uint32_t t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG uint64_t t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG uint64_t t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG uint64_t t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG float t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG double t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG double t88; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int16_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG uint16_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG uint32_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG uint64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int8_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int16_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int8_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int16_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int32_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG int16_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG int32_t t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG int32_t t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG int16_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG int32_t t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG uint16_t t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG uint32_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG uint64_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG int32_t t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG uint16_t t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG uint32_t t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG uint64_t t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG uint32_t t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG uint64_t t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG uint64_t t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG uint64_t t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG float t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG double t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG double t88; HERO_ENTRY_STOP; goto bb0;
 #line 67 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_42cd28);
@@ -629,7 +634,7 @@ bb0:
     hero_print_end();
 #line 111 "tests/golden/run/fixedbugs-144-every-wider-result-builds.hero"
     return;
-#line 633 "fixedbugs144everywiderresultbuilds.c"
+#line 638 "fixedbugs144everywiderresultbuilds.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

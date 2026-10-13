@@ -46,6 +46,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #line 11 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(((BF *)0)->kind) == 1 && sizeof(((BF *)0)->kind) == sizeof(int32_t) && (_Generic(((BF *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field BF kind");
@@ -55,7 +60,7 @@ _Static_assert(__builtin_classify_type(((UNNAMED *)0)->b) == 1 && sizeof(((UNNAM
 #line 16 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(((ZEROW *)0)->a) == 1 && sizeof(((ZEROW *)0)->a) == sizeof(int32_t) && (_Generic(((ZEROW *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZEROW a");
 _Static_assert(__builtin_classify_type(((ZEROW *)0)->b) == 1 && sizeof(((ZEROW *)0)->b) == sizeof(int32_t) && (_Generic(((ZEROW *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field ZEROW b");
-#line 59 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 64 "fixedbugs156recordsbesidebitfieldsbuild.c"
 
 #line 12 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13, "heroes-ffi-union UNNAMED a b");
@@ -63,7 +68,7 @@ _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13, "heroes-ffi-union U
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13 || sizeof(((UNNAMED *)0)->a) == sizeof(UNNAMED), "heroes-ffi-union-narrow UNNAMED a");
 #line 12 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 _Static_assert(__builtin_classify_type(*(UNNAMED *)0) != 13 || sizeof(((UNNAMED *)0)->b) == sizeof(UNNAMED), "heroes-ffi-union-narrow UNNAMED b");
-#line 67 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 72 "fixedbugs156recordsbesidebitfieldsbuild.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -149,7 +154,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 158 "fixedbugs156recordsbesidebitfieldsbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b);
@@ -172,7 +177,7 @@ void h_fixedbugs156recordsbesidebitfieldsbuild_main(void);
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    BF h0_built; UNNAMED h1_u; HERO_NODEBUG BF t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG BF t4; HERO_NODEBUG BF t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG UNNAMED t9; HERO_NODEBUG UNNAMED t10; HERO_NODEBUG UNNAMED t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG UNNAMED t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG ZEROW t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG int32_t t18; goto bb0;
+    BF h0_built; UNNAMED h1_u; HERO_NODEBUG BF t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG BF t4; HERO_NODEBUG BF t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG UNNAMED t9; HERO_NODEBUG UNNAMED t10; HERO_NODEBUG UNNAMED t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG UNNAMED t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG ZEROW t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG int32_t t18; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 bb0:
     t1 = make_bf();
@@ -228,7 +233,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
     return;
-#line 232 "fixedbugs156recordsbesidebitfieldsbuild.c"
+#line 237 "fixedbugs156recordsbesidebitfieldsbuild.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq(const BF *a, const BF *b) {
     hero_panic("h_fixedbugs156recordsbesidebitfieldsbuild_BF_eq: a partial record has no structural equality");

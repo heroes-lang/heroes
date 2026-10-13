@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -87,7 +92,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_4a02223e, "opened");
 HERO_STR_STATIC(hero_str_4414937d, "not reached");
 
-#line 91 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
+#line 96 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -132,7 +137,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
+#line 141 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_H_eq(hh * const *a, hh * const *b);
@@ -151,7 +156,7 @@ void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void);
 #line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
 void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void) {
 #line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hh * h0_a; HERO_NODEBUG hh * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG hh * t3; HERO_NODEBUG HeroStr t4; goto bb0;
+    hh * h0_a; HERO_NODEBUG hh * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG hh * t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
 bb0:
     t1 = p_open();
@@ -170,7 +175,7 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     hero_handle_alive(t3, "the argument `x` of `h_close`");
 #line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t3, "h_close", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t3, "h_close", NULL);
 #line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     (void)h_close(t3);
 #line 19 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
@@ -184,7 +189,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
     return;
-#line 188 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
+#line 193 "fixedbugsareleasethemarkdidnotnameisstoppedbeforec.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

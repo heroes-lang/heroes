@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -47,7 +52,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 51 "fixedbugs382thelargestunsignedelementfits.c"
+#line 56 "fixedbugs382thelargestunsignedelementfits.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -77,7 +82,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 81 "fixedbugs382thelargestunsignedelementfits.c"
+#line 86 "fixedbugs382thelargestunsignedelementfits.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -100,7 +105,7 @@ void h_fixedbugs382thelargestunsignedelementfits_main(void);
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BIG_4, uint64_t, &hero_desc_u64, 3, UINT64_C(18446744073709551615), UINT64_C(0), UINT64_C(9223372036854775808));
 #line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BIG(void) {
-#line 104 "fixedbugs382thelargestunsignedelementfits.c"
+#line 109 "fixedbugs382thelargestunsignedelementfits.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BIG_4);
 }
 #else
@@ -108,7 +113,7 @@ HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BIG(void) {
 #line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BIG(void) {
 #line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG uint64_t t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG uint64_t t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 bb0:
     t1 = UINT64_C(18446744073709551615);
@@ -130,7 +135,7 @@ bb0:
     h0_own0 = t4;
 #line 7 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
     hero_array_decref(t5);
-#line 134 "fixedbugs382thelargestunsignedelementfits.c"
+#line 139 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -142,7 +147,7 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BYTES_4, uint8_t, &hero_desc_u8, 3, UINT64_C(0), UINT64_C(255), UINT64_C(97));
 #line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BYTES(void) {
-#line 146 "fixedbugs382thelargestunsignedelementfits.c"
+#line 151 "fixedbugs382thelargestunsignedelementfits.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_BYTES_4);
 }
 #else
@@ -150,7 +155,7 @@ HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BYTES(void) {
 #line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_BYTES(void) {
 #line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -172,7 +177,7 @@ bb0:
     h0_own0 = t4;
 #line 10 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
     hero_array_decref(t5);
-#line 176 "fixedbugs382thelargestunsignedelementfits.c"
+#line 181 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -184,7 +189,7 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_HALVES_2, uint16_t, &hero_desc_u16, 1, UINT64_C(65535));
 #line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_HALVES(void) {
-#line 188 "fixedbugs382thelargestunsignedelementfits.c"
+#line 193 "fixedbugs382thelargestunsignedelementfits.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_HALVES_2);
 }
 #else
@@ -192,7 +197,7 @@ HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_HALVES(void) {
 #line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_HALVES(void) {
 #line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG uint16_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG uint16_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 bb0:
     t1 = UINT64_C(65535);
@@ -206,7 +211,7 @@ bb0:
     h0_own0 = t2;
 #line 13 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
     hero_array_decref(t3);
-#line 210 "fixedbugs382thelargestunsignedelementfits.c"
+#line 215 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_incref(t2);
     hero_array_release_at(&h0_own0);
     return t2;
@@ -218,7 +223,7 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382thelargestunsignedelementfits_WORDS_3, uint32_t, &hero_desc_u32, 2, UINT64_C(4294967295), UINT64_C(1));
 #line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_WORDS(void) {
-#line 222 "fixedbugs382thelargestunsignedelementfits.c"
+#line 227 "fixedbugs382thelargestunsignedelementfits.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382thelargestunsignedelementfits_WORDS_3);
 }
 #else
@@ -226,7 +231,7 @@ HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_WORDS(void) {
 #line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 HeroArrayHeader * h_fixedbugs382thelargestunsignedelementfits_WORDS(void) {
 #line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG uint32_t t1; HERO_NODEBUG uint32_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG uint32_t t1; HERO_NODEBUG uint32_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 bb0:
     t1 = UINT64_C(4294967295);
@@ -244,7 +249,7 @@ bb0:
     h0_own0 = t3;
 #line 16 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
     hero_array_decref(t4);
-#line 248 "fixedbugs382thelargestunsignedelementfits.c"
+#line 253 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_incref(t3);
     hero_array_release_at(&h0_own0);
     return t3;
@@ -254,7 +259,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 void h_fixedbugs382thelargestunsignedelementfits_main(void) {
 #line 18 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG uint64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG uint64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG uint64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG uint64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG uint8_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG uint16_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG uint32_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG uint32_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG uint64_t t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG HeroArrayHeader * t62; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG uint64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG uint64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG uint64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG uint64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG uint8_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG uint16_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG uint32_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG uint32_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG uint64_t t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
 bb0:
     t1 = h_fixedbugs382thelargestunsignedelementfits_BIG();
@@ -478,7 +483,7 @@ bb0:
     hero_print_int(t48);
 #line 21 "tests/golden/run/fixedbugs-382-the-largest-unsigned-element-fits.hero"
     hero_print_end();
-#line 482 "fixedbugs382thelargestunsignedelementfits.c"
+#line 487 "fixedbugs382thelargestunsignedelementfits.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);

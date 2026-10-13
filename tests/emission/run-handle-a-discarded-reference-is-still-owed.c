@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -88,7 +93,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 92 "handleadiscardedreferenceisstillowed.c"
+#line 97 "handleadiscardedreferenceisstillowed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -134,7 +139,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 138 "handleadiscardedreferenceisstillowed.c"
+#line 143 "handleadiscardedreferenceisstillowed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b);
@@ -153,7 +158,7 @@ void h_handleadiscardedreferenceisstillowed_main(void);
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 void h_handleadiscardedreferenceisstillowed_main(void) {
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    ob * h0_a; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG HeroStr t4; HERO_NODEBUG ob * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG ob * t7; HERO_NODEBUG ob * t8; HERO_NODEBUG HeroStr t9; goto bb0;
+    ob * h0_a; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG HeroStr t4; HERO_NODEBUG ob * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG ob * t7; HERO_NODEBUG ob * t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 bb0:
     t1 = ob_new();
@@ -167,7 +172,7 @@ bb0:
 #line 15 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     {
 #line 15 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    __typeof__(ob_get(t2)) hero_when = ob_get(t2);
+    HERO_NODEBUG __typeof__(ob_get(t2)) hero_when = ob_get(t2);
 #line 15 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     hero_handle_retained(hero_when, "ob_put", 0);
 #line 15 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
@@ -191,7 +196,7 @@ bb0:
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     hero_handle_alive(t7, "the argument `o` of `ob_put`");
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t7, "ob_put", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t7, "ob_put", NULL);
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     (void)ob_put(t7);
 #line 17 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
@@ -204,7 +209,7 @@ bb0:
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     hero_handle_alive(t8, "the argument `o` of `ob_put`");
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t8, "ob_put", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t8, "ob_put", NULL);
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     (void)ob_put(t8);
 #line 18 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
@@ -218,7 +223,7 @@ bb0:
     hero_print_end();
 #line 19 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
     return;
-#line 222 "handleadiscardedreferenceisstillowed.c"
+#line 227 "handleadiscardedreferenceisstillowed.c"
 }
 HERO_TU_LOCAL bool h_handleadiscardedreferenceisstillowed_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

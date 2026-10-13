@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -56,7 +61,7 @@ HERO_STR_STATIC(hero_str_a, "\n");
 HERO_STR_STATIC(hero_str_4e2cb1e5, "at_end");
 HERO_STR_STATIC(hero_str_702e6a8f, "the reader is past its last line");
 
-#line 60 "main.c"
+#line 65 "main.c"
 typedef struct h_readsource_Reader {
     HeroArrayHeader * f_lines;
     int64_t f_at;
@@ -95,7 +100,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 99 "main.c"
+#line 104 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_readsource_Reader_retain(const h_readsource_Reader *v);
@@ -130,7 +135,7 @@ int64_t h_writesource_count(h_writesource_Sink h0_s);
 #line 34 "examples/pipeline/main.hero"
 HeroStr h_main_report(HeroStr h0_text) {
 #line 34 "examples/pipeline/main.hero"
-    h_readsource_Reader h1_r = {0}; h_writesource_Sink h2_s = {0}; int64_t h3_longest; int64_t h4_lines; HeroStr h5_heading = {0}; h_0opt_f87774a h6_one = {0}; HERO_NODEBUG h_0opt_f87774a h7_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h8_f1 = {0}; HeroStr h9_row = {0}; HERO_NODEBUG bool h10_b0; HERO_NODEBUG h_readsource_Reader h11_own11 = {0}; HERO_NODEBUG h_writesource_Sink h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_readsource_Reader t2; HERO_NODEBUG h_writesource_Sink t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG bool t37; HERO_NODEBUG bool t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG bool t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_writesource_Sink t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG h_readsource_Reader t58; HERO_NODEBUG h_readsource_Reader t59; HERO_NODEBUG h_writesource_Sink t60; HERO_NODEBUG h_writesource_Sink t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_0opt_f87774a t63; HERO_NODEBUG h_0opt_f87774a t64; HERO_NODEBUG h_0opt_f87774a t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; goto bb0;
+    h_readsource_Reader h1_r = {0}; h_writesource_Sink h2_s = {0}; int64_t h3_longest; int64_t h4_lines; HeroStr h5_heading = {0}; h_0opt_f87774a h6_one = {0}; HERO_NODEBUG h_0opt_f87774a h7_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h8_f1 = {0}; HeroStr h9_row = {0}; HERO_NODEBUG bool h10_b0; HERO_NODEBUG h_readsource_Reader h11_own11 = {0}; HERO_NODEBUG h_writesource_Sink h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_readsource_Reader t2; HERO_NODEBUG h_writesource_Sink t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG bool t37; HERO_NODEBUG bool t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG bool t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_writesource_Sink t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG h_readsource_Reader t58; HERO_NODEBUG h_readsource_Reader t59; HERO_NODEBUG h_writesource_Sink t60; HERO_NODEBUG h_writesource_Sink t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_0opt_f87774a t63; HERO_NODEBUG h_0opt_f87774a t64; HERO_NODEBUG h_0opt_f87774a t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_ENTRY_STOP; goto bb0;
 #line 34 "examples/pipeline/main.hero"
 bb0:
     t1 = h0_text;
@@ -347,7 +352,7 @@ bb8:
     t19 = h8_f1;
 #line 47 "examples/pipeline/main.hero"
     t20 = t19.as.err;
-#line 351 "main.c"
+#line 356 "main.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb9:
@@ -426,7 +431,7 @@ bb17:
     h18_own18 = t57;
 #line 64 "examples/pipeline/main.hero"
     hero_str_decref(t73);
-#line 430 "main.c"
+#line 435 "main.c"
     hero_str_incref(t57);
     h_readsource_Reader_release(hero_slot_escape(&h1_r));
     h_writesource_Sink_release(hero_slot_escape(&h2_s));
@@ -470,13 +475,13 @@ bb19:
     h_writesource_emit(&h2_s, t55);
 #line 62 "examples/pipeline/main.hero"
     goto bb17;
-#line 474 "main.c"
+#line 479 "main.c"
 }
 
 #line 68 "examples/pipeline/main.hero"
 bool h_main_looks_like_heading(HeroStr h0_row) {
 #line 68 "examples/pipeline/main.hero"
-    HeroStr h1_first = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_ch = {0}; HERO_NODEBUG bool h5_ret0; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG bool t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; goto bb0;
+    HeroStr h1_first = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_ch = {0}; HERO_NODEBUG bool h5_ret0; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG bool t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_ENTRY_STOP; goto bb0;
 #line 68 "examples/pipeline/main.hero"
 bb0:
     t1 = h0_row;
@@ -621,7 +626,7 @@ bb10:
     goto bb8;
 #line 75 "examples/pipeline/main.hero"
 bb11:
-#line 625 "main.c"
+#line 630 "main.c"
     t28 = h5_ret0;
     hero_str_release_at(&h1_first);
     hero_array_release_at(&h2_xs0);
@@ -633,11 +638,11 @@ bb11:
 #line 82 "examples/pipeline/main.hero"
 HeroStr h_main_SAMPLE(void) {
 #line 82 "examples/pipeline/main.hero"
-    HERO_NODEBUG HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 82 "examples/pipeline/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_663ae3de);
-#line 641 "main.c"
+#line 646 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -645,7 +650,7 @@ bb0:
 #line 85 "examples/pipeline/main.hero"
 void h_main_main(void) {
 #line 85 "examples/pipeline/main.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_ENTRY_STOP; goto bb0;
 #line 85 "examples/pipeline/main.hero"
 bb0:
     t1 = h_main_SAMPLE();
@@ -680,7 +685,7 @@ bb0:
     hero_print_str(t4);
 #line 87 "examples/pipeline/main.hero"
     hero_print_end();
-#line 684 "main.c"
+#line 689 "main.c"
     hero_str_release_at(&h0_own0);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -690,7 +695,7 @@ bb0:
 #line 12 "examples/pipeline/read/source.hero"
 h_readsource_Reader h_readsource_new_reader(HeroStr h0_text) {
 #line 12 "examples/pipeline/read/source.hero"
-    HeroArrayHeader * h1_rows = {0}; HeroStr h2_piece = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_ch = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_readsource_Reader h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_readsource_Reader t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_readsource_Reader t45; goto bb0;
+    HeroArrayHeader * h1_rows = {0}; HeroStr h2_piece = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_ch = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_readsource_Reader h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_readsource_Reader t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_readsource_Reader t45; HERO_ENTRY_STOP; goto bb0;
 #line 12 "examples/pipeline/read/source.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -861,7 +866,7 @@ bb8:
     h9_own9 = t35;
 #line 26 "examples/pipeline/read/source.hero"
     h_readsource_Reader_release(&t45);
-#line 865 "main.c"
+#line 870 "main.c"
     h_readsource_Reader_retain(&t35);
     hero_array_release_at(&h1_rows);
     hero_str_release_at(&h2_piece);
@@ -883,13 +888,13 @@ bb9:
 bb10:
 #line 24 "examples/pipeline/read/source.hero"
     goto bb8;
-#line 887 "main.c"
+#line 892 "main.c"
 }
 
 #line 30 "examples/pipeline/read/source.hero"
 h_0opt_f87774a h_readsource_next_line(h_readsource_Reader *ph0_r) {
 #line 30 "examples/pipeline/read/source.hero"
-    HeroStr h1_one = {0}; HERO_NODEBUG h_0opt_f87774a h2_ret0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG h_readsource_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_readsource_Reader t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_readsource_Reader t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG h_readsource_Reader t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_readsource_Reader t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_0opt_f87774a t23; HERO_NODEBUG h_0opt_f87774a t24; goto bb0;
+    HeroStr h1_one = {0}; HERO_NODEBUG h_0opt_f87774a h2_ret0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG h_readsource_Reader t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_readsource_Reader t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_readsource_Reader t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG h_readsource_Reader t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_readsource_Reader t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_0opt_f87774a t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_ENTRY_STOP; goto bb0;
 #line 30 "examples/pipeline/read/source.hero"
 bb0:
     t1 = (*ph0_r);
@@ -977,7 +982,7 @@ bb3:
     goto bb1;
 #line 32 "examples/pipeline/read/source.hero"
 bb4:
-#line 981 "main.c"
+#line 986 "main.c"
     t21 = h2_ret0;
     h_0opt_f87774a_retain(&t21);
     hero_str_release_at(&h1_one);
@@ -989,7 +994,7 @@ bb4:
 #line 37 "examples/pipeline/read/source.hero"
 int64_t h_readsource_remaining(h_readsource_Reader h0_r) {
 #line 37 "examples/pipeline/read/source.hero"
-    HERO_NODEBUG h_readsource_Reader t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_readsource_Reader t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
+    HERO_NODEBUG h_readsource_Reader t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_readsource_Reader t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 37 "examples/pipeline/read/source.hero"
 bb0:
     t1 = h0_r;
@@ -1005,13 +1010,13 @@ bb0:
     if (__builtin_sub_overflow(t3, t5, &t6)) hero_panic_overflow();
 #line 38 "examples/pipeline/read/source.hero"
     return t6;
-#line 1009 "main.c"
+#line 1014 "main.c"
 }
 
 #line 13 "examples/pipeline/write/source.hero"
 h_writesource_Sink h_writesource_new_sink(void) {
 #line 13 "examples/pipeline/write/source.hero"
-    HeroArrayHeader * h0_empty = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG h_writesource_Sink h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_writesource_Sink t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG h_writesource_Sink t6; goto bb0;
+    HeroArrayHeader * h0_empty = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG h_writesource_Sink h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_writesource_Sink t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG h_writesource_Sink t6; HERO_ENTRY_STOP; goto bb0;
 #line 13 "examples/pipeline/write/source.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1040,7 +1045,7 @@ bb0:
     h2_own2 = t3;
 #line 15 "examples/pipeline/write/source.hero"
     h_writesource_Sink_release(&t6);
-#line 1044 "main.c"
+#line 1049 "main.c"
     h_writesource_Sink_retain(&t3);
     hero_array_release_at(&h0_empty);
     hero_array_release_at(&h1_own1);
@@ -1051,7 +1056,7 @@ bb0:
 #line 17 "examples/pipeline/write/source.hero"
 void h_writesource_emit(h_writesource_Sink *ph0_s, HeroStr h1_row) {
 #line 17 "examples/pipeline/write/source.hero"
-    HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG h_writesource_Sink t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG h_writesource_Sink t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_ENTRY_STOP; goto bb0;
 #line 17 "examples/pipeline/write/source.hero"
 bb0:
     t1 = (*ph0_s);
@@ -1075,7 +1080,7 @@ bb0:
     (*ph0_s).f_rows = t4;
 #line 18 "examples/pipeline/write/source.hero"
     hero_array_decref(t6);
-#line 1079 "main.c"
+#line 1084 "main.c"
     hero_array_release_at(&h2_own2);
     return;
 }
@@ -1083,7 +1088,7 @@ bb0:
 #line 20 "examples/pipeline/write/source.hero"
 HeroStr h_writesource_rendered(h_writesource_Sink h0_s) {
 #line 20 "examples/pipeline/write/source.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_writesource_Sink t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_writesource_Sink t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
 #line 20 "examples/pipeline/write/source.hero"
 bb0:
     t1 = h0_s;
@@ -1099,7 +1104,7 @@ bb0:
     h1_own1 = t4;
 #line 21 "examples/pipeline/write/source.hero"
     hero_str_decref(t5);
-#line 1103 "main.c"
+#line 1108 "main.c"
     hero_str_incref(t4);
     hero_str_release_at(&h1_own1);
     return t4;
@@ -1108,7 +1113,7 @@ bb0:
 #line 23 "examples/pipeline/write/source.hero"
 int64_t h_writesource_count(h_writesource_Sink h0_s) {
 #line 23 "examples/pipeline/write/source.hero"
-    HERO_NODEBUG h_writesource_Sink t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; goto bb0;
+    HERO_NODEBUG h_writesource_Sink t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 23 "examples/pipeline/write/source.hero"
 bb0:
     t1 = h0_s;
@@ -1118,7 +1123,7 @@ bb0:
     t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len);
 #line 24 "examples/pipeline/write/source.hero"
     return t3;
-#line 1122 "main.c"
+#line 1127 "main.c"
 }
 HERO_TU_LOCAL void h_readsource_Reader_retain(const h_readsource_Reader *v) {
     hero_array_incref(v->f_lines);

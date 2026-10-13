@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 54 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 typedef void (*h_0fn_47d100e5)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -76,7 +81,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 85 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +101,7 @@ void h_library_exit(int64_t h0_code);
 #line 8 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_stop_at_three(int64_t h0_n) {
 #line 8 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 bb0:
     t1 = h0_n;
@@ -130,13 +135,13 @@ bb2:
 bb3:
 #line 10 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     goto bb1;
-#line 134 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 139 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 }
 
 #line 13 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_turn(int64_t h0_n, h_0fn_47d100e5 h1_act) {
 #line 13 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
-    HERO_NODEBUG h_0fn_47d100e5 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0fn_47d100e5 t6; goto bb0;
+    HERO_NODEBUG h_0fn_47d100e5 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0fn_47d100e5 t6; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 bb0:
     t1 = h1_act;
@@ -155,13 +160,13 @@ bb0:
     h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_turn(t5, t6);
 #line 15 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     return;
-#line 159 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 164 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_main(void) {
 #line 17 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_47d100e5 t2; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_47d100e5 t2; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
 bb0:
     t1 = INT64_C(0);
@@ -171,13 +176,13 @@ bb0:
     h_fixedbugs507aloopendedbyacallbacksexitbuildssilently_turn(t1, t2);
 #line 18 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callback-s-exit-builds-silently.hero"
     return;
-#line 175 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 180 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 }
 
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
 #line 227 "<heroes library>"
-    HERO_NODEBUG int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 227 "<heroes library>"
 bb0:
     t1 = h0_code;
@@ -185,7 +190,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 189 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
+#line 194 "fixedbugs507aloopendedbyacallbacksexitbuildssilently.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -84,7 +89,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 88 "fixedbugs396anextentaboveapageaborts.c"
+#line 93 "fixedbugs396anextentaboveapageaborts.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -128,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "fixedbugs396anextentaboveapageaborts.c"
+#line 137 "fixedbugs396anextentaboveapageaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -145,7 +150,7 @@ void h_fixedbugs396anextentaboveapageaborts_main(void);
 #line 9 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
 void h_fixedbugs396anextentaboveapageaborts_main(void) {
 #line 9 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
-    HeroArrayHeader * h0_buf = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; goto bb0;
+    HeroArrayHeader * h0_buf = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_u8, 1);
@@ -174,9 +179,9 @@ bb0:
 #line 12 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer fill_one_more buf 438 441 u8 void *");
 #line 12 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
-    int64_t hero_lend_e1_0 = hero_lend_count_u64((uint64_t)(t3), "fill_one_more", "buf");
+    HERO_NODEBUG int64_t hero_lend_e1_0 = hero_lend_count_u64((uint64_t)(t3), "fill_one_more", "buf");
 #line 12 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
-    void *hero_lend_b1_0 = hero_lend_take(h0_buf, hero_lend_e1_0, "fill_one_more", "buf");
+    HERO_NODEBUG void *hero_lend_b1_0 = hero_lend_take(h0_buf, hero_lend_e1_0, "fill_one_more", "buf");
 #line 12 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     t4 = fill_one_more((void *)hero_lend_b1_0, t3);
 #line 12 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
@@ -198,7 +203,7 @@ bb0:
     hero_print_int(t7);
 #line 13 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
     hero_print_end();
-#line 202 "fixedbugs396anextentaboveapageaborts.c"
+#line 207 "fixedbugs396anextentaboveapageaborts.c"
     hero_array_release_at(&h0_buf);
     hero_array_release_at(&h1_own1);
     return;

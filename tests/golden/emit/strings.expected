@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +54,7 @@ HERO_STR_STATIC(hero_str_1b7183, "hi ");
 HERO_STR_STATIC(hero_str_2d678ad8, "good day ");
 HERO_STR_STATIC(hero_str_39ff1ae6, "Ziggy");
 
-#line 53 "strings.c"
+#line 58 "strings.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -79,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 83 "strings.c"
+#line 88 "strings.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -97,7 +102,7 @@ void h_strings_main(void);
 #line 7 "tests/golden/emit/strings.hero"
 HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
 #line 7 "tests/golden/emit/strings.hero"
-    HeroStr h2_prefix = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; goto bb0;
+    HeroStr h2_prefix = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/emit/strings.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1b7183);
@@ -127,7 +132,7 @@ bb1:
     h3_own3 = t6;
 #line 12 "tests/golden/emit/strings.hero"
     hero_str_decref(t8);
-#line 131 "strings.c"
+#line 136 "strings.c"
     hero_str_incref(t6);
     hero_str_release_at(&h2_prefix);
     hero_str_release_at(&h3_own3);
@@ -149,13 +154,13 @@ bb2:
 bb3:
 #line 11 "tests/golden/emit/strings.hero"
     goto bb1;
-#line 153 "strings.c"
+#line 158 "strings.c"
 }
 
 #line 14 "tests/golden/emit/strings.hero"
 void h_strings_main(void) {
 #line 14 "tests/golden/emit/strings.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/emit/strings.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_39ff1ae6);
@@ -173,7 +178,7 @@ bb0:
     hero_print_str(t3);
 #line 15 "tests/golden/emit/strings.hero"
     hero_print_end();
-#line 177 "strings.c"
+#line 182 "strings.c"
     hero_str_release_at(&h0_own0);
     return;
 }

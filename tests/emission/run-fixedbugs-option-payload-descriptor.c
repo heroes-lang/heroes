@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -48,7 +53,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_edaa230, "none");
 HERO_STR_STATIC(hero_str_6e, "n");
 
-#line 52 "fixedbugsoptionpayloaddescriptor.c"
+#line 57 "fixedbugsoptionpayloaddescriptor.c"
 typedef struct h_fixedbugsoptionpayloaddescriptor_Block {
     int64_t f_n;
 } h_fixedbugsoptionpayloaddescriptor_Block;
@@ -110,7 +115,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 114 "fixedbugsoptionpayloaddescriptor.c"
+#line 119 "fixedbugsoptionpayloaddescriptor.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsoptionpayloaddescriptor_Block_eq(const h_fixedbugsoptionpayloaddescriptor_Block *a, const h_fixedbugsoptionpayloaddescriptor_Block *b);
@@ -180,7 +185,7 @@ void h_fixedbugsoptionpayloaddescriptor_main(void);
 #line 29 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
 void h_fixedbugsoptionpayloaddescriptor_main(void) {
 #line 29 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
-    h_fixedbugsoptionpayloaddescriptor_Node h0_a = {0}; h_fixedbugsoptionpayloaddescriptor_Node h1_b = {0}; h_fixedbugsoptionpayloaddescriptor_Held h2_h = {0}; h_fixedbugsoptionpayloaddescriptor_Held h3_g = {0}; h_fixedbugsoptionpayloaddescriptor_Node h4_c = {0}; h_fixedbugsoptionpayloaddescriptor_Node h5_d = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node h6_own6 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node h7_own7 = {0}; HERO_NODEBUG h_0opt_4dbf93f0 h8_own8 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held h9_own9 = {0}; HERO_NODEBUG h_0opt_4dbf93f0 h10_own10 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held h11_own11 = {0}; HERO_NODEBUG h_0opt_4dbf93f0 h12_own12 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node h13_own13 = {0}; HERO_NODEBUG h_0opt_4dbf93f0 h14_own14 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node h15_own15 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t1; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t2; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t3; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_4dbf93f0 t8; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_4dbf93f0 t12; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t13; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t14; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Block t18; HERO_NODEBUG h_0opt_4dbf93f0 t19; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Block t22; HERO_NODEBUG h_0opt_4dbf93f0 t23; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t24; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t25; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t28; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t29; HERO_NODEBUG bool t30; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t31; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t32; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t33; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t34; HERO_NODEBUG h_0opt_4dbf93f0 t35; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t36; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t37; HERO_NODEBUG h_0opt_4dbf93f0 t38; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t39; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t40; HERO_NODEBUG h_0opt_4dbf93f0 t41; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t42; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t43; HERO_NODEBUG h_0opt_4dbf93f0 t44; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t45; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t46; goto bb0;
+    h_fixedbugsoptionpayloaddescriptor_Node h0_a = {0}; h_fixedbugsoptionpayloaddescriptor_Node h1_b = {0}; h_fixedbugsoptionpayloaddescriptor_Held h2_h = {0}; h_fixedbugsoptionpayloaddescriptor_Held h3_g = {0}; h_fixedbugsoptionpayloaddescriptor_Node h4_c = {0}; h_fixedbugsoptionpayloaddescriptor_Node h5_d = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node h6_own6 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node h7_own7 = {0}; HERO_NODEBUG h_0opt_4dbf93f0 h8_own8 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held h9_own9 = {0}; HERO_NODEBUG h_0opt_4dbf93f0 h10_own10 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held h11_own11 = {0}; HERO_NODEBUG h_0opt_4dbf93f0 h12_own12 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node h13_own13 = {0}; HERO_NODEBUG h_0opt_4dbf93f0 h14_own14 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node h15_own15 = {0}; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t1; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t2; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t3; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_4dbf93f0 t8; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_4dbf93f0 t12; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t13; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t14; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Block t18; HERO_NODEBUG h_0opt_4dbf93f0 t19; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Block t22; HERO_NODEBUG h_0opt_4dbf93f0 t23; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t24; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t25; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t28; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t29; HERO_NODEBUG bool t30; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t31; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t32; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t33; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t34; HERO_NODEBUG h_0opt_4dbf93f0 t35; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t36; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t37; HERO_NODEBUG h_0opt_4dbf93f0 t38; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t39; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Held t40; HERO_NODEBUG h_0opt_4dbf93f0 t41; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t42; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t43; HERO_NODEBUG h_0opt_4dbf93f0 t44; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t45; HERO_NODEBUG h_fixedbugsoptionpayloaddescriptor_Node t46; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
 bb0:
     t1 = (h_fixedbugsoptionpayloaddescriptor_Node){.tag = h_fixedbugsoptionpayloaddescriptor_Node_tag_leaf};
@@ -375,7 +380,7 @@ bb0:
     hero_print_bool(t30);
 #line 43 "tests/golden/run/fixedbugs-option-payload-descriptor.hero"
     hero_print_end();
-#line 379 "fixedbugsoptionpayloaddescriptor.c"
+#line 384 "fixedbugsoptionpayloaddescriptor.c"
     h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h0_a));
     h_fixedbugsoptionpayloaddescriptor_Node_release(hero_slot_escape(&h1_b));
     h_fixedbugsoptionpayloaddescriptor_Held_release(hero_slot_escape(&h2_h));

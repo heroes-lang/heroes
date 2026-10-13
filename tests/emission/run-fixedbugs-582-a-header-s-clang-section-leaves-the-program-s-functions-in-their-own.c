@@ -44,6 +44,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -81,7 +86,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 85 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 90 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 typedef struct h_fixedbugs582pair_Pair {
     uint8_t f_a;
     int64_t f_b;
@@ -161,7 +166,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 165 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 170 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs582pair_Pair_eq(const h_fixedbugs582pair_Pair *a, const h_fixedbugs582pair_Pair *b);
@@ -194,7 +199,7 @@ int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s);
 #line 13 "tests/golden/run/fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero"
 void h_fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown_main(void) {
 #line 13 "tests/golden/run/fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_NODEBUG int64_t t4; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero"
 bb0:
     t1 = INT64_C(-42);
@@ -210,13 +215,13 @@ bb0:
     hero_print_end();
 #line 14 "tests/golden/run/fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero"
     return;
-#line 214 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 219 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Pair h_fixedbugs582pair_make(int64_t h0_n) {
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; goto bb0;
+    HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = UINT64_C(1);
@@ -226,13 +231,13 @@ bb0:
     t3 = (h_fixedbugs582pair_Pair){.f_a = t1, .f_b = t2};
 #line 18 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 230 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 235 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_second(h_fixedbugs582pair_Pair h0_p) {
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG h_fixedbugs582pair_Pair t1; HERO_NODEBUG int64_t t2; goto bb0;
+    HERO_NODEBUG h_fixedbugs582pair_Pair t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_p;
@@ -240,13 +245,13 @@ bb0:
     t2 = t1.f_b;
 #line 21 "tests/golden/run/fixedbugs582/pair.hero"
     return t2;
-#line 244 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 249 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) {
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_n;
@@ -256,13 +261,13 @@ bb0:
     t3 = (h_fixedbugs582pair_Shape){.tag = h_fixedbugs582pair_Shape_tag_rect, .as.c_rect = {.f_w = t1, .f_h = t2}};
 #line 24 "tests/golden/run/fixedbugs582/pair.hero"
     return t3;
-#line 260 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 265 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) {
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_fixedbugs582pair_Shape t1; HERO_NODEBUG h_fixedbugs582pair_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs582pair_Shape t5; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugs582pair_Shape t18; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t19; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; goto bb0;
+    HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_fixedbugs582pair_Shape t1; HERO_NODEBUG h_fixedbugs582pair_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs582pair_Shape t5; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugs582pair_Shape t18; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t19; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_s;
@@ -365,7 +370,7 @@ bb6:
     t14 = h3_f0;
 #line 29 "tests/golden/run/fixedbugs582/pair.hero"
     t15 = t14.as.err;
-#line 369 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
+#line 374 "fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown.c"
     hero_panic_must(t15);
     hero_unreachable();
 bb7:

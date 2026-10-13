@@ -45,6 +45,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -90,7 +95,7 @@ HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_2731e935, "null: ");
 HERO_STR_STATIC(hero_str_3043d2a7, "after: ");
 
-#line 94 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 99 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -135,7 +140,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 144 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b);
@@ -154,7 +159,7 @@ void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void);
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) {
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    outer * h0_a; outer * h1_kept; outer * h2_b; HERO_NODEBUG outer * t1; HERO_NODEBUG outer * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG outer * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG outer * t6; HERO_NODEBUG outer * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG outer * t9; HERO_NODEBUG outer * t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG outer * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG outer * t15; goto bb0;
+    outer * h0_a; outer * h1_kept; outer * h2_b; HERO_NODEBUG outer * t1; HERO_NODEBUG outer * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG outer * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG outer * t6; HERO_NODEBUG outer * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG outer * t9; HERO_NODEBUG outer * t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG outer * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG outer * t15; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 bb0:
     t1 = make();
@@ -184,7 +189,7 @@ bb0:
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     hero_handle_alive(t6, "the argument `o` of `release`");
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t6, "release", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t6, "release", NULL);
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     (void)release(t6);
 #line 28 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
@@ -228,7 +233,7 @@ bb0:
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     hero_handle_alive(t15, "the argument `o` of `release`");
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    uint64_t hero_life_0_0 = hero_handle_ending(t15, "release", NULL);
+    HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending(t15, "release", NULL);
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     (void)release(t15);
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
@@ -237,7 +242,7 @@ bb0:
     }
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     return;
-#line 241 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 246 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

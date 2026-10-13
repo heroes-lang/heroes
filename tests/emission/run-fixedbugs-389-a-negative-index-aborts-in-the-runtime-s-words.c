@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -45,7 +50,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 49 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
+#line 54 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -75,7 +80,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 79 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
+#line 84 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -92,7 +97,7 @@ void h_fixedbugs389anegativeindexabortsintheruntimeswords_main(void);
 #line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
 void h_fixedbugs389anegativeindexabortsintheruntimeswords_main(void) {
 #line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
-    HeroArrayHeader * h0_xs = {0}; int64_t h1_at; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; int64_t h1_at; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
 bb0:
     t1 = INT64_C(10);
@@ -147,7 +152,7 @@ bb0:
     hero_print_int(t13);
 #line 9 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 151 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
+#line 156 "fixedbugs389anegativeindexabortsintheruntimeswords.c"
     hero_array_release_at(&h0_xs);
     hero_array_release_at(&h2_own2);
     return;

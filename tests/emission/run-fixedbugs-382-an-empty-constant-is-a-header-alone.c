@@ -9,6 +9,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -50,7 +55,7 @@ HERO_STR_STATIC(hero_str_2c, ",");
 HERO_STR_STATIC(hero_str_7c, "|");
 HERO_STR_STATIC(hero_str_eb4ac31, "mars");
 
-#line 54 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 59 "fixedbugs382anemptyconstantisaheaderalone.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -80,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 84 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 89 "fixedbugs382anemptyconstantisaheaderalone.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -102,7 +107,7 @@ void h_fixedbugs382anemptyconstantisaheaderalone_main(void);
 HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NONE_1, &hero_desc_int);
 #line 7 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NONE(void) {
-#line 106 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 111 "fixedbugs382anemptyconstantisaheaderalone.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NONE_1);
 }
 #else
@@ -110,7 +115,7 @@ HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NONE(void) {
 #line 7 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NONE(void) {
 #line 7 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -120,7 +125,7 @@ bb0:
     h0_own0 = t1;
 #line 8 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t2);
-#line 124 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 129 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t1);
     hero_array_release_at(&h0_own0);
     return t1;
@@ -132,7 +137,7 @@ bb0:
 HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS_1, &hero_desc_str);
 #line 10 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(void) {
-#line 136 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 141 "fixedbugs382anemptyconstantisaheaderalone.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS_1);
 }
 #else
@@ -140,7 +145,7 @@ HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(void) {
 #line 10 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_NO_WORDS(void) {
 #line 10 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -150,7 +155,7 @@ bb0:
     h0_own0 = t1;
 #line 11 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t2);
-#line 154 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 159 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t1);
     hero_array_release_at(&h0_own0);
     return t1;
@@ -164,7 +169,7 @@ HERO_ARRAY_STATIC_EMPTY(hero_constant_h_fixedbugs382anemptyconstantisaheaderalon
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_2, HeroArrayHeader *, &hero_desc_array, 1, HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_1));
 #line 13 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(void) {
-#line 168 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 173 "fixedbugs382anemptyconstantisaheaderalone.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW_2);
 }
 #else
@@ -172,7 +177,7 @@ HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(void) {
 #line 13 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 HeroArrayHeader * h_fixedbugs382anemptyconstantisaheaderalone_HOLLOW(void) {
 #line 13 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -192,7 +197,7 @@ bb0:
     h1_own1 = t2;
 #line 14 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_array_decref(t4);
-#line 196 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 201 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_incref(t2);
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
@@ -203,7 +208,7 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 void h_fixedbugs382anemptyconstantisaheaderalone_main(void) {
 #line 16 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
-    int64_t h0_walked; HERO_NODEBUG HeroArrayHeader * h1_xs0 = {0}; HERO_NODEBUG int64_t h2_i0; int64_t h3_x; HeroArrayHeader * h4_xs = {0}; HeroArrayHeader * h5_words = {0}; HeroArrayHeader * h6_deep = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * h23_own23 = {0}; HERO_NODEBUG HeroArrayHeader * h24_own24 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG bool t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG bool t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG HeroArrayHeader * t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroArrayHeader * t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG HeroArrayHeader * t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG HeroArrayHeader * t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG HeroArrayHeader * t98; HERO_NODEBUG HeroArrayHeader * t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG HeroArrayHeader * t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG HeroArrayHeader * t104; goto bb0;
+    int64_t h0_walked; HERO_NODEBUG HeroArrayHeader * h1_xs0 = {0}; HERO_NODEBUG int64_t h2_i0; int64_t h3_x; HeroArrayHeader * h4_xs = {0}; HeroArrayHeader * h5_words = {0}; HeroArrayHeader * h6_deep = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * h23_own23 = {0}; HERO_NODEBUG HeroArrayHeader * h24_own24 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG bool t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG bool t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG HeroArrayHeader * t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroArrayHeader * t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG HeroArrayHeader * t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG HeroArrayHeader * t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG HeroArrayHeader * t98; HERO_NODEBUG HeroArrayHeader * t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG HeroArrayHeader * t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG HeroArrayHeader * t104; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
 bb0:
     t1 = INT64_C(0);
@@ -582,7 +587,7 @@ bb4:
     hero_print_int(t82);
 #line 30 "tests/golden/run/fixedbugs-382-an-empty-constant-is-a-header-alone.hero"
     hero_print_end();
-#line 586 "fixedbugs382anemptyconstantisaheaderalone.c"
+#line 591 "fixedbugs382anemptyconstantisaheaderalone.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_xs);
     hero_array_release_at(&h5_words);

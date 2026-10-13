@@ -44,15 +44,20 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
 #define HERO_NODEBUG __attribute__((nodebug))
+#ifdef __OPTIMIZE__
+#define HERO_ENTRY_STOP ((void)0)
+#else
+#define HERO_ENTRY_STOP __asm__ volatile("nop")
+#endif
 
 #line 19 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 _Static_assert(__builtin_classify_type(((struct keeper *)0)->self) == 5 && _Generic(((struct keeper *)0)->self, __typeof__(((struct keeper *)0)->self): 1, default: 0) && sizeof(((struct keeper *)0)->self) == sizeof(void *), "heroes-ffi-field Keeper self");
 _Static_assert(__builtin_classify_type(((struct keeper *)0)->count) == 1 && sizeof(((struct keeper *)0)->count) == sizeof(int64_t) && (_Generic(((struct keeper *)0)->count, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Keeper count");
-#line 52 "fixedbugs396alocallentinplaceisguarded.c"
+#line 57 "fixedbugs396alocallentinplaceisguarded.c"
 
 #line 18 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 _Static_assert(__builtin_classify_type(*(struct keeper *)0) != 13, "heroes-ffi-union Keeper self count");
-#line 56 "fixedbugs396alocallentinplaceisguarded.c"
+#line 61 "fixedbugs396alocallentinplaceisguarded.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -171,7 +176,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 175 "fixedbugs396alocallentinplaceisguarded.c"
+#line 180 "fixedbugs396alocallentinplaceisguarded.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396alocallentinplaceisguarded_Keeper_eq(const struct keeper *a, const struct keeper *b);
@@ -217,7 +222,7 @@ void h_fixedbugs396alocallentinplaceisguarded_inner(void) {
 #line 32 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 #define h0_y (*hero_lend_h0_y)
 #line 32 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    hero_thread_guard("fixedbugs396alocallentinplaceisguarded.inner"); int32_t *const hero_lend_h0_y = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.inner", "y"); HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int32_t t4; goto bb0;
+    hero_thread_guard("fixedbugs396alocallentinplaceisguarded.inner"); int32_t *const hero_lend_h0_y = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.inner", "y"); HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int32_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb0:
     t1 = INT64_C(0);
@@ -241,7 +246,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_y);
 #line 35 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     return;
-#line 245 "fixedbugs396alocallentinplaceisguarded.c"
+#line 250 "fixedbugs396alocallentinplaceisguarded.c"
 }
 #undef h0_y
 
@@ -254,7 +259,7 @@ int64_t h_fixedbugs396alocallentinplaceisguarded_depth(int64_t h0_n) {
 #line 37 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 #define h1_x (*hero_lend_h1_x)
 #line 37 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.depth", "x"); HERO_NODEBUG h_0opt_e1f4933 h2_f0 = {0}; int64_t h3_below; HERO_NODEBUG h_0opt_e201354 h4_f1 = {0}; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG h_0opt_e1f4933 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_e1f4933 t3; HERO_NODEBUG h_0opt_e1f4933 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e1f4933 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e1f4933 t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int32_t t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_0opt_e1f4933 t33; HERO_NODEBUG h_0opt_e1f4933 t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; goto bb0;
+    int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.depth", "x"); HERO_NODEBUG h_0opt_e1f4933 h2_f0 = {0}; int64_t h3_below; HERO_NODEBUG h_0opt_e201354 h4_f1 = {0}; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG h_0opt_e1f4933 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_e1f4933 t3; HERO_NODEBUG h_0opt_e1f4933 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e1f4933 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e1f4933 t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int32_t t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_0opt_e1f4933 t33; HERO_NODEBUG h_0opt_e1f4933 t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb0:
     t1 = INT64_C(0);
@@ -319,7 +324,7 @@ bb2:
     t8 = h2_f0;
 #line 39 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t9 = t8.as.err;
-#line 323 "fixedbugs396alocallentinplaceisguarded.c"
+#line 328 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -392,7 +397,7 @@ bb7:
     t27 = h4_f1;
 #line 44 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t28 = t27.as.err;
-#line 396 "fixedbugs396alocallentinplaceisguarded.c"
+#line 401 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must(t28);
     hero_unreachable();
 bb8:
@@ -411,7 +416,7 @@ int32_t h_fixedbugs396alocallentinplaceisguarded_early(bool h0_flag) {
 #line 46 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 #define h1_x (*hero_lend_h1_x)
 #line 46 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.early", "x"); HERO_NODEBUG int32_t h2_ret0; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int32_t t6; goto bb0;
+    int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.early", "x"); HERO_NODEBUG int32_t h2_ret0; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int32_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb0:
     t1 = INT64_C(0);
@@ -451,7 +456,7 @@ bb3:
     goto bb1;
 #line 51 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb4:
-#line 455 "fixedbugs396alocallentinplaceisguarded.c"
+#line 460 "fixedbugs396alocallentinplaceisguarded.c"
     t6 = h2_ret0;
     hero_lend_local_give(hero_lend_h1_x);
     return t6;
@@ -463,7 +468,7 @@ int64_t h_fixedbugs396alocallentinplaceisguarded_on_a_thread(int64_t h0_n) {
 #line 55 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 #define h1_x (*hero_lend_h1_x)
 #line 55 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    hero_thread_guard("fixedbugs396alocallentinplaceisguarded.on_a_thread"); int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.on_a_thread", "x"); HERO_NODEBUG h_0opt_e1f4933 h2_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HERO_NODEBUG h_0opt_e1f4933 h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_e1f4933 t3; HERO_NODEBUG h_0opt_e1f4933 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e1f4933 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e1f4933 t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_0opt_e1f4933 t22; HERO_NODEBUG h_0opt_e1f4933 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; goto bb0;
+    hero_thread_guard("fixedbugs396alocallentinplaceisguarded.on_a_thread"); int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.on_a_thread", "x"); HERO_NODEBUG h_0opt_e1f4933 h2_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HERO_NODEBUG h_0opt_e1f4933 h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_e1f4933 t3; HERO_NODEBUG h_0opt_e1f4933 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e1f4933 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e1f4933 t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_0opt_e1f4933 t22; HERO_NODEBUG h_0opt_e1f4933 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_ENTRY_STOP; goto bb0;
 #line 55 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb0:
     t1 = INT64_C(0);
@@ -550,7 +555,7 @@ bb2:
     t8 = h2_f0;
 #line 57 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t9 = t8.as.err;
-#line 554 "fixedbugs396alocallentinplaceisguarded.c"
+#line 559 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -558,7 +563,7 @@ bb3:
     t20 = h3_f1;
 #line 59 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t21 = t20.as.ok;
-#line 562 "fixedbugs396alocallentinplaceisguarded.c"
+#line 567 "fixedbugs396alocallentinplaceisguarded.c"
     h_0opt_e1f4933_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
     h_0opt_e1f4933_release(hero_slot_escape(&h4_own4));
@@ -570,7 +575,7 @@ bb4:
     t18 = h3_f1;
 #line 59 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t19 = t18.as.err;
-#line 574 "fixedbugs396alocallentinplaceisguarded.c"
+#line 579 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must(t19);
     hero_unreachable();
 }
@@ -584,7 +589,7 @@ int64_t h_0cb_fixedbugs396alocallentinplaceisguarded_on_a_thread(int64_t h0_n) {
 #line 61 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 void h_fixedbugs396alocallentinplaceisguarded_start(struct keeper *ph0_k) {
 #line 61 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    goto bb0;
+    HERO_ENTRY_STOP; goto bb0;
 #line 61 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb0:
     hero_lend_local_name(ph0_k, "keeper_init", "k");
@@ -592,13 +597,13 @@ bb0:
     (void)keeper_init(&(*ph0_k));
 #line 62 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     return;
-#line 596 "fixedbugs396alocallentinplaceisguarded.c"
+#line 601 "fixedbugs396alocallentinplaceisguarded.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 int32_t h_fixedbugs396alocallentinplaceisguarded_step(struct keeper *ph0_k) {
 #line 64 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    HERO_NODEBUG int32_t t1; goto bb0;
+    HERO_NODEBUG int32_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 64 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb0:
     hero_lend_local_name(ph0_k, "keeper_step", "k");
@@ -606,13 +611,13 @@ bb0:
     t1 = keeper_step(&(*ph0_k));
 #line 65 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     return t1;
-#line 610 "fixedbugs396alocallentinplaceisguarded.c"
+#line 615 "fixedbugs396alocallentinplaceisguarded.c"
 }
 
 #line 67 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 int32_t h_fixedbugs396alocallentinplaceisguarded_step_twice(struct keeper *ph0_k) {
 #line 67 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; goto bb0;
+    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 67 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb0:
     t1 = h_fixedbugs396alocallentinplaceisguarded_step(&(*ph0_k));
@@ -622,7 +627,7 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 68 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     return t3;
-#line 626 "fixedbugs396alocallentinplaceisguarded.c"
+#line 631 "fixedbugs396alocallentinplaceisguarded.c"
 }
 
 #line 70 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
@@ -638,7 +643,7 @@ void h_fixedbugs396alocallentinplaceisguarded_main(void) {
 #line 70 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 #define h8_w (*hero_lend_h8_w)
 #line 70 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    int32_t *const hero_lend_h0_n = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.main", "n"); int64_t h1_round; struct keeper *const hero_lend_h2_k = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs396alocallentinplaceisguarded.main", "k"); int32_t *const hero_lend_h3_late = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.main", "late"); int64_t h4_t; HeroArrayHeader * h5_md = {0}; int32_t *const hero_lend_h6_m = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.main", "m"); HERO_NODEBUG h_0opt_e1f4933 h7_f0 = {0}; struct keeper *const hero_lend_h8_w = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs396alocallentinplaceisguarded.main", "w"); HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_e1f4933 h10_own10 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG void * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG struct keeper t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG struct keeper t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int32_t t21; HERO_NODEBUG h_0fn_294870dd t22; HERO_NODEBUG int32_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG int32_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG bool t27; HERO_NODEBUG int32_t t28; HERO_NODEBUG h_0fn_48ac9712 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int32_t t35; HERO_NODEBUG uint64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_0opt_e1f4933 t39; HERO_NODEBUG h_0opt_e1f4933 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e1f4933 t44; HERO_NODEBUG HeroFailure t45; HERO_NODEBUG h_0opt_e1f4933 t46; HERO_NODEBUG int32_t t47; HERO_NODEBUG int32_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG uint8_t t52; HERO_NODEBUG void * t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG struct keeper t55; HERO_NODEBUG int32_t t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG struct keeper t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG h_0opt_e1f4933 t62; HERO_NODEBUG h_0opt_e1f4933 t63; goto bb0;
+    int32_t *const hero_lend_h0_n = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.main", "n"); int64_t h1_round; struct keeper *const hero_lend_h2_k = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs396alocallentinplaceisguarded.main", "k"); int32_t *const hero_lend_h3_late = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.main", "late"); int64_t h4_t; HeroArrayHeader * h5_md = {0}; int32_t *const hero_lend_h6_m = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocallentinplaceisguarded.main", "m"); HERO_NODEBUG h_0opt_e1f4933 h7_f0 = {0}; struct keeper *const hero_lend_h8_w = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs396alocallentinplaceisguarded.main", "w"); HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_e1f4933 h10_own10 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG void * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG struct keeper t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG struct keeper t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int32_t t21; HERO_NODEBUG h_0fn_294870dd t22; HERO_NODEBUG int32_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG int32_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG bool t27; HERO_NODEBUG int32_t t28; HERO_NODEBUG h_0fn_48ac9712 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int32_t t35; HERO_NODEBUG uint64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_0opt_e1f4933 t39; HERO_NODEBUG h_0opt_e1f4933 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e1f4933 t44; HERO_NODEBUG HeroFailure t45; HERO_NODEBUG h_0opt_e1f4933 t46; HERO_NODEBUG int32_t t47; HERO_NODEBUG int32_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG uint8_t t52; HERO_NODEBUG void * t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG struct keeper t55; HERO_NODEBUG int32_t t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG struct keeper t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG h_0opt_e1f4933 t62; HERO_NODEBUG h_0opt_e1f4933 t63; HERO_ENTRY_STOP; goto bb0;
 #line 70 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
 bb0:
     t1 = INT64_C(0);
@@ -793,9 +798,9 @@ bb3:
 #line 91 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer stamp32 md 1471 1473 u8 unsigned char *");
 #line 91 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    int64_t hero_lend_e26_0 = INT64_C(32);
+    HERO_NODEBUG int64_t hero_lend_e26_0 = INT64_C(32);
 #line 91 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
-    void *hero_lend_b26_0 = hero_lend_take(h5_md, hero_lend_e26_0, "stamp32", "md");
+    HERO_NODEBUG void *hero_lend_b26_0 = hero_lend_take(h5_md, hero_lend_e26_0, "stamp32", "md");
 #line 91 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     (void)stamp32((void *)hero_lend_b26_0, t36);
 #line 91 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
@@ -889,7 +894,7 @@ bb4:
     hero_print_int(t59);
 #line 96 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     hero_print_end();
-#line 893 "fixedbugs396alocallentinplaceisguarded.c"
+#line 898 "fixedbugs396alocallentinplaceisguarded.c"
     hero_array_release_at(&h5_md);
     h_0opt_e1f4933_release(hero_slot_escape(&h7_f0));
     hero_array_release_at(&h9_own9);
@@ -905,7 +910,7 @@ bb5:
     t44 = h7_f0;
 #line 92 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
     t45 = t44.as.err;
-#line 909 "fixedbugs396alocallentinplaceisguarded.c"
+#line 914 "fixedbugs396alocallentinplaceisguarded.c"
     hero_panic_must(t45);
     hero_unreachable();
 }
