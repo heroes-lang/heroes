@@ -35,6 +35,11 @@ where an edge targets it**, all locals hoisted to the prologue, and a
 unit-typed temporary never declared at all (`void t0;` is a hard error). An `@`
 parameter is a pointer parameter and the body reaches the caller's place through
 it, `(*p_l)`, so §4.8's copy-out writes no C (design.md §3.1, panel 196's R1).
+Every temporary and every slot the lowering invented is declared `HERO_NODEBUG`
+(`nodebug`, defined in the unit's own preamble, so the runtime's ABI does not
+move), and so is every C local the emitter declares inside a body: a stopped
+frame lists the author's bindings alone, and a hidden slot has no debug entry
+to show a wrong value with (panel 213's R1).
 `hero_unreachable()` at every type-system-proven-unreachable point. The emitted
 C never mentions the output path.
 
