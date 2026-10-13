@@ -1,0 +1,19 @@
+# fixedbugs, defect 2045, 2026-10-13, the defect's own reproducer.
+#
+# SYMPTOM: a header of the program's own defining `static inline int
+# hero_str_len(int x)` was told `internal error: compiling the generated C
+# failed` at exit 2: clang's `static declaration of 'hero_str_len' follows
+# non-static declaration` at the header's line, its note at
+# `heroes_runtime.h`'s `int64_t hero_str_len(HeroStr s);`, which every unit
+# reads before any group's header, and defect 360's rule kept a note in the
+# runtime's files the compiler's.
+#
+# FIX: that note is told as the Heroes runtime's own `hero_str_len`, the
+# header refused at its line 4, exit 1, with a `guess` fix renaming the name
+# there (`cli/runtime_name.hero`).
+
+extern "fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

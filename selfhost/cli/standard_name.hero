@@ -33,6 +33,13 @@ constant SUFFIX: str
 # (`runtime_key.made_of`), read as the compiler names it; absent for any
 # other line or file, the file clang compiled among them.
 function declared(path: str, row: i64, runtime: [str]) -> str?
+    return of_line(line_of(path: path, row: row, runtime: runtime)?)
+
+# The line at `row` of `path`, read from the one of `runtime`, the runtime's
+# own files, that `path` names as clang wrote it; absent for any other file,
+# the file clang compiled among them, or a row the file does not hold. Shared
+# with `cli/runtime_name.hero` (defect 2045).
+function line_of(path: str, row: i64, runtime: [str]) -> str?
     for own in runtime
         if group_file.settled(own) == group_file.settled(path)
             text = read_file(own)?
@@ -40,7 +47,7 @@ function declared(path: str, row: i64, runtime: [str]) -> str?
 
             if row < 1 || row > rows.len()
                 return fail(code: "none", msg: "no such line")
-            return of_line(clang_place.without_return(rows[row - 1]))
+            return ok(clang_place.without_return(rows[row - 1]))
 
     return fail(code: "none", msg: "not a file of the runtime's")
 

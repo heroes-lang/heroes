@@ -1,0 +1,17 @@
+# fixedbugs, defect 2045, 2026-10-13, the name declared in a header the group's
+# header includes, an enumerator after a tab.
+#
+# SYMPTOM: `enum { hero_str_len = 3 };` in a header the group's header
+# includes was told `internal error: compiling the generated C failed` at
+# exit 2, clang's `redefinition of 'hero_str_len'` noted at
+# `heroes_runtime.h`'s own declaration.
+#
+# FIX: that note is told as the Heroes runtime's own `hero_str_len`, the
+# group's header refused through the one it includes, at that one's line 4,
+# exit 1, with a `guess` fix renaming it there.
+
+extern "fixedbugs-2045-outer.h"  #~ ffi_header_refused
+    function four() -> i32
+
+function main()
+    print(four())

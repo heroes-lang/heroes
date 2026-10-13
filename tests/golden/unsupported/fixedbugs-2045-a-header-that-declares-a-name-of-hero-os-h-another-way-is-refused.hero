@@ -1,0 +1,16 @@
+# fixedbugs, defect 2045, 2026-10-13, a name of the runtime's other header
+# every unit reads before the groups, `hero_os.h`.
+#
+# SYMPTOM: `int hero_os_pid(int x);` in a header of the program's own was
+# told `internal error: compiling the generated C failed` at exit 2, clang's
+# `conflicting types for 'hero_os_pid'` noted at `hero_os.h`'s own
+# declaration.
+#
+# FIX: that note is told as the Heroes runtime's own `hero_os_pid`, the
+# header refused at its line 3, exit 1, with a `guess` fix renaming it there.
+
+extern "fixedbugs-2045-a-header-that-declares-a-name-of-hero-os-h-another-way-is-refused.h"  #~ ffi_header_refused
+    function five() -> i32
+
+function main()
+    print(five())

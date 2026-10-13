@@ -1,0 +1,16 @@
+# fixedbugs, defect 2045, 2026-10-13, a type of the runtime's declared again:
+# `HeroStr` as an object, whose clang words are alike on every platform.
+#
+# SYMPTOM: `extern int HeroStr;` in a header of the program's own was told
+# `internal error: compiling the generated C failed` at exit 2, clang's
+# `redefinition of 'HeroStr' as different kind of symbol` noted at
+# `heroes_runtime.h`'s `} HeroStr;`.
+#
+# FIX: that note is told as the Heroes runtime's own `HeroStr`, the header
+# refused at its line 3, exit 1, with a `guess` fix renaming it there.
+
+extern "fixedbugs-2045-a-header-that-declares-the-runtime-s-string-type-again-is-refused.h"  #~ ffi_header_refused
+    function six() -> i32
+
+function main()
+    print(six())
