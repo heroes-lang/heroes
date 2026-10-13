@@ -12,7 +12,9 @@
 #   nearly it is told. And a closed `feature` or `task` holds `## What was
 #   done`, naming its card's commit. `section_offences` is the rule, which the
 #   transcription program's `file` asks of a draft (`issue_offences`) and
-#   `records_github.hero` of every issue GitHub holds (`records/prior-art`).
+#   `records_github.hero` of every issue GitHub holds (`records/prior-art`),
+#   the second excusing a sitting the tree under test has not received yet
+#   (`absent_offence`, defect 2039).
 # - **`records/defects-cited`**: every `defect NNN` the compiler, the runtime,
 #   the seed and the tests cite names a defect. Since the issues left the tree
 #   (the author's seven answers of 2026-10-12) the names are GitHub's: an old
@@ -155,6 +157,78 @@ function sittings_named(line: str, known: {str: bool}) -> [str]
 
     return out
 
+# Every path under `docs/panel/` the opener names in a code span, a report of
+# a sitting's folder aside: what `sittings_named` keeps where the tree holds
+# it, and what `absent_offence` judges where it does not.
+function panel_spans(line: str) -> [str]
+    out: [str] @= []
+
+    for span in code_spans(line)
+        if strings.starts_with(text: span, prefix: SITTINGS) && !strings.contains(text: span, needle: "-reports/")
+            out @ out.push(span)
+
+    return out
+
+# The number a sitting's file opens its name with, where `path` is one:
+# `docs/panel/<digits>-<slug>.md`, directly under the folder, the slug not
+# empty. A brief, a report, a folder or any other path is not a sitting's file.
+function sitting_number(path: str) -> i64?
+    wrong = "`" + path + "` is not a sitting's file, `" + SITTINGS + "<number>-<slug>.md`"
+
+    if !strings.starts_with(text: path, prefix: SITTINGS) || !strings.ends_with(text: path, suffix: ".md")
+        return fail(code: "shape", msg: wrong)
+    name = strings.without_prefix(text: path, prefix: SITTINGS)
+    digits = digit_run(text: name, at: 0)
+
+    if strings.contains(text: name, needle: "/") || digits == 0 || !has_at(text: name, at: digits, piece: "-") || name.len() <= digits + 1 + 3
+        return fail(code: "shape", msg: wrong)
+
+    # Digits are ASCII, so the cut stands between characters.
+    return strings.to_number(name.slice(from: 0, to: digits))
+
+# The highest number of a sitting's file `known` holds, or 0 where it holds
+# none.
+function highest_sitting(known: {str: bool}) -> i64
+    top: i64 @= 0
+
+    for path in keys(known)
+        n = sitting_number(path)
+
+        if !n.is_err() && n.must() > top
+            top @ n.must()
+
+    return top
+
+# What is wrong with a `docs/panel/` path an opener names, or "" where the tree
+# holds it or has not received it yet.
+#
+# **`received` places the tree among the sittings, from its own value**
+# (defect 2039): the highest sitting it holds, as `highest_sitting` reads it.
+# Sittings are numbered in the order they sit, so a tree whose highest is 212
+# has received no sitting from 213 on, and a sitting's file numbered above
+# `received` is one this tree cannot hold yet: its decision was opened from the
+# sitting's own lane before the file reached any other tree (`/panel` step 4,
+# which `file` asks against that lane's tree). One numbered at or below it is
+# misnamed, gone, or merged out of order, and stays an offence, which is the
+# loud direction should the order ever break; so does a path that is not a
+# sitting's file. **0 excuses nothing**: what `file` asks of a draft, filed from
+# the tree that holds its sitting, and what a tree holding no sitting gets, since
+# a tree that places itself nowhere is no evidence of being early.
+function absent_offence(span: str, known: {str: bool}, received: i64) -> str
+    if !known[span].is_err()
+        return ""
+    n = sitting_number(span)
+
+    if n.is_err()
+        return "a path this tree does not hold, and not a sitting's file `" + SITTINGS + "<number>-<slug>.md` either"
+
+    if received > 0 && n.must() > received
+        return ""
+
+    if received == 0
+        return "a sitting's file this tree does not hold"
+    return "a sitting's file this tree does not hold, and its number is not above " + received.to_str() + ", the highest sitting the tree holds, so the name is misnamed, gone or merged out of order rather than not yet received"
+
 # Whether the historian sat: the sitting's folder holds its report, or the
 # synthesis names the seat.
 function historian_sat(sitting: str, known: {str: bool}) -> bool
@@ -193,13 +267,17 @@ function precedent_offence(row: str) -> str
 
     return ""
 
-# Every offence of a `## Prior art` section standing on `issue`.
+# Every offence of a `## Prior art` section standing on `issue`, a draft: its
+# sitting is asked of the tree it is filed from, which holds it, so no sitting
+# is excused as not yet received (`received` 0, `absent_offence`).
 function prior_art_offences(issue: cards.Issue, section: Section, known: {str: bool}) -> [str]
-    return section_offences(where: issue.path, kind: issue.card.kind, rows: section.rows, known: known)
+    return section_offences(where: issue.path, kind: issue.card.kind, rows: section.rows, known: known, received: 0)
 
 # Every offence of a prior-art section's `rows`, standing on an issue of `kind`
 # that a message names `where`: a file's path, or an issue's address.
-function section_offences(where: str, kind: str, rows: [str], known: {str: bool}) -> [str]
+# `received` is the highest sitting the tree is placed at, 0 for none
+# (`absent_offence`).
+function section_offences(where: str, kind: str, rows: [str], known: {str: bool}, received: i64) -> [str]
     out: [str] @= []
     told = where + ": `## Prior art` "
 
@@ -231,14 +309,23 @@ function section_offences(where: str, kind: str, rows: [str], known: {str: bool}
     if opener == ""
         out @ out.push(told + "is empty: a section that names no precedent is left out, not written")
         return out
-    sittings = sittings_named(line: opener, known: known)
+    spans = panel_spans(opener)
 
-    if sittings.len() == 0
+    if spans.len() == 0
         out @ out.push(
             told + "opens with `" + strings.trimmed(opener) + "`, which names no sitting's file under `docs/panel/` in a code span"
         )
 
-    for sitting in sittings
+    # Each path is judged, so a misnamed one beside a sitting the tree holds is
+    # told too; a sitting not yet received is asked nothing more, its file and
+    # its folder being where this tree cannot read them.
+    for span in spans
+        wrong = absent_offence(span: span, known: known, received: received)
+
+        if wrong != ""
+            out @ out.push(told + "opens with `" + strings.trimmed(opener) + "`, which names `" + span + "`, " + wrong)
+
+    for sitting in sittings_named(line: opener, known: known)
         if !historian_sat(sitting: sitting, known: known)
             out @ out.push(
                 told + "rests on " + sitting + ", a sitting the historian did not sit in: no report of theirs in its folder and no mention in the synthesis"
@@ -551,6 +638,57 @@ test "the opener names the sitting's file in a code span and the day the links w
     both = "Panels 196 and 197 (`docs/panel/196-a-sitting.md`, `docs/panel/197-another.md`), read 2026-10-11."
     assert sittings_named(line: both, known: known) == ["docs/panel/196-a-sitting.md", "docs/panel/197-another.md"]
     assert historian_sat(sitting: "docs/panel/196-a-sitting.md", known: known)
+
+test "a sitting's file is named by its number and a slug, and the highest a tree holds places the tree"
+    assert sitting_number("docs/panel/213-a-stopped-program.md").must() == 213
+    assert sitting_number("docs/panel/002-ok-constructor.md").must() == 2
+    assert sitting_number("docs/panel/213-reports/historian.md").is_err()
+    assert sitting_number("docs/panel/213.md").is_err()
+    assert sitting_number("docs/panel/213-.md").is_err()
+    assert sitting_number("docs/panel/abc-x.md").is_err()
+    assert sitting_number("docs/panel/213-x.txt").is_err()
+    assert sitting_number("docs/other/213-x.md").is_err()
+    known: {str: bool} @= {}
+    assert highest_sitting(known) == 0
+    known["docs/panel/196-a-sitting.md"] @ true
+    known["docs/panel/212-the-last.md"] @ true
+    known["docs/panel/212-reports/historian.md"] @ true
+    known["docs/panel/999-briefs/brief.md"] @ true
+    assert highest_sitting(known) == 212
+    assert panel_spans("Panel 213 (`docs/panel/213-x.md`, `docs/panel/213-reports/historian.md`, `site/x`)") == ["docs/panel/213-x.md"]
+
+test "a sitting the tree has not received is excused only where the tree places itself, and never in a draft"
+    known: {str: bool} @= {}
+    known["docs/panel/196-a-sitting.md"] @ true
+    known["docs/panel/196-reports/historian.md"] @ true
+    known["docs/panel/212-the-last.md"] @ true
+    precedent = "- **Taken from Ada**: [AI05](https://example.org/ai): the refusal"
+    ahead = [
+        ""
+        "Panel 213 (`docs/panel/213-new.md`, `docs/panel/213-reports/historian.md`), read 2026-10-13."
+        ""
+        precedent
+    ]
+    assert section_offences(where: "w", kind: "decision", rows: ahead, known: known, received: 212).len() == 0
+    drafted = section_offences(where: "w", kind: "decision", rows: ahead, known: known, received: 0)
+    assert drafted.len() == 1
+    assert strings.contains(
+        text: drafted[0],
+        needle: "names `docs/panel/213-new.md`, a sitting's file this tree does not hold"
+    )
+    passed = ["Panel 150 (`docs/panel/150-gone.md`), read 2026-10-13.", precedent]
+    told = section_offences(where: "w", kind: "decision", rows: passed, known: known, received: 212)
+    assert told.len() == 1
+    assert strings.contains(text: told[0], needle: "its number is not above 212, the highest sitting the tree holds")
+    beside = ["Panel 196 (`docs/panel/196-a-sitting.md`, `docs/panel/196-a-typo.md`), read 2026-10-13.", precedent]
+    typo = section_offences(where: "w", kind: "decision", rows: beside, known: known, received: 212)
+    assert typo.len() == 1
+    assert strings.contains(text: typo[0], needle: "names `docs/panel/196-a-typo.md`")
+    shaped = ["Panel 213 (`docs/panel/213-notes/x.md`), read 2026-10-13.", precedent]
+    odd = section_offences(where: "w", kind: "decision", rows: shaped, known: known, received: 212)
+    assert odd.len() == 1
+    assert strings.contains(text: odd[0], needle: "not a sitting's file")
+    assert section_offences(where: "w", kind: "decision", rows: ["Panel 213, read 2026-10-13.", precedent], known: known, received: 212).len() == 1
 
 test "a line cites every number it names after the word, in any case, and no day or lane"
     assert numbers_cited(text: "def" + "ect 235 was repaired", wide: true) == [235]
