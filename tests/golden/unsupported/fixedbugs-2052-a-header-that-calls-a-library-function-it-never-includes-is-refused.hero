@@ -1,0 +1,17 @@
+# fixedbugs, defect 2052, 2026-10-13, a function the link finds.
+#
+# SYMPTOM: a header of the program's own calling the C library's `abs`
+# without including `<stdlib.h>` built and printed 8 at exit 0, clang
+# declaring the name itself where C11 declares nothing (6.5.1p2), its
+# error for that ignored with `-Wall` in the header's region.
+#
+# FIX: `-Wimplicit-function-declaration` stays an error in the region
+# (`emit/header_region.hero`'s `KEPT`), the header refused at the call's
+# line 3, exit 1, and told to have `stdlib.h` named above it
+# (`cli/header_order.hero`).
+
+extern "fixedbugs-2052-a-header-that-calls-a-library-function-it-never-includes-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

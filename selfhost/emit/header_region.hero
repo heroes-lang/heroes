@@ -50,6 +50,34 @@
 # its group decides that part, so the parts whose construct C defines are
 # passed over after `KEPT`, as `-Wall` is (`FORMAT_DEFINED`), and the rest of
 # the group stays an error.
+#
+# **A call to a function nobody declared went with `-Wall`** (defect 2052,
+# 2026-10-13): `-Wimplicit-function-declaration` is one of `-Wall`'s, so the
+# region's ignore turned clang's default error off, and a header's
+# `(int)hero_str_le(8)` built as a call to a function C11 has no declaration
+# of (6.5.1p2: an identifier is an expression only where it is declared),
+# its result read as an `int` nobody promised; the link then stopped at
+# exit 2, `internal error: linking failed`. A function of C's library the
+# header never included, `abs(-8)` with no `<stdlib.h>`, built and printed 8
+# at exit 0, clang declaring it itself. Kept, the header is refused at the
+# call's line before any link, as the program's own lines are; of the 1,576
+# tracked programs with an `extern`, none moved (measured at the repair).
+#
+# **A target's extension accepted what C11 leaves undefined** (defect 2053,
+# 2026-10-13): a header defining `static inline int64_t
+# hero_str_len(HeroStr s)` after the runtime's external declaration gives the
+# name both linkages in one unit, which C11 6.2.2p7 leaves undefined. This
+# Mac's clang and Linux's refuse it, *static declaration of 'hero_str_len'
+# follows non-static declaration*; clang for Windows' MSVC target reads it as
+# Microsoft's extension, a diagnostic off by default, so on the Windows box
+# the program built at exit 0 where it never called the function, and where
+# it did the link said `duplicate symbol: hero_str_len`, exit 2.
+# `-Wmicrosoft-redeclare-static` is made an error in the region
+# (`EXTENDED`), so every target refuses the header at its own line, its note
+# at the runtime's declaration told as the Heroes runtime's own name
+# (`cli/runtime_name.hero`, defect 2045). Clang knows the group on every
+# target, so the pragma is silent where the extension is off (Apple clang 21
+# and Debian clang 22.1.8, measured at the repair).
 
 use emit/checks_raised
 
@@ -61,13 +89,15 @@ constant QUIETED: [str]
     ]
 
 # What it still is, which `-Wall`'s ignore would otherwise turn off: each an
-# error on the build's command line too (`cli/flags.hero`).
+# error on the build's command line too, by `cli/flags.hero` or by clang's
+# own default (`emit/checks_raised.hero`'s `DEFAULT_ERRORS`).
 constant KEPT: [str]
     [
         "-Wreturn-type"
         "-Wuninitialized"
         "-Wformat"
         "-Wconditional-uninitialized"
+        "-Wimplicit-function-declaration"
     ]
 
 # The parts of `-Wformat` whose construct C defines, passed over after `KEPT`
@@ -113,8 +143,18 @@ constant FORMAT_DEFINED: [str]
         "-Wformat-y2k"
     ]
 
+# What C11 refuses and a target's extension accepts, made an error in the
+# region on every target (defect 2053). None is `-Wall`'s, so none is a
+# check the build raises after the region: the C this compiler writes holds
+# no such declaration.
+constant EXTENDED: [str]
+    [
+        "-Wmicrosoft-redeclare-static"
+    ]
+
 # The lines before the groups' includes: the push, the ignores, the kept,
-# then the parts of a kept group passed over again.
+# then the parts of a kept group passed over again, then the extensions
+# refused.
 function opening() -> [str]
     out: [str] @= ["#pragma clang diagnostic push"]
 
@@ -126,6 +166,9 @@ function opening() -> [str]
 
     for word in FORMAT_DEFINED
         out @ out.push("#pragma clang diagnostic ignored \"" + word + "\"")
+
+    for word in EXTENDED
+        out @ out.push("#pragma clang diagnostic error \"" + word + "\"")
 
     return out
 
@@ -144,7 +187,9 @@ test "a header's own code is quiet of -Wall and sign conversion alone, a missing
     assert got[2] == "#pragma clang diagnostic ignored \"-Wsign-conversion\""
     assert got[3] == "#pragma clang diagnostic error \"-Wreturn-type\""
     assert got[5] == "#pragma clang diagnostic error \"-Wformat\""
-    assert got.len() == 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len()
+    assert got[7] == "#pragma clang diagnostic error \"-Wimplicit-function-declaration\""
+    assert got.len() == 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len() + EXTENDED.len()
+    assert got[got.len() - 1] == "#pragma clang diagnostic error \"-Wmicrosoft-redeclare-static\""
 
     # A part of `-Wformat` C defines is passed over after the group is raised,
     # since the later pragma decides the part (defect 2036); written before

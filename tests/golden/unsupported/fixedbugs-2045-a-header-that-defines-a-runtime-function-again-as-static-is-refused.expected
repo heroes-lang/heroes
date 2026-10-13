@@ -1,7 +1,7 @@
 error[ffi_header_refused]: `fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused.h`, the header this group names, does not compile: clang refuses it at line 4: static declaration of 'hero_str_len' follows non-static declaration
-  at tests/golden/unsupported/fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused.hero:15:8
+  at tests/golden/unsupported/fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused.hero:25:8
      |
-  15 | extern "fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused.h"  #~ ffi_header_refused
+  25 | extern "fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused.h"  #~ ffi_header_refused
      |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   note: `fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused.h` line 4 reads `static inline int hero_str_len(int x) { return x; }`
   note: clang adds, at the Heroes runtime's own `hero_str_len`, which every unit of this program declares before any group's header: previous declaration is here

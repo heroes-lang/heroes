@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -95,7 +97,7 @@ HERO_STR_STATIC(hero_str_750951cb, "before ");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 99 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 101 "fixedbugs396alocallentthroughawrapperaborts.c"
 typedef struct h_fixedbugs396alocallentthroughawrapperaborts_Pair {
     uint8_t f_a;
     int64_t f_b;
@@ -144,7 +146,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 150 "fixedbugs396alocallentthroughawrapperaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b);
@@ -173,7 +175,7 @@ bb0:
     t1 = digest32((void *)&(*ph0_x));
 #line 17 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return t1;
-#line 177 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 179 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 19 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
@@ -185,7 +187,7 @@ bb0:
     t1 = h_fixedbugs396alocallentthroughawrapperaborts_inner(&(*ph0_y));
 #line 20 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return t1;
-#line 189 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 191 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
@@ -245,7 +247,7 @@ bb0:
     hero_lend_local_give(hero_lend_h1_m);
 #line 27 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
     return;
-#line 249 "fixedbugs396alocallentthroughawrapperaborts.c"
+#line 251 "fixedbugs396alocallentthroughawrapperaborts.c"
 }
 #undef h1_m
 HERO_TU_LOCAL bool h_fixedbugs396alocallentthroughawrapperaborts_Pair_eq(const h_fixedbugs396alocallentthroughawrapperaborts_Pair *a, const h_fixedbugs396alocallentthroughawrapperaborts_Pair *b) {

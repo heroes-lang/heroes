@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -60,13 +62,13 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 6 "tests/golden/run/fixedbugs559/points.hero"
 _Static_assert(__builtin_classify_type(((Pt *)0)->v) == 1 && sizeof(((Pt *)0)->v) == sizeof(int32_t) && (_Generic(((Pt *)0)->v, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt v");
 _Static_assert(__builtin_classify_type(((Pt *)0)->w) == 1 && sizeof(((Pt *)0)->w) == sizeof(int32_t) && (_Generic(((Pt *)0)->w, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt w");
-#line 64 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 66 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 
 #line 5 "tests/golden/run/fixedbugs559/points.hero"
 _Static_assert(__builtin_classify_type(*(Pt *)0) != 13 || sizeof(((Pt *)0)->v) == sizeof(Pt), "heroes-ffi-union-narrow Pt v");
 #line 5 "tests/golden/run/fixedbugs559/points.hero"
 _Static_assert(__builtin_classify_type(*(Pt *)0) != 13 || sizeof(((Pt *)0)->w) == sizeof(Pt), "heroes-ffi-union-narrow Pt w");
-#line 70 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 72 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -166,7 +168,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 170 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 172 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs559points_Pt_eq(const Pt *a, const Pt *b);
@@ -285,7 +287,7 @@ bb0:
     hero_print_bool(t20);
 #line 21 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
     hero_print_end();
-#line 289 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 291 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     hero_array_release_at(&h2_xs);
     hero_array_release_at(&h3_own3);
     return;
@@ -340,7 +342,7 @@ bb1:
     t14 = t13.as.ok;
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t15 = twice(t14);
-#line 344 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 346 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t15;
@@ -349,7 +351,7 @@ bb2:
     t11 = h1_f0;
 #line 14 "tests/golden/run/fixedbugs559/holder.hero"
     t12 = t11.as.err;
-#line 353 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 355 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
     hero_panic_must(t12);
     hero_unreachable();
 }
@@ -367,7 +369,7 @@ bb0:
     t3 = (h_fixedbugs559holder_Holder){.f_p = t1, .f_n = t2};
 #line 17 "tests/golden/run/fixedbugs559/holder.hero"
     return t3;
-#line 371 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 373 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 }
 
 #line 10 "tests/golden/run/fixedbugs559/points.hero"
@@ -381,7 +383,7 @@ bb0:
     t2 = pt_make(t1);
 #line 11 "tests/golden/run/fixedbugs559/points.hero"
     return t2;
-#line 385 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
+#line 387 "fixedbugs559arecordanothermodulereachesisreadbyitsunit.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs559points_Pt_eq(const Pt *a, const Pt *b) {
     if (!(a->v == b->v)) return false;

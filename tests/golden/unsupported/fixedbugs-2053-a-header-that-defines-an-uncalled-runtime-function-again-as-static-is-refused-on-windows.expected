@@ -1,0 +1,10 @@
+error[ffi_header_refused]: `fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows.h`, the header this group names, does not compile: clang refuses it at line 5: redeclaring non-static 'hero_str_len' as static is a Microsoft extension [-Werror,-Wmicrosoft-redeclare-static]
+  at tests/golden/unsupported/fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows.hero:14:8
+     |
+  14 | extern "fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows.h"  #~…
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows.h` line 5 reads `static inline int64_t hero_str_len(HeroStr s) { (void)s; return 42; }`
+  note: clang adds, at the Heroes runtime's own `hero_str_len`, which every unit of this program declares before any group's header: previous declaration is here
+  note: clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a format reading an argument it was not given or one of another type, a value narrowed to 32 bits or a pointer of another type
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `hero_str_len` in `fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows.h`, a name the Heroes runtime declares first in every unit
