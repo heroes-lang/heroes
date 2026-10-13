@@ -1,0 +1,5 @@
+function main()
+    linux = 4
+    errno = 3
+    stdin = 1
+    print(linux + errno + stdin)

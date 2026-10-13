@@ -1,0 +1,32 @@
+> command script import editors/lldb/heroes_lldb.py
+> breakpoint set --file formatter-containers.hero --line 40
+!resolved: formatter-containers.hero:40
+> run
+!stop: breakpoint at formatter-containers.hero:40
+> frame variable h0_names h1_empty h2_grid h3_points h4_toks h5_ages h6_groups
+!shows: (HeroArrayHeader *) h0_names = ["ada", "grace"]
+!shows: (HeroArrayHeader *) h1_empty = []
+!shows: (HeroArrayHeader *) h2_grid = [[1, 2], [3]]
+!shows: (HeroArrayHeader *) h3_points = [Point(x: 1, y: 2), Point(x: 5, y: 6)]
+!shows: (HeroArrayHeader *) h4_toks = [.num(v: 1), .plus]
+!shows: (HeroMapHeader *) h5_ages = {"ada": 36, "grace": 85}
+!shows: (HeroMapHeader *) h6_groups = {"b": [], "a": ["x", "y"]}
+> frame variable h7_flags h8_xs h9_bytes h10_fs h11_primes h12_big
+!shows: (HeroArrayHeader *) h7_flags = [true, false]
+!shows: (HeroArrayHeader *) h8_xs = [1.5, 2.25]
+!shows: (HeroArrayHeader *) h9_bytes = [104, 105]
+!shows: (HeroArrayHeader *) h10_fs = [twice]
+!shows: (HeroArrayHeader *) h11_primes = [2, 3, 5, 7]
+!shows: (HeroArrayHeader *) h12_big = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, ... 24 more]
+> frame variable -P 1 h3_points
+!shows: [0] = Point(x: 1, y: 2)
+!shows: [1] = Point(x: 5, y: 6)
+> frame variable -P 1 h5_ages
+!shows: ["ada"] = 36
+!shows: ["grace"] = 85
+> frame variable -P 1 h9_bytes
+!shows: [0] = 104
+!shows: [1] = 105
+> frame variable -P 1 -A h12_big
+!shows: [39] = 39
+> continue

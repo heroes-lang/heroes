@@ -627,12 +627,24 @@ State these plainly so nobody drifts:
   can't call native C libraries, which breaks the founding premise). Backend needs concurrency,
   which doesn't exist yet. See Part 9.
 - **No concurrency in v1.** This is the largest gap and it is deliberate.
-- **No typed variable inspection in v1.** Line-level debugging works at every level: generated C
+- **Typed variable inspection stops at the values: no author's names, and no rendering inside the
+  stopped process.** Line-level debugging works at every level: generated C
   carries `#line` directives and every build carries line tables, so lldb breaks on and steps
   through `.hero` source lines and a sanitiser names the `.hero` line. The variables are described
   at an `-O0` build (`heroes build`, `heroes test`), the one an author debugs; `-O2` (`heroes run`)
-  carries the line tables alone (panel 197). But `p x` shows a mangled C temporary, not a Heroes
-  value — printing rich values is still `print`'s job.
+  carries the line tables alone (panel 197). At `-O0` a stopped frame lists the author's bindings
+  alone, the emitter declaring every slot it invented and every temporary `nodebug`, and one fixed
+  formatter, `editors/lldb/heroes_lldb.py`, which the editor extension hands lldb-dap and lldb's
+  own prompt imports in one line, shows their values in Heroes' syntax: a record, a `str`, a `[T]`,
+  a `{K: V}`, a `T?`'s live arm and a variant's case (panel 213). What it does not deliver: the
+  names stay mangled (`p` is `h4_p`, Part 8 item 12), Windows, where LLVM's `lldb.exe` does not
+  start, and anything computed inside the stopped process: printing rich values is still
+  `print`'s job.
+
+  **AMENDED 2026-10-13 by panel 213's R10**
+  (`docs/panel/213-a-stopped-program-shows-heroes-values-through-one-fixed-formatter-the-editor-loads-and-the-emitter-keeps-what-it-invented-out-of-the-debug-information.md`):
+  the bullet read *"No typed variable inspection in v1"*, and its last sentence *"But `p x` shows
+  a mangled C temporary, not a Heroes value"*.
 
 ---
 

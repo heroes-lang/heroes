@@ -1,0 +1,42 @@
+(lldb) target create "./shapes-bc"
+Current executable set to '<copy>/build/ai/shapes-bc' (arm64).
+(lldb) command source -s 0 'cmdsbc.txt'
+Executing commands in '<copy>/build/ai/cmdsbc.txt'.
+(lldb) log enable lldb formatters -f fmt.log
+(lldb) breakpoint set --file shapes.hero --line 30
+Breakpoint 1: where = shapes-bc`h_shapes_main + 1488 at shapes.hero:30:11, address = 0x000000010001646c
+(lldb) run
+Process 19443 launched: '<copy>/build/ai/shapes-bc' (arm64)
+Process 19443 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x000000010001646c shapes-bc`h_shapes_main at shapes.hero:30:11
+   27  	    good = half(8)
+   28  	    bad = half(7)
+   29  	    room = Room(name: "lab", corner: Point(x: 9, y: 10))
+-> 30  	    print(count)
+    	          ^
+   31  	    print(name)
+   32  	    print(p.x + names.len() + points.len() + ages.len())
+   33  	    print(good.default(0) + bad.default(0))
+Target 0: (shapes-bc) stopped.
+(lldb) frame variable h7_good h8_bad
+(h_0opt_e201354) h7_good = 4 {
+  tag = 0
+  as = {
+    ok = 4
+    err = {
+      code = (ptr = "", len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(h_0opt_e201354) h8_bad = "odd" {
+  tag = 1
+  as = {
+    ok = 4295075816
+    err = {
+      code = (ptr = "odd", len = 3)
+      msg = (ptr = "not even", len = 8)
+    }
+  }
+}
