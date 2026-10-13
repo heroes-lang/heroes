@@ -37,7 +37,11 @@
 # **A first error in no group's header is a header's own in two places**
 # (`cli/declared_after.hero`, defect 2049): in a header of C's own the
 # runtime includes after the groups, or in the C this compiler writes, at the
-# name the header's line declared first.
+# name the header's line declared first. **And a first error in a group's
+# header whose notes stand at the include line of the file clang compiled is
+# the header's** where clang declared the name itself at that very line, a
+# function of the C library it knows or a builtin of its own
+# (`cli/builtin_name.hero`, defect 2051).
 #
 # **Only the first error is read.** clang reads on past an error, and what it
 # says after one, about a header it could not read whole or about the
@@ -67,6 +71,7 @@ use cli/group_file
 use cli/clang_first
 use cli/clang_excerpt
 use cli/declared_after
+use cli/builtin_name
 use emit/ffi_build
 use parse
 use resolve
@@ -95,9 +100,15 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
     read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime)
 
     # A first error in no group's header may still be a header's own, where
-    # C declares after the groups the name its line declared (defect 2049).
+    # C declares after the groups the name its line declared (defect 2049);
+    # and one in a group's header whose notes stand at the include line of
+    # the file clang compiled, where clang declared the name itself at the
+    # header's own line (defect 2051).
     if read.is_err()
-        later = declared_after.told(stderr: stderr, s: s, decls: decls, runtime: runtime)
+        later: diag.Diagnostic? @= declared_after.told(stderr: stderr, s: s, decls: decls, runtime: runtime)
+
+        if later.is_err()
+            later @ builtin_name.told(stderr: stderr, s: s, decls: decls, runtime: runtime)
 
         if later.is_err()
             return none

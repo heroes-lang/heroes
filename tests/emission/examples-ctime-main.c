@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -60,11 +62,11 @@ _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_year) == 1 && sizeof
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_mon) == 1 && sizeof(((struct tm *)0)->tm_mon) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_mon, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_mon");
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_mday) == 1 && sizeof(((struct tm *)0)->tm_mday) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_mday, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_mday");
 _Static_assert(__builtin_classify_type(((struct tm *)0)->tm_hour) == 1 && sizeof(((struct tm *)0)->tm_hour) == sizeof(int32_t) && (_Generic(((struct tm *)0)->tm_hour, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Broken tm_hour");
-#line 64 "main.c"
+#line 66 "main.c"
 
 #line 53 "examples/ctime/main.hero"
 _Static_assert(__builtin_classify_type(*(struct tm *)0) != 13, "heroes-ffi-union Broken tm_year tm_mon tm_mday tm_hour");
-#line 68 "main.c"
+#line 70 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -176,7 +178,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 180 "main.c"
+#line 182 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Broken_eq(const struct tm *a, const struct tm *b);
@@ -238,7 +240,7 @@ bb0:
     t1 = INT64_C(1900);
 #line 67 "examples/ctime/main.hero"
     return t1;
-#line 242 "main.c"
+#line 244 "main.c"
 }
 
 #line 69 "examples/ctime/main.hero"
@@ -286,7 +288,7 @@ bb1:
     t12 = h_main_C_EPOCH_YEAR();
 #line 70 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 290 "main.c"
+#line 292 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t13;
@@ -295,7 +297,7 @@ bb2:
     t8 = h1_f0;
 #line 70 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 299 "main.c"
+#line 301 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
@@ -345,7 +347,7 @@ bb1:
     t12 = INT64_C(1);
 #line 74 "examples/ctime/main.hero"
     if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 349 "main.c"
+#line 351 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t13;
@@ -354,7 +356,7 @@ bb2:
     t8 = h1_f0;
 #line 74 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 358 "main.c"
+#line 360 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
@@ -400,7 +402,7 @@ bb1:
     t10 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t11 = t10.as.ok;
-#line 404 "main.c"
+#line 406 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t11;
@@ -409,7 +411,7 @@ bb2:
     t8 = h1_f0;
 #line 77 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 413 "main.c"
+#line 415 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
@@ -455,7 +457,7 @@ bb1:
     t10 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t11 = t10.as.ok;
-#line 459 "main.c"
+#line 461 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t11;
@@ -464,7 +466,7 @@ bb2:
     t8 = h1_f0;
 #line 80 "examples/ctime/main.hero"
     t9 = t8.as.err;
-#line 468 "main.c"
+#line 470 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 }
@@ -755,7 +757,7 @@ bb8:
     goto bb9;
 #line 86 "examples/ctime/main.hero"
 bb9:
-#line 759 "main.c"
+#line 761 "main.c"
     t55 = h12_ret0;
     h_0opt_13b8cf25_retain(&t55);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -891,7 +893,7 @@ bb0:
     h11_own11 = t23;
 #line 90 "examples/ctime/main.hero"
     hero_str_decref(t34);
-#line 895 "main.c"
+#line 897 "main.c"
     hero_str_incref(t23);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -924,7 +926,7 @@ bb0:
 bb1:
 #line 93 "examples/ctime/main.hero"
     t10 = h1_r0;
-#line 928 "main.c"
+#line 930 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_r0);
     hero_str_release_at(&h2_own2);
@@ -984,7 +986,7 @@ bb3:
     hero_str_decref(t15);
 #line 93 "examples/ctime/main.hero"
     goto bb1;
-#line 988 "main.c"
+#line 990 "main.c"
 }
 
 #line 98 "examples/ctime/main.hero"
@@ -1131,7 +1133,7 @@ bb2:
     t10 = h0_f0;
 #line 100 "examples/ctime/main.hero"
     t11 = t10.as.err;
-#line 1135 "main.c"
+#line 1137 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -1218,7 +1220,7 @@ bb3:
     hero_print_bool(t60);
 #line 121 "examples/ctime/main.hero"
     hero_print_end();
-#line 1222 "main.c"
+#line 1224 "main.c"
     h_0opt_13b8cf25_release(hero_slot_escape(&h0_f0));
     h_0opt_13b8cf25_release(hero_slot_escape(&h2_f1));
     h_0opt_13b8cf25_release(hero_slot_escape(&h4_f2));
@@ -1233,7 +1235,7 @@ bb4:
     t37 = h2_f1;
 #line 112 "examples/ctime/main.hero"
     t38 = t37.as.err;
-#line 1237 "main.c"
+#line 1239 "main.c"
     hero_panic_must(t38);
     hero_unreachable();
 }

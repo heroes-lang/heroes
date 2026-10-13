@@ -46,7 +46,8 @@
 # (`emit/header_region.hero`: `-Wall`'s warnings and sign conversions passed
 # over, a missing return, an uninitialised read, a format reading an
 # argument it was not given or one of another type, a value narrowed to 32
-# bits and a pointer of another type refused), and every check of a binding is raised again after it
+# bits, a pointer of another type and a call to a function nobody declared
+# refused), and every check of a binding is raised again after it
 # (`emit/checks_raised.hero`). So the word is still read as the directory it
 # names: as `-isystem` it would quiet what the region keeps, and a header's
 # verdict would again depend on how a package spells its directory. Seven headers under Debian 13's `/usr/include/mit-krb5`, the

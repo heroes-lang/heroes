@@ -1,0 +1,213 @@
+# A header of the program's own refused where clang declared the name its
+# line declares itself, at that very line (design.md §4.19, §4.17; CLAUDE.md
+# §7's named exception; defect 2051, 2026-10-13). clang declares each
+# function of the C library it knows, and each builtin of its own, where a
+# unit first names one, so a header holding `int fabs;` is refused at its own
+# line, *redefinition of 'fabs' as different kind of symbol*. The earlier
+# declaration then stands at the very place of the later, and clang says so
+# as it says it of a header read twice: a note at the line of the file clang
+# compiled that includes the header, *'./e_fabs.h' included multiple times,
+# additional include site here*, once for each declaration, and one asking
+# the header for a guard. A note in the file clang compiled was the
+# compiler's (defect 360), and it was told *internal error: compiling the
+# generated C failed* at exit 2. The unit holds both declarations, so the
+# program is refused before and after; what moves is who is told (defects
+# 060, 360 and 2049).
+#
+# **Asked of the lines, never of a list of names.** The error lies in a
+# group's header the file clang compiled includes itself; every note under it
+# stands either at that include line, naming as included again the very file
+# the error names, or at the error's own line, asking for a guard; and one at
+# least is the first. Both declarations then stand at one line of one
+# inclusion, the header's, so the earlier is clang's own and no line of this
+# compiler's: told as the header's, the name the identifier clang's caret
+# stands on and its message quotes, with a `guess` fix renaming it. A guard
+# would change nothing, so neither note is told as clang wrote it. Any other
+# note stays the compiler's at exit 2.
+
+use source
+use ast
+use diag
+use emit/clang_place
+use emit/ffi_lookup
+use cli/group_file
+use cli/runtime_key
+use cli/runtime_name
+use cli/clang_first
+use cli/clang_excerpt
+use cli/declared_after
+use parse
+
+# clang's words for the two notes it writes where a declaration's earlier one
+# stands at its own place (`Sema::notePreviousDefinition`), word for word
+# around the file's name, as Apple clang 21 and Debian clang 22.1.8 write
+# them.
+constant AGAIN: str
+    "' included multiple times, additional include site here"
+
+constant GUARD: str
+    "unguarded header; consider using #ifdef guards or #pragma once"
+
+# The refusal, on the group's string, or none where clang's first error is
+# not this class. `runtime` is the runtime's directory as clang was given it.
+function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
+    rows = ffi_lookup.lines(text: stderr)
+    first = clang_first.first_error(rows)?
+    steps = clang_place.stack(stderr: stderr, line: rows[first.row])
+    own = runtime_key.made_of(runtime)?
+
+    if steps.len() != 2 || group_file.compilers(path: first.place.path, compiled: steps[0].path, runtime: own)
+        return fail(code: "none", msg: "the error lies in no header the compiled file includes")
+    group = group_file.group_of(s, decls, path: first.place.path)?
+    name = runtime_name.caret_name(rows, after: first.row)?
+    _ = clang_place.offset_of(text: first.message, needle: "'" + name + "'")?
+
+    if !one_place(rows, first: first, including: steps[0])
+        return fail(code: "none", msg: "a note places the earlier declaration elsewhere")
+    line = declared_after.Line(
+        group: group,
+        row: first.place.row,
+        quoted: clang_excerpt.of(rows, after: first.row),
+        name: name
+    )
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_header_refused",
+        message: "`" + group.header + "`, the header this group names, does not compile: its line " + first.place.row.to_str() + " declares `" + name + "`, which clang itself declares first, at that very line, as a name of C's own, and clang refuses the two: " + first.message,
+        span: group.span
+    )
+
+    if !line.quoted.is_err()
+        d.notes @ d.notes.push(
+            "`" + group.header + "` line " + first.place.row.to_str() + " reads `" + line.quoted.must() + "`"
+        )
+    d.notes @ d.notes.push(
+        declared_after.BUILTIN + name + "` is declared by clang itself where a unit first names it, as clang declares each function of the C library it knows and each builtin of its own: its notes, the include line of this program's C named for each declaration and a guard asked of the header, place both at the header's own line, which a guard would not change"
+    )
+    d.fixes @ [declared_after.renamed(s, line: line, why: "a name of C's own, which clang declares itself")]
+    return ok(d)
+
+# Whether every note under the error stands at one of the two places clang
+# writes for a declaration whose earlier one is at its own place, and one at
+# least at `including`, the line of the file clang compiled that includes
+# the error's file, naming that file as clang names it in the error.
+function one_place(rows: [str], first: clang_first.First, including: clang_place.Place) -> bool
+    again: bool @= false
+
+    for note in clang_first.attached(rows, after: first.row)
+        if at(note, place: including) && note.text == "'" + first.place.path + AGAIN
+            again @ true
+        else if !at(note, place: first.place) || note.text != GUARD
+            return false
+
+    return again
+
+# Whether a note stands at a place's file and line.
+function at(note: clang_first.Attached, place: clang_place.Place) -> bool
+    return group_file.settled(note.path) == group_file.settled(place.path) && note.row == place.row
+
+## Tests
+
+constant TEXT: str
+    "extern \"e_fabs.h\"\n    function eight() -> i32\n\nfunction main()\n    print(eight())\n"
+
+# Clang's words as Apple clang 21 on this Mac wrote them on 2026-10-13 for the
+# reproducer, a header holding `int fabs;`, the unit's directory shortened:
+# the file clang compiled is `unit`, each line ends with `end`, and the
+# error, the two notes at the include line and the guard's note are the
+# parts the cases below move.
+function words(unit: str, end: str, error: str, first: str, second: str, guard: str) -> str
+    above = "In file included from " + unit + ":20:" + end
+    return above + error + end + "    1 | int fabs;" + end + "      |     ^" + end + first + end + "   20 | #include <e_fabs.h>" + end + "      |          ^" + end + second + end + above + guard + end + "    1 | int fabs;" + end + "      |     ^" + end + "1 error generated." + end
+
+constant ERROR: str
+    "./e_fabs.h:1:5: error: redefinition of 'fabs' as different kind of symbol"
+
+constant GUARDED: str
+    "./e_fabs.h:1:5: note: unguarded header; consider using #ifdef guards or #pragma once"
+
+# A note at the include line `row` of `unit`, naming `file` as included again.
+function included_again(unit: str, row: str, file: str) -> str
+    return unit + ":" + row + ":10: note: '" + file + "' included multiple times, additional include site here"
+
+test "a header declaring a name clang declares itself at that very line is refused as its own (defect 2051)"
+    s = source.new_source(name: "efabs.hero", text: TEXT)
+    decls = parse.parse(TEXT).decls
+    unit = "build/tu-1/efabs.c"
+    note = included_again(unit: unit, row: "20", file: "./e_fabs.h")
+    mac = words(unit: unit, end: "\n", error: ERROR, first: note, second: note, guard: GUARDED)
+    said = told(stderr: mac, s: s, decls: decls, runtime: "runtime").must()
+    assert said.code == "ffi_header_refused"
+    assert source.span_text(s, said.span) == "\"e_fabs.h\""
+    assert said.message == "`e_fabs.h`, the header this group names, does not compile: its line 1 declares `fabs`, which clang itself declares first, at that very line, as a name of C's own, and clang refuses the two: redefinition of 'fabs' as different kind of symbol"
+    assert said.notes[0] == "`e_fabs.h` line 1 reads `int fabs;`"
+    assert said.notes.len() == 2
+    assert said.fixes.len() == 1 && said.fixes[0].certainty == .guess
+    assert declared_after.taken(said).must().name == "fabs"
+
+    # The Windows box's separator and line ends name the same lines.
+    box = "build\\tu-1\\efabs.c"
+    windows = words(
+        unit: box,
+        end: "\r\n",
+        error: ERROR,
+        first: included_again(unit: box, row: "20", file: "./e_fabs.h"),
+        second: included_again(unit: box, row: "20", file: "./e_fabs.h"),
+        guard: GUARDED
+    )
+    assert told(stderr: windows, s: s, decls: decls, runtime: "runtime").must().message == said.message
+
+# What is not this class: a header read twice, its notes at two lines; a
+# note naming another file; the guard asked at another line; a note that is
+# neither; and a message quoting another name.
+test "a note placing the earlier declaration anywhere else leaves the refusal the compiler's (defect 2051)"
+    s = source.new_source(name: "efabs.hero", text: TEXT)
+    decls = parse.parse(TEXT).decls
+    unit = "build/tu-1/efabs.c"
+    note = included_again(unit: unit, row: "20", file: "./e_fabs.h")
+    twice = words(
+        unit: unit,
+        end: "\n",
+        error: ERROR,
+        first: note,
+        second: included_again(unit: unit, row: "21", file: "./e_fabs.h"),
+        guard: GUARDED
+    )
+    other = words(
+        unit: unit,
+        end: "\n",
+        error: ERROR,
+        first: note,
+        second: included_again(unit: unit, row: "20", file: "./other.h"),
+        guard: GUARDED
+    )
+    elsewhere = words(
+        unit: unit,
+        end: "\n",
+        error: ERROR,
+        first: note,
+        second: note,
+        guard: "./e_fabs.h:2:5: note: unguarded header; consider using #ifdef guards or #pragma once"
+    )
+    neither = words(
+        unit: unit,
+        end: "\n",
+        error: ERROR,
+        first: note,
+        second: unit + ":20:10: note: previous definition is here",
+        guard: GUARDED
+    )
+    quoted = words(
+        unit: unit,
+        end: "\n",
+        error: "./e_fabs.h:1:5: error: redefinition of 'fab' as different kind of symbol",
+        first: note,
+        second: note,
+        guard: GUARDED
+    )
+
+    for text in [twice, other, elsewhere, neither, quoted]
+        assert told(stderr: text, s: s, decls: decls, runtime: "runtime").is_err()
+
+    # And no note at the include line at all, only the guard's.
+    alone = "In file included from " + unit + ":20:\n" + ERROR + "\n    1 | int fabs;\n      |     ^\nIn file included from " + unit + ":20:\n" + GUARDED + "\n"
+    assert told(stderr: alone, s: s, decls: decls, runtime: "runtime").is_err()

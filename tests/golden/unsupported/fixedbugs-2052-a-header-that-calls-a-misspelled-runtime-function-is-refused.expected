@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-2052-a-header-that-calls-a-misspelled-runtime-function-is-refused.h`, the header this group names, does not compile: clang refuses it at line 4: call to undeclared function 'hero_str_le'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  at tests/golden/unsupported/fixedbugs-2052-a-header-that-calls-a-misspelled-runtime-function-is-refused.hero:13:8
+     |
+  13 | extern "fixedbugs-2052-a-header-that-calls-a-misspelled-runtime-function-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2052-a-header-that-calls-a-misspelled-runtime-function-is-refused.h` line 4 reads `static inline int eight(void) { return (int)hero_str_le(8); }`
+  note: clang adds, at `fixedbugs-2052-a-header-that-calls-a-misspelled-runtime-function-is-refused.h` line 4: did you mean 'hero_str_len'?
+  note: clang adds, at `hero_str_len`, a name of the Heroes runtime's own, which every unit of this program declares before any group's header, and clang suggests in the refused line: 'hero_str_len' declared here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

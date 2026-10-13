@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -96,7 +98,7 @@ HERO_STR_STATIC(hero_str_2e, ".");
 HERO_STR_STATIC(hero_str_2d, "-");
 HERO_STR_STATIC(hero_str_30, "0");
 
-#line 100 "main.c"
+#line 102 "main.c"
 typedef struct h_main_Body {
     double f_x;
     double f_y;
@@ -158,7 +160,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 162 "main.c"
+#line 164 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Body_eq(const h_main_Body *a, const h_main_Body *b);
@@ -223,7 +225,7 @@ bb0:
     t1 = 0x1.921fb54442d18p+1;
 #line 54 "examples/nbody/main.hero"
     return t1;
-#line 227 "main.c"
+#line 229 "main.c"
 }
 
 #line 56 "examples/nbody/main.hero"
@@ -235,7 +237,7 @@ bb0:
     t1 = 0x1.6d3d70a3d70a4p+8;
 #line 57 "examples/nbody/main.hero"
     return t1;
-#line 239 "main.c"
+#line 241 "main.c"
 }
 
 #line 59 "examples/nbody/main.hero"
@@ -255,7 +257,7 @@ bb0:
     t5 = t3 * t4;
 #line 60 "examples/nbody/main.hero"
     return t5;
-#line 259 "main.c"
+#line 261 "main.c"
 }
 
 #line 76 "examples/nbody/main.hero"
@@ -281,7 +283,7 @@ bb0:
     t8 = (h_main_Body){.f_x = t1, .f_y = t2, .f_z = t3, .f_vx = t4, .f_vy = t5, .f_vz = t6, .f_mass = t7};
 #line 77 "examples/nbody/main.hero"
     return t8;
-#line 285 "main.c"
+#line 287 "main.c"
 }
 
 #line 85 "examples/nbody/main.hero"
@@ -324,7 +326,7 @@ bb0:
     t19 = (h_main_Body){.f_x = t1, .f_y = t3, .f_z = t5, .f_vx = t8, .f_vy = t11, .f_vz = t15, .f_mass = t18};
 #line 86 "examples/nbody/main.hero"
     return t19;
-#line 328 "main.c"
+#line 330 "main.c"
 }
 
 #line 102 "examples/nbody/main.hero"
@@ -365,7 +367,7 @@ bb0:
     t18 = (h_main_Body){.f_x = t1, .f_y = t2, .f_z = t4, .f_vx = t8, .f_vy = t11, .f_vz = t14, .f_mass = t17};
 #line 103 "examples/nbody/main.hero"
     return t18;
-#line 369 "main.c"
+#line 371 "main.c"
 }
 
 #line 119 "examples/nbody/main.hero"
@@ -408,7 +410,7 @@ bb0:
     t19 = (h_main_Body){.f_x = t1, .f_y = t3, .f_z = t5, .f_vx = t8, .f_vy = t11, .f_vz = t15, .f_mass = t18};
 #line 120 "examples/nbody/main.hero"
     return t19;
-#line 412 "main.c"
+#line 414 "main.c"
 }
 
 #line 136 "examples/nbody/main.hero"
@@ -449,7 +451,7 @@ bb0:
     t18 = (h_main_Body){.f_x = t1, .f_y = t3, .f_z = t4, .f_vx = t7, .f_vy = t10, .f_vz = t14, .f_mass = t17};
 #line 137 "examples/nbody/main.hero"
     return t18;
-#line 453 "main.c"
+#line 455 "main.c"
 }
 
 #line 150 "examples/nbody/main.hero"
@@ -485,7 +487,7 @@ bb0:
     h0_own0 = t6;
 #line 151 "examples/nbody/main.hero"
     hero_array_decref(t7);
-#line 489 "main.c"
+#line 491 "main.c"
     hero_array_incref(t6);
     hero_array_release_at(&h0_own0);
     return t6;
@@ -713,7 +715,7 @@ bb6:
 bb7:
 #line 178 "examples/nbody/main.hero"
     t75 = h8_out;
-#line 717 "main.c"
+#line 719 "main.c"
     hero_array_incref(t75);
     hero_array_release_at(&h4_xs0);
     hero_array_release_at(&h8_out);
@@ -1025,7 +1027,7 @@ bb8:
 bb9:
 #line 220 "examples/nbody/main.hero"
     t121 = h2_moved;
-#line 1029 "main.c"
+#line 1031 "main.c"
     hero_array_incref(t121);
     hero_array_release_at(&h2_moved);
     return t121;
@@ -1099,7 +1101,7 @@ bb0:
     t33 = (h_main_Body){.f_x = t2, .f_y = t4, .f_z = t6, .f_vx = t14, .f_vy = t22, .f_vz = t30, .f_mass = t32};
 #line 226 "examples/nbody/main.hero"
     return t33;
-#line 1103 "main.c"
+#line 1105 "main.c"
 }
 
 #line 239 "examples/nbody/main.hero"
@@ -1317,7 +1319,7 @@ bb6:
     h2_i = t84;
 #line 256 "examples/nbody/main.hero"
     goto bb1;
-#line 1321 "main.c"
+#line 1323 "main.c"
 }
 
 #line 261 "examples/nbody/main.hero"
@@ -1329,7 +1331,7 @@ bb0:
     t1 = INT64_C(1000);
 #line 262 "examples/nbody/main.hero"
     return t1;
-#line 1333 "main.c"
+#line 1335 "main.c"
 }
 
 #line 264 "examples/nbody/main.hero"
@@ -1341,7 +1343,7 @@ bb0:
     t1 = 0x1.47ae147ae147bp-7;
 #line 265 "examples/nbody/main.hero"
     return t1;
-#line 1345 "main.c"
+#line 1347 "main.c"
 }
 
 #line 267 "examples/nbody/main.hero"
@@ -1460,7 +1462,7 @@ bb3:
     hero_print_str(t19);
 #line 277 "examples/nbody/main.hero"
     hero_print_end();
-#line 1464 "main.c"
+#line 1466 "main.c"
     hero_array_release_at(&h0_start);
     hero_array_release_at(&h1_moved);
     hero_array_release_at(&h3_own3);
@@ -1480,7 +1482,7 @@ bb0:
     t1 = 0x1.dcd65p+29;
 #line 290 "examples/nbody/main.hero"
     return t1;
-#line 1484 "main.c"
+#line 1486 "main.c"
 }
 
 #line 292 "examples/nbody/main.hero"
@@ -1649,7 +1651,7 @@ bb5:
     t18 = h3_f0;
 #line 298 "examples/nbody/main.hero"
     t19 = t18.as.err;
-#line 1653 "main.c"
+#line 1655 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -1683,7 +1685,7 @@ bb8:
     goto bb6;
 #line 304 "examples/nbody/main.hero"
 bb9:
-#line 1687 "main.c"
+#line 1689 "main.c"
     t40 = h8_ret0;
     hero_str_incref(t40);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -1761,7 +1763,7 @@ bb2:
 bb3:
 #line 315 "examples/nbody/main.hero"
     t10 = h1_digits;
-#line 1765 "main.c"
+#line 1767 "main.c"
     hero_str_incref(t10);
     hero_str_release_at(&h1_digits);
     hero_str_release_at(&h2_own2);
@@ -1828,7 +1830,7 @@ bb3:
     goto bb1;
 #line 404 "examples/nbody/main.hero"
 bb4:
-#line 1832 "main.c"
+#line 1834 "main.c"
     t14 = h3_ret0;
     return t14;
 }

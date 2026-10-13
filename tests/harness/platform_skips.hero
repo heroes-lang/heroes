@@ -10,17 +10,28 @@
 # surface row is named whole, so a renamed one stops being skipped and is
 # judged, loudly, rather than skipped in silence (the test below holds each
 # name to a case or a row that exists).
+#
+# **And a case whose words are one platform's is judged there alone**
+# (defect 2053, 2026-10-13): clang refuses a header's `static` definition
+# after the runtime's declaration on every platform, in other words on the
+# Windows target than on this Mac and Linux, so each side's words are a case
+# judged where they are said, and the refusal's mark, `#~`, on all three.
 
 use shell
 use strings
 
 # Why a case or a surface row named `name` is not judged on this machine, or
-# absent where it is.
+# absent where it is: on Windows, a shape its C cannot hold; anywhere else, a
+# case whose words are the Windows target's alone.
 function reason(name: str) -> str?
+    named: [Skip] @= elsewhere()
+
     if shell.exe_suffix() == ".exe"
-        for one in windows()
-            if one.name == name
-                return ok(one.why)
+        named @ windows()
+
+    for one in named
+        if one.name == name
+            return ok(one.why)
 
     return fail(code: "judged", msg: "judged on this machine")
 
@@ -31,11 +42,26 @@ record Skip
 constant INLINE_ON_WINDOWS: str
     "the Windows target reads C's `inline` as Microsoft's compiler does: a header's `inline` definition is emitted in every unit that calls it, a COMDAT the linker keeps once (clang -S -emit-llvm on the Windows box, 2026-10-11, clang 23.1.1), so a header-only C99 inline links there and the program prints 6, where C11 6.7.4p7 gives no external definition; it is judged on the platforms whose C reads the standard's rule (defect 640)"
 
+constant STATIC_ON_WINDOWS: str
+    "the Windows target reads a `static` definition after a function's external declaration as Microsoft's extension, which a header's region refuses in clang's words for it, `redeclaring non-static 'hero_str_len' as static is a Microsoft extension` (clang 23.1.1 on the Windows box, 2026-10-13), where this Mac's clang and Linux's say `static declaration of 'hero_str_len' follows non-static declaration`; no static shape is said alike on the three, so each platform's words are judged where they are said, these on this Mac and Linux, the `fixedbugs-2053-` cases on Windows, and every case's mark on all three (defect 2053)"
+
+constant STATIC_ELSEWHERE: str
+    "its words are the Windows target's, Microsoft's extension refused in a header's region (clang 23.1.1 on the Windows box, 2026-10-13), where this Mac's clang and Linux's say `static declaration of 'hero_str_len' follows non-static declaration`, which defect 2045's case judges on them; its mark is judged on every platform (defect 2053)"
+
 # The cases and rows Windows cannot hold, by the name the report gives them.
 function windows() -> [Skip]
     return [
         Skip(name: "fixedbugs-562-a-header-only-inline-is-told-what-c-wants", why: INLINE_ON_WINDOWS)
         Skip(name: "a header-only C99 inline is refused by run as by build, told what C wants (defect 562)", why: INLINE_ON_WINDOWS)
+        Skip(name: "fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused", why: STATIC_ON_WINDOWS)
+    ]
+
+# The cases whose words the Windows target's C alone says, by the name the
+# report gives them, skipped on every other machine.
+function elsewhere() -> [Skip]
+    return [
+        Skip(name: "fixedbugs-2053-a-header-that-defines-a-called-runtime-function-again-as-static-is-refused-on-windows", why: STATIC_ELSEWHERE)
+        Skip(name: "fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows", why: STATIC_ELSEWHERE)
     ]
 
 # Whether the report a case's `!sanitizer:` line names is the runtime's to
@@ -61,14 +87,22 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(text: surface.must(), needle: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 2
+    assert windows().len() == 3
 
-# On a machine that is not Windows nothing is skipped by name.
+    # Each case named for one platform's words is a case that exists, so a
+    # renamed one is judged rather than skipped in silence (defect 2053).
+    for one in [windows()[2], elsewhere()[0], elsewhere()[1]]
+        assert shell.exists("tests/golden/unsupported/" + one.name + ".hero")
+
+    assert elsewhere().len() == 2
+
+# On a machine that is not Windows nothing is skipped by name but the cases
+# whose words are Windows' alone, and on Windows those are judged.
 test "a name is judged where its platform's C holds its shape"
-    if shell.exe_suffix() != ".exe"
-        assert reason("fixedbugs-562-a-header-only-inline-is-told-what-c-wants").is_err()
-    else
-        assert !reason("fixedbugs-562-a-header-only-inline-is-told-what-c-wants").is_err()
+    on_windows = shell.exe_suffix() == ".exe"
+    assert reason("fixedbugs-562-a-header-only-inline-is-told-what-c-wants").is_err() == !on_windows
+    assert reason("fixedbugs-2045-a-header-that-defines-a-runtime-function-again-as-static-is-refused").is_err() == !on_windows
+    assert reason(elsewhere()[0].name).is_err() == on_windows
     assert reason("fixedbugs-562-another-case").is_err()
 
 # A stack overflow's report is the runtime's on Windows alone, and no other

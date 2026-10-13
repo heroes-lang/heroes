@@ -39,12 +39,17 @@ use cli/clang_excerpt
 use parse
 
 # How the note naming C's own declaration opens, and the one naming this
-# compiler's, which `taken` reads back.
+# compiler's, which `taken` reads back; and the one naming a declaration
+# clang makes itself at the header's own line (`cli/builtin_name.hero`,
+# defect 2051).
 constant LIBRARY: str
     "the C library's `"
 
 constant EMITTED: str
     "this compiler's `"
+
+constant BUILTIN: str
+    "C's own `"
 
 # The header's line a note stands on: its group, its row, the line as clang
 # quoted it, and the name both carets stand on.
@@ -182,16 +187,17 @@ function emitted(steps: [clang_place.Place], name: str, s: source.Source, decls:
 
     return fail(code: "none", msg: "no function of the program's own has this C name")
 
-# The name a refusal's note says C declares after the header, and whose it
-# is, for `cli/header_order.hero`, which tries no header before such a one
-# and tells one not beside the program to be declared anew.
+# The name a refusal's note says C declares after the header, or clang
+# itself at its line (defect 2051), and whose it is, for
+# `cli/header_order.hero`, which tries no header before such a one and tells
+# one not beside the program to be declared anew.
 record Taken
     name: str
     whose: str
 
 function taken(d: diag.Diagnostic) -> Taken?
     for note in d.notes
-        for opening in [LIBRARY, EMITTED]
+        for opening in [LIBRARY, EMITTED, BUILTIN]
             if clang_place.same_bytes(text: note, from: 0, part: opening)
                 rest = note.slice(from: opening.len(), to: note.len())
                 stop = clang_place.offset_of(text: rest, needle: "`")?
@@ -199,6 +205,9 @@ function taken(d: diag.Diagnostic) -> Taken?
 
                 if opening == EMITTED
                     whose @ "which this compiler gives one of the program's own functions"
+
+                if opening == BUILTIN
+                    whose @ "which clang declares itself wherever a unit names it"
                 return ok(Taken(name: rest.slice(from: 0, to: stop), whose: whose))
 
     return fail(code: "none", msg: "no note names a name C declares after the header")

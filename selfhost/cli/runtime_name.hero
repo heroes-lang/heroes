@@ -72,14 +72,24 @@ function called(rows: [str], error: i64, path: str, row: i64, runtime: [str]) ->
 
 # The name of the runtime's own clang suggests in the line it quoted, where
 # the note at row `note` of `rows`, at line `row` of `path`, one of
-# `runtime`'s files, stands on that name in the runtime's own line, and the
-# error's `message` says `did you mean '<name>'?`; absent for any other note.
-function suggested(rows: [str], message: str, note: i64, path: str, row: i64, runtime: [str]) -> str?
+# `runtime`'s files, stands on that name in the runtime's own line, and one of
+# `said`, what clang wrote of the error at the error's own place, says `did
+# you mean '<name>'?`; absent for any other note. clang writes the
+# suggestion in the error's message for a type, `unknown type name 'HeroSt';
+# did you mean 'HeroStr'?`, and for a call to a function nobody declared in
+# a note of its own at the call, before the note at the declaration
+# (defect 2052): so `said` is the error's message and the text of each note
+# at the error's file and line.
+function suggested(rows: [str], said: [str], note: i64, path: str, row: i64, runtime: [str]) -> str?
     column = column_of(rows[note])?
     line = standard_name.line_of(path: path, row: row, runtime: runtime)?
     name = name_at(text: line, at: column - 1)?
-    _ = clang_place.offset_of(text: message, needle: SUGGESTION + name + "'?")?
-    return ok(name)
+
+    for text in said
+        if !clang_place.offset_of(text: text, needle: SUGGESTION + name + "'?").is_err()
+            return ok(name)
+
+    return fail(code: "none", msg: "clang suggests no name of the runtime's at the error")
 
 constant SUGGESTION: str
     "did you mean '"
@@ -359,11 +369,11 @@ test "the function whose call holds the caret, and a name clang suggests, are re
         caret: "                                ^~~~~~",
         note: "runtime/heroes_runtime.h:" + str_type.to_str() + ":3"
     )
-    asked = "unknown type name 'HeroSt'; did you mean 'HeroStr'?"
-    assert suggested(rows: typo, message: asked, note: 3, path: "runtime/heroes_runtime.h", row: str_type, runtime: runtime).must() == "HeroStr"
+    asked = ["unknown type name 'HeroSt'; did you mean 'HeroStr'?"]
+    assert suggested(rows: typo, said: asked, note: 3, path: "runtime/heroes_runtime.h", row: str_type, runtime: runtime).must() == "HeroStr"
     assert suggested(
         rows: typo,
-        message: "unknown type name 'HeroSt'",
+        said: ["unknown type name 'HeroSt'"],
         note: 3,
         path: "runtime/heroes_runtime.h",
         row: str_type,
@@ -371,9 +381,38 @@ test "the function whose call holds the caret, and a name clang suggests, are re
     ).is_err()
     assert suggested(
         rows: typo,
-        message: asked,
+        said: asked,
         note: 3,
         path: "build/tu-1/t.c",
         row: str_type,
+        runtime: runtime
+    ).is_err()
+
+    # DEFECT 2052: a call to a function nobody declared, clang's suggestion
+    # in a note of its own at the call, as Apple clang 21 and Debian clang
+    # 22.1.8 wrote it on 2026-10-13; the runtime's note at the function's
+    # name in its declaration. A suggestion of another name names nothing.
+    undeclared = clang_rows(
+        at: "1:45",
+        line: "static inline int eight(void) { return (int)hero_str_le(8); }",
+        caret: "                                            ^",
+        note: "runtime/heroes_runtime.h:" + length.to_str() + ":9"
+    )
+    message = "call to undeclared function 'hero_str_le'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]"
+    assert suggested(rows: undeclared, said: [message, "did you mean 'hero_str_len'?"], note: 3, path: "runtime/heroes_runtime.h", row: length, runtime: runtime).must() == "hero_str_len"
+    assert suggested(
+        rows: undeclared,
+        said: [message],
+        note: 3,
+        path: "runtime/heroes_runtime.h",
+        row: length,
+        runtime: runtime
+    ).is_err()
+    assert suggested(
+        rows: undeclared,
+        said: [message, "did you mean 'hero_str_cmp'?"],
+        note: 3,
+        path: "runtime/heroes_runtime.h",
+        row: length,
         runtime: runtime
     ).is_err()

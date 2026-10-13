@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -125,7 +127,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 129 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 131 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 typedef struct h_0opt_a8ea2 {
     int64_t tag;
     union {
@@ -189,7 +191,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 193 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 195 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
@@ -223,7 +225,7 @@ HeroArrayHeader * h_library_args(void);
 
 #line 19 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 int32_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL(void) {
-#line 227 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 229 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     return SIGKILL;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -241,7 +243,7 @@ int32_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_SIGKILL(void
 
 #line 39 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_HERO_DIR_FILES(void) {
-#line 245 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 247 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     return HERO_DIR_FILES;
 }
 
@@ -254,7 +256,7 @@ bb0:
     t1 = INT64_C(10);
 #line 44 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     return t1;
-#line 258 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 260 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
@@ -284,7 +286,7 @@ bb0:
     h2_own2 = t3;
 #line 49 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     hero_str_decref(t4);
-#line 288 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 290 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -414,7 +416,7 @@ bb4:
     h7_code = t26;
     (void)hero_run_reset();
     t27 = h7_code;
-#line 418 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 420 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_str_release_at(&h2_program);
     hero_array_release_at(&h3_xs0);
     hero_str_release_at(&h5_word);
@@ -445,7 +447,7 @@ bb0:
     t6 = h1_count;
 #line 71 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     return t6;
-#line 449 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 451 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 74 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
@@ -473,7 +475,7 @@ bb0:
     t4 = INT64_C(0);
 #line 75 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(t3, t4);
-#line 477 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 479 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_array_release_at(&h1_own1);
     return;
 }
@@ -693,7 +695,7 @@ bb12:
     goto bb10;
 #line 95 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb13:
-#line 697 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 699 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f1));
     hero_str_release_at(&h6_own6);
@@ -761,7 +763,7 @@ bb5:
 bb6:
 #line 105 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     goto bb4;
-#line 765 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 767 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 109 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
@@ -911,7 +913,7 @@ bb2:
     t24 = h2_f0;
 #line 113 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     t25 = t24.as.err;
-#line 915 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 917 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_panic_must(t25);
     hero_unreachable();
 bb3:
@@ -921,7 +923,7 @@ bb3:
     t51 = hero_str_lend(t50);
 #line 125 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     (void)hero_dir_remove_tree(hero_cstr_nonnull(t51));
-#line 925 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 927 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_str_release_at(&h0_dir);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     hero_str_release_at(&h4_own4);
@@ -1003,7 +1005,7 @@ bb8:
     hero_print_end();
 #line 124 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     goto bb6;
-#line 1007 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 1009 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 127 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
@@ -1039,7 +1041,7 @@ bb0:
     if (t5) goto bb2; else goto bb3;
 #line 130 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb1:
-#line 1043 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 1045 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_array_release_at(&h0_words);
     hero_array_release_at(&h1_own1);
     return;
@@ -1106,18 +1108,18 @@ bb7:
     hero_print_end();
 #line 137 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
     goto bb1;
-#line 1110 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 1112 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 1115 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 1117 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     return HERO_OS_OK;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 1121 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 1123 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -1229,7 +1231,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1233 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 1235 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -1299,7 +1301,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 1303 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
+#line 1305 "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

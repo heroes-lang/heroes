@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -97,7 +99,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_c10bd3d, "after the swap: ");
 
-#line 101 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
+#line 103 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -143,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 147 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
+#line 149 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandleaplacethesamecallwritesisnotpoisoned_Node_eq(node * const *a, node * const *b);
@@ -219,7 +221,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 25 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
     return;
-#line 223 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
+#line 225 "deadhandleaplacethesamecallwritesisnotpoisoned.c"
 }
 #undef h0_a
 HERO_TU_LOCAL bool h_deadhandleaplacethesamecallwritesisnotpoisoned_Node_eq(node * const *a, node * const *b) {

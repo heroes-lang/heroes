@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -90,7 +92,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 94 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 96 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 typedef enum h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag {
     h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_empty = 0,
     h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_held = 1,
@@ -136,7 +138,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 140 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 142 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b);
@@ -169,7 +171,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
     return;
-#line 173 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 175 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b) {
     return hero_handle_eq(*a, *b);

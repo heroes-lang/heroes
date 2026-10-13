@@ -1,0 +1,17 @@
+# fixedbugs, defect 2052, 2026-10-13, the reproducer.
+#
+# SYMPTOM: a header of the program's own calling `hero_str_le`, a function
+# nobody declared, built: the header's region ignored `-Wall`, and with it
+# clang's default error for an implicit declaration, so the build stopped
+# at the link, `internal error: linking failed`, exit 2.
+#
+# FIX: `-Wimplicit-function-declaration` stays an error in the region
+# (`emit/header_region.hero`'s `KEPT`), the header refused at the call's
+# line 4, exit 1, and clang's suggestion, a note of its own at the call,
+# told as the Heroes runtime's own name (`cli/runtime_name.hero`).
+
+extern "fixedbugs-2052-a-header-that-calls-a-misspelled-runtime-function-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

@@ -1,0 +1,22 @@
+# fixedbugs, defect 2053, 2026-10-13, the reproducer, its words the Windows
+# target's: judged there alone (`tests/harness/platform_skips.hero`), and
+# its mark on every platform.
+#
+# SYMPTOM: on the Windows box (clang 23.1.1, MSVC target) a header of the
+# program's own defining `hero_str_len` again as `static`, read as
+# Microsoft's extension, built, and the link said `duplicate symbol:
+# hero_str_len`, `internal error: linking failed`, exit 2. This Mac and
+# Linux refused it at exit 1, `static declaration of 'hero_str_len' follows
+# non-static declaration`.
+#
+# FIX: `-Wmicrosoft-redeclare-static` is an error in the header's region
+# (`emit/header_region.hero`'s `EXTENDED`), so Windows refuses the header at
+# its line 5, exit 1, its note told as the Heroes runtime's own name.
+
+extern "fixedbugs-2053-a-header-that-defines-a-called-runtime-function-again-as-static-is-refused-on-windows.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    word = "abc"
+    print(eight())
+    print(word.len())

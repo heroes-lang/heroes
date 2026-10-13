@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -58,13 +60,13 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 7 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 _Static_assert(__builtin_classify_type(((struct pt *)0)->x) == 1 && sizeof(((struct pt *)0)->x) == sizeof(int32_t) && (_Generic(((struct pt *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt x");
 _Static_assert(__builtin_classify_type(((struct pt *)0)->y) == 1 && sizeof(((struct pt *)0)->y) == sizeof(int32_t) && (_Generic(((struct pt *)0)->y, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pt y");
-#line 62 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 64 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 
 #line 6 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 _Static_assert(__builtin_classify_type(*(struct pt *)0) != 13 || sizeof(((struct pt *)0)->x) == sizeof(struct pt), "heroes-ffi-union-narrow Pt x");
 #line 6 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 _Static_assert(__builtin_classify_type(*(struct pt *)0) != 13 || sizeof(((struct pt *)0)->y) == sizeof(struct pt), "heroes-ffi-union-narrow Pt y");
-#line 68 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 70 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -144,7 +146,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 150 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs094anemptybracelistandazerobuildazerorecord_Pt_eq(const struct pt *a, const struct pt *b);
@@ -164,7 +166,7 @@ void h_fixedbugs094anemptybracelistandazerobuildazerorecord_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY(void) {
-#line 168 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 170 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -176,7 +178,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY(void) 
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 9 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     struct pt hero_constant_value = PT_EMPTY;
-#line 180 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 182 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -195,7 +197,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY(void) 
 
 #line 10 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void) {
-#line 199 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 201 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic push
 #pragma clang diagnostic error "-Wexcess-initializers"
 #pragma clang diagnostic error "-Wconstant-conversion"
@@ -207,7 +209,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void) {
 #pragma clang diagnostic ignored "-Winitializer-overrides"
 #line 10 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     struct pt hero_constant_value = PT_ZERO;
-#line 211 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 213 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 #pragma clang diagnostic pop
     return hero_constant_value;
 }
@@ -273,7 +275,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
     return;
-#line 277 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
+#line 279 "fixedbugs094anemptybracelistandazerobuildazerorecord.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs094anemptybracelistandazerobuildazerorecord_Pt_eq(const struct pt *a, const struct pt *b) {
     if (!(a->x == b->x)) return false;
