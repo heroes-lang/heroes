@@ -13,6 +13,7 @@ use emit/ffi_lookup
 use cli/group_file
 use cli/runtime_key
 use cli/standard_name
+use cli/runtime_name
 
 # clang's first error, read: its row in the text, its place, and its message.
 record First
@@ -53,7 +54,9 @@ function expansion(text: str) -> bool
 # of the compiler's own, the one clang compiled or the runtime's
 # (`group_file.compilers`), save a note at the runtime's line declaring a
 # name of C's `<stdint.h>` again as C does, which is C's own and told so
-# (`cli/standard_name.hero`, defect 2044).
+# (`cli/standard_name.hero`, defect 2044), and one at the runtime's own
+# declaration of the very name the header declares again, which is the
+# header's to rename and told so (`cli/runtime_name.hero`, defect 2045).
 record Reading
     rows: [str]
     first: First
@@ -99,22 +102,36 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
         hop @ hop + 1
 
     no_name: str? = fail(code: "none", msg: "no name of C's")
-    no_note = Attached(path: "", row: 0, text: "", index: 0, standard: no_name)
+    no_note = Attached(path: "", row: 0, text: "", index: 0, standard: no_name, runtime: no_name)
     notes: [Attached] @= []
 
     # A note in a file of the compiler's own makes the refusal the compiler's,
     # save one at the runtime's re-declaration of a name of `<stdint.h>`
     # (defect 2044): the header declares, or misspells, a type C itself
     # declares, and is refused beside any `<stdint.h>` as it is beside the
-    # runtime, which declares it identically before the groups.
+    # runtime, which declares it identically before the groups; and save one
+    # at the runtime's own declaration of the very name the error's caret
+    # stands on in the header (defect 2045): the header declares again a name
+    # the Heroes runtime declares in every unit before any group's header.
     for note in attached(rows, after: first.row)
         if group_file.compilers(path: note.path, compiled: compiled, runtime: own)
             name = standard_name.declared(path: note.path, row: note.row, runtime: own)
+            again: str? @= no_name
 
             if name.is_err()
+                again @ runtime_name.declared(
+                    rows: rows,
+                    error: first.row,
+                    note: note.index,
+                    path: note.path,
+                    row: note.row,
+                    runtime: own
+                )
+
+            if name.is_err() && again.is_err()
                 return fail(code: "none", msg: "a note in a file of the compiler's own")
             notes @ notes.push(
-                Attached(path: note.path, row: note.row, text: note.text, index: note.index, standard: name)
+                Attached(path: note.path, row: note.row, text: note.text, index: note.index, standard: name, runtime: again)
             )
         else
             notes @ notes.push(note)
@@ -194,13 +211,16 @@ function severity_of(line: str) -> str
 
 # A note clang attached to the error: where it points and what it says, and
 # the name of C's `<stdint.h>` the runtime's line it points at declares
-# again, where it points at one (`cli/standard_name.hero`, defect 2044).
+# again, where it points at one (`cli/standard_name.hero`, defect 2044), or
+# the name of the Heroes runtime's own it points at, which the header
+# declares again (`cli/runtime_name.hero`, defect 2045).
 record Attached
     path: str
     row: i64
     text: str
     index: i64
     standard: str?
+    runtime: str?
 
 # The notes clang wrote under the error, up to the next diagnostic that is
 # not a note or clang's count of what it reported. A note's own includes
@@ -222,7 +242,7 @@ function attached(rows: [str], after: i64) -> [Attached]
             if !place.is_err()
                 at = clang_place.offset_of(text: line, needle: NOTE).must()
                 out @ out.push(
-                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index, standard: no_name)
+                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index, standard: no_name, runtime: no_name)
                 )
         index @ index + 1
 

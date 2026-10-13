@@ -18,7 +18,11 @@
 #   and the first after which it compiles is told as a group to write above;
 # - **a header of the program's own**: where neither compiles and the header
 #   is not beside the program, the note says where the line of C it needs
-#   goes, and a `guess` fix names that header, never *repair the header*.
+#   goes, and a `guess` fix names that header, never *repair the header*;
+#   where the header declares again a name the Heroes runtime declares in
+#   every unit, no header is tried before it, and one not beside the program
+#   is told to be declared anew in that header, never included by it
+#   (defect 2045).
 #
 # And on `ffi_unknown_name`'s path, the same search asked of a name
 # (`cli/name_order.hero`). A build that compiles pays nothing for any of it.
@@ -111,6 +115,28 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
 
     if !order_groups.holds(d.notes, one: header_refused.REPAIR)
         return d
+
+    # A name the Heroes runtime declares in every unit before any group's
+    # header, which the header declares again (defect 2045): no header of C's
+    # own written before it takes the name back, so none is tried. A header
+    # beside the program is its own to rename in, the refusal's `guess` fix;
+    # one that is not is declared in a header of the program's own without
+    # that name, never one that includes it.
+    named = header_refused.runtime_named(d)
+
+    if !named.is_err()
+        if order_groups.beside_program(under, header: header)
+            return d
+        own = order_groups.stem(header) + "_own.h"
+        out: diag.Diagnostic @= d
+        out.notes @ replaced(
+            d.notes,
+            said: "`" + header + "` is not this program's to repair, and no header written before it takes back `" + named.must() + "`, which the Heroes runtime declares in every unit before any group's header: declare what this group binds in a header of the program's own beside this file, `" + own + "`, without that name and without including `" + header + "`, which this group then names"
+        )
+        out.fixes @ [
+            diag.Fix(title: "name `" + own + "`, the header of the program's own the note drafts", replacement: "\"" + own + "\"", span: d.span, certainty: .guess)
+        ]
+        return out
     module = source.component_at(s, d.span.start)
     context = above(
         t,
