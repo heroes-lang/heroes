@@ -1,0 +1,360 @@
+(lldb) target create "./shapes"
+Current executable set to '<copy>/build/ai/shapes' (arm64).
+(lldb) command source -s 0 'cmds.txt'
+Executing commands in '<copy>/build/ai/cmds.txt'.
+(lldb) breakpoint set --file shapes.hero --line 30
+Breakpoint 1: where = shapes`h_shapes_main + 1488 at shapes.hero:30:11, address = 0x000000010001641c
+(lldb) run
+Process 14100 launched: '<copy>/build/ai/shapes' (arm64)
+Process 14100 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x000000010001641c shapes`h_shapes_main at shapes.hero:30:11
+   27  	    good = half(8)
+   28  	    bad = half(7)
+   29  	    room = Room(name: "lab", corner: Point(x: 9, y: 10))
+-> 30  	    print(count)
+    	          ^
+   31  	    print(name)
+   32  	    print(p.x + names.len() + points.len() + ages.len())
+   33  	    print(good.default(0) + bad.default(0))
+Target 0: (shapes) stopped.
+(lldb) frame variable
+(int64_t) h0_count = 7
+(HeroStr) h1_name = (ptr = "ada", len = 3)
+(h_shapes_Point) h2_p = (f_x = 3, f_y = 4)
+(h_shapes_Token) h3_t = {
+  tag = h_shapes_Token_tag_num
+  as = {
+    c_num = (f_v = 42)
+  }
+}
+(HeroArrayHeader *) h4_names = 0x0000000100695890
+(HeroArrayHeader *) h5_points = 0x00000001006958d0
+(HeroMapHeader *) h6_ages = 0x0000000100695910
+(h_0opt_e201354) h7_good = {
+  tag = 0
+  as = {
+    ok = 4
+    err = {
+      code = (ptr = "", len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(h_0opt_e201354) h8_bad = {
+  tag = 1
+  as = {
+    ok = 4295075736
+    err = {
+      code = (ptr = "odd", len = 3)
+      msg = (ptr = "not even", len = 8)
+    }
+  }
+}
+(h_shapes_Room) h9_room = {
+  f_name = (ptr = "lab", len = 3)
+  f_corner = (f_x = 9, f_y = 10)
+}
+(h_0opt_e201354) h10_f0 = {
+  tag = 0
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(int64_t) h11_r0 = 4296245248
+(h_0opt_e201354) h12_f1 = {
+  tag = 0
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(int64_t) h13_r1 = 30064771078
+(h_shapes_Token) h14_s0 = {
+  tag = 0x344000
+  as = {
+    c_num = (f_v = 4)
+  }
+}
+(h_shapes_Token_c_num) h15_n = (f_v = 6809745884)
+(HeroArrayHeader *) h16_own16 = 0x0000000100695890
+(HeroArrayHeader *) h17_own17 = 0x00000001006958d0
+(HeroMapHeader *) h18_own18 = 0x0000000100695910
+(h_0opt_e201354) h19_own19 = {
+  tag = 0
+  as = {
+    ok = 4
+    err = {
+      code = (ptr = "", len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(h_0opt_e201354) h20_own20 = {
+  tag = 1
+  as = {
+    ok = 4295075736
+    err = {
+      code = (ptr = "odd", len = 3)
+      msg = (ptr = "not even", len = 8)
+    }
+  }
+}
+(h_shapes_Room) h21_own21 = {
+  f_name = (ptr = "lab", len = 3)
+  f_corner = (f_x = 9, f_y = 10)
+}
+(int64_t) t1 = 7
+(HeroStr) t2 = (ptr = "ada", len = 3)
+(int64_t) t3 = 3
+(int64_t) t4 = 4
+(h_shapes_Point) t5 = (f_x = 3, f_y = 4)
+(int64_t) t6 = 42
+(h_shapes_Token) t7 = {
+  tag = h_shapes_Token_tag_num
+  as = {
+    c_num = (f_v = 42)
+  }
+}
+(HeroStr) t8 = (ptr = "ada", len = 3)
+(HeroStr) t9 = (ptr = "grace", len = 5)
+(HeroArrayHeader *) t10 = 0x0000000100695890
+(int64_t) t11 = 1
+(int64_t) t12 = 2
+(h_shapes_Point) t13 = (f_x = 1, f_y = 2)
+(int64_t) t14 = 5
+(int64_t) t15 = 6
+(h_shapes_Point) t16 = (f_x = 5, f_y = 6)
+(HeroArrayHeader *) t17 = 0x00000001006958d0
+(HeroStr) t18 = (ptr = "ada", len = 3)
+(int64_t) t19 = 36
+(HeroStr) t20 = (ptr = "grace", len = 5)
+(int64_t) t21 = 85
+(HeroMapHeader *) t22 = 0x0000000100695910
+(int64_t) t23 = 8
+(h_0opt_e201354) t24 = {
+  tag = 0
+  as = {
+    ok = 4
+    err = {
+      code = (ptr = "", len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(int64_t) t25 = 7
+(h_0opt_e201354) t26 = {
+  tag = 1
+  as = {
+    ok = 4295075736
+    err = {
+      code = (ptr = "odd", len = 3)
+      msg = (ptr = "not even", len = 8)
+    }
+  }
+}
+(HeroStr) t27 = (ptr = "lab", len = 3)
+(int64_t) t28 = 9
+(int64_t) t29 = 10
+(h_shapes_Point) t30 = (f_x = 9, f_y = 10)
+(h_shapes_Room) t31 = {
+  f_name = (ptr = "lab", len = 3)
+  f_corner = (f_x = 9, f_y = 10)
+}
+(int64_t) t32 = 8517441648
+(HeroStr) t33 = (ptr = "", len = 6171911096)
+(h_shapes_Point) t34 = (f_x = 4296245248, f_y = 65535)
+(int64_t) t35 = 6807470440
+(HeroArrayHeader *) t36 = 0x000000016fdfdda0
+(int64_t) t37 = 6171910128
+(int64_t) t38 = 6171910256
+(HeroArrayHeader *) t39 = 0x000000016fdfeae0
+(int64_t) t40 = 16
+(int64_t) t41 = 6809110828
+(HeroMapHeader *) t42 = 0x000000016fdfdde0
+(int64_t) t43 = 8517435488
+(int64_t) t44 = 3
+(h_0opt_e201354) t45 = {
+  tag = 4298518252
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 3)
+      msg = (ptr = "", len = 4298518248)
+    }
+  }
+}
+(h_0opt_e201354) t46 = {
+  tag = 4373184512
+  as = {
+    ok = 4294967303
+    err = {
+      code = (ptr = "\U00000001", len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(int64_t) t47 = 3
+(int64_t) t48 = 4298518728
+(bool) t49 = false
+(h_0opt_e201354) t50 = {
+  tag = 0
+  as = {
+    ok = 4298518712
+    err = {
+      code = (ptr = "\xc0\x81\xa9\U00000004\U00000001", len = 6171909456)
+      msg = (ptr = "\xc0\U00000002", len = 83)
+    }
+  }
+}
+(int64_t) t51 = 3
+(int64_t) t52 = 16
+(int64_t) t53 = 3
+(h_0opt_e201354) t54 = {
+  tag = 0
+  as = {
+    ok = 252
+    err = {
+      code = (ptr = "", len = 4373184768)
+      msg = (ptr = 0x0000000000000000, len = 4298518248)
+    }
+  }
+}
+(h_0opt_e201354) t55 = {
+  tag = 6171909760
+  as = {
+    ok = 6171909392
+    err = {
+      code = (ptr = "", len = 6807607668)
+      msg = (ptr = "", len = 0)
+    }
+  }
+}
+(int64_t) t56 = 8514456960
+(int64_t) t57 = 6171909720
+(bool) t58 = false
+(h_0opt_e201354) t59 = {
+  tag = 8547179736
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 6171906552)
+      msg = (ptr = "", len = 8514467712)
+    }
+  }
+}
+(int64_t) t60 = 281474976776192
+(int64_t) t61 = 7599824372957184
+(int64_t) t62 = 0
+(int64_t) t63 = 8547179736
+(h_shapes_Room) t64 = {
+  f_name = (ptr = "", len = 0)
+  f_corner = (f_x = 0, f_y = 0)
+}
+(h_shapes_Point) t65 = (f_x = 6807219132, f_y = 6171909160)
+(int64_t) t66 = 6807219076
+(h_shapes_Token) t67 = {
+  tag = h_shapes_Token_tag_num
+  as = {
+    c_num = (f_v = 6171909008)
+  }
+}
+(h_shapes_Token) t68 = {
+  tag = 0xfb805210
+  as = {
+    c_num = (f_v = 8514467712)
+  }
+}
+(int64_t) t69 = 6171909008
+(h_shapes_Token) t70 = {
+  tag = 0x42000000
+  as = {
+    c_num = (f_v = 6807219256)
+  }
+}
+(h_shapes_Token_c_num) t71 = (f_v = 8484113824)
+(h_shapes_Token_c_num) t72 = (f_v = 0)
+(int64_t) t73 = 0
+(int64_t) t74 = 0
+(HeroStr) t75 = (ptr = 0x0000000000000000, len = 0)
+(HeroArrayHeader *) t76 = NULL
+(HeroArrayHeader *) t77 = NULL
+(HeroArrayHeader *) t78 = NULL
+(HeroArrayHeader *) t79 = NULL
+(HeroMapHeader *) t80 = NULL
+(HeroMapHeader *) t81 = NULL
+(h_0opt_e201354) t82 = {
+  tag = 0
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(h_0opt_e201354) t83 = {
+  tag = 0
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(h_0opt_e201354) t84 = {
+  tag = 0
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(h_0opt_e201354) t85 = {
+  tag = 0
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 0)
+      msg = (ptr = 0x0000000000000000, len = 0)
+    }
+  }
+}
+(h_shapes_Room) t86 = {
+  f_name = (ptr = 0x0000000000000000, len = 0)
+  f_corner = (f_x = 0, f_y = 0)
+}
+(h_shapes_Room) t87 = {
+  f_name = (ptr = 0x0000000000000000, len = 0)
+  f_corner = (f_x = 0, f_y = 0)
+}
+(h_0opt_e201354) t88 = {
+  tag = 6807010788
+  as = {
+    ok = 6171908888
+    err = {
+      code = (ptr = "", len = 6171908640)
+      msg = (ptr = "Ч\U00000001", len = 6807215668)
+    }
+  }
+}
+(h_0opt_e201354) t89 = {
+  tag = 0
+  as = {
+    ok = 0
+    err = {
+      code = (ptr = 0x0000000000000000, len = 6171908888)
+      msg = (ptr = "", len = 6171908624)
+    }
+  }
+}

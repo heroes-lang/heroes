@@ -1,0 +1,5 @@
+stopped at program.hero:12, in best, called from main
+
+players = [Player(name: "ada", score: 7), Player(name: "grace", score: 9), Player(name: "alan", score: 4)]
+top = 9
+winner = "alan"
