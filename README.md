@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.svg">
-    <img src="docs/assets/banner-light.svg" alt="Heroes, a small compiled language for the LLM age.">
+    <img src="docs/assets/banner-light.svg" alt="Heroes, a language for the age of LLMs.">
   </picture>
 </p>
 
@@ -25,8 +25,8 @@
   <a href="examples/">The examples</a>
 </p>
 
-A small compiled language for the LLM age, designed so that **every plausible
-mistake a model makes is a compile error**.
+A language for the age of LLMs, designed so that **every plausible mistake a
+model makes is a compile error**.
 
 Not a language that tolerates a machine writing it. Its surface is chosen so
 that the wrong program does not compile, and the diagnostic arrives with the
