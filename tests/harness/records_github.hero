@@ -16,7 +16,8 @@
 # - `records/homes`, that an open feature or task names an open milestone
 #   (`unhomed`);
 # - `records/prior-art`, that a decision's `### Prior art` keeps its two forms
-#   (`prior_art`).
+#   (`prior_art`), a sitting numbered above every one the tree holds excused as
+#   not yet received (defect 2039).
 #
 # **The names of a defect** (the fifth answer): the defects filed until
 # 2026-10-12 keep their numbers, 001 to `OLD_LAST`, each in its issue's title,
@@ -317,11 +318,30 @@ function prior_art_rows(body: str) -> credit.Section
 # decision, opens with its sitting's file and the day its links were re-read,
 # and holds precedents in the two forms; a heading nearly it is told.
 # `known` is every path the tree holds, which a sitting's file is asked of.
+#
+# **GitHub holds today's issues, and the tree under test may be older than a
+# sitting one of them names** (defect 2039): a sitting's decision is opened
+# from its own lane before its file is pushed (`/panel` step 4), so the trunk
+# at `0b8307daf`, whose highest sitting is 212, went red on all four CI legs on
+# issue 2037, which names panel 213's file, and so did the lanes' `records`
+# runs. So the tree is placed among the sittings by its own value, the highest
+# it holds (`credit.highest_sitting`), and a sitting numbered above it is not
+# held against it (`credit.absent_offence`); one at or below it stays an
+# offence.
+#
+# **Not by the issue's age against the commit's**, the other reading of
+# "older": measured 2026-10-13, issue 2037 was opened at 23:07:58Z and the
+# trunk at 00:18:33Z was still `0b8307daf` (21:49:10Z), holding no sitting
+# 213, so a commit made in that window, this repair's own among them, is newer
+# than the issue and lacks the file all the same, and a rule keyed on the
+# commit's time reads it red until the sitting's lane lands. A committer's
+# clock is the committer's machine's, too.
 function prior_art(@r: report.Report, held: github_issues.Listing, known: {str: bool})
     if !held.asked
         unanswered(@r, held: held, label: LABEL_PRIOR_ART)
         return
     offences: [str] @= []
+    received = credit.highest_sitting(known)
 
     for issue in held.issues
         if issue.pull
@@ -337,7 +357,7 @@ function prior_art(@r: report.Report, held: github_issues.Listing, known: {str: 
         section = prior_art_rows(issue.body)
 
         if section.found
-            for wrong in credit.section_offences(where: where, kind: github_issues.kind_of(issue), rows: section.rows, known: known)
+            for wrong in credit.section_offences(where: where, kind: github_issues.kind_of(issue), rows: section.rows, known: known, received: received)
                 offences @ offences.push(wrong)
 
     if offences.len() > 0
@@ -665,6 +685,62 @@ test "a decision's prior art on GitHub keeps its opener and its two forms, and s
     assert strings.contains(text: t.failures[0], needle: "stands on a `defect`")
     assert strings.contains(text: t.failures[0], needle: "is neither `- **Taken from <who>**:`")
     assert strings.contains(text: t.failures[0], needle: "`#### Prior Art` is nearly the heading")
+
+# Issue 2037's shape, the reproducer of defect 2039: a ratification opened
+# from the sitting's lane, naming panel 213's file and its historian's report,
+# against a tree whose highest sitting is 212.
+function ahead_of_tree(sitting: str, created: str) -> github_issues.Listing
+    body = "Filed 2026-10-13\\n\\n### Prior art\\n\\nPanel 213 (`" + sitting + "`, `docs/panel/213-reports/historian.md`), read 2026-10-13.\\n\\n- **Reached first by Nim**: [nimlldb.py](https://example.org/nim): one module registers the summaries\\n"
+    return github_issues.held_of(
+        [fixture(number: 2037, title: "Panel 213: x", kind: "decision", extra: [], body: body, state: "open", created: created, closed: "")]
+    )
+
+test "a sitting the tree has not received yet is not held against it, whatever the issue's age, and a number the tree has passed is (defect 2039)"
+    known: {str: bool} @= {}
+    known["docs/panel/196-a-sitting.md"] @ true
+    known["docs/panel/212-the-last.md"] @ true
+    known["docs/panel/212-reports/historian.md"] @ true
+    newer: report.Report @= report.empty()
+    prior_art(
+        @newer,
+        held: ahead_of_tree(sitting: "docs/panel/213-a-stopped-program.md", created: "2026-10-12T23:07:58Z"),
+        known: known
+    )
+    assert newer.failed == 0
+    assert newer.passed == 1
+
+    # The trunk's commits made after the issue and before the sitting's lane
+    # landed hold no 213 either: the tree is placed by its sittings, not by a
+    # clock.
+    older: report.Report @= report.empty()
+    prior_art(
+        @older,
+        held: ahead_of_tree(sitting: "docs/panel/213-a-stopped-program.md", created: "2026-10-01T12:00:00Z"),
+        known: known
+    )
+    assert older.failed == 0
+    held_number: report.Report @= report.empty()
+    prior_art(
+        @held_number,
+        held: ahead_of_tree(sitting: "docs/panel/212-a-typo.md", created: "2026-10-12T23:07:58Z"),
+        known: known
+    )
+    assert held_number.failed == 1
+    assert strings.contains(
+        text: held_number.failures[0],
+        needle: "names `docs/panel/212-a-typo.md`, a sitting's file this tree does not hold, and its number is not above 212"
+    )
+
+    # A sitting that never lands is told once a later one reaches the tree.
+    known["docs/panel/214-the-next.md"] @ true
+    later: report.Report @= report.empty()
+    prior_art(
+        @later,
+        held: ahead_of_tree(sitting: "docs/panel/213-a-stopped-program.md", created: "2026-10-12T23:07:58Z"),
+        known: known
+    )
+    assert later.failed == 1
+    assert strings.contains(text: later.failures[0], needle: "names `docs/panel/213-a-stopped-program.md`")
 
 test "an instant is read to the second, and an imported issue's noon as its day"
     assert epoch_of("2026-10-12T10:00:00Z").must() == 1791799200
