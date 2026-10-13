@@ -243,6 +243,13 @@ from the binary but cannot make an element at an address, which only the unrelea
 24's development line, or Python kept. **The author chose to keep Python**: R2 and R3 stand as written.
 The rest of the ratification stays pending on the issue above.
 
+**Ratified, 2026-10-14**, a reading: the author's word at about 00:30, meant as *I ratify the panel*,
+given after M-typed-inspection's close. R1 to R10 stand as written. R4's question takes the synthesis's
+default, the names left as they are and no flag admitted for them; R3's reading of CLAUDE.md § 10 stands,
+a component the debugger loads not being a script. R2 and R3 had been the author's own choice at 01:15 on
+2026-10-13, above. What the yes does not settle is what the stub names: a flag for the names, formatters
+in the binary (R6's return condition), and a route for a binding not yet reached.
+
 ## Scored at M-typed-inspection's close, 2026-10-13
 
 Each by the command named, on the milestone's closing tree.
