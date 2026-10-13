@@ -1,0 +1,4 @@
+frame: main 22
+p = Point(x: 3, y: 4)   [h_m_Point]
+    f_x = 3
+    f_y = 4

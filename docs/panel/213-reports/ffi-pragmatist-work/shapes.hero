@@ -1,0 +1,38 @@
+record Point
+    x: i64
+    y: i64
+
+record Room
+    name: str
+    corner: Point
+
+variant Token
+    num
+        v: i64
+    plus
+
+function half(n: i64) -> i64?
+    if n % 2 != 0
+        return fail(code: "odd", msg: "not even")
+    return ok(n / 2)
+
+function main()
+    count = 7
+    name = "ada"
+    p = Point(x: 3, y: 4)
+    t: Token = .num(v: 42)
+    names = ["ada", "grace"]
+    points = [Point(x: 1, y: 2), Point(x: 5, y: 6)]
+    ages = {"ada": 36, "grace": 85}
+    good = half(8)
+    bad = half(7)
+    room = Room(name: "lab", corner: Point(x: 9, y: 10))
+    print(count)
+    print(name)
+    print(p.x + names.len() + points.len() + ages.len())
+    print(good.default(0) + bad.default(0))
+    print(room.corner.y)
+
+    match t
+        .num n => print(n.v)
+        .plus  => print(0)
