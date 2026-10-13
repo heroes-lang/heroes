@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-2052-a-header-that-calls-a-library-function-it-never-includes-is-refused.h`, the header this group names, does not compile: clang refuses it at line 3: call to undeclared library function 'abs' with type 'int (int)'; ISO C99 and later do not support implicit function declarations [-Wimplicit-function-declaration]
+  at tests/golden/unsupported/fixedbugs-2052-a-header-that-calls-a-library-function-it-never-includes-is-refused.hero:13:8
+     |
+  13 | extern "fixedbugs-2052-a-header-that-calls-a-library-function-it-never-includes-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2052-a-header-that-calls-a-library-function-it-never-includes-is-refused.h` line 3 reads `static inline int eight(void) { return abs(-8); }`
+  note: clang adds, at `fixedbugs-2052-a-header-that-calls-a-library-function-it-never-includes-is-refused.h` line 3: include the header <stdlib.h> or explicitly provide a declaration for 'abs'
+  note: `fixedbugs-2052-a-header-that-calls-a-library-function-it-never-includes-is-refused.h` compiles after `stdlib.h`, a header of C's own it uses and does not include: write a group naming `stdlib.h` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)
