@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -84,7 +89,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3615c7bd, "a given back twice, and nothing said");
 
-#line 88 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 93 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -128,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 137 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlecomparedafteritsaddresswashandedoutagain_H_eq(hh * const *a, hh * const *b);
@@ -166,7 +171,7 @@ bb0:
     }
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     return;
-#line 170 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 175 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
 
 #line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
@@ -215,7 +220,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     return;
-#line 219 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 224 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
 HERO_TU_LOCAL bool h_deadhandlecomparedafteritsaddresswashandedoutagain_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

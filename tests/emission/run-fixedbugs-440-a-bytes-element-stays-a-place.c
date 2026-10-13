@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -85,7 +90,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 89 "fixedbugs440abyteselementstaysaplace.c"
+#line 94 "fixedbugs440abyteselementstaysaplace.c"
 typedef struct h_fixedbugs440abyteselementstaysaplace_Packet {
     HeroArrayHeader * f_bytes;
 } h_fixedbugs440abyteselementstaysaplace_Packet;
@@ -133,7 +138,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 137 "fixedbugs440abyteselementstaysaplace.c"
+#line 142 "fixedbugs440abyteselementstaysaplace.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs440abyteselementstaysaplace_Packet_retain(const h_fixedbugs440abyteselementstaysaplace_Packet *v);
@@ -169,7 +174,7 @@ bb0:
     (*ph0_n) = t3;
 #line 16 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     return;
-#line 173 "fixedbugs440abyteselementstaysaplace.c"
+#line 178 "fixedbugs440abyteselementstaysaplace.c"
 }
 
 #line 18 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
@@ -192,7 +197,7 @@ bb0:
     hero_print_end();
 #line 20 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     return;
-#line 196 "fixedbugs440abyteselementstaysaplace.c"
+#line 201 "fixedbugs440abyteselementstaysaplace.c"
 }
 
 #line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
@@ -220,7 +225,7 @@ bb0:
     (*ph0_s) = t3;
 #line 23 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     hero_str_decref(t5);
-#line 224 "fixedbugs440abyteselementstaysaplace.c"
+#line 229 "fixedbugs440abyteselementstaysaplace.c"
     hero_str_release_at(&h1_own1);
     return;
 }
@@ -397,7 +402,7 @@ bb0:
     hero_print_str(t34);
 #line 37 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
     hero_print_end();
-#line 401 "fixedbugs440abyteselementstaysaplace.c"
+#line 406 "fixedbugs440abyteselementstaysaplace.c"
     hero_array_release_at(&h0_bs);
     h_fixedbugs440abyteselementstaysaplace_Packet_release(hero_slot_escape(&h2_p));
     hero_str_release_at(&h3_s);

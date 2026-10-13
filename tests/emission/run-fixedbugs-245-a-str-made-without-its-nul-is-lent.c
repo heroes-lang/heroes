@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -109,7 +114,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 113 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 118 "fixedbugs245astrmadewithoutitsnulislent.c"
 typedef struct h_0opt_e1f4933 {
     int64_t tag;
     union {
@@ -165,7 +170,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 174 "fixedbugs245astrmadewithoutitsnulislent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e1f4933_retain(const h_0opt_e1f4933 *v);
@@ -198,7 +203,7 @@ HeroStr h_fixedbugs245astrmadewithoutitsnulislent_HELD(void) {
 #line 18 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6f23ee1d);
-#line 202 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 207 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -273,7 +278,7 @@ bb1:
     goto bb3;
 #line 25 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
 bb2:
-#line 277 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 282 "fixedbugs245astrmadewithoutitsnulislent.c"
     (void)t7;
     (void)t8;
     hero_panic_assert(t6);
@@ -403,7 +408,7 @@ bb8:
     t28 = h4_f0;
 #line 26 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t29 = t28.as.err;
-#line 407 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 412 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_panic_must(t29);
     hero_unreachable();
 bb9:
@@ -411,7 +416,7 @@ bb9:
     t47 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t48 = t47.as.ok;
-#line 415 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 420 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_incref(t48);
     hero_array_release_at(&h1_xs0);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -427,7 +432,7 @@ bb10:
     t45 = h5_f1;
 #line 29 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     t46 = t45.as.err;
-#line 431 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 436 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_panic_must(t46);
     hero_unreachable();
 }
@@ -467,7 +472,7 @@ bb0:
     hero_print_end();
 #line 32 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     return;
-#line 471 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 476 "fixedbugs245astrmadewithoutitsnulislent.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
@@ -600,7 +605,7 @@ bb0:
     hero_str_decref(t39);
 #line 42 "tests/golden/run/fixedbugs-245-a-str-made-without-its-nul-is-lent.hero"
     h_fixedbugs245astrmadewithoutitsnulislent_lent(t27, t30);
-#line 604 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 609 "fixedbugs245astrmadewithoutitsnulislent.c"
     hero_str_release_at(&h0_s);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -615,25 +620,25 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 619 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 624 "fixedbugs245astrmadewithoutitsnulislent.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 625 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 630 "fixedbugs245astrmadewithoutitsnulislent.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 631 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 636 "fixedbugs245astrmadewithoutitsnulislent.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 637 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 642 "fixedbugs245astrmadewithoutitsnulislent.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -868,7 +873,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 872 "fixedbugs245astrmadewithoutitsnulislent.c"
+#line 877 "fixedbugs245astrmadewithoutitsnulislent.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
