@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-2049-a-header-that-declares-a-function-s-c-name-is-refused.h`, the header this group names, does not compile: its line 3 declares `h_fixedbugs2049aheaderthatdeclaresafunctionscnameisrefused_helper`, which the C this compiler writes for this program declares too, after the groups' headers, and clang refuses the two: conflicting types for 'h_fixedbugs2049aheaderthatdeclaresafunctionscnameisrefused_helper'
+  at tests/golden/unsupported/fixedbugs-2049-a-header-that-declares-a-function-s-c-name-is-refused.hero:11:8
+     |
+  11 | extern "fixedbugs-2049-a-header-that-declares-a-function-s-c-name-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2049-a-header-that-declares-a-function-s-c-name-is-refused.h` line 3 reads `int h_fixedbugs2049aheaderthatdeclaresafunctionscnameisrefused_helper(int x);`
+  note: this compiler's `h_fixedbugs2049aheaderthatdeclaresafunctionscnameisrefused_helper` is the name the C it writes gives this program's function `helper`, at line 14
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `h_fixedbugs2049aheaderthatdeclaresafunctionscnameisrefused_helper` in `fixedbugs-2049-a-header-that-declares-a-function-s-c-name-is-refused.h`, the name this compiler gives this program's function `helper`

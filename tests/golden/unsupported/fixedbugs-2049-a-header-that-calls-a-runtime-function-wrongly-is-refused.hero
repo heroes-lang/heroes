@@ -1,0 +1,16 @@
+# fixedbugs, defect 2049, 2026-10-13, the defect's third reproducer.
+#
+# SYMPTOM: a header of the program's own calling `hero_str_len(8)` was
+# told `internal error: compiling the generated C failed` at exit 2:
+# clang's error at the header's line, its note at `heroes_runtime.h`'s
+# parameter `s`, and a note in the runtime's files was the compiler's.
+#
+# FIX: the note is told as the Heroes runtime's own function the
+# line calls, the header refused at its line 4, exit 1, with a `guess` fix
+# renaming it there (`cli/runtime_name.hero`).
+
+extern "fixedbugs-2049-a-header-that-calls-a-runtime-function-wrongly-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

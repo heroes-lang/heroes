@@ -1,0 +1,18 @@
+# fixedbugs, defect 2049, 2026-10-13, a function other than `main`.
+#
+# SYMPTOM: a header of the program's own declaring the C name of the
+# program's function `helper` another way was told `internal error:
+# compiling the generated C failed` at exit 2, clang's first error in the
+# generated C.
+#
+# FIX: the header is refused at its line 3, exit 1, as the second
+# reproducer is (`cli/declared_after.hero`).
+
+extern "fixedbugs-2049-a-header-that-declares-a-function-s-c-name-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function helper() -> i32
+    return 7
+
+function main()
+    print(eight() + helper())

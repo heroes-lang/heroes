@@ -28,8 +28,16 @@
 #   declares again, `int64_t hero_str_len(HeroStr s);` under `static inline
 #   int hero_str_len(int x)`, told as a name the Heroes runtime declares in
 #   every unit before any group's header, with a `guess` fix that renames it
-#   in the header (`cli/runtime_name.hero`, defect 2045); any other note at a
-#   line of the Heroes library's own stays here.
+#   in the header (`cli/runtime_name.hero`, defect 2045); and save a note at
+#   a function of the runtime's the header's line calls, with the same fix,
+#   or at a name of the runtime's clang suggests for one the line misspells
+#   (defect 2049); any other note at a line of the Heroes library's own
+#   stays here.
+#
+# **A first error in no group's header is a header's own in two places**
+# (`cli/declared_after.hero`, defect 2049): in a header of C's own the
+# runtime includes after the groups, or in the C this compiler writes, at the
+# name the header's line declared first.
 #
 # **Only the first error is read.** clang reads on past an error, and what it
 # says after one, about a header it could not read whole or about the
@@ -58,6 +66,7 @@ use cli/headers_together
 use cli/group_file
 use cli/clang_first
 use cli/clang_excerpt
+use cli/declared_after
 use emit/ffi_build
 use parse
 use resolve
@@ -85,8 +94,16 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
     none: [diag.Diagnostic] = []
     read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime)
 
+    # A first error in no group's header may still be a header's own, where
+    # C declares after the groups the name its line declared (defect 2049).
     if read.is_err()
-        return none
+        later = declared_after.told(stderr: stderr, s: s, decls: decls, runtime: runtime)
+
+        if later.is_err()
+            return none
+        d: diag.Diagnostic @= later.must()
+        d.notes @ d.notes.push(REPAIR)
+        return [d]
     one = read.must()
 
     two = sides(one)
@@ -180,10 +197,11 @@ function told(s: source.Source, rows: [str], first: clang_first.First, steps: [c
 
     for note in notes
         d.notes @ d.notes.push(adds(note, directory: directory))
+        named = note.runtime.default(note.called.default(""))
 
-        if !note.runtime.is_err() && d.fixes.len() == 0
+        if named != "" && d.fixes.len() == 0
             d.fixes @ d.fixes.push(
-                diag.Fix(title: "rename `" + note.runtime.must() + "` in `" + refused_file + "`, a name the Heroes runtime declares first in every unit", replacement: source.span_text(s, group.span), span: group.span, certainty: .guess)
+                diag.Fix(title: "rename `" + named + "` in `" + refused_file + "`, a name the Heroes runtime declares first in every unit", replacement: source.span_text(s, group.span), span: group.span, certainty: .guess)
             )
 
     if !clang_place.offset_of(text: first.message, needle: AS_ERROR).is_err()
@@ -240,13 +258,22 @@ function sides(read: clang_first.Reading) -> Sides?
 # a name of C's `<stdint.h>` again (defect 2044), as C's own declaration of
 # that name, and at the runtime's own declaration of a name the header
 # declares again (defect 2045), as the Heroes runtime's, each of which every
-# unit reads before any group's header, never as a file of the compiler's.
+# unit reads before any group's header, never as a file of the compiler's;
+# and so at a function of the runtime's the refused line calls, or a name of
+# the runtime's clang suggests in it (defect 2049).
 function adds(note: clang_first.Attached, directory: str) -> str
     if !note.standard.is_err()
         return "clang adds, at C's own `" + note.standard.must() + "`, which every unit of this program declares as `<stdint.h>` does, before any group's header: " + note.text
 
     if !note.runtime.is_err()
         return RUNTIME_OWN + note.runtime.must() + "`, which every unit of this program declares before any group's header: " + note.text
+    every = ", which every unit of this program declares before any group's header"
+
+    if !note.called.is_err()
+        return "clang adds, at `" + note.called.must() + "`, a function of the Heroes runtime's own" + every + ", and the refused line calls: " + note.text
+
+    if !note.suggested.is_err()
+        return "clang adds, at `" + note.suggested.must() + "`, a name of the Heroes runtime's own" + every + ", and clang suggests in the refused line: " + note.text
     return "clang adds, at `" + clang_place.shown(path: note.path, directory: directory) + "` line " + note.row.to_str() + ": " + note.text
 
 # The name of the Heroes runtime's own that a refusal's note says the header
@@ -486,8 +513,9 @@ test "a note at the runtime's re-declaration of a name of stdint.h is C's own (d
 # refusal its own, with a `guess` fix renaming the name there. Clang's words as
 # Apple clang 21 wrote them on 2026-10-13 for the reproducer, `static inline
 # int hero_str_len(int x)`, each line of the runtime's found by its text; a
-# note at a parameter a call passed a wrong value to stays the compiler's, and
-# so does a second note in the runtime that is no such declaration.
+# second note in the runtime that is no such declaration stays the
+# compiler's, and a note at a parameter a call passed a wrong value to is the
+# header's since defect 2049 (below).
 test "a note at the runtime's own declaration of the name a header declares again is the runtime's (defect 2045)"
     s = program()
     decls = decls_of()
@@ -509,13 +537,44 @@ test "a note at the runtime's own declaration of the name a header declares agai
     windows = head + through + "runtime\\heroes_runtime.h:" + length.to_str() + ":9: note: previous declaration is here\n"
     assert refused(stderr: windows, s: s, decls: decls, runtime: "runtime")[0].notes == said[0].notes
 
-    # The compiler's: a call's argument under a note at the runtime's
-    # parameter, and a second note in the runtime that is no declaration of
+    # The compiler's: a second note in the runtime that is no declaration of
     # the caret's name.
-    call = "In file included from build/tu-1/t.c:7:\n./bad.h:3:53: error: passing 'int' to parameter of incompatible type 'HeroStr'\n    3 | static inline int eight(void) { return hero_str_len(8); }\n      |                                                     ^\n" + through + "runtime/heroes_runtime.h:" + length.to_str() + ":30: note: passing argument to parameter 's' here\n"
     second = head + through + note + "runtime/heroes_runtime.h:10:9: note: expanded from macro 'HERO_X'\n"
+    assert refused(stderr: second, s: s, decls: decls, runtime: "runtime").len() == 0
 
-    for text in [call, second]
+# DEFECT 2049: a note at a function of the runtime's the header's line calls,
+# or at a name of the runtime's clang suggests for one the line misspells, is
+# the Heroes runtime's, and the header's refusal its own. Clang's words as
+# Apple clang 21 and Debian clang 22.1.8 wrote them alike on 2026-10-13 for
+# the reproducers, `hero_str_len(8)` and `HeroSt`, each line of the runtime's
+# found by its text.
+test "a note at a runtime name the header's line calls or misspells is the runtime's (defect 2049)"
+    s = program()
+    decls = decls_of()
+    length = runtime_row("int64_t hero_str_len(HeroStr s);")
+    str_type = runtime_row("} HeroStr;")
+    through = "In file included from build/tu-1/t.c:2:\nIn file included from runtime/heroes_unit.h:26:\n"
+    call = "In file included from build/tu-1/t.c:7:\n./bad.h:3:53: error: passing 'int' to parameter of incompatible type 'HeroStr'\n    3 | static inline int eight(void) { return hero_str_len(8); }\n      |                                                     ^\n"
+    at_parameter = through + "runtime/heroes_runtime.h:" + length.to_str() + ":30: note: passing argument to parameter 's' here\n"
+    called = refused(stderr: call + at_parameter, s: s, decls: decls, runtime: "runtime")
+    assert called.len() == 1 && called[0].code == "ffi_header_refused"
+    assert called[0].message == "`bad.h`, the header this group names, does not compile: clang refuses it at line 3: passing 'int' to parameter of incompatible type 'HeroStr'"
+    assert called[0].notes[1] == "clang adds, at `hero_str_len`, a function of the Heroes runtime's own, which every unit of this program declares before any group's header, and the refused line calls: passing argument to parameter 's' here"
+    assert called[0].fixes.len() == 1 && called[0].fixes[0].certainty == .guess
+    assert runtime_named(called[0]).is_err()
+    typo = "In file included from build/tu-1/t.c:7:\n./bad.h:1:33: error: unknown type name 'HeroSt'; did you mean 'HeroStr'?\n    1 | static inline int eight(void) { HeroSt s; (void)s; return 8; }\n      |                                 ^~~~~~\n      |                                 HeroStr\n"
+    at_type = through + "runtime/heroes_runtime.h:" + str_type.to_str() + ":3: note: 'HeroStr' declared here\n"
+    suggested = refused(stderr: typo + at_type, s: s, decls: decls, runtime: "runtime")
+    assert suggested.len() == 1
+    assert suggested[0].notes[1] == "clang adds, at `HeroStr`, a name of the Heroes runtime's own, which every unit of this program declares before any group's header, and clang suggests in the refused line: 'HeroStr' declared here"
+    assert suggested[0].fixes.len() == 0 && runtime_named(suggested[0]).is_err()
+
+    # The compiler's: a call of another function under the note at the
+    # runtime's parameter, and a suggestion of another name than the note's.
+    other = "In file included from build/tu-1/t.c:7:\n./bad.h:3:53: error: passing 'int' to parameter of incompatible type 'HeroStr'\n    3 | static inline int eight(void) { return hero_str_lex(8); }\n      |                                                     ^\n"
+    unlike = "In file included from build/tu-1/t.c:7:\n./bad.h:1:33: error: unknown type name 'HeroSt'; did you mean 'HeroStx'?\n    1 | static inline int eight(void) { HeroSt s; (void)s; return 8; }\n      |                                 ^~~~~~\n"
+
+    for text in [other + at_parameter, unlike + at_type]
         assert refused(stderr: text, s: s, decls: decls, runtime: "runtime").len() == 0
 
 # The row of the runtime's header that reads `line`, found by its text.

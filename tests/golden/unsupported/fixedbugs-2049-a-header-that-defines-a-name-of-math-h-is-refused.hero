@@ -1,0 +1,18 @@
+# fixedbugs, defect 2049, 2026-10-13, the defect's first reproducer.
+#
+# SYMPTOM: a header of the program's own defining `static inline int
+# sqrt(int x)` was told `internal error: compiling the generated C failed`
+# at exit 2: clang's first error, `conflicting types for 'sqrt'`, lies in
+# the system's `<math.h>`, which `heroes_standard.h` includes after the
+# groups' headers, its note at the header's line, and no group's header
+# was among the error's includes.
+#
+# FIX: the header is refused at its line 4, exit 1, `<math.h>`'s
+# declaration told as C's own library's, with a `guess` fix renaming the
+# name in the header (`cli/declared_after.hero`).
+
+extern "fixedbugs-2049-a-header-that-defines-a-name-of-math-h-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

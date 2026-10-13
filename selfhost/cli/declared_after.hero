@@ -1,0 +1,283 @@
+# A header of the program's own refused where C declares, after every
+# group's header, the very name the header declared first (design.md §4.19,
+# §4.17; CLAUDE.md §7's named exception; defect 2049, 2026-10-13). Two files
+# of a unit come after its groups: the headers of C's own `heroes_standard.h`
+# includes, `<stdint.h>` and `<math.h>`, and the C this compiler writes for
+# the program. So a header defining `static inline int sqrt(int x)` is
+# refused by clang in `<math.h>`, and one declaring `int h_femit_main(int
+# x);`, this compiler's name for the program's `main`, in the generated C:
+# clang's first error lands in a file no group names, its note at the
+# header's line, and it was told *internal error: compiling the generated C
+# failed* at exit 2. The unit holds both declarations, so the program is
+# refused before and after; what moves is who is told (defects 060, 360 and
+# 2045).
+#
+# **Asked of the lines, never of a list of names.** The name is the
+# identifier clang's caret stands on under its first error, and the same
+# identifier stands under the first note of that error that lies in a
+# group's header and is no macro's expansion. The error lies either in a
+# header of C's own the runtime includes, the runtime's line read from its
+# own file at the row clang names, `#include <math.h>`, no file after it the
+# compiler's or a group's; or in the file clang compiled, which clang names
+# under no include, at the name `emit/mangle.hero` gives one of the
+# program's own functions. Any other first error outside the groups'
+# headers, and any note in a file of the compiler's own, stays the
+# compiler's at exit 2, as defect 360 left it.
+
+use source
+use ast
+use diag
+use emit/clang_place
+use emit/ffi_lookup
+use emit/mangle
+use cli/group_file
+use cli/runtime_key
+use cli/standard_name
+use cli/runtime_name
+use cli/clang_first
+use cli/clang_excerpt
+use parse
+
+# How the note naming C's own declaration opens, and the one naming this
+# compiler's, which `taken` reads back.
+constant LIBRARY: str
+    "the C library's `"
+
+constant EMITTED: str
+    "this compiler's `"
+
+# The header's line a note stands on: its group, its row, the line as clang
+# quoted it, and the name both carets stand on.
+record Line
+    group: group_file.Group
+    row: i64
+    quoted: str?
+    name: str
+
+# The refusal, on the group's string, or none where clang's first error is
+# not this class. `runtime` is the runtime's directory as clang was given it.
+function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
+    rows = ffi_lookup.lines(text: stderr)
+    first = clang_first.first_error(rows)?
+    steps = clang_place.stack(stderr: stderr, line: rows[first.row])
+    own = runtime_key.made_of(runtime)?
+    line = header_line(stderr: stderr, rows: rows, first: first, s: s, decls: decls, runtime: own)?
+    library = included(steps, s: s, decls: decls, runtime: own)
+
+    if !library.is_err()
+        d: diag.Diagnostic @= opened(
+            line: line,
+            by: "`" + library.must() + "`, a header of C's own,",
+            message: first.message
+        )
+        d.notes @ d.notes.push(
+            LIBRARY + line.name + "`, which `" + library.must() + "` declares, is the library's in a unit that includes that header (C11 7.1.3), and this program's C includes it after its groups' headers"
+        )
+        d.fixes @ [renamed(s, line: line, why: "a name of C's own library, which `" + library.must() + "` declares")]
+        return ok(d)
+    decl = emitted(steps, name: line.name, s: s, decls: decls)?
+    called = "this program's function `" + source.span_text(s, decl.name) + "`"
+    d: diag.Diagnostic @= opened(
+        line: line,
+        by: "the C this compiler writes for this program",
+        message: first.message
+    )
+    d.notes @ d.notes.push(
+        EMITTED + line.name + "` is the name the C it writes gives " + called + ", at " + source.elsewhere(s, here: line.group.span.start, there: decl.name.start)
+    )
+    d.fixes @ [renamed(s, line: line, why: "the name this compiler gives " + called)]
+    return ok(d)
+
+# The headline, on the group's string, and the header's line as clang quoted
+# it.
+function opened(line: Line, by: str, message: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_header_refused",
+        message: "`" + line.group.header + "`, the header this group names, does not compile: its line " + line.row.to_str() + " declares `" + line.name + "`, which " + by + " declares too, after the groups' headers, and clang refuses the two: " + message,
+        span: line.group.span
+    )
+
+    if !line.quoted.is_err()
+        d.notes @ d.notes.push(
+            "`" + line.group.header + "` line " + line.row.to_str() + " reads `" + line.quoted.must() + "`"
+        )
+    return d
+
+# A `guess` fix renaming the name in the header, its replacement the group's
+# string as written, since the rename is the header's.
+function renamed(s: source.Source, line: Line, why: str) -> diag.Fix
+    return diag.Fix(
+        title: "rename `" + line.name + "` in `" + line.group.header + "`, " + why,
+        replacement: source.span_text(s, line.group.span),
+        span: line.group.span,
+        certainty: .guess
+    )
+
+# The line of a group's header a note of the first error stands on, where
+# its caret stands on the very name the error's caret stands on: the first
+# note that lies in a group's header and is no macro's expansion; absent
+# where none does, where its caret names another name, or where any note
+# lies in a file of the compiler's own, the one clang compiled, as the
+# note's own includes name it, or the runtime's.
+function header_line(stderr: str, rows: [str], first: clang_first.First, s: source.Source, decls: [ast.Decl], runtime: [str]) -> Line?
+    name = runtime_name.caret_name(rows, after: first.row)?
+    found: Line? @= fail(code: "none", msg: "no note stands in a group's header")
+
+    for note in clang_first.attached(rows, after: first.row)
+        compiled = clang_place.stack(stderr: stderr, line: rows[note.index])[0].path
+
+        if group_file.compilers(path: note.path, compiled: compiled, runtime: runtime)
+            return fail(code: "none", msg: "a note in a file of the compiler's own")
+        group = group_file.group_of(s, decls, path: note.path)
+
+        if found.is_err() && !group.is_err() && !clang_first.expansion(note.text)
+            said = runtime_name.caret_name(rows, after: note.index)
+
+            if said.is_err() || said.must() != name
+                return fail(code: "none", msg: "the note's line holds another name")
+            found @ ok(
+                Line(group: group.must(), row: note.row, quoted: clang_excerpt.of(rows, after: note.index), name: name)
+            )
+
+    return found
+
+# The header of C's own the runtime includes that the first error lies in,
+# `<math.h>`, read from the runtime's own line at the row clang names: the
+# innermost of the error's includes that is a file of the compiler's own is
+# one of the runtime's, never the file clang compiled nor the error's own,
+# and no file after it is a group's header.
+function included(steps: [clang_place.Place], s: source.Source, decls: [ast.Decl], runtime: [str]) -> str?
+    compiled = steps[0].path
+    at: i64 @= steps.len() - 1
+
+    while at > 0 && !group_file.compilers(path: steps[at].path, compiled: compiled, runtime: runtime)
+        if !group_file.group_of(s, decls, path: steps[at].path).is_err()
+            return fail(code: "none", msg: "a group's header among the includes")
+        at @ at - 1
+
+    if at < 1 || at == steps.len() - 1
+        return fail(code: "none", msg: "the error lies in no header the runtime includes")
+    said = standard_name.words(standard_name.line_of(path: steps[at].path, row: steps[at].row, runtime: runtime)?)
+
+    if said.len() != 2 || said[0] != "#include" || said[1].len() < 3 || said[1][0] != '<' || said[1][said[1].len() - 1] != '>'
+        return fail(code: "none", msg: "the runtime's line includes no header of C's own")
+    return ok(said[1])
+
+# The program's own function whose C name, as `mangle.function_name` gives
+# it, is `name`, where the first error lies in the file clang compiled: a
+# file clang names under no include, `femit.c` or the program's `.hero` as
+# the unit's `#line`s say, and no group's header. A group's function keeps
+# its C name, so it is never one; nor is a generic one, whose instances carry
+# a hash, nor the library's.
+function emitted(steps: [clang_place.Place], name: str, s: source.Source, decls: [ast.Decl]) -> ast.Decl?
+    if steps.len() != 1 || !group_file.group_of(s, decls, path: steps[0].path).is_err()
+        return fail(code: "none", msg: "the error lies in no file clang compiled")
+
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.header.is_err() && fd.value.generics.len() == 0 && !source.is_library(s, decl.name.start) && mangle.function_name(module: source.component_at(s, decl.name.start), name: source.span_text(s, decl.name)) == name
+                    return ok(decl)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no function of the program's own has this C name")
+
+# The name a refusal's note says C declares after the header, and whose it
+# is, for `cli/header_order.hero`, which tries no header before such a one
+# and tells one not beside the program to be declared anew.
+record Taken
+    name: str
+    whose: str
+
+function taken(d: diag.Diagnostic) -> Taken?
+    for note in d.notes
+        for opening in [LIBRARY, EMITTED]
+            if clang_place.same_bytes(text: note, from: 0, part: opening)
+                rest = note.slice(from: opening.len(), to: note.len())
+                stop = clang_place.offset_of(text: rest, needle: "`")?
+                whose: str @= "which a header of C's own declares in every unit after its groups' headers"
+
+                if opening == EMITTED
+                    whose @ "which this compiler gives one of the program's own functions"
+                return ok(Taken(name: rest.slice(from: 0, to: stop), whose: whose))
+
+    return fail(code: "none", msg: "no note names a name C declares after the header")
+
+## Tests
+
+constant TEXT: str
+    "extern \"e_std.h\"\n    function eight() -> i32\n\nfunction main()\n    print(eight())\n"
+
+# Clang's words as Apple clang 21 on this Mac and Debian clang 22.1.8 in the
+# Linux arm64 image wrote them on 2026-10-13 for the reproducer, a header
+# defining `static inline int sqrt(int x)`, the runtime's line found by its
+# text and the toolchain's paths shortened: glibc's `<math.h>` declares the
+# name in a file it includes, `bits/mathcalls.h`.
+test "a header declaring a name <math.h> declares after the groups is refused as its own (defect 2049)"
+    s = source.new_source(name: "estd.hero", text: TEXT)
+    decls = parse.parse(TEXT).decls
+    math = "In file included from build/tu-1/estd.c:45:\nIn file included from runtime/heroes_standard.h:" + standard_row("#include <math.h>").to_str() + ":\n"
+    header = "In file included from build/tu-1/estd.c:20:\n./e_std.h:1:19: note: previous definition is here\n    1 | static inline int sqrt(int x) { return x; }\n      |                   ^\n"
+    mac = math + "/sdk/usr/include/math.h:467:15: error: conflicting types for 'sqrt'\n  467 | extern double sqrt(double);\n      |               ^\n" + header
+    linux = math + "In file included from /usr/include/math.h:282:\n/usr/include/aarch64-linux-gnu/bits/mathcalls.h:176:13: error: conflicting types for 'sqrt'\n  176 | __MATHCALL (sqrt,, (_Mdouble_ __x));\n      |             ^\n" + header
+    said = told(stderr: mac + "1 error generated.\n", s: s, decls: decls, runtime: "runtime").must()
+    assert said.code == "ffi_header_refused"
+    assert source.span_text(s, said.span) == "\"e_std.h\""
+    assert said.message == "`e_std.h`, the header this group names, does not compile: its line 1 declares `sqrt`, which `<math.h>`, a header of C's own, declares too, after the groups' headers, and clang refuses the two: conflicting types for 'sqrt'"
+    assert said.notes[0] == "`e_std.h` line 1 reads `static inline int sqrt(int x) { return x; }`"
+    assert said.fixes.len() == 1 && said.fixes[0].certainty == .guess
+    assert taken(said).must().name == "sqrt"
+    on_linux = told(stderr: linux, s: s, decls: decls, runtime: "runtime").must()
+    assert on_linux.message == said.message && on_linux.notes == said.notes
+
+    # The compiler's: a note at another name, a note in the runtime's files,
+    # an error in the runtime's own header, and one in a header no runtime
+    # line includes.
+    other = math + "/sdk/usr/include/math.h:467:15: error: conflicting types for 'sqrt'\n  467 | extern double sqrt(double);\n      |               ^\nIn file included from build/tu-1/estd.c:20:\n./e_std.h:1:19: note: previous definition is here\n    1 | static inline int sqrtx(int x) { return x; }\n      |                   ^\n"
+    noted = mac + "runtime/heroes_runtime.h:10:9: note: expanded from macro 'HERO_X'\n"
+    own = "In file included from build/tu-1/estd.c:45:\nruntime/heroes_standard.h:4:15: error: conflicting types for 'sqrt'\n    4 | extern double sqrt(double);\n      |               ^\n" + header
+    loose = "In file included from build/tu-1/estd.c:45:\n/sdk/usr/include/math.h:467:15: error: conflicting types for 'sqrt'\n  467 | extern double sqrt(double);\n      |               ^\n" + header
+
+    for text in [other, noted, own, loose]
+        assert told(stderr: text, s: s, decls: decls, runtime: "runtime").is_err()
+
+# Clang's words as Apple clang 21 and Debian clang 22.1.8 wrote them alike on
+# 2026-10-13 for the reproducer, a header declaring `int h_femit_main(int
+# x);`: the first error in the file clang compiled, under the `#line` name
+# the unit gives its own lines.
+test "a header declaring this compiler's name for a function of the program's is refused as its own (defect 2049)"
+    text = "extern \"f_emit.h\"\n    function eight() -> i32\n\nfunction main()\n    print(eight())\n"
+    s = source.new_source(name: "f_emit.hero", text: text)
+    decls = parse.parse(text).decls
+    note = "In file included from build/tu-1/femit.c:20:\n./f_emit.h:1:5: note: previous declaration is here\n    1 | int h_femit_main(int x);\n      |     ^\n"
+    said = told(
+        stderr: "femit.c:95:6: error: conflicting types for 'h_femit_main'\n   95 | void h_femit_main(void);\n      |      ^\n" + note,
+        s: s,
+        decls: decls,
+        runtime: "runtime"
+    ).must()
+    assert said.message == "`f_emit.h`, the header this group names, does not compile: its line 1 declares `h_femit_main`, which the C this compiler writes for this program declares too, after the groups' headers, and clang refuses the two: conflicting types for 'h_femit_main'"
+    assert said.notes[1] == "this compiler's `h_femit_main` is the name the C it writes gives this program's function `main`, at line 4"
+    assert said.fixes[0].title == "rename `h_femit_main` in `f_emit.h`, the name this compiler gives this program's function `main`"
+    assert taken(said).must().whose == "which this compiler gives one of the program's own functions"
+
+    # The compiler's: a name no function of the program's own is given, an
+    # error under an include, and a group's own name.
+    for wrong in ["h_femit_eight", "h_other_main", "eight"]
+        line = "femit.c:95:6: error: conflicting types for '" + wrong + "'\n   95 | void " + wrong + "(void);\n      |      ^\n"
+        written = "In file included from build/tu-1/femit.c:20:\n./f_emit.h:1:5: note: previous declaration is here\n    1 | int " + wrong + "(int x);\n      |     ^\n"
+        assert told(stderr: line + written, s: s, decls: decls, runtime: "runtime").is_err()
+
+    under = "In file included from build/tu-1/femit.c:30:\n./g.h:2:6: error: conflicting types for 'h_femit_main'\n    2 | void h_femit_main(void);\n      |      ^\n" + note
+    assert told(stderr: under, s: s, decls: decls, runtime: "runtime").is_err()
+
+# The row of the runtime's `heroes_standard.h` that reads `line`.
+function standard_row(line: str) -> i64
+    rows = ffi_lookup.lines(text: read_file("runtime/heroes_standard.h").must())
+
+    for at in range(from: 0, to: rows.len())
+        if rows[at] == line
+            return at + 1
+
+    assert false
+    return 0

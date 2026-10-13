@@ -1,0 +1,17 @@
+# fixedbugs, defect 2049, 2026-10-13, the defect's fourth reproducer.
+#
+# SYMPTOM: a header of the program's own writing `HeroSt` was told
+# `internal error: compiling the generated C failed` at exit 2: clang's
+# `unknown type name 'HeroSt'; did you mean 'HeroStr'?` at the header's
+# line, its note at `heroes_runtime.h`'s `HeroStr`, and a note in the
+# runtime's files was the compiler's.
+#
+# FIX: the note is told as the Heroes runtime's own name clang
+# suggests, the header refused at its line 3, exit 1, with no fix: clang's
+# own suggestion is the runtime's type (`cli/runtime_name.hero`).
+
+extern "fixedbugs-2049-a-header-that-misspells-the-runtime-s-string-type-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

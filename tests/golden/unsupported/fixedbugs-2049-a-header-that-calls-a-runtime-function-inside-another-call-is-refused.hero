@@ -1,0 +1,15 @@
+# fixedbugs, defect 2049, 2026-10-13, a call inside a call.
+#
+# SYMPTOM: a header of the program's own writing
+# `hero_print_int(hero_str_len(8))` was told `internal error: compiling
+# the generated C failed` at exit 2, as the third reproducer was.
+#
+# FIX: the note is told as the runtime's `hero_str_len`, the call
+# whose parentheses hold clang's caret, never the call around it
+# (`cli/runtime_name.hero`).
+
+extern "fixedbugs-2049-a-header-that-calls-a-runtime-function-inside-another-call-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

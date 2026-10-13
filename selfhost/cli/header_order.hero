@@ -20,9 +20,10 @@
 #   is not beside the program, the note says where the line of C it needs
 #   goes, and a `guess` fix names that header, never *repair the header*;
 #   where the header declares again a name the Heroes runtime declares in
-#   every unit, no header is tried before it, and one not beside the program
-#   is told to be declared anew in that header, never included by it
-#   (defect 2045).
+#   every unit, no header is tried before it (defect 2045), and where it
+#   declares first a name C declares after the groups, no move either
+#   (defect 2049); one not beside the program is told to be declared anew in
+#   that header, never included by it.
 #
 # And on `ffi_unknown_name`'s path, the same search asked of a name
 # (`cli/name_order.hero`). A build that compiles pays nothing for any of it.
@@ -38,6 +39,7 @@ use cli/header_meaning
 use cli/header_refused
 use cli/headers_together
 use cli/order_groups
+use cli/declared_after
 
 # The C11 headers (C11 7.1.2) but the four every unit reads already, the
 # likeliest a header leans on first.
@@ -84,6 +86,15 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     if d.code != "ffi_header_refused"
         return d
     header = emit_externs.unquoted(s, span: d.span)
+
+    # A name C declares after the groups' headers, which the header declared
+    # first (defect 2049): no move and no header of C's own written before it
+    # takes the name back, and a trial's opening holds none of the C this
+    # compiler writes, where such a header compiles, so none is tried.
+    later = declared_after.taken(d)
+
+    if !later.is_err()
+        return anew(d, under: under, header: header, named: later.must())
     written = order_trial.theirs(unit_headers)
     found = search(
         s,
@@ -118,25 +129,16 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
 
     # A name the Heroes runtime declares in every unit before any group's
     # header, which the header declares again (defect 2045): no header of C's
-    # own written before it takes the name back, so none is tried. A header
-    # beside the program is its own to rename in, the refusal's `guess` fix;
-    # one that is not is declared in a header of the program's own without
-    # that name, never one that includes it.
+    # own written before it takes the name back, so none is tried.
     named = header_refused.runtime_named(d)
 
     if !named.is_err()
-        if order_groups.beside_program(under, header: header)
-            return d
-        own = order_groups.stem(header) + "_own.h"
-        out: diag.Diagnostic @= d
-        out.notes @ replaced(
-            d.notes,
-            said: "`" + header + "` is not this program's to repair, and no header written before it takes back `" + named.must() + "`, which the Heroes runtime declares in every unit before any group's header: declare what this group binds in a header of the program's own beside this file, `" + own + "`, without that name and without including `" + header + "`, which this group then names"
+        return anew(
+            d,
+            under: under,
+            header: header,
+            named: declared_after.Taken(name: named.must(), whose: "which the Heroes runtime declares in every unit before any group's header")
         )
-        out.fixes @ [
-            diag.Fix(title: "name `" + own + "`, the header of the program's own the note drafts", replacement: "\"" + own + "\"", span: d.span, certainty: .guess)
-        ]
-        return out
     module = source.component_at(s, d.span.start)
     context = above(
         t,
@@ -182,6 +184,24 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     out.fixes @ out.fixes.push(
         diag.Fix(title: "name `" + own + "`, the header of the program's own the note drafts", replacement: "\"" + own + "\"", span: d.span, certainty: .guess)
     )
+    return out
+
+# `d`, whose header cannot take back `named`: a header beside the program
+# is its own to rename in, the refusal's `guess` fix; one that is not is
+# declared in a header of the program's own without that name, never one
+# that includes it.
+function anew(d: diag.Diagnostic, under: compiling.Compiling, header: str, named: declared_after.Taken) -> diag.Diagnostic
+    if order_groups.beside_program(under, header: header)
+        return d
+    own = order_groups.stem(header) + "_own.h"
+    out: diag.Diagnostic @= d
+    out.notes @ replaced(
+        d.notes,
+        said: "`" + header + "` is not this program's to repair, and no header written before it takes back `" + named.name + "`, " + named.whose + ": declare what this group binds in a header of the program's own beside this file, `" + own + "`, without that name and without including `" + header + "`, which this group then names"
+    )
+    out.fixes @ [
+        diag.Fix(title: "name `" + own + "`, the header of the program's own the note drafts", replacement: "\"" + own + "\"", span: d.span, certainty: .guess)
+    ]
     return out
 
 # The first move of a group of `module` across the refused header, in the
