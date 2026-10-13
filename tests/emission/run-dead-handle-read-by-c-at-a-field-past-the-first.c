@@ -10,11 +10,13 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic error "-Wimplicit-function-declaration"
 #pragma clang diagnostic ignored "-Wformat-extra-args"
 #pragma clang diagnostic ignored "-Wformat-zero-length"
 #pragma clang diagnostic ignored "-Wformat-security"
 #pragma clang diagnostic ignored "-Wformat-truncation"
 #pragma clang diagnostic ignored "-Wformat-y2k"
+#pragma clang diagnostic error "-Wmicrosoft-redeclare-static"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -99,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_1d67a62c, "ob_far_cell(a: @cert) == 1");
 HERO_STR_STATIC(hero_str_7034b02b, "references held: ");
 
-#line 103 "deadhandlereadbycatafieldpastthefirst.c"
+#line 105 "deadhandlereadbycatafieldpastthefirst.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -145,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 149 "deadhandlereadbycatafieldpastthefirst.c"
+#line 151 "deadhandlereadbycatafieldpastthefirst.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlereadbycatafieldpastthefirst_X509_eq(ob * const *a, ob * const *b);
@@ -248,7 +250,7 @@ bb4:
     return;
 #line 25 "tests/golden/run/dead-handle-read-by-c-at-a-field-past-the-first.hero"
 bb5:
-#line 252 "deadhandlereadbycatafieldpastthefirst.c"
+#line 254 "deadhandlereadbycatafieldpastthefirst.c"
     hero_panic_assert_sides(t6, hero_int_to_str(t7), hero_int_to_str(t8));
     hero_unreachable();
 }
