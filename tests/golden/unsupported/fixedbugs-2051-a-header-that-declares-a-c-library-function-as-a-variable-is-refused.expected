@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-2051-a-header-that-declares-a-c-library-function-as-a-variable-is-refused.h`, the header this group names, does not compile: its line 3 declares `fabs`, which clang itself declares first, at that very line, as a name of C's own, and clang refuses the two: redefinition of 'fabs' as different kind of symbol
+  at tests/golden/unsupported/fixedbugs-2051-a-header-that-declares-a-c-library-function-as-a-variable-is-refused.hero:14:8
+     |
+  14 | extern "fixedbugs-2051-a-header-that-declares-a-c-library-function-as-a-variable-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2051-a-header-that-declares-a-c-library-function-as-a-variable-is-refused.h` line 3 reads `int fabs;`
+  note: C's own `fabs` is declared by clang itself where a unit first names it, as clang declares each function of the C library it knows and each builtin of its own: its notes, the include line of this program's C named for each declaration and a guard asked of the header, place both at the header's own line, which a guard would not change
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `fabs` in `fixedbugs-2051-a-header-that-declares-a-c-library-function-as-a-variable-is-refused.h`, a name of C's own, which clang declares itself

@@ -21,9 +21,10 @@
 #   goes, and a `guess` fix names that header, never *repair the header*;
 #   where the header declares again a name the Heroes runtime declares in
 #   every unit, no header is tried before it (defect 2045), and where it
-#   declares first a name C declares after the groups, no move either
-#   (defect 2049); one not beside the program is told to be declared anew in
-#   that header, never included by it.
+#   declares first a name C declares after the groups, or one clang declares
+#   itself at its line, no move either (defects 2049 and 2051); one not
+#   beside the program is told to be declared anew in that header, never
+#   included by it.
 #
 # And on `ffi_unknown_name`'s path, the same search asked of a name
 # (`cli/name_order.hero`). A build that compiles pays nothing for any of it.
@@ -88,7 +89,8 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     header = emit_externs.unquoted(s, span: d.span)
 
     # A name C declares after the groups' headers, which the header declared
-    # first (defect 2049): no move and no header of C's own written before it
+    # first (defect 2049), or one clang declares itself at the header's line
+    # (defect 2051): no move and no header of C's own written before it
     # takes the name back, and a trial's opening holds none of the C this
     # compiler writes, where such a header compiles, so none is tried.
     later = declared_after.taken(d)

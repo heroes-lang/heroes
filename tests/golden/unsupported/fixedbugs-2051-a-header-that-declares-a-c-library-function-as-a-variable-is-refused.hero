@@ -1,0 +1,18 @@
+# fixedbugs, defect 2051, 2026-10-13, the reproducer.
+#
+# SYMPTOM: a header of the program's own holding `int fabs;` was told
+# `internal error: compiling the generated C failed` at exit 2: clang's
+# error at the header's line 3, its notes at the generated unit's include
+# line, `included multiple times`, and a note in that file was the
+# compiler's.
+#
+# FIX: notes at the line that includes the header, naming the error's own
+# file, place clang's own declaration at the header's line: told as C's own
+# `fabs`, the header refused at its line 3, exit 1, with a `guess` fix
+# renaming it (`cli/builtin_name.hero`).
+
+extern "fixedbugs-2051-a-header-that-declares-a-c-library-function-as-a-variable-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

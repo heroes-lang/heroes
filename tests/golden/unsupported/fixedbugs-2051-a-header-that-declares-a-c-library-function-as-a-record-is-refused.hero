@@ -1,0 +1,16 @@
+# fixedbugs, defect 2051, 2026-10-13, a record's variable.
+#
+# SYMPTOM: a header of the program's own holding `struct counted { int n; }
+# malloc;` was told `internal error: compiling the generated C failed` at
+# exit 2, as the reproducer was: clang's notes at the generated unit's
+# include line.
+#
+# FIX: told as C's own `malloc`, which clang declares itself at the
+# header's line, the header refused at its line 3, exit 1, with a `guess`
+# fix renaming it (`cli/builtin_name.hero`).
+
+extern "fixedbugs-2051-a-header-that-declares-a-c-library-function-as-a-record-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())
