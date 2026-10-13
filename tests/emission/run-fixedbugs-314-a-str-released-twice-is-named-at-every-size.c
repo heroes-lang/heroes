@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -82,7 +87,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 86 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 91 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -126,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 135 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -177,7 +182,7 @@ bb0:
     t7 = hero_str_lend(t6);
 #line 28 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
     (void)release_behind(hero_cstr_nonnull(t7));
-#line 181 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
+#line 186 "fixedbugs314astrreleasedtwiceisnamedateverysize.c"
     hero_str_release_at(&h0_word);
     hero_str_release_at(&h1_own1);
     return;

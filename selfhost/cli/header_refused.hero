@@ -44,6 +44,7 @@ use diag
 use emit/clang_place
 use emit/ffi_lookup
 use cli/read_back
+use cli/process
 use cli/headers_together
 use cli/group_file
 use cli/clang_first
@@ -63,11 +64,12 @@ constant REPAIR: str
     "a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C"
 
 # The diagnostic for a header clang refused, or none where clang's first error
-# is not this class. `runtime` and `build` are the directories whose files are
-# the compiler's, as clang was given them.
-function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, build: str) -> [diag.Diagnostic]
+# is not this class. `runtime` is the runtime's directory as clang was given
+# it, whose files are the compiler's with the one clang compiled
+# (`group_file.compilers`).
+function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> [diag.Diagnostic]
     none: [diag.Diagnostic] = []
-    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, build: build)
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime)
 
     if read.is_err()
         return none
@@ -84,8 +86,8 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
 # The group whose header clang refused on its own, where it refused one group's
 # header and no note names another's: the header `cli/header_alone.hero` asks
 # whether it compiles alone (defect 557).
-function refused_alone(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, build: str) -> group_file.Group?
-    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, build: build)?
+function refused_alone(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> group_file.Group?
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime)?
 
     if !read.beside.is_err()
         return fail(code: "none", msg: "two headers are told")
@@ -95,9 +97,9 @@ function refused_alone(stderr: str, s: source.Source, decls: [ast.Decl], runtime
 # header of the unit it does not compile after (defect 557,
 # `cli/header_alone.hero`): told as two headers refused together, the words
 # the same whichever is written first.
-function refused_after(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, build: str, earlier: group_file.Group) -> [diag.Diagnostic]
+function refused_after(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, earlier: group_file.Group) -> [diag.Diagnostic]
     none: [diag.Diagnostic] = []
-    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime, build: build)
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime)
 
     if read.is_err()
         return none
@@ -240,7 +242,7 @@ test "a header clang refuses on its own is told on its group's string, in clang'
     s = program()
     decls = decls_of()
     mac = "In file included from build/tu-1/t.c:7:\n./bad.h:3:14: error: expected expression\n    3 | int broken = ;\n      |              ^\n1 error generated.\n"
-    said = refused(stderr: mac, s: s, decls: decls, runtime: "runtime", build: "build")
+    said = refused(stderr: mac, s: s, decls: decls, runtime: "runtime")
     assert said.len() == 1
     assert said[0].code == "ffi_header_refused"
     assert source.span_text(s, said[0].span) == "\"bad.h\""
@@ -248,11 +250,11 @@ test "a header clang refuses on its own is told on its group's string, in clang'
     assert said[0].notes[0] == "`bad.h` line 3 reads `int broken = ;`"
     assert said[0].notes.len() == 2
     windows = "In file included from build\\tu-1\\t.c:7:\r\ntests/golden/run\\bad.h:3:14: error: expected expression\r\n    3 | int broken = ;\r\n"
-    assert refused(stderr: windows, s: s, decls: decls, runtime: "runtime", build: "build")[0].message == said[0].message
+    assert refused(stderr: windows, s: s, decls: decls, runtime: "runtime")[0].message == said[0].message
 
     # Through the group's header, every include clang followed named.
     through = "In file included from build/tu-1/t.c:8:\nIn file included from d/lib/outer.h:2:\nd/lib/inner.h:3:20: error: expected expression\n    3 | int inner_broken = ;\n"
-    inner = refused(stderr: through, s: s, decls: decls, runtime: "runtime", build: "build")
+    inner = refused(stderr: through, s: s, decls: decls, runtime: "runtime")
     assert source.span_text(s, inner[0].span) == "\"lib/outer.h\""
     assert inner[0].message == "`lib/outer.h`, the header this group names, does not compile: clang refuses `lib/inner.h`, which it includes, at line 3: expected expression"
     assert inner[0].notes[1] == "the includes clang followed: `lib/outer.h` line 2 includes `lib/inner.h`"
@@ -260,7 +262,7 @@ test "a header clang refuses on its own is told on its group's string, in clang'
     # A warning before it is passed over; a `-Werror` is said; clang's note is
     # carried, shown as the group's directory would name its file.
     warned = "In file included from build/tu-1/t.c:7:\n./bad.h:2:2: warning: \"careful\" [-W#warnings]\n./bad.h:5:48: error: implicit conversion loses integer precision: 'long long' to 'int' [-Werror,-Wshorten-64-to-32]\n./bad.h:4:9: note: expanded from macro 'NARROW'\n1 warning and 1 error generated.\n"
-    flagged = refused(stderr: warned, s: s, decls: decls, runtime: "runtime", build: "build")
+    flagged = refused(stderr: warned, s: s, decls: decls, runtime: "runtime")
     assert flagged[0].message == "`bad.h`, the header this group names, does not compile: clang refuses it at line 5: implicit conversion loses integer precision: 'long long' to 'int' [-Werror,-Wshorten-64-to-32]"
     assert flagged[0].notes[0] == "clang adds, at `bad.h` line 4: expanded from macro 'NARROW'"
     assert has(flagged[0].notes, needle: "clang's `-Werror` says the warning is one this compiler makes an error")
@@ -285,16 +287,53 @@ test "a refusal that is not a bound header's own stays the compiler's (defect 36
     ]
 
     for text in none
-        assert refused(stderr: text, s: s, decls: decls, runtime: "runtime", build: "build").len() == 0
+        assert refused(stderr: text, s: s, decls: decls, runtime: "runtime").len() == 0
 
-    # A group binding the runtime's own header, as this compiler's source does.
+    # A group binding the runtime's own header, as this compiler's source does:
+    # the runtime's file, by what `runtime.c` names, wherever it stands, even
+    # under a directory named `build` (defect 2035).
     bound = source.new_source(
         name: "r.hero",
         text: "extern \"hero_os.h\"\n    function hero_os_pid() -> i64\n\nfunction main()\n    print(hero_os_pid())\n"
     )
     parsed = parse.parse(bound.text)
-    in_runtime = "In file included from build/tu-1/r.c:4:\n/abs/runtime/hero_os.h:4:1: error: expected expression\n"
-    assert refused(stderr: in_runtime, s: bound, decls: parsed.decls, runtime: "/abs/runtime", build: "build").len() == 0
+    elsewhere = "build/selftest-runtime-2035"
+    assert !process.remove_tree(elsewhere).is_err()
+    assert !process.mkdir_all(elsewhere).is_err()
+    assert !write_file(path: elsewhere + "/runtime.c", text: "#include \"hero_os.h\"\n").is_err()
+    assert !write_file(path: elsewhere + "/hero_os.h", text: "int hero_os_pid(void);\n").is_err()
+    in_runtime = "In file included from build/tu-1/r.c:4:\n./" + elsewhere + "/hero_os.h:4:1: error: expected expression\n"
+    assert refused(stderr: in_runtime, s: bound, decls: parsed.decls, runtime: elsewhere).len() == 0
+
+    # And a runtime `runtime.c` cannot be read from is no reading at all: the
+    # refusal stays the compiler's.
+    assert refused(stderr: in_runtime, s: bound, decls: parsed.decls, runtime: elsewhere + "/gone").len() == 0
+
+# DEFECT 2035: a program kept under a relative `build/`, or under the
+# `runtime/` the compiler found in the working directory, is the program's,
+# its header told as anywhere else, since a file of the compiler's own is the
+# one clang compiled or one `runtime.c` names, never one a folder holds. Until
+# then each was *internal error* at exit 2. The words are Apple clang 21's
+# for `fixedbugs-2034-...-too-few-arguments-is-refused` copied to
+# `build/rep/a/`, its header renamed `bad.h`, measured 2026-10-13.
+test "a program kept under a folder named build or runtime is told its header's refusal (defect 2035)"
+    s = program()
+    decls = decls_of()
+
+    for under in ["build/rep/a/", "./build/rep/a/", "build/", "runtime/rep/", "x/build/"]
+        said = "In file included from build/tu-28e6b6e97091d848/t.c:15:\n" + under + "bad.h:4:56: error: more '%' conversions than data arguments [-Werror,-Wformat-insufficient-args]\n    4 | static inline int fmt_shout(void) { return printf(\"%d %d\\n\", 7); }\n1 error generated.\n"
+        got = refused(stderr: said, s: s, decls: decls, runtime: "runtime")
+        assert got.len() == 1
+        assert got[0].code == "ffi_header_refused"
+        assert source.span_text(s, got[0].span) == "\"bad.h\""
+
+    # The file clang compiled stays the compiler's whatever its folder: a first
+    # error in it, and a note in it under a header's error.
+    compiled = "build/rep/a/t.c"
+    in_unit = compiled + ":9:1: error: use of undeclared identifier 'h_x'\n"
+    assert refused(stderr: in_unit, s: s, decls: decls, runtime: "runtime").len() == 0
+    noted = "In file included from " + compiled + ":7:\nbuild/rep/a/bad.h:3:1: error: redefinition of 'h_x'\n" + compiled + ":5:9: note: previous definition is here\n"
+    assert refused(stderr: noted, s: s, decls: decls, runtime: "runtime").len() == 0
 
 # DEFECT 284's measurement, held: a group's header found under a directory
 # whose name holds the byte 0xE9, which only Linux makes, reached through
@@ -319,7 +358,7 @@ test "clang's words naming a header under a directory that is not UTF-8 are read
     assert lacked.code == "ffi_missing_header"
     assert lacked.message == "`gone.h` is not on this machine's include path, and `m.h`, the header this group names, includes it at line 2"
     refused_words = read_back.words(fixtures + "refused-under-latin1-directory.txt").must()
-    said = refused(stderr: refused_words, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    said = refused(stderr: refused_words, s: s, decls: parsed.decls, runtime: "runtime")
     assert source.span_text(s, said[0].span) == "\"b.h\""
     assert said[0].message == "`b.h`, the header this group names, does not compile: clang refuses it at line 3: expected expression"
     assert said[0].notes[0] == "`b.h` line 3 reads `int broken = ;`"
@@ -340,8 +379,8 @@ test "two headers clang refuses together are both told, whichever the program in
     parsed = parse.parse(text)
     a_first = "In file included from build/tu-1/p.c:8:\n./b.h:1:19: error: conflicting types for 'twice'\n    1 | static inline int twice(int x) { return x + x; }\n      |                   ^\n./a.h:1:20: note: previous definition is here\n    1 | static inline long twice(long x) { return 2 * x; }\n      |                    ^\n1 error generated.\n"
     b_first = "In file included from build/tu-1/p.c:8:\n./a.h:1:20: error: conflicting types for 'twice'\n    1 | static inline long twice(long x) { return 2 * x; }\n      |                    ^\n./b.h:1:19: note: previous definition is here\n    1 | static inline int twice(int x) { return x + x; }\n      |                   ^\n1 error generated.\n"
-    one = refused(stderr: a_first, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
-    two = refused(stderr: b_first, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    one = refused(stderr: a_first, s: s, decls: parsed.decls, runtime: "runtime")
+    two = refused(stderr: b_first, s: s, decls: parsed.decls, runtime: "runtime")
     assert one.len() == 1
     assert one[0].code == "ffi_header_refused"
     assert source.span_text(s, one[0].span) == "\"a.h\""
@@ -366,8 +405,8 @@ test "a note in a file another group's header includes is told through that head
     parsed = parse.parse(text)
     a_first = "In file included from build/tu-1/p.c:3:\n./b.h:1:19: error: conflicting types for 'twice'\n    1 | static inline int twice(int x) { return x + x; }\n      |                   ^\nIn file included from build/tu-1/p.c:2:\nIn file included from ./a.h:1:\n./a_impl.h:1:20: note: previous definition is here\n    1 | static inline long twice(long x) { return 2 * x; }\n      |                    ^\n1 error generated.\n"
     b_first = "In file included from build/tu-1/p.c:3:\nIn file included from ./a.h:1:\n./a_impl.h:1:20: error: conflicting types for 'twice'\n    1 | static inline long twice(long x) { return 2 * x; }\n      |                    ^\nIn file included from build/tu-1/p.c:2:\n./b.h:1:19: note: previous definition is here\n    1 | static inline int twice(int x) { return x + x; }\n      |                   ^\n1 error generated.\n"
-    one = refused(stderr: a_first, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
-    two = refused(stderr: b_first, s: s, decls: parsed.decls, runtime: "runtime", build: "build")
+    one = refused(stderr: a_first, s: s, decls: parsed.decls, runtime: "runtime")
+    two = refused(stderr: b_first, s: s, decls: parsed.decls, runtime: "runtime")
     assert one.len() == 1
     assert one[0].message == "`a.h` and `b.h`, the headers two groups name, cannot be compiled in one unit: clang refuses them together, at `a_impl.h` line 1, which `a.h` includes, and `b.h` line 1: conflicting types for 'twice'"
     assert two[0].message == one[0].message

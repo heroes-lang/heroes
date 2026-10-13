@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -88,7 +93,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 92 "fficonstant.c"
+#line 97 "fficonstant.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -132,7 +137,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "fficonstant.c"
+#line 141 "fficonstant.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -151,7 +156,7 @@ void h_fficonstant_main(void);
 
 #line 45 "tests/golden/run/ffi-constant.hero"
 double h_fficonstant_M_PI(void) {
-#line 155 "fficonstant.c"
+#line 160 "fficonstant.c"
     return M_PI;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -169,7 +174,7 @@ double h_fficonstant_M_PI(void) {
 
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
-#line 173 "fficonstant.c"
+#line 178 "fficonstant.c"
     return SEEK_SET;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -187,7 +192,7 @@ int64_t h_fficonstant_SEEK_SET(void) {
 
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
-#line 191 "fficonstant.c"
+#line 196 "fficonstant.c"
     return SEEK_END;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -243,7 +248,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/run/ffi-constant.hero"
     return;
-#line 247 "fficonstant.c"
+#line 252 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -84,7 +89,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_511b6db, "%lld");
 
-#line 88 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
+#line 93 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
 typedef struct h_0opt_fbbb698 {
     int64_t tag;
     union {
@@ -138,7 +143,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 142 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
+#line 147 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
@@ -226,7 +231,7 @@ bb1:
     t18 = h1_p;
 #line 24 "tests/golden/run/fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero"
     (void)free(t18);
-#line 230 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
+#line 235 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h0_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h3_own3));
     return;
@@ -235,7 +240,7 @@ bb2:
     t7 = h0_f0;
 #line 21 "tests/golden/run/fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero"
     t8 = t7.as.err;
-#line 239 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
+#line 244 "fixedbugs584sprintfwithfortificationoffbuildssilent.c"
     hero_panic_must(t8);
     hero_unreachable();
 }

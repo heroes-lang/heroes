@@ -39,7 +39,7 @@ constant REDEFINED: str
 # its order.
 function told(stderr: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> [diag.Diagnostic]
     none: [diag.Diagnostic] = []
-    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: t.runtime, build: t.build)
+    read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: t.runtime)
 
     if read.is_err() || clang_place.offset_of(text: read.must().first.message, needle: REDEFINED).is_err()
         return none

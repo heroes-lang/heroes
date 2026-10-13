@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -89,7 +94,7 @@ HERO_STR_STATIC(hero_str_7b9bb5d3, "refs: ");
 HERO_STR_STATIC(hero_str_45d6e555, " up_ref: ");
 HERO_STR_STATIC(hero_str_3f94e3d, "released three times, as C expects");
 
-#line 93 "handlereferencejoinsthelifeitfinds.c"
+#line 98 "handlereferencejoinsthelifeitfinds.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -137,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 141 "handlereferencejoinsthelifeitfinds.c"
+#line 146 "handlereferencejoinsthelifeitfinds.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_Ob_eq(ob * const *a, ob * const *b);
@@ -257,7 +262,7 @@ bb0:
     hero_print_end();
 #line 24 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
     return;
-#line 261 "handlereferencejoinsthelifeitfinds.c"
+#line 266 "handlereferencejoinsthelifeitfinds.c"
 }
 HERO_TU_LOCAL bool h_handlereferencejoinsthelifeitfinds_Ob_eq(ob * const *a, ob * const *b) {
     return hero_handle_eq(*a, *b);

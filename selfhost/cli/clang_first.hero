@@ -11,6 +11,7 @@ use ast
 use emit/clang_place
 use emit/ffi_lookup
 use cli/group_file
+use cli/runtime_key
 
 # clang's first error, read: its row in the text, its place, and its message.
 record First
@@ -33,7 +34,9 @@ constant NOT_FOUND: str
 # What clang's words say of a header: its first error, the includes above
 # it, the group whose header the error lies in, its notes, and the other
 # group a note names, where one does. Absent where the first error is no
-# group's header's, is a missing file, or the runtime's or the build's.
+# group's header's, is a missing file, or lies in or is explained by a file
+# of the compiler's own, the one clang compiled or the runtime's
+# (`group_file.compilers`).
 record Reading
     rows: [str]
     first: First
@@ -44,20 +47,26 @@ record Reading
     beside: group_file.Reached?
     note: Attached
 
-function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, build: str) -> Reading?
+function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> Reading?
     rows = ffi_lookup.lines(text: stderr)
     first = first_error(rows)?
 
     if !clang_place.offset_of(text: first.message, needle: NOT_FOUND).is_err()
         return fail(code: "none", msg: "a missing header")
     steps = clang_place.stack(stderr: stderr, line: rows[first.row])
+
+    # The compiler's own files, by what they are and never by a folder
+    # (defect 2035): the file clang compiled heads the stack, which clang
+    # prints for every diagnostic in a file the compiled one includes, and
+    # the runtime's are those `runtime.c` names. So the search never names a
+    # group in either, wherever the program's own files stand.
+    compiled = steps[0].path
+    own = runtime_key.made_of(runtime)?
     at: i64 @= steps.len() - 1
     group: group_file.Group? @= fail(code: "none", msg: "no group's header is in the stack")
 
-    # The unit clang compiled heads the stack and is the build's, so the
-    # search never names a group after it.
     while at >= 0 && group.is_err()
-        if !group_file.compilers(path: steps[at].path, runtime: runtime, build: build)
+        if !group_file.compilers(path: steps[at].path, compiled: compiled, runtime: own)
             group @ group_file.group_of(s, decls, path: steps[at].path)
 
         if group.is_err()
@@ -68,16 +77,16 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str,
     hop: i64 @= at
 
     while hop < steps.len()
-        if group_file.compilers(path: steps[hop].path, runtime: runtime, build: build)
-            return fail(code: "none", msg: "the runtime's or the build's")
+        if group_file.compilers(path: steps[hop].path, compiled: compiled, runtime: own)
+            return fail(code: "none", msg: "a file of the compiler's own")
         hop @ hop + 1
 
     notes = attached(rows, after: first.row)
     no_note = Attached(path: "", row: 0, text: "", index: 0)
 
     for note in notes
-        if group_file.compilers(path: note.path, runtime: runtime, build: build)
-            return fail(code: "none", msg: "a note of the runtime's or the build's")
+        if group_file.compilers(path: note.path, compiled: compiled, runtime: own)
+            return fail(code: "none", msg: "a note in a file of the compiler's own")
 
     # A note in ANOTHER group's header, or in a file one includes: the two
     # are refused together, and neither alone (defect 538,

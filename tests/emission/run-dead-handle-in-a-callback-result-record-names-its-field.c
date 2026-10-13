@@ -10,6 +10,11 @@
 #pragma clang diagnostic error "-Wuninitialized"
 #pragma clang diagnostic error "-Wformat"
 #pragma clang diagnostic error "-Wconditional-uninitialized"
+#pragma clang diagnostic ignored "-Wformat-extra-args"
+#pragma clang diagnostic ignored "-Wformat-zero-length"
+#pragma clang diagnostic ignored "-Wformat-security"
+#pragma clang diagnostic ignored "-Wformat-truncation"
+#pragma clang diagnostic ignored "-Wformat-y2k"
 #pragma clang diagnostic ignored "-Wpragma-pack"
 #pragma float_control(push)
 #include "heroes_guard_open.h"
@@ -49,11 +54,11 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 #line 12 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 _Static_assert(_Generic(&((struct pair *)0)->a, node * *: 1, default: 0) && sizeof(((struct pair *)0)->a) == sizeof(node *), "heroes-ffi-field Pair a");
 _Static_assert(_Generic(&((struct pair *)0)->b, node * *: 1, default: 0) && sizeof(((struct pair *)0)->b) == sizeof(node *), "heroes-ffi-field Pair b");
-#line 53 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 58 "deadhandleinacallbackresultrecordnamesitsfield.c"
 
 #line 11 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 57 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 62 "deadhandleinacallbackresultrecordnamesitsfield.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -152,7 +157,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 156 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 161 "deadhandleinacallbackresultrecordnamesitsfield.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b);
@@ -233,7 +238,7 @@ bb0:
 bb1:
 #line 24 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t18 = h1_p;
-#line 237 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 242 "deadhandleinacallbackresultrecordnamesitsfield.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
     return t18;
@@ -252,7 +257,7 @@ bb3:
     t11 = h2_f0;
 #line 22 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     t12 = t11.as.err;
-#line 256 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 261 "deadhandleinacallbackresultrecordnamesitsfield.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb4:
@@ -278,7 +283,7 @@ bb4:
 bb5:
 #line 23 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     goto bb1;
-#line 282 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 287 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
 struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
@@ -307,7 +312,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
     return;
-#line 311 "deadhandleinacallbackresultrecordnamesitsfield.c"
+#line 316 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 HERO_TU_LOCAL bool h_deadhandleinacallbackresultrecordnamesitsfield_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

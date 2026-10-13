@@ -134,7 +134,7 @@ function bound(s: source.Source, decls: [ast.Decl]) -> {str: [str]}
 # where its note points into another's (`header_refused.sides`), else its
 # first error on the first group of the program.
 function uncompiled(s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, said: str, message: str) -> diag.Diagnostic
-    read = clang_first.reading(stderr: said, s: s, decls: decls, runtime: t.runtime, build: t.build)
+    read = clang_first.reading(stderr: said, s: s, decls: decls, runtime: t.runtime)
 
     if !read.is_err()
         two = header_refused.sides(read.must())
