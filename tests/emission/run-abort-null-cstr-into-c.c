@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -86,7 +87,7 @@ HERO_STR_STATIC(hero_str_203132, "zzz");
 HERO_STR_STATIC(hero_str_79, "y");
 HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
-#line 90 "abortnullcstrintoc.c"
+#line 91 "abortnullcstrintoc.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -130,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 134 "abortnullcstrintoc.c"
+#line 135 "abortnullcstrintoc.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -147,7 +148,7 @@ void h_abortnullcstrintoc_main(void);
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 void h_abortnullcstrintoc_main(void) {
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
-    const char * h0_absent; HeroStr t1; HeroStr t2; const char * t3; HeroStr t4; const char * t5; const char * t6; const char * t7; HeroStr t8; const char * t9; const char * t10; const char * t11; bool t12; HeroStr t13; goto bb0;
+    const char * h0_absent; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG const char * t6; HERO_NODEBUG const char * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG const char * t9; HERO_NODEBUG const char * t10; HERO_NODEBUG const char * t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; goto bb0;
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);
@@ -198,7 +199,7 @@ bb2:
 bb3:
 #line 34 "tests/golden/run/abort-null-cstr-into-c.hero"
     goto bb1;
-#line 202 "abortnullcstrintoc.c"
+#line 203 "abortnullcstrintoc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

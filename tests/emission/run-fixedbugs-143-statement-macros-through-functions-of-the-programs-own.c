@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -86,7 +87,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 90 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
+#line 91 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -135,7 +136,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 139 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
+#line 140 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_BitSet_eq(bit_set * const *a, bit_set * const *b);
@@ -154,7 +155,7 @@ void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void);
 #line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
 void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void) {
 #line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    bit_set * h0_s; int32_t t1; int32_t t2; bit_set * t3; bit_set * t4; int32_t t5; bit_set * t6; int32_t t7; bit_set * t8; int32_t t9; bit_set * t10; int32_t t11; int32_t t12; bit_set * t13; int32_t t14; int32_t t15; bit_set * t16; int32_t t17; bit_set * t18; goto bb0;
+    bit_set * h0_s; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG bit_set * t3; HERO_NODEBUG bit_set * t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG bit_set * t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG bit_set * t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG bit_set * t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG bit_set * t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG bit_set * t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG bit_set * t18; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
 bb0:
     t1 = INT64_C(256);
@@ -236,7 +237,7 @@ bb0:
     }
 #line 29 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
     return;
-#line 240 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
+#line 241 "fixedbugs143statementmacrosthroughfunctionsoftheprogramsown.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_BitSet_eq(bit_set * const *a, bit_set * const *b) {
     return hero_handle_eq(*a, *b);

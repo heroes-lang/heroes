@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -107,7 +108,7 @@ HERO_STR_STATIC(hero_str_7e662f9e, "write_failed");
 HERO_STR_STATIC(hero_str_1755ec20, "could not write a path holding a NUL byte, which names no file");
 HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 
-#line 111 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 112 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -149,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 153 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 154 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -183,24 +184,24 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 36 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_DIR_FILES(void) {
-#line 187 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 188 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_DIR_FILES;
 }
 
 #line 37 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_HERO_FS_OTHER(void) {
-#line 193 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 194 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_FS_OTHER;
 }
 
 #line 39 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 HeroStr h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_TEXT(void) {
 #line 39 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 204 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 205 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -208,7 +209,7 @@ bb0:
 #line 43 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 int64_t h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_files_in(HeroStr h0_dir) {
 #line 43 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    int64_t h1_count; HeroStr t1; const char * t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 43 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = h0_dir;
@@ -226,13 +227,13 @@ bb0:
     t6 = h1_count;
 #line 46 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     return t6;
-#line 230 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 231 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
 #line 48 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bool h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_holds(HeroStr h0_path) {
 #line 48 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    h_0opt_f87774a h1_f0 = {0}; HeroStr h2_r0 = {0}; h_0opt_f87774a h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr t1; h_0opt_f87774a t2; h_0opt_f87774a t3; int64_t t4; int64_t t5; bool t6; h_0opt_f87774a t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; bool t12; h_0opt_f87774a t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; HeroStr t17; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_f87774a t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = h0_path;
@@ -306,7 +307,7 @@ bb3:
     hero_str_decref(t17);
 #line 49 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t12 = hero_str_eq(t10, t11);
-#line 310 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 311 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -317,7 +318,7 @@ bb3:
 #line 51 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bool h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_wrote(HeroStr h0_path) {
 #line 51 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    h_0opt_a8ea2 h1_f0 = {0}; HeroStr h2_own2 = {0}; h_0opt_a8ea2 h3_own3 = {0}; HeroStr t1; HeroStr t2; h_0opt_a8ea2 t3; h_0opt_a8ea2 t4; int64_t t5; int64_t t6; bool t7; bool t8; HeroStr t9; h_0opt_a8ea2 t10; h_0opt_a8ea2 t11; goto bb0;
+    HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_a8ea2 t3; HERO_NODEBUG h_0opt_a8ea2 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_a8ea2 t10; HERO_NODEBUG h_0opt_a8ea2 t11; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = h0_path;
@@ -355,7 +356,7 @@ bb0:
     t7 = t5 == t6;
 #line 52 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     t8 = !t7;
-#line 359 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 360 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_own2);
     h_0opt_a8ea2_release(hero_slot_escape(&h3_own3));
@@ -365,7 +366,7 @@ bb0:
 #line 54 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_absent(HeroStr h0_dir) {
 #line 54 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    HeroStr h1_path = {0}; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; bool t6; HeroStr t7; HeroStr t8; bool t9; HeroStr t10; HeroStr t11; int64_t t12; HeroStr t13; HeroStr t14; goto bb0;
+    HeroStr h1_path = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; goto bb0;
 #line 54 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = h0_dir;
@@ -418,7 +419,7 @@ bb0:
     hero_print_int(t12);
 #line 56 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     hero_print_end();
-#line 422 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 423 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_path);
     hero_str_release_at(&h2_own2);
     return;
@@ -427,7 +428,7 @@ bb0:
 #line 58 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_own_mode(HeroStr h0_dir) {
 #line 58 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    HeroStr h1_path = {0}; bool h2_b0; int64_t h3_before; HeroStr h4_own4 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; bool t5; bool t6; HeroStr t7; const char * t8; int64_t t9; int64_t t10; int64_t t11; bool t12; bool t13; HeroStr t14; HeroStr t15; HeroStr t16; const char * t17; int64_t t18; HeroStr t19; HeroStr t20; bool t21; HeroStr t22; HeroStr t23; bool t24; HeroStr t25; HeroStr t26; const char * t27; int64_t t28; int64_t t29; bool t30; HeroStr t31; HeroStr t32; int64_t t33; HeroStr t34; HeroStr t35; goto bb0;
+    HeroStr h1_path = {0}; HERO_NODEBUG bool h2_b0; int64_t h3_before; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG const char * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG const char * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG bool t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG const char * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; goto bb0;
 #line 58 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = h0_dir;
@@ -555,7 +556,7 @@ bb5:
     goto bb1;
 #line 62 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb6:
-#line 559 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 560 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_path);
     hero_str_release_at(&h4_own4);
     return;
@@ -564,7 +565,7 @@ bb6:
 #line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_two_names(HeroStr h0_dir) {
 #line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    HeroStr h1_one = {0}; HeroStr h2_two = {0}; bool h3_b0; h_0opt_a8ea2 h4_f0 = {0}; bool h5_b1; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_a8ea2 h8_own8 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; h_0opt_a8ea2 t9; h_0opt_a8ea2 t10; int64_t t11; int64_t t12; bool t13; HeroStr t14; const char * t15; HeroStr t16; const char * t17; int64_t t18; int64_t t19; bool t20; bool t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; bool t28; HeroStr t29; HeroStr t30; bool t31; HeroStr t32; bool t33; bool t34; HeroStr t35; HeroStr t36; const char * t37; int64_t t38; int64_t t39; bool t40; HeroStr t41; HeroStr t42; HeroStr t43; HeroStr t44; h_0opt_a8ea2 t45; h_0opt_a8ea2 t46; goto bb0;
+    HeroStr h1_one = {0}; HeroStr h2_two = {0}; HERO_NODEBUG bool h3_b0; HERO_NODEBUG h_0opt_a8ea2 h4_f0 = {0}; HERO_NODEBUG bool h5_b1; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_a8ea2 h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_a8ea2 t9; HERO_NODEBUG h_0opt_a8ea2 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG const char * t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG const char * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG bool t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG bool t33; HERO_NODEBUG bool t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG const char * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_0opt_a8ea2 t45; HERO_NODEBUG h_0opt_a8ea2 t46; goto bb0;
 #line 76 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = h0_dir;
@@ -745,7 +746,7 @@ bb7:
     goto bb8;
 #line 83 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb8:
-#line 749 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 750 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_one);
     hero_str_release_at(&h2_two);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_f0));
@@ -758,7 +759,7 @@ bb8:
 #line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_no_new_name(HeroStr h0_dir) {
 #line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    HeroStr h1_shut = {0}; HeroStr h2_path = {0}; bool h3_b0; bool h4_b1; h_0opt_a8ea2 h5_f0 = {0}; bool h6_written; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_a8ea2 h9_own9 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; const char * t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_a8ea2 t14; h_0opt_a8ea2 t15; int64_t t16; int64_t t17; bool t18; bool t19; HeroStr t20; const char * t21; int64_t t22; int64_t t23; int64_t t24; bool t25; bool t26; HeroStr t27; HeroStr t28; HeroStr t29; bool t30; HeroStr t31; const char * t32; int64_t t33; HeroStr t35; bool t36; HeroStr t37; HeroStr t38; bool t39; HeroStr t40; HeroStr t41; HeroStr t42; HeroStr t43; h_0opt_a8ea2 t44; h_0opt_a8ea2 t45; goto bb0;
+    HeroStr h1_shut = {0}; HeroStr h2_path = {0}; HERO_NODEBUG bool h3_b0; HERO_NODEBUG bool h4_b1; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}; bool h6_written; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_a8ea2 h9_own9 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG const char * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_a8ea2 t14; HERO_NODEBUG h_0opt_a8ea2 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG const char * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG bool t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG bool t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG const char * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t35; HERO_NODEBUG bool t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG bool t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_a8ea2 t44; HERO_NODEBUG h_0opt_a8ea2 t45; goto bb0;
 #line 92 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = h0_dir;
@@ -934,7 +935,7 @@ bb7:
     goto bb1;
 #line 97 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb8:
-#line 938 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 939 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_shut);
     hero_str_release_at(&h2_path);
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f0));
@@ -947,7 +948,7 @@ bb8:
 #line 103 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_device(void) {
 #line 103 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    HeroStr h0_sink = {0}; HeroStr h1_own1 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; bool t4; HeroStr t5; HeroStr t6; HeroStr t7; bool t8; HeroStr t9; HeroStr t10; const char * t11; int64_t t12; int64_t t13; bool t14; HeroStr t15; HeroStr t16; HeroStr t17; goto bb0;
+    HeroStr h0_sink = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG const char * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; goto bb0;
 #line 103 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_323bd022);
@@ -1000,7 +1001,7 @@ bb1:
     hero_print_bool(t14);
 #line 108 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     hero_print_end();
-#line 1004 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1005 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h0_sink);
     hero_str_release_at(&h1_own1);
     return;
@@ -1021,13 +1022,13 @@ bb2:
 bb3:
 #line 107 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     goto bb1;
-#line 1025 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1026 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
 }
 
 #line 115 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_refused(HeroStr h0_dir) {
 #line 115 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    HeroStr h1_path = {0}; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; bool t3; HeroStr t4; HeroStr t5; const char * t6; int64_t t7; int64_t t8; bool t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; bool t15; HeroStr t16; HeroStr t17; const char * t18; int64_t t19; int64_t t20; bool t21; HeroStr t22; HeroStr t23; goto bb0;
+    HeroStr h1_path = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG const char * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; goto bb0;
 #line 115 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6fa50144);
@@ -1101,7 +1102,7 @@ bb0:
     hero_print_bool(t21);
 #line 118 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
     hero_print_end();
-#line 1105 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1106 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h1_path);
     hero_str_release_at(&h2_own2);
     return;
@@ -1110,7 +1111,7 @@ bb0:
 #line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 void h_fixedbugs438arewritekeepswhatafileisbesidesitsbytes_main(void) {
 #line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
-    HeroStr h0_root = {0}; HeroStr h1_lone = {0}; HeroStr h2_moded = {0}; HeroStr h3_linked = {0}; bool h4_b0; bool h5_b1; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr t1; int64_t t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; const char * t15; int64_t t16; int64_t t17; bool t18; HeroStr t19; const char * t20; int64_t t21; int64_t t22; bool t23; bool t24; HeroStr t25; const char * t26; int64_t t27; int64_t t28; bool t29; bool t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; HeroStr t37; HeroStr t38; const char * t39; HeroStr t41; HeroStr t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroStr t49; goto bb0;
+    HeroStr h0_root = {0}; HeroStr h1_lone = {0}; HeroStr h2_moded = {0}; HeroStr h3_linked = {0}; HERO_NODEBUG bool h4_b0; HERO_NODEBUG bool h5_b1; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG const char * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG const char * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG bool t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG const char * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG bool t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG const char * t39; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; goto bb0;
 #line 125 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_516a33e1);
@@ -1302,7 +1303,7 @@ bb7:
     goto bb1;
 #line 132 "tests/golden/run/fixedbugs-438-a-rewrite-keeps-what-a-file-is-besides-its-bytes.hero"
 bb8:
-#line 1306 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1307 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     hero_str_release_at(&h0_root);
     hero_str_release_at(&h1_lone);
     hero_str_release_at(&h2_moded);
@@ -1317,25 +1318,25 @@ bb8:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 1321 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1322 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 1327 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1328 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 1333 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1334 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 1339 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1340 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -1344,7 +1345,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_f87774a t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; h_0opt_f87774a t38; HeroStr t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; HeroStr t43; h_0opt_f87774a t44; HeroStr t45; h_0opt_f87774a t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; goto bb0;
 #line 167 "<heroes library>"
 bb0:
     t1 = INT64_C(0);
@@ -1570,7 +1571,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 1574 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1575 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1592,7 +1593,7 @@ bb13:
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 186 "<heroes library>"
-    int64_t h2_wrote; h_0opt_a8ea2 h3_ret0 = {0}; h_0opt_a8ea2 h4_own4 = {0}; HeroStr h5_own5 = {0}; h_0opt_a8ea2 h6_own6 = {0}; h_0opt_a8ea2 h7_own7 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; int64_t t5; bool t6; h_0opt_a8ea2 t7; int64_t t8; int64_t t9; bool t10; HeroStr t11; HeroStr t12; h_0opt_a8ea2 t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; h_0opt_a8ea2 t18; h_0opt_a8ea2 t19; h_0opt_a8ea2 t20; HeroStr t21; h_0opt_a8ea2 t22; h_0opt_a8ea2 t23; goto bb0;
+    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_a8ea2 t18; HERO_NODEBUG h_0opt_a8ea2 t19; HERO_NODEBUG h_0opt_a8ea2 t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; goto bb0;
 #line 186 "<heroes library>"
 bb0:
     t1 = h0_path;
@@ -1697,7 +1698,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1701 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
+#line 1702 "fixedbugs438arewritekeepswhatafileisbesidesitsbytes.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

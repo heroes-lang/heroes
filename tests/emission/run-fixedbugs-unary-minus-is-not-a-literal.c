@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -50,7 +51,7 @@ HERO_STR_STATIC(hero_str_20, " ");
 HERO_STR_STATIC(hero_str_2a2e6b28, "checked ");
 HERO_STR_STATIC(hero_str_52436c76, "nested ");
 
-#line 54 "fixedbugsunaryminusisnotaliteral.c"
+#line 55 "fixedbugsunaryminusisnotaliteral.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -88,7 +89,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 92 "fixedbugsunaryminusisnotaliteral.c"
+#line 93 "fixedbugsunaryminusisnotaliteral.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -111,7 +112,7 @@ void h_fixedbugsunaryminusisnotaliteral_main(void);
 #line 32 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 h_0opt_e201354 h_fixedbugsunaryminusisnotaliteral_negated(int64_t h0_n) {
 #line 32 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    h_0opt_e201354 h1_own1 = {0}; int64_t t1; int64_t t2; h_0opt_e201354 t3; h_0opt_e201354 t4; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; goto bb0;
 #line 32 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 bb0:
     t1 = h0_n;
@@ -125,7 +126,7 @@ bb0:
     h1_own1 = t3;
 #line 33 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     h_0opt_e201354_release(&t4);
-#line 129 "fixedbugsunaryminusisnotaliteral.c"
+#line 130 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_retain(&t3);
     h_0opt_e201354_release(hero_slot_escape(&h1_own1));
     return t3;
@@ -134,7 +135,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 double h_fixedbugsunaryminusisnotaliteral_scaled(double h0_v) {
 #line 35 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    double t1; double t2; goto bb0;
+    HERO_NODEBUG double t1; HERO_NODEBUG double t2; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 bb0:
     t1 = h0_v;
@@ -142,13 +143,13 @@ bb0:
     t2 = -t1;
 #line 36 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     return t2;
-#line 146 "fixedbugsunaryminusisnotaliteral.c"
+#line 147 "fixedbugsunaryminusisnotaliteral.c"
 }
 
 #line 38 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 void h_fixedbugsunaryminusisnotaliteral_main(void) {
 #line 38 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
-    int8_t h0_small; int64_t h1_n; double h2_x; h_0opt_e201354 h3_f0 = {0}; h_0opt_e201354 h4_own4 = {0}; int8_t t1; HeroStr t2; int8_t t3; int64_t t4; int64_t t5; int64_t t6; double t7; double t8; double t9; HeroStr t10; int64_t t11; HeroStr t12; double t13; HeroStr t14; int64_t t15; h_0opt_e201354 t16; h_0opt_e201354 t17; int64_t t18; int64_t t19; bool t20; h_0opt_e201354 t21; HeroFailure t22; h_0opt_e201354 t23; int64_t t24; HeroStr t25; double t26; double t27; HeroStr t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; HeroStr t33; double t34; double t35; double t36; h_0opt_e201354 t37; h_0opt_e201354 t38; goto bb0;
+    int8_t h0_small; int64_t h1_n; double h2_x; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG int8_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG double t7; HERO_NODEBUG double t8; HERO_NODEBUG double t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG double t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG double t26; HERO_NODEBUG double t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG double t34; HERO_NODEBUG double t35; HERO_NODEBUG double t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_e201354 t38; goto bb0;
 #line 38 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
 bb0:
 #line 40 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
@@ -278,7 +279,7 @@ bb1:
     hero_print_f64(t36);
 #line 55 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     hero_print_end();
-#line 282 "fixedbugsunaryminusisnotaliteral.c"
+#line 283 "fixedbugsunaryminusisnotaliteral.c"
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
     return;
@@ -287,7 +288,7 @@ bb2:
     t21 = h3_f0;
 #line 52 "tests/golden/run/fixedbugs-unary-minus-is-not-a-literal.hero"
     t22 = t21.as.err;
-#line 291 "fixedbugsunaryminusisnotaliteral.c"
+#line 292 "fixedbugsunaryminusisnotaliteral.c"
     hero_panic_must(t22);
     hero_unreachable();
 }

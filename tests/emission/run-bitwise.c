@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -60,7 +61,7 @@ HERO_STR_STATIC(hero_str_3e4223b, "every = ");
 HERO_STR_STATIC(hero_str_5671f1f7, "has write = ");
 HERO_STR_STATIC(hero_str_6cc5431, "cleared = ");
 
-#line 64 "bitwise.c"
+#line 65 "bitwise.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -90,7 +91,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 94 "bitwise.c"
+#line 95 "bitwise.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -107,7 +108,7 @@ void h_bitwise_main(void);
 #line 22 "tests/golden/run/bitwise.hero"
 void h_bitwise_main(void) {
 #line 22 "tests/golden/run/bitwise.hero"
-    int64_t h0_read; int64_t h1_write; int64_t h2_exec; int64_t h3_every; HeroStr t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; int64_t t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; int64_t t12; HeroStr t13; int64_t t14; int64_t t15; int64_t t16; HeroStr t17; int64_t t18; int64_t t19; HeroStr t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; HeroStr t27; int64_t t28; int64_t t29; int64_t t30; HeroStr t31; int64_t t32; int64_t t33; int64_t t34; HeroStr t35; int64_t t36; int64_t t37; int64_t t38; HeroStr t39; int64_t t40; int64_t t41; int64_t t42; int64_t t43; int64_t t44; HeroStr t45; int64_t t46; int64_t t47; int64_t t48; int64_t t49; bool t50; HeroStr t51; int64_t t52; int64_t t53; int64_t t54; int64_t t55; int64_t t56; int64_t t57; int64_t t58; int64_t t59; int64_t t60; int64_t t61; int64_t t62; int64_t t63; int64_t t64; int64_t t65; int64_t t66; int64_t t67; int64_t t68; int64_t t69; int64_t t70; int64_t t71; int64_t t72; int64_t t73; int64_t t74; HeroStr t75; int64_t t76; HeroStr t77; int64_t t78; int64_t t79; int64_t t80; int64_t t81; bool t82; HeroStr t83; int64_t t84; int64_t t85; int64_t t86; int64_t t87; goto bb0;
+    int64_t h0_read; int64_t h1_write; int64_t h2_exec; int64_t h3_every; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG bool t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG bool t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG int64_t t87; goto bb0;
 #line 22 "tests/golden/run/bitwise.hero"
 bb0:
 #line 24 "tests/golden/run/bitwise.hero"
@@ -386,7 +387,7 @@ bb0:
     hero_print_end();
 #line 48 "tests/golden/run/bitwise.hero"
     return;
-#line 390 "bitwise.c"
+#line 391 "bitwise.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

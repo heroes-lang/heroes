@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -56,7 +57,7 @@ HERO_STR_STATIC(hero_str_eb4aad8, "map ");
 HERO_STR_STATIC(hero_str_6f33a5d2, " and nested ");
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 60 "interpolationholesandbraces.c"
+#line 61 "interpolationholesandbraces.c"
 typedef struct h_0opt_e201354 {
     int64_t tag;
     union {
@@ -94,7 +95,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 98 "interpolationholesandbraces.c"
+#line 99 "interpolationholesandbraces.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
@@ -115,7 +116,7 @@ void h_interpolationholesandbraces_main(void);
 #line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
 void h_interpolationholesandbraces_main(void) {
 #line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
-    int64_t h0_n; HeroStr h1_word = {0}; HeroMapHeader * h2_m = {0}; h_0opt_e201354 h3_f0 = {0}; double h4_x; bool h5_flag; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroMapHeader * h14_own14 = {0}; h_0opt_e201354 h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; HeroStr h26_own26 = {0}; HeroStr h27_own27 = {0}; HeroStr h28_own28 = {0}; int64_t t1; HeroStr t2; int64_t t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; int64_t t11; int64_t t12; int64_t t13; HeroStr t14; int64_t t15; HeroStr t16; HeroStr t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; int64_t t24; HeroMapHeader * t25; HeroMapHeader * t26; HeroStr t27; h_0opt_e201354 t28; h_0opt_e201354 t29; int64_t t30; int64_t t31; bool t32; h_0opt_e201354 t33; HeroFailure t34; h_0opt_e201354 t35; int64_t t36; int64_t t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; HeroStr t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; double t47; bool t48; double t49; bool t50; int64_t t51; HeroStr t52; HeroStr t53; HeroStr t54; HeroStr t55; HeroStr t56; HeroStr t57; HeroStr t58; HeroStr t59; HeroStr t60; HeroStr t61; HeroStr t62; HeroStr t63; HeroStr t64; HeroStr t65; HeroStr t66; HeroStr t67; HeroStr t68; HeroStr t69; HeroMapHeader * t70; HeroMapHeader * t71; h_0opt_e201354 t72; h_0opt_e201354 t73; HeroStr t74; HeroStr t75; HeroStr t76; HeroStr t77; HeroStr t78; HeroStr t79; HeroStr t80; HeroStr t81; HeroStr t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroStr t86; goto bb0;
+    int64_t h0_n; HeroStr h1_word = {0}; HeroMapHeader * h2_m = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; double h4_x; bool h5_flag; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroMapHeader * h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG HeroStr h26_own26 = {0}; HERO_NODEBUG HeroStr h27_own27 = {0}; HERO_NODEBUG HeroStr h28_own28 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroMapHeader * t25; HERO_NODEBUG HeroMapHeader * t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG double t47; HERO_NODEBUG bool t48; HERO_NODEBUG double t49; HERO_NODEBUG bool t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroMapHeader * t70; HERO_NODEBUG HeroMapHeader * t71; HERO_NODEBUG h_0opt_e201354 t72; HERO_NODEBUG h_0opt_e201354 t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; goto bb0;
 #line 14 "tests/golden/run/interpolation-holes-and-braces.hero"
 bb0:
     t1 = INT64_C(3);
@@ -437,7 +438,7 @@ bb1:
     hero_print_str(t60);
 #line 25 "tests/golden/run/interpolation-holes-and-braces.hero"
     hero_print_end();
-#line 441 "interpolationholesandbraces.c"
+#line 442 "interpolationholesandbraces.c"
     hero_str_release_at(&h1_word);
     hero_map_release_at(&h2_m);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -470,7 +471,7 @@ bb2:
     t33 = h3_f0;
 #line 22 "tests/golden/run/interpolation-holes-and-braces.hero"
     t34 = t33.as.err;
-#line 474 "interpolationholesandbraces.c"
+#line 475 "interpolationholesandbraces.c"
     hero_panic_must(t34);
     hero_unreachable();
 }

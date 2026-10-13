@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -48,7 +49,7 @@ HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_d19443a, "abcd");
 HERO_STR_STATIC(hero_str_187ae0ee, "unreachable");
 
-#line 52 "abortrepeatoverflows.c"
+#line 53 "abortrepeatoverflows.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -78,7 +79,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "abortrepeatoverflows.c"
+#line 83 "abortrepeatoverflows.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -95,7 +96,7 @@ void h_abortrepeatoverflows_main(void);
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
 void h_abortrepeatoverflows_main(void) {
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
-    uint64_t h0_n; HeroStr h1_own1 = {0}; HeroStr t1; uint64_t t2; HeroStr t3; uint64_t t4; HeroStr t5; int64_t t6; HeroStr t7; HeroStr t8; goto bb0;
+    uint64_t h0_n; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; goto bb0;
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);
@@ -129,7 +130,7 @@ bb0:
     hero_print_str(t7);
 #line 27 "tests/golden/run/abort-repeat-overflows.hero"
     hero_print_end();
-#line 133 "abortrepeatoverflows.c"
+#line 134 "abortrepeatoverflows.c"
     hero_str_release_at(&h1_own1);
     return;
 }

@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -79,7 +80,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 83 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 84 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 typedef enum h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag {
     h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_empty = 0,
     h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Slot_tag_held = 1,
@@ -125,7 +126,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 129 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 130 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b);
@@ -148,7 +149,7 @@ void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void);
 #line 22 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
 void h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_main(void) {
 #line 22 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
 bb0:
     t1 = INT64_C(1);
@@ -158,7 +159,7 @@ bb0:
     hero_print_end();
 #line 23 "tests/golden/run/fixedbugs-400-a-case-holding-a-handle-compared-only-in-a-test-runs.hero"
     return;
-#line 162 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
+#line 163 "fixedbugs400acaseholdingahandlecomparedonlyinatestruns.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs400acaseholdingahandlecomparedonlyinatestruns_Opaque_eq(struct opaque * const *a, struct opaque * const *b) {
     return hero_handle_eq(*a, *b);

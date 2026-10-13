@@ -46,6 +46,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 63 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *)0)->r) == sizeof(uint8_t) && (_Generic(((Color *)0)->r, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color r");
@@ -66,7 +67,7 @@ _Static_assert(__builtin_classify_type(((AutomationEvent *)0)->type) == 1 && siz
 _Static_assert(sizeof(AutomationEvent) - __builtin_offsetof(AutomationEvent, params) != 0, "heroes-ffi-flex AutomationEvent params");
 #line 101 "examples/raylib/main.hero"
 _Static_assert(_Generic(&((AutomationEvent *)0)->params, _Bool (*)[4]: (sizeof(_Bool) == sizeof(int32_t) && (((_Bool)-1 < 0) == ((int32_t)-1 < 0))), char (*)[4]: (sizeof(char) == sizeof(int32_t) && (((char)-1 < 0) == ((int32_t)-1 < 0))), signed char (*)[4]: (sizeof(signed char) == sizeof(int32_t) && (((signed char)-1 < 0) == ((int32_t)-1 < 0))), short (*)[4]: (sizeof(short) == sizeof(int32_t) && (((short)-1 < 0) == ((int32_t)-1 < 0))), int (*)[4]: (sizeof(int) == sizeof(int32_t) && (((int)-1 < 0) == ((int32_t)-1 < 0))), long (*)[4]: (sizeof(long) == sizeof(int32_t) && (((long)-1 < 0) == ((int32_t)-1 < 0))), long long (*)[4]: (sizeof(long long) == sizeof(int32_t) && (((long long)-1 < 0) == ((int32_t)-1 < 0))), unsigned char (*)[4]: (sizeof(unsigned char) == sizeof(int32_t) && (((unsigned char)-1 < 0) == ((int32_t)-1 < 0))), unsigned short (*)[4]: (sizeof(unsigned short) == sizeof(int32_t) && (((unsigned short)-1 < 0) == ((int32_t)-1 < 0))), unsigned int (*)[4]: (sizeof(unsigned int) == sizeof(int32_t) && (((unsigned int)-1 < 0) == ((int32_t)-1 < 0))), unsigned long (*)[4]: (sizeof(unsigned long) == sizeof(int32_t) && (((unsigned long)-1 < 0) == ((int32_t)-1 < 0))), unsigned long long (*)[4]: (sizeof(unsigned long long) == sizeof(int32_t) && (((unsigned long long)-1 < 0) == ((int32_t)-1 < 0))), default: 0), "heroes-ffi-field AutomationEvent params");
-#line 70 "main.c"
+#line 71 "main.c"
 
 #line 62 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
@@ -76,7 +77,7 @@ _Static_assert(__builtin_classify_type(*(Vector2 *)0) != 13, "heroes-ffi-union V
 _Static_assert(__builtin_classify_type(*(Rectangle *)0) != 13, "heroes-ffi-union Rectangle x y width height");
 #line 98 "examples/raylib/main.hero"
 _Static_assert(__builtin_classify_type(*(AutomationEvent *)0) != 13, "heroes-ffi-union AutomationEvent frame type params");
-#line 80 "main.c"
+#line 81 "main.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -176,7 +177,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 180 "main.c"
+#line 181 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b);
@@ -201,7 +202,7 @@ void h_main_main(void);
 #line 103 "examples/raylib/main.hero"
 void h_main_main(void) {
 #line 103 "examples/raylib/main.hero"
-    Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; uint32_t t1; HeroStr t2; int32_t t3; int32_t t4; int32_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; Color t10; Color t11; int32_t t12; Color t13; float t14; Color t15; int32_t t16; float t17; float t18; Vector2 t19; float t20; float t21; Vector2 t22; float t23; Vector2 t24; Vector2 t25; float t26; HeroStr t27; Vector2 t28; float t29; uint32_t t30; uint32_t t31; int32_t t32; int32_t t33; int32_t t34; int32_t t35; AutomationEvent t37; AutomationEvent t38; int64_t t40; int32_t t41; float t42; float t43; float t44; float t45; Rectangle t46; float t47; float t48; Vector2 t49; Rectangle t50; bool t51; float t52; float t53; Vector2 t54; Rectangle t55; bool t56; goto bb0;
+    Color h0_red; Vector2 h1_mid; AutomationEvent h2_event; Rectangle h3_box; HERO_NODEBUG uint32_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG Color t10; HERO_NODEBUG Color t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG Color t13; HERO_NODEBUG float t14; HERO_NODEBUG Color t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG float t17; HERO_NODEBUG float t18; HERO_NODEBUG Vector2 t19; HERO_NODEBUG float t20; HERO_NODEBUG float t21; HERO_NODEBUG Vector2 t22; HERO_NODEBUG float t23; HERO_NODEBUG Vector2 t24; HERO_NODEBUG Vector2 t25; HERO_NODEBUG float t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG Vector2 t28; HERO_NODEBUG float t29; HERO_NODEBUG uint32_t t30; HERO_NODEBUG uint32_t t31; HERO_NODEBUG int32_t t32; HERO_NODEBUG int32_t t33; HERO_NODEBUG int32_t t34; HERO_NODEBUG int32_t t35; HERO_NODEBUG AutomationEvent t37; HERO_NODEBUG AutomationEvent t38; HERO_NODEBUG int64_t t40; HERO_NODEBUG int32_t t41; HERO_NODEBUG float t42; HERO_NODEBUG float t43; HERO_NODEBUG float t44; HERO_NODEBUG float t45; HERO_NODEBUG Rectangle t46; HERO_NODEBUG float t47; HERO_NODEBUG float t48; HERO_NODEBUG Vector2 t49; HERO_NODEBUG Rectangle t50; HERO_NODEBUG bool t51; HERO_NODEBUG float t52; HERO_NODEBUG float t53; HERO_NODEBUG Vector2 t54; HERO_NODEBUG Rectangle t55; HERO_NODEBUG bool t56; goto bb0;
 #line 103 "examples/raylib/main.hero"
 bb0:
     t1 = UINT64_C(7);
@@ -349,7 +350,7 @@ bb0:
     hero_print_end();
 #line 125 "examples/raylib/main.hero"
     return;
-#line 353 "main.c"
+#line 354 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Color_eq(const Color *a, const Color *b) {
     if (!(a->r == b->r)) return false;

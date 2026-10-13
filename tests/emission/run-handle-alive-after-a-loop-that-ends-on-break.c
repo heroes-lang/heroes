@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -86,7 +87,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_36f6e615, "kept through ");
 HERO_STR_STATIC(hero_str_21ae9a8f, " turns: ");
 
-#line 90 "handlealiveafteraloopthatendsonbreak.c"
+#line 91 "handlealiveafteraloopthatendsonbreak.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -132,7 +133,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 136 "handlealiveafteraloopthatendsonbreak.c"
+#line 137 "handlealiveafteraloopthatendsonbreak.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b);
@@ -151,7 +152,7 @@ void h_handlealiveafteraloopthatendsonbreak_main(void);
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 void h_handlealiveafteraloopthatendsonbreak_main(void) {
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    node * h0_n; bool h1_ended; int64_t h2_k; int64_t t1; node * t2; bool t3; int64_t t4; int64_t t5; int64_t t6; bool t7; node * t8; int64_t t9; int64_t t10; bool t11; node * t12; bool t13; int64_t t14; int64_t t15; int64_t t16; bool t17; bool t18; HeroStr t19; int64_t t20; HeroStr t21; node * t22; int64_t t23; node * t24; goto bb0;
+    node * h0_n; bool h1_ended; int64_t h2_k; HERO_NODEBUG int64_t t1; HERO_NODEBUG node * t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG node * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG node * t12; HERO_NODEBUG bool t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG node * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG node * t24; goto bb0;
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 bb0:
     t1 = INT64_C(3);
@@ -284,7 +285,7 @@ bb8:
 bb9:
 #line 27 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
     goto bb7;
-#line 288 "handlealiveafteraloopthatendsonbreak.c"
+#line 289 "handlealiveafteraloopthatendsonbreak.c"
 }
 HERO_TU_LOCAL bool h_handlealiveafteraloopthatendsonbreak_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

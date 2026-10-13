@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -47,7 +48,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_65, "e");
 HERO_STR_STATIC(hero_str_5ef853e9, "m \033[2J here ");
 
-#line 51 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 52 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -77,7 +78,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 81 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 82 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +95,7 @@ void h_fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode_main(void
 #line 8 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
 void h_fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode_main(void) {
 #line 8 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
-    HeroArrayHeader * h0_b = {0}; h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_r = {0}; h_0opt_f87774a h3_f1 = {0}; HeroArrayHeader * h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; HeroStr h6_own6 = {0}; h_0opt_f87774a h7_own7 = {0}; uint8_t t1; uint8_t t2; uint8_t t3; HeroArrayHeader * t4; HeroStr t5; HeroStr t6; HeroArrayHeader * t7; h_0opt_f87774a t8; h_0opt_f87774a t9; int64_t t10; int64_t t11; bool t12; h_0opt_f87774a t13; HeroFailure t14; h_0opt_f87774a t15; HeroStr t16; HeroStr t17; h_0opt_f87774a t18; h_0opt_f87774a t19; h_0opt_f87774a t20; int64_t t21; int64_t t22; bool t23; h_0opt_f87774a t24; HeroFailure t25; h_0opt_f87774a t26; HeroStr t27; HeroArrayHeader * t28; HeroArrayHeader * t29; h_0opt_f87774a t30; h_0opt_f87774a t31; HeroStr t32; h_0opt_f87774a t33; h_0opt_f87774a t34; h_0opt_f87774a t35; goto bb0;
+    HeroArrayHeader * h0_b = {0}; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; h_0opt_f87774a h2_r = {0}; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG HeroFailure t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG h_0opt_f87774a t34; HERO_NODEBUG h_0opt_f87774a t35; goto bb0;
 #line 8 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
 bb0:
     t1 = UINT64_C(97);
@@ -230,7 +231,7 @@ bb2:
     t13 = h1_f0;
 #line 10 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t14 = t13.as.err;
-#line 234 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 235 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
     hero_panic_must(t14);
     hero_unreachable();
 bb3:
@@ -242,7 +243,7 @@ bb3:
     hero_print_str(t27);
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     hero_print_end();
-#line 246 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 247 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
     hero_array_release_at(&h0_b);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r));
@@ -257,7 +258,7 @@ bb4:
     t24 = h3_f1;
 #line 11 "tests/golden/run/fixedbugs-355-a-must-message-is-written-whole-and-its-controls-by-their-code.hero"
     t25 = t24.as.err;
-#line 261 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
+#line 262 "fixedbugs355amustmessageiswrittenwholeanditscontrolsbytheircode.c"
     hero_panic_must(t25);
     hero_unreachable();
 }

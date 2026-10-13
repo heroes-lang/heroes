@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -86,7 +87,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_7a4a137a, "the new cell reads ");
 HERO_STR_STATIC(hero_str_1a39e328, "the stale copy was given back, and the new cell's life ended with it");
 
-#line 90 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
+#line 91 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -131,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
+#line 136 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitacopygivenbackaftercreuseditsaddressisnotcaught_Cell_eq(cell * const *a, cell * const *b);
@@ -150,7 +151,7 @@ void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void);
 #line 21 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
 void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void) {
 #line 21 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
-    cell * h0_a; cell * h1_kept; cell * h2_b; cell * t1; cell * t2; cell * t3; cell * t4; HeroStr t5; cell * t6; int64_t t7; cell * t8; HeroStr t9; goto bb0;
+    cell * h0_a; cell * h1_kept; cell * h2_b; HERO_NODEBUG cell * t1; HERO_NODEBUG cell * t2; HERO_NODEBUG cell * t3; HERO_NODEBUG cell * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG cell * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG cell * t8; HERO_NODEBUG HeroStr t9; goto bb0;
 #line 21 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
 bb0:
     t1 = cell_open();
@@ -212,7 +213,7 @@ bb0:
     hero_print_end();
 #line 28 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
     return;
-#line 216 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
+#line 217 "limitacopygivenbackaftercreuseditsaddressisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitacopygivenbackaftercreuseditsaddressisnotcaught_Cell_eq(cell * const *a, cell * const *b) {
     return hero_handle_eq(*a, *b);

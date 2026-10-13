@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -47,7 +48,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_6bb5e50a, "ziggy");
 HERO_STR_STATIC(hero_str_eb4ac31, "mars");
 
-#line 51 "fixedbugs382anarrayliteralisoneblock.c"
+#line 52 "fixedbugs382anarrayliteralisoneblock.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -77,7 +78,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 81 "fixedbugs382anarrayliteralisoneblock.c"
+#line 82 "fixedbugs382anarrayliteralisoneblock.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -98,7 +99,7 @@ void h_fixedbugs382anarrayliteralisoneblock_main(void);
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anarrayliteralisoneblock_DIGITS_4, int64_t, &hero_desc_int, 3, INT64_C(3), INT64_C(1), INT64_C(4));
 #line 15 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_DIGITS(void) {
-#line 102 "fixedbugs382anarrayliteralisoneblock.c"
+#line 103 "fixedbugs382anarrayliteralisoneblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anarrayliteralisoneblock_DIGITS_4);
 }
 #else
@@ -106,7 +107,7 @@ HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_DIGITS(void) {
 #line 15 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_DIGITS(void) {
 #line 15 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    HeroArrayHeader * h0_own0 = {0}; int64_t t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; goto bb0;
 #line 15 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 bb0:
     t1 = INT64_C(3);
@@ -128,7 +129,7 @@ bb0:
     h0_own0 = t4;
 #line 16 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_array_decref(t5);
-#line 132 "fixedbugs382anarrayliteralisoneblock.c"
+#line 133 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_incref(t4);
     hero_array_release_at(&h0_own0);
     return t4;
@@ -140,7 +141,7 @@ bb0:
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs382anarrayliteralisoneblock_WORDS_3, HeroStr, &hero_desc_str, 2, HERO_STR_LIT(hero_str_6bb5e50a), HERO_STR_LIT(hero_str_eb4ac31));
 #line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_WORDS(void) {
-#line 144 "fixedbugs382anarrayliteralisoneblock.c"
+#line 145 "fixedbugs382anarrayliteralisoneblock.c"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs382anarrayliteralisoneblock_WORDS_3);
 }
 #else
@@ -148,7 +149,7 @@ HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_WORDS(void) {
 #line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 HeroArrayHeader * h_fixedbugs382anarrayliteralisoneblock_WORDS(void) {
 #line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    HeroArrayHeader * h0_own0 = {0}; HeroStr t1; HeroStr t2; HeroArrayHeader * t3; HeroArrayHeader * t4; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; goto bb0;
 #line 18 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
@@ -166,7 +167,7 @@ bb0:
     h0_own0 = t3;
 #line 19 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_array_decref(t4);
-#line 170 "fixedbugs382anarrayliteralisoneblock.c"
+#line 171 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_incref(t3);
     hero_array_release_at(&h0_own0);
     return t3;
@@ -176,7 +177,7 @@ bb0:
 #line 21 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 void h_fixedbugs382anarrayliteralisoneblock_main(void) {
 #line 21 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
-    HeroArrayHeader * h0_pair = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; HeroStr t6; int64_t t7; HeroArrayHeader * t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; int64_t t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; HeroArrayHeader * t17; HeroArrayHeader * t18; HeroArrayHeader * t19; goto bb0;
+    HeroArrayHeader * h0_pair = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; goto bb0;
 #line 21 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
 bb0:
     t1 = h_fixedbugs382anarrayliteralisoneblock_DIGITS();
@@ -241,7 +242,7 @@ bb0:
     hero_print_int(t15);
 #line 23 "tests/golden/emit/fixedbugs-382-an-array-literal-is-one-block.hero"
     hero_print_end();
-#line 245 "fixedbugs382anarrayliteralisoneblock.c"
+#line 246 "fixedbugs382anarrayliteralisoneblock.c"
     hero_array_release_at(&h0_pair);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);

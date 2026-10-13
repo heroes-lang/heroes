@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -48,7 +49,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_3205, "ab");
 
-#line 52 "aggregates.c"
+#line 53 "aggregates.c"
 typedef struct h_aggregates_Inner {
     HeroStr f_name;
 } h_aggregates_Inner;
@@ -104,7 +105,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 108 "aggregates.c"
+#line 109 "aggregates.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_aggregates_Inner_retain(const h_aggregates_Inner *v);
@@ -138,7 +139,7 @@ void h_aggregates_main(void);
 #line 37 "tests/golden/emit/aggregates.hero"
 int64_t h_aggregates_width(h_aggregates_Shape h0_s) {
 #line 37 "tests/golden/emit/aggregates.hero"
-    h_aggregates_Shape h1_s0 = {0}; int64_t h2_r0; h_aggregates_Shape_c_line h3_l = {0}; h_aggregates_Shape t1; h_aggregates_Shape t2; int64_t t3; int64_t t4; h_aggregates_Shape t5; h_aggregates_Shape_c_line t6; h_aggregates_Shape_c_line t7; int64_t t8; int64_t t9; h_aggregates_Shape t10; h_aggregates_Shape_c_line t11; goto bb0;
+    HERO_NODEBUG h_aggregates_Shape h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_aggregates_Shape_c_line h3_l = {0}; HERO_NODEBUG h_aggregates_Shape t1; HERO_NODEBUG h_aggregates_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_aggregates_Shape t5; HERO_NODEBUG h_aggregates_Shape_c_line t6; HERO_NODEBUG h_aggregates_Shape_c_line t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_aggregates_Shape t10; HERO_NODEBUG h_aggregates_Shape_c_line t11; goto bb0;
 #line 37 "tests/golden/emit/aggregates.hero"
 bb0:
     t1 = h0_s;
@@ -168,7 +169,7 @@ bb0:
 bb1:
 #line 38 "tests/golden/emit/aggregates.hero"
     t9 = h2_r0;
-#line 172 "aggregates.c"
+#line 173 "aggregates.c"
     h_aggregates_Shape_release(hero_slot_escape(&h1_s0));
     h_aggregates_Shape_c_line_release(hero_slot_escape(&h3_l));
     return t9;
@@ -201,13 +202,13 @@ bb3:
     h2_r0 = t8;
 #line 38 "tests/golden/emit/aggregates.hero"
     goto bb1;
-#line 205 "aggregates.c"
+#line 206 "aggregates.c"
 }
 
 #line 42 "tests/golden/emit/aggregates.hero"
 void h_aggregates_main(void) {
 #line 42 "tests/golden/emit/aggregates.hero"
-    h_aggregates_Outer h0_o = {0}; HeroStr h1_own1 = {0}; h_aggregates_Inner h2_own2 = {0}; h_aggregates_Outer h3_own3 = {0}; h_aggregates_Inner h4_own4 = {0}; h_aggregates_Outer h5_own5 = {0}; h_aggregates_Shape h6_own6 = {0}; h_aggregates_Shape h7_own7 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; h_aggregates_Inner t4; int64_t t5; h_aggregates_Outer t6; h_aggregates_Outer t7; h_aggregates_Inner t8; HeroStr t9; h_aggregates_Outer t10; HeroStr t11; h_aggregates_Inner t12; int64_t t13; h_aggregates_Outer t14; bool t15; h_aggregates_Outer t16; h_aggregates_Inner t17; int64_t t18; h_aggregates_Shape t19; int64_t t20; h_aggregates_Shape t21; int64_t t22; HeroStr t23; h_aggregates_Inner t24; h_aggregates_Outer t25; h_aggregates_Outer t26; h_aggregates_Inner t27; h_aggregates_Outer t28; h_aggregates_Shape t29; h_aggregates_Shape t30; goto bb0;
+    h_aggregates_Outer h0_o = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_aggregates_Inner h2_own2 = {0}; HERO_NODEBUG h_aggregates_Outer h3_own3 = {0}; HERO_NODEBUG h_aggregates_Inner h4_own4 = {0}; HERO_NODEBUG h_aggregates_Outer h5_own5 = {0}; HERO_NODEBUG h_aggregates_Shape h6_own6 = {0}; HERO_NODEBUG h_aggregates_Shape h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_aggregates_Inner t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_aggregates_Outer t6; HERO_NODEBUG h_aggregates_Outer t7; HERO_NODEBUG h_aggregates_Inner t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_aggregates_Outer t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_aggregates_Inner t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_aggregates_Outer t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_aggregates_Outer t16; HERO_NODEBUG h_aggregates_Inner t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_aggregates_Shape t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_aggregates_Shape t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_aggregates_Inner t24; HERO_NODEBUG h_aggregates_Outer t25; HERO_NODEBUG h_aggregates_Outer t26; HERO_NODEBUG h_aggregates_Inner t27; HERO_NODEBUG h_aggregates_Outer t28; HERO_NODEBUG h_aggregates_Shape t29; HERO_NODEBUG h_aggregates_Shape t30; goto bb0;
 #line 42 "tests/golden/emit/aggregates.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_61);
@@ -325,7 +326,7 @@ bb0:
     hero_print_int(t22);
 #line 47 "tests/golden/emit/aggregates.hero"
     hero_print_end();
-#line 329 "aggregates.c"
+#line 330 "aggregates.c"
     h_aggregates_Outer_release(hero_slot_escape(&h0_o));
     hero_str_release_at(&h1_own1);
     h_aggregates_Inner_release(hero_slot_escape(&h2_own2));

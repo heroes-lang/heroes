@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -82,7 +83,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_20, " ");
 
-#line 86 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
+#line 87 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -126,7 +127,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
+#line 131 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -143,7 +144,7 @@ void h_fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder_ma
 #line 10 "tests/golden/run/fixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order.hero"
 void h_fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder_main(void) {
 #line 10 "tests/golden/run/fixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order.hero"
-    double h0_one; double h1_ten; double h2_big; double h3_tenth; int64_t t1; int64_t t2; double t3; int64_t t4; int64_t t5; double t6; int64_t t7; int64_t t8; double t9; double t10; double t11; double t12; double t13; double t14; double t15; double t16; double t17; HeroStr t18; double t19; double t20; double t21; double t22; double t23; goto bb0;
+    double h0_one; double h1_ten; double h2_big; double h3_tenth; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG double t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG double t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG double t9; HERO_NODEBUG double t10; HERO_NODEBUG double t11; HERO_NODEBUG double t12; HERO_NODEBUG double t13; HERO_NODEBUG double t14; HERO_NODEBUG double t15; HERO_NODEBUG double t16; HERO_NODEBUG double t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG double t19; HERO_NODEBUG double t20; HERO_NODEBUG double t21; HERO_NODEBUG double t22; HERO_NODEBUG double t23; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order.hero"
 bb0:
     t1 = INT64_C(-1);
@@ -205,7 +206,7 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/run/fixedbugs-582-a-header-s-float-control-precise-off-leaves-the-program-s-sums-in-order.hero"
     return;
-#line 209 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
+#line 210 "fixedbugs582aheadersfloatcontrolpreciseoffleavestheprogramssumsinorder.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

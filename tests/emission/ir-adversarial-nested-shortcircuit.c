@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -48,7 +49,7 @@ HERO_STR_STATIC(hero_str_61, "a");
 HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_63, "c");
 
-#line 52 "adversarialnestedshortcircuit.c"
+#line 53 "adversarialnestedshortcircuit.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -78,7 +79,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "adversarialnestedshortcircuit.c"
+#line 83 "adversarialnestedshortcircuit.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -96,7 +97,7 @@ bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c);
 #line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_loud(HeroStr h0_tag, bool h1_answer) {
 #line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
-    HeroStr t1; bool t2; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; goto bb0;
 #line 7 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bb0:
     t1 = h0_tag;
@@ -107,13 +108,13 @@ bb0:
     t2 = h1_answer;
 #line 9 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     return t2;
-#line 111 "adversarialnestedshortcircuit.c"
+#line 112 "adversarialnestedshortcircuit.c"
 }
 
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c) {
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
-    bool h3_b0; bool h4_b1; HeroStr t1; bool t2; bool t3; HeroStr t4; bool t5; bool t6; bool t7; HeroStr t8; bool t9; bool t10; bool t11; goto bb0;
+    HERO_NODEBUG bool h3_b0; HERO_NODEBUG bool h4_b1; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; goto bb0;
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_61);
@@ -163,7 +164,7 @@ bb4:
     t11 = h3_b0;
 #line 12 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
     return t11;
-#line 167 "adversarialnestedshortcircuit.c"
+#line 168 "adversarialnestedshortcircuit.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

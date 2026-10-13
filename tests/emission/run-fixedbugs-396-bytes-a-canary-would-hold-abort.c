@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -83,7 +84,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 HERO_STR_STATIC(hero_str_5687795c, "not reached ");
 
-#line 87 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 88 "fixedbugs396bytesacanarywouldholdabort.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -127,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 132 "fixedbugs396bytesacanarywouldholdabort.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -144,7 +145,7 @@ void h_fixedbugs396bytesacanarywouldholdabort_main(void);
 #line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
 void h_fixedbugs396bytesacanarywouldholdabort_main(void) {
 #line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    HeroArrayHeader * h0_s = {0}; HeroArrayHeader * h1_own1 = {0}; HeroArrayHeader * t1; HeroStr t2; int32_t t3; HeroStr t4; HeroArrayHeader * t5; int64_t t6; HeroArrayHeader * t7; HeroArrayHeader * t8; goto bb0;
+    HeroArrayHeader * h0_s = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_i8, 1);
@@ -193,7 +194,7 @@ bb0:
     hero_print_int(t6);
 #line 14 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
     hero_print_end();
-#line 197 "fixedbugs396bytesacanarywouldholdabort.c"
+#line 198 "fixedbugs396bytesacanarywouldholdabort.c"
     hero_array_release_at(&h0_s);
     hero_array_release_at(&h1_own1);
     return;

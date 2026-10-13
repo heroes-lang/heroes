@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +50,7 @@ HERO_STR_STATIC(hero_str_62, "b");
 HERO_STR_STATIC(hero_str_6b, "k");
 HERO_STR_STATIC(hero_str_6a, "j");
 
-#line 53 "inferredcelleveryshaperuns.c"
+#line 54 "inferredcelleveryshaperuns.c"
 typedef struct h_inferredcelleveryshaperuns_Point {
     int64_t f_x;
     int64_t f_y;
@@ -92,7 +93,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 96 "inferredcelleveryshaperuns.c"
+#line 97 "inferredcelleveryshaperuns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_inferredcelleveryshaperuns_Point_eq(const h_inferredcelleveryshaperuns_Point *a, const h_inferredcelleveryshaperuns_Point *b);
@@ -116,7 +117,7 @@ void h_inferredcelleveryshaperuns_main(void);
 #line 10 "tests/golden/run/inferred-cell-every-shape-runs.hero"
 void h_inferredcelleveryshaperuns_bump(int64_t *ph0_n) {
 #line 10 "tests/golden/run/inferred-cell-every-shape-runs.hero"
-    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
 #line 10 "tests/golden/run/inferred-cell-every-shape-runs.hero"
 bb0:
     t1 = (*ph0_n);
@@ -128,13 +129,13 @@ bb0:
     (*ph0_n) = t3;
 #line 11 "tests/golden/run/inferred-cell-every-shape-runs.hero"
     return;
-#line 132 "inferredcelleveryshaperuns.c"
+#line 133 "inferredcelleveryshaperuns.c"
 }
 
 #line 13 "tests/golden/run/inferred-cell-every-shape-runs.hero"
 void h_inferredcelleveryshaperuns_main(void) {
 #line 13 "tests/golden/run/inferred-cell-every-shape-runs.hero"
-    int64_t h0_v; HeroStr h1_s = {0}; h_inferredcelleveryshaperuns_Point h2_p; HeroArrayHeader * h3_xs = {0}; HeroMapHeader * h4_m = {0}; double h5_f; bool h6_b; int64_t h7_n; HeroStr h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroMapHeader * h10_own10 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; int64_t t10; h_inferredcelleveryshaperuns_Point t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t17; HeroStr t19; int64_t t20; HeroMapHeader * t21; HeroStr t22; int64_t t23; double t24; double t25; double t26; double t27; bool t28; bool t29; bool t30; int64_t t31; int64_t t32; HeroStr t33; h_inferredcelleveryshaperuns_Point t34; int64_t t35; HeroArrayHeader * t36; int64_t t37; HeroMapHeader * t38; int64_t t39; double t40; bool t41; int64_t t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroArrayHeader * t46; HeroArrayHeader * t47; HeroMapHeader * t48; HeroMapHeader * t49; goto bb0;
+    int64_t h0_v; HeroStr h1_s = {0}; h_inferredcelleveryshaperuns_Point h2_p; HeroArrayHeader * h3_xs = {0}; HeroMapHeader * h4_m = {0}; double h5_f; bool h6_b; int64_t h7_n; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroMapHeader * h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_inferredcelleveryshaperuns_Point t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroMapHeader * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG double t24; HERO_NODEBUG double t25; HERO_NODEBUG double t26; HERO_NODEBUG double t27; HERO_NODEBUG bool t28; HERO_NODEBUG bool t29; HERO_NODEBUG bool t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_inferredcelleveryshaperuns_Point t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroMapHeader * t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG double t40; HERO_NODEBUG bool t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG HeroMapHeader * t48; HERO_NODEBUG HeroMapHeader * t49; goto bb0;
 #line 13 "tests/golden/run/inferred-cell-every-shape-runs.hero"
 bb0:
     t1 = INT64_C(0);
@@ -305,7 +306,7 @@ bb0:
     hero_print_int(t42);
 #line 37 "tests/golden/run/inferred-cell-every-shape-runs.hero"
     hero_print_end();
-#line 309 "inferredcelleveryshaperuns.c"
+#line 310 "inferredcelleveryshaperuns.c"
     hero_str_release_at(&h1_s);
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);

@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -83,7 +84,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_35d9fe9b, "payload");
 
-#line 87 "cfreesaleaseonalatercall.c"
+#line 88 "cfreesaleaseonalatercall.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -127,7 +128,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 131 "cfreesaleaseonalatercall.c"
+#line 132 "cfreesaleaseonalatercall.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -144,7 +145,7 @@ void h_cfreesaleaseonalatercall_main(void);
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 void h_cfreesaleaseonalatercall_main(void) {
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
-    HeroStr h0_x = {0}; const char * h1_c; HeroStr t1; HeroStr t2; const char * t3; const char * t4; int64_t t5; HeroStr t6; goto bb0;
+    HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG const char * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; goto bb0;
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);
@@ -171,7 +172,7 @@ bb0:
     hero_print_end();
     (void)later_free();
     hero_held_release(&h1_c);
-#line 175 "cfreesaleaseonalatercall.c"
+#line 176 "cfreesaleaseonalatercall.c"
     hero_str_release_at(&h0_x);
     return;
 }

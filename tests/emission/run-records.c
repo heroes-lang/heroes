@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "records.c"
+#line 49 "records.c"
 typedef struct h_records_Point {
     int64_t f_x;
     int64_t f_y;
@@ -84,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "records.c"
+#line 89 "records.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b);
@@ -107,7 +108,7 @@ void h_records_main(void);
 #line 18 "tests/golden/run/records.hero"
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) {
 #line 18 "tests/golden/run/records.hero"
-    int64_t h2_dx; int64_t h3_dy; h_records_Point t1; int64_t t2; h_records_Point t3; int64_t t4; int64_t t5; h_records_Point t6; int64_t t7; h_records_Point t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; goto bb0;
+    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG h_records_Point t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_records_Point t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_records_Point t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_records_Point t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; goto bb0;
 #line 18 "tests/golden/run/records.hero"
 bb0:
     t1 = h0_a;
@@ -147,13 +148,13 @@ bb0:
     if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow();
 #line 21 "tests/golden/run/records.hero"
     return t17;
-#line 151 "records.c"
+#line 152 "records.c"
 }
 
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) {
 #line 23 "tests/golden/run/records.hero"
-    h_records_Point t1; int64_t t2; int64_t t3; int64_t t4; h_records_Point t5; int64_t t6; h_records_Point t7; goto bb0;
+    HERO_NODEBUG h_records_Point t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_records_Point t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_records_Point t7; goto bb0;
 #line 23 "tests/golden/run/records.hero"
 bb0:
     t1 = h0_p;
@@ -171,13 +172,13 @@ bb0:
     t7 = (h_records_Point){.f_x = t4, .f_y = t6};
 #line 24 "tests/golden/run/records.hero"
     return t7;
-#line 175 "records.c"
+#line 176 "records.c"
 }
 
 #line 26 "tests/golden/run/records.hero"
 void h_records_main(void) {
 #line 26 "tests/golden/run/records.hero"
-    h_records_Point h0_p; h_records_Point h1_q; h_records_Pair h2_both; h_records_Point h3_r; int64_t t1; int64_t t2; h_records_Point t3; int64_t t4; int64_t t5; h_records_Point t6; h_records_Point t7; h_records_Point t8; int64_t t9; h_records_Point t10; h_records_Point t11; bool t12; h_records_Point t13; int64_t t14; int64_t t15; h_records_Point t16; bool t17; h_records_Point t18; h_records_Point t19; h_records_Pair t20; h_records_Pair t21; h_records_Point t22; int64_t t23; h_records_Pair t24; h_records_Point t25; h_records_Point t26; h_records_Pair t27; bool t28; h_records_Point t29; h_records_Point t30; h_records_Point t31; h_records_Point t32; int64_t t33; h_records_Point t34; int64_t t35; h_records_Point t36; h_records_Point t37; h_records_Pair t38; h_records_Point t39; h_records_Point t40; h_records_Pair t41; bool t42; goto bb0;
+    h_records_Point h0_p; h_records_Point h1_q; h_records_Pair h2_both; h_records_Point h3_r; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_records_Point t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_records_Point t6; HERO_NODEBUG h_records_Point t7; HERO_NODEBUG h_records_Point t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_records_Point t10; HERO_NODEBUG h_records_Point t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_records_Point t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_records_Point t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_records_Point t18; HERO_NODEBUG h_records_Point t19; HERO_NODEBUG h_records_Pair t20; HERO_NODEBUG h_records_Pair t21; HERO_NODEBUG h_records_Point t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_records_Pair t24; HERO_NODEBUG h_records_Point t25; HERO_NODEBUG h_records_Point t26; HERO_NODEBUG h_records_Pair t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_records_Point t29; HERO_NODEBUG h_records_Point t30; HERO_NODEBUG h_records_Point t31; HERO_NODEBUG h_records_Point t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG h_records_Point t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG h_records_Point t36; HERO_NODEBUG h_records_Point t37; HERO_NODEBUG h_records_Pair t38; HERO_NODEBUG h_records_Point t39; HERO_NODEBUG h_records_Point t40; HERO_NODEBUG h_records_Pair t41; HERO_NODEBUG bool t42; goto bb0;
 #line 26 "tests/golden/run/records.hero"
 bb0:
     t1 = INT64_C(0);
@@ -297,7 +298,7 @@ bb0:
     hero_print_end();
 #line 47 "tests/golden/run/records.hero"
     return;
-#line 301 "records.c"
+#line 302 "records.c"
 }
 HERO_TU_LOCAL bool h_records_Point_eq(const h_records_Point *a, const h_records_Point *b) {
     if (!(a->f_x == b->f_x)) return false;

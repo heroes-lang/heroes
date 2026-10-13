@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -199,7 +200,7 @@ HERO_STR_STATIC(hero_str_4a05a740, "null_cstr");
 HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 203 "main.c"
+#line 204 "main.c"
 typedef struct h_bookentry_Amount {
     int64_t f_cents;
 } h_bookentry_Amount;
@@ -410,7 +411,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 414 "main.c"
+#line 415 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_bookentry_Amount_eq(const h_bookentry_Amount *a, const h_bookentry_Amount *b);
@@ -696,7 +697,7 @@ void h_library_exit(int64_t h0_code);
 #line 33 "examples/ledger/main.hero"
 void h_main_main(void) {
 #line 33 "examples/ledger/main.hero"
-    h_0opt_24dfc0bb h0_opened = {0}; h_0opt_24dfc0bb h1_f0 = {0}; h_0opt_24dfc0bb h2_f1 = {0}; h_dbsqlite_Db h3_db; h_0opt_a8ea2 h4_built = {0}; h_0opt_a8ea2 h5_f2 = {0}; h_0opt_a8ea2 h6_shown = {0}; h_0opt_a8ea2 h7_f3 = {0}; h_0opt_24dfc0bb h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_a8ea2 h10_own10 = {0}; h_0opt_a8ea2 h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; h_0opt_24dfc0bb t1; h_0opt_24dfc0bb t2; h_0opt_24dfc0bb t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_24dfc0bb t8; HeroStr t9; int64_t t10; h_0opt_24dfc0bb t11; h_0opt_24dfc0bb t12; int64_t t13; int64_t t14; bool t15; h_0opt_24dfc0bb t16; HeroFailure t17; h_0opt_24dfc0bb t18; h_dbsqlite_Db t19; h_dbsqlite_Db t20; h_0opt_a8ea2 t21; h_0opt_a8ea2 t22; h_0opt_a8ea2 t23; int64_t t24; int64_t t25; bool t26; HeroStr t27; h_0opt_a8ea2 t28; HeroStr t29; int64_t t31; h_dbsqlite_Db t32; h_0opt_a8ea2 t33; h_0opt_a8ea2 t34; h_0opt_a8ea2 t35; int64_t t36; int64_t t37; bool t38; HeroStr t39; h_0opt_a8ea2 t40; HeroStr t41; int64_t t43; h_0opt_24dfc0bb t45; h_0opt_24dfc0bb t46; h_0opt_24dfc0bb t47; h_0opt_24dfc0bb t48; HeroStr t49; h_0opt_a8ea2 t50; h_0opt_a8ea2 t51; h_0opt_a8ea2 t52; h_0opt_a8ea2 t53; h_0opt_a8ea2 t54; h_0opt_a8ea2 t55; HeroStr t56; HeroStr t57; goto bb0;
+    h_0opt_24dfc0bb h0_opened = {0}; HERO_NODEBUG h_0opt_24dfc0bb h1_f0 = {0}; HERO_NODEBUG h_0opt_24dfc0bb h2_f1 = {0}; h_dbsqlite_Db h3_db; h_0opt_a8ea2 h4_built = {0}; HERO_NODEBUG h_0opt_a8ea2 h5_f2 = {0}; h_0opt_a8ea2 h6_shown = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_f3 = {0}; HERO_NODEBUG h_0opt_24dfc0bb h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_a8ea2 h10_own10 = {0}; HERO_NODEBUG h_0opt_a8ea2 h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_24dfc0bb t1; HERO_NODEBUG h_0opt_24dfc0bb t2; HERO_NODEBUG h_0opt_24dfc0bb t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_24dfc0bb t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0opt_24dfc0bb t11; HERO_NODEBUG h_0opt_24dfc0bb t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_0opt_24dfc0bb t16; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG h_0opt_24dfc0bb t18; HERO_NODEBUG h_dbsqlite_Db t19; HERO_NODEBUG h_dbsqlite_Db t20; HERO_NODEBUG h_0opt_a8ea2 t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG h_0opt_a8ea2 t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t31; HERO_NODEBUG h_dbsqlite_Db t32; HERO_NODEBUG h_0opt_a8ea2 t33; HERO_NODEBUG h_0opt_a8ea2 t34; HERO_NODEBUG h_0opt_a8ea2 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG h_0opt_a8ea2 t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG int64_t t43; HERO_NODEBUG h_0opt_24dfc0bb t45; HERO_NODEBUG h_0opt_24dfc0bb t46; HERO_NODEBUG h_0opt_24dfc0bb t47; HERO_NODEBUG h_0opt_24dfc0bb t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_0opt_a8ea2 t50; HERO_NODEBUG h_0opt_a8ea2 t51; HERO_NODEBUG h_0opt_a8ea2 t52; HERO_NODEBUG h_0opt_a8ea2 t53; HERO_NODEBUG h_0opt_a8ea2 t54; HERO_NODEBUG h_0opt_a8ea2 t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; goto bb0;
 #line 33 "examples/ledger/main.hero"
 bb0:
     t1 = h_dbsqlite_opened();
@@ -837,7 +838,7 @@ bb5:
     t16 = h2_f1;
 #line 39 "examples/ledger/main.hero"
     t17 = t16.as.err;
-#line 841 "main.c"
+#line 842 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 bb6:
@@ -915,7 +916,7 @@ bb8:
 bb9:
 #line 52 "examples/ledger/main.hero"
     h_dbsqlite_closed(&h3_db);
-#line 919 "main.c"
+#line 920 "main.c"
     h_0opt_24dfc0bb_release(hero_slot_escape(&h0_opened));
     h_0opt_24dfc0bb_release(hero_slot_escape(&h1_f0));
     h_0opt_24dfc0bb_release(hero_slot_escape(&h2_f1));
@@ -961,13 +962,13 @@ bb10:
 bb11:
 #line 51 "examples/ledger/main.hero"
     goto bb9;
-#line 965 "main.c"
+#line 966 "main.c"
 }
 
 #line 57 "examples/ledger/main.hero"
 h_0opt_a8ea2 h_main_build(h_dbsqlite_Db h0_db) {
 #line 57 "examples/ledger/main.hero"
-    h_0opt_a8ea2 h1_f0 = {0}; h_0opt_a8ea2 h2_f1 = {0}; h_0opt_a8ea2 h3_f2 = {0}; h_0opt_791f9719 h4_f3 = {0}; h_dbsqlite_Statement h5_accounts; HeroArrayHeader * h6_xs0 = {0}; int64_t h7_i0; h_bookentry_Account h8_a = {0}; h_0opt_a8ea2 h9_f4 = {0}; h_0opt_a8ea2 h10_f5 = {0}; h_0opt_70720e79 h11_f6 = {0}; h_0opt_a8ea2 h12_f7 = {0}; h_0opt_791f9719 h13_f8 = {0}; h_dbsqlite_Statement h14_rows; HeroArrayHeader * h15_xs1 = {0}; int64_t h16_i1; h_bookentry_Entry h17_e = {0}; h_0opt_a8ea2 h18_f9 = {0}; h_0opt_a8ea2 h19_f10 = {0}; h_0opt_a8ea2 h20_f11 = {0}; h_0opt_a8ea2 h21_f12 = {0}; h_0opt_70720e79 h22_f13 = {0}; h_0opt_a8ea2 h23_f14 = {0}; h_0opt_a8ea2 h24_f15 = {0}; h_0opt_a8ea2 h25_ret0 = {0}; h_0opt_a8ea2 h26_own26 = {0}; h_0opt_a8ea2 h27_own27 = {0}; h_0opt_a8ea2 h28_own28 = {0}; h_0opt_a8ea2 h29_own29 = {0}; h_0opt_a8ea2 h30_own30 = {0}; h_0opt_791f9719 h31_own31 = {0}; h_0opt_a8ea2 h32_own32 = {0}; HeroArrayHeader * h33_own33 = {0}; h_0opt_a8ea2 h34_own34 = {0}; h_0opt_a8ea2 h35_own35 = {0}; h_0opt_791f9719 h36_own36 = {0}; h_0opt_a8ea2 h37_own37 = {0}; h_0opt_a8ea2 h38_own38 = {0}; h_0opt_70720e79 h39_own39 = {0}; h_0opt_a8ea2 h40_own40 = {0}; h_0opt_a8ea2 h41_own41 = {0}; h_0opt_a8ea2 h42_own42 = {0}; h_0opt_a8ea2 h43_own43 = {0}; HeroArrayHeader * h44_own44 = {0}; h_0opt_a8ea2 h45_own45 = {0}; h_0opt_a8ea2 h46_own46 = {0}; h_0opt_a8ea2 h47_own47 = {0}; h_0opt_a8ea2 h48_own48 = {0}; h_0opt_a8ea2 h49_own49 = {0}; h_0opt_a8ea2 h50_own50 = {0}; h_0opt_a8ea2 h51_own51 = {0}; h_0opt_a8ea2 h52_own52 = {0}; h_0opt_a8ea2 h53_own53 = {0}; h_0opt_70720e79 h54_own54 = {0}; h_0opt_a8ea2 h55_own55 = {0}; h_0opt_a8ea2 h56_own56 = {0}; h_0opt_a8ea2 h57_own57 = {0}; h_0opt_a8ea2 h58_own58 = {0}; h_0opt_a8ea2 h59_own59 = {0}; h_0opt_a8ea2 h60_own60 = {0}; h_dbsqlite_Db t1; HeroStr t2; h_0opt_a8ea2 t3; h_0opt_a8ea2 t4; int64_t t5; int64_t t6; bool t7; h_0opt_a8ea2 t8; HeroFailure t9; h_0opt_a8ea2 t10; h_dbsqlite_Db t13; HeroStr t14; h_0opt_a8ea2 t15; h_0opt_a8ea2 t16; int64_t t17; int64_t t18; bool t19; h_0opt_a8ea2 t20; HeroFailure t21; h_0opt_a8ea2 t22; h_dbsqlite_Db t25; HeroStr t26; h_0opt_a8ea2 t27; h_0opt_a8ea2 t28; int64_t t29; int64_t t30; bool t31; h_0opt_a8ea2 t32; HeroFailure t33; h_0opt_a8ea2 t34; h_dbsqlite_Db t37; HeroStr t38; h_0opt_791f9719 t39; h_0opt_791f9719 t40; int64_t t41; int64_t t42; bool t43; h_0opt_791f9719 t44; HeroFailure t45; h_0opt_a8ea2 t46; h_0opt_791f9719 t47; h_dbsqlite_Statement t48; HeroArrayHeader * t49; int64_t t50; int64_t t51; HeroArrayHeader * t52; int64_t t53; bool t54; HeroArrayHeader * t55; int64_t t56; h_bookentry_Account t57; h_dbsqlite_Statement t58; int64_t t59; h_bookentry_Account t60; HeroStr t61; h_0opt_a8ea2 t62; h_0opt_a8ea2 t63; int64_t t64; int64_t t65; bool t66; h_0opt_a8ea2 t67; HeroFailure t68; h_0opt_a8ea2 t69; h_dbsqlite_Statement t72; int64_t t73; h_bookentry_Account t74; HeroStr t75; h_0opt_a8ea2 t76; h_0opt_a8ea2 t77; int64_t t78; int64_t t79; bool t80; h_0opt_a8ea2 t81; HeroFailure t82; h_0opt_a8ea2 t83; h_dbsqlite_Statement t86; h_0opt_70720e79 t87; h_0opt_70720e79 t88; int64_t t89; int64_t t90; bool t91; h_0opt_70720e79 t92; HeroFailure t93; h_0opt_a8ea2 t94; h_dbsqlite_Statement t97; h_0opt_a8ea2 t98; h_0opt_a8ea2 t99; int64_t t100; int64_t t101; bool t102; h_0opt_a8ea2 t103; HeroFailure t104; h_0opt_a8ea2 t105; int64_t t108; int64_t t109; int64_t t110; h_dbsqlite_Db t112; HeroStr t113; h_0opt_791f9719 t114; h_0opt_791f9719 t115; int64_t t116; int64_t t117; bool t118; h_0opt_791f9719 t119; HeroFailure t120; h_0opt_a8ea2 t121; h_0opt_791f9719 t122; h_dbsqlite_Statement t123; HeroArrayHeader * t124; int64_t t125; int64_t t126; HeroArrayHeader * t127; int64_t t128; bool t129; HeroArrayHeader * t130; int64_t t131; h_bookentry_Entry t132; h_dbsqlite_Statement t133; int64_t t134; h_bookentry_Entry t135; int64_t t136; h_0opt_a8ea2 t137; h_0opt_a8ea2 t138; int64_t t139; int64_t t140; bool t141; h_0opt_a8ea2 t142; HeroFailure t143; h_0opt_a8ea2 t144; h_dbsqlite_Statement t147; int64_t t148; h_bookentry_Entry t149; HeroStr t150; h_0opt_a8ea2 t151; h_0opt_a8ea2 t152; int64_t t153; int64_t t154; bool t155; h_0opt_a8ea2 t156; HeroFailure t157; h_0opt_a8ea2 t158; h_dbsqlite_Statement t161; int64_t t162; h_bookentry_Entry t163; HeroStr t164; h_0opt_a8ea2 t165; h_0opt_a8ea2 t166; int64_t t167; int64_t t168; bool t169; h_0opt_a8ea2 t170; HeroFailure t171; h_0opt_a8ea2 t172; h_dbsqlite_Statement t175; int64_t t176; h_bookentry_Entry t177; h_bookentry_Amount t178; int64_t t179; h_0opt_a8ea2 t180; h_0opt_a8ea2 t181; int64_t t182; int64_t t183; bool t184; h_0opt_a8ea2 t185; HeroFailure t186; h_0opt_a8ea2 t187; h_dbsqlite_Statement t190; h_0opt_70720e79 t191; h_0opt_70720e79 t192; int64_t t193; int64_t t194; bool t195; h_0opt_70720e79 t196; HeroFailure t197; h_0opt_a8ea2 t198; h_dbsqlite_Statement t201; h_0opt_a8ea2 t202; h_0opt_a8ea2 t203; int64_t t204; int64_t t205; bool t206; h_0opt_a8ea2 t207; HeroFailure t208; h_0opt_a8ea2 t209; int64_t t212; int64_t t213; int64_t t214; h_dbsqlite_Db t216; HeroStr t217; h_0opt_a8ea2 t218; h_0opt_a8ea2 t219; int64_t t220; int64_t t221; bool t222; h_0opt_a8ea2 t223; HeroFailure t224; h_0opt_a8ea2 t225; h_0opt_a8ea2 t228; h_0opt_a8ea2 t229; h_0opt_a8ea2 t230; h_0opt_a8ea2 t231; h_0opt_a8ea2 t232; h_0opt_a8ea2 t233; h_0opt_a8ea2 t234; h_0opt_a8ea2 t235; h_0opt_a8ea2 t236; h_0opt_a8ea2 t237; h_0opt_791f9719 t238; h_0opt_791f9719 t239; h_0opt_a8ea2 t240; HeroArrayHeader * t241; HeroArrayHeader * t242; h_0opt_a8ea2 t243; h_bookentry_Account t244; h_0opt_a8ea2 t245; h_0opt_a8ea2 t246; h_0opt_791f9719 t247; h_0opt_791f9719 t248; h_0opt_a8ea2 t249; h_0opt_a8ea2 t250; h_0opt_a8ea2 t251; h_0opt_70720e79 t252; h_0opt_70720e79 t253; h_0opt_a8ea2 t254; h_0opt_a8ea2 t255; h_0opt_a8ea2 t256; h_0opt_a8ea2 t257; h_0opt_a8ea2 t258; HeroArrayHeader * t259; HeroArrayHeader * t260; h_0opt_a8ea2 t261; h_bookentry_Entry t262; h_0opt_a8ea2 t263; h_0opt_a8ea2 t264; h_0opt_a8ea2 t265; h_0opt_a8ea2 t266; h_0opt_a8ea2 t267; h_0opt_a8ea2 t268; h_0opt_a8ea2 t269; h_0opt_a8ea2 t270; h_0opt_a8ea2 t271; h_0opt_a8ea2 t272; h_0opt_a8ea2 t273; h_0opt_a8ea2 t274; h_0opt_a8ea2 t275; h_0opt_70720e79 t276; h_0opt_70720e79 t277; h_0opt_a8ea2 t278; h_0opt_a8ea2 t279; h_0opt_a8ea2 t280; h_0opt_a8ea2 t281; h_0opt_a8ea2 t282; h_0opt_a8ea2 t283; h_0opt_a8ea2 t284; goto bb0;
+    HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h2_f1 = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f2 = {0}; HERO_NODEBUG h_0opt_791f9719 h4_f3 = {0}; h_dbsqlite_Statement h5_accounts; HERO_NODEBUG HeroArrayHeader * h6_xs0 = {0}; HERO_NODEBUG int64_t h7_i0; h_bookentry_Account h8_a = {0}; HERO_NODEBUG h_0opt_a8ea2 h9_f4 = {0}; HERO_NODEBUG h_0opt_a8ea2 h10_f5 = {0}; HERO_NODEBUG h_0opt_70720e79 h11_f6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h12_f7 = {0}; HERO_NODEBUG h_0opt_791f9719 h13_f8 = {0}; h_dbsqlite_Statement h14_rows; HERO_NODEBUG HeroArrayHeader * h15_xs1 = {0}; HERO_NODEBUG int64_t h16_i1; h_bookentry_Entry h17_e = {0}; HERO_NODEBUG h_0opt_a8ea2 h18_f9 = {0}; HERO_NODEBUG h_0opt_a8ea2 h19_f10 = {0}; HERO_NODEBUG h_0opt_a8ea2 h20_f11 = {0}; HERO_NODEBUG h_0opt_a8ea2 h21_f12 = {0}; HERO_NODEBUG h_0opt_70720e79 h22_f13 = {0}; HERO_NODEBUG h_0opt_a8ea2 h23_f14 = {0}; HERO_NODEBUG h_0opt_a8ea2 h24_f15 = {0}; HERO_NODEBUG h_0opt_a8ea2 h25_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h26_own26 = {0}; HERO_NODEBUG h_0opt_a8ea2 h27_own27 = {0}; HERO_NODEBUG h_0opt_a8ea2 h28_own28 = {0}; HERO_NODEBUG h_0opt_a8ea2 h29_own29 = {0}; HERO_NODEBUG h_0opt_a8ea2 h30_own30 = {0}; HERO_NODEBUG h_0opt_791f9719 h31_own31 = {0}; HERO_NODEBUG h_0opt_a8ea2 h32_own32 = {0}; HERO_NODEBUG HeroArrayHeader * h33_own33 = {0}; HERO_NODEBUG h_0opt_a8ea2 h34_own34 = {0}; HERO_NODEBUG h_0opt_a8ea2 h35_own35 = {0}; HERO_NODEBUG h_0opt_791f9719 h36_own36 = {0}; HERO_NODEBUG h_0opt_a8ea2 h37_own37 = {0}; HERO_NODEBUG h_0opt_a8ea2 h38_own38 = {0}; HERO_NODEBUG h_0opt_70720e79 h39_own39 = {0}; HERO_NODEBUG h_0opt_a8ea2 h40_own40 = {0}; HERO_NODEBUG h_0opt_a8ea2 h41_own41 = {0}; HERO_NODEBUG h_0opt_a8ea2 h42_own42 = {0}; HERO_NODEBUG h_0opt_a8ea2 h43_own43 = {0}; HERO_NODEBUG HeroArrayHeader * h44_own44 = {0}; HERO_NODEBUG h_0opt_a8ea2 h45_own45 = {0}; HERO_NODEBUG h_0opt_a8ea2 h46_own46 = {0}; HERO_NODEBUG h_0opt_a8ea2 h47_own47 = {0}; HERO_NODEBUG h_0opt_a8ea2 h48_own48 = {0}; HERO_NODEBUG h_0opt_a8ea2 h49_own49 = {0}; HERO_NODEBUG h_0opt_a8ea2 h50_own50 = {0}; HERO_NODEBUG h_0opt_a8ea2 h51_own51 = {0}; HERO_NODEBUG h_0opt_a8ea2 h52_own52 = {0}; HERO_NODEBUG h_0opt_a8ea2 h53_own53 = {0}; HERO_NODEBUG h_0opt_70720e79 h54_own54 = {0}; HERO_NODEBUG h_0opt_a8ea2 h55_own55 = {0}; HERO_NODEBUG h_0opt_a8ea2 h56_own56 = {0}; HERO_NODEBUG h_0opt_a8ea2 h57_own57 = {0}; HERO_NODEBUG h_0opt_a8ea2 h58_own58 = {0}; HERO_NODEBUG h_0opt_a8ea2 h59_own59 = {0}; HERO_NODEBUG h_0opt_a8ea2 h60_own60 = {0}; HERO_NODEBUG h_dbsqlite_Db t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_a8ea2 t3; HERO_NODEBUG h_0opt_a8ea2 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_a8ea2 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_a8ea2 t10; HERO_NODEBUG h_dbsqlite_Db t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_a8ea2 t15; HERO_NODEBUG h_0opt_a8ea2 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_a8ea2 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_dbsqlite_Db t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_a8ea2 t27; HERO_NODEBUG h_0opt_a8ea2 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_a8ea2 t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG h_0opt_a8ea2 t34; HERO_NODEBUG h_dbsqlite_Db t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_0opt_791f9719 t39; HERO_NODEBUG h_0opt_791f9719 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_791f9719 t44; HERO_NODEBUG HeroFailure t45; HERO_NODEBUG h_0opt_a8ea2 t46; HERO_NODEBUG h_0opt_791f9719 t47; HERO_NODEBUG h_dbsqlite_Statement t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG bool t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG h_bookentry_Account t57; HERO_NODEBUG h_dbsqlite_Statement t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG h_bookentry_Account t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG h_0opt_a8ea2 t62; HERO_NODEBUG h_0opt_a8ea2 t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG bool t66; HERO_NODEBUG h_0opt_a8ea2 t67; HERO_NODEBUG HeroFailure t68; HERO_NODEBUG h_0opt_a8ea2 t69; HERO_NODEBUG h_dbsqlite_Statement t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG h_bookentry_Account t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG h_0opt_a8ea2 t76; HERO_NODEBUG h_0opt_a8ea2 t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG bool t80; HERO_NODEBUG h_0opt_a8ea2 t81; HERO_NODEBUG HeroFailure t82; HERO_NODEBUG h_0opt_a8ea2 t83; HERO_NODEBUG h_dbsqlite_Statement t86; HERO_NODEBUG h_0opt_70720e79 t87; HERO_NODEBUG h_0opt_70720e79 t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG bool t91; HERO_NODEBUG h_0opt_70720e79 t92; HERO_NODEBUG HeroFailure t93; HERO_NODEBUG h_0opt_a8ea2 t94; HERO_NODEBUG h_dbsqlite_Statement t97; HERO_NODEBUG h_0opt_a8ea2 t98; HERO_NODEBUG h_0opt_a8ea2 t99; HERO_NODEBUG int64_t t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG bool t102; HERO_NODEBUG h_0opt_a8ea2 t103; HERO_NODEBUG HeroFailure t104; HERO_NODEBUG h_0opt_a8ea2 t105; HERO_NODEBUG int64_t t108; HERO_NODEBUG int64_t t109; HERO_NODEBUG int64_t t110; HERO_NODEBUG h_dbsqlite_Db t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG h_0opt_791f9719 t114; HERO_NODEBUG h_0opt_791f9719 t115; HERO_NODEBUG int64_t t116; HERO_NODEBUG int64_t t117; HERO_NODEBUG bool t118; HERO_NODEBUG h_0opt_791f9719 t119; HERO_NODEBUG HeroFailure t120; HERO_NODEBUG h_0opt_a8ea2 t121; HERO_NODEBUG h_0opt_791f9719 t122; HERO_NODEBUG h_dbsqlite_Statement t123; HERO_NODEBUG HeroArrayHeader * t124; HERO_NODEBUG int64_t t125; HERO_NODEBUG int64_t t126; HERO_NODEBUG HeroArrayHeader * t127; HERO_NODEBUG int64_t t128; HERO_NODEBUG bool t129; HERO_NODEBUG HeroArrayHeader * t130; HERO_NODEBUG int64_t t131; HERO_NODEBUG h_bookentry_Entry t132; HERO_NODEBUG h_dbsqlite_Statement t133; HERO_NODEBUG int64_t t134; HERO_NODEBUG h_bookentry_Entry t135; HERO_NODEBUG int64_t t136; HERO_NODEBUG h_0opt_a8ea2 t137; HERO_NODEBUG h_0opt_a8ea2 t138; HERO_NODEBUG int64_t t139; HERO_NODEBUG int64_t t140; HERO_NODEBUG bool t141; HERO_NODEBUG h_0opt_a8ea2 t142; HERO_NODEBUG HeroFailure t143; HERO_NODEBUG h_0opt_a8ea2 t144; HERO_NODEBUG h_dbsqlite_Statement t147; HERO_NODEBUG int64_t t148; HERO_NODEBUG h_bookentry_Entry t149; HERO_NODEBUG HeroStr t150; HERO_NODEBUG h_0opt_a8ea2 t151; HERO_NODEBUG h_0opt_a8ea2 t152; HERO_NODEBUG int64_t t153; HERO_NODEBUG int64_t t154; HERO_NODEBUG bool t155; HERO_NODEBUG h_0opt_a8ea2 t156; HERO_NODEBUG HeroFailure t157; HERO_NODEBUG h_0opt_a8ea2 t158; HERO_NODEBUG h_dbsqlite_Statement t161; HERO_NODEBUG int64_t t162; HERO_NODEBUG h_bookentry_Entry t163; HERO_NODEBUG HeroStr t164; HERO_NODEBUG h_0opt_a8ea2 t165; HERO_NODEBUG h_0opt_a8ea2 t166; HERO_NODEBUG int64_t t167; HERO_NODEBUG int64_t t168; HERO_NODEBUG bool t169; HERO_NODEBUG h_0opt_a8ea2 t170; HERO_NODEBUG HeroFailure t171; HERO_NODEBUG h_0opt_a8ea2 t172; HERO_NODEBUG h_dbsqlite_Statement t175; HERO_NODEBUG int64_t t176; HERO_NODEBUG h_bookentry_Entry t177; HERO_NODEBUG h_bookentry_Amount t178; HERO_NODEBUG int64_t t179; HERO_NODEBUG h_0opt_a8ea2 t180; HERO_NODEBUG h_0opt_a8ea2 t181; HERO_NODEBUG int64_t t182; HERO_NODEBUG int64_t t183; HERO_NODEBUG bool t184; HERO_NODEBUG h_0opt_a8ea2 t185; HERO_NODEBUG HeroFailure t186; HERO_NODEBUG h_0opt_a8ea2 t187; HERO_NODEBUG h_dbsqlite_Statement t190; HERO_NODEBUG h_0opt_70720e79 t191; HERO_NODEBUG h_0opt_70720e79 t192; HERO_NODEBUG int64_t t193; HERO_NODEBUG int64_t t194; HERO_NODEBUG bool t195; HERO_NODEBUG h_0opt_70720e79 t196; HERO_NODEBUG HeroFailure t197; HERO_NODEBUG h_0opt_a8ea2 t198; HERO_NODEBUG h_dbsqlite_Statement t201; HERO_NODEBUG h_0opt_a8ea2 t202; HERO_NODEBUG h_0opt_a8ea2 t203; HERO_NODEBUG int64_t t204; HERO_NODEBUG int64_t t205; HERO_NODEBUG bool t206; HERO_NODEBUG h_0opt_a8ea2 t207; HERO_NODEBUG HeroFailure t208; HERO_NODEBUG h_0opt_a8ea2 t209; HERO_NODEBUG int64_t t212; HERO_NODEBUG int64_t t213; HERO_NODEBUG int64_t t214; HERO_NODEBUG h_dbsqlite_Db t216; HERO_NODEBUG HeroStr t217; HERO_NODEBUG h_0opt_a8ea2 t218; HERO_NODEBUG h_0opt_a8ea2 t219; HERO_NODEBUG int64_t t220; HERO_NODEBUG int64_t t221; HERO_NODEBUG bool t222; HERO_NODEBUG h_0opt_a8ea2 t223; HERO_NODEBUG HeroFailure t224; HERO_NODEBUG h_0opt_a8ea2 t225; HERO_NODEBUG h_0opt_a8ea2 t228; HERO_NODEBUG h_0opt_a8ea2 t229; HERO_NODEBUG h_0opt_a8ea2 t230; HERO_NODEBUG h_0opt_a8ea2 t231; HERO_NODEBUG h_0opt_a8ea2 t232; HERO_NODEBUG h_0opt_a8ea2 t233; HERO_NODEBUG h_0opt_a8ea2 t234; HERO_NODEBUG h_0opt_a8ea2 t235; HERO_NODEBUG h_0opt_a8ea2 t236; HERO_NODEBUG h_0opt_a8ea2 t237; HERO_NODEBUG h_0opt_791f9719 t238; HERO_NODEBUG h_0opt_791f9719 t239; HERO_NODEBUG h_0opt_a8ea2 t240; HERO_NODEBUG HeroArrayHeader * t241; HERO_NODEBUG HeroArrayHeader * t242; HERO_NODEBUG h_0opt_a8ea2 t243; HERO_NODEBUG h_bookentry_Account t244; HERO_NODEBUG h_0opt_a8ea2 t245; HERO_NODEBUG h_0opt_a8ea2 t246; HERO_NODEBUG h_0opt_791f9719 t247; HERO_NODEBUG h_0opt_791f9719 t248; HERO_NODEBUG h_0opt_a8ea2 t249; HERO_NODEBUG h_0opt_a8ea2 t250; HERO_NODEBUG h_0opt_a8ea2 t251; HERO_NODEBUG h_0opt_70720e79 t252; HERO_NODEBUG h_0opt_70720e79 t253; HERO_NODEBUG h_0opt_a8ea2 t254; HERO_NODEBUG h_0opt_a8ea2 t255; HERO_NODEBUG h_0opt_a8ea2 t256; HERO_NODEBUG h_0opt_a8ea2 t257; HERO_NODEBUG h_0opt_a8ea2 t258; HERO_NODEBUG HeroArrayHeader * t259; HERO_NODEBUG HeroArrayHeader * t260; HERO_NODEBUG h_0opt_a8ea2 t261; HERO_NODEBUG h_bookentry_Entry t262; HERO_NODEBUG h_0opt_a8ea2 t263; HERO_NODEBUG h_0opt_a8ea2 t264; HERO_NODEBUG h_0opt_a8ea2 t265; HERO_NODEBUG h_0opt_a8ea2 t266; HERO_NODEBUG h_0opt_a8ea2 t267; HERO_NODEBUG h_0opt_a8ea2 t268; HERO_NODEBUG h_0opt_a8ea2 t269; HERO_NODEBUG h_0opt_a8ea2 t270; HERO_NODEBUG h_0opt_a8ea2 t271; HERO_NODEBUG h_0opt_a8ea2 t272; HERO_NODEBUG h_0opt_a8ea2 t273; HERO_NODEBUG h_0opt_a8ea2 t274; HERO_NODEBUG h_0opt_a8ea2 t275; HERO_NODEBUG h_0opt_70720e79 t276; HERO_NODEBUG h_0opt_70720e79 t277; HERO_NODEBUG h_0opt_a8ea2 t278; HERO_NODEBUG h_0opt_a8ea2 t279; HERO_NODEBUG h_0opt_a8ea2 t280; HERO_NODEBUG h_0opt_a8ea2 t281; HERO_NODEBUG h_0opt_a8ea2 t282; HERO_NODEBUG h_0opt_a8ea2 t283; HERO_NODEBUG h_0opt_a8ea2 t284; goto bb0;
 #line 57 "examples/ledger/main.hero"
 bb0:
     t1 = h0_db;
@@ -1973,7 +1974,7 @@ bb40:
     goto bb41;
 #line 84 "examples/ledger/main.hero"
 bb41:
-#line 1977 "main.c"
+#line 1978 "main.c"
     t229 = h25_ret0;
     h_0opt_a8ea2_retain(&t229);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
@@ -2037,7 +2038,7 @@ bb41:
 #line 90 "examples/ledger/main.hero"
 h_0opt_a8ea2 h_main_show(h_dbsqlite_Db h0_db) {
 #line 90 "examples/ledger/main.hero"
-    HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; HeroStr h3_line = {0}; h_0opt_5036d564 h4_f0 = {0}; HeroArrayHeader * h5_from_db = {0}; HeroArrayHeader * h6_mine = {0}; HeroArrayHeader * h7_xs1 = {0}; int64_t h8_i1; h_bookentry_Balance h9_b = {0}; h_0opt_f87774a h10_f1 = {0}; HeroStr h11_kind = {0}; h_0opt_e201354 h12_f2 = {0}; int64_t h13_db_total; h_0opt_e201354 h14_f3 = {0}; int64_t h15_db_rows; h_0opt_db92a83 h16_f4 = {0}; double h17_average; double h18_mine_average; h_0opt_e201354 h19_f5 = {0}; h_0opt_e201354 h20_f6 = {0}; int64_t h21_living; int64_t h22_mine_living; HeroArrayHeader * h23_xs2 = {0}; int64_t h24_i2; h_bookentry_Entry h25_e = {0}; h_0opt_f87774a h26_f7 = {0}; h_0opt_a8ea2 h27_ret0 = {0}; HeroArrayHeader * h28_own28 = {0}; HeroArrayHeader * h29_own29 = {0}; HeroArrayHeader * h30_own30 = {0}; HeroStr h31_own31 = {0}; h_0opt_5036d564 h32_own32 = {0}; HeroArrayHeader * h33_own33 = {0}; HeroArrayHeader * h34_own34 = {0}; h_0opt_a8ea2 h35_own35 = {0}; HeroArrayHeader * h36_own36 = {0}; h_0opt_f87774a h37_own37 = {0}; HeroStr h38_own38 = {0}; h_0opt_e201354 h39_own39 = {0}; HeroStr h40_own40 = {0}; h_0opt_a8ea2 h41_own41 = {0}; HeroArrayHeader * h42_own42 = {0}; HeroStr h43_own43 = {0}; HeroStr h44_own44 = {0}; h_0opt_e201354 h45_own45 = {0}; h_0opt_a8ea2 h46_own46 = {0}; HeroArrayHeader * h47_own47 = {0}; HeroStr h48_own48 = {0}; h_0opt_db92a83 h49_own49 = {0}; h_0opt_a8ea2 h50_own50 = {0}; HeroArrayHeader * h51_own51 = {0}; HeroArrayHeader * h52_own52 = {0}; HeroStr h53_own53 = {0}; h_0opt_e201354 h54_own54 = {0}; h_0opt_a8ea2 h55_own55 = {0}; HeroStr h56_own56 = {0}; h_0opt_e201354 h57_own57 = {0}; HeroArrayHeader * h58_own58 = {0}; h_0opt_a8ea2 h59_own59 = {0}; HeroArrayHeader * h60_own60 = {0}; h_0opt_f87774a h61_own61 = {0}; HeroStr h62_own62 = {0}; HeroStr h63_own63 = {0}; h_0opt_a8ea2 h64_own64 = {0}; h_0opt_a8ea2 h65_own65 = {0}; HeroStr t1; HeroArrayHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; HeroStr t12; HeroStr t13; int64_t t14; int64_t t15; int64_t t16; HeroStr t17; HeroStr t18; HeroStr t19; h_dbsqlite_Db t20; h_0opt_5036d564 t21; h_0opt_5036d564 t22; int64_t t23; int64_t t24; bool t25; h_0opt_5036d564 t26; HeroFailure t27; h_0opt_a8ea2 t28; h_0opt_5036d564 t29; HeroArrayHeader * t30; HeroArrayHeader * t31; HeroArrayHeader * t32; HeroArrayHeader * t33; int64_t t34; int64_t t35; HeroArrayHeader * t36; int64_t t37; bool t38; HeroArrayHeader * t39; int64_t t40; h_bookentry_Balance t41; h_bookentry_Balance t42; HeroStr t43; HeroArrayHeader * t44; h_0opt_f87774a t45; h_0opt_f87774a t46; int64_t t47; int64_t t48; bool t49; h_0opt_f87774a t50; HeroFailure t51; h_0opt_a8ea2 t52; h_0opt_f87774a t53; HeroStr t54; h_bookentry_Balance t55; HeroStr t56; HeroStr t57; int64_t t58; int64_t t59; int64_t t60; HeroStr t61; HeroStr t62; HeroStr t63; HeroArrayHeader * t64; HeroArrayHeader * t65; bool t66; HeroStr t67; h_dbsqlite_Db t68; HeroStr t69; h_0opt_e201354 t70; h_0opt_e201354 t71; int64_t t72; int64_t t73; bool t74; h_0opt_e201354 t75; HeroFailure t76; h_0opt_a8ea2 t77; h_0opt_e201354 t78; int64_t t79; HeroStr t80; int64_t t81; HeroArrayHeader * t82; h_bookentry_Amount t83; int64_t t84; bool t85; HeroStr t86; HeroStr t87; int64_t t88; h_bookentry_Amount t89; HeroStr t90; h_dbsqlite_Db t91; HeroStr t92; h_0opt_e201354 t93; h_0opt_e201354 t94; int64_t t95; int64_t t96; bool t97; h_0opt_e201354 t98; HeroFailure t99; h_0opt_a8ea2 t100; h_0opt_e201354 t101; int64_t t102; HeroStr t103; int64_t t104; HeroArrayHeader * t105; int64_t t106; bool t107; HeroStr t108; h_dbsqlite_Db t109; HeroStr t110; h_0opt_db92a83 t111; h_0opt_db92a83 t112; int64_t t113; int64_t t114; bool t115; h_0opt_db92a83 t116; HeroFailure t117; h_0opt_a8ea2 t118; h_0opt_db92a83 t119; double t120; HeroArrayHeader * t121; h_bookentry_Amount t122; int64_t t123; double t124; HeroArrayHeader * t125; int64_t t126; double t127; double t128; HeroStr t129; double t130; double t131; bool t132; HeroStr t133; HeroStr t134; double t135; h_0opt_e201354 t136; h_0opt_e201354 t137; int64_t t138; int64_t t139; bool t140; h_0opt_e201354 t141; HeroFailure t142; h_0opt_e201354 t143; int64_t t144; h_bookentry_Amount t145; HeroStr t146; HeroStr t147; HeroStr t148; h_dbsqlite_Db t149; HeroStr t150; h_0opt_e201354 t151; h_0opt_e201354 t152; int64_t t153; int64_t t154; bool t155; h_0opt_e201354 t156; HeroFailure t157; h_0opt_a8ea2 t158; h_0opt_e201354 t159; int64_t t160; int64_t t161; HeroArrayHeader * t162; int64_t t163; int64_t t164; HeroArrayHeader * t165; int64_t t166; bool t167; HeroArrayHeader * t168; int64_t t169; h_bookentry_Entry t170; h_bookentry_Entry t171; HeroStr t172; HeroArrayHeader * t173; h_0opt_f87774a t174; h_0opt_f87774a t175; int64_t t176; int64_t t177; bool t178; h_0opt_f87774a t179; HeroFailure t180; h_0opt_a8ea2 t181; h_0opt_f87774a t182; HeroStr t183; HeroStr t184; bool t185; int64_t t186; h_bookentry_Entry t187; h_bookentry_Amount t188; int64_t t189; int64_t t190; int64_t t191; int64_t t192; int64_t t193; HeroStr t194; int64_t t195; h_bookentry_Amount t196; HeroStr t197; HeroStr t198; int64_t t199; int64_t t200; bool t201; HeroStr t202; h_0opt_a8ea2 t203; h_0opt_a8ea2 t204; HeroArrayHeader * t205; HeroArrayHeader * t206; HeroArrayHeader * t207; HeroArrayHeader * t208; HeroStr t209; HeroStr t210; h_0opt_5036d564 t211; h_0opt_5036d564 t212; HeroArrayHeader * t213; HeroArrayHeader * t214; HeroArrayHeader * t215; HeroArrayHeader * t216; HeroArrayHeader * t217; h_0opt_a8ea2 t218; h_bookentry_Balance t219; HeroArrayHeader * t220; h_0opt_f87774a t221; h_0opt_f87774a t222; HeroStr t223; h_0opt_e201354 t224; h_0opt_e201354 t225; HeroStr t226; HeroStr t227; h_0opt_a8ea2 t228; HeroArrayHeader * t229; HeroStr t230; HeroStr t231; h_0opt_e201354 t232; h_0opt_e201354 t233; h_0opt_a8ea2 t234; HeroArrayHeader * t235; HeroStr t236; h_0opt_db92a83 t237; h_0opt_db92a83 t238; h_0opt_a8ea2 t239; HeroArrayHeader * t240; HeroArrayHeader * t241; HeroStr t242; h_0opt_e201354 t243; h_0opt_e201354 t244; h_0opt_a8ea2 t245; HeroStr t246; h_0opt_e201354 t247; h_0opt_e201354 t248; HeroArrayHeader * t249; HeroArrayHeader * t250; h_0opt_a8ea2 t251; h_bookentry_Entry t252; HeroArrayHeader * t253; h_0opt_f87774a t254; h_0opt_f87774a t255; HeroStr t256; HeroStr t257; h_0opt_a8ea2 t258; h_0opt_a8ea2 t259; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h1_xs0 = {0}; HERO_NODEBUG int64_t h2_i0; HeroStr h3_line = {0}; HERO_NODEBUG h_0opt_5036d564 h4_f0 = {0}; HeroArrayHeader * h5_from_db = {0}; HeroArrayHeader * h6_mine = {0}; HERO_NODEBUG HeroArrayHeader * h7_xs1 = {0}; HERO_NODEBUG int64_t h8_i1; h_bookentry_Balance h9_b = {0}; HERO_NODEBUG h_0opt_f87774a h10_f1 = {0}; HeroStr h11_kind = {0}; HERO_NODEBUG h_0opt_e201354 h12_f2 = {0}; int64_t h13_db_total; HERO_NODEBUG h_0opt_e201354 h14_f3 = {0}; int64_t h15_db_rows; HERO_NODEBUG h_0opt_db92a83 h16_f4 = {0}; double h17_average; double h18_mine_average; HERO_NODEBUG h_0opt_e201354 h19_f5 = {0}; HERO_NODEBUG h_0opt_e201354 h20_f6 = {0}; int64_t h21_living; int64_t h22_mine_living; HERO_NODEBUG HeroArrayHeader * h23_xs2 = {0}; HERO_NODEBUG int64_t h24_i2; h_bookentry_Entry h25_e = {0}; HERO_NODEBUG h_0opt_f87774a h26_f7 = {0}; HERO_NODEBUG h_0opt_a8ea2 h27_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h28_own28 = {0}; HERO_NODEBUG HeroArrayHeader * h29_own29 = {0}; HERO_NODEBUG HeroArrayHeader * h30_own30 = {0}; HERO_NODEBUG HeroStr h31_own31 = {0}; HERO_NODEBUG h_0opt_5036d564 h32_own32 = {0}; HERO_NODEBUG HeroArrayHeader * h33_own33 = {0}; HERO_NODEBUG HeroArrayHeader * h34_own34 = {0}; HERO_NODEBUG h_0opt_a8ea2 h35_own35 = {0}; HERO_NODEBUG HeroArrayHeader * h36_own36 = {0}; HERO_NODEBUG h_0opt_f87774a h37_own37 = {0}; HERO_NODEBUG HeroStr h38_own38 = {0}; HERO_NODEBUG h_0opt_e201354 h39_own39 = {0}; HERO_NODEBUG HeroStr h40_own40 = {0}; HERO_NODEBUG h_0opt_a8ea2 h41_own41 = {0}; HERO_NODEBUG HeroArrayHeader * h42_own42 = {0}; HERO_NODEBUG HeroStr h43_own43 = {0}; HERO_NODEBUG HeroStr h44_own44 = {0}; HERO_NODEBUG h_0opt_e201354 h45_own45 = {0}; HERO_NODEBUG h_0opt_a8ea2 h46_own46 = {0}; HERO_NODEBUG HeroArrayHeader * h47_own47 = {0}; HERO_NODEBUG HeroStr h48_own48 = {0}; HERO_NODEBUG h_0opt_db92a83 h49_own49 = {0}; HERO_NODEBUG h_0opt_a8ea2 h50_own50 = {0}; HERO_NODEBUG HeroArrayHeader * h51_own51 = {0}; HERO_NODEBUG HeroArrayHeader * h52_own52 = {0}; HERO_NODEBUG HeroStr h53_own53 = {0}; HERO_NODEBUG h_0opt_e201354 h54_own54 = {0}; HERO_NODEBUG h_0opt_a8ea2 h55_own55 = {0}; HERO_NODEBUG HeroStr h56_own56 = {0}; HERO_NODEBUG h_0opt_e201354 h57_own57 = {0}; HERO_NODEBUG HeroArrayHeader * h58_own58 = {0}; HERO_NODEBUG h_0opt_a8ea2 h59_own59 = {0}; HERO_NODEBUG HeroArrayHeader * h60_own60 = {0}; HERO_NODEBUG h_0opt_f87774a h61_own61 = {0}; HERO_NODEBUG HeroStr h62_own62 = {0}; HERO_NODEBUG HeroStr h63_own63 = {0}; HERO_NODEBUG h_0opt_a8ea2 h64_own64 = {0}; HERO_NODEBUG h_0opt_a8ea2 h65_own65 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_dbsqlite_Db t20; HERO_NODEBUG h_0opt_5036d564 t21; HERO_NODEBUG h_0opt_5036d564 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_0opt_5036d564 t26; HERO_NODEBUG HeroFailure t27; HERO_NODEBUG h_0opt_a8ea2 t28; HERO_NODEBUG h_0opt_5036d564 t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_bookentry_Balance t41; HERO_NODEBUG h_bookentry_Balance t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG bool t49; HERO_NODEBUG h_0opt_f87774a t50; HERO_NODEBUG HeroFailure t51; HERO_NODEBUG h_0opt_a8ea2 t52; HERO_NODEBUG h_0opt_f87774a t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_bookentry_Balance t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG HeroArrayHeader * t65; HERO_NODEBUG bool t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG h_dbsqlite_Db t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_e201354 t70; HERO_NODEBUG h_0opt_e201354 t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG bool t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_NODEBUG HeroFailure t76; HERO_NODEBUG h_0opt_a8ea2 t77; HERO_NODEBUG h_0opt_e201354 t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG h_bookentry_Amount t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG bool t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG h_bookentry_Amount t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG h_dbsqlite_Db t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG h_0opt_e201354 t93; HERO_NODEBUG h_0opt_e201354 t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG bool t97; HERO_NODEBUG h_0opt_e201354 t98; HERO_NODEBUG HeroFailure t99; HERO_NODEBUG h_0opt_a8ea2 t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG int64_t t104; HERO_NODEBUG HeroArrayHeader * t105; HERO_NODEBUG int64_t t106; HERO_NODEBUG bool t107; HERO_NODEBUG HeroStr t108; HERO_NODEBUG h_dbsqlite_Db t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG h_0opt_db92a83 t111; HERO_NODEBUG h_0opt_db92a83 t112; HERO_NODEBUG int64_t t113; HERO_NODEBUG int64_t t114; HERO_NODEBUG bool t115; HERO_NODEBUG h_0opt_db92a83 t116; HERO_NODEBUG HeroFailure t117; HERO_NODEBUG h_0opt_a8ea2 t118; HERO_NODEBUG h_0opt_db92a83 t119; HERO_NODEBUG double t120; HERO_NODEBUG HeroArrayHeader * t121; HERO_NODEBUG h_bookentry_Amount t122; HERO_NODEBUG int64_t t123; HERO_NODEBUG double t124; HERO_NODEBUG HeroArrayHeader * t125; HERO_NODEBUG int64_t t126; HERO_NODEBUG double t127; HERO_NODEBUG double t128; HERO_NODEBUG HeroStr t129; HERO_NODEBUG double t130; HERO_NODEBUG double t131; HERO_NODEBUG bool t132; HERO_NODEBUG HeroStr t133; HERO_NODEBUG HeroStr t134; HERO_NODEBUG double t135; HERO_NODEBUG h_0opt_e201354 t136; HERO_NODEBUG h_0opt_e201354 t137; HERO_NODEBUG int64_t t138; HERO_NODEBUG int64_t t139; HERO_NODEBUG bool t140; HERO_NODEBUG h_0opt_e201354 t141; HERO_NODEBUG HeroFailure t142; HERO_NODEBUG h_0opt_e201354 t143; HERO_NODEBUG int64_t t144; HERO_NODEBUG h_bookentry_Amount t145; HERO_NODEBUG HeroStr t146; HERO_NODEBUG HeroStr t147; HERO_NODEBUG HeroStr t148; HERO_NODEBUG h_dbsqlite_Db t149; HERO_NODEBUG HeroStr t150; HERO_NODEBUG h_0opt_e201354 t151; HERO_NODEBUG h_0opt_e201354 t152; HERO_NODEBUG int64_t t153; HERO_NODEBUG int64_t t154; HERO_NODEBUG bool t155; HERO_NODEBUG h_0opt_e201354 t156; HERO_NODEBUG HeroFailure t157; HERO_NODEBUG h_0opt_a8ea2 t158; HERO_NODEBUG h_0opt_e201354 t159; HERO_NODEBUG int64_t t160; HERO_NODEBUG int64_t t161; HERO_NODEBUG HeroArrayHeader * t162; HERO_NODEBUG int64_t t163; HERO_NODEBUG int64_t t164; HERO_NODEBUG HeroArrayHeader * t165; HERO_NODEBUG int64_t t166; HERO_NODEBUG bool t167; HERO_NODEBUG HeroArrayHeader * t168; HERO_NODEBUG int64_t t169; HERO_NODEBUG h_bookentry_Entry t170; HERO_NODEBUG h_bookentry_Entry t171; HERO_NODEBUG HeroStr t172; HERO_NODEBUG HeroArrayHeader * t173; HERO_NODEBUG h_0opt_f87774a t174; HERO_NODEBUG h_0opt_f87774a t175; HERO_NODEBUG int64_t t176; HERO_NODEBUG int64_t t177; HERO_NODEBUG bool t178; HERO_NODEBUG h_0opt_f87774a t179; HERO_NODEBUG HeroFailure t180; HERO_NODEBUG h_0opt_a8ea2 t181; HERO_NODEBUG h_0opt_f87774a t182; HERO_NODEBUG HeroStr t183; HERO_NODEBUG HeroStr t184; HERO_NODEBUG bool t185; HERO_NODEBUG int64_t t186; HERO_NODEBUG h_bookentry_Entry t187; HERO_NODEBUG h_bookentry_Amount t188; HERO_NODEBUG int64_t t189; HERO_NODEBUG int64_t t190; HERO_NODEBUG int64_t t191; HERO_NODEBUG int64_t t192; HERO_NODEBUG int64_t t193; HERO_NODEBUG HeroStr t194; HERO_NODEBUG int64_t t195; HERO_NODEBUG h_bookentry_Amount t196; HERO_NODEBUG HeroStr t197; HERO_NODEBUG HeroStr t198; HERO_NODEBUG int64_t t199; HERO_NODEBUG int64_t t200; HERO_NODEBUG bool t201; HERO_NODEBUG HeroStr t202; HERO_NODEBUG h_0opt_a8ea2 t203; HERO_NODEBUG h_0opt_a8ea2 t204; HERO_NODEBUG HeroArrayHeader * t205; HERO_NODEBUG HeroArrayHeader * t206; HERO_NODEBUG HeroArrayHeader * t207; HERO_NODEBUG HeroArrayHeader * t208; HERO_NODEBUG HeroStr t209; HERO_NODEBUG HeroStr t210; HERO_NODEBUG h_0opt_5036d564 t211; HERO_NODEBUG h_0opt_5036d564 t212; HERO_NODEBUG HeroArrayHeader * t213; HERO_NODEBUG HeroArrayHeader * t214; HERO_NODEBUG HeroArrayHeader * t215; HERO_NODEBUG HeroArrayHeader * t216; HERO_NODEBUG HeroArrayHeader * t217; HERO_NODEBUG h_0opt_a8ea2 t218; HERO_NODEBUG h_bookentry_Balance t219; HERO_NODEBUG HeroArrayHeader * t220; HERO_NODEBUG h_0opt_f87774a t221; HERO_NODEBUG h_0opt_f87774a t222; HERO_NODEBUG HeroStr t223; HERO_NODEBUG h_0opt_e201354 t224; HERO_NODEBUG h_0opt_e201354 t225; HERO_NODEBUG HeroStr t226; HERO_NODEBUG HeroStr t227; HERO_NODEBUG h_0opt_a8ea2 t228; HERO_NODEBUG HeroArrayHeader * t229; HERO_NODEBUG HeroStr t230; HERO_NODEBUG HeroStr t231; HERO_NODEBUG h_0opt_e201354 t232; HERO_NODEBUG h_0opt_e201354 t233; HERO_NODEBUG h_0opt_a8ea2 t234; HERO_NODEBUG HeroArrayHeader * t235; HERO_NODEBUG HeroStr t236; HERO_NODEBUG h_0opt_db92a83 t237; HERO_NODEBUG h_0opt_db92a83 t238; HERO_NODEBUG h_0opt_a8ea2 t239; HERO_NODEBUG HeroArrayHeader * t240; HERO_NODEBUG HeroArrayHeader * t241; HERO_NODEBUG HeroStr t242; HERO_NODEBUG h_0opt_e201354 t243; HERO_NODEBUG h_0opt_e201354 t244; HERO_NODEBUG h_0opt_a8ea2 t245; HERO_NODEBUG HeroStr t246; HERO_NODEBUG h_0opt_e201354 t247; HERO_NODEBUG h_0opt_e201354 t248; HERO_NODEBUG HeroArrayHeader * t249; HERO_NODEBUG HeroArrayHeader * t250; HERO_NODEBUG h_0opt_a8ea2 t251; HERO_NODEBUG h_bookentry_Entry t252; HERO_NODEBUG HeroArrayHeader * t253; HERO_NODEBUG h_0opt_f87774a t254; HERO_NODEBUG h_0opt_f87774a t255; HERO_NODEBUG HeroStr t256; HERO_NODEBUG HeroStr t257; HERO_NODEBUG h_0opt_a8ea2 t258; HERO_NODEBUG h_0opt_a8ea2 t259; goto bb0;
 #line 90 "examples/ledger/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1803a4b1);
@@ -2823,7 +2824,7 @@ bb20:
     t141 = h19_f5;
 #line 126 "examples/ledger/main.hero"
     t142 = t141.as.err;
-#line 2827 "main.c"
+#line 2828 "main.c"
     hero_panic_must(t142);
     hero_unreachable();
 bb21:
@@ -3065,7 +3066,7 @@ bb31:
     goto bb27;
 #line 137 "examples/ledger/main.hero"
 bb32:
-#line 3069 "main.c"
+#line 3070 "main.c"
     t204 = h27_ret0;
     h_0opt_a8ea2_retain(&t204);
     hero_array_release_at(&h1_xs0);
@@ -3129,7 +3130,7 @@ bb32:
 #line 145 "examples/ledger/main.hero"
 h_0opt_5036d564 h_main_queried_balances(h_dbsqlite_Db h0_db) {
 #line 145 "examples/ledger/main.hero"
-    h_0opt_791f9719 h1_f0 = {0}; h_dbsqlite_Statement h2_statement; HeroArrayHeader * h3_out = {0}; bool h4_going; h_0opt_70720e79 h5_f1 = {0}; h_dbsqlite_Step h6_s0; h_0opt_e405689 h7_f2 = {0}; h_0opt_f87774a h8_f3 = {0}; HeroStr h9_name = {0}; h_0opt_e405689 h10_f4 = {0}; h_0opt_e201354 h11_f5 = {0}; int64_t h12_count; h_0opt_e405689 h13_f6 = {0}; h_0opt_e201354 h14_f7 = {0}; int64_t h15_cents; h_0opt_5036d564 h16_ret0 = {0}; h_0opt_791f9719 h17_own17 = {0}; HeroArrayHeader * h18_own18 = {0}; h_0opt_5036d564 h19_own19 = {0}; h_0opt_70720e79 h20_own20 = {0}; h_0opt_5036d564 h21_own21 = {0}; h_0opt_5036d564 h22_own22 = {0}; h_0opt_e405689 h23_own23 = {0}; h_0opt_f87774a h24_own24 = {0}; h_0opt_5036d564 h25_own25 = {0}; h_0opt_e405689 h26_own26 = {0}; h_0opt_5036d564 h27_own27 = {0}; h_0opt_e201354 h28_own28 = {0}; h_0opt_5036d564 h29_own29 = {0}; h_0opt_e405689 h30_own30 = {0}; h_0opt_5036d564 h31_own31 = {0}; h_0opt_e201354 h32_own32 = {0}; h_0opt_5036d564 h33_own33 = {0}; h_bookentry_Balance h34_own34 = {0}; h_0opt_5036d564 h35_own35 = {0}; h_dbsqlite_Db t1; HeroStr t2; h_0opt_791f9719 t3; h_0opt_791f9719 t4; int64_t t5; int64_t t6; bool t7; h_0opt_791f9719 t8; HeroFailure t9; h_0opt_5036d564 t10; h_0opt_791f9719 t11; h_dbsqlite_Statement t12; HeroArrayHeader * t13; bool t14; bool t15; h_dbsqlite_Statement t16; h_0opt_70720e79 t17; h_0opt_70720e79 t18; int64_t t19; int64_t t20; bool t21; h_0opt_70720e79 t22; HeroFailure t23; h_0opt_5036d564 t24; h_0opt_70720e79 t25; h_dbsqlite_Step t26; h_dbsqlite_Step t27; int64_t t28; h_dbsqlite_Statement t29; int64_t t30; h_0opt_e405689 t31; h_0opt_e405689 t32; int64_t t33; int64_t t34; bool t35; h_0opt_e405689 t36; HeroFailure t37; h_0opt_5036d564 t38; h_0opt_e405689 t39; h_dbsqlite_Cell t40; h_0opt_f87774a t41; h_0opt_f87774a t42; int64_t t43; int64_t t44; bool t45; h_0opt_f87774a t46; HeroFailure t47; h_0opt_5036d564 t48; h_0opt_f87774a t49; HeroStr t50; h_dbsqlite_Statement t51; int64_t t52; h_0opt_e405689 t53; h_0opt_e405689 t54; int64_t t55; int64_t t56; bool t57; h_0opt_e405689 t58; HeroFailure t59; h_0opt_5036d564 t60; h_0opt_e405689 t61; h_dbsqlite_Cell t62; h_0opt_e201354 t63; h_0opt_e201354 t64; int64_t t65; int64_t t66; bool t67; h_0opt_e201354 t68; HeroFailure t69; h_0opt_5036d564 t70; h_0opt_e201354 t71; int64_t t72; h_dbsqlite_Statement t73; int64_t t74; h_0opt_e405689 t75; h_0opt_e405689 t76; int64_t t77; int64_t t78; bool t79; h_0opt_e405689 t80; HeroFailure t81; h_0opt_5036d564 t82; h_0opt_e405689 t83; h_dbsqlite_Cell t84; h_0opt_e201354 t85; h_0opt_e201354 t86; int64_t t87; int64_t t88; bool t89; h_0opt_e201354 t90; HeroFailure t91; h_0opt_5036d564 t92; h_0opt_e201354 t93; int64_t t94; HeroStr t96; int64_t t97; int64_t t98; h_bookentry_Amount t99; h_bookentry_Balance t100; bool t102; HeroArrayHeader * t104; h_0opt_5036d564 t105; h_0opt_5036d564 t106; h_0opt_791f9719 t107; h_0opt_791f9719 t108; HeroArrayHeader * t109; HeroArrayHeader * t110; h_0opt_5036d564 t111; h_0opt_70720e79 t112; h_0opt_70720e79 t113; h_0opt_5036d564 t114; h_0opt_5036d564 t115; h_0opt_e405689 t116; h_0opt_e405689 t117; h_0opt_f87774a t118; h_0opt_f87774a t119; h_0opt_5036d564 t120; HeroStr t121; h_0opt_e405689 t122; h_0opt_e405689 t123; h_0opt_5036d564 t124; h_0opt_e201354 t125; h_0opt_e201354 t126; h_0opt_5036d564 t127; h_0opt_e405689 t128; h_0opt_e405689 t129; h_0opt_5036d564 t130; h_0opt_e201354 t131; h_0opt_e201354 t132; h_0opt_5036d564 t133; h_bookentry_Balance t134; h_0opt_5036d564 t135; goto bb0;
+    HERO_NODEBUG h_0opt_791f9719 h1_f0 = {0}; h_dbsqlite_Statement h2_statement; HeroArrayHeader * h3_out = {0}; bool h4_going; HERO_NODEBUG h_0opt_70720e79 h5_f1 = {0}; HERO_NODEBUG h_dbsqlite_Step h6_s0; HERO_NODEBUG h_0opt_e405689 h7_f2 = {0}; HERO_NODEBUG h_0opt_f87774a h8_f3 = {0}; HeroStr h9_name = {0}; HERO_NODEBUG h_0opt_e405689 h10_f4 = {0}; HERO_NODEBUG h_0opt_e201354 h11_f5 = {0}; int64_t h12_count; HERO_NODEBUG h_0opt_e405689 h13_f6 = {0}; HERO_NODEBUG h_0opt_e201354 h14_f7 = {0}; int64_t h15_cents; HERO_NODEBUG h_0opt_5036d564 h16_ret0 = {0}; HERO_NODEBUG h_0opt_791f9719 h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG h_0opt_5036d564 h19_own19 = {0}; HERO_NODEBUG h_0opt_70720e79 h20_own20 = {0}; HERO_NODEBUG h_0opt_5036d564 h21_own21 = {0}; HERO_NODEBUG h_0opt_5036d564 h22_own22 = {0}; HERO_NODEBUG h_0opt_e405689 h23_own23 = {0}; HERO_NODEBUG h_0opt_f87774a h24_own24 = {0}; HERO_NODEBUG h_0opt_5036d564 h25_own25 = {0}; HERO_NODEBUG h_0opt_e405689 h26_own26 = {0}; HERO_NODEBUG h_0opt_5036d564 h27_own27 = {0}; HERO_NODEBUG h_0opt_e201354 h28_own28 = {0}; HERO_NODEBUG h_0opt_5036d564 h29_own29 = {0}; HERO_NODEBUG h_0opt_e405689 h30_own30 = {0}; HERO_NODEBUG h_0opt_5036d564 h31_own31 = {0}; HERO_NODEBUG h_0opt_e201354 h32_own32 = {0}; HERO_NODEBUG h_0opt_5036d564 h33_own33 = {0}; HERO_NODEBUG h_bookentry_Balance h34_own34 = {0}; HERO_NODEBUG h_0opt_5036d564 h35_own35 = {0}; HERO_NODEBUG h_dbsqlite_Db t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_791f9719 t3; HERO_NODEBUG h_0opt_791f9719 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_791f9719 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_5036d564 t10; HERO_NODEBUG h_0opt_791f9719 t11; HERO_NODEBUG h_dbsqlite_Statement t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_dbsqlite_Statement t16; HERO_NODEBUG h_0opt_70720e79 t17; HERO_NODEBUG h_0opt_70720e79 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_70720e79 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_5036d564 t24; HERO_NODEBUG h_0opt_70720e79 t25; HERO_NODEBUG h_dbsqlite_Step t26; HERO_NODEBUG h_dbsqlite_Step t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_dbsqlite_Statement t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_0opt_e405689 t31; HERO_NODEBUG h_0opt_e405689 t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG h_0opt_e405689 t36; HERO_NODEBUG HeroFailure t37; HERO_NODEBUG h_0opt_5036d564 t38; HERO_NODEBUG h_0opt_e405689 t39; HERO_NODEBUG h_dbsqlite_Cell t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroFailure t47; HERO_NODEBUG h_0opt_5036d564 t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG h_dbsqlite_Statement t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG h_0opt_e405689 t53; HERO_NODEBUG h_0opt_e405689 t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG h_0opt_e405689 t58; HERO_NODEBUG HeroFailure t59; HERO_NODEBUG h_0opt_5036d564 t60; HERO_NODEBUG h_0opt_e405689 t61; HERO_NODEBUG h_dbsqlite_Cell t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG h_0opt_e201354 t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG bool t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG HeroFailure t69; HERO_NODEBUG h_0opt_5036d564 t70; HERO_NODEBUG h_0opt_e201354 t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG h_dbsqlite_Statement t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG h_0opt_e405689 t75; HERO_NODEBUG h_0opt_e405689 t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG bool t79; HERO_NODEBUG h_0opt_e405689 t80; HERO_NODEBUG HeroFailure t81; HERO_NODEBUG h_0opt_5036d564 t82; HERO_NODEBUG h_0opt_e405689 t83; HERO_NODEBUG h_dbsqlite_Cell t84; HERO_NODEBUG h_0opt_e201354 t85; HERO_NODEBUG h_0opt_e201354 t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG bool t89; HERO_NODEBUG h_0opt_e201354 t90; HERO_NODEBUG HeroFailure t91; HERO_NODEBUG h_0opt_5036d564 t92; HERO_NODEBUG h_0opt_e201354 t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG HeroStr t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG h_bookentry_Amount t99; HERO_NODEBUG h_bookentry_Balance t100; HERO_NODEBUG bool t102; HERO_NODEBUG HeroArrayHeader * t104; HERO_NODEBUG h_0opt_5036d564 t105; HERO_NODEBUG h_0opt_5036d564 t106; HERO_NODEBUG h_0opt_791f9719 t107; HERO_NODEBUG h_0opt_791f9719 t108; HERO_NODEBUG HeroArrayHeader * t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG h_0opt_5036d564 t111; HERO_NODEBUG h_0opt_70720e79 t112; HERO_NODEBUG h_0opt_70720e79 t113; HERO_NODEBUG h_0opt_5036d564 t114; HERO_NODEBUG h_0opt_5036d564 t115; HERO_NODEBUG h_0opt_e405689 t116; HERO_NODEBUG h_0opt_e405689 t117; HERO_NODEBUG h_0opt_f87774a t118; HERO_NODEBUG h_0opt_f87774a t119; HERO_NODEBUG h_0opt_5036d564 t120; HERO_NODEBUG HeroStr t121; HERO_NODEBUG h_0opt_e405689 t122; HERO_NODEBUG h_0opt_e405689 t123; HERO_NODEBUG h_0opt_5036d564 t124; HERO_NODEBUG h_0opt_e201354 t125; HERO_NODEBUG h_0opt_e201354 t126; HERO_NODEBUG h_0opt_5036d564 t127; HERO_NODEBUG h_0opt_e405689 t128; HERO_NODEBUG h_0opt_e405689 t129; HERO_NODEBUG h_0opt_5036d564 t130; HERO_NODEBUG h_0opt_e201354 t131; HERO_NODEBUG h_0opt_e201354 t132; HERO_NODEBUG h_0opt_5036d564 t133; HERO_NODEBUG h_bookentry_Balance t134; HERO_NODEBUG h_0opt_5036d564 t135; goto bb0;
 #line 145 "examples/ledger/main.hero"
 bb0:
     t1 = h0_db;
@@ -3674,7 +3675,7 @@ bb22:
     goto bb23;
 #line 155 "examples/ledger/main.hero"
 bb23:
-#line 3678 "main.c"
+#line 3679 "main.c"
     t106 = h16_ret0;
     h_0opt_5036d564_retain(&t106);
     h_0opt_791f9719_release(hero_slot_escape(&h1_f0));
@@ -3712,7 +3713,7 @@ bb23:
 #line 164 "examples/ledger/main.hero"
 h_0opt_e201354 h_main_queried_int(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
 #line 164 "examples/ledger/main.hero"
-    h_0opt_791f9719 h2_f0 = {0}; h_dbsqlite_Statement h3_statement; int64_t h4_value; bool h5_found; h_0opt_70720e79 h6_f1 = {0}; h_dbsqlite_Step h7_s0; h_0opt_e405689 h8_f2 = {0}; h_0opt_e201354 h9_f3 = {0}; h_0opt_e201354 h10_ret0 = {0}; h_0opt_791f9719 h11_own11 = {0}; h_0opt_70720e79 h12_own12 = {0}; h_0opt_e201354 h13_own13 = {0}; h_0opt_e201354 h14_own14 = {0}; h_0opt_e405689 h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; h_0opt_e201354 h17_own17 = {0}; h_0opt_e201354 h18_own18 = {0}; h_0opt_e201354 h19_own19 = {0}; HeroStr h20_own20 = {0}; h_0opt_e201354 h21_own21 = {0}; h_dbsqlite_Db t1; HeroStr t2; h_0opt_791f9719 t3; h_0opt_791f9719 t4; int64_t t5; int64_t t6; bool t7; h_0opt_791f9719 t8; HeroFailure t9; h_0opt_e201354 t10; h_0opt_791f9719 t11; h_dbsqlite_Statement t12; int64_t t13; bool t14; h_dbsqlite_Statement t15; h_0opt_70720e79 t16; h_0opt_70720e79 t17; int64_t t18; int64_t t19; bool t20; h_0opt_70720e79 t21; HeroFailure t22; h_0opt_e201354 t23; h_0opt_70720e79 t24; h_dbsqlite_Step t25; h_dbsqlite_Step t26; int64_t t27; h_dbsqlite_Statement t28; int64_t t29; h_0opt_e405689 t30; h_0opt_e405689 t31; int64_t t32; int64_t t33; bool t34; h_0opt_e405689 t35; HeroFailure t36; h_0opt_e201354 t37; h_0opt_e405689 t38; h_dbsqlite_Cell t39; h_0opt_e201354 t40; h_0opt_e201354 t41; int64_t t42; int64_t t43; bool t44; h_0opt_e201354 t45; HeroFailure t46; h_0opt_e201354 t47; h_0opt_e201354 t48; int64_t t49; bool t50; bool t51; bool t53; bool t54; HeroStr t55; HeroStr t56; HeroStr t57; HeroStr t58; h_0opt_e201354 t59; int64_t t60; h_0opt_e201354 t61; h_0opt_e201354 t62; h_0opt_791f9719 t63; h_0opt_791f9719 t64; h_0opt_70720e79 t65; h_0opt_70720e79 t66; h_0opt_e201354 t67; h_0opt_e201354 t68; h_0opt_e405689 t69; h_0opt_e405689 t70; h_0opt_e201354 t71; h_0opt_e201354 t72; h_0opt_e201354 t73; h_0opt_e201354 t74; h_0opt_e201354 t75; HeroStr t76; h_0opt_e201354 t77; goto bb0;
+    HERO_NODEBUG h_0opt_791f9719 h2_f0 = {0}; h_dbsqlite_Statement h3_statement; int64_t h4_value; bool h5_found; HERO_NODEBUG h_0opt_70720e79 h6_f1 = {0}; HERO_NODEBUG h_dbsqlite_Step h7_s0; HERO_NODEBUG h_0opt_e405689 h8_f2 = {0}; HERO_NODEBUG h_0opt_e201354 h9_f3 = {0}; HERO_NODEBUG h_0opt_e201354 h10_ret0 = {0}; HERO_NODEBUG h_0opt_791f9719 h11_own11 = {0}; HERO_NODEBUG h_0opt_70720e79 h12_own12 = {0}; HERO_NODEBUG h_0opt_e201354 h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG h_0opt_e405689 h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG h_0opt_e201354 h18_own18 = {0}; HERO_NODEBUG h_0opt_e201354 h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG h_dbsqlite_Db t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_791f9719 t3; HERO_NODEBUG h_0opt_791f9719 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_791f9719 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_791f9719 t11; HERO_NODEBUG h_dbsqlite_Statement t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_dbsqlite_Statement t15; HERO_NODEBUG h_0opt_70720e79 t16; HERO_NODEBUG h_0opt_70720e79 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_70720e79 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_70720e79 t24; HERO_NODEBUG h_dbsqlite_Step t25; HERO_NODEBUG h_dbsqlite_Step t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_dbsqlite_Statement t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_0opt_e405689 t30; HERO_NODEBUG h_0opt_e405689 t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_0opt_e405689 t35; HERO_NODEBUG HeroFailure t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_e405689 t38; HERO_NODEBUG h_dbsqlite_Cell t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG HeroFailure t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG h_0opt_e201354 t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG bool t50; HERO_NODEBUG bool t51; HERO_NODEBUG bool t53; HERO_NODEBUG bool t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG h_0opt_e201354 t62; HERO_NODEBUG h_0opt_791f9719 t63; HERO_NODEBUG h_0opt_791f9719 t64; HERO_NODEBUG h_0opt_70720e79 t65; HERO_NODEBUG h_0opt_70720e79 t66; HERO_NODEBUG h_0opt_e201354 t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG h_0opt_e405689 t69; HERO_NODEBUG h_0opt_e405689 t70; HERO_NODEBUG h_0opt_e201354 t71; HERO_NODEBUG h_0opt_e201354 t72; HERO_NODEBUG h_0opt_e201354 t73; HERO_NODEBUG h_0opt_e201354 t74; HERO_NODEBUG h_0opt_e201354 t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG h_0opt_e201354 t77; goto bb0;
 #line 164 "examples/ledger/main.hero"
 bb0:
     t1 = h0_db;
@@ -4037,7 +4038,7 @@ bb14:
     goto bb12;
 #line 178 "examples/ledger/main.hero"
 bb15:
-#line 4041 "main.c"
+#line 4042 "main.c"
     t62 = h10_ret0;
     h_0opt_e201354_retain(&t62);
     h_0opt_791f9719_release(hero_slot_escape(&h2_f0));
@@ -4061,7 +4062,7 @@ bb15:
 #line 181 "examples/ledger/main.hero"
 h_0opt_db92a83 h_main_queried_float(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
 #line 181 "examples/ledger/main.hero"
-    h_0opt_791f9719 h2_f0 = {0}; h_dbsqlite_Statement h3_statement; double h4_value; bool h5_found; h_0opt_70720e79 h6_f1 = {0}; h_dbsqlite_Step h7_s0; h_0opt_e405689 h8_f2 = {0}; h_dbsqlite_Cell h9_s1 = {0}; h_dbsqlite_Cell_c_float_cell h10_f; h_dbsqlite_Cell_c_integer_cell h11_i; h_0opt_db92a83 h12_ret0 = {0}; h_0opt_791f9719 h13_own13 = {0}; h_0opt_70720e79 h14_own14 = {0}; h_0opt_db92a83 h15_own15 = {0}; h_0opt_db92a83 h16_own16 = {0}; h_0opt_e405689 h17_own17 = {0}; h_0opt_db92a83 h18_own18 = {0}; h_0opt_db92a83 h19_own19 = {0}; HeroStr h20_own20 = {0}; h_0opt_db92a83 h21_own21 = {0}; h_dbsqlite_Db t1; HeroStr t2; h_0opt_791f9719 t3; h_0opt_791f9719 t4; int64_t t5; int64_t t6; bool t7; h_0opt_791f9719 t8; HeroFailure t9; h_0opt_db92a83 t10; h_0opt_791f9719 t11; h_dbsqlite_Statement t12; double t13; bool t14; h_dbsqlite_Statement t15; h_0opt_70720e79 t16; h_0opt_70720e79 t17; int64_t t18; int64_t t19; bool t20; h_0opt_70720e79 t21; HeroFailure t22; h_0opt_db92a83 t23; h_0opt_70720e79 t24; h_dbsqlite_Step t25; h_dbsqlite_Step t26; int64_t t27; h_dbsqlite_Statement t28; int64_t t29; h_0opt_e405689 t30; h_0opt_e405689 t31; int64_t t32; int64_t t33; bool t34; h_0opt_e405689 t35; HeroFailure t36; h_0opt_db92a83 t37; h_0opt_e405689 t38; h_dbsqlite_Cell t39; h_dbsqlite_Cell t40; int64_t t41; h_dbsqlite_Cell t42; h_dbsqlite_Cell_c_float_cell t43; h_dbsqlite_Cell_c_float_cell t44; double t45; h_dbsqlite_Cell t46; h_dbsqlite_Cell_c_integer_cell t47; h_dbsqlite_Cell_c_integer_cell t48; int64_t t49; double t50; double t51; double t52; double t53; bool t54; bool t55; bool t57; bool t58; HeroStr t59; HeroStr t60; HeroStr t61; HeroStr t62; h_0opt_db92a83 t63; double t64; h_0opt_db92a83 t65; h_0opt_db92a83 t66; h_0opt_791f9719 t67; h_0opt_791f9719 t68; h_0opt_70720e79 t69; h_0opt_70720e79 t70; h_0opt_db92a83 t71; h_0opt_db92a83 t72; h_0opt_e405689 t73; h_0opt_e405689 t74; h_dbsqlite_Cell t75; h_0opt_db92a83 t76; h_0opt_db92a83 t77; HeroStr t78; h_0opt_db92a83 t79; goto bb0;
+    HERO_NODEBUG h_0opt_791f9719 h2_f0 = {0}; h_dbsqlite_Statement h3_statement; double h4_value; bool h5_found; HERO_NODEBUG h_0opt_70720e79 h6_f1 = {0}; HERO_NODEBUG h_dbsqlite_Step h7_s0; HERO_NODEBUG h_0opt_e405689 h8_f2 = {0}; HERO_NODEBUG h_dbsqlite_Cell h9_s1 = {0}; h_dbsqlite_Cell_c_float_cell h10_f; h_dbsqlite_Cell_c_integer_cell h11_i; HERO_NODEBUG h_0opt_db92a83 h12_ret0 = {0}; HERO_NODEBUG h_0opt_791f9719 h13_own13 = {0}; HERO_NODEBUG h_0opt_70720e79 h14_own14 = {0}; HERO_NODEBUG h_0opt_db92a83 h15_own15 = {0}; HERO_NODEBUG h_0opt_db92a83 h16_own16 = {0}; HERO_NODEBUG h_0opt_e405689 h17_own17 = {0}; HERO_NODEBUG h_0opt_db92a83 h18_own18 = {0}; HERO_NODEBUG h_0opt_db92a83 h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG h_0opt_db92a83 h21_own21 = {0}; HERO_NODEBUG h_dbsqlite_Db t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_791f9719 t3; HERO_NODEBUG h_0opt_791f9719 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_791f9719 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_db92a83 t10; HERO_NODEBUG h_0opt_791f9719 t11; HERO_NODEBUG h_dbsqlite_Statement t12; HERO_NODEBUG double t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_dbsqlite_Statement t15; HERO_NODEBUG h_0opt_70720e79 t16; HERO_NODEBUG h_0opt_70720e79 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_70720e79 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG h_0opt_db92a83 t23; HERO_NODEBUG h_0opt_70720e79 t24; HERO_NODEBUG h_dbsqlite_Step t25; HERO_NODEBUG h_dbsqlite_Step t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_dbsqlite_Statement t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_0opt_e405689 t30; HERO_NODEBUG h_0opt_e405689 t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_0opt_e405689 t35; HERO_NODEBUG HeroFailure t36; HERO_NODEBUG h_0opt_db92a83 t37; HERO_NODEBUG h_0opt_e405689 t38; HERO_NODEBUG h_dbsqlite_Cell t39; HERO_NODEBUG h_dbsqlite_Cell t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG h_dbsqlite_Cell t42; HERO_NODEBUG h_dbsqlite_Cell_c_float_cell t43; HERO_NODEBUG h_dbsqlite_Cell_c_float_cell t44; HERO_NODEBUG double t45; HERO_NODEBUG h_dbsqlite_Cell t46; HERO_NODEBUG h_dbsqlite_Cell_c_integer_cell t47; HERO_NODEBUG h_dbsqlite_Cell_c_integer_cell t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG double t50; HERO_NODEBUG double t51; HERO_NODEBUG double t52; HERO_NODEBUG double t53; HERO_NODEBUG bool t54; HERO_NODEBUG bool t55; HERO_NODEBUG bool t57; HERO_NODEBUG bool t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_0opt_db92a83 t63; HERO_NODEBUG double t64; HERO_NODEBUG h_0opt_db92a83 t65; HERO_NODEBUG h_0opt_db92a83 t66; HERO_NODEBUG h_0opt_791f9719 t67; HERO_NODEBUG h_0opt_791f9719 t68; HERO_NODEBUG h_0opt_70720e79 t69; HERO_NODEBUG h_0opt_70720e79 t70; HERO_NODEBUG h_0opt_db92a83 t71; HERO_NODEBUG h_0opt_db92a83 t72; HERO_NODEBUG h_0opt_e405689 t73; HERO_NODEBUG h_0opt_e405689 t74; HERO_NODEBUG h_dbsqlite_Cell t75; HERO_NODEBUG h_0opt_db92a83 t76; HERO_NODEBUG h_0opt_db92a83 t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG h_0opt_db92a83 t79; goto bb0;
 #line 181 "examples/ledger/main.hero"
 bb0:
     t1 = h0_db;
@@ -4417,7 +4418,7 @@ bb18:
     goto bb16;
 #line 201 "examples/ledger/main.hero"
 bb19:
-#line 4421 "main.c"
+#line 4422 "main.c"
     t66 = h12_ret0;
     h_0opt_db92a83_retain(&t66);
     h_0opt_791f9719_release(hero_slot_escape(&h2_f0));
@@ -4439,7 +4440,7 @@ bb19:
 #line 207 "examples/ledger/main.hero"
 bool h_main_same_balances(HeroArrayHeader * h0_from_db, HeroArrayHeader * h1_mine) {
 #line 207 "examples/ledger/main.hero"
-    int64_t h2_at; bool h3_ret0; HeroArrayHeader * t1; int64_t t2; HeroArrayHeader * t3; int64_t t4; bool t5; bool t6; int64_t t7; int64_t t8; HeroArrayHeader * t9; int64_t t10; bool t11; HeroArrayHeader * t12; int64_t t13; h_bookentry_Balance t14; HeroStr t15; HeroArrayHeader * t16; int64_t t17; h_bookentry_Balance t18; HeroStr t19; bool t20; bool t21; HeroArrayHeader * t22; int64_t t23; h_bookentry_Balance t24; int64_t t25; HeroArrayHeader * t26; int64_t t27; h_bookentry_Balance t28; int64_t t29; bool t30; bool t31; HeroArrayHeader * t32; int64_t t33; h_bookentry_Balance t34; h_bookentry_Amount t35; int64_t t36; HeroArrayHeader * t37; int64_t t38; h_bookentry_Balance t39; h_bookentry_Amount t40; int64_t t41; bool t42; bool t43; int64_t t44; int64_t t45; int64_t t46; bool t47; bool t48; goto bb0;
+    int64_t h2_at; HERO_NODEBUG bool h3_ret0; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_bookentry_Balance t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_bookentry_Balance t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG bool t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_bookentry_Balance t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_bookentry_Balance t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG bool t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG h_bookentry_Balance t34; HERO_NODEBUG h_bookentry_Amount t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_bookentry_Balance t39; HERO_NODEBUG h_bookentry_Amount t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG bool t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG bool t47; HERO_NODEBUG bool t48; goto bb0;
 #line 207 "examples/ledger/main.hero"
 bb0:
     t1 = h0_from_db;
@@ -4612,7 +4613,7 @@ bb15:
     goto bb13;
 #line 220 "examples/ledger/main.hero"
 bb16:
-#line 4616 "main.c"
+#line 4617 "main.c"
     t48 = h3_ret0;
     return t48;
 }
@@ -4620,7 +4621,7 @@ bb16:
 #line 229 "examples/ledger/main.hero"
 bool h_main_near(double h0_a, double h1_b) {
 #line 229 "examples/ledger/main.hero"
-    double h2_d; bool h3_ret0; double t1; double t2; double t3; double t4; double t5; bool t6; double t7; double t8; double t9; double t10; bool t11; double t12; double t13; bool t14; bool t15; goto bb0;
+    double h2_d; HERO_NODEBUG bool h3_ret0; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG bool t6; HERO_NODEBUG double t7; HERO_NODEBUG double t8; HERO_NODEBUG double t9; HERO_NODEBUG double t10; HERO_NODEBUG bool t11; HERO_NODEBUG double t12; HERO_NODEBUG double t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; goto bb0;
 #line 229 "examples/ledger/main.hero"
 bb0:
     t1 = h0_a;
@@ -4678,7 +4679,7 @@ bb3:
     goto bb1;
 #line 233 "examples/ledger/main.hero"
 bb4:
-#line 4682 "main.c"
+#line 4683 "main.c"
     t15 = h3_ret0;
     return t15;
 }
@@ -4686,7 +4687,7 @@ bb4:
 #line 236 "examples/ledger/main.hero"
 HeroStr h_main_verdict(bool h0_holds) {
 #line 236 "examples/ledger/main.hero"
-    HeroStr h1_ret0 = {0}; bool t1; HeroStr t2; HeroStr t3; HeroStr t4; goto bb0;
+    HERO_NODEBUG HeroStr h1_ret0 = {0}; HERO_NODEBUG bool t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; goto bb0;
 #line 236 "examples/ledger/main.hero"
 bb0:
     t1 = h0_holds;
@@ -4714,7 +4715,7 @@ bb3:
     goto bb1;
 #line 238 "examples/ledger/main.hero"
 bb4:
-#line 4718 "main.c"
+#line 4719 "main.c"
     t4 = h1_ret0;
     hero_str_incref(t4);
     return t4;
@@ -4723,7 +4724,7 @@ bb4:
 #line 305 "examples/ledger/main.hero"
 HeroStr h_main_err_text_of(h_0opt_a8ea2 h0_got) {
 #line 305 "examples/ledger/main.hero"
-    h_0opt_a8ea2 h1_s0 = {0}; HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; h_0opt_a8ea2 t1; h_0opt_a8ea2 t2; int64_t t3; HeroStr t4; h_0opt_a8ea2 t5; HeroFailure t6; HeroFailure t7; HeroStr t8; HeroStr t9; h_0opt_a8ea2 t10; HeroStr t11; HeroFailure t12; HeroStr t13; goto bb0;
+    HERO_NODEBUG h_0opt_a8ea2 h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG h_0opt_a8ea2 t1; HERO_NODEBUG h_0opt_a8ea2 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_a8ea2 t5; HERO_NODEBUG HeroFailure t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_a8ea2 t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG HeroStr t13; goto bb0;
 #line 305 "examples/ledger/main.hero"
 bb0:
     t1 = h0_got;
@@ -4753,7 +4754,7 @@ bb0:
 bb1:
 #line 306 "examples/ledger/main.hero"
     t9 = h2_r0;
-#line 4757 "main.c"
+#line 4758 "main.c"
     hero_str_incref(t9);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -4800,13 +4801,13 @@ bb3:
     hero_str_decref(t13);
 #line 306 "examples/ledger/main.hero"
     goto bb1;
-#line 4804 "main.c"
+#line 4805 "main.c"
 }
 
 #line 310 "examples/ledger/main.hero"
 HeroStr h_main_why_open(h_0opt_24dfc0bb h0_got) {
 #line 310 "examples/ledger/main.hero"
-    h_0opt_24dfc0bb h1_s0 = {0}; HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; h_0opt_24dfc0bb t1; h_0opt_24dfc0bb t2; int64_t t3; HeroStr t4; h_0opt_24dfc0bb t5; HeroFailure t6; HeroFailure t7; HeroStr t8; HeroStr t9; h_0opt_24dfc0bb t10; HeroStr t11; HeroFailure t12; HeroStr t13; goto bb0;
+    HERO_NODEBUG h_0opt_24dfc0bb h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG h_0opt_24dfc0bb t1; HERO_NODEBUG h_0opt_24dfc0bb t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_24dfc0bb t5; HERO_NODEBUG HeroFailure t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_24dfc0bb t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG HeroStr t13; goto bb0;
 #line 310 "examples/ledger/main.hero"
 bb0:
     t1 = h0_got;
@@ -4836,7 +4837,7 @@ bb0:
 bb1:
 #line 311 "examples/ledger/main.hero"
     t9 = h2_r0;
-#line 4840 "main.c"
+#line 4841 "main.c"
     hero_str_incref(t9);
     h_0opt_24dfc0bb_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -4883,13 +4884,13 @@ bb3:
     hero_str_decref(t13);
 #line 311 "examples/ledger/main.hero"
     goto bb1;
-#line 4887 "main.c"
+#line 4888 "main.c"
 }
 
 #line 26 "examples/ledger/book/entry.hero"
 h_0opt_2e78f68e h_bookentry_amount(int64_t h0_units, int64_t h1_cents) {
 #line 26 "examples/ledger/book/entry.hero"
-    bool h2_b0; h_0opt_2e78f68e h3_ret0 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; h_0opt_2e78f68e h6_own6 = {0}; h_0opt_2e78f68e h7_own7 = {0}; h_0opt_2e78f68e h8_own8 = {0}; int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; bool t6; bool t7; HeroStr t8; HeroStr t9; int64_t t10; HeroStr t11; HeroStr t12; h_0opt_2e78f68e t13; int64_t t14; int64_t t15; bool t16; HeroStr t17; HeroStr t18; h_0opt_2e78f68e t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; h_bookentry_Amount t25; h_0opt_2e78f68e t26; h_0opt_2e78f68e t27; HeroStr t28; HeroStr t29; h_0opt_2e78f68e t30; h_0opt_2e78f68e t31; h_0opt_2e78f68e t32; goto bb0;
+    HERO_NODEBUG bool h2_b0; HERO_NODEBUG h_0opt_2e78f68e h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_2e78f68e h6_own6 = {0}; HERO_NODEBUG h_0opt_2e78f68e h7_own7 = {0}; HERO_NODEBUG h_0opt_2e78f68e h8_own8 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_2e78f68e t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG h_0opt_2e78f68e t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_bookentry_Amount t25; HERO_NODEBUG h_0opt_2e78f68e t26; HERO_NODEBUG h_0opt_2e78f68e t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_2e78f68e t30; HERO_NODEBUG h_0opt_2e78f68e t31; HERO_NODEBUG h_0opt_2e78f68e t32; goto bb0;
 #line 26 "examples/ledger/book/entry.hero"
 bb0:
     t1 = h1_cents;
@@ -5026,7 +5027,7 @@ bb8:
     goto bb6;
 #line 31 "examples/ledger/book/entry.hero"
 bb9:
-#line 5030 "main.c"
+#line 5031 "main.c"
     t27 = h3_ret0;
     h_0opt_2e78f68e_retain(&t27);
     hero_str_release_at(&h4_own4);
@@ -5040,7 +5041,7 @@ bb9:
 #line 34 "examples/ledger/book/entry.hero"
 h_bookentry_Amount h_bookentry_negated(h_bookentry_Amount h0_a) {
 #line 34 "examples/ledger/book/entry.hero"
-    int64_t t1; h_bookentry_Amount t2; int64_t t3; int64_t t4; h_bookentry_Amount t5; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_bookentry_Amount t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_bookentry_Amount t5; goto bb0;
 #line 34 "examples/ledger/book/entry.hero"
 bb0:
     t1 = INT64_C(0);
@@ -5054,13 +5055,13 @@ bb0:
     t5 = (h_bookentry_Amount){.f_cents = t4};
 #line 35 "examples/ledger/book/entry.hero"
     return t5;
-#line 5058 "main.c"
+#line 5059 "main.c"
 }
 
 #line 37 "examples/ledger/book/entry.hero"
 h_bookentry_Amount h_bookentry_added(h_bookentry_Amount h0_a, h_bookentry_Amount h1_b) {
 #line 37 "examples/ledger/book/entry.hero"
-    h_bookentry_Amount t1; int64_t t2; h_bookentry_Amount t3; int64_t t4; int64_t t5; h_bookentry_Amount t6; goto bb0;
+    HERO_NODEBUG h_bookentry_Amount t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_bookentry_Amount t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_bookentry_Amount t6; goto bb0;
 #line 37 "examples/ledger/book/entry.hero"
 bb0:
     t1 = h0_a;
@@ -5076,13 +5077,13 @@ bb0:
     t6 = (h_bookentry_Amount){.f_cents = t5};
 #line 38 "examples/ledger/book/entry.hero"
     return t6;
-#line 5080 "main.c"
+#line 5081 "main.c"
 }
 
 #line 44 "examples/ledger/book/entry.hero"
 HeroStr h_bookentry_shown(h_bookentry_Amount h0_a) {
 #line 44 "examples/ledger/book/entry.hero"
-    int64_t h1_size; int64_t h2_whole; int64_t h3_rest; HeroStr h4_tail = {0}; HeroStr h5_text = {0}; HeroStr h6_ret0 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_bookentry_Amount t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; HeroStr t16; int64_t t17; int64_t t18; bool t19; HeroStr t20; HeroStr t21; HeroStr t22; int64_t t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; h_bookentry_Amount t29; int64_t t30; int64_t t31; bool t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; HeroStr t37; HeroStr t38; HeroStr t39; HeroStr t40; HeroStr t41; HeroStr t42; HeroStr t43; HeroStr t44; HeroStr t45; HeroStr t46; goto bb0;
+    int64_t h1_size; int64_t h2_whole; int64_t h3_rest; HeroStr h4_tail = {0}; HeroStr h5_text = {0}; HERO_NODEBUG HeroStr h6_ret0 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_bookentry_Amount t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_bookentry_Amount t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; goto bb0;
 #line 44 "examples/ledger/book/entry.hero"
 bb0:
     t1 = h0_a;
@@ -5274,7 +5275,7 @@ bb9:
     goto bb7;
 #line 58 "examples/ledger/book/entry.hero"
 bb10:
-#line 5278 "main.c"
+#line 5279 "main.c"
     t37 = h6_ret0;
     hero_str_incref(t37);
     hero_str_release_at(&h4_tail);
@@ -5291,7 +5292,7 @@ bb10:
 #line 78 "examples/ledger/book/entry.hero"
 HeroArrayHeader * h_bookentry_book(void) {
 #line 78 "examples/ledger/book/entry.hero"
-    h_bookentry_Entry h0_own0 = {0}; h_bookentry_Entry h1_own1 = {0}; h_bookentry_Entry h2_own2 = {0}; h_bookentry_Entry h3_own3 = {0}; h_bookentry_Entry h4_own4 = {0}; h_bookentry_Entry h5_own5 = {0}; h_bookentry_Entry h6_own6 = {0}; h_bookentry_Entry h7_own7 = {0}; h_bookentry_Entry h8_own8 = {0}; h_bookentry_Entry h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; int64_t t6; h_bookentry_Amount t7; h_bookentry_Entry t8; int64_t t9; HeroStr t10; HeroStr t11; int64_t t12; h_bookentry_Amount t13; h_bookentry_Entry t14; int64_t t15; HeroStr t16; HeroStr t17; int64_t t18; int64_t t19; int64_t t20; h_bookentry_Amount t21; h_bookentry_Entry t22; int64_t t23; HeroStr t24; HeroStr t25; int64_t t26; int64_t t27; int64_t t28; h_bookentry_Amount t29; h_bookentry_Entry t30; int64_t t31; HeroStr t32; HeroStr t33; int64_t t34; int64_t t35; int64_t t36; h_bookentry_Amount t37; h_bookentry_Entry t38; int64_t t39; HeroStr t40; HeroStr t41; int64_t t42; h_bookentry_Amount t43; h_bookentry_Entry t44; int64_t t45; HeroStr t46; HeroStr t47; int64_t t48; int64_t t49; int64_t t50; h_bookentry_Amount t51; h_bookentry_Entry t52; int64_t t53; HeroStr t54; HeroStr t55; int64_t t56; h_bookentry_Amount t57; h_bookentry_Entry t58; int64_t t59; HeroStr t60; HeroStr t61; int64_t t62; int64_t t63; int64_t t64; h_bookentry_Amount t65; h_bookentry_Entry t66; int64_t t67; HeroStr t68; HeroStr t69; int64_t t70; int64_t t71; int64_t t72; h_bookentry_Amount t73; h_bookentry_Entry t74; HeroArrayHeader * t75; h_bookentry_Entry t76; h_bookentry_Entry t77; h_bookentry_Entry t78; h_bookentry_Entry t79; h_bookentry_Entry t80; h_bookentry_Entry t81; h_bookentry_Entry t82; h_bookentry_Entry t83; h_bookentry_Entry t84; h_bookentry_Entry t85; HeroArrayHeader * t86; goto bb0;
+    HERO_NODEBUG h_bookentry_Entry h0_own0 = {0}; HERO_NODEBUG h_bookentry_Entry h1_own1 = {0}; HERO_NODEBUG h_bookentry_Entry h2_own2 = {0}; HERO_NODEBUG h_bookentry_Entry h3_own3 = {0}; HERO_NODEBUG h_bookentry_Entry h4_own4 = {0}; HERO_NODEBUG h_bookentry_Entry h5_own5 = {0}; HERO_NODEBUG h_bookentry_Entry h6_own6 = {0}; HERO_NODEBUG h_bookentry_Entry h7_own7 = {0}; HERO_NODEBUG h_bookentry_Entry h8_own8 = {0}; HERO_NODEBUG h_bookentry_Entry h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_bookentry_Amount t7; HERO_NODEBUG h_bookentry_Entry t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_bookentry_Amount t13; HERO_NODEBUG h_bookentry_Entry t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_bookentry_Amount t21; HERO_NODEBUG h_bookentry_Entry t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_bookentry_Amount t29; HERO_NODEBUG h_bookentry_Entry t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG h_bookentry_Amount t37; HERO_NODEBUG h_bookentry_Entry t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG h_bookentry_Amount t43; HERO_NODEBUG h_bookentry_Entry t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG h_bookentry_Amount t51; HERO_NODEBUG h_bookentry_Entry t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG h_bookentry_Amount t57; HERO_NODEBUG h_bookentry_Entry t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG h_bookentry_Amount t65; HERO_NODEBUG h_bookentry_Entry t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG h_bookentry_Amount t73; HERO_NODEBUG h_bookentry_Entry t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG h_bookentry_Entry t76; HERO_NODEBUG h_bookentry_Entry t77; HERO_NODEBUG h_bookentry_Entry t78; HERO_NODEBUG h_bookentry_Entry t79; HERO_NODEBUG h_bookentry_Entry t80; HERO_NODEBUG h_bookentry_Entry t81; HERO_NODEBUG h_bookentry_Entry t82; HERO_NODEBUG h_bookentry_Entry t83; HERO_NODEBUG h_bookentry_Entry t84; HERO_NODEBUG h_bookentry_Entry t85; HERO_NODEBUG HeroArrayHeader * t86; goto bb0;
 #line 78 "examples/ledger/book/entry.hero"
 bb0:
 #line 80 "examples/ledger/book/entry.hero"
@@ -5561,7 +5562,7 @@ bb0:
     h10_own10 = t75;
 #line 79 "examples/ledger/book/entry.hero"
     hero_array_decref(t86);
-#line 5565 "main.c"
+#line 5566 "main.c"
     hero_array_incref(t75);
     h_bookentry_Entry_release(hero_slot_escape(&h0_own0));
     h_bookentry_Entry_release(hero_slot_escape(&h1_own1));
@@ -5580,7 +5581,7 @@ bb0:
 #line 98 "examples/ledger/book/entry.hero"
 HeroArrayHeader * h_bookentry_accounts(void) {
 #line 98 "examples/ledger/book/entry.hero"
-    h_bookentry_Account h0_own0 = {0}; h_bookentry_Account h1_own1 = {0}; h_bookentry_Account h2_own2 = {0}; h_bookentry_Account h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; HeroStr t1; HeroStr t2; h_bookentry_Account t3; HeroStr t4; HeroStr t5; h_bookentry_Account t6; HeroStr t7; HeroStr t8; h_bookentry_Account t9; HeroStr t10; HeroStr t11; h_bookentry_Account t12; HeroArrayHeader * t13; h_bookentry_Account t14; h_bookentry_Account t15; h_bookentry_Account t16; h_bookentry_Account t17; HeroArrayHeader * t18; goto bb0;
+    HERO_NODEBUG h_bookentry_Account h0_own0 = {0}; HERO_NODEBUG h_bookentry_Account h1_own1 = {0}; HERO_NODEBUG h_bookentry_Account h2_own2 = {0}; HERO_NODEBUG h_bookentry_Account h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_bookentry_Account t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_bookentry_Account t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_bookentry_Account t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_bookentry_Account t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG h_bookentry_Account t14; HERO_NODEBUG h_bookentry_Account t15; HERO_NODEBUG h_bookentry_Account t16; HERO_NODEBUG h_bookentry_Account t17; HERO_NODEBUG HeroArrayHeader * t18; goto bb0;
 #line 98 "examples/ledger/book/entry.hero"
 bb0:
 #line 100 "examples/ledger/book/entry.hero"
@@ -5660,7 +5661,7 @@ bb0:
     h4_own4 = t13;
 #line 99 "examples/ledger/book/entry.hero"
     hero_array_decref(t18);
-#line 5664 "main.c"
+#line 5665 "main.c"
     hero_array_incref(t13);
     h_bookentry_Account_release(hero_slot_escape(&h0_own0));
     h_bookentry_Account_release(hero_slot_escape(&h1_own1));
@@ -5673,7 +5674,7 @@ bb0:
 #line 112 "examples/ledger/book/entry.hero"
 HeroArrayHeader * h_bookentry_balances(HeroArrayHeader * h0_entries) {
 #line 112 "examples/ledger/book/entry.hero"
-    HeroArrayHeader * h1_names = {0}; HeroMapHeader * h2_totals = {0}; HeroMapHeader * h3_counts = {0}; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; h_bookentry_Entry h6_e = {0}; h_0opt_e201354 h7_seen = {0}; h_0opt_e201354 h8_f0 = {0}; h_0opt_e201354 h9_f1 = {0}; h_0opt_e201354 h10_f2 = {0}; HeroArrayHeader * h11_out = {0}; HeroArrayHeader * h12_xs1 = {0}; int64_t h13_i1; HeroStr h14_name = {0}; h_0opt_e201354 h15_f3 = {0}; h_0opt_e201354 h16_f4 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroMapHeader * h18_own18 = {0}; HeroMapHeader * h19_own19 = {0}; h_0opt_e201354 h20_own20 = {0}; HeroArrayHeader * h21_own21 = {0}; HeroArrayHeader * h22_own22 = {0}; h_0opt_e201354 h23_own23 = {0}; h_0opt_e201354 h24_own24 = {0}; h_0opt_e201354 h25_own25 = {0}; h_bookentry_Balance h26_own26 = {0}; HeroArrayHeader * t1; HeroMapHeader * t2; HeroMapHeader * t3; HeroArrayHeader * t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; bool t9; HeroArrayHeader * t10; int64_t t11; h_bookentry_Entry t12; HeroMapHeader * t13; h_bookentry_Entry t14; HeroStr t15; h_0opt_e201354 t16; h_0opt_e201354 t17; h_0opt_e201354 t18; int64_t t19; int64_t t20; bool t21; h_bookentry_Entry t23; HeroStr t24; h_bookentry_Entry t26; HeroStr t27; h_bookentry_Entry t28; h_bookentry_Amount t29; int64_t t30; h_bookentry_Entry t31; HeroStr t32; int64_t t33; h_bookentry_Entry t34; HeroStr t35; h_0opt_e201354 t36; h_0opt_e201354 t37; int64_t t38; int64_t t39; bool t40; h_0opt_e201354 t41; HeroFailure t42; h_0opt_e201354 t43; int64_t t44; h_bookentry_Entry t45; h_bookentry_Amount t46; int64_t t47; int64_t t48; h_bookentry_Entry t49; HeroStr t50; HeroMapHeader * t51; h_bookentry_Entry t52; HeroStr t53; h_0opt_e201354 t54; h_0opt_e201354 t55; int64_t t56; int64_t t57; bool t58; h_0opt_e201354 t59; HeroFailure t60; h_0opt_e201354 t61; int64_t t62; int64_t t63; int64_t t64; int64_t t65; int64_t t66; int64_t t67; HeroArrayHeader * t68; HeroArrayHeader * t69; HeroArrayHeader * t70; int64_t t71; int64_t t72; HeroArrayHeader * t73; int64_t t74; bool t75; HeroArrayHeader * t76; int64_t t77; HeroStr t78; HeroStr t80; HeroMapHeader * t81; HeroStr t82; h_0opt_e201354 t83; h_0opt_e201354 t84; int64_t t85; int64_t t86; bool t87; h_0opt_e201354 t88; HeroFailure t89; h_0opt_e201354 t90; int64_t t91; HeroMapHeader * t92; HeroStr t93; h_0opt_e201354 t94; h_0opt_e201354 t95; int64_t t96; int64_t t97; bool t98; h_0opt_e201354 t99; HeroFailure t100; h_0opt_e201354 t101; int64_t t102; h_bookentry_Amount t103; h_bookentry_Balance t104; int64_t t106; int64_t t107; int64_t t108; HeroArrayHeader * t109; HeroArrayHeader * t110; HeroArrayHeader * t111; HeroMapHeader * t112; HeroMapHeader * t113; HeroMapHeader * t114; HeroMapHeader * t115; HeroArrayHeader * t116; h_bookentry_Entry t117; h_0opt_e201354 t118; h_0opt_e201354 t119; h_0opt_e201354 t120; HeroArrayHeader * t121; HeroArrayHeader * t122; HeroArrayHeader * t123; HeroArrayHeader * t124; h_0opt_e201354 t125; h_0opt_e201354 t126; h_0opt_e201354 t127; HeroStr t128; h_0opt_e201354 t129; h_0opt_e201354 t130; h_0opt_e201354 t131; h_0opt_e201354 t132; h_bookentry_Balance t133; goto bb0;
+    HeroArrayHeader * h1_names = {0}; HeroMapHeader * h2_totals = {0}; HeroMapHeader * h3_counts = {0}; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; h_bookentry_Entry h6_e = {0}; h_0opt_e201354 h7_seen = {0}; HERO_NODEBUG h_0opt_e201354 h8_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h9_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h10_f2 = {0}; HeroArrayHeader * h11_out = {0}; HERO_NODEBUG HeroArrayHeader * h12_xs1 = {0}; HERO_NODEBUG int64_t h13_i1; HeroStr h14_name = {0}; HERO_NODEBUG h_0opt_e201354 h15_f3 = {0}; HERO_NODEBUG h_0opt_e201354 h16_f4 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroMapHeader * h18_own18 = {0}; HERO_NODEBUG HeroMapHeader * h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG h_0opt_e201354 h23_own23 = {0}; HERO_NODEBUG h_0opt_e201354 h24_own24 = {0}; HERO_NODEBUG h_0opt_e201354 h25_own25 = {0}; HERO_NODEBUG h_bookentry_Balance h26_own26 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_bookentry_Entry t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG h_bookentry_Entry t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_bookentry_Entry t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_bookentry_Entry t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG h_bookentry_Entry t28; HERO_NODEBUG h_bookentry_Amount t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_bookentry_Entry t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG h_bookentry_Entry t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG HeroFailure t42; HERO_NODEBUG h_0opt_e201354 t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG h_bookentry_Entry t45; HERO_NODEBUG h_bookentry_Amount t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG h_bookentry_Entry t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroMapHeader * t51; HERO_NODEBUG h_bookentry_Entry t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG bool t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG HeroFailure t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG bool t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroMapHeader * t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG h_0opt_e201354 t83; HERO_NODEBUG h_0opt_e201354 t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG bool t87; HERO_NODEBUG h_0opt_e201354 t88; HERO_NODEBUG HeroFailure t89; HERO_NODEBUG h_0opt_e201354 t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG HeroMapHeader * t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG h_0opt_e201354 t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG bool t98; HERO_NODEBUG h_0opt_e201354 t99; HERO_NODEBUG HeroFailure t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG h_bookentry_Amount t103; HERO_NODEBUG h_bookentry_Balance t104; HERO_NODEBUG int64_t t106; HERO_NODEBUG int64_t t107; HERO_NODEBUG int64_t t108; HERO_NODEBUG HeroArrayHeader * t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_NODEBUG HeroMapHeader * t112; HERO_NODEBUG HeroMapHeader * t113; HERO_NODEBUG HeroMapHeader * t114; HERO_NODEBUG HeroMapHeader * t115; HERO_NODEBUG HeroArrayHeader * t116; HERO_NODEBUG h_bookentry_Entry t117; HERO_NODEBUG h_0opt_e201354 t118; HERO_NODEBUG h_0opt_e201354 t119; HERO_NODEBUG h_0opt_e201354 t120; HERO_NODEBUG HeroArrayHeader * t121; HERO_NODEBUG HeroArrayHeader * t122; HERO_NODEBUG HeroArrayHeader * t123; HERO_NODEBUG HeroArrayHeader * t124; HERO_NODEBUG h_0opt_e201354 t125; HERO_NODEBUG h_0opt_e201354 t126; HERO_NODEBUG h_0opt_e201354 t127; HERO_NODEBUG HeroStr t128; HERO_NODEBUG h_0opt_e201354 t129; HERO_NODEBUG h_0opt_e201354 t130; HERO_NODEBUG h_0opt_e201354 t131; HERO_NODEBUG h_0opt_e201354 t132; HERO_NODEBUG h_bookentry_Balance t133; goto bb0;
 #line 112 "examples/ledger/book/entry.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -6007,7 +6008,7 @@ bb9:
     t41 = h9_f1;
 #line 125 "examples/ledger/book/entry.hero"
     t42 = t41.as.err;
-#line 6011 "main.c"
+#line 6012 "main.c"
     hero_panic_must(t42);
     hero_unreachable();
 bb10:
@@ -6029,7 +6030,7 @@ bb11:
     t59 = h10_f2;
 #line 126 "examples/ledger/book/entry.hero"
     t60 = t59.as.err;
-#line 6033 "main.c"
+#line 6034 "main.c"
     hero_panic_must(t60);
     hero_unreachable();
 bb12:
@@ -6123,7 +6124,7 @@ bb14:
 bb15:
 #line 137 "examples/ledger/book/entry.hero"
     t109 = h11_out;
-#line 6127 "main.c"
+#line 6128 "main.c"
     hero_array_incref(t109);
     hero_array_release_at(&h1_names);
     hero_map_release_at(&h2_totals);
@@ -6207,7 +6208,7 @@ bb17:
     t88 = h15_f3;
 #line 134 "examples/ledger/book/entry.hero"
     t89 = t88.as.err;
-#line 6211 "main.c"
+#line 6212 "main.c"
     hero_panic_must(t89);
     hero_unreachable();
 bb18:
@@ -6236,7 +6237,7 @@ bb19:
     t99 = h16_f4;
 #line 134 "examples/ledger/book/entry.hero"
     t100 = t99.as.err;
-#line 6240 "main.c"
+#line 6241 "main.c"
     hero_panic_must(t100);
     hero_unreachable();
 }
@@ -6244,7 +6245,7 @@ bb19:
 #line 140 "examples/ledger/book/entry.hero"
 h_bookentry_Amount h_bookentry_total(HeroArrayHeader * h0_entries) {
 #line 140 "examples/ledger/book/entry.hero"
-    h_bookentry_Amount h1_sum; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_bookentry_Entry h4_e = {0}; int64_t t1; h_bookentry_Amount t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; h_bookentry_Entry t11; h_bookentry_Amount t12; h_bookentry_Entry t13; h_bookentry_Amount t14; h_bookentry_Amount t15; int64_t t16; int64_t t17; int64_t t18; h_bookentry_Amount t19; HeroArrayHeader * t20; h_bookentry_Entry t21; goto bb0;
+    h_bookentry_Amount h1_sum; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_bookentry_Entry h4_e = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_bookentry_Amount t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_bookentry_Entry t11; HERO_NODEBUG h_bookentry_Amount t12; HERO_NODEBUG h_bookentry_Entry t13; HERO_NODEBUG h_bookentry_Amount t14; HERO_NODEBUG h_bookentry_Amount t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_bookentry_Amount t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_bookentry_Entry t21; goto bb0;
 #line 140 "examples/ledger/book/entry.hero"
 bb0:
     t1 = INT64_C(0);
@@ -6323,7 +6324,7 @@ bb3:
 bb4:
 #line 146 "examples/ledger/book/entry.hero"
     t19 = h1_sum;
-#line 6327 "main.c"
+#line 6328 "main.c"
     hero_array_release_at(&h2_xs0);
     h_bookentry_Entry_release(hero_slot_escape(&h4_e));
     return t19;
@@ -6332,7 +6333,7 @@ bb4:
 #line 149 "examples/ledger/book/entry.hero"
 h_0opt_f87774a h_bookentry_kind_of(HeroStr h0_name, HeroArrayHeader * h1_all_accounts) {
 #line 149 "examples/ledger/book/entry.hero"
-    HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_bookentry_Account h4_a = {0}; h_0opt_f87774a h5_ret0 = {0}; HeroStr h6_own6 = {0}; h_0opt_f87774a h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; h_bookentry_Account t9; h_bookentry_Account t10; HeroStr t11; HeroStr t12; bool t13; h_bookentry_Account t14; HeroStr t15; h_0opt_f87774a t16; int64_t t17; int64_t t18; int64_t t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; h_0opt_f87774a t24; h_0opt_f87774a t25; HeroArrayHeader * t26; h_bookentry_Account t27; HeroStr t28; h_0opt_f87774a t29; h_0opt_f87774a t30; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_bookentry_Account h4_a = {0}; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_bookentry_Account t9; HERO_NODEBUG h_bookentry_Account t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_bookentry_Account t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG h_bookentry_Account t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG h_0opt_f87774a t30; goto bb0;
 #line 149 "examples/ledger/book/entry.hero"
 bb0:
     t1 = h1_all_accounts;
@@ -6461,7 +6462,7 @@ bb7:
     goto bb5;
 #line 152 "examples/ledger/book/entry.hero"
 bb8:
-#line 6465 "main.c"
+#line 6466 "main.c"
     t25 = h5_ret0;
     h_0opt_f87774a_retain(&t25);
     hero_array_release_at(&h2_xs0);
@@ -6474,7 +6475,7 @@ bb8:
 
 #line 45 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_OK(void) {
-#line 6478 "main.c"
+#line 6479 "main.c"
     return SQLITE_OK;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -6492,7 +6493,7 @@ int64_t h_dbsqlite_SQLITE_OK(void) {
 
 #line 46 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_ROW(void) {
-#line 6496 "main.c"
+#line 6497 "main.c"
     return SQLITE_ROW;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -6510,7 +6511,7 @@ int64_t h_dbsqlite_SQLITE_ROW(void) {
 
 #line 47 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_DONE(void) {
-#line 6514 "main.c"
+#line 6515 "main.c"
     return SQLITE_DONE;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -6528,7 +6529,7 @@ int64_t h_dbsqlite_SQLITE_DONE(void) {
 
 #line 48 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_INTEGER(void) {
-#line 6532 "main.c"
+#line 6533 "main.c"
     return SQLITE_INTEGER;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -6546,7 +6547,7 @@ int64_t h_dbsqlite_SQLITE_INTEGER(void) {
 
 #line 49 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_FLOAT(void) {
-#line 6550 "main.c"
+#line 6551 "main.c"
     return SQLITE_FLOAT;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -6564,7 +6565,7 @@ int64_t h_dbsqlite_SQLITE_FLOAT(void) {
 
 #line 50 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_TEXT(void) {
-#line 6568 "main.c"
+#line 6569 "main.c"
     return SQLITE_TEXT;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -6582,7 +6583,7 @@ int64_t h_dbsqlite_SQLITE_TEXT(void) {
 
 #line 51 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_NULL(void) {
-#line 6586 "main.c"
+#line 6587 "main.c"
     return SQLITE_NULL;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -6600,7 +6601,7 @@ int64_t h_dbsqlite_SQLITE_NULL(void) {
 
 #line 56 "examples/ledger/db/sqlite.hero"
 void * h_dbsqlite_SQLITE_TRANSIENT(void) {
-#line 6604 "main.c"
+#line 6605 "main.c"
     return SQLITE_TRANSIENT;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -6619,7 +6620,7 @@ void * h_dbsqlite_SQLITE_TRANSIENT(void) {
 #line 158 "examples/ledger/db/sqlite.hero"
 h_0opt_e405689 h_dbsqlite_cell_at(sqlite3_stmt * h0_statement, int32_t h1_column) {
 #line 158 "examples/ledger/db/sqlite.hero"
-    int32_t h2_kind; h_0opt_e201354 h3_f0 = {0}; h_0opt_e201354 h4_f1 = {0}; h_0opt_e201354 h5_f2 = {0}; h_0opt_f87774a h6_text = {0}; h_0opt_f87774a h7_f3 = {0}; h_0opt_e201354 h8_f4 = {0}; h_0opt_f87774a h9_f5 = {0}; h_0opt_e201354 h10_f6 = {0}; h_0opt_e405689 h11_ret0 = {0}; h_0opt_e201354 h12_own12 = {0}; h_0opt_e201354 h13_own13 = {0}; h_dbsqlite_Cell h14_own14 = {0}; h_0opt_e405689 h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; h_dbsqlite_Cell h17_own17 = {0}; h_0opt_e405689 h18_own18 = {0}; h_0opt_e201354 h19_own19 = {0}; h_0opt_f87774a h20_own20 = {0}; h_0opt_e201354 h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; h_0opt_e405689 h25_own25 = {0}; h_dbsqlite_Cell h26_own26 = {0}; h_0opt_e405689 h27_own27 = {0}; h_dbsqlite_Cell h28_own28 = {0}; h_0opt_e405689 h29_own29 = {0}; h_dbsqlite_Cell h30_own30 = {0}; h_0opt_e405689 h31_own31 = {0}; sqlite3_stmt * t1; int32_t t2; int32_t t3; int32_t t4; h_0opt_e201354 t5; h_0opt_e201354 t6; int64_t t7; int64_t t8; bool t9; h_0opt_e201354 t10; HeroFailure t11; h_0opt_e201354 t12; int64_t t13; int64_t t14; bool t15; sqlite3_stmt * t16; int32_t t17; int64_t t18; h_dbsqlite_Cell t19; h_0opt_e405689 t20; int32_t t21; h_0opt_e201354 t22; h_0opt_e201354 t23; int64_t t24; int64_t t25; bool t26; h_0opt_e201354 t27; HeroFailure t28; h_0opt_e201354 t29; int64_t t30; int64_t t31; bool t32; sqlite3_stmt * t33; int32_t t34; double t35; h_dbsqlite_Cell t36; h_0opt_e405689 t37; int32_t t38; h_0opt_e201354 t39; h_0opt_e201354 t40; int64_t t41; int64_t t42; bool t43; h_0opt_e201354 t44; HeroFailure t45; h_0opt_e201354 t46; int64_t t47; int64_t t48; bool t49; sqlite3_stmt * t50; int32_t t51; const char * t52; h_0opt_f87774a t53; h_0opt_f87774a t54; h_0opt_f87774a t55; int64_t t56; int64_t t57; bool t58; HeroStr t59; HeroStr t60; int32_t t61; h_0opt_e201354 t62; h_0opt_e201354 t63; int64_t t64; int64_t t65; bool t66; h_0opt_e201354 t67; HeroFailure t68; h_0opt_e201354 t69; int64_t t70; HeroStr t71; HeroStr t72; HeroStr t73; HeroStr t74; h_0opt_e405689 t75; h_0opt_f87774a t76; h_0opt_f87774a t77; int64_t t78; int64_t t79; bool t80; h_0opt_f87774a t81; HeroFailure t82; h_0opt_f87774a t83; HeroStr t84; h_dbsqlite_Cell t85; h_0opt_e405689 t86; int32_t t87; h_0opt_e201354 t88; h_0opt_e201354 t89; int64_t t90; int64_t t91; bool t92; h_0opt_e201354 t93; HeroFailure t94; h_0opt_e201354 t95; int64_t t96; int64_t t97; bool t98; h_dbsqlite_Cell t99; h_0opt_e405689 t100; h_dbsqlite_Cell t101; h_0opt_e405689 t102; h_0opt_e405689 t103; h_0opt_e201354 t104; h_0opt_e201354 t105; h_0opt_e201354 t106; h_0opt_e201354 t107; h_dbsqlite_Cell t108; h_0opt_e405689 t109; h_0opt_e201354 t110; h_0opt_e201354 t111; h_dbsqlite_Cell t112; h_0opt_e405689 t113; h_0opt_e201354 t114; h_0opt_e201354 t115; h_0opt_f87774a t116; h_0opt_f87774a t117; h_0opt_f87774a t118; h_0opt_f87774a t119; h_0opt_e201354 t120; h_0opt_e201354 t121; HeroStr t122; HeroStr t123; HeroStr t124; h_0opt_e405689 t125; h_dbsqlite_Cell t126; h_0opt_e405689 t127; h_dbsqlite_Cell t128; h_0opt_e405689 t129; h_dbsqlite_Cell t130; h_0opt_e405689 t131; goto bb0;
+    int32_t h2_kind; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h4_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h5_f2 = {0}; h_0opt_f87774a h6_text = {0}; HERO_NODEBUG h_0opt_f87774a h7_f3 = {0}; HERO_NODEBUG h_0opt_e201354 h8_f4 = {0}; HERO_NODEBUG h_0opt_f87774a h9_f5 = {0}; HERO_NODEBUG h_0opt_e201354 h10_f6 = {0}; HERO_NODEBUG h_0opt_e405689 h11_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h12_own12 = {0}; HERO_NODEBUG h_0opt_e201354 h13_own13 = {0}; HERO_NODEBUG h_dbsqlite_Cell h14_own14 = {0}; HERO_NODEBUG h_0opt_e405689 h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG h_dbsqlite_Cell h17_own17 = {0}; HERO_NODEBUG h_0opt_e405689 h18_own18 = {0}; HERO_NODEBUG h_0opt_e201354 h19_own19 = {0}; HERO_NODEBUG h_0opt_f87774a h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG h_0opt_e405689 h25_own25 = {0}; HERO_NODEBUG h_dbsqlite_Cell h26_own26 = {0}; HERO_NODEBUG h_0opt_e405689 h27_own27 = {0}; HERO_NODEBUG h_dbsqlite_Cell h28_own28 = {0}; HERO_NODEBUG h_0opt_e405689 h29_own29 = {0}; HERO_NODEBUG h_dbsqlite_Cell h30_own30 = {0}; HERO_NODEBUG h_0opt_e405689 h31_own31 = {0}; HERO_NODEBUG sqlite3_stmt * t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG sqlite3_stmt * t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_dbsqlite_Cell t19; HERO_NODEBUG h_0opt_e405689 t20; HERO_NODEBUG int32_t t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG sqlite3_stmt * t33; HERO_NODEBUG int32_t t34; HERO_NODEBUG double t35; HERO_NODEBUG h_dbsqlite_Cell t36; HERO_NODEBUG h_0opt_e405689 t37; HERO_NODEBUG int32_t t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e201354 t44; HERO_NODEBUG HeroFailure t45; HERO_NODEBUG h_0opt_e201354 t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG bool t49; HERO_NODEBUG sqlite3_stmt * t50; HERO_NODEBUG int32_t t51; HERO_NODEBUG const char * t52; HERO_NODEBUG h_0opt_f87774a t53; HERO_NODEBUG h_0opt_f87774a t54; HERO_NODEBUG h_0opt_f87774a t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG bool t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG int32_t t61; HERO_NODEBUG h_0opt_e201354 t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG bool t66; HERO_NODEBUG h_0opt_e201354 t67; HERO_NODEBUG HeroFailure t68; HERO_NODEBUG h_0opt_e201354 t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_e405689 t75; HERO_NODEBUG h_0opt_f87774a t76; HERO_NODEBUG h_0opt_f87774a t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG bool t80; HERO_NODEBUG h_0opt_f87774a t81; HERO_NODEBUG HeroFailure t82; HERO_NODEBUG h_0opt_f87774a t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG h_dbsqlite_Cell t85; HERO_NODEBUG h_0opt_e405689 t86; HERO_NODEBUG int32_t t87; HERO_NODEBUG h_0opt_e201354 t88; HERO_NODEBUG h_0opt_e201354 t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG bool t92; HERO_NODEBUG h_0opt_e201354 t93; HERO_NODEBUG HeroFailure t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG bool t98; HERO_NODEBUG h_dbsqlite_Cell t99; HERO_NODEBUG h_0opt_e405689 t100; HERO_NODEBUG h_dbsqlite_Cell t101; HERO_NODEBUG h_0opt_e405689 t102; HERO_NODEBUG h_0opt_e405689 t103; HERO_NODEBUG h_0opt_e201354 t104; HERO_NODEBUG h_0opt_e201354 t105; HERO_NODEBUG h_0opt_e201354 t106; HERO_NODEBUG h_0opt_e201354 t107; HERO_NODEBUG h_dbsqlite_Cell t108; HERO_NODEBUG h_0opt_e405689 t109; HERO_NODEBUG h_0opt_e201354 t110; HERO_NODEBUG h_0opt_e201354 t111; HERO_NODEBUG h_dbsqlite_Cell t112; HERO_NODEBUG h_0opt_e405689 t113; HERO_NODEBUG h_0opt_e201354 t114; HERO_NODEBUG h_0opt_e201354 t115; HERO_NODEBUG h_0opt_f87774a t116; HERO_NODEBUG h_0opt_f87774a t117; HERO_NODEBUG h_0opt_f87774a t118; HERO_NODEBUG h_0opt_f87774a t119; HERO_NODEBUG h_0opt_e201354 t120; HERO_NODEBUG h_0opt_e201354 t121; HERO_NODEBUG HeroStr t122; HERO_NODEBUG HeroStr t123; HERO_NODEBUG HeroStr t124; HERO_NODEBUG h_0opt_e405689 t125; HERO_NODEBUG h_dbsqlite_Cell t126; HERO_NODEBUG h_0opt_e405689 t127; HERO_NODEBUG h_dbsqlite_Cell t128; HERO_NODEBUG h_0opt_e405689 t129; HERO_NODEBUG h_dbsqlite_Cell t130; HERO_NODEBUG h_0opt_e405689 t131; goto bb0;
 #line 158 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_statement;
@@ -6707,7 +6708,7 @@ bb3:
     t10 = h3_f0;
 #line 161 "examples/ledger/db/sqlite.hero"
     t11 = t10.as.err;
-#line 6711 "main.c"
+#line 6712 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb4:
@@ -6793,7 +6794,7 @@ bb8:
     t27 = h4_f1;
 #line 164 "examples/ledger/db/sqlite.hero"
     t28 = t27.as.err;
-#line 6797 "main.c"
+#line 6798 "main.c"
     hero_panic_must(t28);
     hero_unreachable();
 bb9:
@@ -6879,7 +6880,7 @@ bb13:
     t44 = h5_f2;
 #line 167 "examples/ledger/db/sqlite.hero"
     t45 = t44.as.err;
-#line 6883 "main.c"
+#line 6884 "main.c"
     hero_panic_must(t45);
     hero_unreachable();
 bb14:
@@ -7044,7 +7045,7 @@ bb20:
     t67 = h8_f4;
 #line 176 "examples/ledger/db/sqlite.hero"
     t68 = t67.as.err;
-#line 7048 "main.c"
+#line 7049 "main.c"
     hero_panic_must(t68);
     hero_unreachable();
 bb21:
@@ -7082,7 +7083,7 @@ bb22:
     t81 = h9_f5;
 #line 178 "examples/ledger/db/sqlite.hero"
     t82 = t81.as.err;
-#line 7086 "main.c"
+#line 7087 "main.c"
     hero_panic_must(t82);
     hero_unreachable();
 bb23:
@@ -7126,7 +7127,7 @@ bb25:
     t93 = h10_f6;
 #line 180 "examples/ledger/db/sqlite.hero"
     t94 = t93.as.err;
-#line 7130 "main.c"
+#line 7131 "main.c"
     hero_panic_must(t94);
     hero_unreachable();
 bb26:
@@ -7158,7 +7159,7 @@ bb27:
     goto bb23;
 #line 181 "examples/ledger/db/sqlite.hero"
 bb28:
-#line 7162 "main.c"
+#line 7163 "main.c"
     t103 = h11_ret0;
     h_0opt_e405689_retain(&t103);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -7197,7 +7198,7 @@ h_0opt_24dfc0bb h_dbsqlite_opened(void) {
 #line 231 "examples/ledger/db/sqlite.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 231 "examples/ledger/db/sqlite.hero"
-    sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "dbsqlite.opened", "db"); HeroStr h1_reason = {0}; h_0opt_24dfc0bb h2_ret0 = {0}; h_0opt_24dfc0bb h3_own3 = {0}; HeroStr h4_own4 = {0}; h_0opt_24dfc0bb h5_own5 = {0}; sqlite3 * t1; HeroStr t2; const char * t3; int64_t t4; int64_t t5; bool t6; sqlite3 * t7; h_dbsqlite_Db t8; HeroStr t9; sqlite3 * t10; HeroStr t12; HeroStr t13; h_0opt_24dfc0bb t14; sqlite3 * t15; h_dbsqlite_Db t16; h_0opt_24dfc0bb t17; h_0opt_24dfc0bb t18; h_0opt_24dfc0bb t19; HeroStr t20; HeroStr t21; h_0opt_24dfc0bb t22; goto bb0;
+    sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "dbsqlite.opened", "db"); HeroStr h1_reason = {0}; HERO_NODEBUG h_0opt_24dfc0bb h2_ret0 = {0}; HERO_NODEBUG h_0opt_24dfc0bb h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_24dfc0bb h5_own5 = {0}; HERO_NODEBUG sqlite3 * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG sqlite3 * t7; HERO_NODEBUG h_dbsqlite_Db t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG sqlite3 * t10; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_24dfc0bb t14; HERO_NODEBUG sqlite3 * t15; HERO_NODEBUG h_dbsqlite_Db t16; HERO_NODEBUG h_0opt_24dfc0bb t17; HERO_NODEBUG h_0opt_24dfc0bb t18; HERO_NODEBUG h_0opt_24dfc0bb t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_24dfc0bb t22; goto bb0;
 #line 231 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = ((void *)0);
@@ -7297,7 +7298,7 @@ bb3:
     goto bb1;
 #line 250 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7301 "main.c"
+#line 7302 "main.c"
     t18 = h2_ret0;
     h_0opt_24dfc0bb_retain(&t18);
     hero_str_release_at(&h1_reason);
@@ -7312,7 +7313,7 @@ bb4:
 #line 253 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_closed(h_dbsqlite_Db *ph0_db) {
 #line 253 "examples/ledger/db/sqlite.hero"
-    h_dbsqlite_Db t1; sqlite3 * t2; int64_t t3; goto bb0;
+    HERO_NODEBUG h_dbsqlite_Db t1; HERO_NODEBUG sqlite3 * t2; HERO_NODEBUG int64_t t3; goto bb0;
 #line 253 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = (*ph0_db);
@@ -7332,7 +7333,7 @@ bb0:
     }
 #line 254 "examples/ledger/db/sqlite.hero"
     return t3;
-#line 7336 "main.c"
+#line 7337 "main.c"
 }
 
 #line 276 "examples/ledger/db/sqlite.hero"
@@ -7340,7 +7341,7 @@ h_0opt_a8ea2 h_dbsqlite_run(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
 #line 276 "examples/ledger/db/sqlite.hero"
 #define h3_cell0 (*hero_lend_h3_cell0)
 #line 276 "examples/ledger/db/sqlite.hero"
-    h_0opt_f87774a h2_problem = {0}; const char * *const hero_lend_h3_cell0 = (const char * *)hero_lend_local(sizeof(const char *), "dbsqlite.run", "$cell0"); const char * h4_owned0; h_0opt_f87774a h5_owned1 = {0}; h_0opt_f87774a h6_f0 = {0}; HeroStr h7_r0 = {0}; h_0opt_a8ea2 h8_ret0 = {0}; h_0opt_f87774a h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; h_0opt_a8ea2 h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; h_0opt_a8ea2 h15_own15 = {0}; HeroStr t1; HeroStr t2; h_0opt_f87774a t3; h_dbsqlite_Db t4; sqlite3 * t5; HeroStr t6; const char * t7; void * t8; void * t9; const char * t10; int64_t t11; const char * t12; const char * t13; h_0opt_f87774a t14; const char * t15; const char * t16; bool t17; const char * t18; void * t19; h_0opt_f87774a t20; int64_t t21; bool t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; h_0opt_f87774a t27; h_0opt_f87774a t28; int64_t t29; int64_t t30; bool t31; h_0opt_f87774a t32; HeroStr t33; h_dbsqlite_Db t34; HeroStr t35; HeroStr t36; HeroStr t37; h_0opt_a8ea2 t38; h_0opt_a8ea2 t39; h_0opt_a8ea2 t40; h_0opt_f87774a t41; h_0opt_f87774a t42; h_0opt_f87774a t43; h_0opt_f87774a t44; h_0opt_a8ea2 t45; h_0opt_f87774a t46; HeroStr t47; h_0opt_f87774a t48; HeroStr t49; HeroStr t50; HeroStr t51; HeroStr t52; h_0opt_a8ea2 t53; goto bb0;
+    h_0opt_f87774a h2_problem = {0}; HERO_NODEBUG const char * *const hero_lend_h3_cell0 = (const char * *)hero_lend_local(sizeof(const char *), "dbsqlite.run", "$cell0"); HERO_NODEBUG const char * h4_owned0; HERO_NODEBUG h_0opt_f87774a h5_owned1 = {0}; HERO_NODEBUG h_0opt_f87774a h6_f0 = {0}; HERO_NODEBUG HeroStr h7_r0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h8_ret0 = {0}; HERO_NODEBUG h_0opt_f87774a h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG h_0opt_a8ea2 h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_a8ea2 h15_own15 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_dbsqlite_Db t4; HERO_NODEBUG sqlite3 * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG const char * t7; HERO_NODEBUG void * t8; HERO_NODEBUG void * t9; HERO_NODEBUG const char * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG const char * t12; HERO_NODEBUG const char * t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG const char * t15; HERO_NODEBUG const char * t16; HERO_NODEBUG bool t17; HERO_NODEBUG const char * t18; HERO_NODEBUG void * t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_dbsqlite_Db t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_0opt_a8ea2 t38; HERO_NODEBUG h_0opt_a8ea2 t39; HERO_NODEBUG h_0opt_a8ea2 t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG h_0opt_f87774a t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG h_0opt_a8ea2 t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG h_0opt_f87774a t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_0opt_a8ea2 t53; goto bb0;
 #line 276 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_edaa230);
@@ -7567,7 +7568,7 @@ bb8:
     goto bb9;
 #line 280 "examples/ledger/db/sqlite.hero"
 bb9:
-#line 7571 "main.c"
+#line 7572 "main.c"
     t40 = h8_ret0;
     h_0opt_a8ea2_retain(&t40);
     h_0opt_f87774a_release(hero_slot_escape(&h2_problem));
@@ -7589,7 +7590,7 @@ bb9:
 #line 285 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_changed(h_dbsqlite_Db h0_db) {
 #line 285 "examples/ledger/db/sqlite.hero"
-    h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_own2 = {0}; h_dbsqlite_Db t1; sqlite3 * t2; int32_t t3; h_0opt_e201354 t4; h_0opt_e201354 t5; int64_t t6; int64_t t7; bool t8; h_0opt_e201354 t9; HeroFailure t10; h_0opt_e201354 t11; int64_t t12; h_0opt_e201354 t13; h_0opt_e201354 t14; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_dbsqlite_Db t1; HERO_NODEBUG sqlite3 * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; goto bb0;
 #line 285 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_db;
@@ -7631,7 +7632,7 @@ bb1:
     t11 = h1_f0;
 #line 286 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 7635 "main.c"
+#line 7636 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -7640,7 +7641,7 @@ bb2:
     t9 = h1_f0;
 #line 286 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 7644 "main.c"
+#line 7645 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -7652,7 +7653,7 @@ h_0opt_791f9719 h_dbsqlite_prepared(h_dbsqlite_Db h0_db, HeroStr h1_sql) {
 #line 290 "examples/ledger/db/sqlite.hero"
 #define h3_tail (*hero_lend_h3_tail)
 #line 290 "examples/ledger/db/sqlite.hero"
-    sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "dbsqlite.prepared", "statement"); const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "dbsqlite.prepared", "tail"); h_0opt_791f9719 h4_ret0 = {0}; h_0opt_791f9719 h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_791f9719 h9_own9 = {0}; sqlite3_stmt * t1; const char * t2; h_dbsqlite_Db t3; sqlite3 * t4; HeroStr t5; const char * t6; int32_t t7; int64_t t8; int64_t t9; bool t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; h_dbsqlite_Db t15; HeroStr t16; HeroStr t17; h_0opt_791f9719 t18; sqlite3_stmt * t19; h_dbsqlite_Statement t20; h_0opt_791f9719 t21; h_0opt_791f9719 t22; h_0opt_791f9719 t23; HeroStr t24; HeroStr t25; HeroStr t26; h_0opt_791f9719 t27; goto bb0;
+    sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "dbsqlite.prepared", "statement"); const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "dbsqlite.prepared", "tail"); HERO_NODEBUG h_0opt_791f9719 h4_ret0 = {0}; HERO_NODEBUG h_0opt_791f9719 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_791f9719 h9_own9 = {0}; HERO_NODEBUG sqlite3_stmt * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG h_dbsqlite_Db t3; HERO_NODEBUG sqlite3 * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_dbsqlite_Db t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_791f9719 t18; HERO_NODEBUG sqlite3_stmt * t19; HERO_NODEBUG h_dbsqlite_Statement t20; HERO_NODEBUG h_0opt_791f9719 t21; HERO_NODEBUG h_0opt_791f9719 t22; HERO_NODEBUG h_0opt_791f9719 t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_791f9719 t27; goto bb0;
 #line 290 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = ((void *)0);
@@ -7761,7 +7762,7 @@ bb3:
     goto bb1;
 #line 295 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7765 "main.c"
+#line 7766 "main.c"
     t22 = h4_ret0;
     h_0opt_791f9719_retain(&t22);
     h_0opt_791f9719_release(hero_slot_escape(&h5_own5));
@@ -7779,7 +7780,7 @@ bb4:
 #line 298 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_finalized(h_dbsqlite_Statement *ph0_statement) {
 #line 298 "examples/ledger/db/sqlite.hero"
-    h_dbsqlite_Statement t1; sqlite3_stmt * t2; int64_t t3; goto bb0;
+    HERO_NODEBUG h_dbsqlite_Statement t1; HERO_NODEBUG sqlite3_stmt * t2; HERO_NODEBUG int64_t t3; goto bb0;
 #line 298 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = (*ph0_statement);
@@ -7799,13 +7800,13 @@ bb0:
     }
 #line 299 "examples/ledger/db/sqlite.hero"
     return t3;
-#line 7803 "main.c"
+#line 7804 "main.c"
 }
 
 #line 303 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_reset(h_dbsqlite_Statement h0_statement) {
 #line 303 "examples/ledger/db/sqlite.hero"
-    h_0opt_a8ea2 h1_ret0 = {0}; h_0opt_a8ea2 h2_own2 = {0}; h_0opt_a8ea2 h3_own3 = {0}; h_dbsqlite_Statement t1; sqlite3_stmt * t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; HeroStr t7; h_0opt_a8ea2 t8; h_0opt_a8ea2 t9; h_0opt_a8ea2 t10; h_0opt_a8ea2 t11; h_0opt_a8ea2 t12; goto bb0;
+    HERO_NODEBUG h_0opt_a8ea2 h1_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h2_own2 = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_own3 = {0}; HERO_NODEBUG h_dbsqlite_Statement t1; HERO_NODEBUG sqlite3_stmt * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_a8ea2 t8; HERO_NODEBUG h_0opt_a8ea2 t9; HERO_NODEBUG h_0opt_a8ea2 t10; HERO_NODEBUG h_0opt_a8ea2 t11; HERO_NODEBUG h_0opt_a8ea2 t12; goto bb0;
 #line 303 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_statement;
@@ -7863,7 +7864,7 @@ bb3:
     goto bb1;
 #line 305 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7867 "main.c"
+#line 7868 "main.c"
     t10 = h1_ret0;
     h_0opt_a8ea2_retain(&t10);
     h_0opt_a8ea2_release(hero_slot_escape(&h2_own2));
@@ -7874,7 +7875,7 @@ bb4:
 #line 324 "examples/ledger/db/sqlite.hero"
 h_0opt_70720e79 h_dbsqlite_stepped(h_dbsqlite_Statement h0_statement) {
 #line 324 "examples/ledger/db/sqlite.hero"
-    int64_t h1_code; h_0opt_70720e79 h2_ret0 = {0}; h_0opt_70720e79 h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; h_0opt_70720e79 h6_own6 = {0}; h_0opt_70720e79 h7_own7 = {0}; h_dbsqlite_Statement t1; sqlite3_stmt * t2; int64_t t3; int64_t t4; int64_t t5; bool t6; h_dbsqlite_Step t7; h_0opt_70720e79 t8; int64_t t9; int64_t t10; bool t11; h_dbsqlite_Step t12; h_0opt_70720e79 t13; HeroStr t14; HeroStr t15; int64_t t16; HeroStr t17; HeroStr t18; h_0opt_70720e79 t19; h_0opt_70720e79 t20; h_0opt_70720e79 t21; HeroStr t22; HeroStr t23; h_0opt_70720e79 t24; h_0opt_70720e79 t25; goto bb0;
+    int64_t h1_code; HERO_NODEBUG h_0opt_70720e79 h2_ret0 = {0}; HERO_NODEBUG h_0opt_70720e79 h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_70720e79 h6_own6 = {0}; HERO_NODEBUG h_0opt_70720e79 h7_own7 = {0}; HERO_NODEBUG h_dbsqlite_Statement t1; HERO_NODEBUG sqlite3_stmt * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_dbsqlite_Step t7; HERO_NODEBUG h_0opt_70720e79 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_dbsqlite_Step t12; HERO_NODEBUG h_0opt_70720e79 t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG h_0opt_70720e79 t19; HERO_NODEBUG h_0opt_70720e79 t20; HERO_NODEBUG h_0opt_70720e79 t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_0opt_70720e79 t24; HERO_NODEBUG h_0opt_70720e79 t25; goto bb0;
 #line 324 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_statement;
@@ -7986,7 +7987,7 @@ bb6:
     goto bb4;
 #line 331 "examples/ledger/db/sqlite.hero"
 bb7:
-#line 7990 "main.c"
+#line 7991 "main.c"
     t20 = h2_ret0;
     h_0opt_70720e79_retain(&t20);
     h_0opt_70720e79_release(hero_slot_escape(&h3_own3));
@@ -8000,7 +8001,7 @@ bb7:
 #line 338 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_bind_int(h_dbsqlite_Statement h0_statement, int64_t h1_at, int64_t h2_value) {
 #line 338 "examples/ledger/db/sqlite.hero"
-    h_0opt_e1f4933 h3_f0 = {0}; h_0opt_a8ea2 h4_ret0 = {0}; h_0opt_e1f4933 h5_own5 = {0}; h_0opt_a8ea2 h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_a8ea2 h9_own9 = {0}; h_dbsqlite_Statement t1; sqlite3_stmt * t2; int64_t t3; h_0opt_e1f4933 t4; h_0opt_e1f4933 t5; int64_t t6; int64_t t7; bool t8; h_0opt_e1f4933 t9; HeroFailure t10; h_0opt_e1f4933 t11; int32_t t12; int64_t t13; int64_t t14; int64_t t15; bool t16; HeroStr t17; HeroStr t18; int64_t t19; HeroStr t20; HeroStr t21; h_0opt_a8ea2 t22; h_0opt_a8ea2 t23; h_0opt_a8ea2 t24; h_0opt_e1f4933 t25; h_0opt_e1f4933 t26; h_0opt_a8ea2 t27; HeroStr t28; HeroStr t29; h_0opt_a8ea2 t30; goto bb0;
+    HERO_NODEBUG h_0opt_e1f4933 h3_f0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_ret0 = {0}; HERO_NODEBUG h_0opt_e1f4933 h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_a8ea2 h9_own9 = {0}; HERO_NODEBUG h_dbsqlite_Statement t1; HERO_NODEBUG sqlite3_stmt * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0opt_e1f4933 t4; HERO_NODEBUG h_0opt_e1f4933 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e1f4933 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_e1f4933 t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_NODEBUG h_0opt_a8ea2 t24; HERO_NODEBUG h_0opt_e1f4933 t25; HERO_NODEBUG h_0opt_e1f4933 t26; HERO_NODEBUG h_0opt_a8ea2 t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_a8ea2 t30; goto bb0;
 #line 338 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_statement;
@@ -8080,7 +8081,7 @@ bb3:
     t9 = h3_f0;
 #line 339 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8084 "main.c"
+#line 8085 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
@@ -8128,7 +8129,7 @@ bb5:
     goto bb1;
 #line 340 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8132 "main.c"
+#line 8133 "main.c"
     t24 = h4_ret0;
     h_0opt_a8ea2_retain(&t24);
     h_0opt_e1f4933_release(hero_slot_escape(&h3_f0));
@@ -8143,7 +8144,7 @@ bb6:
 #line 343 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_bind_float(h_dbsqlite_Statement h0_statement, int64_t h1_at, double h2_value) {
 #line 343 "examples/ledger/db/sqlite.hero"
-    h_0opt_e1f4933 h3_f0 = {0}; h_0opt_a8ea2 h4_ret0 = {0}; h_0opt_e1f4933 h5_own5 = {0}; h_0opt_a8ea2 h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_a8ea2 h9_own9 = {0}; h_dbsqlite_Statement t1; sqlite3_stmt * t2; int64_t t3; h_0opt_e1f4933 t4; h_0opt_e1f4933 t5; int64_t t6; int64_t t7; bool t8; h_0opt_e1f4933 t9; HeroFailure t10; h_0opt_e1f4933 t11; int32_t t12; double t13; int64_t t14; int64_t t15; bool t16; HeroStr t17; HeroStr t18; int64_t t19; HeroStr t20; HeroStr t21; h_0opt_a8ea2 t22; h_0opt_a8ea2 t23; h_0opt_a8ea2 t24; h_0opt_e1f4933 t25; h_0opt_e1f4933 t26; h_0opt_a8ea2 t27; HeroStr t28; HeroStr t29; h_0opt_a8ea2 t30; goto bb0;
+    HERO_NODEBUG h_0opt_e1f4933 h3_f0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_ret0 = {0}; HERO_NODEBUG h_0opt_e1f4933 h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_a8ea2 h9_own9 = {0}; HERO_NODEBUG h_dbsqlite_Statement t1; HERO_NODEBUG sqlite3_stmt * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0opt_e1f4933 t4; HERO_NODEBUG h_0opt_e1f4933 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e1f4933 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_e1f4933 t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG double t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_NODEBUG h_0opt_a8ea2 t24; HERO_NODEBUG h_0opt_e1f4933 t25; HERO_NODEBUG h_0opt_e1f4933 t26; HERO_NODEBUG h_0opt_a8ea2 t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_a8ea2 t30; goto bb0;
 #line 343 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_statement;
@@ -8223,7 +8224,7 @@ bb3:
     t9 = h3_f0;
 #line 344 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8227 "main.c"
+#line 8228 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
@@ -8271,7 +8272,7 @@ bb5:
     goto bb1;
 #line 345 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8275 "main.c"
+#line 8276 "main.c"
     t24 = h4_ret0;
     h_0opt_a8ea2_retain(&t24);
     h_0opt_e1f4933_release(hero_slot_escape(&h3_f0));
@@ -8286,7 +8287,7 @@ bb6:
 #line 356 "examples/ledger/db/sqlite.hero"
 h_0opt_a8ea2 h_dbsqlite_bind_text(h_dbsqlite_Statement h0_statement, int64_t h1_at, HeroStr h2_text) {
 #line 356 "examples/ledger/db/sqlite.hero"
-    const char * h3_held; h_0opt_e1f4933 h4_f0 = {0}; int64_t h5_rc; h_0opt_a8ea2 h6_ret0 = {0}; h_0opt_e1f4933 h7_own7 = {0}; h_0opt_a8ea2 h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; h_0opt_a8ea2 h11_own11 = {0}; HeroStr t1; const char * t2; h_dbsqlite_Statement t3; sqlite3_stmt * t4; int64_t t5; h_0opt_e1f4933 t6; h_0opt_e1f4933 t7; int64_t t8; int64_t t9; bool t10; h_0opt_e1f4933 t11; HeroFailure t12; h_0opt_e1f4933 t13; int32_t t14; const char * t15; int32_t t16; void * t17; int64_t t18; int64_t t19; int64_t t20; bool t21; HeroStr t22; HeroStr t23; int64_t t24; HeroStr t25; HeroStr t26; h_0opt_a8ea2 t27; h_0opt_a8ea2 t28; h_0opt_a8ea2 t29; h_0opt_e1f4933 t30; h_0opt_e1f4933 t31; h_0opt_a8ea2 t32; HeroStr t33; HeroStr t34; h_0opt_a8ea2 t35; goto bb0;
+    const char * h3_held; HERO_NODEBUG h_0opt_e1f4933 h4_f0 = {0}; int64_t h5_rc; HERO_NODEBUG h_0opt_a8ea2 h6_ret0 = {0}; HERO_NODEBUG h_0opt_e1f4933 h7_own7 = {0}; HERO_NODEBUG h_0opt_a8ea2 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_a8ea2 h11_own11 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG h_dbsqlite_Statement t3; HERO_NODEBUG sqlite3_stmt * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_e1f4933 t6; HERO_NODEBUG h_0opt_e1f4933 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_e1f4933 t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG h_0opt_e1f4933 t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG const char * t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG void * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_a8ea2 t27; HERO_NODEBUG h_0opt_a8ea2 t28; HERO_NODEBUG h_0opt_a8ea2 t29; HERO_NODEBUG h_0opt_e1f4933 t30; HERO_NODEBUG h_0opt_e1f4933 t31; HERO_NODEBUG h_0opt_a8ea2 t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_0opt_a8ea2 t35; goto bb0;
 #line 356 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h2_text;
@@ -8364,7 +8365,7 @@ bb2:
     t11 = h4_f0;
 #line 360 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.err;
-#line 8368 "main.c"
+#line 8369 "main.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb3:
@@ -8426,7 +8427,7 @@ bb5:
     goto bb3;
 #line 368 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8430 "main.c"
+#line 8431 "main.c"
     t29 = h6_ret0;
     h_0opt_a8ea2_retain(&t29);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -8441,7 +8442,7 @@ bb6:
 #line 373 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_columns(h_dbsqlite_Statement h0_statement) {
 #line 373 "examples/ledger/db/sqlite.hero"
-    h_0opt_e201354 h1_f0 = {0}; h_0opt_e201354 h2_own2 = {0}; h_dbsqlite_Statement t1; sqlite3_stmt * t2; int32_t t3; h_0opt_e201354 t4; h_0opt_e201354 t5; int64_t t6; int64_t t7; bool t8; h_0opt_e201354 t9; HeroFailure t10; h_0opt_e201354 t11; int64_t t12; h_0opt_e201354 t13; h_0opt_e201354 t14; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_dbsqlite_Statement t1; HERO_NODEBUG sqlite3_stmt * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; goto bb0;
 #line 373 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_statement;
@@ -8483,7 +8484,7 @@ bb1:
     t11 = h1_f0;
 #line 374 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 8487 "main.c"
+#line 8488 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -8492,7 +8493,7 @@ bb2:
     t9 = h1_f0;
 #line 374 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8496 "main.c"
+#line 8497 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -8500,7 +8501,7 @@ bb2:
 #line 381 "examples/ledger/db/sqlite.hero"
 h_0opt_e405689 h_dbsqlite_cell(h_dbsqlite_Statement h0_statement, int64_t h1_column) {
 #line 381 "examples/ledger/db/sqlite.hero"
-    h_0opt_e1f4933 h2_f0 = {0}; h_0opt_e1f4933 h3_own3 = {0}; h_0opt_e405689 h4_own4 = {0}; h_dbsqlite_Statement t1; sqlite3_stmt * t2; int64_t t3; h_0opt_e1f4933 t4; h_0opt_e1f4933 t5; int64_t t6; int64_t t7; bool t8; h_0opt_e1f4933 t9; HeroFailure t10; h_0opt_e1f4933 t11; int32_t t12; h_0opt_e405689 t13; h_0opt_e1f4933 t14; h_0opt_e1f4933 t15; h_0opt_e405689 t16; goto bb0;
+    HERO_NODEBUG h_0opt_e1f4933 h2_f0 = {0}; HERO_NODEBUG h_0opt_e1f4933 h3_own3 = {0}; HERO_NODEBUG h_0opt_e405689 h4_own4 = {0}; HERO_NODEBUG h_dbsqlite_Statement t1; HERO_NODEBUG sqlite3_stmt * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0opt_e1f4933 t4; HERO_NODEBUG h_0opt_e1f4933 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e1f4933 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_e1f4933 t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG h_0opt_e405689 t13; HERO_NODEBUG h_0opt_e1f4933 t14; HERO_NODEBUG h_0opt_e1f4933 t15; HERO_NODEBUG h_0opt_e405689 t16; goto bb0;
 #line 381 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_statement;
@@ -8556,7 +8557,7 @@ bb1:
     h4_own4 = t13;
 #line 382 "examples/ledger/db/sqlite.hero"
     h_0opt_e405689_release(&t16);
-#line 8560 "main.c"
+#line 8561 "main.c"
     h_0opt_e405689_retain(&t13);
     h_0opt_e1f4933_release(hero_slot_escape(&h2_f0));
     h_0opt_e1f4933_release(hero_slot_escape(&h3_own3));
@@ -8567,7 +8568,7 @@ bb2:
     t9 = h2_f0;
 #line 382 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8571 "main.c"
+#line 8572 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -8575,7 +8576,7 @@ bb2:
 #line 386 "examples/ledger/db/sqlite.hero"
 h_0opt_e201354 h_dbsqlite_integer_of(h_dbsqlite_Cell h0_c) {
 #line 386 "examples/ledger/db/sqlite.hero"
-    h_dbsqlite_Cell h1_s0 = {0}; h_0opt_e201354 h2_r0 = {0}; h_dbsqlite_Cell_c_integer_cell h3_i; h_0opt_e201354 h4_own4 = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; h_0opt_e201354 h7_own7 = {0}; h_0opt_e201354 h8_own8 = {0}; h_dbsqlite_Cell t1; h_dbsqlite_Cell t2; int64_t t3; h_dbsqlite_Cell t4; h_dbsqlite_Cell_c_integer_cell t5; h_dbsqlite_Cell_c_integer_cell t6; int64_t t7; h_0opt_e201354 t8; HeroStr t9; HeroStr t10; h_0opt_e201354 t11; HeroStr t12; HeroStr t13; h_0opt_e201354 t14; HeroStr t15; HeroStr t16; h_0opt_e201354 t17; HeroStr t18; HeroStr t19; h_0opt_e201354 t20; h_0opt_e201354 t21; h_dbsqlite_Cell t22; h_0opt_e201354 t23; h_0opt_e201354 t24; h_0opt_e201354 t25; h_0opt_e201354 t26; h_0opt_e201354 t27; h_0opt_e201354 t28; h_0opt_e201354 t29; h_0opt_e201354 t30; h_0opt_e201354 t31; h_0opt_e201354 t32; goto bb0;
+    HERO_NODEBUG h_dbsqlite_Cell h1_s0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_r0 = {0}; h_dbsqlite_Cell_c_integer_cell h3_i; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_dbsqlite_Cell t1; HERO_NODEBUG h_dbsqlite_Cell t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_dbsqlite_Cell t4; HERO_NODEBUG h_dbsqlite_Cell_c_integer_cell t5; HERO_NODEBUG h_dbsqlite_Cell_c_integer_cell t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_dbsqlite_Cell t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG h_0opt_e201354 t30; HERO_NODEBUG h_0opt_e201354 t31; HERO_NODEBUG h_0opt_e201354 t32; goto bb0;
 #line 386 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_c;
@@ -8611,7 +8612,7 @@ bb0:
 bb1:
 #line 387 "examples/ledger/db/sqlite.hero"
     t21 = h2_r0;
-#line 8615 "main.c"
+#line 8616 "main.c"
     h_0opt_e201354_retain(&t21);
     h_dbsqlite_Cell_release(hero_slot_escape(&h1_s0));
     h_0opt_e201354_release(hero_slot_escape(&h2_r0));
@@ -8762,13 +8763,13 @@ bb6:
     h_0opt_e201354_release(&t32);
 #line 387 "examples/ledger/db/sqlite.hero"
     goto bb1;
-#line 8766 "main.c"
+#line 8767 "main.c"
 }
 
 #line 394 "examples/ledger/db/sqlite.hero"
 h_0opt_f87774a h_dbsqlite_text_of(h_dbsqlite_Cell h0_c) {
 #line 394 "examples/ledger/db/sqlite.hero"
-    h_dbsqlite_Cell h1_s0 = {0}; h_0opt_f87774a h2_r0 = {0}; h_dbsqlite_Cell_c_text_cell h3_t = {0}; h_dbsqlite_Cell_c_integer_cell h4_i; h_dbsqlite_Cell_c_float_cell h5_f; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; h_0opt_f87774a h11_own11 = {0}; h_0opt_f87774a h12_own12 = {0}; h_dbsqlite_Cell t1; h_dbsqlite_Cell t2; int64_t t3; h_dbsqlite_Cell t4; h_dbsqlite_Cell_c_text_cell t5; h_dbsqlite_Cell_c_text_cell t6; HeroStr t7; h_0opt_f87774a t8; h_dbsqlite_Cell t9; h_dbsqlite_Cell_c_integer_cell t10; h_dbsqlite_Cell_c_integer_cell t11; int64_t t12; HeroStr t13; h_0opt_f87774a t14; h_dbsqlite_Cell t15; h_dbsqlite_Cell_c_float_cell t16; h_dbsqlite_Cell_c_float_cell t17; double t18; HeroStr t19; h_0opt_f87774a t20; HeroStr t21; HeroStr t22; h_0opt_f87774a t23; HeroStr t24; HeroStr t25; h_0opt_f87774a t26; h_0opt_f87774a t27; h_dbsqlite_Cell t28; h_dbsqlite_Cell_c_text_cell t29; h_0opt_f87774a t30; h_0opt_f87774a t31; HeroStr t32; h_0opt_f87774a t33; h_0opt_f87774a t34; HeroStr t35; h_0opt_f87774a t36; h_0opt_f87774a t37; h_0opt_f87774a t38; h_0opt_f87774a t39; h_0opt_f87774a t40; h_0opt_f87774a t41; goto bb0;
+    HERO_NODEBUG h_dbsqlite_Cell h1_s0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_r0 = {0}; h_dbsqlite_Cell_c_text_cell h3_t = {0}; h_dbsqlite_Cell_c_integer_cell h4_i; h_dbsqlite_Cell_c_float_cell h5_f; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG h_0opt_f87774a h11_own11 = {0}; HERO_NODEBUG h_0opt_f87774a h12_own12 = {0}; HERO_NODEBUG h_dbsqlite_Cell t1; HERO_NODEBUG h_dbsqlite_Cell t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_dbsqlite_Cell t4; HERO_NODEBUG h_dbsqlite_Cell_c_text_cell t5; HERO_NODEBUG h_dbsqlite_Cell_c_text_cell t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG h_dbsqlite_Cell t9; HERO_NODEBUG h_dbsqlite_Cell_c_integer_cell t10; HERO_NODEBUG h_dbsqlite_Cell_c_integer_cell t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_dbsqlite_Cell t15; HERO_NODEBUG h_dbsqlite_Cell_c_float_cell t16; HERO_NODEBUG h_dbsqlite_Cell_c_float_cell t17; HERO_NODEBUG double t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_0opt_f87774a t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_dbsqlite_Cell t28; HERO_NODEBUG h_dbsqlite_Cell_c_text_cell t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG h_0opt_f87774a t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_f87774a t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG h_0opt_f87774a t40; HERO_NODEBUG h_0opt_f87774a t41; goto bb0;
 #line 394 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_c;
@@ -8804,7 +8805,7 @@ bb0:
 bb1:
 #line 395 "examples/ledger/db/sqlite.hero"
     t27 = h2_r0;
-#line 8808 "main.c"
+#line 8809 "main.c"
     h_0opt_f87774a_retain(&t27);
     h_dbsqlite_Cell_release(hero_slot_escape(&h1_s0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
@@ -8990,13 +8991,13 @@ bb6:
     h_0opt_f87774a_release(&t41);
 #line 395 "examples/ledger/db/sqlite.hero"
     goto bb1;
-#line 8994 "main.c"
+#line 8995 "main.c"
 }
 
 #line 405 "examples/ledger/db/sqlite.hero"
 HeroStr h_dbsqlite_why(h_dbsqlite_Db h0_db) {
 #line 405 "examples/ledger/db/sqlite.hero"
-    h_0opt_f87774a h1_f0 = {0}; HeroStr h2_r0 = {0}; h_0opt_f87774a h3_own3 = {0}; h_dbsqlite_Db t1; sqlite3 * t2; const char * t3; h_0opt_f87774a t4; h_0opt_f87774a t5; int64_t t6; int64_t t7; bool t8; h_0opt_f87774a t9; HeroStr t10; HeroStr t11; HeroStr t12; h_0opt_f87774a t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}; HERO_NODEBUG h_dbsqlite_Db t1; HERO_NODEBUG sqlite3 * t2; HERO_NODEBUG const char * t3; HERO_NODEBUG h_0opt_f87774a t4; HERO_NODEBUG h_0opt_f87774a t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; goto bb0;
 #line 405 "examples/ledger/db/sqlite.hero"
 bb0:
     t1 = h0_db;
@@ -9066,7 +9067,7 @@ bb2:
 bb3:
 #line 406 "examples/ledger/db/sqlite.hero"
     t12 = h2_r0;
-#line 9070 "main.c"
+#line 9071 "main.c"
     hero_str_incref(t12);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
@@ -9077,11 +9078,11 @@ bb3:
 #line 11 "examples/ledger/report/lines.hero"
 HeroStr h_reportlines_BALANCE_HEADING(void) {
 #line 11 "examples/ledger/report/lines.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 11 "examples/ledger/report/lines.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3a42ef76);
-#line 9085 "main.c"
+#line 9086 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -9089,7 +9090,7 @@ bb0:
 #line 16 "examples/ledger/report/lines.hero"
 HeroArrayHeader * h_reportlines_book_lines(HeroArrayHeader * h0_entries, HeroArrayHeader * h1_accounts) {
 #line 16 "examples/ledger/report/lines.hero"
-    HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_bookentry_Entry h5_e = {0}; h_0opt_f87774a h6_f0 = {0}; HeroStr h7_r0 = {0}; HeroStr h8_kind = {0}; HeroArrayHeader * h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_bookentry_Entry t10; h_bookentry_Entry t11; HeroStr t12; HeroArrayHeader * t13; h_0opt_f87774a t14; h_0opt_f87774a t15; int64_t t16; int64_t t17; bool t18; h_0opt_f87774a t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t24; h_bookentry_Entry t25; int64_t t26; HeroStr t27; int64_t t28; HeroStr t29; HeroStr t30; h_bookentry_Entry t31; HeroStr t32; int64_t t33; HeroStr t34; HeroStr t35; HeroStr t36; int64_t t37; HeroStr t38; HeroStr t39; h_bookentry_Entry t40; HeroStr t41; int64_t t42; HeroStr t43; HeroStr t44; h_bookentry_Entry t45; h_bookentry_Amount t46; HeroStr t47; int64_t t48; HeroStr t49; HeroStr t50; int64_t t52; int64_t t53; int64_t t54; HeroArrayHeader * t55; HeroArrayHeader * t56; HeroArrayHeader * t57; HeroArrayHeader * t58; h_bookentry_Entry t59; h_0opt_f87774a t60; h_0opt_f87774a t61; HeroStr t62; HeroStr t63; HeroStr t64; HeroStr t65; HeroStr t66; HeroStr t67; HeroStr t68; HeroStr t69; HeroStr t70; HeroStr t71; HeroStr t72; HeroStr t73; HeroStr t74; HeroStr t75; HeroStr t76; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; h_bookentry_Entry h5_e = {0}; HERO_NODEBUG h_0opt_f87774a h6_f0 = {0}; HERO_NODEBUG HeroStr h7_r0 = {0}; HeroStr h8_kind = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_bookentry_Entry t10; HERO_NODEBUG h_bookentry_Entry t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_bookentry_Entry t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_bookentry_Entry t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG h_bookentry_Entry t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_bookentry_Entry t45; HERO_NODEBUG h_bookentry_Amount t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG h_bookentry_Entry t59; HERO_NODEBUG h_0opt_f87774a t60; HERO_NODEBUG h_0opt_f87774a t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroStr t76; goto bb0;
 #line 16 "examples/ledger/report/lines.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -9198,7 +9199,7 @@ bb3:
 bb4:
 #line 25 "examples/ledger/report/lines.hero"
     t55 = h2_out;
-#line 9202 "main.c"
+#line 9203 "main.c"
     hero_array_incref(t55);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -9392,13 +9393,13 @@ bb7:
     hero_array_push_owned(&h2_out, &t50);
 #line 21 "examples/ledger/report/lines.hero"
     goto bb3;
-#line 9396 "main.c"
+#line 9397 "main.c"
 }
 
 #line 27 "examples/ledger/report/lines.hero"
 HeroStr h_reportlines_balance_line(h_bookentry_Balance h0_b, HeroStr h1_kind) {
 #line 27 "examples/ledger/report/lines.hero"
-    HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; h_bookentry_Balance t1; HeroStr t2; int64_t t3; HeroStr t4; HeroStr t5; int64_t t6; HeroStr t7; HeroStr t8; h_bookentry_Balance t9; int64_t t10; HeroStr t11; int64_t t12; HeroStr t13; HeroStr t14; h_bookentry_Balance t15; h_bookentry_Amount t16; HeroStr t17; int64_t t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_bookentry_Balance t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_bookentry_Balance t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_bookentry_Balance t15; HERO_NODEBUG h_bookentry_Amount t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; goto bb0;
 #line 27 "examples/ledger/report/lines.hero"
 bb0:
     t1 = h0_b;
@@ -9494,7 +9495,7 @@ bb0:
     h10_own10 = t20;
 #line 28 "examples/ledger/report/lines.hero"
     hero_str_decref(t29);
-#line 9498 "main.c"
+#line 9499 "main.c"
     hero_str_incref(t20);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -9511,7 +9512,7 @@ bb0:
 #line 32 "examples/ledger/report/lines.hero"
 HeroStr h_reportlines_wide(HeroStr h0_text, int64_t h1_to) {
 #line 32 "examples/ledger/report/lines.hero"
-    h_0opt_fbbb698 h2_f0 = {0}; HeroStr h3_ret0 = {0}; h_0opt_fbbb698 h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; int64_t t10; HeroStr t11; int64_t t12; int64_t t13; h_0opt_fbbb698 t14; h_0opt_fbbb698 t15; int64_t t16; int64_t t17; bool t18; h_0opt_fbbb698 t19; HeroFailure t20; h_0opt_fbbb698 t21; uint64_t t22; HeroStr t23; HeroStr t24; HeroStr t25; h_0opt_fbbb698 t26; h_0opt_fbbb698 t27; HeroStr t28; HeroStr t29; HeroStr t30; goto bb0;
+    HERO_NODEBUG h_0opt_fbbb698 h2_f0 = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_fbbb698 t14; HERO_NODEBUG h_0opt_fbbb698 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_fbbb698 t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG h_0opt_fbbb698 t21; HERO_NODEBUG uint64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_fbbb698 t26; HERO_NODEBUG h_0opt_fbbb698 t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; goto bb0;
 #line 32 "examples/ledger/report/lines.hero"
 bb0:
     t1 = h0_text;
@@ -9624,7 +9625,7 @@ bb5:
     t19 = h2_f0;
 #line 35 "examples/ledger/report/lines.hero"
     t20 = t19.as.err;
-#line 9628 "main.c"
+#line 9629 "main.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb6:
@@ -9641,7 +9642,7 @@ bb6:
 #line 40 "examples/ledger/report/lines.hero"
 HeroStr h_reportlines_right(HeroStr h0_text, int64_t h1_to) {
 #line 40 "examples/ledger/report/lines.hero"
-    h_0opt_fbbb698 h2_f0 = {0}; HeroStr h3_ret0 = {0}; h_0opt_fbbb698 h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; int64_t t9; HeroStr t10; int64_t t11; int64_t t12; h_0opt_fbbb698 t13; h_0opt_fbbb698 t14; int64_t t15; int64_t t16; bool t17; h_0opt_fbbb698 t18; HeroFailure t19; h_0opt_fbbb698 t20; uint64_t t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; h_0opt_fbbb698 t26; h_0opt_fbbb698 t27; HeroStr t28; HeroStr t29; HeroStr t30; goto bb0;
+    HERO_NODEBUG h_0opt_fbbb698 h2_f0 = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_0opt_fbbb698 t13; HERO_NODEBUG h_0opt_fbbb698 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_0opt_fbbb698 t18; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG h_0opt_fbbb698 t20; HERO_NODEBUG uint64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_fbbb698 t26; HERO_NODEBUG h_0opt_fbbb698 t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; goto bb0;
 #line 40 "examples/ledger/report/lines.hero"
 bb0:
     t1 = h0_text;
@@ -9754,7 +9755,7 @@ bb5:
     t18 = h2_f0;
 #line 43 "examples/ledger/report/lines.hero"
     t19 = t18.as.err;
-#line 9758 "main.c"
+#line 9759 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -9771,7 +9772,7 @@ bb6:
 #line 48 "examples/ledger/report/lines.hero"
 bool h_reportlines_holds(HeroStr h0_text, HeroStr h1_needle) {
 #line 48 "examples/ledger/report/lines.hero"
-    int64_t h2_at; bool h3_ret0; HeroStr h4_own4 = {0}; HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; bool t6; int64_t t7; int64_t t8; HeroStr t9; int64_t t10; int64_t t11; HeroStr t12; int64_t t13; bool t14; HeroStr t15; int64_t t16; int64_t t17; HeroStr t18; int64_t t19; int64_t t20; HeroStr t21; HeroStr t22; bool t23; bool t24; int64_t t25; int64_t t26; int64_t t27; bool t28; bool t29; HeroStr t30; goto bb0;
+    int64_t h2_at; HERO_NODEBUG bool h3_ret0; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG bool t23; HERO_NODEBUG bool t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; goto bb0;
 #line 48 "examples/ledger/report/lines.hero"
 bb0:
     t1 = h1_needle;
@@ -9884,7 +9885,7 @@ bb9:
     goto bb7;
 #line 55 "examples/ledger/report/lines.hero"
 bb10:
-#line 9888 "main.c"
+#line 9889 "main.c"
     t29 = h3_ret0;
     hero_str_release_at(&h4_own4);
     return t29;
@@ -9892,7 +9893,7 @@ bb10:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 9896 "main.c"
+#line 9897 "main.c"
     return HERO_STR_OK;
 }
 
@@ -9901,7 +9902,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
 #line 153 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 153 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; h_0opt_f87774a h7_own7 = {0}; const char * t1; const char * t2; bool t3; HeroStr t4; HeroStr t5; h_0opt_f87774a t6; int64_t t7; const char * t8; HeroStr t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; h_0opt_f87774a t17; h_0opt_f87774a t18; HeroStr t19; HeroStr t20; h_0opt_f87774a t21; h_0opt_f87774a t22; h_0opt_f87774a t23; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG const char * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG h_0opt_f87774a t23; goto bb0;
 #line 153 "<heroes library>"
 bb0:
     t1 = h0_c;
@@ -10015,7 +10016,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 10019 "main.c"
+#line 10020 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -10031,7 +10032,7 @@ bb7:
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
 #line 227 "<heroes library>"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 227 "<heroes library>"
 bb0:
     t1 = h0_code;
@@ -10039,7 +10040,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 10043 "main.c"
+#line 10044 "main.c"
 }
 HERO_TU_LOCAL bool h_bookentry_Amount_eq(const h_bookentry_Amount *a, const h_bookentry_Amount *b) {
     if (!(a->f_cents == b->f_cents)) return false;

@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -82,7 +83,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 
-#line 86 "fixedbugs171apointerbehindadereferencingmacrocalledwhilenull.c"
+#line 87 "fixedbugs171apointerbehindadereferencingmacrocalledwhilenull.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -126,7 +127,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "fixedbugs171apointerbehindadereferencingmacrocalledwhilenull.c"
+#line 131 "fixedbugs171apointerbehindadereferencingmacrocalledwhilenull.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -143,7 +144,7 @@ void h_fixedbugs171apointerbehindadereferencingmacrocalledwhilenull_main(void);
 #line 13 "tests/golden/run/fixedbugs-171-a-pointer-behind-a-dereferencing-macro-called-while-null.hero"
 void h_fixedbugs171apointerbehindadereferencingmacrocalledwhilenull_main(void) {
 #line 13 "tests/golden/run/fixedbugs-171-a-pointer-behind-a-dereferencing-macro-called-while-null.hero"
-    HeroStr t1; int32_t t2; int32_t t3; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-171-a-pointer-behind-a-dereferencing-macro-called-while-null.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);
@@ -160,7 +161,7 @@ bb0:
     hero_print_end();
 #line 15 "tests/golden/run/fixedbugs-171-a-pointer-behind-a-dereferencing-macro-called-while-null.hero"
     return;
-#line 164 "fixedbugs171apointerbehindadereferencingmacrocalledwhilenull.c"
+#line 165 "fixedbugs171apointerbehindadereferencingmacrocalledwhilenull.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

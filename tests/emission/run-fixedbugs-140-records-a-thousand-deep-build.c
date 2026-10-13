@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "fixedbugs140recordsathousanddeepbuild.c"
+#line 49 "fixedbugs140recordsathousanddeepbuild.c"
 typedef struct h_fixedbugs140recordsathousanddeepbuild_R0 {
     int64_t f_v;
 } h_fixedbugs140recordsathousanddeepbuild_R0;
@@ -5089,7 +5090,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 5093 "fixedbugs140recordsathousanddeepbuild.c"
+#line 5094 "fixedbugs140recordsathousanddeepbuild.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs140recordsathousanddeepbuild_R0_eq(const h_fixedbugs140recordsathousanddeepbuild_R0 *a, const h_fixedbugs140recordsathousanddeepbuild_R0 *b);
@@ -7123,7 +7124,7 @@ void h_fixedbugs140recordsathousanddeepbuild_main(void);
 #line 3016 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
 void h_fixedbugs140recordsathousanddeepbuild_main(void) {
 #line 3016 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
-    HeroArrayHeader * h0_xs; __builtin_memset(&h0_xs, 0, sizeof h0_xs); HeroMapHeader * h1_m; __builtin_memset(&h1_m, 0, sizeof h1_m); HeroArrayHeader * h2_own2; __builtin_memset(&h2_own2, 0, sizeof h2_own2); HeroMapHeader * h3_own3; __builtin_memset(&h3_own3, 0, sizeof h3_own3); HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; HeroArrayHeader * t4; HeroArrayHeader * t5; bool t6; HeroMapHeader * t7; HeroMapHeader * t8; int64_t t9; HeroArrayHeader * t10; HeroArrayHeader * t11; HeroMapHeader * t12; HeroMapHeader * t13; goto bb0;
+    HeroArrayHeader * h0_xs; __builtin_memset(&h0_xs, 0, sizeof h0_xs); HeroMapHeader * h1_m; __builtin_memset(&h1_m, 0, sizeof h1_m); HERO_NODEBUG HeroArrayHeader * h2_own2; __builtin_memset(&h2_own2, 0, sizeof h2_own2); HERO_NODEBUG HeroMapHeader * h3_own3; __builtin_memset(&h3_own3, 0, sizeof h3_own3); HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroMapHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG HeroMapHeader * t12; HERO_NODEBUG HeroMapHeader * t13; goto bb0;
 #line 3016 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
 bb0:
     t1 = hero_array_new(&h_fixedbugs140recordsathousanddeepbuild_R999_desc, 1);
@@ -7179,7 +7180,7 @@ bb0:
     hero_print_int(t9);
 #line 3021 "tests/golden/run/fixedbugs-140-records-a-thousand-deep-build.hero"
     hero_print_end();
-#line 7183 "fixedbugs140recordsathousanddeepbuild.c"
+#line 7184 "fixedbugs140recordsathousanddeepbuild.c"
     hero_array_release_at(&h0_xs);
     hero_map_release_at(&h1_m);
     hero_array_release_at(&h2_own2);

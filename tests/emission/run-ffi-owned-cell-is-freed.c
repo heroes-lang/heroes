@@ -44,6 +44,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -94,7 +95,7 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 98 "ffiownedcellisfreed.c"
+#line 99 "ffiownedcellisfreed.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -141,7 +142,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 145 "ffiownedcellisfreed.c"
+#line 146 "ffiownedcellisfreed.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -166,7 +167,7 @@ void h_ffiownedcellisfreed_main(void) {
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 #define h17_cell2 (*hero_lend_h17_cell2)
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
-    h_0opt_f87774a h0_first = {0}; const char * *const hero_lend_h1_cell0 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell0"); const char * h2_owned0; h_0opt_f87774a h3_owned1 = {0}; h_0opt_f87774a h4_f0 = {0}; HeroStr h5_r0 = {0}; h_0opt_f87774a h6_second = {0}; const char * *const hero_lend_h7_cell1 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell1"); const char * h8_owned2; h_0opt_f87774a h9_owned3 = {0}; h_0opt_f87774a h10_f1 = {0}; HeroStr h11_r1 = {0}; h_0opt_f87774a h12_f2 = {0}; HeroStr h13_r2 = {0}; h_0opt_f87774a h14_f3 = {0}; HeroStr h15_r3 = {0}; h_0opt_f87774a h16_quiet = {0}; const char * *const hero_lend_h17_cell2 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell2"); const char * h18_owned4; h_0opt_f87774a h19_owned5 = {0}; h_0opt_f87774a h20_s0 = {0}; HeroStr h21_text = {0}; HeroFailure h22_e = {0}; h_0opt_f87774a h23_own23 = {0}; h_0opt_f87774a h24_own24 = {0}; h_0opt_f87774a h25_own25 = {0}; h_0opt_f87774a h26_own26 = {0}; h_0opt_f87774a h27_own27 = {0}; h_0opt_f87774a h28_own28 = {0}; HeroStr t1; HeroStr t2; h_0opt_f87774a t3; int32_t t4; const char * t5; const char * t7; const char * t8; h_0opt_f87774a t9; const char * t10; const char * t11; bool t12; const char * t13; void * t14; h_0opt_f87774a t15; h_0opt_f87774a t16; h_0opt_f87774a t17; int64_t t18; int64_t t19; bool t20; h_0opt_f87774a t21; HeroStr t22; HeroStr t23; HeroStr t24; HeroStr t25; HeroStr t26; h_0opt_f87774a t27; int32_t t28; const char * t29; const char * t31; const char * t32; h_0opt_f87774a t33; const char * t34; const char * t35; bool t36; const char * t37; void * t38; h_0opt_f87774a t39; h_0opt_f87774a t40; h_0opt_f87774a t41; int64_t t42; int64_t t43; bool t44; h_0opt_f87774a t45; HeroStr t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; h_0opt_f87774a t50; int64_t t51; int64_t t52; bool t53; h_0opt_f87774a t54; HeroStr t55; HeroStr t56; HeroStr t57; h_0opt_f87774a t58; h_0opt_f87774a t59; int64_t t60; int64_t t61; bool t62; h_0opt_f87774a t63; HeroStr t64; HeroStr t65; HeroStr t66; bool t67; HeroStr t68; HeroStr t69; h_0opt_f87774a t70; int32_t t71; const char * t72; const char * t74; const char * t75; h_0opt_f87774a t76; const char * t77; const char * t78; bool t79; const char * t80; void * t81; h_0opt_f87774a t82; h_0opt_f87774a t83; h_0opt_f87774a t84; int64_t t85; h_0opt_f87774a t86; HeroStr t87; HeroStr t88; HeroStr t89; h_0opt_f87774a t90; HeroFailure t91; HeroStr t92; HeroFailure t93; HeroStr t94; h_0opt_f87774a t95; h_0opt_f87774a t96; h_0opt_f87774a t97; h_0opt_f87774a t98; h_0opt_f87774a t99; h_0opt_f87774a t100; HeroStr t101; HeroStr t102; h_0opt_f87774a t103; h_0opt_f87774a t104; h_0opt_f87774a t105; h_0opt_f87774a t106; h_0opt_f87774a t107; h_0opt_f87774a t108; HeroStr t109; HeroStr t110; h_0opt_f87774a t111; HeroStr t112; HeroStr t113; h_0opt_f87774a t114; HeroStr t115; HeroStr t116; h_0opt_f87774a t117; h_0opt_f87774a t118; h_0opt_f87774a t119; h_0opt_f87774a t120; h_0opt_f87774a t121; h_0opt_f87774a t122; HeroStr t123; HeroFailure t124; goto bb0;
+    h_0opt_f87774a h0_first = {0}; HERO_NODEBUG const char * *const hero_lend_h1_cell0 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell0"); HERO_NODEBUG const char * h2_owned0; HERO_NODEBUG h_0opt_f87774a h3_owned1 = {0}; HERO_NODEBUG h_0opt_f87774a h4_f0 = {0}; HERO_NODEBUG HeroStr h5_r0 = {0}; h_0opt_f87774a h6_second = {0}; HERO_NODEBUG const char * *const hero_lend_h7_cell1 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell1"); HERO_NODEBUG const char * h8_owned2; HERO_NODEBUG h_0opt_f87774a h9_owned3 = {0}; HERO_NODEBUG h_0opt_f87774a h10_f1 = {0}; HERO_NODEBUG HeroStr h11_r1 = {0}; HERO_NODEBUG h_0opt_f87774a h12_f2 = {0}; HERO_NODEBUG HeroStr h13_r2 = {0}; HERO_NODEBUG h_0opt_f87774a h14_f3 = {0}; HERO_NODEBUG HeroStr h15_r3 = {0}; h_0opt_f87774a h16_quiet = {0}; HERO_NODEBUG const char * *const hero_lend_h17_cell2 = (const char * *)hero_lend_local(sizeof(const char *), "ffiownedcellisfreed.main", "$cell2"); HERO_NODEBUG const char * h18_owned4; HERO_NODEBUG h_0opt_f87774a h19_owned5 = {0}; HERO_NODEBUG h_0opt_f87774a h20_s0 = {0}; HeroStr h21_text = {0}; HeroFailure h22_e = {0}; HERO_NODEBUG h_0opt_f87774a h23_own23 = {0}; HERO_NODEBUG h_0opt_f87774a h24_own24 = {0}; HERO_NODEBUG h_0opt_f87774a h25_own25 = {0}; HERO_NODEBUG h_0opt_f87774a h26_own26 = {0}; HERO_NODEBUG h_0opt_f87774a h27_own27 = {0}; HERO_NODEBUG h_0opt_f87774a h28_own28 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG const char * t5; HERO_NODEBUG const char * t7; HERO_NODEBUG const char * t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG const char * t10; HERO_NODEBUG const char * t11; HERO_NODEBUG bool t12; HERO_NODEBUG const char * t13; HERO_NODEBUG void * t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG int32_t t28; HERO_NODEBUG const char * t29; HERO_NODEBUG const char * t31; HERO_NODEBUG const char * t32; HERO_NODEBUG h_0opt_f87774a t33; HERO_NODEBUG const char * t34; HERO_NODEBUG const char * t35; HERO_NODEBUG bool t36; HERO_NODEBUG const char * t37; HERO_NODEBUG void * t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG h_0opt_f87774a t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_NODEBUG h_0opt_f87774a t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG bool t53; HERO_NODEBUG h_0opt_f87774a t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG h_0opt_f87774a t58; HERO_NODEBUG h_0opt_f87774a t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG bool t62; HERO_NODEBUG h_0opt_f87774a t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG bool t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG int32_t t71; HERO_NODEBUG const char * t72; HERO_NODEBUG const char * t74; HERO_NODEBUG const char * t75; HERO_NODEBUG h_0opt_f87774a t76; HERO_NODEBUG const char * t77; HERO_NODEBUG const char * t78; HERO_NODEBUG bool t79; HERO_NODEBUG const char * t80; HERO_NODEBUG void * t81; HERO_NODEBUG h_0opt_f87774a t82; HERO_NODEBUG h_0opt_f87774a t83; HERO_NODEBUG h_0opt_f87774a t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG h_0opt_f87774a t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG h_0opt_f87774a t90; HERO_NODEBUG HeroFailure t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG HeroFailure t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG h_0opt_f87774a t95; HERO_NODEBUG h_0opt_f87774a t96; HERO_NODEBUG h_0opt_f87774a t97; HERO_NODEBUG h_0opt_f87774a t98; HERO_NODEBUG h_0opt_f87774a t99; HERO_NODEBUG h_0opt_f87774a t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG HeroStr t102; HERO_NODEBUG h_0opt_f87774a t103; HERO_NODEBUG h_0opt_f87774a t104; HERO_NODEBUG h_0opt_f87774a t105; HERO_NODEBUG h_0opt_f87774a t106; HERO_NODEBUG h_0opt_f87774a t107; HERO_NODEBUG h_0opt_f87774a t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG h_0opt_f87774a t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG HeroStr t113; HERO_NODEBUG h_0opt_f87774a t114; HERO_NODEBUG HeroStr t115; HERO_NODEBUG HeroStr t116; HERO_NODEBUG h_0opt_f87774a t117; HERO_NODEBUG h_0opt_f87774a t118; HERO_NODEBUG h_0opt_f87774a t119; HERO_NODEBUG h_0opt_f87774a t120; HERO_NODEBUG h_0opt_f87774a t121; HERO_NODEBUG h_0opt_f87774a t122; HERO_NODEBUG HeroStr t123; HERO_NODEBUG HeroFailure t124; goto bb0;
 #line 47 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_edaa230);
@@ -677,7 +678,7 @@ bb18:
     }
 #line 66 "tests/golden/run/ffi-owned-cell-is-freed.hero"
 bb19:
-#line 681 "ffiownedcellisfreed.c"
+#line 682 "ffiownedcellisfreed.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_first));
     h_0opt_f87774a_release(hero_slot_escape(&h3_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h4_f0));
@@ -757,7 +758,7 @@ bb21:
     hero_print_end();
 #line 68 "tests/golden/run/ffi-owned-cell-is-freed.hero"
     goto bb19;
-#line 761 "ffiownedcellisfreed.c"
+#line 762 "ffiownedcellisfreed.c"
 }
 #undef h1_cell0
 #undef h7_cell1
@@ -765,7 +766,7 @@ bb21:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 769 "ffiownedcellisfreed.c"
+#line 770 "ffiownedcellisfreed.c"
     return HERO_STR_OK;
 }
 
@@ -774,7 +775,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
 #line 153 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 153 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; h_0opt_f87774a h7_own7 = {0}; const char * t1; const char * t2; bool t3; HeroStr t4; HeroStr t5; h_0opt_f87774a t6; int64_t t7; const char * t8; HeroStr t9; int64_t t10; int64_t t11; bool t12; HeroStr t13; h_0opt_f87774a t14; HeroStr t15; HeroStr t16; h_0opt_f87774a t17; h_0opt_f87774a t18; HeroStr t19; HeroStr t20; h_0opt_f87774a t21; h_0opt_f87774a t22; h_0opt_f87774a t23; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG const char * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG h_0opt_f87774a t23; goto bb0;
 #line 153 "<heroes library>"
 bb0:
     t1 = h0_c;
@@ -888,7 +889,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 892 "ffiownedcellisfreed.c"
+#line 893 "ffiownedcellisfreed.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

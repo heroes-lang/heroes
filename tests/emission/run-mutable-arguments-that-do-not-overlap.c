@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "mutableargumentsthatdonotoverlap.c"
+#line 49 "mutableargumentsthatdonotoverlap.c"
 typedef struct h_mutableargumentsthatdonotoverlap_P {
     int64_t f_x;
     int64_t f_y;
@@ -84,7 +85,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 88 "mutableargumentsthatdonotoverlap.c"
+#line 89 "mutableargumentsthatdonotoverlap.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_mutableargumentsthatdonotoverlap_P_eq(const h_mutableargumentsthatdonotoverlap_P *a, const h_mutableargumentsthatdonotoverlap_P *b);
@@ -123,7 +124,7 @@ void h_mutableargumentsthatdonotoverlap_main(void);
 #line 20 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
 void h_mutableargumentsthatdonotoverlap_shift(int64_t *ph0_a, int64_t *ph1_b) {
 #line 20 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 20 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
 bb0:
     t1 = (*ph0_a);
@@ -142,13 +143,13 @@ bb0:
     (*ph1_b) = t6;
 #line 22 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
     return;
-#line 146 "mutableargumentsthatdonotoverlap.c"
+#line 147 "mutableargumentsthatdonotoverlap.c"
 }
 
 #line 24 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
 void h_mutableargumentsthatdonotoverlap_main(void) {
 #line 24 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
-    h_mutableargumentsthatdonotoverlap_P h0_p; h_mutableargumentsthatdonotoverlap_P h1_q; HeroArrayHeader * h2_xs = {0}; HeroArrayHeader * h3_ys = {0}; h_mutableargumentsthatdonotoverlap_Nest h4_n; HeroArrayHeader * h5_ps = {0}; int64_t h6_u; int64_t h7_v; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; int64_t t1; int64_t t2; h_mutableargumentsthatdonotoverlap_P t3; h_mutableargumentsthatdonotoverlap_P t4; int64_t t5; h_mutableargumentsthatdonotoverlap_P t6; int64_t t7; h_mutableargumentsthatdonotoverlap_P t8; h_mutableargumentsthatdonotoverlap_P t9; int64_t t10; h_mutableargumentsthatdonotoverlap_P t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; int64_t t20; int64_t t21; HeroArrayHeader * t22; int64_t t23; int64_t t24; HeroArrayHeader * t25; int64_t t26; int64_t t27; HeroArrayHeader * t28; int64_t t29; int64_t t30; HeroArrayHeader * t31; int64_t t32; int64_t t33; HeroArrayHeader * t34; int64_t t35; int64_t t36; int64_t t37; int64_t t38; h_mutableargumentsthatdonotoverlap_P t39; int64_t t40; h_mutableargumentsthatdonotoverlap_Nest t41; h_mutableargumentsthatdonotoverlap_Nest t42; h_mutableargumentsthatdonotoverlap_P t43; int64_t t44; h_mutableargumentsthatdonotoverlap_Nest t45; h_mutableargumentsthatdonotoverlap_P t46; int64_t t47; h_mutableargumentsthatdonotoverlap_Nest t48; h_mutableargumentsthatdonotoverlap_P t49; int64_t t50; h_mutableargumentsthatdonotoverlap_Nest t51; int64_t t52; int64_t t53; int64_t t54; h_mutableargumentsthatdonotoverlap_P t55; int64_t t56; int64_t t57; h_mutableargumentsthatdonotoverlap_P t58; HeroArrayHeader * t59; int64_t t60; int64_t t61; HeroArrayHeader * t62; int64_t t63; h_mutableargumentsthatdonotoverlap_P t64; int64_t t65; HeroArrayHeader * t66; int64_t t67; h_mutableargumentsthatdonotoverlap_P t68; int64_t t69; int64_t t70; int64_t t71; int64_t t72; int64_t t73; HeroArrayHeader * t74; HeroArrayHeader * t75; HeroArrayHeader * t76; HeroArrayHeader * t77; HeroArrayHeader * t78; goto bb0;
+    h_mutableargumentsthatdonotoverlap_P h0_p; h_mutableargumentsthatdonotoverlap_P h1_q; HeroArrayHeader * h2_xs = {0}; HeroArrayHeader * h3_ys = {0}; h_mutableargumentsthatdonotoverlap_Nest h4_n; HeroArrayHeader * h5_ps = {0}; int64_t h6_u; int64_t h7_v; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t3; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t8; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_Nest t41; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_Nest t42; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_Nest t45; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_Nest t48; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_Nest t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG h_mutableargumentsthatdonotoverlap_P t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG HeroArrayHeader * t78; goto bb0;
 #line 24 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
 bb0:
 #line 26 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
@@ -423,7 +424,7 @@ bb0:
     hero_print_int(t73);
 #line 72 "tests/golden/run/mutable-arguments-that-do-not-overlap.hero"
     hero_print_end();
-#line 427 "mutableargumentsthatdonotoverlap.c"
+#line 428 "mutableargumentsthatdonotoverlap.c"
     hero_array_release_at(&h2_xs);
     hero_array_release_at(&h3_ys);
     hero_array_release_at(&h5_ps);

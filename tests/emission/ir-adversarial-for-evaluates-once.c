@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -46,7 +47,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_4808f94f, "built");
 
-#line 50 "adversarialforevaluatesonce.c"
+#line 51 "adversarialforevaluatesonce.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -76,7 +77,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 80 "adversarialforevaluatesonce.c"
+#line 81 "adversarialforevaluatesonce.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -94,7 +95,7 @@ int64_t h_adversarialforevaluatesonce_total(void);
 #line 7 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 HeroArrayHeader * h_adversarialforevaluatesonce_numbers(void) {
 #line 7 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-    HeroArrayHeader * h0_own0 = {0}; HeroStr t1; int64_t t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; HeroArrayHeader * t6; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; goto bb0;
 #line 7 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_4808f94f);
@@ -121,7 +122,7 @@ bb0:
     h0_own0 = t5;
 #line 9 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     hero_array_decref(t6);
-#line 125 "adversarialforevaluatesonce.c"
+#line 126 "adversarialforevaluatesonce.c"
     hero_array_incref(t5);
     hero_array_release_at(&h0_own0);
     return t5;
@@ -130,7 +131,7 @@ bb0:
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 int64_t h_adversarialforevaluatesonce_total(void) {
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-    int64_t h0_sum; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; int64_t h3_n; HeroArrayHeader * h4_own4 = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; HeroArrayHeader * t19; goto bb0;
+    int64_t h0_sum; HERO_NODEBUG HeroArrayHeader * h1_xs0 = {0}; HERO_NODEBUG int64_t h2_i0; int64_t h3_n; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; goto bb0;
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 bb0:
     t1 = INT64_C(0);
@@ -205,7 +206,7 @@ bb3:
 bb4:
 #line 17 "tests/golden/ir/adversarial-for-evaluates-once.hero"
     t17 = h0_sum;
-#line 209 "adversarialforevaluatesonce.c"
+#line 210 "adversarialforevaluatesonce.c"
     hero_array_release_at(&h1_xs0);
     hero_array_release_at(&h4_own4);
     return t17;

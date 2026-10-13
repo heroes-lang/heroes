@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -84,7 +85,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_3615c7bd, "a given back twice, and nothing said");
 
-#line 88 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 89 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -128,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 132 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 133 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_deadhandlecomparedafteritsaddresswashandedoutagain_H_eq(hh * const *a, hh * const *b);
@@ -148,7 +149,7 @@ void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void);
 #line 18 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_closed(hh * *ph0_x) {
 #line 18 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
-    hh * t1; goto bb0;
+    HERO_NODEBUG hh * t1; goto bb0;
 #line 18 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 bb0:
     t1 = (*ph0_x);
@@ -166,13 +167,13 @@ bb0:
     }
 #line 19 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     return;
-#line 170 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 171 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
 
 #line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 void h_deadhandlecomparedafteritsaddresswashandedoutagain_main(void) {
 #line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
-    hh * h0_a; hh * h1_b; hh * t1; hh * t2; hh * t3; hh * t4; bool t5; hh * t6; HeroStr t7; goto bb0;
+    hh * h0_a; hh * h1_b; HERO_NODEBUG hh * t1; HERO_NODEBUG hh * t2; HERO_NODEBUG hh * t3; HERO_NODEBUG hh * t4; HERO_NODEBUG bool t5; HERO_NODEBUG hh * t6; HERO_NODEBUG HeroStr t7; goto bb0;
 #line 21 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
 bb0:
     t1 = f_open();
@@ -215,7 +216,7 @@ bb0:
     hero_print_end();
 #line 27 "tests/golden/run/dead-handle-compared-after-its-address-was-handed-out-again.hero"
     return;
-#line 219 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
+#line 220 "deadhandlecomparedafteritsaddresswashandedoutagain.c"
 }
 HERO_TU_LOCAL bool h_deadhandlecomparedafteritsaddresswashandedoutagain_H_eq(hh * const *a, hh * const *b) {
     return hero_handle_eq(*a, *b);

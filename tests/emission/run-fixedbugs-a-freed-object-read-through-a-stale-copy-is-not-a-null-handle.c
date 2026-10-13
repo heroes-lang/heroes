@@ -44,6 +44,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -88,7 +89,7 @@ HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_2731e935, "null: ");
 HERO_STR_STATIC(hero_str_3043d2a7, "after: ");
 
-#line 92 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 93 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -133,7 +134,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 137 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 138 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b);
@@ -152,7 +153,7 @@ void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void);
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) {
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    outer * h0_a; outer * h1_kept; outer * t1; outer * t2; HeroStr t3; outer * t4; int64_t t5; outer * t6; HeroStr t7; outer * t8; outer * t9; bool t10; HeroStr t11; outer * t12; int64_t t13; goto bb0;
+    outer * h0_a; outer * h1_kept; HERO_NODEBUG outer * t1; HERO_NODEBUG outer * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG outer * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG outer * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG outer * t8; HERO_NODEBUG outer * t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG outer * t12; HERO_NODEBUG int64_t t13; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 bb0:
     t1 = make();
@@ -217,7 +218,7 @@ bb0:
     hero_print_end();
 #line 43 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
     return;
-#line 221 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
+#line 222 "fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle.c"
 }
 HERO_TU_LOCAL bool h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);

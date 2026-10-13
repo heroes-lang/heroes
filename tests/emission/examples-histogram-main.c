@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +50,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_b63ac2, "digit ");
 HERO_STR_STATIC(hero_str_1dce, ": ");
 
-#line 53 "main.c"
+#line 54 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -83,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "main.c"
+#line 88 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -111,19 +112,19 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 22 "examples/histogram/main.hero"
 int64_t h_main_NUMBERS(void) {
 #line 22 "examples/histogram/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 22 "examples/histogram/main.hero"
 bb0:
     t1 = INT64_C(20000);
 #line 23 "examples/histogram/main.hero"
     return t1;
-#line 121 "main.c"
+#line 122 "main.c"
 }
 
 #line 26 "examples/histogram/main.hero"
 int64_t h_main_value_at(int64_t h0_n) {
 #line 26 "examples/histogram/main.hero"
-    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; goto bb0;
 #line 26 "examples/histogram/main.hero"
 bb0:
     t1 = h0_n;
@@ -141,13 +142,13 @@ bb0:
     t5 = t3 % t4;
 #line 27 "examples/histogram/main.hero"
     return t5;
-#line 145 "main.c"
+#line 146 "main.c"
 }
 
 #line 30 "examples/histogram/main.hero"
 int64_t h_main_count_of(int64_t h0_digit) {
 #line 30 "examples/histogram/main.hero"
-    hero_thread_guard("main.count_of"); int64_t h1_seen; int64_t h2_n; int64_t h3_v; bool h4_b0; int64_t t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; bool t10; int64_t t11; int64_t t12; bool t13; bool t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; bool t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; bool t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; int64_t t33; int64_t t34; int64_t t35; goto bb0;
+    hero_thread_guard("main.count_of"); int64_t h1_seen; int64_t h2_n; int64_t h3_v; HERO_NODEBUG bool h4_b0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; goto bb0;
 #line 30 "examples/histogram/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -299,7 +300,7 @@ bb13:
 bb14:
 #line 42 "examples/histogram/main.hero"
     goto bb12;
-#line 303 "main.c"
+#line 304 "main.c"
 }
 
 int64_t h_0cb_main_count_of(int64_t h0_digit) {
@@ -310,7 +311,7 @@ int64_t h_0cb_main_count_of(int64_t h0_digit) {
 #line 49 "examples/histogram/main.hero"
 HeroArrayHeader * h_main_counts(void) {
 #line 49 "examples/histogram/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_d; HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_h; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; h_0fn_48ac9712 t7; int64_t t8; int64_t t9; int64_t t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t25; int64_t t26; int64_t t28; int64_t t29; int64_t t30; HeroArrayHeader * t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; HeroArrayHeader * t35; HeroArrayHeader * t36; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_d; HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; goto bb0;
 #line 49 "examples/histogram/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -440,7 +441,7 @@ bb6:
 bb7:
 #line 62 "examples/histogram/main.hero"
     t31 = h2_out;
-#line 444 "main.c"
+#line 445 "main.c"
     hero_array_incref(t31);
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h2_out);
@@ -453,7 +454,7 @@ bb7:
 #line 64 "examples/histogram/main.hero"
 void h_main_main(void) {
 #line 64 "examples/histogram/main.hero"
-    HeroArrayHeader * h0_found = {0}; int64_t h1_d; HeroArrayHeader * h2_own2 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; int64_t t7; HeroStr t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; HeroArrayHeader * t16; goto bb0;
+    HeroArrayHeader * h0_found = {0}; int64_t h1_d; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroArrayHeader * t16; goto bb0;
 #line 64 "examples/histogram/main.hero"
 bb0:
     t1 = h_main_counts();
@@ -520,7 +521,7 @@ bb2:
     goto bb1;
 #line 70 "examples/histogram/main.hero"
 bb3:
-#line 524 "main.c"
+#line 525 "main.c"
     hero_array_release_at(&h0_found);
     hero_array_release_at(&h2_own2);
     return;

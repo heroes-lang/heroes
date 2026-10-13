@@ -1,0 +1,32 @@
+# At `-O0` a stopped frame lists the bindings the author wrote and nothing the
+# lowering invented (panel 213's R1, provisional, author ratification
+# pending). `add` holds temporaries, the `$own` slots of its strings, the
+# array its loop walks and the loop's index, the match's scrutinee and the
+# `$ret0` its two ways out return through, and its frame lists `n`, `label`,
+# `total`, `k`, `step` and `v`, six, and nothing else; `main` holds
+# temporaries alone and lists nothing. Until R1 the frame of `add` listed
+# the lowering's slots and temporaries among them. The names are still the
+# emitted C's, `h2_total` for `total`: the day the frame shows the author's
+# own spelling this case moves with it, on purpose.
+
+variant Step
+    num
+        v: i64
+    stop
+
+function add(n: i64, label: str) -> str
+    total: i64 @= 0
+
+    for k in [1, 2, 3]
+        total @ total + k * n
+
+    step: Step = .num(v: total)
+
+    match step
+        .num v => total @ total + v.v
+        .stop  => return "stopped"
+
+    return label + total.to_str()
+
+function main()
+    print(add(n: 2, label: "sum "))

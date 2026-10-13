@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -49,7 +50,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_3b5e78d0, "dot product over ");
 HERO_STR_STATIC(hero_str_694794a4, " terms: ");
 
-#line 53 "main.c"
+#line 54 "main.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t tag;
@@ -83,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "main.c"
+#line 88 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -114,31 +115,31 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 20 "examples/dotproduct/main.hero"
 int64_t h_main_BANDS(void) {
 #line 20 "examples/dotproduct/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 20 "examples/dotproduct/main.hero"
 bb0:
     t1 = INT64_C(6);
 #line 21 "examples/dotproduct/main.hero"
     return t1;
-#line 124 "main.c"
+#line 125 "main.c"
 }
 
 #line 23 "examples/dotproduct/main.hero"
 int64_t h_main_PER_BAND(void) {
 #line 23 "examples/dotproduct/main.hero"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 23 "examples/dotproduct/main.hero"
 bb0:
     t1 = INT64_C(4000);
 #line 24 "examples/dotproduct/main.hero"
     return t1;
-#line 136 "main.c"
+#line 137 "main.c"
 }
 
 #line 29 "examples/dotproduct/main.hero"
 int64_t h_main_left(int64_t h0_at) {
 #line 29 "examples/dotproduct/main.hero"
-    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; goto bb0;
 #line 29 "examples/dotproduct/main.hero"
 bb0:
     t1 = h0_at;
@@ -156,13 +157,13 @@ bb0:
     if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow();
 #line 30 "examples/dotproduct/main.hero"
     return t5;
-#line 160 "main.c"
+#line 161 "main.c"
 }
 
 #line 32 "examples/dotproduct/main.hero"
 int64_t h_main_right(int64_t h0_at) {
 #line 32 "examples/dotproduct/main.hero"
-    int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; goto bb0;
 #line 32 "examples/dotproduct/main.hero"
 bb0:
     t1 = INT64_C(53);
@@ -180,13 +181,13 @@ bb0:
     if (__builtin_sub_overflow(t1, t4, &t5)) hero_panic_overflow();
 #line 33 "examples/dotproduct/main.hero"
     return t5;
-#line 184 "main.c"
+#line 185 "main.c"
 }
 
 #line 35 "examples/dotproduct/main.hero"
 int64_t h_main_band(int64_t h0_index) {
 #line 35 "examples/dotproduct/main.hero"
-    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_at; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; bool t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; goto bb0;
+    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_at; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; goto bb0;
 #line 35 "examples/dotproduct/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -251,7 +252,7 @@ bb3:
     t22 = h1_total;
 #line 43 "examples/dotproduct/main.hero"
     return t22;
-#line 255 "main.c"
+#line 256 "main.c"
 }
 
 int64_t h_0cb_main_band(int64_t h0_index) {
@@ -262,7 +263,7 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 #line 45 "examples/dotproduct/main.hero"
 int64_t h_main_together(void) {
 #line 45 "examples/dotproduct/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_h; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; h_0fn_48ac9712 t7; int64_t t8; int64_t t9; int64_t t11; int64_t t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t16; int64_t t17; HeroArrayHeader * t18; int64_t t19; bool t20; HeroArrayHeader * t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; int64_t t30; int64_t t31; HeroArrayHeader * t32; HeroArrayHeader * t33; HeroArrayHeader * t34; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; goto bb0;
 #line 45 "examples/dotproduct/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -384,7 +385,7 @@ bb6:
 bb7:
 #line 58 "examples/dotproduct/main.hero"
     t31 = h2_total;
-#line 388 "main.c"
+#line 389 "main.c"
     hero_array_release_at(&h0_handles);
     hero_array_release_at(&h3_xs0);
     hero_array_release_at(&h6_own6);
@@ -394,7 +395,7 @@ bb7:
 #line 60 "examples/dotproduct/main.hero"
 int64_t h_main_alone(void) {
 #line 60 "examples/dotproduct/main.hero"
-    int64_t h0_total; int64_t h1_at; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; bool t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; goto bb0;
+    int64_t h0_total; int64_t h1_at; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; goto bb0;
 #line 60 "examples/dotproduct/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -451,13 +452,13 @@ bb3:
     t18 = h0_total;
 #line 68 "examples/dotproduct/main.hero"
     return t18;
-#line 455 "main.c"
+#line 456 "main.c"
 }
 
 #line 70 "examples/dotproduct/main.hero"
 void h_main_main(void) {
 #line 70 "examples/dotproduct/main.hero"
-    HeroStr t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 70 "examples/dotproduct/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3b5e78d0);
@@ -483,7 +484,7 @@ bb0:
     hero_print_end();
 #line 71 "examples/dotproduct/main.hero"
     return;
-#line 487 "main.c"
+#line 488 "main.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

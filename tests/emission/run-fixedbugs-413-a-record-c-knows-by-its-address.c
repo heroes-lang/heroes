@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 23 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 _Static_assert(__builtin_classify_type(((struct keeper *)0)->self) == 5 && _Generic(((struct keeper *)0)->self, __typeof__(((struct keeper *)0)->self): 1, default: 0) && sizeof(((struct keeper *)0)->self) == sizeof(void *), "heroes-ffi-field Keeper self");
@@ -55,11 +56,11 @@ _Static_assert(sizeof(struct pair) - __builtin_offsetof(struct pair, k) != 0, "h
 #line 29 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 _Static_assert(_Generic(&((struct pair *)0)->k, struct keeper (*)[2]: 1, default: 0) && sizeof(struct pair) - __builtin_offsetof(struct pair, k) >= sizeof(struct keeper[2]), "heroes-ffi-field Pair k");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->after) == 1 && sizeof(((struct pair *)0)->after) == sizeof(int64_t) && (_Generic(((struct pair *)0)->after, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair after");
-#line 59 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 60 "fixedbugs413arecordcknowsbyitsaddress.c"
 
 #line 25 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 _Static_assert(__builtin_classify_type(*(struct wrap *)0) != 13, "heroes-ffi-union Wrap before k");
-#line 63 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 64 "fixedbugs413arecordcknowsbyitsaddress.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -146,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 150 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 151 "fixedbugs413arecordcknowsbyitsaddress.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs413arecordcknowsbyitsaddress_Keeper_eq(const struct keeper *a, const struct keeper *b);
@@ -208,7 +209,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 #line 34 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_start(struct keeper *ph0_k) {
 #line 34 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    int32_t t1; goto bb0;
+    HERO_NODEBUG int32_t t1; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb0:
     hero_lend_local_name(ph0_k, "keep_init", "k");
@@ -216,25 +217,25 @@ bb0:
     t1 = keep_init(&(*ph0_k));
 #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 220 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 221 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_passed_on(struct keeper *ph0_k) {
 #line 37 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    int32_t t1; goto bb0;
+    HERO_NODEBUG int32_t t1; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb0:
     t1 = h_fixedbugs413arecordcknowsbyitsaddress_start(&(*ph0_k));
 #line 38 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     return t1;
-#line 232 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 233 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 40 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int32_t h_fixedbugs413arecordcknowsbyitsaddress_deep(struct keeper *ph0_k, int64_t h1_n) {
 #line 40 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    int32_t h2_ret0; int64_t t1; int64_t t2; bool t3; int32_t t4; int64_t t5; int64_t t6; int64_t t7; int32_t t8; int32_t t9; goto bb0;
+    HERO_NODEBUG int32_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG int32_t t9; goto bb0;
 #line 40 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb0:
     t1 = h1_n;
@@ -274,7 +275,7 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb4:
-#line 278 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 279 "fixedbugs413arecordcknowsbyitsaddress.c"
     t9 = h2_ret0;
     return t9;
 }
@@ -282,7 +283,7 @@ bb4:
 #line 45 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 int64_t h_fixedbugs413arecordcknowsbyitsaddress_every_one(HeroArrayHeader * *ph0_ks) {
 #line 45 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    int64_t h1_refused; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_i; HeroArrayHeader * h5_own5 = {0}; int64_t t1; int64_t t2; HeroArrayHeader * t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; bool t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; int64_t t14; int32_t t15; int32_t t16; bool t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; HeroArrayHeader * t25; HeroArrayHeader * t26; goto bb0;
+    int64_t h1_refused; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_i; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; goto bb0;
 #line 45 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb0:
     t1 = INT64_C(0);
@@ -365,7 +366,7 @@ bb3:
 bb4:
 #line 52 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     t24 = h1_refused;
-#line 369 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 370 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
     return t24;
@@ -386,7 +387,7 @@ bb6:
 bb7:
 #line 50 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     goto bb5;
-#line 390 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 391 "fixedbugs413arecordcknowsbyitsaddress.c"
 }
 
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
@@ -402,7 +403,7 @@ void h_fixedbugs413arecordcknowsbyitsaddress_main(void) {
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 #define h8_copy (*hero_lend_h8_copy)
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
-    struct keeper *const hero_lend_h0_k = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "k"); HeroArrayHeader * h1_ks = {0}; HeroArrayHeader * h2_ws = {0}; struct pair h3_p; __attribute__((unused)) struct wrap h4_w; struct keeper *const hero_lend_h5_a = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "a"); struct keeper *const hero_lend_h6_b = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "b"); struct keeper *const hero_lend_h7_d = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "d"); struct keeper *const hero_lend_h8_copy = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "copy"); HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * h10_own10 = {0}; struct keeper t1; int32_t t2; HeroStr t3; int32_t t4; struct keeper t5; struct keeper t6; struct keeper t7; HeroArrayHeader * t8; int64_t t9; int32_t t10; HeroStr t11; int64_t t12; int32_t t13; int64_t t14; struct keeper t15; struct wrap t16; int64_t t17; struct keeper t18; struct wrap t19; HeroArrayHeader * t20; int64_t t21; int32_t t22; HeroStr t23; int64_t t24; int32_t t25; struct pair t26; int64_t t27; int32_t t28; HeroStr t29; int64_t t30; int32_t t31; int64_t t32; struct keeper t33; struct wrap t34; int32_t t35; HeroStr t36; int32_t t37; struct keeper t38; int32_t t39; HeroStr t40; int32_t t41; int64_t t42; int32_t t43; HeroStr t44; int64_t t45; int32_t t46; struct keeper t47; int32_t t48; HeroStr t49; int32_t t50; struct keeper t51; int64_t t52; int32_t t53; HeroStr t54; int32_t t55; int64_t t56; HeroStr t57; int64_t t58; int32_t t59; HeroStr t60; int64_t t61; int32_t t62; HeroStr t63; int64_t t64; int32_t t65; HeroArrayHeader * t66; int64_t t67; struct keeper t68; int64_t t69; HeroStr t70; HeroArrayHeader * t71; int64_t t72; struct wrap t73; int64_t t74; HeroStr t75; HeroArrayHeader * t76; int64_t t77; struct wrap t78; struct keeper t79; int64_t t80; HeroStr t81; struct pair t82; int64_t t83; struct keeper t84; int32_t t85; HeroStr t86; int32_t t87; HeroArrayHeader * t88; HeroArrayHeader * t89; HeroArrayHeader * t90; HeroArrayHeader * t91; goto bb0;
+    struct keeper *const hero_lend_h0_k = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "k"); HeroArrayHeader * h1_ks = {0}; HeroArrayHeader * h2_ws = {0}; struct pair h3_p; __attribute__((unused)) struct wrap h4_w; struct keeper *const hero_lend_h5_a = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "a"); struct keeper *const hero_lend_h6_b = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "b"); struct keeper *const hero_lend_h7_d = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "d"); struct keeper *const hero_lend_h8_copy = (struct keeper *)hero_lend_local(sizeof(struct keeper), "fixedbugs413arecordcknowsbyitsaddress.main", "copy"); HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG struct keeper t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG struct keeper t5; HERO_NODEBUG struct keeper t6; HERO_NODEBUG struct keeper t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG struct keeper t15; HERO_NODEBUG struct wrap t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG struct keeper t18; HERO_NODEBUG struct wrap t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int32_t t25; HERO_NODEBUG struct pair t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int32_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int32_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG struct keeper t33; HERO_NODEBUG struct wrap t34; HERO_NODEBUG int32_t t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG int32_t t37; HERO_NODEBUG struct keeper t38; HERO_NODEBUG int32_t t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG int32_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int32_t t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int32_t t46; HERO_NODEBUG struct keeper t47; HERO_NODEBUG int32_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG int32_t t50; HERO_NODEBUG struct keeper t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int32_t t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG int32_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int32_t t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int32_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int32_t t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG struct keeper t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG struct wrap t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG struct wrap t78; HERO_NODEBUG struct keeper t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG struct pair t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG struct keeper t84; HERO_NODEBUG int32_t t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG int32_t t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; goto bb0;
 #line 54 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
 bb0:
     t1 = (struct keeper){0};
@@ -776,7 +777,7 @@ bb0:
     hero_print_int(t87);
 #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
     hero_print_end();
-#line 780 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 781 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_release_at(&h1_ks);
     hero_array_release_at(&h2_ws);
     hero_array_release_at(&h9_own9);
@@ -797,7 +798,7 @@ bb0:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -846,7 +847,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 850 "fixedbugs413arecordcknowsbyitsaddress.c"
+#line 851 "fixedbugs413arecordcknowsbyitsaddress.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

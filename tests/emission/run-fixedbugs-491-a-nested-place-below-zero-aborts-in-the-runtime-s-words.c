@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 49 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
 typedef struct h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row {
     HeroArrayHeader * f_cells;
 } h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row;
@@ -78,7 +79,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 82 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 83 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_retain(const h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row *v);
@@ -117,7 +118,7 @@ void h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_main(void);
 #line 7 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
 void h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_main(void) {
 #line 7 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
-    HeroArrayHeader * h0_rows = {0}; int64_t h1_at; HeroArrayHeader * h2_own2 = {0}; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row h3_own3 = {0}; HeroArrayHeader * h4_own4 = {0}; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; int64_t t1; int64_t t2; HeroArrayHeader * t3; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t4; int64_t t5; int64_t t6; HeroArrayHeader * t7; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t8; HeroArrayHeader * t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; int64_t t17; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t18; HeroArrayHeader * t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; HeroArrayHeader * t26; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t27; HeroArrayHeader * t28; h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t29; HeroArrayHeader * t30; HeroArrayHeader * t31; goto bb0;
+    HeroArrayHeader * h0_rows = {0}; int64_t h1_at; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; goto bb0;
 #line 7 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
 bb0:
     t1 = INT64_C(1);
@@ -236,7 +237,7 @@ bb0:
     hero_print_int(t25);
 #line 13 "tests/golden/run/fixedbugs-491-a-nested-place-below-zero-aborts-in-the-runtime-s-words.hero"
     hero_print_end();
-#line 240 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
+#line 241 "fixedbugs491anestedplacebelowzeroabortsintheruntimeswords.c"
     hero_array_release_at(&h0_rows);
     hero_array_release_at(&h2_own2);
     h_fixedbugs491anestedplacebelowzeroabortsintheruntimeswords_Row_release(hero_slot_escape(&h3_own3));

@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -67,7 +68,7 @@ HERO_STR_STATIC(hero_str_285737f8, "the expression ends too soon");
 HERO_STR_STATIC(hero_str_a9c11e6, "found an operator");
 HERO_STR_STATIC(hero_str_6ebbfefc, "missing closing paren");
 
-#line 71 "main.c"
+#line 72 "main.c"
 typedef enum h_lex_Token_tag {
     h_lex_Token_tag_num = 0,
     h_lex_Token_tag_name = 1,
@@ -193,7 +194,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 197 "main.c"
+#line 198 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_lex_Token_c_num_eq(const h_lex_Token_c_num *a, const h_lex_Token_c_num *b);
@@ -331,7 +332,7 @@ HERO_TU_LOCAL int64_t h_main_reduce_37f8817a(HeroArrayHeader * h0_xs, int64_t h1
 #line 56 "examples/calculator/main.hero"
 int64_t h_main_plus(int64_t h0_a, int64_t h1_b) {
 #line 56 "examples/calculator/main.hero"
-    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
 #line 56 "examples/calculator/main.hero"
 bb0:
     t1 = h0_a;
@@ -341,13 +342,13 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 57 "examples/calculator/main.hero"
     return t3;
-#line 345 "main.c"
+#line 346 "main.c"
 }
 
 #line 63 "examples/calculator/main.hero"
 int64_t h_main_double(int64_t h0_n) {
 #line 63 "examples/calculator/main.hero"
-    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
 #line 63 "examples/calculator/main.hero"
 bb0:
     t1 = h0_n;
@@ -357,13 +358,13 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 64 "examples/calculator/main.hero"
     return t3;
-#line 361 "main.c"
+#line 362 "main.c"
 }
 
 #line 68 "examples/calculator/main.hero"
 void h_main_main(void) {
 #line 68 "examples/calculator/main.hero"
-    HeroMapHeader * h0_env = {0}; HeroArrayHeader * h1_cases = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_c = {0}; h_0opt_e201354 h5_s0 = {0}; int64_t h6_v; HeroFailure h7_e = {0}; HeroMapHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; h_0opt_e201354 h10_own10 = {0}; HeroStr t1; int64_t t2; HeroStr t3; int64_t t4; HeroMapHeader * t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroArrayHeader * t11; HeroArrayHeader * t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t16; bool t17; HeroArrayHeader * t18; int64_t t19; HeroStr t20; HeroStr t21; HeroMapHeader * t22; h_0opt_e201354 t23; h_0opt_e201354 t24; int64_t t25; h_0opt_e201354 t26; int64_t t27; HeroStr t28; HeroStr t29; int64_t t30; h_0opt_e201354 t31; HeroFailure t32; HeroStr t33; HeroStr t34; HeroFailure t35; HeroStr t36; HeroStr t37; HeroFailure t38; HeroStr t39; int64_t t40; int64_t t41; int64_t t42; HeroMapHeader * t43; HeroMapHeader * t44; HeroArrayHeader * t45; HeroArrayHeader * t46; HeroArrayHeader * t47; HeroStr t48; h_0opt_e201354 t49; h_0opt_e201354 t50; HeroFailure t51; goto bb0;
+    HeroMapHeader * h0_env = {0}; HeroArrayHeader * h1_cases = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_c = {0}; HERO_NODEBUG h_0opt_e201354 h5_s0 = {0}; int64_t h6_v; HeroFailure h7_e = {0}; HERO_NODEBUG HeroMapHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroMapHeader * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_0opt_e201354 t31; HERO_NODEBUG HeroFailure t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroFailure t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroFailure t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG HeroMapHeader * t43; HERO_NODEBUG HeroMapHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG h_0opt_e201354 t50; HERO_NODEBUG HeroFailure t51; goto bb0;
 #line 68 "examples/calculator/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_78);
@@ -516,7 +517,7 @@ bb3:
     goto bb1;
 #line 79 "examples/calculator/main.hero"
 bb4:
-#line 520 "main.c"
+#line 521 "main.c"
     hero_map_release_at(&h0_env);
     hero_array_release_at(&h1_cases);
     hero_array_release_at(&h2_xs0);
@@ -593,17 +594,17 @@ bb7:
     hero_print_end();
 #line 82 "examples/calculator/main.hero"
     goto bb5;
-#line 597 "main.c"
+#line 598 "main.c"
 }
 
 #line 14 "examples/calculator/eval.hero"
 HeroStr h_eval_ERR_TRAILING_TOKENS(void) {
 #line 14 "examples/calculator/eval.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 14 "examples/calculator/eval.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_a26a417);
-#line 607 "main.c"
+#line 608 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -611,11 +612,11 @@ bb0:
 #line 17 "examples/calculator/eval.hero"
 HeroStr h_eval_ERR_UNKNOWN_NAME(void) {
 #line 17 "examples/calculator/eval.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 17 "examples/calculator/eval.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
-#line 619 "main.c"
+#line 620 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -623,7 +624,7 @@ bb0:
 #line 23 "examples/calculator/eval.hero"
 h_0opt_e201354 h_eval_lookup(HeroMapHeader * h0_env, HeroStr h1_name) {
 #line 23 "examples/calculator/eval.hero"
-    h_0opt_e201354 h2_f0 = {0}; h_0opt_e201354 h3_f1 = {0}; h_0opt_e201354 h4_ret0 = {0}; h_0opt_e201354 h5_own5 = {0}; h_0opt_e201354 h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_e201354 h9_own9 = {0}; h_0opt_e201354 h10_own10 = {0}; HeroMapHeader * t1; HeroStr t2; h_0opt_e201354 t3; h_0opt_e201354 t4; int64_t t5; int64_t t6; bool t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; h_0opt_e201354 t12; HeroMapHeader * t13; HeroStr t14; h_0opt_e201354 t15; h_0opt_e201354 t16; int64_t t17; int64_t t18; bool t19; h_0opt_e201354 t20; HeroFailure t21; h_0opt_e201354 t22; int64_t t23; h_0opt_e201354 t24; h_0opt_e201354 t25; h_0opt_e201354 t26; h_0opt_e201354 t27; h_0opt_e201354 t28; h_0opt_e201354 t29; HeroStr t30; HeroStr t31; h_0opt_e201354 t32; h_0opt_e201354 t33; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h4_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG h_0opt_e201354 t33; goto bb0;
 #line 23 "examples/calculator/eval.hero"
 bb0:
     t1 = h0_env;
@@ -784,7 +785,7 @@ bb5:
     t20 = h3_f1;
 #line 26 "examples/calculator/eval.hero"
     t21 = t20.as.err;
-#line 788 "main.c"
+#line 789 "main.c"
     hero_panic_must(t21);
     hero_unreachable();
 bb6:
@@ -804,7 +805,7 @@ bb6:
 #line 28 "examples/calculator/eval.hero"
 h_0opt_e201354 h_eval_sum_of(HeroArrayHeader * h0_children, HeroMapHeader * h1_env) {
 #line 28 "examples/calculator/eval.hero"
-    int64_t h2_tot; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_parse_Expr h5_c = {0}; h_0opt_e201354 h6_f0 = {0}; h_0opt_e201354 h7_ret0 = {0}; h_0opt_e201354 h8_own8 = {0}; h_0opt_e201354 h9_own9 = {0}; h_0opt_e201354 h10_own10 = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_parse_Expr t10; int64_t t11; h_parse_Expr t12; HeroMapHeader * t13; h_0opt_e201354 t14; h_0opt_e201354 t15; int64_t t16; int64_t t17; bool t18; h_0opt_e201354 t19; HeroFailure t20; h_0opt_e201354 t21; h_0opt_e201354 t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; h_0opt_e201354 t29; h_0opt_e201354 t30; HeroArrayHeader * t31; h_parse_Expr t32; h_0opt_e201354 t33; h_0opt_e201354 t34; h_0opt_e201354 t35; h_0opt_e201354 t36; goto bb0;
+    int64_t h2_tot; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; h_parse_Expr h5_c = {0}; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h7_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_parse_Expr t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG h_0opt_e201354 t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_parse_Expr t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; goto bb0;
 #line 28 "examples/calculator/eval.hero"
 bb0:
     t1 = INT64_C(0);
@@ -947,7 +948,7 @@ bb6:
     goto bb7;
 #line 32 "examples/calculator/eval.hero"
 bb7:
-#line 951 "main.c"
+#line 952 "main.c"
     t30 = h7_ret0;
     h_0opt_e201354_retain(&t30);
     hero_array_release_at(&h3_xs0);
@@ -962,7 +963,7 @@ bb7:
 #line 36 "examples/calculator/eval.hero"
 h_0opt_e201354 h_eval_product_of(HeroArrayHeader * h0_children, HeroMapHeader * h1_env) {
 #line 36 "examples/calculator/eval.hero"
-    int64_t h2_tot; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; h_parse_Expr h5_c = {0}; h_0opt_e201354 h6_f0 = {0}; h_0opt_e201354 h7_ret0 = {0}; h_0opt_e201354 h8_own8 = {0}; h_0opt_e201354 h9_own9 = {0}; h_0opt_e201354 h10_own10 = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_parse_Expr t10; int64_t t11; h_parse_Expr t12; HeroMapHeader * t13; h_0opt_e201354 t14; h_0opt_e201354 t15; int64_t t16; int64_t t17; bool t18; h_0opt_e201354 t19; HeroFailure t20; h_0opt_e201354 t21; h_0opt_e201354 t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; h_0opt_e201354 t29; h_0opt_e201354 t30; HeroArrayHeader * t31; h_parse_Expr t32; h_0opt_e201354 t33; h_0opt_e201354 t34; h_0opt_e201354 t35; h_0opt_e201354 t36; goto bb0;
+    int64_t h2_tot; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; h_parse_Expr h5_c = {0}; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h7_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_parse_Expr t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG h_0opt_e201354 t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG h_parse_Expr t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; goto bb0;
 #line 36 "examples/calculator/eval.hero"
 bb0:
     t1 = INT64_C(1);
@@ -1105,7 +1106,7 @@ bb6:
     goto bb7;
 #line 40 "examples/calculator/eval.hero"
 bb7:
-#line 1109 "main.c"
+#line 1110 "main.c"
     t30 = h7_ret0;
     h_0opt_e201354_retain(&t30);
     hero_array_release_at(&h3_xs0);
@@ -1120,7 +1121,7 @@ bb7:
 #line 45 "examples/calculator/eval.hero"
 h_0opt_e201354 h_eval_evaluate(h_parse_Expr h0_e, HeroMapHeader * h1_env) {
 #line 45 "examples/calculator/eval.hero"
-    h_parse_Expr h2_s0 = {0}; h_0opt_e201354 h3_r0 = {0}; h_parse_Expr_c_num h4_n; h_parse_Expr_c_variable h5_x = {0}; h_parse_Expr_c_sum h6_s = {0}; h_parse_Expr_c_product h7_q = {0}; h_0opt_e201354 h8_own8 = {0}; h_0opt_e201354 h9_own9 = {0}; h_0opt_e201354 h10_own10 = {0}; h_0opt_e201354 h11_own11 = {0}; h_parse_Expr t1; h_parse_Expr t2; int64_t t3; h_parse_Expr t4; h_parse_Expr_c_num t5; h_parse_Expr_c_num t6; int64_t t7; h_0opt_e201354 t8; h_parse_Expr t9; h_parse_Expr_c_variable t10; HeroMapHeader * t11; h_parse_Expr_c_variable t12; HeroStr t13; h_0opt_e201354 t14; h_parse_Expr t15; h_parse_Expr_c_sum t16; h_parse_Expr_c_sum t17; HeroArrayHeader * t18; HeroMapHeader * t19; h_0opt_e201354 t20; h_parse_Expr t21; h_parse_Expr_c_product t22; h_parse_Expr_c_product t23; HeroArrayHeader * t24; HeroMapHeader * t25; h_0opt_e201354 t26; h_0opt_e201354 t27; h_parse_Expr t28; h_0opt_e201354 t29; h_0opt_e201354 t30; h_parse_Expr_c_variable t31; h_0opt_e201354 t32; h_0opt_e201354 t33; h_parse_Expr_c_sum t34; h_0opt_e201354 t35; h_0opt_e201354 t36; h_parse_Expr_c_product t37; h_0opt_e201354 t38; h_0opt_e201354 t39; goto bb0;
+    HERO_NODEBUG h_parse_Expr h2_s0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_r0 = {0}; h_parse_Expr_c_num h4_n; h_parse_Expr_c_variable h5_x = {0}; h_parse_Expr_c_sum h6_s = {0}; h_parse_Expr_c_product h7_q = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG h_0opt_e201354 h11_own11 = {0}; HERO_NODEBUG h_parse_Expr t1; HERO_NODEBUG h_parse_Expr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_parse_Expr t4; HERO_NODEBUG h_parse_Expr_c_num t5; HERO_NODEBUG h_parse_Expr_c_num t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG h_parse_Expr t9; HERO_NODEBUG h_parse_Expr_c_variable t10; HERO_NODEBUG HeroMapHeader * t11; HERO_NODEBUG h_parse_Expr_c_variable t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_parse_Expr t15; HERO_NODEBUG h_parse_Expr_c_sum t16; HERO_NODEBUG h_parse_Expr_c_sum t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_parse_Expr t21; HERO_NODEBUG h_parse_Expr_c_product t22; HERO_NODEBUG h_parse_Expr_c_product t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroMapHeader * t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_parse_Expr t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG h_0opt_e201354 t30; HERO_NODEBUG h_parse_Expr_c_variable t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG h_parse_Expr_c_sum t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG h_parse_Expr_c_product t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_NODEBUG h_0opt_e201354 t39; goto bb0;
 #line 45 "examples/calculator/eval.hero"
 bb0:
     t1 = h0_e;
@@ -1154,7 +1155,7 @@ bb0:
 bb1:
 #line 46 "examples/calculator/eval.hero"
     t27 = h3_r0;
-#line 1158 "main.c"
+#line 1159 "main.c"
     h_0opt_e201354_retain(&t27);
     h_parse_Expr_release(hero_slot_escape(&h2_s0));
     h_0opt_e201354_release(hero_slot_escape(&h3_r0));
@@ -1309,13 +1310,13 @@ bb5:
     h_0opt_e201354_release(&t39);
 #line 46 "examples/calculator/eval.hero"
     goto bb1;
-#line 1313 "main.c"
+#line 1314 "main.c"
 }
 
 #line 53 "examples/calculator/eval.hero"
 HeroArrayHeader * h_eval_names_used(h_parse_Expr h0_e) {
 #line 53 "examples/calculator/eval.hero"
-    h_parse_Expr h1_s0 = {0}; HeroArrayHeader * h2_r0 = {0}; h_parse_Expr_c_variable h3_x = {0}; h_parse_Expr_c_sum h4_s = {0}; h_parse_Expr_c_product h5_q = {0}; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; h_parse_Expr t1; h_parse_Expr t2; int64_t t3; HeroArrayHeader * t4; h_parse_Expr t5; h_parse_Expr_c_variable t6; h_parse_Expr_c_variable t7; HeroStr t8; HeroArrayHeader * t9; h_parse_Expr t10; h_parse_Expr_c_sum t11; h_parse_Expr_c_sum t12; HeroArrayHeader * t13; HeroArrayHeader * t14; h_parse_Expr t15; h_parse_Expr_c_product t16; h_parse_Expr_c_product t17; HeroArrayHeader * t18; HeroArrayHeader * t19; HeroArrayHeader * t20; h_parse_Expr t21; HeroArrayHeader * t22; HeroArrayHeader * t23; h_parse_Expr_c_variable t24; HeroArrayHeader * t25; HeroArrayHeader * t26; h_parse_Expr_c_sum t27; HeroArrayHeader * t28; HeroArrayHeader * t29; h_parse_Expr_c_product t30; HeroArrayHeader * t31; HeroArrayHeader * t32; goto bb0;
+    HERO_NODEBUG h_parse_Expr h1_s0 = {0}; HERO_NODEBUG HeroArrayHeader * h2_r0 = {0}; h_parse_Expr_c_variable h3_x = {0}; h_parse_Expr_c_sum h4_s = {0}; h_parse_Expr_c_product h5_q = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_parse_Expr t1; HERO_NODEBUG h_parse_Expr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG h_parse_Expr t5; HERO_NODEBUG h_parse_Expr_c_variable t6; HERO_NODEBUG h_parse_Expr_c_variable t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG h_parse_Expr_c_sum t11; HERO_NODEBUG h_parse_Expr_c_sum t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG h_parse_Expr t15; HERO_NODEBUG h_parse_Expr_c_product t16; HERO_NODEBUG h_parse_Expr_c_product t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_parse_Expr t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG h_parse_Expr_c_variable t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG h_parse_Expr_c_sum t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG h_parse_Expr_c_product t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; goto bb0;
 #line 53 "examples/calculator/eval.hero"
 bb0:
     t1 = h0_e;
@@ -1349,7 +1350,7 @@ bb0:
 bb1:
 #line 54 "examples/calculator/eval.hero"
     t20 = h2_r0;
-#line 1353 "main.c"
+#line 1354 "main.c"
     hero_array_incref(t20);
     h_parse_Expr_release(hero_slot_escape(&h1_s0));
     hero_array_release_at(&h2_r0);
@@ -1490,13 +1491,13 @@ bb5:
     hero_array_decref(t32);
 #line 54 "examples/calculator/eval.hero"
     goto bb1;
-#line 1494 "main.c"
+#line 1495 "main.c"
 }
 
 #line 60 "examples/calculator/eval.hero"
 HeroArrayHeader * h_eval_names_of(HeroArrayHeader * h0_children) {
 #line 60 "examples/calculator/eval.hero"
-    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_parse_Expr h4_c = {0}; HeroArrayHeader * h5_xs1 = {0}; int64_t h6_i1; HeroStr h7_n = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_parse_Expr t10; h_parse_Expr t11; HeroArrayHeader * t12; int64_t t13; int64_t t14; HeroArrayHeader * t15; int64_t t16; bool t17; HeroArrayHeader * t18; int64_t t19; HeroStr t20; HeroStr t22; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; int64_t t29; HeroArrayHeader * t30; HeroArrayHeader * t31; HeroArrayHeader * t32; HeroArrayHeader * t33; h_parse_Expr t34; HeroArrayHeader * t35; HeroArrayHeader * t36; HeroStr t37; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_parse_Expr h4_c = {0}; HERO_NODEBUG HeroArrayHeader * h5_xs1 = {0}; HERO_NODEBUG int64_t h6_i1; HeroStr h7_n = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG h_parse_Expr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG h_parse_Expr t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroStr t37; goto bb0;
 #line 60 "examples/calculator/eval.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1597,7 +1598,7 @@ bb3:
 bb4:
 #line 67 "examples/calculator/eval.hero"
     t30 = h1_out;
-#line 1601 "main.c"
+#line 1602 "main.c"
     hero_array_incref(t30);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -1655,13 +1656,13 @@ bb7:
 bb8:
 #line 64 "examples/calculator/eval.hero"
     goto bb3;
-#line 1659 "main.c"
+#line 1660 "main.c"
 }
 
 #line 72 "examples/calculator/eval.hero"
 h_0opt_e201354 h_eval_calculate(HeroStr h0_text, HeroMapHeader * h1_env) {
 #line 72 "examples/calculator/eval.hero"
-    h_0opt_7894d480 h2_f0 = {0}; HeroArrayHeader * h3_ts = {0}; h_parse_Parse h4_p = {0}; h_0opt_56c12c78 h5_f1 = {0}; h_parse_Expr h6_tree = {0}; h_0opt_e201354 h7_ret0 = {0}; h_0opt_7894d480 h8_own8 = {0}; h_parse_Parse h9_own9 = {0}; h_0opt_56c12c78 h10_own10 = {0}; h_0opt_e201354 h11_own11 = {0}; h_0opt_e201354 h12_own12 = {0}; h_0opt_e201354 h13_own13 = {0}; HeroStr h14_own14 = {0}; h_0opt_e201354 h15_own15 = {0}; HeroStr t1; h_0opt_7894d480 t2; h_0opt_7894d480 t3; int64_t t4; int64_t t5; bool t6; h_0opt_7894d480 t7; HeroFailure t8; h_0opt_e201354 t9; h_0opt_7894d480 t10; HeroArrayHeader * t11; HeroArrayHeader * t12; int64_t t13; h_parse_Parse t14; h_0opt_56c12c78 t15; h_0opt_56c12c78 t16; int64_t t17; int64_t t18; bool t19; h_0opt_56c12c78 t20; HeroFailure t21; h_0opt_e201354 t22; h_0opt_56c12c78 t23; h_parse_Expr t24; h_parse_Parse t25; bool t26; bool t27; HeroStr t28; HeroStr t29; h_0opt_e201354 t30; h_parse_Expr t31; HeroMapHeader * t32; h_0opt_e201354 t33; h_0opt_e201354 t34; h_0opt_7894d480 t35; h_0opt_7894d480 t36; HeroArrayHeader * t37; h_parse_Parse t38; h_parse_Parse t39; h_0opt_56c12c78 t40; h_0opt_56c12c78 t41; h_0opt_e201354 t42; h_parse_Expr t43; h_0opt_e201354 t44; h_0opt_e201354 t45; HeroStr t46; h_0opt_e201354 t47; goto bb0;
+    HERO_NODEBUG h_0opt_7894d480 h2_f0 = {0}; HeroArrayHeader * h3_ts = {0}; h_parse_Parse h4_p = {0}; HERO_NODEBUG h_0opt_56c12c78 h5_f1 = {0}; h_parse_Expr h6_tree = {0}; HERO_NODEBUG h_0opt_e201354 h7_ret0 = {0}; HERO_NODEBUG h_0opt_7894d480 h8_own8 = {0}; HERO_NODEBUG h_parse_Parse h9_own9 = {0}; HERO_NODEBUG h_0opt_56c12c78 h10_own10 = {0}; HERO_NODEBUG h_0opt_e201354 h11_own11 = {0}; HERO_NODEBUG h_0opt_e201354 h12_own12 = {0}; HERO_NODEBUG h_0opt_e201354 h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_7894d480 t2; HERO_NODEBUG h_0opt_7894d480 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_7894d480 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_7894d480 t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_parse_Parse t14; HERO_NODEBUG h_0opt_56c12c78 t15; HERO_NODEBUG h_0opt_56c12c78 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_56c12c78 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_56c12c78 t23; HERO_NODEBUG h_parse_Expr t24; HERO_NODEBUG h_parse_Parse t25; HERO_NODEBUG bool t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_e201354 t30; HERO_NODEBUG h_parse_Expr t31; HERO_NODEBUG HeroMapHeader * t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG h_0opt_7894d480 t35; HERO_NODEBUG h_0opt_7894d480 t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG h_parse_Parse t38; HERO_NODEBUG h_parse_Parse t39; HERO_NODEBUG h_0opt_56c12c78 t40; HERO_NODEBUG h_0opt_56c12c78 t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG h_parse_Expr t43; HERO_NODEBUG h_0opt_e201354 t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG h_0opt_e201354 t47; goto bb0;
 #line 72 "examples/calculator/eval.hero"
 bb0:
     t1 = h0_text;
@@ -1865,7 +1866,7 @@ bb7:
     goto bb5;
 #line 78 "examples/calculator/eval.hero"
 bb8:
-#line 1869 "main.c"
+#line 1870 "main.c"
     t34 = h7_ret0;
     h_0opt_e201354_retain(&t34);
     h_0opt_7894d480_release(hero_slot_escape(&h2_f0));
@@ -1887,7 +1888,7 @@ bb8:
 #line 122 "examples/calculator/eval.hero"
 h_parse_Expr h_eval_simplify(h_parse_Expr h0_e) {
 #line 122 "examples/calculator/eval.hero"
-    h_parse_Expr h1_s0 = {0}; h_parse_Expr h2_r0 = {0}; h_parse_Expr_c_sum h3_s = {0}; h_parse_Expr_c_product h4_q = {0}; HeroArrayHeader * h5_own5 = {0}; h_parse_Expr h6_own6 = {0}; HeroArrayHeader * h7_own7 = {0}; h_parse_Expr h8_own8 = {0}; h_parse_Expr t1; h_parse_Expr t2; int64_t t3; h_parse_Expr t4; h_parse_Expr t5; h_parse_Expr t6; h_parse_Expr_c_sum t7; h_parse_Expr_c_sum t8; HeroArrayHeader * t9; HeroArrayHeader * t10; bool t11; h_parse_Expr t12; h_parse_Expr t13; h_parse_Expr_c_product t14; h_parse_Expr_c_product t15; HeroArrayHeader * t16; HeroArrayHeader * t17; bool t18; h_parse_Expr t19; h_parse_Expr t20; h_parse_Expr t21; h_parse_Expr t22; h_parse_Expr t23; h_parse_Expr_c_sum t24; HeroArrayHeader * t25; h_parse_Expr t26; h_parse_Expr t27; h_parse_Expr_c_product t28; HeroArrayHeader * t29; h_parse_Expr t30; h_parse_Expr t31; goto bb0;
+    HERO_NODEBUG h_parse_Expr h1_s0 = {0}; HERO_NODEBUG h_parse_Expr h2_r0 = {0}; h_parse_Expr_c_sum h3_s = {0}; h_parse_Expr_c_product h4_q = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_parse_Expr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_parse_Expr h8_own8 = {0}; HERO_NODEBUG h_parse_Expr t1; HERO_NODEBUG h_parse_Expr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_parse_Expr t4; HERO_NODEBUG h_parse_Expr t5; HERO_NODEBUG h_parse_Expr t6; HERO_NODEBUG h_parse_Expr_c_sum t7; HERO_NODEBUG h_parse_Expr_c_sum t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_parse_Expr t12; HERO_NODEBUG h_parse_Expr t13; HERO_NODEBUG h_parse_Expr_c_product t14; HERO_NODEBUG h_parse_Expr_c_product t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_parse_Expr t19; HERO_NODEBUG h_parse_Expr t20; HERO_NODEBUG h_parse_Expr t21; HERO_NODEBUG h_parse_Expr t22; HERO_NODEBUG h_parse_Expr t23; HERO_NODEBUG h_parse_Expr_c_sum t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG h_parse_Expr t26; HERO_NODEBUG h_parse_Expr t27; HERO_NODEBUG h_parse_Expr_c_product t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG h_parse_Expr t30; HERO_NODEBUG h_parse_Expr t31; goto bb0;
 #line 122 "examples/calculator/eval.hero"
 bb0:
     t1 = h0_e;
@@ -1921,7 +1922,7 @@ bb0:
 bb1:
 #line 123 "examples/calculator/eval.hero"
     t20 = h2_r0;
-#line 1925 "main.c"
+#line 1926 "main.c"
     h_parse_Expr_retain(&t20);
     h_parse_Expr_release(hero_slot_escape(&h1_s0));
     h_parse_Expr_release(hero_slot_escape(&h2_r0));
@@ -2051,13 +2052,13 @@ bb5:
     h_parse_Expr_release(&t31);
 #line 123 "examples/calculator/eval.hero"
     goto bb1;
-#line 2055 "main.c"
+#line 2056 "main.c"
 }
 
 #line 131 "examples/calculator/eval.hero"
 HeroArrayHeader * h_eval_keep_sum(HeroArrayHeader * h0_children) {
 #line 131 "examples/calculator/eval.hero"
-    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_parse_Expr h4_child = {0}; h_parse_Expr h5_one = {0}; HeroArrayHeader * h6_own6 = {0}; h_parse_Expr h7_own7 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_parse_Expr t10; h_parse_Expr t11; h_parse_Expr t12; h_parse_Expr t13; int64_t t14; bool t15; bool t16; h_parse_Expr t18; int64_t t20; int64_t t21; int64_t t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; h_parse_Expr t27; h_parse_Expr t28; h_parse_Expr t29; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_parse_Expr h4_child = {0}; h_parse_Expr h5_one = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_parse_Expr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG h_parse_Expr t11; HERO_NODEBUG h_parse_Expr t12; HERO_NODEBUG h_parse_Expr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_parse_Expr t18; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG h_parse_Expr t27; HERO_NODEBUG h_parse_Expr t28; HERO_NODEBUG h_parse_Expr t29; goto bb0;
 #line 131 "examples/calculator/eval.hero"
 bb0:
     t1 = hero_array_new(&h_parse_Expr_desc, 1);
@@ -2162,7 +2163,7 @@ bb3:
 bb4:
 #line 140 "examples/calculator/eval.hero"
     t23 = h1_out;
-#line 2166 "main.c"
+#line 2167 "main.c"
     hero_array_incref(t23);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -2184,13 +2185,13 @@ bb6:
 bb7:
 #line 138 "examples/calculator/eval.hero"
     goto bb5;
-#line 2188 "main.c"
+#line 2189 "main.c"
 }
 
 #line 143 "examples/calculator/eval.hero"
 HeroArrayHeader * h_eval_keep_product(HeroArrayHeader * h0_children) {
 #line 143 "examples/calculator/eval.hero"
-    HeroArrayHeader * h1_out = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; h_parse_Expr h4_child = {0}; h_parse_Expr h5_one = {0}; HeroArrayHeader * h6_own6 = {0}; h_parse_Expr h7_own7 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; h_parse_Expr t10; h_parse_Expr t11; h_parse_Expr t12; h_parse_Expr t13; int64_t t14; bool t15; bool t16; h_parse_Expr t18; int64_t t20; int64_t t21; int64_t t22; HeroArrayHeader * t23; HeroArrayHeader * t24; HeroArrayHeader * t25; HeroArrayHeader * t26; h_parse_Expr t27; h_parse_Expr t28; h_parse_Expr t29; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_parse_Expr h4_child = {0}; h_parse_Expr h5_one = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_parse_Expr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG h_parse_Expr t11; HERO_NODEBUG h_parse_Expr t12; HERO_NODEBUG h_parse_Expr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_parse_Expr t18; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG h_parse_Expr t27; HERO_NODEBUG h_parse_Expr t28; HERO_NODEBUG h_parse_Expr t29; goto bb0;
 #line 143 "examples/calculator/eval.hero"
 bb0:
     t1 = hero_array_new(&h_parse_Expr_desc, 1);
@@ -2295,7 +2296,7 @@ bb3:
 bb4:
 #line 152 "examples/calculator/eval.hero"
     t23 = h1_out;
-#line 2299 "main.c"
+#line 2300 "main.c"
     hero_array_incref(t23);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -2317,13 +2318,13 @@ bb6:
 bb7:
 #line 150 "examples/calculator/eval.hero"
     goto bb5;
-#line 2321 "main.c"
+#line 2322 "main.c"
 }
 
 #line 155 "examples/calculator/eval.hero"
 bool h_eval_is_literal(h_parse_Expr h0_e, int64_t h1_v) {
 #line 155 "examples/calculator/eval.hero"
-    h_parse_Expr h2_s0 = {0}; bool h3_r0; h_parse_Expr_c_num h4_n; h_parse_Expr t1; h_parse_Expr t2; int64_t t3; h_parse_Expr t4; h_parse_Expr_c_num t5; h_parse_Expr_c_num t6; int64_t t7; int64_t t8; bool t9; bool t10; bool t11; bool t12; bool t13; h_parse_Expr t14; goto bb0;
+    HERO_NODEBUG h_parse_Expr h2_s0 = {0}; HERO_NODEBUG bool h3_r0; h_parse_Expr_c_num h4_n; HERO_NODEBUG h_parse_Expr t1; HERO_NODEBUG h_parse_Expr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_parse_Expr t4; HERO_NODEBUG h_parse_Expr_c_num t5; HERO_NODEBUG h_parse_Expr_c_num t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_parse_Expr t14; goto bb0;
 #line 155 "examples/calculator/eval.hero"
 bb0:
     t1 = h0_e;
@@ -2357,7 +2358,7 @@ bb0:
 bb1:
 #line 156 "examples/calculator/eval.hero"
     t13 = h3_r0;
-#line 2361 "main.c"
+#line 2362 "main.c"
     h_parse_Expr_release(hero_slot_escape(&h2_s0));
     return t13;
 bb2:
@@ -2403,13 +2404,13 @@ bb5:
     h3_r0 = t12;
 #line 156 "examples/calculator/eval.hero"
     goto bb1;
-#line 2407 "main.c"
+#line 2408 "main.c"
 }
 
 #line 163 "examples/calculator/eval.hero"
 h_parse_Expr h_eval_rebuild(HeroArrayHeader * h0_kept, bool h1_zero) {
 #line 163 "examples/calculator/eval.hero"
-    h_parse_Expr h2_ret0 = {0}; h_parse_Expr h3_own3 = {0}; h_parse_Expr h4_own4 = {0}; h_parse_Expr h5_own5 = {0}; h_parse_Expr h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; bool t4; HeroArrayHeader * t5; int64_t t6; h_parse_Expr t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; bool t11; bool t12; int64_t t13; h_parse_Expr t14; int64_t t15; h_parse_Expr t16; bool t17; HeroArrayHeader * t18; h_parse_Expr t19; HeroArrayHeader * t20; h_parse_Expr t21; h_parse_Expr t22; h_parse_Expr t23; h_parse_Expr t24; h_parse_Expr t25; h_parse_Expr t26; goto bb0;
+    HERO_NODEBUG h_parse_Expr h2_ret0 = {0}; HERO_NODEBUG h_parse_Expr h3_own3 = {0}; HERO_NODEBUG h_parse_Expr h4_own4 = {0}; HERO_NODEBUG h_parse_Expr h5_own5 = {0}; HERO_NODEBUG h_parse_Expr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_parse_Expr t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_parse_Expr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_parse_Expr t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG h_parse_Expr t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_parse_Expr t21; HERO_NODEBUG h_parse_Expr t22; HERO_NODEBUG h_parse_Expr t23; HERO_NODEBUG h_parse_Expr t24; HERO_NODEBUG h_parse_Expr t25; HERO_NODEBUG h_parse_Expr t26; goto bb0;
 #line 163 "examples/calculator/eval.hero"
 bb0:
     t1 = h0_kept;
@@ -2543,7 +2544,7 @@ bb12:
     goto bb10;
 #line 173 "examples/calculator/eval.hero"
 bb13:
-#line 2547 "main.c"
+#line 2548 "main.c"
     t22 = h2_ret0;
     h_parse_Expr_retain(&t22);
     h_parse_Expr_release(hero_slot_escape(&h3_own3));
@@ -2556,11 +2557,11 @@ bb13:
 #line 12 "examples/calculator/lex.hero"
 HeroStr h_lex_ERR_UNKNOWN_CHAR(void) {
 #line 12 "examples/calculator/lex.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 12 "examples/calculator/lex.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7bbd4cfb);
-#line 2564 "main.c"
+#line 2565 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -2568,7 +2569,7 @@ bb0:
 #line 30 "examples/calculator/lex.hero"
 bool h_lex_at_end(h_lex_Lex h0_l) {
 #line 30 "examples/calculator/lex.hero"
-    h_lex_Lex t1; int64_t t2; h_lex_Lex t3; HeroStr t4; int64_t t5; bool t6; goto bb0;
+    HERO_NODEBUG h_lex_Lex t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_lex_Lex t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; goto bb0;
 #line 30 "examples/calculator/lex.hero"
 bb0:
     t1 = h0_l;
@@ -2584,13 +2585,13 @@ bb0:
     t6 = t2 >= t5;
 #line 31 "examples/calculator/lex.hero"
     return t6;
-#line 2588 "main.c"
+#line 2589 "main.c"
 }
 
 #line 33 "examples/calculator/lex.hero"
 uint8_t h_lex_here(h_lex_Lex h0_l) {
 #line 33 "examples/calculator/lex.hero"
-    h_lex_Lex t1; HeroStr t2; h_lex_Lex t3; int64_t t4; uint8_t t5; goto bb0;
+    HERO_NODEBUG h_lex_Lex t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_lex_Lex t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG uint8_t t5; goto bb0;
 #line 33 "examples/calculator/lex.hero"
 bb0:
     t1 = h0_l;
@@ -2604,13 +2605,13 @@ bb0:
     t5 = ((void)((t2.ptr == NULL || t4 < 0 || t4 >= t2.len) ? ((void)hero_str_byte(t2, t4), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t4]);
 #line 34 "examples/calculator/lex.hero"
     return t5;
-#line 2608 "main.c"
+#line 2609 "main.c"
 }
 
 #line 36 "examples/calculator/lex.hero"
 void h_lex_advance(h_lex_Lex *ph0_l) {
 #line 36 "examples/calculator/lex.hero"
-    h_lex_Lex t1; int64_t t2; int64_t t3; int64_t t4; goto bb0;
+    HERO_NODEBUG h_lex_Lex t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; goto bb0;
 #line 36 "examples/calculator/lex.hero"
 bb0:
     t1 = (*ph0_l);
@@ -2624,13 +2625,13 @@ bb0:
     (*ph0_l).f_pos = t4;
 #line 37 "examples/calculator/lex.hero"
     return;
-#line 2628 "main.c"
+#line 2629 "main.c"
 }
 
 #line 39 "examples/calculator/lex.hero"
 bool h_lex_is_digit(uint8_t h0_c) {
 #line 39 "examples/calculator/lex.hero"
-    bool h1_b0; uint8_t t1; uint8_t t2; bool t3; uint8_t t4; uint8_t t5; bool t6; bool t7; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; goto bb0;
 #line 39 "examples/calculator/lex.hero"
 bb0:
     t1 = h0_c;
@@ -2660,13 +2661,13 @@ bb2:
     t7 = h1_b0;
 #line 40 "examples/calculator/lex.hero"
     return t7;
-#line 2664 "main.c"
+#line 2665 "main.c"
 }
 
 #line 42 "examples/calculator/lex.hero"
 bool h_lex_is_letter(uint8_t h0_c) {
 #line 42 "examples/calculator/lex.hero"
-    bool h1_b0; uint8_t t1; uint8_t t2; bool t3; uint8_t t4; uint8_t t5; bool t6; bool t7; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; goto bb0;
 #line 42 "examples/calculator/lex.hero"
 bb0:
     t1 = h0_c;
@@ -2696,13 +2697,13 @@ bb2:
     t7 = h1_b0;
 #line 43 "examples/calculator/lex.hero"
     return t7;
-#line 2700 "main.c"
+#line 2701 "main.c"
 }
 
 #line 46 "examples/calculator/lex.hero"
 int64_t h_lex_read_number(h_lex_Lex *ph0_l) {
 #line 46 "examples/calculator/lex.hero"
-    int64_t h1_v; bool h2_b0; h_0opt_e201354 h3_f0 = {0}; h_0opt_e201354 h4_own4 = {0}; int64_t t1; h_lex_Lex t2; bool t3; bool t4; h_lex_Lex t5; uint8_t t6; bool t7; bool t8; int64_t t9; int64_t t10; int64_t t11; h_lex_Lex t12; uint8_t t13; uint8_t t14; uint8_t t15; h_0opt_e201354 t16; h_0opt_e201354 t17; int64_t t18; int64_t t19; bool t20; h_0opt_e201354 t21; HeroFailure t22; h_0opt_e201354 t23; int64_t t24; int64_t t25; int64_t t26; h_0opt_e201354 t27; h_0opt_e201354 t28; goto bb0;
+    int64_t h1_v; HERO_NODEBUG bool h2_b0; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_lex_Lex t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_lex_Lex t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_lex_Lex t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; goto bb0;
 #line 46 "examples/calculator/lex.hero"
 bb0:
     t1 = INT64_C(0);
@@ -2767,7 +2768,7 @@ bb2:
 bb3:
 #line 53 "examples/calculator/lex.hero"
     t26 = h1_v;
-#line 2771 "main.c"
+#line 2772 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
     return t26;
@@ -2806,7 +2807,7 @@ bb7:
     t21 = h3_f0;
 #line 50 "examples/calculator/lex.hero"
     t22 = t21.as.err;
-#line 2810 "main.c"
+#line 2811 "main.c"
     hero_panic_must(t22);
     hero_unreachable();
 }
@@ -2814,7 +2815,7 @@ bb7:
 #line 56 "examples/calculator/lex.hero"
 HeroStr h_lex_read_name(h_lex_Lex *ph0_l) {
 #line 56 "examples/calculator/lex.hero"
-    int64_t h1_start; bool h2_b0; HeroStr h3_own3 = {0}; h_lex_Lex t1; int64_t t2; h_lex_Lex t3; bool t4; bool t5; h_lex_Lex t6; uint8_t t7; bool t8; bool t9; h_lex_Lex t10; HeroStr t11; int64_t t12; h_lex_Lex t13; int64_t t14; HeroStr t15; HeroStr t16; goto bb0;
+    int64_t h1_start; HERO_NODEBUG bool h2_b0; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG h_lex_Lex t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_lex_Lex t3; HERO_NODEBUG bool t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_lex_Lex t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG h_lex_Lex t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_lex_Lex t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; goto bb0;
 #line 56 "examples/calculator/lex.hero"
 bb0:
     t1 = (*ph0_l);
@@ -2861,7 +2862,7 @@ bb3:
     h3_own3 = t15;
 #line 62 "examples/calculator/lex.hero"
     hero_str_decref(t16);
-#line 2865 "main.c"
+#line 2866 "main.c"
     hero_str_incref(t15);
     hero_str_release_at(&h3_own3);
     return t15;
@@ -2882,13 +2883,13 @@ bb5:
     t9 = h2_b0;
 #line 59 "examples/calculator/lex.hero"
     if (t9) goto bb2; else goto bb3;
-#line 2886 "main.c"
+#line 2887 "main.c"
 }
 
 #line 65 "examples/calculator/lex.hero"
 h_0opt_7894d480 h_lex_tokenize(HeroStr h0_text) {
 #line 65 "examples/calculator/lex.hero"
-    h_lex_Lex h1_l = {0}; HeroArrayHeader * h2_out = {0}; uint8_t h3_c; h_0opt_7894d480 h4_ret0 = {0}; h_lex_Lex h5_own5 = {0}; HeroArrayHeader * h6_own6 = {0}; h_0opt_7894d480 h7_own7 = {0}; h_lex_Token h8_own8 = {0}; HeroStr h9_own9 = {0}; h_lex_Token h10_own10 = {0}; h_lex_Token h11_own11 = {0}; h_lex_Token h12_own12 = {0}; h_lex_Token h13_own13 = {0}; h_lex_Token h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; h_0opt_7894d480 h18_own18 = {0}; HeroStr t1; int64_t t2; h_lex_Lex t3; HeroArrayHeader * t4; h_lex_Lex t5; bool t6; bool t7; h_lex_Lex t8; uint8_t t9; uint8_t t10; uint8_t t11; bool t12; uint8_t t13; bool t14; int64_t t16; h_lex_Token t17; uint8_t t19; bool t20; HeroStr t22; h_lex_Token t23; uint8_t t25; uint8_t t26; bool t27; h_lex_Token t29; uint8_t t31; uint8_t t32; bool t33; h_lex_Token t35; uint8_t t37; uint8_t t38; bool t39; h_lex_Token t41; uint8_t t43; uint8_t t44; bool t45; h_lex_Token t47; HeroStr t49; HeroStr t50; h_lex_Lex t51; int64_t t52; HeroStr t53; HeroStr t54; h_0opt_7894d480 t55; HeroArrayHeader * t56; h_0opt_7894d480 t57; h_0opt_7894d480 t58; h_lex_Lex t59; h_lex_Lex t60; HeroArrayHeader * t61; HeroArrayHeader * t62; h_0opt_7894d480 t63; h_lex_Token t64; HeroStr t65; h_lex_Token t66; h_lex_Token t67; h_lex_Token t68; h_lex_Token t69; h_lex_Token t70; HeroStr t71; HeroStr t72; HeroStr t73; h_0opt_7894d480 t74; goto bb0;
+    h_lex_Lex h1_l = {0}; HeroArrayHeader * h2_out = {0}; uint8_t h3_c; HERO_NODEBUG h_0opt_7894d480 h4_ret0 = {0}; HERO_NODEBUG h_lex_Lex h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_0opt_7894d480 h7_own7 = {0}; HERO_NODEBUG h_lex_Token h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_lex_Token h10_own10 = {0}; HERO_NODEBUG h_lex_Token h11_own11 = {0}; HERO_NODEBUG h_lex_Token h12_own12 = {0}; HERO_NODEBUG h_lex_Token h13_own13 = {0}; HERO_NODEBUG h_lex_Token h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG h_0opt_7894d480 h18_own18 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_lex_Lex t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG h_lex_Lex t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_lex_Lex t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_lex_Token t17; HERO_NODEBUG uint8_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_lex_Token t23; HERO_NODEBUG uint8_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_lex_Token t29; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG h_lex_Token t35; HERO_NODEBUG uint8_t t37; HERO_NODEBUG uint8_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_lex_Token t41; HERO_NODEBUG uint8_t t43; HERO_NODEBUG uint8_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG h_lex_Token t47; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG h_lex_Lex t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_0opt_7894d480 t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG h_0opt_7894d480 t57; HERO_NODEBUG h_0opt_7894d480 t58; HERO_NODEBUG h_lex_Lex t59; HERO_NODEBUG h_lex_Lex t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG h_0opt_7894d480 t63; HERO_NODEBUG h_lex_Token t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG h_lex_Token t66; HERO_NODEBUG h_lex_Token t67; HERO_NODEBUG h_lex_Token t68; HERO_NODEBUG h_lex_Token t69; HERO_NODEBUG h_lex_Token t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG h_0opt_7894d480 t74; goto bb0;
 #line 65 "examples/calculator/lex.hero"
 bb0:
     t1 = h0_text;
@@ -3176,7 +3177,7 @@ bb18:
     goto bb19;
 #line 91 "examples/calculator/lex.hero"
 bb19:
-#line 3180 "main.c"
+#line 3181 "main.c"
     t58 = h4_ret0;
     h_0opt_7894d480_retain(&t58);
     h_lex_Lex_release(hero_slot_escape(&h1_l));
@@ -3201,11 +3202,11 @@ bb19:
 #line 13 "examples/calculator/parse.hero"
 HeroStr h_parse_ERR_EXPECTED_FACTOR(void) {
 #line 13 "examples/calculator/parse.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 13 "examples/calculator/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7c822393);
-#line 3209 "main.c"
+#line 3210 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3213,11 +3214,11 @@ bb0:
 #line 16 "examples/calculator/parse.hero"
 HeroStr h_parse_ERR_UNCLOSED_PAREN(void) {
 #line 16 "examples/calculator/parse.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 16 "examples/calculator/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7b0b513f);
-#line 3221 "main.c"
+#line 3222 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3225,11 +3226,11 @@ bb0:
 #line 19 "examples/calculator/parse.hero"
 HeroStr h_parse_ERR_UNEXPECTED_END(void) {
 #line 19 "examples/calculator/parse.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 19 "examples/calculator/parse.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7423baed);
-#line 3233 "main.c"
+#line 3234 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3237,7 +3238,7 @@ bb0:
 #line 41 "examples/calculator/parse.hero"
 bool h_parse_parse_at_end(h_parse_Parse h0_p) {
 #line 41 "examples/calculator/parse.hero"
-    h_parse_Parse t1; int64_t t2; h_parse_Parse t3; HeroArrayHeader * t4; int64_t t5; bool t6; goto bb0;
+    HERO_NODEBUG h_parse_Parse t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_parse_Parse t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; goto bb0;
 #line 41 "examples/calculator/parse.hero"
 bb0:
     t1 = h0_p;
@@ -3253,13 +3254,13 @@ bb0:
     t6 = t2 >= t5;
 #line 42 "examples/calculator/parse.hero"
     return t6;
-#line 3257 "main.c"
+#line 3258 "main.c"
 }
 
 #line 44 "examples/calculator/parse.hero"
 h_lex_Token h_parse_parse_here(h_parse_Parse h0_p) {
 #line 44 "examples/calculator/parse.hero"
-    h_parse_Parse t1; HeroArrayHeader * t2; h_parse_Parse t3; int64_t t4; h_lex_Token t5; goto bb0;
+    HERO_NODEBUG h_parse_Parse t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_parse_Parse t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_lex_Token t5; goto bb0;
 #line 44 "examples/calculator/parse.hero"
 bb0:
     t1 = h0_p;
@@ -3271,7 +3272,7 @@ bb0:
     t4 = t3.f_pos;
 #line 45 "examples/calculator/parse.hero"
     t5 = ((void)((t2 == NULL || t4 < 0 || t4 >= t2->len) ? ((void)hero_array_at(t2, t4), hero_unreachable()) : (void)0), (void)(t2->elem->size != sizeof(h_lex_Token) ? hero_unreachable() : (void)0), ((h_lex_Token const *)(const void *)(t2 + 1))[t4]);
-#line 3275 "main.c"
+#line 3276 "main.c"
     h_lex_Token_retain(&t5);
     return t5;
 }
@@ -3279,7 +3280,7 @@ bb0:
 #line 47 "examples/calculator/parse.hero"
 void h_parse_parse_advance(h_parse_Parse *ph0_p) {
 #line 47 "examples/calculator/parse.hero"
-    h_parse_Parse t1; int64_t t2; int64_t t3; int64_t t4; goto bb0;
+    HERO_NODEBUG h_parse_Parse t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; goto bb0;
 #line 47 "examples/calculator/parse.hero"
 bb0:
     t1 = (*ph0_p);
@@ -3293,13 +3294,13 @@ bb0:
     (*ph0_p).f_pos = t4;
 #line 48 "examples/calculator/parse.hero"
     return;
-#line 3297 "main.c"
+#line 3298 "main.c"
 }
 
 #line 58 "examples/calculator/parse.hero"
 h_0opt_56c12c78 h_parse_factor(h_parse_Parse *ph0_p) {
 #line 58 "examples/calculator/parse.hero"
-    h_lex_Token h1_t = {0}; h_lex_Token h2_s0 = {0}; h_0opt_56c12c78 h3_r0 = {0}; h_lex_Token_c_num h4_n; h_lex_Token_c_name h5_x = {0}; h_0opt_56c12c78 h6_ret0 = {0}; h_lex_Token h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_56c12c78 h9_own9 = {0}; h_parse_Expr h10_own10 = {0}; h_0opt_56c12c78 h11_own11 = {0}; h_parse_Expr h12_own12 = {0}; h_0opt_56c12c78 h13_own13 = {0}; h_0opt_56c12c78 h14_own14 = {0}; HeroStr h15_own15 = {0}; h_0opt_56c12c78 h16_own16 = {0}; h_parse_Parse t1; bool t2; HeroStr t3; HeroStr t4; h_0opt_56c12c78 t5; h_parse_Parse t6; h_lex_Token t7; h_lex_Token t8; h_lex_Token t9; int64_t t10; h_lex_Token t11; h_lex_Token_c_num t12; h_lex_Token_c_num t13; int64_t t14; h_parse_Expr t15; h_0opt_56c12c78 t16; h_lex_Token t17; h_lex_Token_c_name t18; h_lex_Token_c_name t19; HeroStr t20; h_parse_Expr t21; h_0opt_56c12c78 t22; h_0opt_56c12c78 t23; HeroStr t24; HeroStr t25; h_0opt_56c12c78 t26; h_0opt_56c12c78 t27; h_0opt_56c12c78 t28; h_lex_Token t29; h_lex_Token t30; h_lex_Token t31; HeroStr t32; h_0opt_56c12c78 t33; h_parse_Expr t34; h_0opt_56c12c78 t35; h_0opt_56c12c78 t36; h_lex_Token_c_name t37; h_parse_Expr t38; h_0opt_56c12c78 t39; h_0opt_56c12c78 t40; h_0opt_56c12c78 t41; h_0opt_56c12c78 t42; HeroStr t43; h_0opt_56c12c78 t44; h_0opt_56c12c78 t45; goto bb0;
+    h_lex_Token h1_t = {0}; HERO_NODEBUG h_lex_Token h2_s0 = {0}; HERO_NODEBUG h_0opt_56c12c78 h3_r0 = {0}; h_lex_Token_c_num h4_n; h_lex_Token_c_name h5_x = {0}; HERO_NODEBUG h_0opt_56c12c78 h6_ret0 = {0}; HERO_NODEBUG h_lex_Token h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_56c12c78 h9_own9 = {0}; HERO_NODEBUG h_parse_Expr h10_own10 = {0}; HERO_NODEBUG h_0opt_56c12c78 h11_own11 = {0}; HERO_NODEBUG h_parse_Expr h12_own12 = {0}; HERO_NODEBUG h_0opt_56c12c78 h13_own13 = {0}; HERO_NODEBUG h_0opt_56c12c78 h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG h_0opt_56c12c78 h16_own16 = {0}; HERO_NODEBUG h_parse_Parse t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_56c12c78 t5; HERO_NODEBUG h_parse_Parse t6; HERO_NODEBUG h_lex_Token t7; HERO_NODEBUG h_lex_Token t8; HERO_NODEBUG h_lex_Token t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_lex_Token t11; HERO_NODEBUG h_lex_Token_c_num t12; HERO_NODEBUG h_lex_Token_c_num t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_parse_Expr t15; HERO_NODEBUG h_0opt_56c12c78 t16; HERO_NODEBUG h_lex_Token t17; HERO_NODEBUG h_lex_Token_c_name t18; HERO_NODEBUG h_lex_Token_c_name t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_parse_Expr t21; HERO_NODEBUG h_0opt_56c12c78 t22; HERO_NODEBUG h_0opt_56c12c78 t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_56c12c78 t26; HERO_NODEBUG h_0opt_56c12c78 t27; HERO_NODEBUG h_0opt_56c12c78 t28; HERO_NODEBUG h_lex_Token t29; HERO_NODEBUG h_lex_Token t30; HERO_NODEBUG h_lex_Token t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_56c12c78 t33; HERO_NODEBUG h_parse_Expr t34; HERO_NODEBUG h_0opt_56c12c78 t35; HERO_NODEBUG h_0opt_56c12c78 t36; HERO_NODEBUG h_lex_Token_c_name t37; HERO_NODEBUG h_parse_Expr t38; HERO_NODEBUG h_0opt_56c12c78 t39; HERO_NODEBUG h_0opt_56c12c78 t40; HERO_NODEBUG h_0opt_56c12c78 t41; HERO_NODEBUG h_0opt_56c12c78 t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_56c12c78 t44; HERO_NODEBUG h_0opt_56c12c78 t45; goto bb0;
 #line 58 "examples/calculator/parse.hero"
 bb0:
     t1 = (*ph0_p);
@@ -3543,7 +3544,7 @@ bb8:
     goto bb4;
 #line 65 "examples/calculator/parse.hero"
 bb9:
-#line 3547 "main.c"
+#line 3548 "main.c"
     t28 = h6_ret0;
     h_0opt_56c12c78_retain(&t28);
     h_lex_Token_release(hero_slot_escape(&h1_t));
@@ -3566,7 +3567,7 @@ bb9:
 #line 72 "examples/calculator/parse.hero"
 h_0opt_56c12c78 h_parse_group(h_parse_Parse *ph0_p) {
 #line 72 "examples/calculator/parse.hero"
-    h_0opt_56c12c78 h1_f0 = {0}; h_parse_Expr h2_inner = {0}; h_0opt_56c12c78 h3_ret0 = {0}; h_0opt_56c12c78 h4_own4 = {0}; h_0opt_56c12c78 h5_own5 = {0}; h_lex_Token h6_own6 = {0}; h_lex_Token h7_own7 = {0}; HeroStr h8_own8 = {0}; h_0opt_56c12c78 h9_own9 = {0}; h_0opt_56c12c78 h10_own10 = {0}; HeroStr h11_own11 = {0}; h_0opt_56c12c78 h12_own12 = {0}; h_0opt_56c12c78 t1; h_0opt_56c12c78 t2; int64_t t3; int64_t t4; bool t5; h_0opt_56c12c78 t6; HeroFailure t7; h_0opt_56c12c78 t8; h_0opt_56c12c78 t9; h_parse_Expr t10; h_parse_Parse t11; bool t12; HeroStr t13; HeroStr t14; h_0opt_56c12c78 t15; h_parse_Parse t16; h_lex_Token t17; h_lex_Token t18; bool t19; HeroStr t20; HeroStr t21; h_0opt_56c12c78 t22; h_parse_Expr t23; h_0opt_56c12c78 t24; h_0opt_56c12c78 t25; h_0opt_56c12c78 t26; h_0opt_56c12c78 t27; h_parse_Expr t28; h_0opt_56c12c78 t29; h_lex_Token t30; h_lex_Token t31; HeroStr t32; h_0opt_56c12c78 t33; h_0opt_56c12c78 t34; HeroStr t35; h_0opt_56c12c78 t36; goto bb0;
+    HERO_NODEBUG h_0opt_56c12c78 h1_f0 = {0}; h_parse_Expr h2_inner = {0}; HERO_NODEBUG h_0opt_56c12c78 h3_ret0 = {0}; HERO_NODEBUG h_0opt_56c12c78 h4_own4 = {0}; HERO_NODEBUG h_0opt_56c12c78 h5_own5 = {0}; HERO_NODEBUG h_lex_Token h6_own6 = {0}; HERO_NODEBUG h_lex_Token h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_56c12c78 h9_own9 = {0}; HERO_NODEBUG h_0opt_56c12c78 h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG h_0opt_56c12c78 h12_own12 = {0}; HERO_NODEBUG h_0opt_56c12c78 t1; HERO_NODEBUG h_0opt_56c12c78 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_56c12c78 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_0opt_56c12c78 t8; HERO_NODEBUG h_0opt_56c12c78 t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG h_parse_Parse t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_56c12c78 t15; HERO_NODEBUG h_parse_Parse t16; HERO_NODEBUG h_lex_Token t17; HERO_NODEBUG h_lex_Token t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_56c12c78 t22; HERO_NODEBUG h_parse_Expr t23; HERO_NODEBUG h_0opt_56c12c78 t24; HERO_NODEBUG h_0opt_56c12c78 t25; HERO_NODEBUG h_0opt_56c12c78 t26; HERO_NODEBUG h_0opt_56c12c78 t27; HERO_NODEBUG h_parse_Expr t28; HERO_NODEBUG h_0opt_56c12c78 t29; HERO_NODEBUG h_lex_Token t30; HERO_NODEBUG h_lex_Token t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_56c12c78 t33; HERO_NODEBUG h_0opt_56c12c78 t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_56c12c78 t36; goto bb0;
 #line 72 "examples/calculator/parse.hero"
 bb0:
     t1 = h_parse_expression(&(*ph0_p));
@@ -3743,7 +3744,7 @@ bb8:
     goto bb6;
 #line 79 "examples/calculator/parse.hero"
 bb9:
-#line 3747 "main.c"
+#line 3748 "main.c"
     t25 = h3_ret0;
     h_0opt_56c12c78_retain(&t25);
     h_0opt_56c12c78_release(hero_slot_escape(&h1_f0));
@@ -3763,7 +3764,7 @@ bb9:
 #line 84 "examples/calculator/parse.hero"
 h_0opt_56c12c78 h_parse_term(h_parse_Parse *ph0_p) {
 #line 84 "examples/calculator/parse.hero"
-    h_0opt_56c12c78 h1_f0 = {0}; h_parse_Expr h2_first = {0}; HeroArrayHeader * h3_children = {0}; bool h4_b0; h_0opt_56c12c78 h5_f1 = {0}; h_0opt_56c12c78 h6_ret0 = {0}; h_0opt_56c12c78 h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; h_0opt_56c12c78 h9_own9 = {0}; h_0opt_56c12c78 h10_own10 = {0}; h_lex_Token h11_own11 = {0}; h_lex_Token h12_own12 = {0}; h_0opt_56c12c78 h13_own13 = {0}; h_parse_Expr h14_own14 = {0}; h_0opt_56c12c78 h15_own15 = {0}; h_0opt_56c12c78 h16_own16 = {0}; h_0opt_56c12c78 t1; h_0opt_56c12c78 t2; int64_t t3; int64_t t4; bool t5; h_0opt_56c12c78 t6; HeroFailure t7; h_0opt_56c12c78 t8; h_0opt_56c12c78 t9; h_parse_Expr t10; h_parse_Expr t11; HeroArrayHeader * t12; h_parse_Parse t13; bool t14; bool t15; h_parse_Parse t16; h_lex_Token t17; h_lex_Token t18; bool t19; bool t20; h_0opt_56c12c78 t22; h_0opt_56c12c78 t23; int64_t t24; int64_t t25; bool t26; h_0opt_56c12c78 t27; HeroFailure t28; h_0opt_56c12c78 t29; h_0opt_56c12c78 t30; h_parse_Expr t31; HeroArrayHeader * t33; int64_t t34; int64_t t35; bool t36; h_parse_Expr t37; h_0opt_56c12c78 t38; HeroArrayHeader * t39; h_parse_Expr t40; h_0opt_56c12c78 t41; h_0opt_56c12c78 t42; h_0opt_56c12c78 t43; h_0opt_56c12c78 t44; h_parse_Expr t45; HeroArrayHeader * t46; HeroArrayHeader * t47; h_0opt_56c12c78 t48; h_0opt_56c12c78 t49; h_0opt_56c12c78 t50; h_lex_Token t51; h_lex_Token t52; h_0opt_56c12c78 t53; h_parse_Expr t54; h_0opt_56c12c78 t55; h_0opt_56c12c78 t56; goto bb0;
+    HERO_NODEBUG h_0opt_56c12c78 h1_f0 = {0}; h_parse_Expr h2_first = {0}; HeroArrayHeader * h3_children = {0}; HERO_NODEBUG bool h4_b0; HERO_NODEBUG h_0opt_56c12c78 h5_f1 = {0}; HERO_NODEBUG h_0opt_56c12c78 h6_ret0 = {0}; HERO_NODEBUG h_0opt_56c12c78 h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_56c12c78 h9_own9 = {0}; HERO_NODEBUG h_0opt_56c12c78 h10_own10 = {0}; HERO_NODEBUG h_lex_Token h11_own11 = {0}; HERO_NODEBUG h_lex_Token h12_own12 = {0}; HERO_NODEBUG h_0opt_56c12c78 h13_own13 = {0}; HERO_NODEBUG h_parse_Expr h14_own14 = {0}; HERO_NODEBUG h_0opt_56c12c78 h15_own15 = {0}; HERO_NODEBUG h_0opt_56c12c78 h16_own16 = {0}; HERO_NODEBUG h_0opt_56c12c78 t1; HERO_NODEBUG h_0opt_56c12c78 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_56c12c78 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_0opt_56c12c78 t8; HERO_NODEBUG h_0opt_56c12c78 t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG h_parse_Expr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG h_parse_Parse t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_parse_Parse t16; HERO_NODEBUG h_lex_Token t17; HERO_NODEBUG h_lex_Token t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_56c12c78 t22; HERO_NODEBUG h_0opt_56c12c78 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG h_0opt_56c12c78 t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG h_0opt_56c12c78 t29; HERO_NODEBUG h_0opt_56c12c78 t30; HERO_NODEBUG h_parse_Expr t31; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_parse_Expr t37; HERO_NODEBUG h_0opt_56c12c78 t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG h_parse_Expr t40; HERO_NODEBUG h_0opt_56c12c78 t41; HERO_NODEBUG h_0opt_56c12c78 t42; HERO_NODEBUG h_0opt_56c12c78 t43; HERO_NODEBUG h_0opt_56c12c78 t44; HERO_NODEBUG h_parse_Expr t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG h_0opt_56c12c78 t48; HERO_NODEBUG h_0opt_56c12c78 t49; HERO_NODEBUG h_0opt_56c12c78 t50; HERO_NODEBUG h_lex_Token t51; HERO_NODEBUG h_lex_Token t52; HERO_NODEBUG h_0opt_56c12c78 t53; HERO_NODEBUG h_parse_Expr t54; HERO_NODEBUG h_0opt_56c12c78 t55; HERO_NODEBUG h_0opt_56c12c78 t56; goto bb0;
 #line 84 "examples/calculator/parse.hero"
 bb0:
     t1 = h_parse_factor(&(*ph0_p));
@@ -4012,7 +4013,7 @@ bb12:
     goto bb10;
 #line 93 "examples/calculator/parse.hero"
 bb13:
-#line 4016 "main.c"
+#line 4017 "main.c"
     t42 = h6_ret0;
     h_0opt_56c12c78_retain(&t42);
     h_0opt_56c12c78_release(hero_slot_escape(&h1_f0));
@@ -4035,7 +4036,7 @@ bb13:
 #line 97 "examples/calculator/parse.hero"
 h_0opt_56c12c78 h_parse_expression(h_parse_Parse *ph0_p) {
 #line 97 "examples/calculator/parse.hero"
-    h_0opt_56c12c78 h1_f0 = {0}; h_parse_Expr h2_first = {0}; HeroArrayHeader * h3_children = {0}; bool h4_b0; h_0opt_56c12c78 h5_f1 = {0}; h_0opt_56c12c78 h6_ret0 = {0}; h_0opt_56c12c78 h7_own7 = {0}; HeroArrayHeader * h8_own8 = {0}; h_0opt_56c12c78 h9_own9 = {0}; h_0opt_56c12c78 h10_own10 = {0}; h_lex_Token h11_own11 = {0}; h_lex_Token h12_own12 = {0}; h_0opt_56c12c78 h13_own13 = {0}; h_parse_Expr h14_own14 = {0}; h_0opt_56c12c78 h15_own15 = {0}; h_0opt_56c12c78 h16_own16 = {0}; h_0opt_56c12c78 t1; h_0opt_56c12c78 t2; int64_t t3; int64_t t4; bool t5; h_0opt_56c12c78 t6; HeroFailure t7; h_0opt_56c12c78 t8; h_0opt_56c12c78 t9; h_parse_Expr t10; h_parse_Expr t11; HeroArrayHeader * t12; h_parse_Parse t13; bool t14; bool t15; h_parse_Parse t16; h_lex_Token t17; h_lex_Token t18; bool t19; bool t20; h_0opt_56c12c78 t22; h_0opt_56c12c78 t23; int64_t t24; int64_t t25; bool t26; h_0opt_56c12c78 t27; HeroFailure t28; h_0opt_56c12c78 t29; h_0opt_56c12c78 t30; h_parse_Expr t31; HeroArrayHeader * t33; int64_t t34; int64_t t35; bool t36; h_parse_Expr t37; h_0opt_56c12c78 t38; HeroArrayHeader * t39; h_parse_Expr t40; h_0opt_56c12c78 t41; h_0opt_56c12c78 t42; h_0opt_56c12c78 t43; h_0opt_56c12c78 t44; h_parse_Expr t45; HeroArrayHeader * t46; HeroArrayHeader * t47; h_0opt_56c12c78 t48; h_0opt_56c12c78 t49; h_0opt_56c12c78 t50; h_lex_Token t51; h_lex_Token t52; h_0opt_56c12c78 t53; h_parse_Expr t54; h_0opt_56c12c78 t55; h_0opt_56c12c78 t56; goto bb0;
+    HERO_NODEBUG h_0opt_56c12c78 h1_f0 = {0}; h_parse_Expr h2_first = {0}; HeroArrayHeader * h3_children = {0}; HERO_NODEBUG bool h4_b0; HERO_NODEBUG h_0opt_56c12c78 h5_f1 = {0}; HERO_NODEBUG h_0opt_56c12c78 h6_ret0 = {0}; HERO_NODEBUG h_0opt_56c12c78 h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG h_0opt_56c12c78 h9_own9 = {0}; HERO_NODEBUG h_0opt_56c12c78 h10_own10 = {0}; HERO_NODEBUG h_lex_Token h11_own11 = {0}; HERO_NODEBUG h_lex_Token h12_own12 = {0}; HERO_NODEBUG h_0opt_56c12c78 h13_own13 = {0}; HERO_NODEBUG h_parse_Expr h14_own14 = {0}; HERO_NODEBUG h_0opt_56c12c78 h15_own15 = {0}; HERO_NODEBUG h_0opt_56c12c78 h16_own16 = {0}; HERO_NODEBUG h_0opt_56c12c78 t1; HERO_NODEBUG h_0opt_56c12c78 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_56c12c78 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_0opt_56c12c78 t8; HERO_NODEBUG h_0opt_56c12c78 t9; HERO_NODEBUG h_parse_Expr t10; HERO_NODEBUG h_parse_Expr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG h_parse_Parse t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_parse_Parse t16; HERO_NODEBUG h_lex_Token t17; HERO_NODEBUG h_lex_Token t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_56c12c78 t22; HERO_NODEBUG h_0opt_56c12c78 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG h_0opt_56c12c78 t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG h_0opt_56c12c78 t29; HERO_NODEBUG h_0opt_56c12c78 t30; HERO_NODEBUG h_parse_Expr t31; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_parse_Expr t37; HERO_NODEBUG h_0opt_56c12c78 t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG h_parse_Expr t40; HERO_NODEBUG h_0opt_56c12c78 t41; HERO_NODEBUG h_0opt_56c12c78 t42; HERO_NODEBUG h_0opt_56c12c78 t43; HERO_NODEBUG h_0opt_56c12c78 t44; HERO_NODEBUG h_parse_Expr t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG h_0opt_56c12c78 t48; HERO_NODEBUG h_0opt_56c12c78 t49; HERO_NODEBUG h_0opt_56c12c78 t50; HERO_NODEBUG h_lex_Token t51; HERO_NODEBUG h_lex_Token t52; HERO_NODEBUG h_0opt_56c12c78 t53; HERO_NODEBUG h_parse_Expr t54; HERO_NODEBUG h_0opt_56c12c78 t55; HERO_NODEBUG h_0opt_56c12c78 t56; goto bb0;
 #line 97 "examples/calculator/parse.hero"
 bb0:
     t1 = h_parse_term(&(*ph0_p));
@@ -4284,7 +4285,7 @@ bb12:
     goto bb10;
 #line 106 "examples/calculator/parse.hero"
 bb13:
-#line 4288 "main.c"
+#line 4289 "main.c"
     t42 = h6_ret0;
     h_0opt_56c12c78_retain(&t42);
     h_0opt_56c12c78_release(hero_slot_escape(&h1_f0));
@@ -4309,7 +4310,7 @@ bb13:
 #line 38 "examples/calculator/main.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_main_apply_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) {
 #line 38 "examples/calculator/main.hero"
-    HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_x; HeroArrayHeader * h6_own6 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; h_0fn_48ac9712 t12; int64_t t13; int64_t t14; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; HeroArrayHeader * t20; HeroArrayHeader * t21; HeroArrayHeader * t22; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; goto bb0;
 #line 38 "examples/calculator/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -4390,7 +4391,7 @@ bb3:
 bb4:
 #line 44 "examples/calculator/main.hero"
     t19 = h2_out;
-#line 4394 "main.c"
+#line 4395 "main.c"
     hero_array_incref(t19);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -4403,7 +4404,7 @@ bb4:
 #line 48 "examples/calculator/main.hero"
 HERO_TU_LOCAL int64_t h_main_reduce_37f8817a(HeroArrayHeader * h0_xs, int64_t h1_initial, h_0fn_7b615d8f h2_f) {
 #line 48 "examples/calculator/main.hero"
-    int64_t h3_acc; HeroArrayHeader * h4_xs0 = {0}; int64_t h5_i0; int64_t h6_x; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; int64_t t10; h_0fn_7b615d8f t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; goto bb0;
+    int64_t h3_acc; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; int64_t h6_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_7b615d8f t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; goto bb0;
 #line 48 "examples/calculator/main.hero"
 bb0:
     t1 = h1_initial;
@@ -4474,7 +4475,7 @@ bb3:
 bb4:
 #line 54 "examples/calculator/main.hero"
     t18 = h3_acc;
-#line 4478 "main.c"
+#line 4479 "main.c"
     hero_array_release_at(&h4_xs0);
     return t18;
 }

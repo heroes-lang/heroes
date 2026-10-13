@@ -45,13 +45,14 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 35 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(((Color *)0)->r) == 1 && sizeof(((Color *)0)->r) == sizeof(uint8_t) && (_Generic(((Color *)0)->r, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color r");
 _Static_assert(__builtin_classify_type(((Color *)0)->g) == 1 && sizeof(((Color *)0)->g) == sizeof(uint8_t) && (_Generic(((Color *)0)->g, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color g");
 _Static_assert(__builtin_classify_type(((Color *)0)->b) == 1 && sizeof(((Color *)0)->b) == sizeof(uint8_t) && (_Generic(((Color *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color b");
 _Static_assert(__builtin_classify_type(((Color *)0)->a) == 1 && sizeof(((Color *)0)->a) == sizeof(uint8_t) && (_Generic(((Color *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Color a");
-#line 55 "fixedbugsagrouprecordineverycontainer.c"
+#line 56 "fixedbugsagrouprecordineverycontainer.c"
 
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13, "heroes-ffi-union Color r g b a");
@@ -63,7 +64,7 @@ _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->b) == sizeof(Color), "heroes-ffi-union-narrow Color b");
 #line 34 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 _Static_assert(__builtin_classify_type(*(Color *)0) != 13 || sizeof(((Color *)0)->a) == sizeof(Color), "heroes-ffi-union-narrow Color a");
-#line 67 "fixedbugsagrouprecordineverycontainer.c"
+#line 68 "fixedbugsagrouprecordineverycontainer.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -162,7 +163,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 166 "fixedbugsagrouprecordineverycontainer.c"
+#line 167 "fixedbugsagrouprecordineverycontainer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugsagrouprecordineverycontainer_Color_eq(const Color *a, const Color *b);
@@ -206,7 +207,7 @@ void h_fixedbugsagrouprecordineverycontainer_main(void);
 #line 41 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 void h_fixedbugsagrouprecordineverycontainer_main(void) {
 #line 41 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
-    Color h0_a; Color h1_b; Color h2_c; HeroArrayHeader * h3_xs = {0}; HeroMapHeader * h4_m = {0}; h_0opt_31fbd75 h5_f0 = {0}; HeroMapHeader * h6_keyed = {0}; h_0opt_e201354 h7_f1 = {0}; h_0opt_31fbd75 h8_maybe = {0}; h_0opt_31fbd75 h9_f2 = {0}; HeroArrayHeader * h10_own10 = {0}; HeroMapHeader * h11_own11 = {0}; h_0opt_31fbd75 h12_own12 = {0}; HeroMapHeader * h13_own13 = {0}; h_0opt_e201354 h14_own14 = {0}; h_0opt_31fbd75 h15_own15 = {0}; uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; Color t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; Color t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; Color t15; Color t16; Color t17; bool t18; Color t19; Color t20; bool t21; Color t22; Color t23; HeroArrayHeader * t24; HeroArrayHeader * t25; int64_t t26; HeroArrayHeader * t27; int64_t t28; Color t29; Color t30; bool t31; HeroMapHeader * t32; int64_t t33; Color t34; HeroMapHeader * t35; int64_t t36; h_0opt_31fbd75 t37; h_0opt_31fbd75 t38; int64_t t39; int64_t t40; bool t41; h_0opt_31fbd75 t42; HeroFailure t43; h_0opt_31fbd75 t44; Color t45; Color t46; bool t47; HeroMapHeader * t48; Color t49; int64_t t50; HeroMapHeader * t51; Color t52; h_0opt_e201354 t53; h_0opt_e201354 t54; int64_t t55; int64_t t56; bool t57; h_0opt_e201354 t58; HeroFailure t59; h_0opt_e201354 t60; int64_t t61; Color t62; h_0opt_31fbd75 t63; h_0opt_31fbd75 t64; h_0opt_31fbd75 t65; int64_t t66; int64_t t67; bool t68; Color t69; int32_t t70; HeroArrayHeader * t71; HeroArrayHeader * t72; HeroMapHeader * t73; HeroMapHeader * t74; h_0opt_31fbd75 t75; h_0opt_31fbd75 t76; HeroMapHeader * t77; HeroMapHeader * t78; h_0opt_e201354 t79; h_0opt_e201354 t80; h_0opt_31fbd75 t81; h_0opt_31fbd75 t82; h_0opt_31fbd75 t83; goto bb0;
+    Color h0_a; Color h1_b; Color h2_c; HeroArrayHeader * h3_xs = {0}; HeroMapHeader * h4_m = {0}; HERO_NODEBUG h_0opt_31fbd75 h5_f0 = {0}; HeroMapHeader * h6_keyed = {0}; HERO_NODEBUG h_0opt_e201354 h7_f1 = {0}; h_0opt_31fbd75 h8_maybe = {0}; HERO_NODEBUG h_0opt_31fbd75 h9_f2 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroMapHeader * h11_own11 = {0}; HERO_NODEBUG h_0opt_31fbd75 h12_own12 = {0}; HERO_NODEBUG HeroMapHeader * h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG h_0opt_31fbd75 h15_own15 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG Color t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG Color t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG Color t15; HERO_NODEBUG Color t16; HERO_NODEBUG Color t17; HERO_NODEBUG bool t18; HERO_NODEBUG Color t19; HERO_NODEBUG Color t20; HERO_NODEBUG bool t21; HERO_NODEBUG Color t22; HERO_NODEBUG Color t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG Color t29; HERO_NODEBUG Color t30; HERO_NODEBUG bool t31; HERO_NODEBUG HeroMapHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG Color t34; HERO_NODEBUG HeroMapHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG h_0opt_31fbd75 t37; HERO_NODEBUG h_0opt_31fbd75 t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_0opt_31fbd75 t42; HERO_NODEBUG HeroFailure t43; HERO_NODEBUG h_0opt_31fbd75 t44; HERO_NODEBUG Color t45; HERO_NODEBUG Color t46; HERO_NODEBUG bool t47; HERO_NODEBUG HeroMapHeader * t48; HERO_NODEBUG Color t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroMapHeader * t51; HERO_NODEBUG Color t52; HERO_NODEBUG h_0opt_e201354 t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG HeroFailure t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG Color t62; HERO_NODEBUG h_0opt_31fbd75 t63; HERO_NODEBUG h_0opt_31fbd75 t64; HERO_NODEBUG h_0opt_31fbd75 t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG bool t68; HERO_NODEBUG Color t69; HERO_NODEBUG int32_t t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroMapHeader * t74; HERO_NODEBUG h_0opt_31fbd75 t75; HERO_NODEBUG h_0opt_31fbd75 t76; HERO_NODEBUG HeroMapHeader * t77; HERO_NODEBUG HeroMapHeader * t78; HERO_NODEBUG h_0opt_e201354 t79; HERO_NODEBUG h_0opt_e201354 t80; HERO_NODEBUG h_0opt_31fbd75 t81; HERO_NODEBUG h_0opt_31fbd75 t82; HERO_NODEBUG h_0opt_31fbd75 t83; goto bb0;
 #line 41 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
 bb0:
     t1 = UINT64_C(1);
@@ -456,7 +457,7 @@ bb2:
     t42 = h5_f0;
 #line 58 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t43 = t42.as.err;
-#line 460 "fixedbugsagrouprecordineverycontainer.c"
+#line 461 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t43);
     hero_unreachable();
 bb3:
@@ -515,7 +516,7 @@ bb3:
     hero_print_int(t70);
 #line 68 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     hero_print_end();
-#line 519 "fixedbugsagrouprecordineverycontainer.c"
+#line 520 "fixedbugsagrouprecordineverycontainer.c"
     hero_array_release_at(&h3_xs);
     hero_map_release_at(&h4_m);
     h_0opt_31fbd75_release(hero_slot_escape(&h5_f0));
@@ -535,7 +536,7 @@ bb4:
     t58 = h7_f1;
 #line 61 "tests/golden/run/fixedbugs-a-group-record-in-every-container.hero"
     t59 = t58.as.err;
-#line 539 "fixedbugsagrouprecordineverycontainer.c"
+#line 540 "fixedbugsagrouprecordineverycontainer.c"
     hero_panic_must(t59);
     hero_unreachable();
 }

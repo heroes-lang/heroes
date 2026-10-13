@@ -45,6 +45,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 16 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(sizeof(struct held) - __builtin_offsetof(struct held, buf) != 0, "heroes-ffi-flex Held buf");
@@ -54,13 +55,13 @@ _Static_assert(__builtin_classify_type(((struct held *)0)->after) == 1 && sizeof
 #line 19 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(((struct pair *)0)->a) == 1 && sizeof(((struct pair *)0)->a) == sizeof(int32_t) && (_Generic(((struct pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair a");
 _Static_assert(__builtin_classify_type(((struct pair *)0)->b) == 1 && sizeof(((struct pair *)0)->b) == sizeof(int32_t) && (_Generic(((struct pair *)0)->b, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pair b");
-#line 58 "fficountedbyastatedextent.c"
+#line 59 "fficountedbyastatedextent.c"
 
 #line 15 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(*(struct held *)0) != 13, "heroes-ffi-union Held buf after");
 #line 18 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 _Static_assert(__builtin_classify_type(*(struct pair *)0) != 13, "heroes-ffi-union Pair a b");
-#line 64 "fficountedbyastatedextent.c"
+#line 65 "fficountedbyastatedextent.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -157,7 +158,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 161 "fficountedbyastatedextent.c"
+#line 162 "fficountedbyastatedextent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b);
@@ -179,7 +180,7 @@ void h_fficountedbyastatedextent_main(void);
 
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
-#line 183 "fficountedbyastatedextent.c"
+#line 184 "fficountedbyastatedextent.c"
     return HELD_LEN;
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -198,7 +199,7 @@ int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
 #line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 struct held h_fficountedbyastatedextent_zero(void) {
 #line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    uint8_t t1; uint8_t t2; uint8_t t3; uint8_t t4; uint8_t t5; uint8_t t6; uint8_t t7; uint8_t t8; uint8_t t9; uint8_t t10; uint8_t t11; uint8_t t12; uint8_t t13; uint8_t t14; uint8_t t15; uint8_t t16; int64_t t18; struct held t19; goto bb0;
+    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG int64_t t18; HERO_NODEBUG struct held t19; goto bb0;
 #line 28 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -238,7 +239,7 @@ bb0:
     t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18};
 #line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return t19;
-#line 242 "fficountedbyastatedextent.c"
+#line 243 "fficountedbyastatedextent.c"
 }
 
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
@@ -246,7 +247,7 @@ void h_fficountedbyastatedextent_main(void) {
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 #define h1_pair (*hero_lend_h1_pair)
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
-    struct held h0_h; struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair"); struct held t1; void * t4; struct held t5; int64_t t7; uint8_t t8; HeroStr t9; struct held t10; int64_t t12; uint8_t t13; HeroStr t14; struct held t15; int64_t t16; struct held t17; void * t20; struct held t21; int64_t t23; uint8_t t24; HeroStr t25; struct held t26; int64_t t28; uint8_t t29; HeroStr t30; struct held t31; int64_t t32; struct held t33; void * t36; struct held t37; int64_t t39; uint8_t t40; HeroStr t41; struct held t42; int64_t t43; struct held t44; void * t47; struct held t48; int64_t t50; uint8_t t51; HeroStr t52; struct held t53; int64_t t54; struct held t55; void * t58; struct held t59; int64_t t61; uint8_t t62; HeroStr t63; struct held t64; int64_t t66; uint8_t t67; HeroStr t68; struct held t69; int64_t t70; int32_t t71; int32_t t72; struct pair t73; struct pair t74; int32_t t75; HeroStr t76; struct pair t77; int32_t t78; goto bb0;
+    struct held h0_h; struct pair *const hero_lend_h1_pair = (struct pair *)hero_lend_local(sizeof(struct pair), "fficountedbyastatedextent.main", "pair"); HERO_NODEBUG struct held t1; HERO_NODEBUG void * t4; HERO_NODEBUG struct held t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG struct held t10; HERO_NODEBUG int64_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG struct held t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG struct held t17; HERO_NODEBUG void * t20; HERO_NODEBUG struct held t21; HERO_NODEBUG int64_t t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG struct held t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG struct held t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG struct held t33; HERO_NODEBUG void * t36; HERO_NODEBUG struct held t37; HERO_NODEBUG int64_t t39; HERO_NODEBUG uint8_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG struct held t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG struct held t44; HERO_NODEBUG void * t47; HERO_NODEBUG struct held t48; HERO_NODEBUG int64_t t50; HERO_NODEBUG uint8_t t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG struct held t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG struct held t55; HERO_NODEBUG void * t58; HERO_NODEBUG struct held t59; HERO_NODEBUG int64_t t61; HERO_NODEBUG uint8_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG struct held t64; HERO_NODEBUG int64_t t66; HERO_NODEBUG uint8_t t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG struct held t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int32_t t71; HERO_NODEBUG int32_t t72; HERO_NODEBUG struct pair t73; HERO_NODEBUG struct pair t74; HERO_NODEBUG int32_t t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG struct pair t77; HERO_NODEBUG int32_t t78; goto bb0;
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 bb0:
     t1 = h_fficountedbyastatedextent_zero();
@@ -465,7 +466,7 @@ bb0:
     hero_lend_local_give(hero_lend_h1_pair);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return;
-#line 469 "fficountedbyastatedextent.c"
+#line 470 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {

@@ -49,6 +49,23 @@
 #   handed a frame that died when the wrapper returned (defect 413).
 # - Nothing else is initialised, for the value's reason: a Heroes
 #   binding is always initialised, and clang checks the rest.
+#
+# WHAT A DEBUGGER IS SHOWN (panel 213's R1, provisional, author ratification
+# pending): the author's parameters and bindings, and nothing the lowering
+# invented. A temporary, a `synthetic_slot` (an `$own` slot, a loop's index,
+# a match's scrutinee) and the `return_slot` are declared under `HIDDEN`, the
+# word each unit defines as `__attribute__((nodebug))` beside `HERO_TU_LOCAL`
+# (`emit/decls.hero`), so neither the runtime's header nor its ABI stamp
+# moves. The decision is the slot's kind, asked here, where the IR still
+# holds it: the `$` an invented slot's name begins with does not survive the
+# mangler (`$own3` is `h3_own3`), so nothing reading the C or the binary
+# afterwards could tell the two apart. **A hidden declaration cannot show a
+# wrong value**: it has no entry in the debug information at all, so the
+# debugger has no name to print and no place to read; what is lost is the
+# variable, never the truth of one shown. The sitting measured 042's
+# `shapes.hero` at line 30 from 111 locals to 11, and
+# `tests/golden/lldb/locals.hero`'s `describe` from 15 to 3. A parameter is
+# never hidden: the signature declares it, and no prologue line does.
 
 use check/state
 use ir/containers
@@ -64,6 +81,18 @@ use emit/lend_local
 record Prologue
     lines: [str]
     defines: [str]
+
+# The word before a declaration the debugger is not shown (the header above
+# says why), as `emit/decls.hero` defines it in every unit.
+constant HIDDEN: str
+    "HERO_NODEBUG "
+
+# What comes before a slot's declaration: nothing for a parameter or a
+# binding the author wrote, `HIDDEN` for a slot the lowering invented.
+function hidden(kind: containers.SlotKind) -> str
+    return match kind
+        .param_slot | .local_slot      => ""
+        .synthetic_slot | .return_slot => HIDDEN
 
 function written(c: state.Checked, names: ctype.Names, f: containers.Function, live: [bool], read: {i64: bool}, owner: str, copies_bytes: bool) -> Prologue
     lines: [str] @= []
@@ -103,7 +132,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
             declared = lend_local.declared(c, names, f, at: index, owner: owner)
 
             if declared != ""
-                lines @ lines.push(declared)
+                lines @ lines.push(hidden(slot.kind) + declared)
                 defines @ defines.push(lend_local.defined(f, at: index))
             index @ index + 1
             continue
@@ -141,7 +170,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
 
             if !slots_read[index]
                 deliberate @ "__attribute__((unused)) "
-            lines @ lines.push(deliberate + spelled.must() + " " + name + initialiser + ";")
+            lines @ lines.push(hidden(slot.kind) + deliberate + spelled.must() + " " + name + initialiser + ";")
 
             if by_bytes
                 lines @ lines.push("__builtin_memset(&" + name + ", 0, sizeof " + name + ");")
@@ -209,7 +238,9 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
 
                 if !lends[value_at].is_err()
                     spelling @ "const " + spelled.must()
-                lines @ lines.push(deliberate + spelling + " " + mangle.value(value_at) + ";")
+
+                # Every temporary is the lowering's, so every one is hidden.
+                lines @ lines.push(HIDDEN + deliberate + spelling + " " + mangle.value(value_at) + ";")
         value_at @ value_at + 1
 
     return Prologue(lines: lines, defines: defines)

@@ -45,17 +45,18 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #line 14 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 _Static_assert(__builtin_classify_type(((SA *)0)->kind) == 1 && sizeof(((SA *)0)->kind) == sizeof(int32_t) && (_Generic(((SA *)0)->kind, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA kind");
 _Static_assert(__builtin_classify_type(((SA *)0)->i) == 1 && sizeof(((SA *)0)->i) == sizeof(int32_t) && (_Generic(((SA *)0)->i, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA i");
 _Static_assert(_Generic(&((SA *)0)->f, float *: 1, default: 0) && sizeof(((SA *)0)->f) == sizeof(float), "heroes-ffi-field SA f");
 _Static_assert(__builtin_classify_type(((SA *)0)->x) == 1 && sizeof(((SA *)0)->x) == sizeof(int32_t) && (_Generic(((SA *)0)->x, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field SA x");
-#line 55 "ffiaconstructionnamesonearmofeachunion.c"
+#line 56 "ffiaconstructionnamesonearmofeachunion.c"
 
 #line 13 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 _Static_assert(__builtin_classify_type(*(SA *)0) != 13, "heroes-ffi-union SA kind i f x");
-#line 59 "ffiaconstructionnamesonearmofeachunion.c"
+#line 60 "ffiaconstructionnamesonearmofeachunion.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -142,7 +143,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "ffiaconstructionnamesonearmofeachunion.c"
+#line 147 "ffiaconstructionnamesonearmofeachunion.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_SA_eq(const SA *a, const SA *b);
@@ -161,7 +162,7 @@ void h_ffiaconstructionnamesonearmofeachunion_main(void);
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 void h_ffiaconstructionnamesonearmofeachunion_main(void) {
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    SA h0_s; SA h1_t; SA h2_a; SA h3_b; bool h4_b0; bool h5_b1; SA t1; SA t2; int32_t t3; int32_t t4; float t5; int32_t t6; SA t7; SA t8; float t9; SA t10; int32_t t11; SA t12; SA t13; SA t14; int32_t t15; SA t16; int32_t t17; bool t18; SA t19; int32_t t20; SA t21; int32_t t22; bool t23; bool t24; SA t25; int32_t t26; SA t27; int32_t t28; bool t29; bool t30; goto bb0;
+    SA h0_s; SA h1_t; SA h2_a; SA h3_b; HERO_NODEBUG bool h4_b0; HERO_NODEBUG bool h5_b1; HERO_NODEBUG SA t1; HERO_NODEBUG SA t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG float t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG SA t7; HERO_NODEBUG SA t8; HERO_NODEBUG float t9; HERO_NODEBUG SA t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG SA t12; HERO_NODEBUG SA t13; HERO_NODEBUG SA t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG SA t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG SA t19; HERO_NODEBUG int32_t t20; HERO_NODEBUG SA t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG bool t24; HERO_NODEBUG SA t25; HERO_NODEBUG int32_t t26; HERO_NODEBUG SA t27; HERO_NODEBUG int32_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG bool t30; goto bb0;
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 bb0:
     t1 = make_sa();
@@ -266,7 +267,7 @@ bb4:
     hero_print_end();
 #line 30 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
     return;
-#line 270 "ffiaconstructionnamesonearmofeachunion.c"
+#line 271 "ffiaconstructionnamesonearmofeachunion.c"
 }
 HERO_TU_LOCAL bool h_ffiaconstructionnamesonearmofeachunion_SA_eq(const SA *a, const SA *b) {
     if (!(a->kind == b->kind)) return false;

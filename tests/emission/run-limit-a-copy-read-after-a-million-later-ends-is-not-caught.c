@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -86,7 +87,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_11c935bc, "ends after the target: ");
 HERO_STR_STATIC(hero_str_eb0c0ab, "the target reads: ");
 
-#line 90 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 91 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -131,7 +132,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 135 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 136 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitacopyreadafteramillionlaterendsisnotcaught_Big_eq(big * const *a, big * const *b);
@@ -150,7 +151,7 @@ void h_limitacopyreadafteramillionlaterendsisnotcaught_main(void);
 #line 19 "tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero"
 void h_limitacopyreadafteramillionlaterendsisnotcaught_main(void) {
 #line 19 "tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero"
-    big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; big * t1; big * t2; big * t3; int64_t t4; int64_t t5; int64_t t6; bool t7; big * t8; big * t9; int64_t t10; int64_t t11; int64_t t12; HeroStr t13; int64_t t14; HeroStr t15; big * t16; int64_t t17; goto bb0;
+    big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; HERO_NODEBUG big * t1; HERO_NODEBUG big * t2; HERO_NODEBUG big * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG big * t8; HERO_NODEBUG big * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG big * t16; HERO_NODEBUG int64_t t17; goto bb0;
 #line 19 "tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero"
 bb0:
     t1 = big_new();
@@ -245,7 +246,7 @@ bb3:
     hero_print_end();
 #line 31 "tests/golden/run/limit-a-copy-read-after-a-million-later-ends-is-not-caught.hero"
     return;
-#line 249 "limitacopyreadafteramillionlaterendsisnotcaught.c"
+#line 250 "limitacopyreadafteramillionlaterendsisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitacopyreadafteramillionlaterendsisnotcaught_Big_eq(big * const *a, big * const *b) {
     return hero_handle_eq(*a, *b);

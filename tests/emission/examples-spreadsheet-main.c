@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -92,7 +93,7 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 96 "main.c"
+#line 97 "main.c"
 typedef struct h_formula_Parse {
     HeroStr f_text;
     int64_t f_pos;
@@ -176,7 +177,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 180 "main.c"
+#line 181 "main.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_formula_Parse_retain(const h_formula_Parse *v);
@@ -310,7 +311,7 @@ void h_library_exit(int64_t h0_code);
 #line 22 "examples/spreadsheet/main.hero"
 void h_main_main(void) {
 #line 22 "examples/spreadsheet/main.hero"
-    HeroArrayHeader * h0_given = {0}; h_0opt_f87774a h1_s0 = {0}; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HeroArrayHeader * h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroArrayHeader * t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; int64_t t7; HeroArrayHeader * t8; int64_t t9; HeroStr t10; h_0opt_f87774a t11; h_0opt_f87774a t12; int64_t t13; h_0opt_f87774a t14; HeroFailure t15; HeroStr t16; HeroArrayHeader * t17; int64_t t18; HeroStr t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroFailure t23; HeroStr t24; HeroStr t25; h_0opt_f87774a t26; HeroStr t27; HeroStr t28; HeroArrayHeader * t29; HeroArrayHeader * t30; h_0opt_f87774a t31; h_0opt_f87774a t32; HeroFailure t33; HeroStr t34; HeroStr t35; HeroStr t36; HeroStr t37; goto bb0;
+    HeroArrayHeader * h0_given = {0}; HERO_NODEBUG h_0opt_f87774a h1_s0 = {0}; HeroFailure h2_e = {0}; HeroStr h3_text = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG h_0opt_f87774a t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; goto bb0;
 #line 22 "examples/spreadsheet/main.hero"
 bb0:
     t1 = h_library_args();
@@ -397,7 +398,7 @@ bb3:
     goto bb1;
 #line 27 "examples/spreadsheet/main.hero"
 bb4:
-#line 401 "main.c"
+#line 402 "main.c"
     hero_array_release_at(&h0_given);
     h_0opt_f87774a_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
@@ -482,13 +483,13 @@ bb6:
     h_main_evaluate(t28);
 #line 31 "examples/spreadsheet/main.hero"
     goto bb4;
-#line 486 "main.c"
+#line 487 "main.c"
 }
 
 #line 33 "examples/spreadsheet/main.hero"
 void h_main_stop(HeroStr h0_message) {
 #line 33 "examples/spreadsheet/main.hero"
-    HeroStr t1; int64_t t2; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; goto bb0;
 #line 33 "examples/spreadsheet/main.hero"
 bb0:
     t1 = h0_message;
@@ -503,13 +504,13 @@ bb0:
     hero_unreachable();
 #line 35 "examples/spreadsheet/main.hero"
     return;
-#line 507 "main.c"
+#line 508 "main.c"
 }
 
 #line 37 "examples/spreadsheet/main.hero"
 void h_main_evaluate(HeroStr h0_text) {
 #line 37 "examples/spreadsheet/main.hero"
-    h_0opt_2bbbbbdd h1_s0 = {0}; HeroFailure h2_e = {0}; h_sheet_Sheet h3_s = {0}; h_0opt_2bbbbbdd h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroStr t1; h_0opt_2bbbbbdd t2; h_0opt_2bbbbbdd t3; int64_t t4; h_0opt_2bbbbbdd t5; HeroFailure t6; HeroFailure t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroFailure t11; HeroStr t12; HeroStr t13; h_0opt_2bbbbbdd t14; h_sheet_Sheet t15; h_sheet_Sheet t16; h_0opt_2bbbbbdd t17; h_0opt_2bbbbbdd t18; HeroFailure t19; HeroStr t20; HeroStr t21; h_sheet_Sheet t22; goto bb0;
+    HERO_NODEBUG h_0opt_2bbbbbdd h1_s0 = {0}; HeroFailure h2_e = {0}; h_sheet_Sheet h3_s = {0}; HERO_NODEBUG h_0opt_2bbbbbdd h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_2bbbbbdd t2; HERO_NODEBUG h_0opt_2bbbbbdd t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_0opt_2bbbbbdd t5; HERO_NODEBUG HeroFailure t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_2bbbbbdd t14; HERO_NODEBUG h_sheet_Sheet t15; HERO_NODEBUG h_sheet_Sheet t16; HERO_NODEBUG h_0opt_2bbbbbdd t17; HERO_NODEBUG h_0opt_2bbbbbdd t18; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_sheet_Sheet t22; goto bb0;
 #line 37 "examples/spreadsheet/main.hero"
 bb0:
     t1 = h0_text;
@@ -545,7 +546,7 @@ bb0:
     }
 #line 38 "examples/spreadsheet/main.hero"
 bb1:
-#line 549 "main.c"
+#line 550 "main.c"
     h_0opt_2bbbbbdd_release(hero_slot_escape(&h1_s0));
     hero_failure_release(&h2_e);
     h_sheet_Sheet_release(hero_slot_escape(&h3_s));
@@ -615,13 +616,13 @@ bb3:
     h_main_report(t16);
 #line 40 "examples/spreadsheet/main.hero"
     goto bb1;
-#line 619 "main.c"
+#line 620 "main.c"
 }
 
 #line 42 "examples/spreadsheet/main.hero"
 void h_main_report(h_sheet_Sheet h0_s) {
 #line 42 "examples/spreadsheet/main.hero"
-    int64_t h1_broken; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_name = {0}; h_0opt_db92a83 h5_s0 = {0}; double h6_v; HeroFailure h7_e = {0}; HeroArrayHeader * h8_own8 = {0}; HeroArrayHeader * h9_own9 = {0}; h_0opt_db92a83 h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; int64_t t1; h_sheet_Sheet t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; HeroStr t11; h_sheet_Sheet t12; HeroStr t13; HeroArrayHeader * t14; h_0opt_db92a83 t15; h_0opt_db92a83 t16; int64_t t17; h_0opt_db92a83 t18; double t19; HeroStr t20; HeroStr t21; HeroStr t22; double t23; HeroStr t24; h_0opt_db92a83 t25; HeroFailure t26; int64_t t27; int64_t t28; int64_t t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroFailure t33; HeroStr t34; int64_t t35; int64_t t36; int64_t t37; h_sheet_Sheet t38; HeroArrayHeader * t39; int64_t t40; HeroStr t41; HeroStr t42; int64_t t43; HeroStr t44; HeroStr t45; int64_t t46; int64_t t47; bool t48; int64_t t49; HeroArrayHeader * t50; HeroArrayHeader * t51; HeroStr t52; HeroArrayHeader * t53; h_0opt_db92a83 t54; h_0opt_db92a83 t55; HeroArrayHeader * t56; HeroStr t57; HeroStr t58; HeroStr t59; HeroStr t60; HeroFailure t61; HeroStr t62; goto bb0;
+    int64_t h1_broken; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_name = {0}; HERO_NODEBUG h_0opt_db92a83 h5_s0 = {0}; double h6_v; HeroFailure h7_e = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_db92a83 h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_sheet_Sheet t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_sheet_Sheet t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG h_0opt_db92a83 t15; HERO_NODEBUG h_0opt_db92a83 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_0opt_db92a83 t18; HERO_NODEBUG double t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG double t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_0opt_db92a83 t25; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG h_sheet_Sheet t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG h_0opt_db92a83 t54; HERO_NODEBUG h_0opt_db92a83 t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroFailure t61; HERO_NODEBUG HeroStr t62; goto bb0;
 #line 42 "examples/spreadsheet/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -876,7 +877,7 @@ bb7:
     goto bb5;
 #line 51 "examples/spreadsheet/main.hero"
 bb8:
-#line 880 "main.c"
+#line 881 "main.c"
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_name);
     h_0opt_db92a83_release(hero_slot_escape(&h5_s0));
@@ -904,13 +905,13 @@ bb9:
 bb10:
 #line 56 "examples/spreadsheet/main.hero"
     goto bb8;
-#line 908 "main.c"
+#line 909 "main.c"
 }
 
 #line 61 "examples/spreadsheet/main.hero"
 HeroStr h_main_padded(HeroStr h0_name) {
 #line 61 "examples/spreadsheet/main.hero"
-    HeroStr h1_out = {0}; HeroStr h2_own2 = {0}; HeroStr t1; HeroStr t2; int64_t t3; int64_t t4; bool t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; goto bb0;
+    HeroStr h1_out = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; goto bb0;
 #line 61 "examples/spreadsheet/main.hero"
 bb0:
     t1 = h0_name;
@@ -963,7 +964,7 @@ bb2:
 bb3:
 #line 67 "examples/spreadsheet/main.hero"
     t9 = h1_out;
-#line 967 "main.c"
+#line 968 "main.c"
     hero_str_incref(t9);
     hero_str_release_at(&h1_out);
     hero_str_release_at(&h2_own2);
@@ -973,11 +974,11 @@ bb3:
 #line 22 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_CIRCULAR_REFERENCE(void) {
 #line 22 "examples/spreadsheet/formula.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 22 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3253dd13);
-#line 981 "main.c"
+#line 982 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -985,11 +986,11 @@ bb0:
 #line 25 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_DIVISION_BY_ZERO(void) {
 #line 25 "examples/spreadsheet/formula.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 25 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3dbf07bc);
-#line 993 "main.c"
+#line 994 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -997,11 +998,11 @@ bb0:
 #line 28 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_EXPECTED_PAREN(void) {
 #line 28 "examples/spreadsheet/formula.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 28 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3f28650a);
-#line 1005 "main.c"
+#line 1006 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1009,11 +1010,11 @@ bb0:
 #line 31 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_TRAILING_INPUT(void) {
 #line 31 "examples/spreadsheet/formula.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 31 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1ab4f50e);
-#line 1017 "main.c"
+#line 1018 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1021,11 +1022,11 @@ bb0:
 #line 34 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNCLOSED_PAREN(void) {
 #line 34 "examples/spreadsheet/formula.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 34 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7b0b513f);
-#line 1029 "main.c"
+#line 1030 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1033,11 +1034,11 @@ bb0:
 #line 37 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNEXPECTED_CHARACTER(void) {
 #line 37 "examples/spreadsheet/formula.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 37 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_70ef3fbe);
-#line 1041 "main.c"
+#line 1042 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1045,11 +1046,11 @@ bb0:
 #line 40 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNEXPECTED_END(void) {
 #line 40 "examples/spreadsheet/formula.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 40 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7423baed);
-#line 1053 "main.c"
+#line 1054 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1057,11 +1058,11 @@ bb0:
 #line 43 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_ERR_UNKNOWN_NAME(void) {
 #line 43 "examples/spreadsheet/formula.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 43 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7d34d37c);
-#line 1065 "main.c"
+#line 1066 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1069,7 +1070,7 @@ bb0:
 #line 50 "examples/spreadsheet/formula.hero"
 bool h_formula_at_end(h_formula_Parse h0_p) {
 #line 50 "examples/spreadsheet/formula.hero"
-    h_formula_Parse t1; int64_t t2; h_formula_Parse t3; HeroStr t4; int64_t t5; bool t6; goto bb0;
+    HERO_NODEBUG h_formula_Parse t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_formula_Parse t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; goto bb0;
 #line 50 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = h0_p;
@@ -1085,13 +1086,13 @@ bb0:
     t6 = t2 >= t5;
 #line 51 "examples/spreadsheet/formula.hero"
     return t6;
-#line 1089 "main.c"
+#line 1090 "main.c"
 }
 
 #line 53 "examples/spreadsheet/formula.hero"
 uint8_t h_formula_here(h_formula_Parse h0_p) {
 #line 53 "examples/spreadsheet/formula.hero"
-    h_formula_Parse t1; HeroStr t2; h_formula_Parse t3; int64_t t4; uint8_t t5; goto bb0;
+    HERO_NODEBUG h_formula_Parse t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_formula_Parse t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG uint8_t t5; goto bb0;
 #line 53 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = h0_p;
@@ -1105,13 +1106,13 @@ bb0:
     t5 = ((void)((t2.ptr == NULL || t4 < 0 || t4 >= t2.len) ? ((void)hero_str_byte(t2, t4), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t2.ptr[t4]);
 #line 54 "examples/spreadsheet/formula.hero"
     return t5;
-#line 1109 "main.c"
+#line 1110 "main.c"
 }
 
 #line 56 "examples/spreadsheet/formula.hero"
 void h_formula_advance(h_formula_Parse *ph0_p) {
 #line 56 "examples/spreadsheet/formula.hero"
-    h_formula_Parse t1; int64_t t2; int64_t t3; int64_t t4; goto bb0;
+    HERO_NODEBUG h_formula_Parse t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; goto bb0;
 #line 56 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = (*ph0_p);
@@ -1125,13 +1126,13 @@ bb0:
     (*ph0_p).f_pos = t4;
 #line 57 "examples/spreadsheet/formula.hero"
     return;
-#line 1129 "main.c"
+#line 1130 "main.c"
 }
 
 #line 59 "examples/spreadsheet/formula.hero"
 void h_formula_skip_space(h_formula_Parse *ph0_p) {
 #line 59 "examples/spreadsheet/formula.hero"
-    bool h1_b0; bool h2_b1; h_formula_Parse t1; bool t2; bool t3; h_formula_Parse t4; uint8_t t5; uint8_t t6; bool t7; h_formula_Parse t8; uint8_t t9; uint8_t t10; bool t11; bool t12; bool t13; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG bool h2_b1; HERO_NODEBUG h_formula_Parse t1; HERO_NODEBUG bool t2; HERO_NODEBUG bool t3; HERO_NODEBUG h_formula_Parse t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_formula_Parse t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; goto bb0;
 #line 59 "examples/spreadsheet/formula.hero"
 bb0:
 #line 59 "examples/spreadsheet/formula.hero"
@@ -1198,13 +1199,13 @@ bb7:
     h1_b0 = t12;
 #line 60 "examples/spreadsheet/formula.hero"
     goto bb5;
-#line 1202 "main.c"
+#line 1203 "main.c"
 }
 
 #line 63 "examples/spreadsheet/formula.hero"
 bool h_formula_contains(HeroArrayHeader * h0_known, HeroStr h1_name) {
 #line 63 "examples/spreadsheet/formula.hero"
-    HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_one = {0}; bool h5_ret0; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; HeroStr t9; HeroStr t10; HeroStr t11; bool t12; bool t13; int64_t t14; int64_t t15; int64_t t16; bool t17; bool t18; HeroArrayHeader * t19; HeroStr t20; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_one = {0}; HERO_NODEBUG bool h5_ret0; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroStr t20; goto bb0;
 #line 63 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = h0_known;
@@ -1295,7 +1296,7 @@ bb7:
     goto bb5;
 #line 66 "examples/spreadsheet/formula.hero"
 bb8:
-#line 1299 "main.c"
+#line 1300 "main.c"
     t18 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_one);
@@ -1305,7 +1306,7 @@ bb8:
 #line 74 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_value_of(h_sheet_Sheet h0_s, HeroStr h1_name, HeroArrayHeader * h2_visiting) {
 #line 74 "examples/spreadsheet/formula.hero"
-    h_0opt_f87774a h3_f0 = {0}; HeroStr h4_r0 = {0}; HeroStr h5_source = {0}; h_formula_Parse h6_p = {0}; h_0opt_db92a83 h7_f1 = {0}; double h8_v; h_0opt_db92a83 h9_ret0 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; h_0opt_db92a83 h14_own14 = {0}; h_formula_Parse h15_own15 = {0}; HeroArrayHeader * h16_own16 = {0}; h_0opt_db92a83 h17_own17 = {0}; h_0opt_db92a83 h18_own18 = {0}; h_0opt_db92a83 h19_own19 = {0}; h_0opt_db92a83 h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; h_0opt_db92a83 h25_own25 = {0}; HeroArrayHeader * t1; HeroStr t2; bool t3; HeroStr t4; HeroStr t5; HeroStr t6; HeroStr t7; HeroStr t8; HeroStr t9; h_0opt_db92a83 t10; h_sheet_Sheet t11; HeroMapHeader * t12; HeroStr t13; h_0opt_f87774a t14; h_0opt_f87774a t15; int64_t t16; int64_t t17; bool t18; h_0opt_f87774a t19; HeroStr t20; HeroStr t21; HeroStr t22; HeroStr t23; HeroStr t24; bool t25; double t26; h_0opt_db92a83 t27; HeroStr t28; int64_t t29; h_formula_Parse t30; h_sheet_Sheet t31; HeroArrayHeader * t32; HeroStr t33; HeroArrayHeader * t34; h_0opt_db92a83 t35; h_0opt_db92a83 t36; int64_t t37; int64_t t38; bool t39; h_0opt_db92a83 t40; HeroFailure t41; h_0opt_db92a83 t42; h_0opt_db92a83 t43; double t44; h_formula_Parse t45; bool t46; bool t47; HeroStr t48; HeroStr t49; HeroStr t50; HeroStr t51; h_formula_Parse t52; int64_t t53; HeroStr t54; HeroStr t55; h_0opt_db92a83 t56; double t57; h_0opt_db92a83 t58; h_0opt_db92a83 t59; h_0opt_f87774a t60; h_0opt_f87774a t61; HeroStr t62; HeroStr t63; HeroStr t64; h_0opt_db92a83 t65; HeroStr t66; HeroStr t67; HeroStr t68; h_formula_Parse t69; h_formula_Parse t70; HeroArrayHeader * t71; h_0opt_db92a83 t72; h_0opt_db92a83 t73; h_0opt_db92a83 t74; h_0opt_db92a83 t75; h_0opt_db92a83 t76; HeroStr t77; HeroStr t78; HeroStr t79; HeroStr t80; h_0opt_db92a83 t81; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}; HERO_NODEBUG HeroStr h4_r0 = {0}; HeroStr h5_source = {0}; h_formula_Parse h6_p = {0}; HERO_NODEBUG h_0opt_db92a83 h7_f1 = {0}; double h8_v; HERO_NODEBUG h_0opt_db92a83 h9_ret0 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_db92a83 h14_own14 = {0}; HERO_NODEBUG h_formula_Parse h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_0opt_db92a83 h17_own17 = {0}; HERO_NODEBUG h_0opt_db92a83 h18_own18 = {0}; HERO_NODEBUG h_0opt_db92a83 h19_own19 = {0}; HERO_NODEBUG h_0opt_db92a83 h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG h_0opt_db92a83 h25_own25 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_db92a83 t10; HERO_NODEBUG h_sheet_Sheet t11; HERO_NODEBUG HeroMapHeader * t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG bool t25; HERO_NODEBUG double t26; HERO_NODEBUG h_0opt_db92a83 t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_formula_Parse t30; HERO_NODEBUG h_sheet_Sheet t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG h_0opt_db92a83 t35; HERO_NODEBUG h_0opt_db92a83 t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_0opt_db92a83 t40; HERO_NODEBUG HeroFailure t41; HERO_NODEBUG h_0opt_db92a83 t42; HERO_NODEBUG h_0opt_db92a83 t43; HERO_NODEBUG double t44; HERO_NODEBUG h_formula_Parse t45; HERO_NODEBUG bool t46; HERO_NODEBUG bool t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_formula_Parse t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_0opt_db92a83 t56; HERO_NODEBUG double t57; HERO_NODEBUG h_0opt_db92a83 t58; HERO_NODEBUG h_0opt_db92a83 t59; HERO_NODEBUG h_0opt_f87774a t60; HERO_NODEBUG h_0opt_f87774a t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG h_0opt_db92a83 t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG h_formula_Parse t69; HERO_NODEBUG h_formula_Parse t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG h_0opt_db92a83 t72; HERO_NODEBUG h_0opt_db92a83 t73; HERO_NODEBUG h_0opt_db92a83 t74; HERO_NODEBUG h_0opt_db92a83 t75; HERO_NODEBUG h_0opt_db92a83 t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG h_0opt_db92a83 t81; goto bb0;
 #line 74 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = h2_visiting;
@@ -1666,7 +1667,7 @@ bb14:
     goto bb12;
 #line 86 "examples/spreadsheet/formula.hero"
 bb15:
-#line 1670 "main.c"
+#line 1671 "main.c"
     t59 = h9_ret0;
     h_0opt_db92a83_retain(&t59);
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
@@ -1696,7 +1697,7 @@ bb15:
 #line 91 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_expression(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
 #line 91 "examples/spreadsheet/formula.hero"
-    h_0opt_db92a83 h3_f0 = {0}; double h4_total; bool h5_more; bool h6_b0; h_0opt_db92a83 h7_f1 = {0}; bool h8_b1; h_0opt_db92a83 h9_f2 = {0}; h_0opt_db92a83 h10_ret0 = {0}; h_0opt_db92a83 h11_own11 = {0}; h_0opt_db92a83 h12_own12 = {0}; h_0opt_db92a83 h13_own13 = {0}; h_0opt_db92a83 h14_own14 = {0}; h_0opt_db92a83 h15_own15 = {0}; h_0opt_db92a83 h16_own16 = {0}; h_0opt_db92a83 h17_own17 = {0}; h_sheet_Sheet t1; HeroArrayHeader * t2; h_0opt_db92a83 t3; h_0opt_db92a83 t4; int64_t t5; int64_t t6; bool t7; h_0opt_db92a83 t8; HeroFailure t9; h_0opt_db92a83 t10; h_0opt_db92a83 t11; double t12; bool t13; bool t14; h_formula_Parse t15; bool t16; bool t17; h_formula_Parse t18; uint8_t t19; uint8_t t20; bool t21; bool t22; double t23; h_sheet_Sheet t24; HeroArrayHeader * t25; h_0opt_db92a83 t26; h_0opt_db92a83 t27; int64_t t28; int64_t t29; bool t30; h_0opt_db92a83 t31; HeroFailure t32; h_0opt_db92a83 t33; h_0opt_db92a83 t34; double t35; double t36; h_formula_Parse t37; bool t38; bool t39; h_formula_Parse t40; uint8_t t41; uint8_t t42; bool t43; bool t44; double t45; h_sheet_Sheet t46; HeroArrayHeader * t47; h_0opt_db92a83 t48; h_0opt_db92a83 t49; int64_t t50; int64_t t51; bool t52; h_0opt_db92a83 t53; HeroFailure t54; h_0opt_db92a83 t55; h_0opt_db92a83 t56; double t57; double t58; bool t59; double t60; h_0opt_db92a83 t61; h_0opt_db92a83 t62; h_0opt_db92a83 t63; h_0opt_db92a83 t64; h_0opt_db92a83 t65; h_0opt_db92a83 t66; h_0opt_db92a83 t67; h_0opt_db92a83 t68; h_0opt_db92a83 t69; h_0opt_db92a83 t70; h_0opt_db92a83 t71; h_0opt_db92a83 t72; goto bb0;
+    HERO_NODEBUG h_0opt_db92a83 h3_f0 = {0}; double h4_total; bool h5_more; HERO_NODEBUG bool h6_b0; HERO_NODEBUG h_0opt_db92a83 h7_f1 = {0}; HERO_NODEBUG bool h8_b1; HERO_NODEBUG h_0opt_db92a83 h9_f2 = {0}; HERO_NODEBUG h_0opt_db92a83 h10_ret0 = {0}; HERO_NODEBUG h_0opt_db92a83 h11_own11 = {0}; HERO_NODEBUG h_0opt_db92a83 h12_own12 = {0}; HERO_NODEBUG h_0opt_db92a83 h13_own13 = {0}; HERO_NODEBUG h_0opt_db92a83 h14_own14 = {0}; HERO_NODEBUG h_0opt_db92a83 h15_own15 = {0}; HERO_NODEBUG h_0opt_db92a83 h16_own16 = {0}; HERO_NODEBUG h_0opt_db92a83 h17_own17 = {0}; HERO_NODEBUG h_sheet_Sheet t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0opt_db92a83 t3; HERO_NODEBUG h_0opt_db92a83 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_db92a83 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_db92a83 t10; HERO_NODEBUG h_0opt_db92a83 t11; HERO_NODEBUG double t12; HERO_NODEBUG bool t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_formula_Parse t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_formula_Parse t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG double t23; HERO_NODEBUG h_sheet_Sheet t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG h_0opt_db92a83 t26; HERO_NODEBUG h_0opt_db92a83 t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG h_0opt_db92a83 t31; HERO_NODEBUG HeroFailure t32; HERO_NODEBUG h_0opt_db92a83 t33; HERO_NODEBUG h_0opt_db92a83 t34; HERO_NODEBUG double t35; HERO_NODEBUG double t36; HERO_NODEBUG h_formula_Parse t37; HERO_NODEBUG bool t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_formula_Parse t40; HERO_NODEBUG uint8_t t41; HERO_NODEBUG uint8_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG bool t44; HERO_NODEBUG double t45; HERO_NODEBUG h_sheet_Sheet t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG h_0opt_db92a83 t48; HERO_NODEBUG h_0opt_db92a83 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG h_0opt_db92a83 t53; HERO_NODEBUG HeroFailure t54; HERO_NODEBUG h_0opt_db92a83 t55; HERO_NODEBUG h_0opt_db92a83 t56; HERO_NODEBUG double t57; HERO_NODEBUG double t58; HERO_NODEBUG bool t59; HERO_NODEBUG double t60; HERO_NODEBUG h_0opt_db92a83 t61; HERO_NODEBUG h_0opt_db92a83 t62; HERO_NODEBUG h_0opt_db92a83 t63; HERO_NODEBUG h_0opt_db92a83 t64; HERO_NODEBUG h_0opt_db92a83 t65; HERO_NODEBUG h_0opt_db92a83 t66; HERO_NODEBUG h_0opt_db92a83 t67; HERO_NODEBUG h_0opt_db92a83 t68; HERO_NODEBUG h_0opt_db92a83 t69; HERO_NODEBUG h_0opt_db92a83 t70; HERO_NODEBUG h_0opt_db92a83 t71; HERO_NODEBUG h_0opt_db92a83 t72; goto bb0;
 #line 91 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = h1_s;
@@ -1992,7 +1993,7 @@ bb18:
     goto bb19;
 #line 103 "examples/spreadsheet/formula.hero"
 bb19:
-#line 1996 "main.c"
+#line 1997 "main.c"
     t62 = h10_ret0;
     h_0opt_db92a83_retain(&t62);
     h_0opt_db92a83_release(hero_slot_escape(&h3_f0));
@@ -2011,7 +2012,7 @@ bb19:
 #line 109 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_term(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
 #line 109 "examples/spreadsheet/formula.hero"
-    h_0opt_db92a83 h3_f0 = {0}; double h4_total; bool h5_more; bool h6_b0; h_0opt_db92a83 h7_f1 = {0}; bool h8_b1; h_0opt_db92a83 h9_f2 = {0}; double h10_divisor; h_0opt_db92a83 h11_ret0 = {0}; h_0opt_db92a83 h12_own12 = {0}; h_0opt_db92a83 h13_own13 = {0}; h_0opt_db92a83 h14_own14 = {0}; h_0opt_db92a83 h15_own15 = {0}; h_0opt_db92a83 h16_own16 = {0}; h_0opt_db92a83 h17_own17 = {0}; h_0opt_db92a83 h18_own18 = {0}; HeroStr h19_own19 = {0}; h_0opt_db92a83 h20_own20 = {0}; h_sheet_Sheet t1; HeroArrayHeader * t2; h_0opt_db92a83 t3; h_0opt_db92a83 t4; int64_t t5; int64_t t6; bool t7; h_0opt_db92a83 t8; HeroFailure t9; h_0opt_db92a83 t10; h_0opt_db92a83 t11; double t12; bool t13; bool t14; h_formula_Parse t15; bool t16; bool t17; h_formula_Parse t18; uint8_t t19; uint8_t t20; bool t21; bool t22; double t23; h_sheet_Sheet t24; HeroArrayHeader * t25; h_0opt_db92a83 t26; h_0opt_db92a83 t27; int64_t t28; int64_t t29; bool t30; h_0opt_db92a83 t31; HeroFailure t32; h_0opt_db92a83 t33; h_0opt_db92a83 t34; double t35; double t36; h_formula_Parse t37; bool t38; bool t39; h_formula_Parse t40; uint8_t t41; uint8_t t42; bool t43; bool t44; h_sheet_Sheet t45; HeroArrayHeader * t46; h_0opt_db92a83 t47; h_0opt_db92a83 t48; int64_t t49; int64_t t50; bool t51; h_0opt_db92a83 t52; HeroFailure t53; h_0opt_db92a83 t54; h_0opt_db92a83 t55; double t56; double t57; double t58; bool t59; HeroStr t60; HeroStr t61; h_0opt_db92a83 t62; double t63; double t64; double t65; bool t66; double t67; h_0opt_db92a83 t68; h_0opt_db92a83 t69; h_0opt_db92a83 t70; h_0opt_db92a83 t71; h_0opt_db92a83 t72; h_0opt_db92a83 t73; h_0opt_db92a83 t74; h_0opt_db92a83 t75; h_0opt_db92a83 t76; h_0opt_db92a83 t77; h_0opt_db92a83 t78; h_0opt_db92a83 t79; HeroStr t80; h_0opt_db92a83 t81; goto bb0;
+    HERO_NODEBUG h_0opt_db92a83 h3_f0 = {0}; double h4_total; bool h5_more; HERO_NODEBUG bool h6_b0; HERO_NODEBUG h_0opt_db92a83 h7_f1 = {0}; HERO_NODEBUG bool h8_b1; HERO_NODEBUG h_0opt_db92a83 h9_f2 = {0}; double h10_divisor; HERO_NODEBUG h_0opt_db92a83 h11_ret0 = {0}; HERO_NODEBUG h_0opt_db92a83 h12_own12 = {0}; HERO_NODEBUG h_0opt_db92a83 h13_own13 = {0}; HERO_NODEBUG h_0opt_db92a83 h14_own14 = {0}; HERO_NODEBUG h_0opt_db92a83 h15_own15 = {0}; HERO_NODEBUG h_0opt_db92a83 h16_own16 = {0}; HERO_NODEBUG h_0opt_db92a83 h17_own17 = {0}; HERO_NODEBUG h_0opt_db92a83 h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_db92a83 h20_own20 = {0}; HERO_NODEBUG h_sheet_Sheet t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0opt_db92a83 t3; HERO_NODEBUG h_0opt_db92a83 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_db92a83 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_db92a83 t10; HERO_NODEBUG h_0opt_db92a83 t11; HERO_NODEBUG double t12; HERO_NODEBUG bool t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_formula_Parse t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_formula_Parse t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG double t23; HERO_NODEBUG h_sheet_Sheet t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG h_0opt_db92a83 t26; HERO_NODEBUG h_0opt_db92a83 t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG h_0opt_db92a83 t31; HERO_NODEBUG HeroFailure t32; HERO_NODEBUG h_0opt_db92a83 t33; HERO_NODEBUG h_0opt_db92a83 t34; HERO_NODEBUG double t35; HERO_NODEBUG double t36; HERO_NODEBUG h_formula_Parse t37; HERO_NODEBUG bool t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_formula_Parse t40; HERO_NODEBUG uint8_t t41; HERO_NODEBUG uint8_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG bool t44; HERO_NODEBUG h_sheet_Sheet t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG h_0opt_db92a83 t47; HERO_NODEBUG h_0opt_db92a83 t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG bool t51; HERO_NODEBUG h_0opt_db92a83 t52; HERO_NODEBUG HeroFailure t53; HERO_NODEBUG h_0opt_db92a83 t54; HERO_NODEBUG h_0opt_db92a83 t55; HERO_NODEBUG double t56; HERO_NODEBUG double t57; HERO_NODEBUG double t58; HERO_NODEBUG bool t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG h_0opt_db92a83 t62; HERO_NODEBUG double t63; HERO_NODEBUG double t64; HERO_NODEBUG double t65; HERO_NODEBUG bool t66; HERO_NODEBUG double t67; HERO_NODEBUG h_0opt_db92a83 t68; HERO_NODEBUG h_0opt_db92a83 t69; HERO_NODEBUG h_0opt_db92a83 t70; HERO_NODEBUG h_0opt_db92a83 t71; HERO_NODEBUG h_0opt_db92a83 t72; HERO_NODEBUG h_0opt_db92a83 t73; HERO_NODEBUG h_0opt_db92a83 t74; HERO_NODEBUG h_0opt_db92a83 t75; HERO_NODEBUG h_0opt_db92a83 t76; HERO_NODEBUG h_0opt_db92a83 t77; HERO_NODEBUG h_0opt_db92a83 t78; HERO_NODEBUG h_0opt_db92a83 t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG h_0opt_db92a83 t81; goto bb0;
 #line 109 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = h1_s;
@@ -2353,7 +2354,7 @@ bb21:
     goto bb19;
 #line 124 "examples/spreadsheet/formula.hero"
 bb22:
-#line 2357 "main.c"
+#line 2358 "main.c"
     t69 = h11_ret0;
     h_0opt_db92a83_retain(&t69);
     h_0opt_db92a83_release(hero_slot_escape(&h3_f0));
@@ -2374,7 +2375,7 @@ bb22:
 #line 131 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_factor(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
 #line 131 "examples/spreadsheet/formula.hero"
-    uint8_t h3_c; h_0opt_db92a83 h4_f0 = {0}; double h5_inner; bool h6_b0; h_0opt_db92a83 h7_f1 = {0}; h_0opt_db92a83 h8_ret0 = {0}; HeroStr h9_own9 = {0}; h_0opt_db92a83 h10_own10 = {0}; h_0opt_db92a83 h11_own11 = {0}; h_0opt_db92a83 h12_own12 = {0}; h_0opt_db92a83 h13_own13 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; h_0opt_db92a83 h17_own17 = {0}; h_0opt_db92a83 h18_own18 = {0}; h_0opt_db92a83 h19_own19 = {0}; h_0opt_db92a83 h20_own20 = {0}; h_0opt_db92a83 h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; h_0opt_db92a83 h25_own25 = {0}; h_0opt_db92a83 h26_own26 = {0}; h_formula_Parse t1; bool t2; HeroStr t3; HeroStr t4; h_0opt_db92a83 t5; h_formula_Parse t6; uint8_t t7; uint8_t t8; uint8_t t9; bool t10; h_sheet_Sheet t11; HeroArrayHeader * t12; h_0opt_db92a83 t13; h_0opt_db92a83 t14; int64_t t15; int64_t t16; bool t17; h_0opt_db92a83 t18; HeroFailure t19; h_0opt_db92a83 t20; h_0opt_db92a83 t21; double t22; h_formula_Parse t23; bool t24; h_formula_Parse t25; uint8_t t26; uint8_t t27; bool t28; bool t29; HeroStr t30; HeroStr t31; h_formula_Parse t32; int64_t t33; HeroStr t34; HeroStr t35; h_0opt_db92a83 t36; double t37; h_0opt_db92a83 t38; uint8_t t39; uint8_t t40; bool t41; h_sheet_Sheet t42; HeroArrayHeader * t43; h_0opt_db92a83 t44; h_0opt_db92a83 t45; int64_t t46; int64_t t47; bool t48; h_0opt_db92a83 t49; HeroFailure t50; h_0opt_db92a83 t51; h_0opt_db92a83 t52; double t53; double t54; h_0opt_db92a83 t55; uint8_t t56; bool t57; double t58; h_0opt_db92a83 t59; uint8_t t60; bool t61; h_sheet_Sheet t62; HeroArrayHeader * t63; h_0opt_db92a83 t64; HeroStr t65; HeroStr t66; h_formula_Parse t67; int64_t t68; HeroStr t69; HeroStr t70; h_0opt_db92a83 t71; h_0opt_db92a83 t72; HeroStr t73; h_0opt_db92a83 t74; h_0opt_db92a83 t75; h_0opt_db92a83 t76; h_0opt_db92a83 t77; h_0opt_db92a83 t78; HeroStr t79; HeroStr t80; HeroStr t81; h_0opt_db92a83 t82; h_0opt_db92a83 t83; h_0opt_db92a83 t84; h_0opt_db92a83 t85; h_0opt_db92a83 t86; h_0opt_db92a83 t87; HeroStr t88; HeroStr t89; HeroStr t90; h_0opt_db92a83 t91; h_0opt_db92a83 t92; goto bb0;
+    uint8_t h3_c; HERO_NODEBUG h_0opt_db92a83 h4_f0 = {0}; double h5_inner; HERO_NODEBUG bool h6_b0; HERO_NODEBUG h_0opt_db92a83 h7_f1 = {0}; HERO_NODEBUG h_0opt_db92a83 h8_ret0 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_db92a83 h10_own10 = {0}; HERO_NODEBUG h_0opt_db92a83 h11_own11 = {0}; HERO_NODEBUG h_0opt_db92a83 h12_own12 = {0}; HERO_NODEBUG h_0opt_db92a83 h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_db92a83 h17_own17 = {0}; HERO_NODEBUG h_0opt_db92a83 h18_own18 = {0}; HERO_NODEBUG h_0opt_db92a83 h19_own19 = {0}; HERO_NODEBUG h_0opt_db92a83 h20_own20 = {0}; HERO_NODEBUG h_0opt_db92a83 h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG h_0opt_db92a83 h25_own25 = {0}; HERO_NODEBUG h_0opt_db92a83 h26_own26 = {0}; HERO_NODEBUG h_formula_Parse t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_db92a83 t5; HERO_NODEBUG h_formula_Parse t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_sheet_Sheet t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG h_0opt_db92a83 t13; HERO_NODEBUG h_0opt_db92a83 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_0opt_db92a83 t18; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG h_0opt_db92a83 t20; HERO_NODEBUG h_0opt_db92a83 t21; HERO_NODEBUG double t22; HERO_NODEBUG h_formula_Parse t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_formula_Parse t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG uint8_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_formula_Parse t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_db92a83 t36; HERO_NODEBUG double t37; HERO_NODEBUG h_0opt_db92a83 t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG uint8_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_sheet_Sheet t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG h_0opt_db92a83 t44; HERO_NODEBUG h_0opt_db92a83 t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_0opt_db92a83 t49; HERO_NODEBUG HeroFailure t50; HERO_NODEBUG h_0opt_db92a83 t51; HERO_NODEBUG h_0opt_db92a83 t52; HERO_NODEBUG double t53; HERO_NODEBUG double t54; HERO_NODEBUG h_0opt_db92a83 t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG double t58; HERO_NODEBUG h_0opt_db92a83 t59; HERO_NODEBUG uint8_t t60; HERO_NODEBUG bool t61; HERO_NODEBUG h_sheet_Sheet t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG h_0opt_db92a83 t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG h_formula_Parse t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG h_0opt_db92a83 t71; HERO_NODEBUG h_0opt_db92a83 t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG h_0opt_db92a83 t74; HERO_NODEBUG h_0opt_db92a83 t75; HERO_NODEBUG h_0opt_db92a83 t76; HERO_NODEBUG h_0opt_db92a83 t77; HERO_NODEBUG h_0opt_db92a83 t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_0opt_db92a83 t82; HERO_NODEBUG h_0opt_db92a83 t83; HERO_NODEBUG h_0opt_db92a83 t84; HERO_NODEBUG h_0opt_db92a83 t85; HERO_NODEBUG h_0opt_db92a83 t86; HERO_NODEBUG h_0opt_db92a83 t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG HeroStr t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG h_0opt_db92a83 t91; HERO_NODEBUG h_0opt_db92a83 t92; goto bb0;
 #line 131 "examples/spreadsheet/formula.hero"
 bb0:
     h_formula_skip_space(&(*ph0_p));
@@ -2789,7 +2790,7 @@ bb24:
     goto bb22;
 #line 156 "examples/spreadsheet/formula.hero"
 bb25:
-#line 2793 "main.c"
+#line 2794 "main.c"
     t72 = h8_ret0;
     h_0opt_db92a83_retain(&t72);
     h_0opt_db92a83_release(hero_slot_escape(&h4_f0));
@@ -2818,7 +2819,7 @@ bb25:
 #line 161 "examples/spreadsheet/formula.hero"
 double h_formula_number(h_formula_Parse *ph0_p) {
 #line 161 "examples/spreadsheet/formula.hero"
-    double h1_whole; bool h2_b0; h_0opt_e201354 h3_f0 = {0}; bool h4_b1; double h5_scale; bool h6_b2; h_0opt_e201354 h7_f1 = {0}; h_0opt_e201354 h8_own8 = {0}; h_0opt_e201354 h9_own9 = {0}; double t1; h_formula_Parse t2; bool t3; bool t4; h_formula_Parse t5; uint8_t t6; bool t7; bool t8; double t9; double t10; double t11; h_formula_Parse t12; uint8_t t13; uint8_t t14; uint8_t t15; h_0opt_e201354 t16; h_0opt_e201354 t17; int64_t t18; int64_t t19; bool t20; h_0opt_e201354 t21; HeroFailure t22; h_0opt_e201354 t23; int64_t t24; double t25; double t26; h_formula_Parse t27; bool t28; bool t29; h_formula_Parse t30; uint8_t t31; uint8_t t32; bool t33; bool t34; double t35; h_formula_Parse t36; bool t37; bool t38; h_formula_Parse t39; uint8_t t40; bool t41; bool t42; double t43; double t44; double t45; double t46; h_formula_Parse t47; uint8_t t48; uint8_t t49; uint8_t t50; h_0opt_e201354 t51; h_0opt_e201354 t52; int64_t t53; int64_t t54; bool t55; h_0opt_e201354 t56; HeroFailure t57; h_0opt_e201354 t58; int64_t t59; double t60; double t61; double t62; double t63; double t64; h_0opt_e201354 t65; h_0opt_e201354 t66; h_0opt_e201354 t67; h_0opt_e201354 t68; goto bb0;
+    double h1_whole; HERO_NODEBUG bool h2_b0; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; HERO_NODEBUG bool h4_b1; double h5_scale; HERO_NODEBUG bool h6_b2; HERO_NODEBUG h_0opt_e201354 h7_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG h_formula_Parse t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_formula_Parse t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG bool t8; HERO_NODEBUG double t9; HERO_NODEBUG double t10; HERO_NODEBUG double t11; HERO_NODEBUG h_formula_Parse t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG double t25; HERO_NODEBUG double t26; HERO_NODEBUG h_formula_Parse t27; HERO_NODEBUG bool t28; HERO_NODEBUG bool t29; HERO_NODEBUG h_formula_Parse t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG bool t34; HERO_NODEBUG double t35; HERO_NODEBUG h_formula_Parse t36; HERO_NODEBUG bool t37; HERO_NODEBUG bool t38; HERO_NODEBUG h_formula_Parse t39; HERO_NODEBUG uint8_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG bool t42; HERO_NODEBUG double t43; HERO_NODEBUG double t44; HERO_NODEBUG double t45; HERO_NODEBUG double t46; HERO_NODEBUG h_formula_Parse t47; HERO_NODEBUG uint8_t t48; HERO_NODEBUG uint8_t t49; HERO_NODEBUG uint8_t t50; HERO_NODEBUG h_0opt_e201354 t51; HERO_NODEBUG h_0opt_e201354 t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG bool t55; HERO_NODEBUG h_0opt_e201354 t56; HERO_NODEBUG HeroFailure t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG double t60; HERO_NODEBUG double t61; HERO_NODEBUG double t62; HERO_NODEBUG double t63; HERO_NODEBUG double t64; HERO_NODEBUG h_0opt_e201354 t65; HERO_NODEBUG h_0opt_e201354 t66; HERO_NODEBUG h_0opt_e201354 t67; HERO_NODEBUG h_0opt_e201354 t68; goto bb0;
 #line 161 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = 0x0p+0;
@@ -2929,13 +2930,13 @@ bb7:
     t21 = h3_f0;
 #line 165 "examples/spreadsheet/formula.hero"
     t22 = t21.as.err;
-#line 2933 "main.c"
+#line 2934 "main.c"
     hero_panic_must(t22);
     hero_unreachable();
 bb8:
 #line 176 "examples/spreadsheet/formula.hero"
     t64 = h1_whole;
-#line 2939 "main.c"
+#line 2940 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     h_0opt_e201354_release(hero_slot_escape(&h7_f1));
     h_0opt_e201354_release(hero_slot_escape(&h8_own8));
@@ -3075,7 +3076,7 @@ bb19:
     t56 = h7_f1;
 #line 174 "examples/spreadsheet/formula.hero"
     t57 = t56.as.err;
-#line 3079 "main.c"
+#line 3080 "main.c"
     hero_panic_must(t57);
     hero_unreachable();
 }
@@ -3083,7 +3084,7 @@ bb19:
 #line 179 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_named(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
 #line 179 "examples/spreadsheet/formula.hero"
-    HeroStr h3_word = {0}; h_0opt_db92a83 h4_ret0 = {0}; HeroStr h5_own5 = {0}; h_0opt_db92a83 h6_own6 = {0}; h_0opt_db92a83 h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; HeroStr h10_own10 = {0}; h_0opt_db92a83 h11_own11 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; bool t4; h_sheet_Sheet t5; HeroArrayHeader * t6; h_0opt_db92a83 t7; HeroStr t8; bool t9; bool t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; h_0opt_db92a83 t17; h_sheet_Sheet t18; HeroStr t19; HeroArrayHeader * t20; h_0opt_db92a83 t21; h_0opt_db92a83 t22; HeroStr t23; HeroStr t24; h_0opt_db92a83 t25; h_0opt_db92a83 t26; HeroStr t27; HeroStr t28; HeroStr t29; h_0opt_db92a83 t30; goto bb0;
+    HeroStr h3_word = {0}; HERO_NODEBUG h_0opt_db92a83 h4_ret0 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_db92a83 h6_own6 = {0}; HERO_NODEBUG h_0opt_db92a83 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_db92a83 h11_own11 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_sheet_Sheet t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG h_0opt_db92a83 t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_db92a83 t17; HERO_NODEBUG h_sheet_Sheet t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_0opt_db92a83 t21; HERO_NODEBUG h_0opt_db92a83 t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_0opt_db92a83 t25; HERO_NODEBUG h_0opt_db92a83 t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_0opt_db92a83 t30; goto bb0;
 #line 179 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = h_formula_word_at(&(*ph0_p));
@@ -3215,7 +3216,7 @@ bb6:
     goto bb4;
 #line 186 "examples/spreadsheet/formula.hero"
 bb7:
-#line 3219 "main.c"
+#line 3220 "main.c"
     t22 = h4_ret0;
     h_0opt_db92a83_retain(&t22);
     hero_str_release_at(&h3_word);
@@ -3232,7 +3233,7 @@ bb7:
 #line 189 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_word_at(h_formula_Parse *ph0_p) {
 #line 189 "examples/spreadsheet/formula.hero"
-    int64_t h1_start; bool h2_b0; bool h3_b1; HeroStr h4_own4 = {0}; h_formula_Parse t1; int64_t t2; h_formula_Parse t3; bool t4; bool t5; h_formula_Parse t6; uint8_t t7; bool t8; h_formula_Parse t9; uint8_t t10; bool t11; bool t12; bool t13; h_formula_Parse t14; HeroStr t15; int64_t t16; h_formula_Parse t17; int64_t t18; HeroStr t19; HeroStr t20; goto bb0;
+    int64_t h1_start; HERO_NODEBUG bool h2_b0; HERO_NODEBUG bool h3_b1; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_formula_Parse t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_formula_Parse t3; HERO_NODEBUG bool t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_formula_Parse t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_formula_Parse t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_formula_Parse t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_formula_Parse t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; goto bb0;
 #line 189 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = (*ph0_p);
@@ -3279,7 +3280,7 @@ bb3:
     h4_own4 = t19;
 #line 195 "examples/spreadsheet/formula.hero"
     hero_str_decref(t20);
-#line 3283 "main.c"
+#line 3284 "main.c"
     hero_str_incref(t19);
     hero_str_release_at(&h4_own4);
     return t19;
@@ -3320,13 +3321,13 @@ bb7:
     h2_b0 = t12;
 #line 192 "examples/spreadsheet/formula.hero"
     goto bb5;
-#line 3324 "main.c"
+#line 3325 "main.c"
 }
 
 #line 199 "examples/spreadsheet/formula.hero"
 h_0opt_db92a83 h_formula_sum_of(h_formula_Parse *ph0_p, h_sheet_Sheet h1_s, HeroArrayHeader * h2_visiting) {
 #line 199 "examples/spreadsheet/formula.hero"
-    bool h3_b0; int64_t h4_start; bool h5_b1; HeroStr h6_inside = {0}; double h7_total; h_0opt_5a58f2ca h8_f0 = {0}; HeroArrayHeader * h9_xs0 = {0}; int64_t h10_i0; HeroStr h11_name = {0}; h_0opt_db92a83 h12_f1 = {0}; h_0opt_db92a83 h13_ret0 = {0}; HeroStr h14_own14 = {0}; h_0opt_db92a83 h15_own15 = {0}; HeroStr h16_own16 = {0}; h_0opt_5a58f2ca h17_own17 = {0}; HeroStr h18_own18 = {0}; h_0opt_db92a83 h19_own19 = {0}; h_0opt_db92a83 h20_own20 = {0}; h_0opt_db92a83 h21_own21 = {0}; h_0opt_db92a83 h22_own22 = {0}; h_0opt_db92a83 h23_own23 = {0}; h_formula_Parse t1; bool t2; h_formula_Parse t3; uint8_t t4; uint8_t t5; bool t6; bool t7; HeroStr t8; HeroStr t9; h_0opt_db92a83 t10; h_formula_Parse t11; int64_t t12; h_formula_Parse t13; bool t14; bool t15; h_formula_Parse t16; uint8_t t17; uint8_t t18; bool t19; bool t20; h_formula_Parse t21; bool t22; HeroStr t23; HeroStr t24; h_0opt_db92a83 t25; h_formula_Parse t26; HeroStr t27; int64_t t28; h_formula_Parse t29; int64_t t30; HeroStr t31; double t32; HeroStr t33; h_0opt_5a58f2ca t34; h_0opt_5a58f2ca t35; int64_t t36; int64_t t37; bool t38; h_0opt_5a58f2ca t39; HeroFailure t40; h_0opt_db92a83 t41; h_0opt_5a58f2ca t42; HeroArrayHeader * t43; int64_t t44; int64_t t45; HeroArrayHeader * t46; int64_t t47; bool t48; HeroArrayHeader * t49; int64_t t50; HeroStr t51; double t52; h_sheet_Sheet t53; HeroStr t54; HeroArrayHeader * t55; h_0opt_db92a83 t56; h_0opt_db92a83 t57; int64_t t58; int64_t t59; bool t60; h_0opt_db92a83 t61; HeroFailure t62; h_0opt_db92a83 t63; h_0opt_db92a83 t64; double t65; double t66; int64_t t67; int64_t t68; int64_t t69; double t70; h_0opt_db92a83 t71; h_0opt_db92a83 t72; HeroStr t73; h_0opt_db92a83 t74; HeroStr t75; HeroStr t76; h_0opt_5a58f2ca t77; h_0opt_5a58f2ca t78; HeroStr t79; h_0opt_db92a83 t80; HeroArrayHeader * t81; h_0opt_db92a83 t82; HeroStr t83; h_0opt_db92a83 t84; h_0opt_db92a83 t85; h_0opt_db92a83 t86; h_0opt_db92a83 t87; goto bb0;
+    HERO_NODEBUG bool h3_b0; int64_t h4_start; HERO_NODEBUG bool h5_b1; HeroStr h6_inside = {0}; double h7_total; HERO_NODEBUG h_0opt_5a58f2ca h8_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h9_xs0 = {0}; HERO_NODEBUG int64_t h10_i0; HeroStr h11_name = {0}; HERO_NODEBUG h_0opt_db92a83 h12_f1 = {0}; HERO_NODEBUG h_0opt_db92a83 h13_ret0 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_db92a83 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG h_0opt_db92a83 h19_own19 = {0}; HERO_NODEBUG h_0opt_db92a83 h20_own20 = {0}; HERO_NODEBUG h_0opt_db92a83 h21_own21 = {0}; HERO_NODEBUG h_0opt_db92a83 h22_own22 = {0}; HERO_NODEBUG h_0opt_db92a83 h23_own23 = {0}; HERO_NODEBUG h_formula_Parse t1; HERO_NODEBUG bool t2; HERO_NODEBUG h_formula_Parse t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_db92a83 t10; HERO_NODEBUG h_formula_Parse t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_formula_Parse t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_formula_Parse t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_formula_Parse t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_0opt_db92a83 t25; HERO_NODEBUG h_formula_Parse t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_formula_Parse t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG double t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_0opt_5a58f2ca t34; HERO_NODEBUG h_0opt_5a58f2ca t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG h_0opt_5a58f2ca t39; HERO_NODEBUG HeroFailure t40; HERO_NODEBUG h_0opt_db92a83 t41; HERO_NODEBUG h_0opt_5a58f2ca t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG double t52; HERO_NODEBUG h_sheet_Sheet t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG h_0opt_db92a83 t56; HERO_NODEBUG h_0opt_db92a83 t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG h_0opt_db92a83 t61; HERO_NODEBUG HeroFailure t62; HERO_NODEBUG h_0opt_db92a83 t63; HERO_NODEBUG h_0opt_db92a83 t64; HERO_NODEBUG double t65; HERO_NODEBUG double t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG double t70; HERO_NODEBUG h_0opt_db92a83 t71; HERO_NODEBUG h_0opt_db92a83 t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG h_0opt_db92a83 t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG h_0opt_5a58f2ca t77; HERO_NODEBUG h_0opt_5a58f2ca t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG h_0opt_db92a83 t80; HERO_NODEBUG HeroArrayHeader * t81; HERO_NODEBUG h_0opt_db92a83 t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG h_0opt_db92a83 t84; HERO_NODEBUG h_0opt_db92a83 t85; HERO_NODEBUG h_0opt_db92a83 t86; HERO_NODEBUG h_0opt_db92a83 t87; goto bb0;
 #line 199 "examples/spreadsheet/formula.hero"
 bb0:
     h_formula_skip_space(&(*ph0_p));
@@ -3700,7 +3701,7 @@ bb21:
     goto bb22;
 #line 217 "examples/spreadsheet/formula.hero"
 bb22:
-#line 3704 "main.c"
+#line 3705 "main.c"
     t72 = h13_ret0;
     h_0opt_db92a83_retain(&t72);
     hero_str_release_at(&h6_inside);
@@ -3724,7 +3725,7 @@ bb22:
 #line 268 "examples/spreadsheet/formula.hero"
 HeroStr h_formula_code_of(h_sheet_Sheet h0_s, HeroStr h1_name) {
 #line 268 "examples/spreadsheet/formula.hero"
-    h_0opt_db92a83 h2_s0 = {0}; HeroStr h3_r0 = {0}; HeroFailure h4_e = {0}; HeroArrayHeader * h5_own5 = {0}; h_0opt_db92a83 h6_own6 = {0}; h_sheet_Sheet t1; HeroStr t2; HeroArrayHeader * t3; h_0opt_db92a83 t4; h_0opt_db92a83 t5; int64_t t6; HeroStr t7; h_0opt_db92a83 t8; HeroFailure t9; HeroFailure t10; HeroStr t11; HeroStr t12; HeroArrayHeader * t13; h_0opt_db92a83 t14; h_0opt_db92a83 t15; HeroStr t16; HeroFailure t17; HeroStr t18; goto bb0;
+    HERO_NODEBUG h_0opt_db92a83 h2_s0 = {0}; HERO_NODEBUG HeroStr h3_r0 = {0}; HeroFailure h4_e = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_0opt_db92a83 h6_own6 = {0}; HERO_NODEBUG h_sheet_Sheet t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG h_0opt_db92a83 t4; HERO_NODEBUG h_0opt_db92a83 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_db92a83 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG h_0opt_db92a83 t14; HERO_NODEBUG h_0opt_db92a83 t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG HeroStr t18; goto bb0;
 #line 268 "examples/spreadsheet/formula.hero"
 bb0:
     t1 = h0_s;
@@ -3772,7 +3773,7 @@ bb0:
 bb1:
 #line 269 "examples/spreadsheet/formula.hero"
     t12 = h3_r0;
-#line 3776 "main.c"
+#line 3777 "main.c"
     hero_str_incref(t12);
     h_0opt_db92a83_release(hero_slot_escape(&h2_s0));
     hero_str_release_at(&h3_r0);
@@ -3821,17 +3822,17 @@ bb3:
     hero_str_decref(t18);
 #line 269 "examples/spreadsheet/formula.hero"
     goto bb1;
-#line 3825 "main.c"
+#line 3826 "main.c"
 }
 
 #line 17 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_BAD_CELL_NAME(void) {
 #line 17 "examples/spreadsheet/sheet.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 17 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_267d64cc);
-#line 3835 "main.c"
+#line 3836 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3839,11 +3840,11 @@ bb0:
 #line 20 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_BAD_RANGE(void) {
 #line 20 "examples/spreadsheet/sheet.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 20 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_df3d626);
-#line 3847 "main.c"
+#line 3848 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3851,11 +3852,11 @@ bb0:
 #line 23 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_ERR_NO_ASSIGNMENT(void) {
 #line 23 "examples/spreadsheet/sheet.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 23 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_e72c1af);
-#line 3859 "main.c"
+#line 3860 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3863,11 +3864,11 @@ bb0:
 #line 26 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_LETTERS(void) {
 #line 26 "examples/spreadsheet/sheet.hero"
-    HeroStr t1; goto bb0;
+    HERO_NODEBUG HeroStr t1; goto bb0;
 #line 26 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_15cf97f9);
-#line 3871 "main.c"
+#line 3872 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -3875,7 +3876,7 @@ bb0:
 #line 36 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_letter(uint8_t h0_c) {
 #line 36 "examples/spreadsheet/sheet.hero"
-    bool h1_b0; uint8_t t1; uint8_t t2; bool t3; uint8_t t4; uint8_t t5; bool t6; bool t7; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; goto bb0;
 #line 36 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h0_c;
@@ -3905,13 +3906,13 @@ bb2:
     t7 = h1_b0;
 #line 37 "examples/spreadsheet/sheet.hero"
     return t7;
-#line 3909 "main.c"
+#line 3910 "main.c"
 }
 
 #line 39 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_digit(uint8_t h0_c) {
 #line 39 "examples/spreadsheet/sheet.hero"
-    bool h1_b0; uint8_t t1; uint8_t t2; bool t3; uint8_t t4; uint8_t t5; bool t6; bool t7; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; goto bb0;
 #line 39 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h0_c;
@@ -3941,13 +3942,13 @@ bb2:
     t7 = h1_b0;
 #line 40 "examples/spreadsheet/sheet.hero"
     return t7;
-#line 3945 "main.c"
+#line 3946 "main.c"
 }
 
 #line 42 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_space(uint8_t h0_c) {
 #line 42 "examples/spreadsheet/sheet.hero"
-    bool h1_b0; bool h2_b1; uint8_t t1; uint8_t t2; bool t3; uint8_t t4; uint8_t t5; bool t6; bool t7; uint8_t t8; uint8_t t9; bool t10; bool t11; goto bb0;
+    HERO_NODEBUG bool h1_b0; HERO_NODEBUG bool h2_b1; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; goto bb0;
 #line 42 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h0_c;
@@ -3997,13 +3998,13 @@ bb4:
     t11 = h1_b0;
 #line 43 "examples/spreadsheet/sheet.hero"
     return t11;
-#line 4001 "main.c"
+#line 4002 "main.c"
 }
 
 #line 45 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_trimmed(HeroStr h0_line) {
 #line 45 "examples/spreadsheet/sheet.hero"
-    int64_t h1_from; bool h2_b0; int64_t h3_to; bool h4_b1; HeroStr h5_own5 = {0}; int64_t t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; HeroStr t6; int64_t t7; uint8_t t8; bool t9; bool t10; int64_t t11; int64_t t12; int64_t t13; HeroStr t14; int64_t t15; int64_t t16; int64_t t17; bool t18; HeroStr t19; int64_t t20; int64_t t21; int64_t t22; uint8_t t23; bool t24; bool t25; int64_t t26; int64_t t27; int64_t t28; HeroStr t29; int64_t t30; int64_t t31; HeroStr t32; HeroStr t33; goto bb0;
+    int64_t h1_from; HERO_NODEBUG bool h2_b0; int64_t h3_to; HERO_NODEBUG bool h4_b1; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG bool t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; goto bb0;
 #line 45 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = INT64_C(0);
@@ -4105,7 +4106,7 @@ bb8:
     h5_own5 = t32;
 #line 56 "examples/spreadsheet/sheet.hero"
     hero_str_decref(t33);
-#line 4109 "main.c"
+#line 4110 "main.c"
     hero_str_incref(t32);
     hero_str_release_at(&h5_own5);
     return t32;
@@ -4132,13 +4133,13 @@ bb10:
     t25 = h4_b1;
 #line 53 "examples/spreadsheet/sheet.hero"
     if (t25) goto bb7; else goto bb8;
-#line 4136 "main.c"
+#line 4137 "main.c"
 }
 
 #line 58 "examples/spreadsheet/sheet.hero"
 HeroArrayHeader * h_sheet_split_lines(HeroStr h0_text) {
 #line 58 "examples/spreadsheet/sheet.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroStr h5_own5 = {0}; HeroStr h6_own6 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; HeroStr t5; int64_t t6; bool t7; HeroStr t8; int64_t t9; uint8_t t10; uint8_t t11; bool t12; HeroStr t14; int64_t t15; int64_t t16; HeroStr t17; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; HeroStr t26; int64_t t27; bool t28; HeroStr t30; int64_t t31; HeroStr t32; int64_t t33; HeroStr t34; HeroArrayHeader * t36; HeroArrayHeader * t37; HeroArrayHeader * t38; HeroStr t39; HeroStr t40; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; goto bb0;
 #line 58 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -4248,7 +4249,7 @@ bb6:
 bb7:
 #line 71 "examples/spreadsheet/sheet.hero"
     t36 = h1_out;
-#line 4252 "main.c"
+#line 4253 "main.c"
     hero_array_incref(t36);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h4_own4);
@@ -4280,13 +4281,13 @@ bb8:
 bb9:
 #line 70 "examples/spreadsheet/sheet.hero"
     goto bb7;
-#line 4284 "main.c"
+#line 4285 "main.c"
 }
 
 #line 76 "examples/spreadsheet/sheet.hero"
 h_0opt_605417d4 h_sheet_cell_of(HeroStr h0_name) {
 #line 76 "examples/spreadsheet/sheet.hero"
-    bool h1_b0; int64_t h2_row; int64_t h3_i; h_0opt_e201354 h4_f0 = {0}; h_0opt_e201354 h5_f1 = {0}; h_0opt_605417d4 h6_ret0 = {0}; HeroStr h7_own7 = {0}; HeroStr h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_605417d4 h10_own10 = {0}; h_0opt_e201354 h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroStr h14_own14 = {0}; h_0opt_605417d4 h15_own15 = {0}; h_0opt_e201354 h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; h_0opt_605417d4 h20_own20 = {0}; h_0opt_605417d4 h21_own21 = {0}; HeroStr t1; int64_t t2; int64_t t3; bool t4; HeroStr t5; int64_t t6; uint8_t t7; bool t8; bool t9; bool t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; h_0opt_605417d4 t17; int64_t t18; int64_t t19; int64_t t20; HeroStr t21; int64_t t22; bool t23; HeroStr t24; int64_t t25; uint8_t t26; bool t27; bool t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; h_0opt_605417d4 t35; int64_t t36; int64_t t37; int64_t t38; HeroStr t39; int64_t t40; uint8_t t41; uint8_t t42; uint8_t t43; h_0opt_e201354 t44; h_0opt_e201354 t45; int64_t t46; int64_t t47; bool t48; h_0opt_e201354 t49; HeroFailure t50; h_0opt_e201354 t51; int64_t t52; int64_t t53; int64_t t54; int64_t t55; int64_t t56; int64_t t57; int64_t t58; bool t59; HeroStr t60; HeroStr t61; HeroStr t62; HeroStr t63; HeroStr t64; HeroStr t65; h_0opt_605417d4 t66; HeroStr t67; int64_t t68; uint8_t t69; uint8_t t70; uint8_t t71; h_0opt_e201354 t72; h_0opt_e201354 t73; int64_t t74; int64_t t75; bool t76; h_0opt_e201354 t77; HeroFailure t78; h_0opt_e201354 t79; int64_t t80; int64_t t81; h_sheet_Cell t82; h_0opt_605417d4 t83; h_0opt_605417d4 t84; HeroStr t85; HeroStr t86; HeroStr t87; h_0opt_605417d4 t88; h_0opt_e201354 t89; h_0opt_e201354 t90; HeroStr t91; HeroStr t92; HeroStr t93; h_0opt_605417d4 t94; h_0opt_e201354 t95; h_0opt_e201354 t96; HeroStr t97; HeroStr t98; HeroStr t99; h_0opt_605417d4 t100; h_0opt_605417d4 t101; goto bb0;
+    HERO_NODEBUG bool h1_b0; int64_t h2_row; int64_t h3_i; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h5_f1 = {0}; HERO_NODEBUG h_0opt_605417d4 h6_ret0 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_605417d4 h10_own10 = {0}; HERO_NODEBUG h_0opt_e201354 h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_605417d4 h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_605417d4 h20_own20 = {0}; HERO_NODEBUG h_0opt_605417d4 h21_own21 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_605417d4 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_0opt_605417d4 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG uint8_t t41; HERO_NODEBUG uint8_t t42; HERO_NODEBUG uint8_t t43; HERO_NODEBUG h_0opt_e201354 t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG HeroFailure t50; HERO_NODEBUG h_0opt_e201354 t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG h_0opt_605417d4 t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG uint8_t t69; HERO_NODEBUG uint8_t t70; HERO_NODEBUG uint8_t t71; HERO_NODEBUG h_0opt_e201354 t72; HERO_NODEBUG h_0opt_e201354 t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG bool t76; HERO_NODEBUG h_0opt_e201354 t77; HERO_NODEBUG HeroFailure t78; HERO_NODEBUG h_0opt_e201354 t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG h_sheet_Cell t82; HERO_NODEBUG h_0opt_605417d4 t83; HERO_NODEBUG h_0opt_605417d4 t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG h_0opt_605417d4 t88; HERO_NODEBUG h_0opt_e201354 t89; HERO_NODEBUG h_0opt_e201354 t90; HERO_NODEBUG HeroStr t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG h_0opt_605417d4 t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG h_0opt_e201354 t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG HeroStr t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG h_0opt_605417d4 t100; HERO_NODEBUG h_0opt_605417d4 t101; goto bb0;
 #line 76 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h0_name;
@@ -4539,7 +4540,7 @@ bb13:
     t49 = h4_f0;
 #line 85 "examples/spreadsheet/sheet.hero"
     t50 = t49.as.err;
-#line 4543 "main.c"
+#line 4544 "main.c"
     hero_panic_must(t50);
     hero_unreachable();
 bb14:
@@ -4658,7 +4659,7 @@ bb18:
     t77 = h5_f1;
 #line 90 "examples/spreadsheet/sheet.hero"
     t78 = t77.as.err;
-#line 4662 "main.c"
+#line 4663 "main.c"
     hero_panic_must(t78);
     hero_unreachable();
 bb19:
@@ -4687,7 +4688,7 @@ bb19:
 #line 94 "examples/spreadsheet/sheet.hero"
 HeroStr h_sheet_name_of(h_sheet_Cell h0_c) {
 #line 94 "examples/spreadsheet/sheet.hero"
-    HeroStr h1_own1 = {0}; HeroStr h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroStr h4_own4 = {0}; HeroStr t1; h_sheet_Cell t2; int64_t t3; h_sheet_Cell t4; int64_t t5; int64_t t6; int64_t t7; HeroStr t8; h_sheet_Cell t9; int64_t t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_sheet_Cell t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_sheet_Cell t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_sheet_Cell t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; goto bb0;
 #line 94 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h_sheet_LETTERS();
@@ -4737,7 +4738,7 @@ bb0:
     h4_own4 = t12;
 #line 95 "examples/spreadsheet/sheet.hero"
     hero_str_decref(t16);
-#line 4741 "main.c"
+#line 4742 "main.c"
     hero_str_incref(t12);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -4749,7 +4750,7 @@ bb0:
 #line 97 "examples/spreadsheet/sheet.hero"
 bool h_sheet_is_name(HeroStr h0_word) {
 #line 97 "examples/spreadsheet/sheet.hero"
-    h_0opt_605417d4 h1_f0 = {0}; h_0opt_605417d4 h2_own2 = {0}; HeroStr t1; h_0opt_605417d4 t2; h_0opt_605417d4 t3; int64_t t4; int64_t t5; bool t6; bool t7; h_0opt_605417d4 t8; h_0opt_605417d4 t9; goto bb0;
+    HERO_NODEBUG h_0opt_605417d4 h1_f0 = {0}; HERO_NODEBUG h_0opt_605417d4 h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_605417d4 t2; HERO_NODEBUG h_0opt_605417d4 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_605417d4 t8; HERO_NODEBUG h_0opt_605417d4 t9; goto bb0;
 #line 97 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h0_word;
@@ -4779,7 +4780,7 @@ bb0:
     t6 = t4 == t5;
 #line 98 "examples/spreadsheet/sheet.hero"
     t7 = !t6;
-#line 4783 "main.c"
+#line 4784 "main.c"
     h_0opt_605417d4_release(hero_slot_escape(&h1_f0));
     h_0opt_605417d4_release(hero_slot_escape(&h2_own2));
     return t7;
@@ -4788,7 +4789,7 @@ bb0:
 #line 105 "examples/spreadsheet/sheet.hero"
 h_0opt_5a58f2ca h_sheet_expand(HeroStr h0_text) {
 #line 105 "examples/spreadsheet/sheet.hero"
-    int64_t h1_at; h_0opt_605417d4 h2_f0 = {0}; h_sheet_Cell h3_from; h_0opt_605417d4 h4_f1 = {0}; h_sheet_Cell h5_to; HeroArrayHeader * h6_out = {0}; HeroArrayHeader * h7_xs0 = {0}; int64_t h8_i0; int64_t h9_row; HeroArrayHeader * h10_xs1 = {0}; int64_t h11_i1; int64_t h12_column; h_0opt_5a58f2ca h13_ret0 = {0}; HeroStr h14_own14 = {0}; HeroStr h15_own15 = {0}; h_0opt_605417d4 h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; h_0opt_5a58f2ca h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; h_0opt_605417d4 h23_own23 = {0}; h_0opt_5a58f2ca h24_own24 = {0}; HeroArrayHeader * h25_own25 = {0}; HeroArrayHeader * h26_own26 = {0}; h_0opt_5a58f2ca h27_own27 = {0}; HeroArrayHeader * h28_own28 = {0}; h_0opt_5a58f2ca h29_own29 = {0}; HeroStr h30_own30 = {0}; HeroStr t1; uint8_t t2; int64_t t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; HeroStr t8; HeroStr t9; HeroStr t10; HeroStr t11; HeroStr t12; h_0opt_5a58f2ca t13; HeroStr t14; int64_t t15; int64_t t16; HeroStr t17; HeroStr t18; h_0opt_605417d4 t19; h_0opt_605417d4 t20; int64_t t21; int64_t t22; bool t23; h_0opt_605417d4 t24; HeroFailure t25; h_0opt_5a58f2ca t26; h_0opt_605417d4 t27; h_sheet_Cell t28; HeroStr t29; int64_t t30; int64_t t31; int64_t t32; HeroStr t33; int64_t t34; HeroStr t35; HeroStr t36; h_0opt_605417d4 t37; h_0opt_605417d4 t38; int64_t t39; int64_t t40; bool t41; h_0opt_605417d4 t42; HeroFailure t43; h_0opt_5a58f2ca t44; h_0opt_605417d4 t45; h_sheet_Cell t46; HeroArrayHeader * t47; h_sheet_Cell t48; int64_t t49; h_sheet_Cell t50; int64_t t51; int64_t t52; int64_t t53; HeroArrayHeader * t54; int64_t t55; int64_t t56; HeroArrayHeader * t57; int64_t t58; bool t59; HeroArrayHeader * t60; int64_t t61; int64_t t62; h_sheet_Cell t63; int64_t t64; h_sheet_Cell t65; int64_t t66; int64_t t67; int64_t t68; HeroArrayHeader * t69; int64_t t70; int64_t t71; HeroArrayHeader * t72; int64_t t73; bool t74; HeroArrayHeader * t75; int64_t t76; int64_t t77; int64_t t79; int64_t t80; h_sheet_Cell t81; HeroStr t82; int64_t t84; int64_t t85; int64_t t86; int64_t t87; int64_t t88; int64_t t89; HeroArrayHeader * t90; h_0opt_5a58f2ca t91; h_0opt_5a58f2ca t92; HeroStr t93; HeroStr t94; h_0opt_605417d4 t95; h_0opt_605417d4 t96; HeroStr t97; HeroStr t98; HeroStr t99; h_0opt_5a58f2ca t100; HeroStr t101; HeroStr t102; h_0opt_605417d4 t103; h_0opt_605417d4 t104; h_0opt_5a58f2ca t105; HeroArrayHeader * t106; HeroArrayHeader * t107; HeroArrayHeader * t108; HeroArrayHeader * t109; h_0opt_5a58f2ca t110; HeroArrayHeader * t111; HeroArrayHeader * t112; h_0opt_5a58f2ca t113; HeroStr t114; goto bb0;
+    int64_t h1_at; HERO_NODEBUG h_0opt_605417d4 h2_f0 = {0}; h_sheet_Cell h3_from; HERO_NODEBUG h_0opt_605417d4 h4_f1 = {0}; h_sheet_Cell h5_to; HeroArrayHeader * h6_out = {0}; HERO_NODEBUG HeroArrayHeader * h7_xs0 = {0}; HERO_NODEBUG int64_t h8_i0; int64_t h9_row; HERO_NODEBUG HeroArrayHeader * h10_xs1 = {0}; HERO_NODEBUG int64_t h11_i1; int64_t h12_column; HERO_NODEBUG h_0opt_5a58f2ca h13_ret0 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG h_0opt_605417d4 h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG h_0opt_605417d4 h23_own23 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h24_own24 = {0}; HERO_NODEBUG HeroArrayHeader * h25_own25 = {0}; HERO_NODEBUG HeroArrayHeader * h26_own26 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h27_own27 = {0}; HERO_NODEBUG HeroArrayHeader * h28_own28 = {0}; HERO_NODEBUG h_0opt_5a58f2ca h29_own29 = {0}; HERO_NODEBUG HeroStr h30_own30 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_5a58f2ca t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG h_0opt_605417d4 t19; HERO_NODEBUG h_0opt_605417d4 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_0opt_605417d4 t24; HERO_NODEBUG HeroFailure t25; HERO_NODEBUG h_0opt_5a58f2ca t26; HERO_NODEBUG h_0opt_605417d4 t27; HERO_NODEBUG h_sheet_Cell t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_605417d4 t37; HERO_NODEBUG h_0opt_605417d4 t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG h_0opt_605417d4 t42; HERO_NODEBUG HeroFailure t43; HERO_NODEBUG h_0opt_5a58f2ca t44; HERO_NODEBUG h_0opt_605417d4 t45; HERO_NODEBUG h_sheet_Cell t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG h_sheet_Cell t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG h_sheet_Cell t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG h_sheet_Cell t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG h_sheet_Cell t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG bool t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG h_sheet_Cell t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG h_0opt_5a58f2ca t91; HERO_NODEBUG h_0opt_5a58f2ca t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG h_0opt_605417d4 t95; HERO_NODEBUG h_0opt_605417d4 t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG HeroStr t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG h_0opt_5a58f2ca t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG HeroStr t102; HERO_NODEBUG h_0opt_605417d4 t103; HERO_NODEBUG h_0opt_605417d4 t104; HERO_NODEBUG h_0opt_5a58f2ca t105; HERO_NODEBUG HeroArrayHeader * t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG HeroArrayHeader * t109; HERO_NODEBUG h_0opt_5a58f2ca t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_NODEBUG HeroArrayHeader * t112; HERO_NODEBUG h_0opt_5a58f2ca t113; HERO_NODEBUG HeroStr t114; goto bb0;
 #line 105 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h0_text;
@@ -5206,7 +5207,7 @@ bb15:
     goto bb10;
 #line 115 "examples/spreadsheet/sheet.hero"
 bb16:
-#line 5210 "main.c"
+#line 5211 "main.c"
     t92 = h13_ret0;
     h_0opt_5a58f2ca_retain(&t92);
     h_0opt_605417d4_release(hero_slot_escape(&h2_f0));
@@ -5237,7 +5238,7 @@ bb16:
 #line 120 "examples/spreadsheet/sheet.hero"
 int64_t h_sheet_index_of(HeroStr h0_text, uint8_t h1_c) {
 #line 120 "examples/spreadsheet/sheet.hero"
-    int64_t h2_i; int64_t h3_ret0; int64_t t1; int64_t t2; HeroStr t3; int64_t t4; bool t5; HeroStr t6; int64_t t7; uint8_t t8; uint8_t t9; bool t10; int64_t t11; int64_t t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; goto bb0;
+    int64_t h2_i; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; goto bb0;
 #line 120 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = INT64_C(0);
@@ -5308,7 +5309,7 @@ bb6:
     goto bb4;
 #line 125 "examples/spreadsheet/sheet.hero"
 bb7:
-#line 5312 "main.c"
+#line 5313 "main.c"
     t18 = h3_ret0;
     return t18;
 }
@@ -5316,7 +5317,7 @@ bb7:
 #line 133 "examples/spreadsheet/sheet.hero"
 h_0opt_2bbbbbdd h_sheet_read(HeroStr h0_text) {
 #line 133 "examples/spreadsheet/sheet.hero"
-    HeroMapHeader * h1_cells = {0}; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_line = {0}; HeroStr h5_head = {0}; bool h6_b0; int64_t h7_at; HeroStr h8_name = {0}; h_0opt_2bbbbbdd h9_ret0 = {0}; HeroMapHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroStr h12_own12 = {0}; h_sheet_Sheet h13_own13 = {0}; h_0opt_2bbbbbdd h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroStr h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; h_0opt_2bbbbbdd h20_own20 = {0}; HeroStr h21_own21 = {0}; HeroStr h22_own22 = {0}; HeroStr h23_own23 = {0}; HeroStr h24_own24 = {0}; HeroStr h25_own25 = {0}; h_0opt_2bbbbbdd h26_own26 = {0}; HeroMapHeader * t1; HeroStr t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; HeroStr t11; HeroStr t12; HeroStr t13; HeroStr t14; HeroStr t15; bool t16; HeroStr t17; int64_t t18; uint8_t t19; uint8_t t20; bool t21; bool t22; HeroStr t23; uint8_t t24; int64_t t25; int64_t t26; int64_t t27; bool t28; HeroStr t29; HeroStr t30; HeroStr t31; HeroStr t32; HeroStr t33; HeroStr t34; h_0opt_2bbbbbdd t35; HeroStr t36; int64_t t37; int64_t t38; HeroStr t39; HeroStr t40; HeroStr t41; bool t42; bool t43; HeroStr t44; HeroStr t45; HeroStr t46; HeroStr t47; HeroStr t48; HeroStr t49; h_0opt_2bbbbbdd t50; HeroStr t51; HeroStr t52; int64_t t53; int64_t t54; int64_t t55; HeroStr t56; int64_t t57; HeroStr t58; HeroStr t59; int64_t t60; int64_t t61; int64_t t62; HeroMapHeader * t63; h_sheet_Sheet t64; h_0opt_2bbbbbdd t65; h_0opt_2bbbbbdd t66; HeroMapHeader * t67; HeroMapHeader * t68; HeroArrayHeader * t69; HeroArrayHeader * t70; HeroStr t71; HeroStr t72; HeroStr t73; h_sheet_Sheet t74; h_0opt_2bbbbbdd t75; HeroStr t76; HeroStr t77; HeroStr t78; HeroStr t79; HeroStr t80; HeroStr t81; h_0opt_2bbbbbdd t82; HeroStr t83; HeroStr t84; HeroStr t85; HeroStr t86; HeroStr t87; h_0opt_2bbbbbdd t88; goto bb0;
+    HeroMapHeader * h1_cells = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_line = {0}; HeroStr h5_head = {0}; HERO_NODEBUG bool h6_b0; int64_t h7_at; HeroStr h8_name = {0}; HERO_NODEBUG h_0opt_2bbbbbdd h9_ret0 = {0}; HERO_NODEBUG HeroMapHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_sheet_Sheet h13_own13 = {0}; HERO_NODEBUG h_0opt_2bbbbbdd h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_2bbbbbdd h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG h_0opt_2bbbbbdd h26_own26 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_0opt_2bbbbbdd t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG bool t42; HERO_NODEBUG bool t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_0opt_2bbbbbdd t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG HeroMapHeader * t63; HERO_NODEBUG h_sheet_Sheet t64; HERO_NODEBUG h_0opt_2bbbbbdd t65; HERO_NODEBUG h_0opt_2bbbbbdd t66; HERO_NODEBUG HeroMapHeader * t67; HERO_NODEBUG HeroMapHeader * t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG h_sheet_Sheet t74; HERO_NODEBUG h_0opt_2bbbbbdd t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_0opt_2bbbbbdd t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG h_0opt_2bbbbbdd t88; goto bb0;
 #line 133 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0);
@@ -5685,7 +5686,7 @@ bb15:
     goto bb13;
 #line 148 "examples/spreadsheet/sheet.hero"
 bb16:
-#line 5689 "main.c"
+#line 5690 "main.c"
     t66 = h9_ret0;
     h_0opt_2bbbbbdd_retain(&t66);
     hero_map_release_at(&h1_cells);
@@ -5716,7 +5717,7 @@ bb16:
 #line 156 "examples/spreadsheet/sheet.hero"
 HeroArrayHeader * h_sheet_names(h_sheet_Sheet h0_s) {
 #line 156 "examples/spreadsheet/sheet.hero"
-    HeroArrayHeader * h1_known = {0}; HeroArrayHeader * h2_out = {0}; HeroArrayHeader * h3_xs0 = {0}; int64_t h4_i0; int64_t h5_row; HeroArrayHeader * h6_xs1 = {0}; int64_t h7_i1; int64_t h8_column; HeroStr h9_name = {0}; h_0opt_f87774a h10_f0 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroArrayHeader * h12_own12 = {0}; HeroArrayHeader * h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroArrayHeader * h15_own15 = {0}; HeroStr h16_own16 = {0}; h_0opt_f87774a h17_own17 = {0}; h_sheet_Sheet t1; HeroMapHeader * t2; HeroArrayHeader * t3; HeroArrayHeader * t4; HeroArrayHeader * t5; int64_t t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; int64_t t10; HeroArrayHeader * t11; int64_t t12; int64_t t13; HeroArrayHeader * t14; int64_t t15; bool t16; HeroArrayHeader * t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; HeroArrayHeader * t22; int64_t t23; int64_t t24; HeroArrayHeader * t25; int64_t t26; bool t27; HeroArrayHeader * t28; int64_t t29; int64_t t30; int64_t t31; int64_t t32; h_sheet_Cell t33; HeroStr t34; h_sheet_Sheet t35; HeroMapHeader * t36; HeroStr t37; h_0opt_f87774a t38; h_0opt_f87774a t39; int64_t t40; int64_t t41; bool t42; bool t43; HeroStr t45; int64_t t47; int64_t t48; int64_t t49; int64_t t50; int64_t t51; int64_t t52; HeroArrayHeader * t53; HeroArrayHeader * t54; HeroArrayHeader * t55; HeroArrayHeader * t56; HeroArrayHeader * t57; HeroArrayHeader * t58; HeroArrayHeader * t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroStr t63; HeroStr t64; h_0opt_f87774a t65; h_0opt_f87774a t66; goto bb0;
+    HeroArrayHeader * h1_known = {0}; HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_row; HERO_NODEBUG HeroArrayHeader * h6_xs1 = {0}; HERO_NODEBUG int64_t h7_i1; int64_t h8_column; HeroStr h9_name = {0}; HERO_NODEBUG h_0opt_f87774a h10_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG h_sheet_Sheet t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_sheet_Cell t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_sheet_Sheet t35; HERO_NODEBUG HeroMapHeader * t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG h_0opt_f87774a t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG bool t43; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG h_0opt_f87774a t65; HERO_NODEBUG h_0opt_f87774a t66; goto bb0;
 #line 156 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h0_s;
@@ -5856,7 +5857,7 @@ bb3:
 bb4:
 #line 167 "examples/spreadsheet/sheet.hero"
     t53 = h2_out;
-#line 5860 "main.c"
+#line 5861 "main.c"
     hero_array_incref(t53);
     hero_array_release_at(&h1_known);
     hero_array_release_at(&h2_out);
@@ -5996,13 +5997,13 @@ bb10:
 bb11:
 #line 165 "examples/spreadsheet/sheet.hero"
     goto bb9;
-#line 6000 "main.c"
+#line 6001 "main.c"
 }
 
 #line 169 "examples/spreadsheet/sheet.hero"
 int64_t h_sheet_highest_row(HeroArrayHeader * h0_known) {
 #line 169 "examples/spreadsheet/sheet.hero"
-    int64_t h1_best; HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; HeroStr h4_name = {0}; h_0opt_605417d4 h5_s0 = {0}; h_sheet_Cell h6_c; h_0opt_605417d4 h7_own7 = {0}; int64_t t1; HeroArrayHeader * t2; int64_t t3; int64_t t4; HeroArrayHeader * t5; int64_t t6; bool t7; HeroArrayHeader * t8; int64_t t9; HeroStr t10; HeroStr t11; h_0opt_605417d4 t12; h_0opt_605417d4 t13; int64_t t14; h_0opt_605417d4 t15; h_sheet_Cell t16; int64_t t17; h_sheet_Cell t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; HeroArrayHeader * t25; HeroStr t26; h_0opt_605417d4 t27; h_0opt_605417d4 t28; goto bb0;
+    int64_t h1_best; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_name = {0}; HERO_NODEBUG h_0opt_605417d4 h5_s0 = {0}; h_sheet_Cell h6_c; HERO_NODEBUG h_0opt_605417d4 h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_605417d4 t12; HERO_NODEBUG h_0opt_605417d4 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_605417d4 t15; HERO_NODEBUG h_sheet_Cell t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_sheet_Cell t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_605417d4 t27; HERO_NODEBUG h_0opt_605417d4 t28; goto bb0;
 #line 169 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = INT64_C(0);
@@ -6099,7 +6100,7 @@ bb3:
 bb4:
 #line 177 "examples/spreadsheet/sheet.hero"
     t24 = h1_best;
-#line 6103 "main.c"
+#line 6104 "main.c"
     hero_array_release_at(&h2_xs0);
     hero_str_release_at(&h4_name);
     h_0opt_605417d4_release(hero_slot_escape(&h5_s0));
@@ -6130,13 +6131,13 @@ bb6:
 bb7:
 #line 174 "examples/spreadsheet/sheet.hero"
     goto bb3;
-#line 6134 "main.c"
+#line 6135 "main.c"
 }
 
 #line 179 "examples/spreadsheet/sheet.hero"
 int64_t h_sheet_larger(int64_t h0_a, int64_t h1_b) {
 #line 179 "examples/spreadsheet/sheet.hero"
-    int64_t h2_ret0; int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+    HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 179 "examples/spreadsheet/sheet.hero"
 bb0:
     t1 = h0_a;
@@ -6168,7 +6169,7 @@ bb3:
     goto bb1;
 #line 181 "examples/spreadsheet/sheet.hero"
 bb4:
-#line 6172 "main.c"
+#line 6173 "main.c"
     t6 = h2_ret0;
     return t6;
 }
@@ -6176,7 +6177,7 @@ bb4:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HeroArrayHeader * h4_own4 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; HeroArrayHeader * t13; HeroArrayHeader * t14; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -6225,7 +6226,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 6229 "main.c"
+#line 6230 "main.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -6234,25 +6235,25 @@ bb3:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 6238 "main.c"
+#line 6239 "main.c"
     return HERO_OS_OK;
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 6244 "main.c"
+#line 6245 "main.c"
     return HERO_OS_NOT_FOUND;
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 6250 "main.c"
+#line 6251 "main.c"
     return HERO_OS_NOT_TEXT;
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 6256 "main.c"
+#line 6257 "main.c"
     return HERO_OS_BAD_NAME;
 }
 
@@ -6261,7 +6262,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; h_0opt_f87774a h3_ret0 = {0}; HeroStr h4_own4 = {0}; h_0opt_f87774a h5_own5 = {0}; h_0opt_f87774a h6_own6 = {0}; HeroStr h7_own7 = {0}; h_0opt_f87774a h8_own8 = {0}; HeroStr h9_own9 = {0}; h_0opt_f87774a h10_own10 = {0}; HeroStr h11_own11 = {0}; HeroStr h12_own12 = {0}; h_0opt_f87774a h13_own13 = {0}; int64_t t1; HeroStr t2; HeroStr t3; int64_t t4; int64_t t5; bool t6; HeroStr t7; h_0opt_f87774a t8; int64_t t9; int64_t t10; bool t11; HeroStr t12; HeroStr t13; h_0opt_f87774a t14; int64_t t15; int64_t t16; bool t17; HeroStr t18; HeroStr t19; HeroStr t20; HeroStr t21; h_0opt_f87774a t22; int64_t t23; int64_t t24; bool t25; HeroStr t26; HeroStr t27; HeroStr t28; HeroStr t29; HeroStr t30; HeroStr t31; h_0opt_f87774a t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; h_0opt_f87774a t37; h_0opt_f87774a t38; HeroStr t39; HeroStr t40; h_0opt_f87774a t41; h_0opt_f87774a t42; HeroStr t43; h_0opt_f87774a t44; HeroStr t45; h_0opt_f87774a t46; HeroStr t47; HeroStr t48; h_0opt_f87774a t49; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; goto bb0;
 #line 167 "<heroes library>"
 bb0:
     t1 = INT64_C(0);
@@ -6487,7 +6488,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 6491 "main.c"
+#line 6492 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -6509,7 +6510,7 @@ bb13:
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HeroArrayHeader * h2_own2 = {0}; HeroStr h3_own3 = {0}; HeroArrayHeader * t1; int64_t t2; int64_t t3; int64_t t4; bool t5; int64_t t7; HeroStr t8; int64_t t10; int64_t t11; int64_t t12; HeroArrayHeader * t13; HeroArrayHeader * t14; HeroArrayHeader * t15; HeroStr t16; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -6566,7 +6567,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 6570 "main.c"
+#line 6571 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -6577,7 +6578,7 @@ bb3:
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
 #line 227 "<heroes library>"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 227 "<heroes library>"
 bb0:
     t1 = h0_code;
@@ -6585,7 +6586,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 6589 "main.c"
+#line 6590 "main.c"
 }
 HERO_TU_LOCAL void h_formula_Parse_retain(const h_formula_Parse *v) {
     hero_str_incref(v->f_text);

@@ -43,6 +43,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -85,7 +86,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_1b811794, "read through the stale copy: ");
 
-#line 89 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 90 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -130,7 +131,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 134 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 135 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitacopyreadaftercreuseditsaddressisnotcaught_Node_eq(node * const *a, node * const *b);
@@ -149,7 +150,7 @@ void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void);
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
 void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void) {
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    node * h0_a; node * h1_keep; node * h2_b; node * t1; node * t2; node * t3; node * t4; HeroStr t5; node * t6; int64_t t7; node * t8; goto bb0;
+    node * h0_a; node * h1_keep; node * h2_b; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG node * t3; HERO_NODEBUG node * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG node * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG node * t8; goto bb0;
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
 bb0:
     t1 = node_new();
@@ -206,7 +207,7 @@ bb0:
     }
 #line 30 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
     return;
-#line 210 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
+#line 211 "limitacopyreadaftercreuseditsaddressisnotcaught.c"
 }
 HERO_TU_LOCAL bool h_limitacopyreadaftercreuseditsaddressisnotcaught_Node_eq(node * const *a, node * const *b) {
     return hero_handle_eq(*a, *b);

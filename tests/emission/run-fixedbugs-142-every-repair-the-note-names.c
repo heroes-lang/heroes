@@ -8,6 +8,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
+#define HERO_NODEBUG __attribute__((nodebug))
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -44,7 +45,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 48 "fixedbugs142everyrepairthenotenames.c"
+#line 49 "fixedbugs142everyrepairthenotenames.c"
 typedef enum h_fixedbugs142everyrepairthenotenames_Color_tag {
     h_fixedbugs142everyrepairthenotenames_Color_tag_red = 0,
     h_fixedbugs142everyrepairthenotenames_Color_tag_blue = 1,
@@ -83,7 +84,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 87 "fixedbugs142everyrepairthenotenames.c"
+#line 88 "fixedbugs142everyrepairthenotenames.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs142everyrepairthenotenames_Color_eq(const h_fixedbugs142everyrepairthenotenames_Color *a, const h_fixedbugs142everyrepairthenotenames_Color *b);
@@ -111,7 +112,7 @@ void h_library_exit(int64_t h0_code);
 #line 12 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_sign(int64_t h0_n) {
 #line 12 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    int64_t h1_ret0; int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -143,7 +144,7 @@ bb3:
     goto bb1;
 #line 14 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb4:
-#line 147 "fixedbugs142everyrepairthenotenames.c"
+#line 148 "fixedbugs142everyrepairthenotenames.c"
     t6 = h1_ret0;
     return t6;
 }
@@ -151,7 +152,7 @@ bb4:
 #line 18 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_sign_both(int64_t h0_n) {
 #line 18 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    int64_t h1_ret0; int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -178,7 +179,7 @@ bb3:
     goto bb4;
 #line 22 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb4:
-#line 182 "fixedbugs142everyrepairthenotenames.c"
+#line 183 "fixedbugs142everyrepairthenotenames.c"
     t6 = h1_ret0;
     return t6;
 }
@@ -186,7 +187,7 @@ bb4:
 #line 26 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_first_at_least(HeroArrayHeader * h0_xs, int64_t h1_least) {
 #line 26 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HeroArrayHeader * h2_xs0 = {0}; int64_t h3_i0; int64_t h4_x; int64_t h5_ret0; HeroArrayHeader * t1; int64_t t2; int64_t t3; HeroArrayHeader * t4; int64_t t5; bool t6; HeroArrayHeader * t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; bool t12; int64_t t13; int64_t t14; int64_t t15; int64_t t16; int64_t t17; int64_t t18; HeroArrayHeader * t19; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_xs;
@@ -271,7 +272,7 @@ bb7:
     goto bb5;
 #line 29 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb8:
-#line 275 "fixedbugs142everyrepairthenotenames.c"
+#line 276 "fixedbugs142everyrepairthenotenames.c"
     t18 = h5_ret0;
     hero_array_release_at(&h2_xs0);
     return t18;
@@ -280,7 +281,7 @@ bb8:
 #line 33 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_count_down(int64_t h0_n) {
 #line 33 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    int64_t h1_i; int64_t h2_ret0; int64_t t1; int64_t t2; int64_t t3; bool t4; int64_t t5; int64_t t6; bool t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; goto bb0;
+    int64_t h1_i; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -341,7 +342,7 @@ bb6:
     goto bb4;
 #line 38 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb7:
-#line 345 "fixedbugs142everyrepairthenotenames.c"
+#line 346 "fixedbugs142everyrepairthenotenames.c"
     t13 = h2_ret0;
     return t13;
 }
@@ -349,7 +350,7 @@ bb7:
 #line 43 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_until_found(int64_t h0_n) {
 #line 43 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    int64_t h1_i; int64_t h2_ret0; int64_t t1; bool t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; bool t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; int64_t t12; int64_t t13; goto bb0;
+    int64_t h1_i; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; goto bb0;
 #line 43 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = INT64_C(0);
@@ -410,7 +411,7 @@ bb6:
     goto bb4;
 #line 48 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb7:
-#line 414 "fixedbugs142everyrepairthenotenames.c"
+#line 415 "fixedbugs142everyrepairthenotenames.c"
     t13 = h2_ret0;
     return t13;
 }
@@ -418,7 +419,7 @@ bb7:
 #line 54 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_double(int64_t h0_n) {
 #line 54 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    int64_t t1; int64_t t2; int64_t t3; goto bb0;
+    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; goto bb0;
 #line 54 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -428,13 +429,13 @@ bb0:
     if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 55 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     return t3;
-#line 432 "fixedbugs142everyrepairthenotenames.c"
+#line 433 "fixedbugs142everyrepairthenotenames.c"
 }
 
 #line 59 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_checked(int64_t h0_n) {
 #line 59 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    int64_t h1_ret0; int64_t t1; int64_t t2; bool t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; goto bb0;
 #line 59 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -471,7 +472,7 @@ bb3:
     goto bb1;
 #line 61 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb4:
-#line 475 "fixedbugs142everyrepairthenotenames.c"
+#line 476 "fixedbugs142everyrepairthenotenames.c"
     t7 = h1_ret0;
     return t7;
 }
@@ -479,7 +480,7 @@ bb4:
 #line 71 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_shade(h_fixedbugs142everyrepairthenotenames_Color h0_c) {
 #line 71 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    h_fixedbugs142everyrepairthenotenames_Color h1_s0; int64_t h2_ret0; h_fixedbugs142everyrepairthenotenames_Color t1; h_fixedbugs142everyrepairthenotenames_Color t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; goto bb0;
+    HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color t1; HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; goto bb0;
 #line 71 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_c;
@@ -515,7 +516,7 @@ bb3:
     goto bb4;
 #line 74 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb4:
-#line 519 "fixedbugs142everyrepairthenotenames.c"
+#line 520 "fixedbugs142everyrepairthenotenames.c"
     t6 = h2_ret0;
     return t6;
 }
@@ -523,7 +524,7 @@ bb4:
 #line 76 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 void h_fixedbugs142everyrepairthenotenames_main(void) {
 #line 76 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HeroArrayHeader * h0_own0 = {0}; HeroArrayHeader * h1_own1 = {0}; int64_t t1; int64_t t2; int64_t t3; int64_t t4; int64_t t5; int64_t t6; int64_t t7; int64_t t8; int64_t t9; int64_t t10; int64_t t11; HeroArrayHeader * t12; int64_t t13; int64_t t14; int64_t t15; HeroArrayHeader * t16; int64_t t17; int64_t t18; int64_t t19; int64_t t20; int64_t t21; int64_t t22; int64_t t23; int64_t t24; int64_t t25; int64_t t26; int64_t t27; int64_t t28; h_fixedbugs142everyrepairthenotenames_Color t29; int64_t t30; HeroArrayHeader * t31; HeroArrayHeader * t32; goto bb0;
+    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; goto bb0;
 #line 76 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = INT64_C(5);
@@ -642,7 +643,7 @@ bb0:
     hero_print_int(t30);
 #line 88 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
     hero_print_end();
-#line 646 "fixedbugs142everyrepairthenotenames.c"
+#line 647 "fixedbugs142everyrepairthenotenames.c"
     hero_array_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     return;
@@ -651,7 +652,7 @@ bb0:
 #line 227 "<heroes library>"
 void h_library_exit(int64_t h0_code) {
 #line 227 "<heroes library>"
-    int64_t t1; goto bb0;
+    HERO_NODEBUG int64_t t1; goto bb0;
 #line 227 "<heroes library>"
 bb0:
     t1 = h0_code;
@@ -659,7 +660,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 663 "fixedbugs142everyrepairthenotenames.c"
+#line 664 "fixedbugs142everyrepairthenotenames.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs142everyrepairthenotenames_Color_eq(const h_fixedbugs142everyrepairthenotenames_Color *a, const h_fixedbugs142everyrepairthenotenames_Color *b) {
     if (a->tag != b->tag) return false;
