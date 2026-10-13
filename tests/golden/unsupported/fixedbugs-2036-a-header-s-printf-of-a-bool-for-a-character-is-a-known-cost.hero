@@ -1,0 +1,22 @@
+# fixedbugs, defect 2036's finding, pinned 2026-10-13 as a known cost.
+#
+# SYMPTOM: a header of the program's own whose `printf("%c\n", (bool)1)`
+# hands `%c` a `bool` is refused `ffi_header_refused` at exit 1, `using '%c'
+# format specifier, but argument has boolean value [-Werror,-Wformat]`.
+#
+# REASON: C defines the call: a `bool` argument is promoted to `int` (C11
+# 6.5.2.2p6), which `%c` converts to `unsigned char` (7.21.6.1p8); but clang
+# files the diagnostic under `-Wformat` itself, under none of its parts, and
+# the region keeps `-Wformat` an error for the conversion its argument does
+# not match, which reads the wrong bytes (defect 2034); no pragma reaches one
+# of its own diagnostics alone (`emit/header_region.hero`).
+#
+# RULING: the author's, 2026-10-13, a known cost: robustness first (design.md
+# §1.12). Revisit if clang gives this diagnostic a flag of its own; this
+# golden moves when the region can pass it over.
+
+extern "fixedbugs-2036-a-header-s-printf-of-a-bool-for-a-character-is-a-known-cost.h"  #~ ffi_header_refused
+    function fmt_shape() -> i32
+
+function main()
+    print(fmt_shape())

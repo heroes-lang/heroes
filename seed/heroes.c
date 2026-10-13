@@ -808754,44 +808754,44 @@ bb0:
 #endif
 
 #if HERO_STATIC_CONSTANTS
-#line 102 "selfhost/emit/header_region.hero"
+#line 107 "selfhost/emit/header_region.hero"
 HERO_ARRAY_STATIC(hero_constant_h_emitheaderregion_FORMAT_DEFINED_6, HeroStr, &hero_desc_str, 5, HERO_STR_LIT(hero_str_2adc4370), HERO_STR_LIT(hero_str_5d5114d8), HERO_STR_LIT(hero_str_3c8ade3b), HERO_STR_LIT(hero_str_18cedd8c), HERO_STR_LIT(hero_str_38ddcad));
-#line 102 "selfhost/emit/header_region.hero"
+#line 107 "selfhost/emit/header_region.hero"
 HeroArrayHeader * h_emitheaderregion_FORMAT_DEFINED(void) {
 #line 808762 "main.c"
     return HERO_ARRAY_LIT(hero_constant_h_emitheaderregion_FORMAT_DEFINED_6);
 }
 #else
 
-#line 102 "selfhost/emit/header_region.hero"
+#line 107 "selfhost/emit/header_region.hero"
 HeroArrayHeader * h_emitheaderregion_FORMAT_DEFINED(void) {
-#line 102 "selfhost/emit/header_region.hero"
+#line 107 "selfhost/emit/header_region.hero"
     HeroArrayHeader * h0_own0 = {0}; HeroStr t1; HeroStr t2; HeroStr t3; HeroStr t4; HeroStr t5; HeroArrayHeader * t6; HeroArrayHeader * t7; goto bb0;
-#line 102 "selfhost/emit/header_region.hero"
+#line 107 "selfhost/emit/header_region.hero"
 bb0:
-#line 104 "selfhost/emit/header_region.hero"
+#line 109 "selfhost/emit/header_region.hero"
     t1 = HERO_STR_LIT(hero_str_2adc4370);
     t2 = HERO_STR_LIT(hero_str_5d5114d8);
     t3 = HERO_STR_LIT(hero_str_3c8ade3b);
     t4 = HERO_STR_LIT(hero_str_18cedd8c);
     t5 = HERO_STR_LIT(hero_str_38ddcad);
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     t6 = hero_array_new(&hero_desc_str, 5);
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&t6, &t1);
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&t6, &t2);
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&t6, &t3);
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&t6, &t4);
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&t6, &t5);
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     t7 = h0_own0;
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     h0_own0 = t6;
-#line 103 "selfhost/emit/header_region.hero"
+#line 108 "selfhost/emit/header_region.hero"
     hero_array_decref(t7);
 #line 808797 "main.c"
     hero_array_incref(t6);
@@ -808800,299 +808800,299 @@ bb0:
 }
 #endif
 
-#line 113 "selfhost/emit/header_region.hero"
+#line 118 "selfhost/emit/header_region.hero"
 HeroArrayHeader * h_emitheaderregion_opening(void) {
-#line 113 "selfhost/emit/header_region.hero"
+#line 118 "selfhost/emit/header_region.hero"
     HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_xs0 = {0}; int64_t h2_i0; HeroStr h3_word = {0}; HeroArrayHeader * h4_xs1 = {0}; int64_t h5_i1; HeroStr h6_word = {0}; HeroArrayHeader * h7_xs2 = {0}; int64_t h8_i2; HeroStr h9_word = {0}; HeroArrayHeader * h10_own10 = {0}; HeroArrayHeader * h11_own11 = {0}; HeroStr h12_own12 = {0}; HeroStr h13_own13 = {0}; HeroArrayHeader * h14_own14 = {0}; HeroStr h15_own15 = {0}; HeroStr h16_own16 = {0}; HeroArrayHeader * h17_own17 = {0}; HeroStr h18_own18 = {0}; HeroStr h19_own19 = {0}; HeroStr t1; HeroArrayHeader * t2; HeroArrayHeader * t3; int64_t t4; int64_t t5; HeroArrayHeader * t6; int64_t t7; bool t8; HeroArrayHeader * t9; int64_t t10; HeroStr t11; HeroStr t13; HeroStr t14; HeroStr t15; HeroStr t16; HeroStr t17; int64_t t19; int64_t t20; int64_t t21; HeroArrayHeader * t22; int64_t t23; int64_t t24; HeroArrayHeader * t25; int64_t t26; bool t27; HeroArrayHeader * t28; int64_t t29; HeroStr t30; HeroStr t32; HeroStr t33; HeroStr t34; HeroStr t35; HeroStr t36; int64_t t38; int64_t t39; int64_t t40; HeroArrayHeader * t41; int64_t t42; int64_t t43; HeroArrayHeader * t44; int64_t t45; bool t46; HeroArrayHeader * t47; int64_t t48; HeroStr t49; HeroStr t51; HeroStr t52; HeroStr t53; HeroStr t54; HeroStr t55; int64_t t57; int64_t t58; int64_t t59; HeroArrayHeader * t60; HeroArrayHeader * t61; HeroArrayHeader * t62; HeroArrayHeader * t63; HeroArrayHeader * t64; HeroStr t65; HeroStr t66; HeroStr t67; HeroArrayHeader * t68; HeroArrayHeader * t69; HeroStr t70; HeroStr t71; HeroStr t72; HeroArrayHeader * t73; HeroArrayHeader * t74; HeroStr t75; HeroStr t76; HeroStr t77; goto bb0;
-#line 113 "selfhost/emit/header_region.hero"
+#line 118 "selfhost/emit/header_region.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5a0c1473);
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     t2 = hero_array_new(&hero_desc_str, 1);
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&t2, &t1);
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     t61 = h10_own10;
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     h10_own10 = t2;
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     hero_array_decref(t61);
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     t62 = h0_out;
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     hero_array_incref(t2);
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     h0_out = t2;
-#line 114 "selfhost/emit/header_region.hero"
+#line 119 "selfhost/emit/header_region.hero"
     hero_array_decref(t62);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t3 = h_emitheaderregion_QUIETED();
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t63 = h11_own11;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     h11_own11 = t3;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     hero_array_decref(t63);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t64 = h1_xs0;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     hero_array_incref(t3);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     h1_xs0 = t3;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     hero_array_decref(t64);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t4 = INT64_C(0);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     h2_i0 = t4;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     goto bb1;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
 bb1:
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t5 = h2_i0;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t6 = h1_xs0;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t8 = t5 < t7;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     if (t8) goto bb2; else goto bb4;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
 bb2:
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t9 = h1_xs0;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t10 = h2_i0;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t65 = h3_word;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     hero_str_incref(t11);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     h3_word = t11;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     hero_str_decref(t65);
     t13 = HERO_STR_LIT(hero_str_b22c208);
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     t14 = h3_word;
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     t15 = hero_str_concat(t13, t14);
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     t66 = h12_own12;
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     h12_own12 = t15;
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     hero_str_decref(t66);
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     t16 = HERO_STR_LIT(hero_str_22);
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     t17 = hero_str_concat(t15, t16);
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     t67 = h13_own13;
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     h13_own13 = t17;
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     hero_str_decref(t67);
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&h0_out, &t17);
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
     goto bb3;
-#line 117 "selfhost/emit/header_region.hero"
+#line 122 "selfhost/emit/header_region.hero"
 bb3:
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t19 = h2_i0;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     t20 = INT64_C(1);
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow();
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     h2_i0 = t21;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
     goto bb1;
-#line 116 "selfhost/emit/header_region.hero"
+#line 121 "selfhost/emit/header_region.hero"
 bb4:
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t22 = h_emitheaderregion_KEPT();
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t68 = h14_own14;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     h14_own14 = t22;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     hero_array_decref(t68);
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t69 = h4_xs1;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     hero_array_incref(t22);
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     h4_xs1 = t22;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     hero_array_decref(t69);
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t23 = INT64_C(0);
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     h5_i1 = t23;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     goto bb5;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
 bb5:
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t24 = h5_i1;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t25 = h4_xs1;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t26 = ((void)(t25 == NULL ? ((void)hero_array_len(t25), hero_unreachable()) : (void)0), t25->len);
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t27 = t24 < t26;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     if (t27) goto bb6; else goto bb8;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
 bb6:
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t28 = h4_xs1;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t29 = h5_i1;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t30 = ((void)((t28 == NULL || t29 < 0 || t29 >= t28->len) ? ((void)hero_array_at(t28, t29), hero_unreachable()) : (void)0), (void)(t28->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t28 + 1))[t29]);
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t70 = h6_word;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     hero_str_incref(t30);
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     h6_word = t30;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     hero_str_decref(t70);
     t32 = HERO_STR_LIT(hero_str_181b73dd);
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     t33 = h6_word;
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     t34 = hero_str_concat(t32, t33);
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     t71 = h15_own15;
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     h15_own15 = t34;
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     hero_str_decref(t71);
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     t35 = HERO_STR_LIT(hero_str_22);
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     t36 = hero_str_concat(t34, t35);
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     t72 = h16_own16;
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     h16_own16 = t36;
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     hero_str_decref(t72);
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&h0_out, &t36);
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
     goto bb7;
-#line 120 "selfhost/emit/header_region.hero"
+#line 125 "selfhost/emit/header_region.hero"
 bb7:
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t38 = h5_i1;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     t39 = INT64_C(1);
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     if (__builtin_add_overflow(t38, t39, &t40)) hero_panic_overflow();
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     h5_i1 = t40;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
     goto bb5;
-#line 119 "selfhost/emit/header_region.hero"
+#line 124 "selfhost/emit/header_region.hero"
 bb8:
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t41 = h_emitheaderregion_FORMAT_DEFINED();
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t73 = h17_own17;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     h17_own17 = t41;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     hero_array_decref(t73);
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t74 = h7_xs2;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     hero_array_incref(t41);
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     h7_xs2 = t41;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     hero_array_decref(t74);
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t42 = INT64_C(0);
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     h8_i2 = t42;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     goto bb9;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
 bb9:
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t43 = h8_i2;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t44 = h7_xs2;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len);
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t46 = t43 < t45;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     if (t46) goto bb10; else goto bb12;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
 bb10:
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t47 = h7_xs2;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t48 = h8_i2;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t49 = ((void)((t47 == NULL || t48 < 0 || t48 >= t47->len) ? ((void)hero_array_at(t47, t48), hero_unreachable()) : (void)0), (void)(t47->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t47 + 1))[t48]);
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t75 = h9_word;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     hero_str_incref(t49);
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     h9_word = t49;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     hero_str_decref(t75);
     t51 = HERO_STR_LIT(hero_str_b22c208);
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     t52 = h9_word;
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     t53 = hero_str_concat(t51, t52);
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     t76 = h18_own18;
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     h18_own18 = t53;
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     hero_str_decref(t76);
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     t54 = HERO_STR_LIT(hero_str_22);
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     t55 = hero_str_concat(t53, t54);
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     t77 = h19_own19;
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     h19_own19 = t55;
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     hero_str_decref(t77);
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     hero_array_push_owned(&h0_out, &t55);
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
     goto bb11;
-#line 123 "selfhost/emit/header_region.hero"
+#line 128 "selfhost/emit/header_region.hero"
 bb11:
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t57 = h8_i2;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     t58 = INT64_C(1);
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     if (__builtin_add_overflow(t57, t58, &t59)) hero_panic_overflow();
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     h8_i2 = t59;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
     goto bb9;
-#line 122 "selfhost/emit/header_region.hero"
+#line 127 "selfhost/emit/header_region.hero"
 bb12:
-#line 125 "selfhost/emit/header_region.hero"
+#line 130 "selfhost/emit/header_region.hero"
     t60 = h0_out;
 #line 809098 "main.c"
     hero_array_incref(t60);
@@ -809116,11 +809116,11 @@ bb12:
     return t60;
 }
 
-#line 130 "selfhost/emit/header_region.hero"
+#line 135 "selfhost/emit/header_region.hero"
 HeroStr h_emitheaderregion_CLOSING(void) {
-#line 130 "selfhost/emit/header_region.hero"
+#line 135 "selfhost/emit/header_region.hero"
     HeroStr t1; goto bb0;
-#line 130 "selfhost/emit/header_region.hero"
+#line 135 "selfhost/emit/header_region.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_51c95cd3);
 #line 809127 "main.c"
