@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-2044-a-header-that-declares-int64-t-as-a-variable-is-refused.h`, the header this group names, does not compile: clang refuses it at line 3: redefinition of 'int64_t' as different kind of symbol
+  at tests/golden/unsupported/fixedbugs-2044-a-header-that-declares-int64-t-as-a-variable-is-refused.hero:15:8
+     |
+  15 | extern "fixedbugs-2044-a-header-that-declares-int64-t-as-a-variable-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2044-a-header-that-declares-int64-t-as-a-variable-is-refused.h` line 3 reads `int int64_t;`
+  note: clang adds, at C's own `int64_t`, which every unit of this program declares as `<stdint.h>` does, before any group's header: previous definition is here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

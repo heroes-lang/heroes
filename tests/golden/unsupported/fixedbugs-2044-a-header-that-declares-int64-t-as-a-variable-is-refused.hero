@@ -1,0 +1,19 @@
+# fixedbugs, defect 2044, 2026-10-13, the defect's own name.
+#
+# SYMPTOM: a header of the program's own that declares `int64_t` another
+# way, `typedef long int64_t;` on this Mac or `int int64_t;` anywhere, was
+# told `internal error: compiling the generated C failed` at exit 2: clang's
+# note points at `heroes_runtime.h`'s `typedef __INT64_TYPE__ int64_t;`, the
+# type declared again as C11 6.7p3 allows, and a note in the runtime's files
+# was the compiler's (defect 360's rule).
+#
+# FIX: a note at the runtime's line declaring a name of `<stdint.h>` again
+# as C does, read from the line itself (`cli/standard_name.hero`), is told as
+# C's own, and the header is refused at its line 1, exit 1. The header would
+# be refused beside any `<stdint.h>` just the same.
+
+extern "fixedbugs-2044-a-header-that-declares-int64-t-as-a-variable-is-refused.h"  #~ ffi_header_refused
+    function seven() -> i32
+
+function main()
+    print(seven())

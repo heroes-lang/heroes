@@ -1,0 +1,18 @@
+# fixedbugs, defect 2044, 2026-10-13, the shape beside that C accepts.
+#
+# SYMPTOM: none; this case holds the line between accepted and refused where
+# defect 2044's repair moved only who is blamed. A header declaring
+# `int64_t` again as the same type C declares builds, beside the runtime's
+# own identical declaration, as C11 6.7p3 allows. `typedef long long
+# int64_t;` is that type on this Mac and Windows and `typedef long int64_t;`
+# on Linux, each refused on the other, so the header writes clang's own
+# `__INT64_TYPE__`, the type on every platform.
+#
+# FIX: the refusal of a header that declares it another way is the header's
+# (`cli/standard_name.hero`); this one builds and prints the value.
+
+extern "fixedbugs-2044-a-header-that-declares-int64-t-again-as-c-does-builds.h"
+    function nine_billion() -> i64
+
+function main()
+    print(nine_billion())

@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-2044-a-header-that-misspells-a-c-integer-type-is-refused.h`, the header this group names, does not compile: clang refuses it at line 3: unknown type name 'int46_t'; did you mean 'int16_t'?
+  at tests/golden/unsupported/fixedbugs-2044-a-header-that-misspells-a-c-integer-type-is-refused.hero:12:8
+     |
+  12 | extern "fixedbugs-2044-a-header-that-misspells-a-c-integer-type-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2044-a-header-that-misspells-a-c-integer-type-is-refused.h` line 3 reads `static inline int46_t seven(void) { return 7; }`
+  note: clang adds, at C's own `int16_t`, which every unit of this program declares as `<stdint.h>` does, before any group's header: 'int16_t' declared here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

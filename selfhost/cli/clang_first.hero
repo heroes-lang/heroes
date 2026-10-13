@@ -12,6 +12,7 @@ use emit/clang_place
 use emit/ffi_lookup
 use cli/group_file
 use cli/runtime_key
+use cli/standard_name
 
 # clang's first error, read: its row in the text, its place, and its message.
 record First
@@ -50,7 +51,9 @@ function expansion(text: str) -> bool
 # group a note names, where one does. Absent where the first error is no
 # group's header's, is a missing file, or lies in or is explained by a file
 # of the compiler's own, the one clang compiled or the runtime's
-# (`group_file.compilers`).
+# (`group_file.compilers`), save a note at the runtime's line declaring a
+# name of C's `<stdint.h>` again as C does, which is C's own and told so
+# (`cli/standard_name.hero`, defect 2044).
 record Reading
     rows: [str]
     first: First
@@ -95,12 +98,26 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
             return fail(code: "none", msg: "a file of the compiler's own")
         hop @ hop + 1
 
-    notes = attached(rows, after: first.row)
-    no_note = Attached(path: "", row: 0, text: "", index: 0)
+    no_name: str? = fail(code: "none", msg: "no name of C's")
+    no_note = Attached(path: "", row: 0, text: "", index: 0, standard: no_name)
+    notes: [Attached] @= []
 
-    for note in notes
+    # A note in a file of the compiler's own makes the refusal the compiler's,
+    # save one at the runtime's re-declaration of a name of `<stdint.h>`
+    # (defect 2044): the header declares, or misspells, a type C itself
+    # declares, and is refused beside any `<stdint.h>` as it is beside the
+    # runtime, which declares it identically before the groups.
+    for note in attached(rows, after: first.row)
         if group_file.compilers(path: note.path, compiled: compiled, runtime: own)
-            return fail(code: "none", msg: "a note in a file of the compiler's own")
+            name = standard_name.declared(path: note.path, row: note.row, runtime: own)
+
+            if name.is_err()
+                return fail(code: "none", msg: "a note in a file of the compiler's own")
+            notes @ notes.push(
+                Attached(path: note.path, row: note.row, text: note.text, index: note.index, standard: name)
+            )
+        else
+            notes @ notes.push(note)
 
     # A note in ANOTHER group's header, or in a file one includes: the two
     # are refused together, and neither alone (defect 538,
@@ -175,12 +192,15 @@ function severity_of(line: str) -> str
 
     return which
 
-# A note clang attached to the error: where it points and what it says.
+# A note clang attached to the error: where it points and what it says, and
+# the name of C's `<stdint.h>` the runtime's line it points at declares
+# again, where it points at one (`cli/standard_name.hero`, defect 2044).
 record Attached
     path: str
     row: i64
     text: str
     index: i64
+    standard: str?
 
 # The notes clang wrote under the error, up to the next diagnostic that is
 # not a note or clang's count of what it reported. A note's own includes
@@ -189,6 +209,7 @@ record Attached
 function attached(rows: [str], after: i64) -> [Attached]
     out: [Attached] @= []
     index: i64 @= after + 1
+    no_name: str? = fail(code: "none", msg: "no name of C's")
 
     while index < rows.len()
         line = clang_place.without_return(rows[index])
@@ -201,7 +222,7 @@ function attached(rows: [str], after: i64) -> [Attached]
             if !place.is_err()
                 at = clang_place.offset_of(text: line, needle: NOTE).must()
                 out @ out.push(
-                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index)
+                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index, standard: no_name)
                 )
         index @ index + 1
 
