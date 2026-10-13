@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `fixedbugs-2049-a-header-that-misspells-the-runtime-s-failure-type-is-refused.h`, the header this group names, does not compile: clang refuses it at line 3: unknown type name 'HeroFailur'; did you mean 'HeroFailure'?
+  at tests/golden/unsupported/fixedbugs-2049-a-header-that-misspells-the-runtime-s-failure-type-is-refused.hero:10:8
+     |
+  10 | extern "fixedbugs-2049-a-header-that-misspells-the-runtime-s-failure-type-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2049-a-header-that-misspells-the-runtime-s-failure-type-is-refused.h` line 3 reads `static inline int eight(void) { HeroFailur f; (void)f; return 8; }`
+  note: clang adds, at `HeroFailure`, a name of the Heroes runtime's own, which every unit of this program declares before any group's header, and clang suggests in the refused line: 'HeroFailure' declared here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

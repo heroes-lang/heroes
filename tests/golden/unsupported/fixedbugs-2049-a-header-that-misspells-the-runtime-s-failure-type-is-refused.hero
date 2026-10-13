@@ -1,0 +1,14 @@
+# fixedbugs, defect 2049, 2026-10-13, another type of the runtime's.
+#
+# SYMPTOM: a header of the program's own writing `HeroFailur` was told
+# `internal error: compiling the generated C failed` at exit 2, as the
+# fourth reproducer was.
+#
+# FIX: the note is told as the Heroes runtime's own `HeroFailure`,
+# the header refused at its line 3, exit 1 (`cli/runtime_name.hero`).
+
+extern "fixedbugs-2049-a-header-that-misspells-the-runtime-s-failure-type-is-refused.h"  #~ ffi_header_refused
+    function eight() -> i32
+
+function main()
+    print(eight())

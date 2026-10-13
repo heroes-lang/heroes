@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-2049-a-header-that-declares-a-name-of-math-h-another-way-is-refused.h`, the header this group names, does not compile: its line 3 declares `floor`, which `<math.h>`, a header of C's own, declares too, after the groups' headers, and clang refuses the two: conflicting types for 'floor'
+  at tests/golden/unsupported/fixedbugs-2049-a-header-that-declares-a-name-of-math-h-another-way-is-refused.hero:11:8
+     |
+  11 | extern "fixedbugs-2049-a-header-that-declares-a-name-of-math-h-another-way-is-refused.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2049-a-header-that-declares-a-name-of-math-h-another-way-is-refused.h` line 3 reads `double floor(int x);`
+  note: the C library's `floor`, which `<math.h>` declares, is the library's in a unit that includes that header (C11 7.1.3), and this program's C includes it after its groups' headers
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `floor` in `fixedbugs-2049-a-header-that-declares-a-name-of-math-h-another-way-is-refused.h`, a name of C's own library, which `<math.h>` declares

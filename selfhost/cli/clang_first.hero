@@ -102,37 +102,27 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
         hop @ hop + 1
 
     no_name: str? = fail(code: "none", msg: "no name of C's")
-    no_note = Attached(path: "", row: 0, text: "", index: 0, standard: no_name, runtime: no_name)
+    no_note = Attached(
+        path: "",
+        row: 0,
+        text: "",
+        index: 0,
+        standard: no_name,
+        runtime: no_name,
+        called: no_name,
+        suggested: no_name
+    )
     notes: [Attached] @= []
 
     # A note in a file of the compiler's own makes the refusal the compiler's,
-    # save one at the runtime's re-declaration of a name of `<stdint.h>`
-    # (defect 2044): the header declares, or misspells, a type C itself
-    # declares, and is refused beside any `<stdint.h>` as it is beside the
-    # runtime, which declares it identically before the groups; and save one
-    # at the runtime's own declaration of the very name the error's caret
-    # stands on in the header (defect 2045): the header declares again a name
-    # the Heroes runtime declares in every unit before any group's header.
+    # save one the header's own line explains (`explaining`).
     for note in attached(rows, after: first.row)
         if group_file.compilers(path: note.path, compiled: compiled, runtime: own)
-            name = standard_name.declared(path: note.path, row: note.row, runtime: own)
-            again: str? @= no_name
+            explained = explaining(rows: rows, first: first, note: note, runtime: own)
 
-            if name.is_err()
-                again @ runtime_name.declared(
-                    rows: rows,
-                    error: first.row,
-                    note: note.index,
-                    path: note.path,
-                    row: note.row,
-                    runtime: own
-                )
-
-            if name.is_err() && again.is_err()
+            if explained.is_err()
                 return fail(code: "none", msg: "a note in a file of the compiler's own")
-            notes @ notes.push(
-                Attached(path: note.path, row: note.row, text: note.text, index: note.index, standard: name, runtime: again)
-            )
+            notes @ notes.push(explained.must())
         else
             notes @ notes.push(note)
 
@@ -171,6 +161,53 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
     return ok(
         Reading(rows: rows, first: first, steps: steps, at: at, group: group.must(), notes: notes, beside: nobody, note: no_note)
     )
+
+# A note at a line of the runtime's own files that the header's line,
+# clang's first error, explains, read as the first of four readings that
+# names it; absent for any other note, which leaves the refusal the
+# compiler's. The runtime's re-declaration of a name of `<stdint.h>`
+# (defect 2044): the header declares, or misspells, a type C itself
+# declares, and is refused beside any `<stdint.h>` as it is beside the
+# runtime, which declares it identically before the groups. The runtime's
+# own declaration of the very name the error's caret stands on (defect
+# 2045): the header declares again a name the Heroes runtime declares in
+# every unit before any group's header. And a function of the runtime's the
+# line calls, or a name of the runtime's clang suggests for one the line
+# misspells (defect 2049): the line uses a name of the runtime's that every
+# unit declares before any group's header (`cli/runtime_name.hero`).
+function explaining(rows: [str], first: First, note: Attached, runtime: [str]) -> Attached?
+    out: Attached @= note
+    out.standard @ standard_name.declared(path: note.path, row: note.row, runtime: runtime)
+
+    if !out.standard.is_err()
+        return ok(out)
+    out.runtime @ runtime_name.declared(
+        rows: rows,
+        error: first.row,
+        note: note.index,
+        path: note.path,
+        row: note.row,
+        runtime: runtime
+    )
+
+    if !out.runtime.is_err()
+        return ok(out)
+    out.called @ runtime_name.called(rows: rows, error: first.row, path: note.path, row: note.row, runtime: runtime)
+
+    if !out.called.is_err()
+        return ok(out)
+    out.suggested @ runtime_name.suggested(
+        rows: rows,
+        message: first.message,
+        note: note.index,
+        path: note.path,
+        row: note.row,
+        runtime: runtime
+    )
+
+    if !out.suggested.is_err()
+        return ok(out)
+    return fail(code: "none", msg: "a note no reading of the header's line explains")
 
 # The first row clang wrote as an error with a place, `path:row:col: error:`
 # or `fatal error:`. A row its excerpt quotes begins with a space, and a
@@ -213,7 +250,8 @@ function severity_of(line: str) -> str
 # the name of C's `<stdint.h>` the runtime's line it points at declares
 # again, where it points at one (`cli/standard_name.hero`, defect 2044), or
 # the name of the Heroes runtime's own it points at, which the header
-# declares again (`cli/runtime_name.hero`, defect 2045).
+# declares again (`cli/runtime_name.hero`, defect 2045), calls, or misspells
+# as clang suggests (defect 2049).
 record Attached
     path: str
     row: i64
@@ -221,6 +259,8 @@ record Attached
     index: i64
     standard: str?
     runtime: str?
+    called: str?
+    suggested: str?
 
 # The notes clang wrote under the error, up to the next diagnostic that is
 # not a note or clang's count of what it reported. A note's own includes
@@ -242,7 +282,7 @@ function attached(rows: [str], after: i64) -> [Attached]
             if !place.is_err()
                 at = clang_place.offset_of(text: line, needle: NOTE).must()
                 out @ out.push(
-                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index, standard: no_name, runtime: no_name)
+                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index, standard: no_name, runtime: no_name, called: no_name, suggested: no_name)
                 )
         index @ index + 1
 
