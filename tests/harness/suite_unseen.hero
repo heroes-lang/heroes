@@ -81,6 +81,21 @@ function known() -> [Found]
         # the report says so at its own line 492.
         Found(path: "docs/panel/192-reports/historian.md", line: 311, code: 8203)
         Found(path: "docs/panel/192-reports/historian.md", line: 331, code: 8203)
+        # Panel 213's ffi-pragmatist kept two Linux transcripts as lldb-dap
+        # and lldb wrote them, evidence of what a debugger received: a bell,
+        # a carriage return and shift-out bytes in the adapter's console,
+        # and the NUL of a C string an embedded summary printed.
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 161, code: 7)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 173, code: 13)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 179, code: 14)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 179, code: 6)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 179, code: 5)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 179, code: 4)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 180, code: 14)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 180, code: 6)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 180, code: 5)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-dap-linux-shapes-initcommands.txt", line: 180, code: 4)
+        Found(path: "docs/panel/213-reports/ffi-pragmatist-work/lldb-linux-embedded-summary.txt", line: 1, code: 0)
     ]
 
 ## The characters
