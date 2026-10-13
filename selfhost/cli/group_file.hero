@@ -101,17 +101,28 @@ function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
 
 # The group a note's file arrives through, and the directory its header was
 # found in: the innermost file of the note's own includes a group names
-# (`clang_place.stack`).
+# (`clang_place.stack`), never one of the compiler's own (`compilers`).
+#
+# **A file the runtime entered first is no group's** (defect 2040,
+# 2026-10-13): the runtime reads `<stddef.h>` and `<stdbool.h>` before the
+# groups, so a note in one, `NULL`'s definition or `size_t`'s, has
+# `heroes_runtime.h` among its includes, which a group of the Heroes library
+# names; it was read as that header refused beside the program's, and told
+# *a diagnostic landed inside the Heroes library* where the program's own
+# header was at fault.
 record Reached
     group: Group
     directory: str
 
-function arriving(stderr: str, row: str, s: source.Source, decls: [ast.Decl]) -> Reached?
+function arriving(stderr: str, row: str, s: source.Source, decls: [ast.Decl], compiled: str, runtime: [str]) -> Reached?
     steps = clang_place.stack(stderr: stderr, line: row)
     at: i64 @= steps.len() - 1
 
     while at >= 0
-        found = group_of(s, decls, path: steps[at].path)
+        found: Group? @= fail(code: "none", msg: "a file of the compiler's own")
+
+        if !compilers(path: steps[at].path, compiled: compiled, runtime: runtime)
+            found @ group_of(s, decls, path: steps[at].path)
 
         if !found.is_err()
             return ok(

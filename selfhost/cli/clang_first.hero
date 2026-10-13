@@ -31,6 +31,20 @@ constant NOTE: str
 constant NOT_FOUND: str
     "' file not found"
 
+# The two notes clang writes for a macro's expansion, word for word
+# (`DiagnosticRenderer`'s backtrace): where a macro the error's tokens came
+# from was defined, and where an argument of one was written.
+constant FROM_MACRO: str
+    "expanded from macro '"
+
+constant FROM_HERE: str
+    "expanded from here"
+
+# Whether a note is one of a macro's expansion, by clang's words for it.
+function expansion(text: str) -> bool
+    at = clang_place.offset_of(text: text, needle: FROM_MACRO)
+    return !at.is_err() && at.must() == 0 || text == FROM_HERE
+
 # What clang's words say of a header: its first error, the includes above
 # it, the group whose header the error lies in, its notes, and the other
 # group a note names, where one does. Absent where the first error is no
@@ -94,8 +108,25 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
     # own includes that is one, which clang prints since panel 202's (g)
     # (defect 550): until then a note in a file another group's header
     # includes named no group, and one order was told as one header.
+    #
+    # **A macro's expansion is where the error's own tokens were written,
+    # never a second header** (defect 2040): `NULL` passed to a `nonnull`
+    # parameter is noted *expanded from macro 'NULL'* at its definition, and
+    # a macro of another group's header the refused one includes was told as
+    # the two refused together, though the refused one fails alone. A header
+    # that compiles alone and fails after another's macro is still told as
+    # two, by compiling it alone (`cli/header_alone.hero`, defect 557).
     for note in notes
-        reached = group_file.arriving(stderr: stderr, row: rows[note.index], s: s, decls: decls)
+        if expansion(note.text)
+            continue
+        reached = group_file.arriving(
+            stderr: stderr,
+            row: rows[note.index],
+            s: s,
+            decls: decls,
+            compiled: compiled,
+            runtime: own
+        )
 
         if !reached.is_err() && reached.must().group.header != group.must().header
             return ok(

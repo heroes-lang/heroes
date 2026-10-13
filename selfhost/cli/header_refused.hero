@@ -363,6 +363,37 @@ test "clang's words naming a header under a directory that is not UTF-8 are read
     assert said[0].message == "`b.h`, the header this group names, does not compile: clang refuses it at line 3: expected expression"
     assert said[0].notes[0] == "`b.h` line 3 reads `int broken = ;`"
 
+# DEFECT 2040: a note that is no second header leaves the refusal the
+# header's own. Clang's words as Apple clang 21 wrote them on 2026-10-13, the
+# runtime's paths written relative and the toolchain's shortened: `NULL`
+# passed to a `nonnull` parameter, noted at its definition in a file the
+# runtime entered first; `size_t` typedef'd again, noted at C's own; and a
+# macro of another group's header the refused one includes. The program names
+# `heroes_runtime.h` as the Heroes library does, which the first two read as
+# a second header refused, and the third named `a2.h` beside it.
+test "a macro's expansion, or a file the runtime entered first, is no second header (defect 2040)"
+    text = "extern \"heroes_runtime.h\"\n    function hero_exit(code: i64)\n\nextern \"a2.h\"\n    constant A2_ONE: i32\n\nextern \"nn.h\"\n    function call_need() -> i32\n\nfunction main()\n    print(call_need() + A2_ONE)\n"
+    s = source.new_source(name: "n.hero", text: text)
+    parsed = parse.parse(text)
+    through = "In file included from build/tu-1/n.c:2:\nIn file included from runtime/heroes_unit.h:26:\nIn file included from runtime/heroes_runtime.h:55:\n"
+    nulled = "In file included from build/tu-1/n.c:20:\n./nn.h:4:49: error: null passed to a callee that requires a non-null argument [-Werror,-Wnonnull]\n    4 | static inline int call_need(void) { return need(NULL); }\n      |                                                 ^~~~\n" + through + "In file included from /clang/include/stddef.h:113:\n/clang/include/__stddef_null.h:26:14: note: expanded from macro 'NULL'\n   26 | #define NULL ((void*)0)\n      |              ^~~~~~~~~~\n1 error generated.\n"
+    sized = "In file included from build/tu-1/n.c:20:\n./nn.h:6:13: error: typedef redefinition with different types ('int' vs 'unsigned long')\n" + through + "In file included from /clang/include/stddef.h:98:\n/clang/include/__stddef_size_t.h:18:23: note: previous definition is here\n1 error generated.\n"
+    included = "In file included from build/tu-1/n.c:21:\n./nn.h:5:45: error: null passed to a callee that requires a non-null argument [-Werror,-Wnonnull]\nIn file included from build/tu-1/n.c:21:\nIn file included from ./nn.h:2:\n./a2.h:1:18: note: expanded from macro 'NOTHING2'\n1 error generated.\n"
+
+    for said in [nulled, sized, included]
+        got = refused(stderr: said, s: s, decls: parsed.decls, runtime: "runtime")
+        assert got.len() == 1
+        assert got[0].code == "ffi_header_refused"
+        assert source.span_text(s, got[0].span) == "\"nn.h\""
+        opening = clang_place.offset_of(
+            text: got[0].message,
+            needle: "`nn.h`, the header this group names, does not compile: clang refuses it at line "
+        )
+        assert !opening.is_err() && opening.must() == 0
+
+    noted = refused(stderr: nulled, s: s, decls: parsed.decls, runtime: "runtime")[0]
+    assert has(noted.notes, needle: "expanded from macro 'NULL'")
+
 function has(notes: [str], needle: str) -> bool
     for note in notes
         if !clang_place.offset_of(text: note, needle: needle).is_err()
