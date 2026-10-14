@@ -12,9 +12,11 @@
 #   reading of the code is `credit.hero`'s;
 # - `records/numbering`, that no number names two defects (`numbering`);
 # - `records/verdicts`, that a pending sitting is asked by an open decision
-#   (`queued`);
+#   (`queued`), one whose ratification GitHub closed after every answer the
+#   tree holds excused as not yet received (`unasked_offence`, defect 2041);
 # - `records/homes`, that an open feature or task names an open milestone
-#   (`unhomed`);
+#   (`unhomed`), one GitHub numbered above every milestone whose row the tree
+#   holds excused as not yet received (defect 2041);
 # - `records/prior-art`, that a decision's `### Prior art` keeps its two forms
 #   (`prior_art`), a sitting numbered above every one the tree holds excused as
 #   not yet received (defect 2039).
@@ -266,10 +268,26 @@ function names_panel(title: str, digits: str) -> bool
 
 # Why each open feature or task GitHub holds is not owed to an open milestone:
 # it names none, one with no row in § The chain (`chain`, each milestone to
-# whether its row is open), one whose row is closed, or one GitHub holds
-# closed.
+# whether its row is open) that this tree has received, one whose row is
+# closed, or one GitHub holds closed.
+#
+# **GitHub holds today's milestones, and the tree under test may be older than
+# one of them** (defect 2041, the shape defect 2039 repaired for
+# `records/prior-art`): a milestone is opened in its lane, its GitHub
+# milestone made and its items filed there before its row reaches any other
+# tree, so every older tree read the items as homeless. So the tree is placed
+# among the milestones by its own value, the highest number GitHub gave a
+# milestone whose row it holds (`milestones_received`): GitHub numbers a
+# repository's milestones in the order they are made, so one numbered above it
+# is one this tree has not received, and is not held against it; one at or
+# below it with no row is missing, renamed or merged out of order, and stays
+# an offence, the loud direction should the order break (two lanes each
+# opening a milestone, merged in the other order). **0 excuses nothing**: a
+# tree that places itself nowhere is no evidence of being early. A milestone
+# no tree ever receives is told once a later one's row reaches the tree.
 function unhomed(held: github_issues.Listing, chain: {str: bool}) -> [str]
     out: [str] @= []
+    received = milestones_received(held: held, chain: chain)
 
     for kind in ["feature", "task"]
         for issue in github_issues.of_kind(held: held, kind: kind)
@@ -285,13 +303,138 @@ function unhomed(held: github_issues.Listing, chain: {str: bool}) -> [str]
             open_now = chain[home]
 
             if open_now.is_err()
-                out @ out.push(told(issue) + ": " + home + " has no row in § The chain")
+                wrong = rowless_offence(home: home, number: issue.milestone_number, received: received)
+
+                if wrong != ""
+                    out @ out.push(told(issue) + ": " + wrong)
             else if !open_now.must()
                 out @ out.push(told(issue) + ": " + home + " is CLOSED and this item of its work is still open")
             else if !issue.milestone_open
                 out @ out.push(told(issue) + ": " + home + " is open in § The chain and closed on GitHub")
 
     return out
+
+# The highest number GitHub gave a milestone whose row `chain` holds, among the
+# milestones the listing's issues name, or 0 where it holds none: where the
+# tree stands among the milestones (`unhomed`).
+function milestones_received(held: github_issues.Listing, chain: {str: bool}) -> i64
+    top: i64 @= 0
+
+    for issue in held.issues
+        if !issue.pull && issue.milestone != "" && !chain[issue.milestone].is_err() && issue.milestone_number > top
+            top @ issue.milestone_number
+
+    return top
+
+# What is wrong with an open item's milestone `home`, numbered `number` by
+# GitHub, that has no row in § The chain, or "" where the tree has not
+# received it yet (`unhomed`).
+function rowless_offence(home: str, number: i64, received: i64) -> str
+    if received > 0 && number > received
+        return ""
+    wrong = home + " has no row in § The chain"
+
+    if received == 0
+        return wrong
+    return wrong + ", and GitHub numbered it " + number.to_str() + ", not above " + received.to_str() + ", the highest milestone whose row this tree holds, so the row is missing, renamed or merged out of order rather than not yet received"
+
+# The first instant GitHub closed, as completed, a ratification of each
+# sitting, by the sitting's number: a decision titled `Panel <digits>:`
+# (`ratifies`), the earliest where there are several, since that is the least
+# a tree holding the sitting's answer has received.
+function first_answers(held: github_issues.Listing) -> {i64: github_issues.Listed}
+    out: {i64: github_issues.Listed} @= {}
+
+    for issue in github_issues.of_kind(held: held, kind: "decision")
+        if issue.open || issue.reason != "completed" || !ratifies(issue.title)
+            continue
+        at = answered_at(issue)
+        digits = credit.digit_run(text: issue.title, at: 6)
+
+        # Digits are ASCII, so the cut stands between characters.
+        sitting = strings.to_number(issue.title.slice(from: 6, to: 6 + digits))
+
+        if at.is_err() || sitting.is_err()
+            continue
+        before = out[sitting.must()]
+
+        if before.is_err() || at.must() < answered_at(before.must()).default(at.must())
+            out[sitting.must()] @ issue
+
+    return out
+
+# The instant GitHub closed `issue`, in seconds since 1970 UTC. **An imported
+# issue's noon is read as the first second of its day**: the import wrote each
+# closed card's day as noon UTC (`at_or_before`), every import ran before the
+# first issue `file` opened, so such a close came before every close of the
+# program's own, and the day's first second keeps it there.
+function answered_at(issue: github_issues.Listed) -> i64?
+    seconds = epoch_of(issue.closed)
+
+    if seconds.is_err()
+        return seconds
+
+    if strings.ends_with(text: issue.closed, suffix: "T12:00:00Z") && imported(issue)
+        return ok(seconds.must() / 86400 * 86400)
+    return seconds
+
+# Where a tree stands among the author's answers.
+record Answered
+    at: i64
+    sitting: i64
+    closed: str
+
+# **The tree is placed among the answers by its own value** (defect 2041): of
+# the sittings it holds answered, `answered`, the latest first answer GitHub
+# closed (`first_answers`), or `at` 0 where it holds none GitHub answered. An
+# answer reaches a tree as the commit that writes it beneath the sitting's
+# stub, which `close` names and so precedes. **The premise, a claim and not a
+# guarantee**: the answers are closed in the order their commits land, so a
+# ratification GitHub closed after the tree's latest is one this tree has not
+# received. Where two land in the other order, the tree holding the later
+# close and not the earlier is told the earlier as lost: the loud direction.
+function answers_received(answered: [i64], first: {i64: github_issues.Listed}) -> Answered
+    top: Answered @= Answered(at: 0, sitting: 0, closed: "")
+
+    for sitting in answered
+        issue = first[sitting]
+
+        if issue.is_err()
+            continue
+        at = answered_at(issue.must())
+
+        if !at.is_err() && at.must() > top.at
+            top @ Answered(at: at.must(), sitting: sitting, closed: issue.must().closed)
+
+    return top
+
+# Why a sitting the tree holds with a `Pending` verdict that no open decision
+# asks for (`queued`), numbered `sitting` and spelt `digits`, is an offence, or
+# "" where GitHub closed its ratification after every answer the tree holds,
+# an answer this tree has not received yet (defect 2041).
+#
+# **Not by asking git whether the commit `close` names is an ancestor of
+# HEAD**, the repair the issue named: the CI's legs check out one commit
+# (`actions/checkout`, `fetch-depth` 1, measured in `.github/workflows/ci.yml`
+# 2026-10-14), so no commit but HEAD is there to ask, and an answer written in
+# a lane that never lands would leave its sitting silent for good. Here it is
+# told once a later answer reaches the tree, as defect 2039's sitting is.
+# **0 excuses nothing**, as there.
+function unasked_offence(sitting: i64, digits: str, first: {i64: github_issues.Listed}, received: Answered) -> str
+    asked = "the verdict reads `Pending` and no open decision on GitHub, titled `Panel " + digits + ":`, asks for it"
+    answer = first[sitting]
+
+    if answer.is_err()
+        return asked
+    at = answered_at(answer.must()).default(0)
+
+    if received.at > 0 && at > received.at
+        return ""
+    closed = asked + "; GitHub closed its ratification, " + told(answer.must()) + ", at " + answer.must().closed
+
+    if received.at == 0
+        return closed + ", and this tree holds no answered sitting GitHub answered, so nothing places it among the answers"
+    return closed + ", not after " + received.closed + ", when it closed the ratification of " + padded(received.sitting) + ", which this tree holds answered, so the answer is lost or merged out of order rather than not yet received"
 
 # The lines a body's `### Prior art` section opens, up to the next heading or
 # the `Record:` line, or none where it has no such section.
@@ -741,6 +884,135 @@ test "a sitting the tree has not received yet is not held against it, whatever t
     )
     assert later.failed == 1
     assert strings.contains(text: later.failures[0], needle: "names `docs/panel/213-a-stopped-program.md`")
+
+# A ratification GitHub closed, as `close` closes one: `Panel <n>:`, a
+# decision, closed as completed at `closed`.
+function ratified(number: i64, sitting: str, created: str, closed: str) -> str
+    return fixture(
+        number: number,
+        title: "Panel " + sitting + ": a sitting",
+        kind: "decision",
+        extra: [],
+        body: "Filed " + created.slice(from: 0, to: 10) + "\\n\\nratify",
+        state: "closed",
+        created: created,
+        closed: closed
+    )
+
+test "a ratification GitHub closed after every answer the tree holds is not held against it, and one closed before is (defect 2041)"
+    held = github_issues.held_of(
+        [ratified(number: 2037, sitting: "213", created: "2026-10-12T23:07:58Z", closed: "2026-10-14T02:56:48Z"), ratified(number: 2057, sitting: "214", created: "2026-10-14T03:10:46Z", closed: "2026-10-14T07:59:37Z"), fixture(number: 1500, title: "Panel 150: an old one", kind: "decision", extra: [], body: RECORDED, state: "closed", created: "2026-09-20T12:00:00Z", closed: "2026-09-21T12:00:00Z"), ratified(number: 1501, sitting: "150", created: "2026-10-01T08:00:00Z", closed: "2026-10-01T09:00:00Z"), fixture(number: 2058, title: "Panel 150 finding: later", kind: "decision", extra: [], body: "b", state: "closed", created: "2026-10-14T08:00:00Z", closed: "2026-10-14T09:00:00Z"), fixture(number: 2059, title: "Panel 215: asked", kind: "decision", extra: [], body: "b", state: "open", created: "2026-10-14T08:00:00Z", closed: "")]
+    )
+    first = first_answers(held)
+
+    # A finding is no ratification, an open decision no answer, and of two
+    # answers the first is what a tree holding the sitting has received; an
+    # imported noon is its day's first second.
+    assert keys(first).sort() == [150, 213, 214]
+    assert first[150].must().number == 1500
+    assert answered_at(first[150].must()).must() == epoch_of("2026-09-21T00:00:00Z").must()
+
+    # Issue 2057's shape at the round's tree `a0dd1aa55`: 213 answered, 214
+    # pending, GitHub closing 214's ratification after `fda81bd14` wrote it.
+    round = answers_received(answered: [150, 213], first: first)
+    assert round.sitting == 213
+    assert round.closed == "2026-10-14T02:56:48Z"
+    assert unasked_offence(sitting: 214, digits: "214", first: first, received: round) == ""
+
+    # A tree holding 214's answer and not 213's, closed before it, lost it.
+    later = answers_received(answered: [150, 214], first: first)
+    lost = unasked_offence(sitting: 213, digits: "213", first: first, received: later)
+    assert strings.contains(
+        text: lost,
+        needle: "titled `Panel 213:`, asks for it; GitHub closed its ratification, https://github.com/heroes-lang/heroes/issues/2037 (Panel 213: a sitting), at 2026-10-14T02:56:48Z, not after 2026-10-14T07:59:37Z, when it closed the ratification of 214"
+    )
+
+    # No ratification at all is told as before, and a tree placed nowhere
+    # excuses nothing.
+    assert unasked_offence(sitting: 216, digits: "216", first: first, received: round) == "the verdict reads `Pending` and no open decision on GitHub, titled `Panel 216:`, asks for it"
+    nowhere = answers_received(answered: [216], first: first)
+    assert nowhere.at == 0
+    assert strings.contains(
+        text: unasked_offence(sitting: 214, digits: "214", first: first, received: nowhere),
+        needle: "nothing places it among the answers"
+    )
+
+    # A ratification closed as not planned answers nothing.
+    dropped = github_issues.held_of([ratified(number: 2060, sitting: "216", created: "2026-10-14T08:00:00Z", closed: "2026-10-14T10:00:00Z")]).issues[0]
+    planned = github_issues.Listing(
+        asked: true,
+        broken: false,
+        why: "",
+        issues: [first[213].must(), github_issues.Listed(number: dropped.number, title: dropped.title, body: dropped.body, open: false, reason: "not_planned", labels: dropped.labels, milestone: "", milestone_open: false, milestone_number: 0, created: dropped.created, closed: dropped.closed, pull: false)]
+    )
+    assert keys(first_answers(planned)) == [213]
+
+# An open item of a milestone GitHub numbered `numbered`.
+function owed(number: i64, kind: str, milestone: str, numbered: i64) -> str
+    return github_issues.json_full(
+        number: number,
+        title: "an item",
+        body: "Filed 2026-10-14\\n\\nb",
+        state: "open",
+        labels: ["kind:" + kind],
+        milestone: milestone,
+        milestone_number: numbered,
+        created: "2026-10-14T08:00:00Z",
+        closed: ""
+    )
+
+test "a milestone GitHub numbered above every one whose row the tree holds is not held against it, and one at or below it is (defect 2041)"
+    chain: {str: bool} @= {}
+    chain["M-typed-inspection"] @ true
+    chain["M-issue-files"] @ false
+    done = github_issues.json_full(
+        number: 2,
+        title: "done",
+        body: "Filed 2026-10-12\\n\\nb",
+        state: "closed",
+        labels: ["kind:task"],
+        milestone: "M-issue-files",
+        milestone_number: 83,
+        created: "2026-10-12T12:00:00Z",
+        closed: "2026-10-12T21:00:00Z"
+    )
+    ahead = github_issues.held_of(
+        [done, owed(number: 3, kind: "feature", milestone: "M-typed-inspection", numbered: 69), owed(number: 4, kind: "task", milestone: "M-web-framework", numbered: 85)]
+    )
+    assert milestones_received(held: ahead, chain: chain) == 83
+    assert unhomed(held: ahead, chain: chain).len() == 0
+
+    # Numbered at or below the tree's highest: missing, renamed or merged out
+    # of order.
+    behind = github_issues.held_of([done, owed(number: 5, kind: "task", milestone: "M-doc-generator", numbered: 70)])
+    said = unhomed(held: behind, chain: chain)
+    assert said.len() == 1
+    assert strings.contains(
+        text: said[0],
+        needle: "M-doc-generator has no row in § The chain, and GitHub numbered it 70, not above 83, the highest milestone whose row this tree holds"
+    )
+
+    # Its row landed, the milestone is judged as every other.
+    chain["M-web-framework"] @ false
+    landed = unhomed(held: ahead, chain: chain)
+    assert landed.len() == 1
+    assert strings.contains(text: landed[0], needle: "M-web-framework is CLOSED")
+
+    # A tree placed nowhere excuses nothing, and a milestone that never lands
+    # is told once a later one's row reaches the tree.
+    none: {str: bool} = {}
+    assert unhomed(held: ahead, chain: none) == [told(ahead.issues[1]) + ": M-typed-inspection has no row in § The chain", told(ahead.issues[2]) + ": M-web-framework has no row in § The chain"]
+    passed: {str: bool} @= {}
+    passed["M-online-compiler"] @ true
+    beyond = github_issues.held_of(
+        [owed(number: 4, kind: "task", milestone: "M-web-framework", numbered: 85), owed(number: 6, kind: "task", milestone: "M-online-compiler", numbered: 86)]
+    )
+    stray = unhomed(held: beyond, chain: passed)
+    assert stray.len() == 1
+    assert strings.contains(
+        text: stray[0],
+        needle: "M-web-framework has no row in § The chain, and GitHub numbered it 85, not above 86"
+    )
 
 test "an instant is read to the second, and an imported issue's noon as its day"
     assert epoch_of("2026-10-12T10:00:00Z").must() == 1791799200

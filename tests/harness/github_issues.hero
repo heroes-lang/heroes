@@ -61,7 +61,8 @@ constant OPEN_LISTING: str
     "/repos/heroes-lang/heroes/issues?state=open&sort=created&direction=asc&per_page=100&page="
 
 # One issue as the checks read it: `labels` sorted, `milestone` its title or
-# "", `closed` "" while open, `reason` GitHub's `state_reason` or "".
+# "", `milestone_number` the number GitHub gave that milestone or 0, `closed`
+# "" while open, `reason` GitHub's `state_reason` or "".
 record Listed
     number: i64
     title: str
@@ -71,6 +72,7 @@ record Listed
     labels: [str]
     milestone: str
     milestone_open: bool
+    milestone_number: i64
     created: str
     closed: str
     pull: bool
@@ -210,12 +212,14 @@ function listed_of(j: json_read.Json) -> Listed?
 
     milestone: str @= ""
     milestone_open: bool @= false
+    milestone_number: i64 @= 0
     held = json_fields.field(of: j, name: "milestone")?
 
     match held
         .fields _ =>
             milestone @ json_fields.text_at(of: held, name: "title")?
             milestone_open @ json_fields.text_at(of: held, name: "state")? == "open"
+            milestone_number @ json_fields.whole_at(of: held, name: "number")?
         .null_value | .truth _ | .number _ | .text _ | .items _ => milestone @ ""
 
     reason: str @= ""
@@ -224,7 +228,7 @@ function listed_of(j: json_read.Json) -> Listed?
     if !stated.is_err()
         reason @ json_fields.text_at(of: j, name: "state_reason")?
     return ok(
-        Listed(number: json_fields.whole_at(of: j, name: "number")?, title: json_fields.text_at(of: j, name: "title")?, body: json_fields.text_at(of: j, name: "body")?, open: json_fields.text_at(of: j, name: "state")? == "open", reason: reason, labels: names.sort(), milestone: milestone, milestone_open: milestone_open, created: json_fields.text_at(of: j, name: "created_at")?, closed: json_fields.text_at(of: j, name: "closed_at")?, pull: !json_fields.field(of: j, name: "pull_request").is_err())
+        Listed(number: json_fields.whole_at(of: j, name: "number")?, title: json_fields.text_at(of: j, name: "title")?, body: json_fields.text_at(of: j, name: "body")?, open: json_fields.text_at(of: j, name: "state")? == "open", reason: reason, labels: names.sort(), milestone: milestone, milestone_open: milestone_open, milestone_number: milestone_number, created: json_fields.text_at(of: j, name: "created_at")?, closed: json_fields.text_at(of: j, name: "closed_at")?, pull: !json_fields.field(of: j, name: "pull_request").is_err())
     )
 
 # The value of the label `<name>:<value>` an issue carries, "" for none: its
@@ -250,8 +254,23 @@ function of_kind(held: Listing, kind: str) -> [Listed]
     return out
 
 # An issue written as GitHub lists one, for the tests of every reader of this
-# module: `state` `open` or `closed`, `milestone` "" for none.
+# module: `state` `open` or `closed`, `milestone` "" for none, numbered 1.
 function json_of(number: i64, title: str, body: str, state: str, labels: [str], milestone: str, created: str, closed: str) -> str
+    return json_full(
+        number: number,
+        title: title,
+        body: body,
+        state: state,
+        labels: labels,
+        milestone: milestone,
+        milestone_number: 1,
+        created: created,
+        closed: closed
+    )
+
+# `json_of` with the number GitHub gave the milestone, which places a tree
+# among the milestones (`records_github.milestones_received`).
+function json_full(number: i64, title: str, body: str, state: str, labels: [str], milestone: str, milestone_number: i64, created: str, closed: str) -> str
     named: [str] @= []
 
     for label in labels
@@ -260,7 +279,7 @@ function json_of(number: i64, title: str, body: str, state: str, labels: [str], 
     held: str @= "null"
 
     if milestone != ""
-        held @ "{\"title\":\"" + milestone + "\",\"number\":1,\"state\":\"open\"}"
+        held @ "{\"title\":\"" + milestone + "\",\"number\":" + milestone_number.to_str() + ",\"state\":\"open\"}"
     ended: str @= "null"
 
     if closed != ""
@@ -301,6 +320,7 @@ test "an issue is read with its labels sorted, its milestone and its state, and 
     assert i.labels == ["class:blocking", "kind:defect"]
     assert i.milestone == "M-issue-files"
     assert i.milestone_open
+    assert i.milestone_number == 1
     assert !i.open
     assert i.reason == "completed"
     assert i.closed == "2026-10-04T12:00:00Z"
@@ -312,6 +332,7 @@ test "an issue is read with its labels sorted, its milestone and its state, and 
     assert pulled.pull
     assert pulled.body == ""
     assert pulled.reason == ""
+    assert pulled.milestone_number == 0
     assert of_kind(held: Listing(asked: true, broken: false, why: "", issues: [i, pulled]), kind: "defect").len() == 1
 
 test "the listing is read a page at a time until a short page, kept, and read again from the disk"
