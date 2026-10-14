@@ -1,0 +1,6 @@
+error[ffi_field_type]: `Tagged.via` is a union with no name of its own in `fixedbugs-2062-records.h`, not `i32` — clang read the header's struct and the field disagrees
+  at tests/golden/unsupported/fixedbugs-2062-a-member-whose-type-has-no-name-is-told-so.hero:13:9
+     |
+  13 |         via: i32  #~ ffi_field_type
+     |         ^^^
+  note: no type a field is declared with names a union the header gives no name (§ 13): bind `Tagged` `partial` without `via`, which builds today, and reach `via`'s members through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, which this group then names in `fixedbugs-2062-records.h`'s place

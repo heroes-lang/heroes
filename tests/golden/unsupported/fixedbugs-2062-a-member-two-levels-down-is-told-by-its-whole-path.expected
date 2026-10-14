@@ -1,0 +1,7 @@
+error[ffi_unknown_field]: `fixedbugs-2062-records.h` declares `fd` in `struct deep` only inside `inner.u`, a union `struct deep` holds, as `inner.u.fd`: clang read the header, and a field of a group's `record` is a member of the type itself
+  at tests/golden/unsupported/fixedbugs-2062-a-member-two-levels-down-is-told-by-its-whole-path.hero:12:9
+     |
+  12 |         fd: i32  #~ ffi_unknown_field
+     |         ^^
+  note: a group's `record` names the members the header gives its type itself (§4.19, § 13): bind `Deep` `partial`, naming only those, `kind`, which builds today
+  note: reach `inner.u.fd` through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, `static inline int deep_fd(const struct deep *t) { return t->inner.u.fd; }`, which this group then names in `fixedbugs-2062-records.h`'s place

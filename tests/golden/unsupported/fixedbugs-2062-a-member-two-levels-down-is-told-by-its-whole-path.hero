@@ -1,0 +1,16 @@
+# fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `fd`, in the union `u` inside the struct `inner`, as a field:
+# *declares no `fd`*, false.
+#
+# FIX: told by its whole path, `inner.u.fd`, and the function drafted reads
+# it so.
+
+extern "fixedbugs-2062-records.h"
+    record Deep tag deep
+        kind: i32
+        fd: i32  #~ ffi_unknown_field
+
+function main()
+    d = Deep(kind: 2, rest: zero)
+    print(d.kind)

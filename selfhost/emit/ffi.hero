@@ -30,6 +30,7 @@ use emit/ffi_record
 use emit/ffi_layout
 use emit/ffi_built
 use emit/ffi_field
+use emit/ffi_nested
 use emit/ffi_tag
 use emit/ffi_incomplete
 use emit/ffi_build
@@ -179,6 +180,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !macro_f.is_err()
             found @ ffi_lookup.add_once(found, d: macro_f.must())
+
+        # A field the header has inside another member, and one whose type
+        # has no name (defect 2062), each read before the field's own reader.
+        inside = ffi_nested.unknown_inside(s, decls, line: line, nested: asked.nested)
+
+        if !inside.is_err()
+            found @ ffi_lookup.add_once(found, d: inside.must())
         unknown_f = ffi_field.unknown_field(s, decls, line: line)
 
         if !unknown_f.is_err()
@@ -199,6 +207,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !const_f.is_err()
             found @ ffi_lookup.add_once(found, d: const_f.must())
+        unnamed = ffi_nested.unnamed_member(s, tree, decls, line: line, fields: asked.fields)
+
+        if !unnamed.is_err()
+            found @ ffi_lookup.add_once(found, d: unnamed.must())
         field = ffi_field.field_type(
             s,
             tree,

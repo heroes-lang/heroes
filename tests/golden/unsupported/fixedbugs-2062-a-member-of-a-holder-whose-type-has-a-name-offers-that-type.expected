@@ -1,0 +1,8 @@
+error[ffi_unknown_field]: `fixedbugs-2062-records.h` declares `fd` in `struct holds` only inside `via`, a union `struct holds` holds, as `via.fd`: clang read the header, and a field of a group's `record` is a member of the type itself
+  at tests/golden/unsupported/fixedbugs-2062-a-member-of-a-holder-whose-type-has-a-name-offers-that-type.hero:12:9
+     |
+  12 |         fd: i32  #~ ffi_unknown_field
+     |         ^^
+  note: a group's `record` names the members the header gives its type itself (§4.19, § 13): bind `Holds` `partial`, naming only those, `kind`, which builds today
+  note: reach `via.fd` through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, `static inline int holds_fd(const struct holds *t) { return t->via.fd; }`, which this group then names in `fixedbugs-2062-records.h`'s place
+  note: or bind `union named_u`, the type of `via`, as a record of this group, and declare `via` a field of it (§ 13)
