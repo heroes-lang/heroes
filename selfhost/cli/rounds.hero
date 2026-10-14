@@ -30,6 +30,7 @@ use cli/whose
 use cli/two_ways
 use cli/defined_twice
 use cli/pragma_ask
+use cli/bound_macro
 use diag
 
 # What the rounds came back with: the verdict, the failure already told where
@@ -109,9 +110,18 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     # A failure here is the AUTHOR's, and it rides the same mapping a clang
     # failure does — `emit/ffi.hero` reads the assertion's marker back into
     # the parameter's diagnostic.
-    # A name the compiler writes that a group's header defines as a macro
-    # holding a `_Pragma`, told before anything reads a header through it
-    # (`cli/pragma_ask.hero`, defect 570): the author's, and no round after.
+    # A name a group binds whose meaning another group's header gives it, a
+    # macro read before or after the group's own (`cli/bound_macro.hero`,
+    # defect 2056); then a name the compiler writes that a group's header
+    # defines as a macro holding a `_Pragma`, told before anything reads a
+    # header through it (`cli/pragma_ask.hero`, defect 570): the author's,
+    # and no round after either.
+    taken = bound_macro.told(t, planned.probings, s: s, decls: art.decls)
+
+    if taken.len() > 0
+        _ = compile.stage(taken, s).is_err()
+        over: ()? = fail(code: "diagnostics", msg: "another group's header gives a name this program binds its meaning")
+        return assemble.Round(verdict: over, refusals: [], binary: "", modules: [])
     pragmas = pragma_ask.told(t, planned.probings, s: s, decls: art.decls)
 
     if pragmas.len() > 0

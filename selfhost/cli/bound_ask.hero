@@ -1,0 +1,118 @@
+# The clang runs `cli/bound_macro.hero` asks (design.md §4.19; defect 2056,
+# 2026-10-14): the questions of `cli/bound_said.hero` written into the unit's
+# opening, preprocessed under the probe's words, and their answers kept, as
+# the pragma question's are, under everything they depend on, so a warm build
+# asks clang nothing. Kept as one line per answer, never as clang's text,
+# which is every header's.
+
+use emit/c_text
+use emit/externs as emit_externs
+use emit/macro_guard
+use cli/toolchain
+use cli/compiling
+use cli/bound_names
+use cli/bound_said
+use cli/process
+use cli/publish
+use cli/response_file
+use cli/digest
+use cli/kept
+use cli/libraries
+use cli/read_back
+use cli/strings
+
+# The questions of every name at a place.
+function questions(bound: [bound_names.Bound], place: i64) -> [str]
+    out: [str] @= []
+
+    for b in bound
+        out @ strings.with_all(list: out, more: bound_said.question(place: place, name: b.name, arity: b.arity))
+
+    return out
+
+# The unit's opening around `lines`: its first line, the compiler's own
+# headers, then the groups' region and guard, so each header is read after
+# what every unit reads before it, as `cli/order_trial.hero` reads one.
+function opening(lines: [str]) -> str
+    no_names: {str: bool} = {}
+    out: [str] @= [macro_guard.FIRST_LINE]
+    out @ strings.with_all(list: out, more: c_text.includes(emit_externs.SEEDS))
+    out @ strings.with_all(list: out, more: macro_guard.around(lines, bound: no_names))
+    return out.join("\n") + "\n"
+
+# What a header read alone made of the names, and the names it printed.
+record Alone
+    meanings: {str: str}
+    named: {str: bool}
+
+function alone_answers(t: toolchain.Toolchain, probe: compiling.Probe, text: str) -> Alone?
+    said = preprocessed(t, probe: probe, text: text, mode: ["-E"])?
+    return ok(Alone(meanings: bound_said.answers(said), named: bound_said.named_after_mark(said)))
+
+# The answers of the questions in `text`, asked once and kept under what they
+# depend on, one line each, `<place> <name>`, a tab and the answer.
+function kept_answers(t: toolchain.Toolchain, probe: compiling.Probe, text: str) -> {str: str}?
+    key = digest.digest(
+        t.fingerprint + "|meaning|" + t.compiler_key + "|" + text + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
+    )
+    path = t.build + "/meaning/said-" + key + ".txt"
+    known = kept.read(path)
+
+    if !known.is_err()
+        return ok(unkept(known.must()))
+    said = preprocessed(t, probe: probe, text: text, mode: ["-E"])?
+    answered = bound_said.answers(said)
+    rows: [str] @= []
+
+    for key_of in sort(keys(answered))
+        rows @ rows.push(key_of + "\t" + answered[key_of].must())
+
+    _ = kept.write(path: path, text: rows.join("\n")).is_err()
+    return ok(answered)
+
+function unkept(text: str) -> {str: str}
+    out: {str: str} @= {}
+
+    for row in bound_said.rows(text)
+        tab = bound_said.index_of(text: row, needle: "\t", from: 0)
+
+        if !tab.is_err()
+            out[row.slice(from: 0, to: tab.must())] @ row.slice(from: tab.must() + 1, to: row.len())
+
+    return out
+
+# What clang's preprocessor wrote of `text` under the probe's words and
+# `mode`, or none where it did not start or refused the text: a header that
+# does not preprocess is told by the build's own compile.
+function preprocessed(t: toolchain.Toolchain, probe: compiling.Probe, text: str, mode: [str]) -> str?
+    dir = t.build + "/meaning"
+    process.mkdir_all(dir)?
+    path = dir + "/meaning-" + digest.digest(text) + ".c"
+    publish.write_whole(path: path, text: text, keyed: true)?
+    out = publish.private_name(dir + "/meaning-stdout.txt")
+    line = response_file.carried(
+        line: strings.with_all(list: strings.with_all(list: ["clang"], more: mode), more: probe.words),
+        dir: dir
+    )
+    ran = process.run(program: "clang", words: line.push(path), out: out, err: process.discard())
+    said = read_back.words(out)
+    publish.discard(out)
+
+    if !ran.started || ran.code != 0
+        return fail(code: "failed", msg: "clang did not preprocess the questions of the bound names")
+    return said
+
+## Tests
+
+# The opening reads the compiler's own headers first and the questions
+# between the guard's two lines.
+test "the questions stand between the guard's lines, after the compiler's own headers"
+    text = opening(["#include <a.h>", "\"q\""])
+    assert strings.starts_with(
+        text: text,
+        prefix: "#include \"heroes_unit.h\"\n#include <heroes_unit.h>\n#include <hero_os.h>\n"
+    )
+    assert strings.holds(
+        text: text,
+        needle: "#include \"heroes_guard_open.h\"\n#include <a.h>\n\"q\"\n#include \"heroes_guard_close.h\"\n"
+    )

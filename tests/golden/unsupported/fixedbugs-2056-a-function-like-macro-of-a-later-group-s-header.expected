@@ -1,0 +1,8 @@
+error[ffi_macro_name]: `fabs`, which this group binds from `math.h`, is changed by `fixedbugs-2056-function-like.h`, a header read after it: this program's C would read `fabs` as `fixedbugs-2056-function-like.h` leaves it, not as `math.h` makes it
+  at tests/golden/unsupported/fixedbugs-2056-a-function-like-macro-of-a-later-group-s-header.hero:12:14
+     |
+  12 |     function fabs(x: f64) -> f64  #~ ffi_macro_name
+     |              ^^^^
+  note: `fixedbugs-2056-function-like.h` line 5 reads `#define fabs(x) my_fabs(x)`
+  note: where this program's C writes `(fabs); fabs(0);`, clang reads `(fabs); fabs(0);` after `math.h`, and `(fabs); my_fabs(0);` after `fixedbugs-2056-function-like.h`
+  note: a header of your own that includes `fixedbugs-2056-function-like.h` and then writes `#undef fabs`, named instead of `fixedbugs-2056-function-like.h` by the group at line 14, leaves `fabs` to `math.h`

@@ -26,6 +26,9 @@
 # a binding of `sqrt` from a header that makes it a macro. A program that binds
 # no header but the compiler's own (`emit/externs.hero`'s `is_own`) has no
 # guard at all, and a unit's text grows by its two includes.
+# Such a name is saved and undefined around `heroes_standard.h` too
+# (`read_after`, defect 2056), and whose macro it is, its own header's or
+# another group's, is asked of clang before a unit compiles (`cli/bound_macro`).
 #
 # **What it does not hold, and why**: a name the unit defines itself, a
 # mangled function, field, local or label, which a header's macro would
@@ -118,6 +121,29 @@ function around(lines: [str], bound: {str: bool}) -> [str]
 
     for line in deprecation.BESIDE
         out @ out.push(line)
+
+    return out
+
+# `heroes_standard.h` read with each name of the list the program binds saved
+# and undefined, given back after (defect 2056): bound as `sqrt`, `#define sqrt
+# my_sqrt` over a `float my_sqrt(float)` rewrote `<math.h>`'s, at exit 2.
+function read_after(bound: {str: bool}) -> [str]
+    kept: [str] @= []
+
+    for name in guarded_names.names()
+        if !bound[name].is_err()
+            kept @ kept.push(name)
+
+    out: [str] @= []
+
+    for name in kept
+        out @ out.push("#pragma push_macro(\"" + name + "\")")
+        out @ out.push("#undef " + name)
+
+    out @ out.push(STANDARD_LINE)
+
+    for name in kept
+        out @ out.push("#pragma pop_macro(\"" + name + "\")")
 
     return out
 

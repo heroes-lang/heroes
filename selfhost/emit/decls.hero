@@ -102,15 +102,24 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     # declaration, and a unit with no group, most of the compiler's own, has
     # none to keep (measured: asked of every unit, 18.7 billion instructions
     # more on the compiler's own `--emit-c`).
-    if groups.len() > 0
-        for line in macro_guard.around(c_text.includes(groups), bound: macro_guard.bound_names(s, decls))
-            writer.line(@w, text: line)
-
     # The C library's standard headers after the groups, so a module's first
     # group can set a switch the library reads once (panel 205's R3, defect
     # 568), with the four names the unit's C takes from them defined again
-    # (`runtime/heroes_standard.h`).
-    writer.line(@w, text: macro_guard.STANDARD_LINE)
+    # (`runtime/heroes_standard.h`), and read with no name the program binds
+    # as a group's macro left it (defect 2056).
+    standard: [str] @= [macro_guard.STANDARD_LINE]
+
+    if groups.len() > 0
+        bound = macro_guard.bound_names(s, decls)
+
+        for line in macro_guard.around(c_text.includes(groups), bound: bound)
+            writer.line(@w, text: line)
+
+        standard @ macro_guard.read_after(bound)
+
+    for line in standard
+        writer.line(@w, text: line)
+
     writer.line(@w, text: "")
     writer.line(@w, text: "_Static_assert(HERO_RUNTIME_ABI == 30, \"heroes_runtime.h is from another compiler\");")
 

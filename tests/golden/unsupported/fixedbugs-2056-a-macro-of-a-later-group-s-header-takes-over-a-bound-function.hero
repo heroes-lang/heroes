@@ -1,0 +1,19 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14 (panel 214's critic).
+#
+# SYMPTOM: the groups of the case beside this one the other way round:
+# `<math.h>` declares `fabs` first, `fixedbugs-2056-shadow.h` makes it a
+# macro after, and the guard's push again kept that macro for the unit's own
+# C: `fabs(-3.0)` printed `1000.0` at exit 0.
+#
+# FIX: a name a later header changes after its group's header is refused at
+# the name, `ffi_macro_name`, naming the later header and its directive.
+
+extern "math.h" link "m"
+    function fabs(x: f64) -> f64  #~ ffi_macro_name
+
+extern "fixedbugs-2056-shadow.h"
+    function seven() -> i32
+
+function main()
+    print(seven())
+    print(fabs(-3.0))

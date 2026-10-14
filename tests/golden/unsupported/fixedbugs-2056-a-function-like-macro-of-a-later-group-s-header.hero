@@ -1,0 +1,19 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14.
+#
+# SYMPTOM: `#define fabs(x) my_fabs(x)` in a later group's header, `fabs`
+# bound from `<math.h>`: the probe writes `(fabs)(a0)`, which a function-like
+# macro does not expand, so it held `<math.h>`'s own `fabs`, and the call
+# `fabs(t3)` expanded the macro: `1000.0` at exit 0.
+#
+# FIX: each name is asked as the unit's C writes it, in parentheses and as a
+# call, so the call's macro is seen, and refused at the name.
+
+extern "math.h" link "m"
+    function fabs(x: f64) -> f64  #~ ffi_macro_name
+
+extern "fixedbugs-2056-function-like.h"
+    function seven() -> i32
+
+function main()
+    print(seven())
+    print(fabs(-3.0))

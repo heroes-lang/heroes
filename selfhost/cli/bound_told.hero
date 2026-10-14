@@ -1,0 +1,121 @@
+# The refusals of `cli/bound_macro.hero` (design.md §4.17, §4.19; defect
+# 2056, 2026-10-14): `ffi_macro_name` at the name the group binds, naming the
+# header that binds it, the header whose macro the unit would read instead,
+# the directive that header writes where a `-dD` run of the questions finds
+# it, what clang reads at each place, and the repair, a header of the
+# program's own that includes the other and undoes the macro.
+
+use ast
+use token
+use source
+use diag
+use emit/clang_place
+use emit/externs as emit_externs
+use emit/macro_guard
+use cli/toolchain
+use cli/compiling
+use cli/bound_names
+use cli/bound_said
+use cli/bound_ask
+use cli/strings
+
+# A name a later header changed.
+function after(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], text: str, b: bound_names.Bound, by: str, place: i64, before: str, then: str) -> diag.Diagnostic
+    d = diag.new_diagnostic(
+        code: "ffi_macro_name",
+        message: "`" + b.name + "`, which this group binds from `" + b.header + "`, is changed by `" + by + "`, a header read after it: this program's C would read `" + b.name + "` as `" + by + "` leaves it, not as `" + b.header + "` makes it",
+        span: b.span
+    )
+    return noted(
+        t,
+        probe: probe,
+        s,
+        decls,
+        text: text,
+        d: d,
+        b: b,
+        by: by,
+        place: place,
+        one: "clang reads `" + before + "` after `" + b.header + "`, and `" + then + "` after `" + by + "`",
+        own_macro: before != bound_said.folded(bound_said.asked(b.name, arity: b.arity))
+    )
+
+# A name an earlier header's macro made what its own header leaves it.
+function before_told(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], text: str, b: bound_names.Bound, by: str, place: i64, own: str, then: str) -> diag.Diagnostic
+    d = diag.new_diagnostic(
+        code: "ffi_macro_name",
+        message: "`" + b.name + "`, which this group binds from `" + b.header + "`, is a macro of `" + by + "`, a header read before it: `" + b.header + "` reads its own `" + b.name + "` through it, and this program's C would read `" + b.name + "` as `" + by + "` makes it, not as `" + b.header + "` does",
+        span: b.span
+    )
+    return noted(
+        t,
+        probe: probe,
+        s,
+        decls,
+        text: text,
+        d: d,
+        b: b,
+        by: by,
+        place: place,
+        one: "clang reads `" + own + "` after `" + b.header + "` read without `" + by + "`, and `" + then + "` after `" + b.header + "` read where this program puts it",
+        own_macro: false
+    )
+
+# The directive the other header writes, what clang reads where, and the
+# repair: the other header's macro undone after it, and, where the group's
+# own header makes the name a macro (`own_macro`), that definition again.
+function noted(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], text: str, d: diag.Diagnostic, b: bound_names.Bound, by: str, place: i64, one: str, own_macro: bool) -> diag.Diagnostic
+    out: diag.Diagnostic @= d
+    names: {str: bool} @= {}
+    names[b.name] @ true
+    said = bound_ask.preprocessed(t, probe: probe, text: text, mode: ["-E", "-dD"])
+    again: str @= " and `" + b.header + "`'s own definition of it again"
+
+    if !said.is_err()
+        found = bound_said.directives(said.must(), names: names)
+        written = found.found[place.to_str() + " " + b.name]
+
+        if !written.is_err()
+            out.notes @ out.notes.push(
+                where(written.must(), by: by, entered: found.entered[place.to_str()].default("")) + " reads `" + written.must().text + "`"
+            )
+        own = found.found[b.place.to_str() + " " + b.name]
+
+        if !own.is_err() && strings.starts_with(text: own.must().text, prefix: "#define ")
+            again @ " and `" + own.must().text + "` again"
+    out.notes @ out.notes.push(
+        "where this program's C writes `" + bound_said.asked(b.name, arity: b.arity) + "`, " + one
+    )
+    undone: str @= "#undef " + b.name + "`"
+
+    if own_macro
+        undone @ undone + again
+    group = group_at(s, decls, header: by)
+    at: str @= ""
+
+    if !group.is_err()
+        at @ ", named instead of `" + by + "` by the group at " + source.elsewhere(s, here: b.span.start, there: group.must().start) + ","
+    out.notes @ out.notes.push(
+        "a header of your own that includes `" + by + "` and then writes `" + undone + at + " leaves `" + b.name + "` to `" + b.header + "`"
+    )
+    return out
+
+# A directive's place as a note names it: the other group's header by the
+# name its group wrote, or a file it includes as found from there.
+function where(written: bound_said.Directive, by: str, entered: str) -> str
+    for spelled in clang_place.spellings(written.file)
+        if spelled == by
+            return "`" + by + "` line " + written.line.to_str()
+
+    directory = clang_place.found_in(path: clang_place.slashed(entered), spelled: by)
+    return "`" + clang_place.shown(path: written.file, directory: directory) + "` line " + written.line.to_str() + ", which `" + by + "` includes,"
+
+# The string of the first group naming `header`.
+function group_at(s: source.Source, decls: [ast.Decl], header: str) -> token.Span?
+    for decl in decls
+        found = macro_guard.header_of(decl)
+
+        if !found.is_err() && emit_externs.unquoted(s, span: found.must()) == header
+            return found
+
+    return fail(code: "none", msg: "no group names this header")

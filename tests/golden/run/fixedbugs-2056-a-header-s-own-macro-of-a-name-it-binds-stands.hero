@@ -1,0 +1,18 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14: what the repair leaves.
+#
+# A name a group binds from a header that makes it a macro of its own is
+# that header's: `fabs` bound from `fixedbugs-2056-own.h` is its `my_fabs`,
+# `1000.0`, beside a group binding `sqrt` from `<math.h>`, read first, whose
+# `sqrt` stays `<math.h>`'s, `2.0`. The question of each bound name
+# (`cli/bound_macro.hero`) finds `fabs` made a macro by its own group's
+# header and refuses nothing.
+
+extern "math.h" link "m"
+    function sqrt(x: f64) -> f64
+
+extern "fixedbugs-2056-own.h"
+    function fabs(x: f64) -> f64
+
+function main()
+    print(fabs(-3.0))
+    print(sqrt(4.0))

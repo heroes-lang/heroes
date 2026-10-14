@@ -46,7 +46,10 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wattribute-warning"
+#pragma push_macro("value")
+#undef value
 #include "heroes_standard.h"
+#pragma pop_macro("value")
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -102,7 +105,7 @@ HERO_STR_STATIC(hero_str_63c4e8c6, "before: ");
 HERO_STR_STATIC(hero_str_2731e935, "null: ");
 HERO_STR_STATIC(hero_str_3043d2a7, "after: ");
 
-#line 106 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 109 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -147,7 +150,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 151 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 154 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b);
@@ -249,7 +252,7 @@ bb0:
     }
 #line 32 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
     return;
-#line 253 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
+#line 256 "limitastalecopyfaultingincnamesthecopytheprogramkept.c"
 }
 HERO_TU_LOCAL bool h_limitastalecopyfaultingincnamesthecopytheprogramkept_Outer_eq(outer * const *a, outer * const *b) {
     return hero_handle_eq(*a, *b);
