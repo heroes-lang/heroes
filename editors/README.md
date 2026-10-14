@@ -22,11 +22,12 @@ refuses (`07`, `1e5`, `0X1F`, `1__000`), a tab outside a comment, a raw
 control character, `//` and a string in backticks. The thesis, in the
 editor.
 
-The contextual words (`as`, `link`, `package`, and the FFI's marks `tag`,
-`owned`, `acquires` and the rest) are painted only where the parser reads
-them: `as` on a `use` line, `link` and `package` after an `extern` line's
-header, the others on an `extern` group's indented lines, never before a `:`.
-Anywhere else each is an ordinary name, as it is to the compiler.
+The contextual words (`as`, `link`, `package`, `rest` and `zero`, and the
+FFI's marks `tag`, `owned`, `acquires` and the others) are painted only where
+the parser reads them: `as` on a `use` line, `link` and `package` after an
+`extern` line's header, `rest: zero` where it ends a call's list, the others
+on an `extern` group's indented lines, never before a `:`. Anywhere else each
+is an ordinary name, as it is to the compiler.
 
 ## Install
 
@@ -347,8 +348,9 @@ any other type can name the matchers itself, `"problemMatcher": ["$heroes",
 ## Keeping it honest
 
 The grammar is a *second* description of the lexical surface, so it can
-drift from the lexer's own tables: the keywords, the contextual words and
-the foreign words in `selfhost/keywords.hero`, the tokens in
+drift from the lexer's own tables: the keywords and the contextual words
+in `selfhost/keywords.hero`, the foreign words in
+`selfhost/foreign_words.hero`, the tokens in
 `selfhost/token.hero` and `selfhost/punctuation.hero`, the escapes in
 `selfhost/escape.hero` and `selfhost/code_escape.hero`, the numbers in
 `selfhost/number.hero`, the character literals in `selfhost/literals.hero`,

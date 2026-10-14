@@ -23,6 +23,43 @@ which the landing of 2026-10-06 did not finish: neither highlighter paints
 these two, though the parser reads them in one position (both read
 2026-10-14).
 
+**Measured 2026-10-14, the compiler-engineer's prediction for R1's landing**
+(panel 194, *200 to 330 `selfhost/` insertions, no DECIDED row moved but
+possibly `ast.hero`, a cold `--emit-c` within 0.5% of its parent*), on
+`838d2719` against its parent: **393 insertions**, by `git diff --numstat
+-- selfhost` with the 63 lines `expr_kinds.hero` took from `ast.hero`
+left out, so **above the range**. The overrun is the sitting's own amendment,
+which no seat built before predicting: the whole-object zero
+(`emit/zeroed.hero`, 133) and its call (`emit/construct.hero`, +25); the rest
+reads 235, beside the seat's own build at 241. No DECIDED row moved (`ast.hero`
+517 of 550). The cold `--emit-c` of the parent's tree, three rounds
+interleaved, each in a fresh directory holding `selfhost/` and `runtime/`:
+the parent's compiler 1,084.43, 1,084.92 and 1,084.49 billion instructions
+retired, R1's 1,085.08, 1,084.53 and 1,084.52, **+0.01%** on the means; CPU
+time, user plus sys, 98.97 s against 99.44 s on the means (+0.47%, R1's third
+run the slowest of the six at a load of 1.89), real within 3.3% of user plus
+sys in every run, on this Mac's 8 cores at a load of 1.65 to 2.22 with other
+lanes working; the emitted C identical, 1,272,814 lines. The emission half
+**held**, the insertion half **missed**, high.
+
+**The walk, finished 2026-10-14.** `rest` and `zero` are contextual words, by
+`selfhost/keywords.hero`'s own definition (read in one position, a name
+everywhere else): two `WORD_` constants read at the five sites that spelled
+them as literals, so `heroes grammar` prints sixteen; both highlighters paint
+them where `parse/rest_words.hero` reads them, which vscode-textmate's own
+engine and the site's tokenizer agree on, line for line, over eighteen sample
+lines; a round trip of the formatter and a line of the AST dump are unit
+tests. `keywords.hero` went to 312 lines past §11's 300, so its two tables
+became two modules, the foreign words now `selfhost/foreign_words.hero`.
+
+**The union under MemorySanitizer, run again 2026-10-14** on the lane's
+compiler in `heroes-linux-arm64` (Debian clang 22.1.8): the C
+`run/ffi-rest-zero-a-union-none-of-whose-members-is-named` emits is clean at
+`-O0` to `-O3`, printing its `.expected`, and a control that copies heap bytes
+nobody wrote over each construction, in place of its whole write and its
+`memset`, is reported at every level, two reports each. The Windows box, which
+panel 194 named beside Linux, is unrun.
+
 **Scheduled 2026-09-18** out of panel 164, which recorded *a real five-field
 `utsname` needs 1280 literal zeros*. **This file opened 2026-09-25**, with
 panel 178, while the milestone's row stays `scheduled`: one `**OPEN**` row at a

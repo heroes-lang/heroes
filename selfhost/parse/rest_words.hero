@@ -11,6 +11,7 @@
 use token
 use ast
 use cursor
+use keywords
 
 # An argument list with the words taken off its end, and their index in
 # `Ast.rests`, or -1.
@@ -57,7 +58,8 @@ function is_words(a: ast.Ast, text: str, arg: ast.Arg) -> bool
     if arg.mutable || arg.name.is_err()
         return false
     label = arg.name.must()
+    rest = keywords.WORD_REST
 
-    if label.end - label.start != 4 || text[label.start] != 114 || a.exprs[arg.value].kind != .name
+    if label.end - label.start != rest.len() || text[label.start] != rest[0] || a.exprs[arg.value].kind != .name
         return false
-    return cursor.slice_of(text, label) == "rest" && cursor.slice_of(text, a.exprs[arg.value].span) == "zero"
+    return cursor.slice_of(text, label) == rest && cursor.slice_of(text, a.exprs[arg.value].span) == keywords.WORD_ZERO
