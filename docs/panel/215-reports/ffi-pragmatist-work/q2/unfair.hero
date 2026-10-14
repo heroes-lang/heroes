@@ -1,0 +1,21 @@
+# ffi-pragmatist, panel 215, Q2: os_unfair_lock copied unlocked (documented fine), then copied locked
+extern "unfair.h"
+    record UfBox tag ufbox partial
+        tag: i32
+    function uf_init(@b: UfBox)
+    function uf_lock(@b: UfBox)
+    function uf_trylock(@b: UfBox) -> i32
+    function uf_unlock(@b: UfBox)
+
+function main()
+    a: UfBox @= UfBox(tag: 1, rest: zero)
+    uf_init(@a)
+    fresh: UfBox @= a
+    print("copied unlocked: trylock ", uf_trylock(@fresh))
+    uf_unlock(@fresh)
+    uf_lock(@a)
+    held: UfBox @= a
+    print("copied locked: trylock ", uf_trylock(@held))
+    uf_unlock(@held)
+    uf_unlock(@a)
+    print("both unlocked")

@@ -1,0 +1,21 @@
+# ffi-pragmatist, panel 215, Q3: `struct sockaddr` built WITHOUT rest: zero, glibc's fields;
+# 127.0.0.1:47215, the port's two bytes and the address in sa_data, as 044's server writes them
+extern "q3.h"
+    constant SOCK_STREAM: i32
+    record SockAddr tag sockaddr
+        sa_family: u16
+        sa_data: i8[14]
+    function socket(domain: i32, kind: i32, protocol: i32) -> i32
+    function bind(fd: i32, @addr: SockAddr lent, len: u32) -> i32
+    function getsockname(fd: i32, @addr: SockAddr lent, @len: u32) -> i32
+
+function byte(x: i8) -> i64
+    return (x.to_i64().must() + 256) % 256
+
+function main()
+    fd = socket(domain: 2, kind: SOCK_STREAM, protocol: 0)
+    a: SockAddr @= SockAddr(sa_family: 2, sa_data: [-72, 111, 127, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+    print("bind ", bind(fd: fd, @a, len: 16))
+    got: SockAddr @= SockAddr(sa_family: 0, sa_data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    n: u32 @= 16
+    print("getsockname ", getsockname(fd: fd, @got, @n), " port ", byte(got.sa_data[0]) * 256 + byte(got.sa_data[1]))

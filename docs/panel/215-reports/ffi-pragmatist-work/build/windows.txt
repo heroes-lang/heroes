@@ -1,0 +1,35 @@
+heroes 0.4.0
+heroes 0.4.0
+clang version 23.1.1 (https://github.com/llvm/llvm-project 6dfe1677ab8dffbc6ec13d53a1e0215d75147689)
+wcs.hero heroes: build 0 | count m2 -2|
+wcs.hero heroes-c: build 1 |  1 error[ffi_lock_copied] 
+wsrw.hero heroes: build 0 | try 1|copy try 0 n 1|
+wsrw.hero heroes-c: build 1 |  6 error[ffi_lock_copied] 
+wmtx.hero heroes: build 0 | 0 1|
+wmtx.hero heroes-c: build 1 |  3 error[ffi_lock_copied] 
+wholder.hero heroes: build 0 | 0|
+wholder.hero heroes-c: build 1 |  1 error[ffi_lock_copied] 
+wkept.hero heroes: build 0 | 2 1 5 0 3|
+wkept.hero heroes-c: build 0 | 2 1 5 0 3|
+error[ffi_lock_copied]: this copies a `CsBox`, whose C struct `struct csbox` holds a `CRITICAL_SECTION` at `cs`, which C forbids to copy
+  at wcs.hero:25:18
+error[ffi_lock_copied]: `b` takes by value a `SrwBox`, whose C struct `struct srwbox` holds a `SRWLOCK` at `l`, a copy C forbids
+  at wsrw.hero:21:15
+error[ffi_lock_copied]: `bump` returns a `SrwBox`, whose C struct `struct srwbox` holds a `SRWLOCK` at `l`, a copy out of its place, which C forbids
+  at wsrw.hero:21:10
+error[ffi_lock_copied]: this copies a `SrwBox`, whose C struct `struct srwbox` holds a `SRWLOCK` at `l`, which C forbids to copy
+  at wsrw.hero:22:18
+error[ffi_lock_copied]: this copies a `SrwBox`, whose C struct `struct srwbox` holds a `SRWLOCK` at `l`, which C forbids to copy
+  at wsrw.hero:24:12
+error[ffi_lock_copied]: this copies a `SrwBox`, whose C struct `struct srwbox` holds a `SRWLOCK` at `l`, which C forbids to copy
+  at wsrw.hero:30:17
+error[ffi_lock_copied]: this copies a `SrwBox`, whose C struct `struct srwbox` holds a `SRWLOCK` at `l`, which C forbids to copy
+  at wsrw.hero:30:9
+error[ffi_lock_copied]: `made` returns a `MBox`, whose C struct `struct mbox` holds a `mtx_t` at `m`, a copy out of its place, which C forbids
+  at wmtx.hero:21:10
+error[ffi_lock_copied]: this copies a `MBox`, whose C struct `struct mbox` holds a `mtx_t` at `m`, which C forbids to copy
+  at wmtx.hero:24:12
+error[ffi_lock_copied]: this copies a `MBox`, whose C struct `struct mbox` holds a `mtx_t` at `m`, which C forbids to copy
+  at wmtx.hero:27:20
+error[ffi_lock_copied]: this copies a `Both`, whose field `c` holds a `CsBox`, whose C struct `struct csbox` holds a `CRITICAL_SECTION` at `cs`, which C forbids to copy
+  at wholder.hero:28:9

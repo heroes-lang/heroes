@@ -1,0 +1,6 @@
+error[ffi_union_field]: this construction of `VU` names `fd` and `handle`, which are the same bytes: `shapes.h` declares `VU` a `union`, so C would keep only the one written last
+  at w4_two_arms.hero:7:9
+    |
+  7 |     u = VU(fd: 1, handle: nullptr)
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a `record` over a C union names one or more of each union's members and reads any, and is built naming exactly one, an anonymous struct's fields counting as one (§ 13): name the one the program writes

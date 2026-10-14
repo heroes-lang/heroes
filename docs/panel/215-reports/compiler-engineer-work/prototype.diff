@@ -1,0 +1,333 @@
+diff --git a/runtime/heroes_guard_close.h b/runtime/heroes_guard_close.h
+index 29fe3f90c..bbf845297 100644
+--- a/runtime/heroes_guard_close.h
++++ b/runtime/heroes_guard_close.h
+@@ -317,6 +317,7 @@
+ #pragma pop_macro("hero_map_release_at")
+ #pragma pop_macro("hero_map_set")
+ #pragma pop_macro("hero_os_pid")
++#pragma pop_macro("hero_pad_zero")
+ #pragma pop_macro("hero_panic")
+ #pragma pop_macro("hero_panic_assert")
+ #pragma pop_macro("hero_panic_assert_sides")
+diff --git a/runtime/heroes_guard_open.h b/runtime/heroes_guard_open.h
+index d51bff063..0ca7449b2 100644
+--- a/runtime/heroes_guard_open.h
++++ b/runtime/heroes_guard_open.h
+@@ -317,6 +317,7 @@
+ #pragma push_macro("hero_map_release_at")
+ #pragma push_macro("hero_map_set")
+ #pragma push_macro("hero_os_pid")
++#pragma push_macro("hero_pad_zero")
+ #pragma push_macro("hero_panic")
+ #pragma push_macro("hero_panic_assert")
+ #pragma push_macro("hero_panic_assert_sides")
+diff --git a/runtime/heroes_runtime.h b/runtime/heroes_runtime.h
+index c79f5d07d..8a87a7584 100644
+--- a/runtime/heroes_runtime.h
++++ b/runtime/heroes_runtime.h
+@@ -729,6 +729,8 @@ int64_t hero_lend_count_u64(uint64_t, const char *, const char *);
+ void *hero_lend_local(size_t, const char *, const char *);
+ void hero_lend_local_name(void *, const char *, const char *);
+ void hero_lend_local_give(void *);
++/* Panel 215 prototype, route G: zero every byte of an object no member span covers. */
++void hero_pad_zero(void *, size_t, const size_t *, size_t);
+ 
+ /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
+  *
+diff --git a/runtime/parts/lend.c b/runtime/parts/lend.c
+index 6136eafdb..9fd65acec 100644
+--- a/runtime/parts/lend.c
++++ b/runtime/parts/lend.c
+@@ -487,6 +487,26 @@ void hero_lend_local_name(void *local, const char *callee, const char *param) {
+     }
+ }
+ 
++/* PANEL 215'S PROTOTYPE OF ROUTE G: the padding of a group record zeroed in
++ * place before C reads it. `spans` holds `n` pairs, each a member's offset and
++ * size in the header's own layout; every byte of the `size` at `p` that no
++ * pair covers is padding, and is written zero. Nothing a member holds is
++ * touched, so a mutex another thread is locking keeps its bytes. */
++void hero_pad_zero(void *p, size_t size, const size_t *spans, size_t n) {
++    unsigned char *b = p;
++    size_t at = 0;
++    while (at < size) {
++        size_t next = size;
++        int covered = 0;
++        for (size_t i = 0; i < n; i++) {
++            size_t off = spans[2 * i], len = spans[2 * i + 1];
++            if (off <= at && at < off + len) { covered = 1; at = off + len; break; }
++            if (off > at && off < next) next = off;
++        }
++        if (!covered) { memset(b + at, 0, next - at); at = next; }
++    }
++}
++
+ void hero_lend_local_give(void *local) {
+     if (hero_lend_depth < 1) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
+     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
+diff --git a/selfhost/ast.hero b/selfhost/ast.hero
+index bf0ff8cf4..24d261ef8 100644
+--- a/selfhost/ast.hero
++++ b/selfhost/ast.hero
+@@ -523,6 +523,8 @@ variant DeclKind
+         header: token.Span?
+         library: Library?
+         partial: bool
++        # Panel 215's prototype (Q2 route B): the record is not a value.
++        pinned: bool
+         tag: token.Span?
+     variant_decl
+         cases: [Case]
+@@ -667,6 +669,7 @@ test "a group's record carries what the head line said"
+         header: ok(zero),
+         library: ok(.link(name: zero)),
+         partial: true,
++        pinned: false,
+         tag: fail(code: "absent", msg: "no tag")
+     )
+ 
+diff --git a/selfhost/checker.hero b/selfhost/checker.hero
+index a83665ca1..dc115117b 100644
+--- a/selfhost/checker.hero
++++ b/selfhost/checker.hero
+@@ -41,6 +41,7 @@ use check/contracts
+ use check/moved
+ use check/lending
+ use check/leasing
++use check/pinned
+ use check/counted
+ use check/freer_marks
+ use check/endless
+@@ -110,6 +111,9 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
+     # is a use-after-free the moment that cell is emptied (panel 125).
+     leasing.leases_stay_in_their_cell(@c, a, r, s, decls)
+ 
++    # Panel 215's prototype (Q2 route B): a pinned record is not a value.
++    pinned.pinned_stay_in_place(@c, a, r, s, decls)
++
+     # Panel 199 (defect 457): a function whose every path calls the function
+     # itself before it returns or ends, told at the call; after the types,
+     # which say whether `x.f()` calls a field of `x` (§4.11).
+diff --git a/selfhost/cli/header_types.hero b/selfhost/cli/header_types.hero
+index 0872153b4..6ba3d342f 100644
+--- a/selfhost/cli/header_types.hero
++++ b/selfhost/cli/header_types.hero
+@@ -200,6 +200,8 @@ function lend_units(answers: [pointee_ask.Answered]) -> {str: str}
+     for one in answers
+         if one.asked.declared == pointee_ask.UNIT
+             out[one.asked.name + " " + one.asked.index.to_str()] @ one.header_type
++        else if one.asked.declared == "vouched"
++            out["%vouched " + one.asked.index.to_str()] @ ""
+ 
+     return lend_type.with_read_casts(out, answers)
+ 
+diff --git a/selfhost/cli/layout.hero b/selfhost/cli/layout.hero
+index 99fcc0277..48a4df037 100644
+--- a/selfhost/cli/layout.hero
++++ b/selfhost/cli/layout.hero
+@@ -95,14 +95,15 @@ record Asking
+ 
+ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe) -> ()?
+     every: {i64: bool}? = fail(code: "every", msg: "every group record")
+-    return check_records(t, p, c, s, decls, probe: probe, records: every)
++    vouched: {i64: bool} @= {}
++    return check_records(t, p, c, s, decls, probe: probe, records: every, @vouched)
+ 
+ # The same, of the group records `records` holds where it is given: those a
+ # module's unit reads the headers of, asked of those headers alone, since a
+ # record is laid out as the unit that spells it reads it (panel 202 R1,
+ # `cli/probing.hero`). `p` is the whole program, whose every use of a record
+ # is what the union questions ask about.
+-function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?) -> ()?
++function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?, @vouched: {i64: bool}) -> ()?
+     wanted: [layout_text.Asked] @= []
+ 
+     for one in layout_text.asked(s, decls)
+@@ -132,7 +133,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
+         screen = kept.read(dir + "/screen-" + known.must() + ".txt")
+ 
+         if !screen.is_err()
+-            return answered(a, wanted: wanted, sum: known.must(), said: screen.must())
++            return answered(a, wanted: wanted, sum: known.must(), said: screen.must(), @vouched)
+     process.mkdir_all(dir)?
+     screen_c = pointee.unit_path(dir: dir, stem: "screen", text: screen_text)
+     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
+@@ -161,7 +162,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
+     listing = deps.pointer_text(rows.must())
+     sum = listing.slice(from: 0, to: 16)
+     kept.write(path: dir + "/screen-" + sum + ".txt", text: said.must())?
+-    verdict = answered(a, wanted: wanted, sum: sum, said: said.must())
++    verdict = answered(a, wanted: wanted, sum: sum, said: said.must(), @vouched)
+     publish.write_whole(path: listed, text: listing, keyed: true)?
+     return verdict
+ 
+@@ -171,7 +172,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
+ # has no layout is refused first, by the screen's own two answers, unless
+ # clang erred outside the screen too: then the headers did not compile
+ # alone, and the program's own compile says so on the author's line.
+-function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -> ()?
++function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str, @vouched: {i64: bool}) -> ()?
+     opaque = layout_screen.no_layout(said, wanted: wanted)
+ 
+     if opaque.len() > 0 && !layout_screen.strays(said)
+@@ -182,6 +183,11 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
+     for one in wanted
+         if !flagged[one.decl].is_err()
+             dumped @ dumped.push(one)
++        else if !partial_record(a.decls, decl: one.decl)
++            # Panel 215's prototype: a record the screen vouches for names
++            # exactly the struct's members, so its padding is C's arithmetic
++            # on the declared fields (`emit/padding.hero`).
++            vouched[one.decl] @ true
+ 
+     if dumped.len() == 0
+         return ok()
+@@ -207,6 +213,14 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
+     text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
+     return judged(a, sum: sum, text: text)
+ 
++# Whether `decl` is a `partial` record, which the screen proves nothing of.
++function partial_record(decls: [ast.Decl], decl: i64) -> bool
++    match decls[decl].kind
++        .record_decl rec                                             => return rec.partial
++        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
++
++    return false
++
+ # **A record named after a typedef whose type has no layout, refused here,
+ # before any unit compiles** (defect 191, 2026-10-02): the screen's two
+ # questions said where clang erred, which is the verdict, and the type behind
+diff --git a/selfhost/cli/probing.hero b/selfhost/cli/probing.hero
+index 1cefb15b7..d0c67253a 100644
+--- a/selfhost/cli/probing.hero
++++ b/selfhost/cli/probing.hero
+@@ -201,7 +201,15 @@ function check_all(t: toolchain.Toolchain, p: containers.Program, c: state.Check
+ 
+     for one in probings
+         if !one.probe.is_err() && laid_out(decls, records: one.records)
+-            laid = layout.check_records(t, p, c, s, decls, probe: one.probe.must(), records: ok(one.records))
++            vouched: {i64: bool} @= {}
++            laid = layout.check_records(t, p, c, s, decls, probe: one.probe.must(), records: ok(one.records), @vouched)
++
++            # Panel 215's prototype: each record the screen vouched for rides
++            # the pointee answers to the emitter (`header_types.lend_units`).
++            for decl in keys_of(vouched)
++                answered @ answered.push(
++                    pointee_ask.Answered(asked: pointee_ask.Pointee(name: "%vouched", param: "", index: decl, declared: "vouched", file: "", line: 0, depth: false), header_type: "", pointee: "")
++                )
+ 
+             if laid.is_err()
+                 return Checked(verdict: laid, modules: one.modules, unread: unread, unread_modules: unread_modules)
+diff --git a/selfhost/emit/guarded_names.hero b/selfhost/emit/guarded_names.hero
+index b6548a841..781026870 100644
+--- a/selfhost/emit/guarded_names.hero
++++ b/selfhost/emit/guarded_names.hero
+@@ -83,7 +83,7 @@ constant NAMES: [str]
+         "hero_lend_count_u64 hero_lend_give hero_lend_local hero_lend_local_give"
+         "hero_lend_local_name hero_lend_take hero_map_decref hero_map_eq"
+         "hero_map_find hero_map_incref hero_map_keys hero_map_len hero_map_new"
+-        "hero_map_put hero_map_release_at hero_map_set hero_os_pid hero_panic"
++        "hero_map_put hero_map_release_at hero_map_set hero_os_pid hero_pad_zero hero_panic"
+         "hero_panic_assert hero_panic_assert_sides hero_panic_must"
+         "hero_panic_overflow hero_print_bool hero_print_end hero_print_f32"
+         "hero_print_f64 hero_print_int hero_print_str hero_print_uint"
+diff --git a/selfhost/emit/ops.hero b/selfhost/emit/ops.hero
+index e8cfc5f2c..34eeaeaf9 100644
+--- a/selfhost/emit/ops.hero
++++ b/selfhost/emit/ops.hero
+@@ -26,6 +26,7 @@ use emit/field_lend
+ use emit/lend_extent
+ use emit/lend_buffer
+ use emit/lend_local
++use emit/padding
+ use emit/extern_probe
+ use emit/writer
+ use emit/handle_traffic
+@@ -153,6 +154,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
+             # `_Static_assert` is a declaration and the call is a statement.
+             lend_extent.assertions(@w, c, names, s, decls, f, run: run, decl: e.decl)
+             lend_local.label(@w, c, s, decls, f, run: run, decl: e.decl)
++            padding.zero(@w, c, names, s, decls, f, run: run)
+ 
+             # An array lent through `@` crosses as a buffer the runtime places
+             # against a page nothing may touch (panel 196's R4,
+diff --git a/selfhost/handles.hero b/selfhost/handles.hero
+index b448c00bd..75d835fd7 100644
+--- a/selfhost/handles.hero
++++ b/selfhost/handles.hero
+@@ -292,20 +292,20 @@ test "all three clauses are load-bearing, and a record with fields is never a ha
+     one: [ast.Field] = [ast.Field(name: token.Span(start: 4, end: 5), ty: 0, doc: [])]
+ 
+     assert is_handle_record(
+-        .record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: tag)
++        .record_decl(fields: empty, header: header, library: none_library(), partial: false, pinned: false, tag: tag)
+     )
+ 
+     # Outside a group there is no header to leave a type opaque.
+-    assert !is_handle_record(.record_decl(fields: empty, header: none, library: none_library(), partial: false, tag: tag))
++    assert !is_handle_record(.record_decl(fields: empty, header: none, library: none_library(), partial: false, pinned: false, tag: tag))
+ 
+     # Without a tag the C type has no name.
+-    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: none))
++    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: false, pinned: false, tag: none))
+ 
+     # `partial` names SOME fields; with none it names nothing.
+-    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: true, tag: tag))
++    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: true, pinned: false, tag: tag))
+ 
+     # A group record WITH fields is the header's struct, by value, as before.
+-    assert !is_handle_record(.record_decl(fields: one, header: header, library: none_library(), partial: false, tag: tag))
++    assert !is_handle_record(.record_decl(fields: one, header: header, library: none_library(), partial: false, pinned: false, tag: tag))
+ 
+     # And nothing else is a record at all.
+     assert !is_handle_record(.test_decl(body: ast.Block(span: token.Span(start: 0, end: 0), stmts: [])))
+diff --git a/selfhost/parse/records.hero b/selfhost/parse/records.hero
+index 867a9534d..1e53ef421 100644
+--- a/selfhost/parse/records.hero
++++ b/selfhost/parse/records.hero
+@@ -91,6 +91,14 @@ function partial_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
+     _ = cursor.bump(@c)
+     return true
+ 
++# Panel 215's prototype (Q2 route B): `pinned` after `partial`'s place, a
++# contextual word as `partial` is, consumed only on a group's record.
++function pinned_marker(@c: cursor.Cursor, text: str, in_group: bool) -> bool
++    if !in_group || !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != "pinned"
++        return false
++    _ = cursor.bump(@c)
++    return true
++
+ # A group `record` with a `tag` and NO fields is a HANDLE: a pointer to a type
+ # the header names and leaves opaque (panel 145, ratified 2026-09-13).
+ # `handles.is_handle_parts` is the one place that says which three facts make
+@@ -106,6 +114,7 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
+     in_group = tails.is_from_c(linkage)
+     tag = tag_marker(@c, text, in_group: in_group)
+     partial = partial_marker(@c, text, in_group: in_group)
++    pinned = pinned_marker(@c, text, in_group: in_group)
+     head_end: token.Span @= name
+ 
+     if !tag.is_err()
+@@ -143,7 +152,7 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
+     if fields.len() > 0
+         finish @ fields[fields.len() - 1].name
+     decls @ decls.push(
+-        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), partial: partial, tag: tag))
++        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), partial: partial, pinned: pinned, tag: tag))
+     )
+ 
+ # A record's or a variant's block that holds a declaration, `function f()`
+diff --git a/selfhost/resolve/types.hero b/selfhost/resolve/types.hero
+index b382c8d45..5afa20041 100644
+--- a/selfhost/resolve/types.hero
++++ b/selfhost/resolve/types.hero
+@@ -227,7 +227,7 @@ function record_decl_named(name_start: i64, name_end: i64) -> ast.Decl
+         name: span,
+         doc: doc,
+         span: span,
+-        kind: .record_decl(fields: fields, header: fail(code: "absent", msg: "plain"), library: fail(code: "absent", msg: "plain"), partial: false, tag: fail(code: "absent", msg: "plain"))
++        kind: .record_decl(fields: fields, header: fail(code: "absent", msg: "plain"), library: fail(code: "absent", msg: "plain"), partial: false, pinned: false, tag: fail(code: "absent", msg: "plain"))
+     )
+ 
+ test "the three namespaces answer in order: primitive, generic, declaration"

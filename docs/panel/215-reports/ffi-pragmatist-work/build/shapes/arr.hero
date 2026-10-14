@@ -1,0 +1,12 @@
+# Counters kept in a `[T]`, whose growth moves every element (spec § 13).
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_value(@c: Counter) -> i64
+
+function main()
+    cs: [Counter] @= [Counter(n: 0, rest: zero)]
+    cs @ cs.push(Counter(n: 0, rest: zero))
+    _ = counter_init(@cs[0])
+    print(counter_value(@cs[0]), cs.len())

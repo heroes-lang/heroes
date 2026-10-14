@@ -1,0 +1,186 @@
+# PANEL 215'S PROTOTYPE OF Q2'S ROUTE B, not a landing (issue 1335): a group's
+# record marked `pinned` is not a value. `m2 = m`, `m2: T @= m`, a by-value
+# parameter, a result, an argument handed on by value, an element, a
+# comparison: each would copy C's bytes, a locked mutex among them, and each is
+# refused. What stays legal is what reaches C as the place itself: an `@` lend
+# of the cell or of a field, a field read or write through it, and a
+# construction or a group constant that initialises its cell or a field of a
+# construction. A record holding a pinned one by value, directly or through a
+# fixed array, is pinned with it, which is `partial`'s "for it and for any
+# value holding it" (spec § 13).
+#
+# The shape is the lease's clause 1 (`check/leasing.hero`): a name allowed only
+# where a call lends it, asked at every position, through the lend's own parent
+# map (`check/lending.hero`).
+
+use ast
+use source
+use resolved
+use diag
+use check/state
+use check/table
+use check/lending
+use check/leasing
+
+function pinned_stay_in_place(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
+    if !any_marked(decls)
+        return
+    known: {i64: bool} @= {}
+    signatures(@c, s, decls, @known)
+    into = lending.argument_of(a)
+    written = leasing.written_roots(a)
+    based = bases(a)
+    starts = initialisers(r)
+    at: i64 @= 0
+
+    while at < a.exprs.len()
+        position(@c, a, r, decls, at: at, into: into, written: written, based: based, starts: starts, known: @known)
+        at @ at + 1
+
+function any_marked(decls: [ast.Decl]) -> bool
+    for d in decls
+        match d.kind
+            .record_decl rec =>
+                if rec.pinned
+                    return true
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return false
+
+# A parameter that is not `@`, or a result, of a pinned type.
+function signatures(@c: state.Checker, s: source.Source, decls: [ast.Decl], @known: {i64: bool})
+    for d in decls
+        match d.kind
+            .function_decl fd =>
+                for p in fd.value.params
+                    ty = state.written_type(c.out, p.ty)
+
+                    if !p.mutable && !ty.is_err() && is_pinned(c.out, decls, ty: ty.must(), @known, depth: 0)
+                        state.push_diagnostic(
+                            @c,
+                            diag.new_diagnostic(code: "pinned_copied", message: "`" + source.span_text(s, p.name) + "` takes a pinned record by value, which copies C's bytes: write `@" + source.span_text(s, p.name) + "`, so C's place itself is lent", span: p.name)
+                        )
+
+                result = state.written_type(c.out, fd.value.result)
+
+                if !result.is_err() && is_pinned(c.out, decls, ty: result.must(), @known, depth: 0)
+                    state.push_diagnostic(
+                        @c,
+                        diag.new_diagnostic(code: "pinned_copied", message: "`" + source.span_text(s, d.name) + "` returns a pinned record, which copies it out of its place: build it where it lives, `x: T @= T(...)`, and lend it with `@`", span: d.name)
+                    )
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+# One expression of a pinned type, judged by where it stands.
+function position(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], at: i64, into: {i64: i64}, written: {i64: bool}, based: {i64: bool}, starts: {i64: bool}, @known: {i64: bool})
+    if at >= c.out.expr_types.len()
+        return
+
+    if !is_pinned(c.out, decls, ty: c.out.expr_types[at], @known, depth: 0)
+        return
+
+    if !written[at].is_err() || !based[at].is_err()
+        return
+
+    if !into[at].is_err() && leasing.marked_in(a, call: into[at].must(), value: at)
+        return
+
+    if fresh(a, r, at: at) && (!starts[at].is_err() || constructs(a, r, decls, into: into, at: at))
+        return
+    state.push_diagnostic(
+        @c,
+        diag.new_diagnostic(code: "pinned_copied", message: "a pinned record is not a value: this copies C's bytes, a lock or a handle C keeps among them; lend the place with `@`, or read a field of it", span: a.exprs[at].span)
+    )
+
+# A value that has no place yet: a construction or a group's constant.
+function fresh(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
+    match a.exprs[at].kind
+        .call =>
+            return true
+        .name =>
+            match r.uses[at]
+                .top                                      => return true
+                .local | .builtin | .module | .unresolved => return false
+        .method | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return false
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index         => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error  => return false
+
+    return false
+
+# Whether `at` is an argument of a record's construction.
+function constructs(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], into: {i64: i64}, at: i64) -> bool
+    if into[at].is_err()
+        return false
+
+    match a.exprs[into[at].must()].kind
+        .call cl =>
+            match r.uses[cl.callee]
+                .top t =>
+                    match decls[t.at].kind
+                        .record_decl                                                 => return true
+                        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+                .local | .builtin | .module | .unresolved => return false
+        .method | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return false
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index                 => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error          => return false
+
+    return false
+
+# Every expression that is the base of a field or an index expression.
+function bases(a: ast.Ast) -> {i64: bool}
+    out: {i64: bool} @= {}
+
+    for e in a.exprs
+        match e.kind
+            .field f                                                                         => out[f.base] @ true
+            .index i                                                                         => out[i.base] @ true
+            .call | .method | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp => continue
+            .bool_lit | .field_name | .null_ptr | .hole | .unary | .binary | .variant_case   => continue
+            .array | .map | .try_expr | .if_expr | .match_expr | .error                      => continue
+
+    return out
+
+# Every expression that initialises a local where it is declared.
+function initialisers(r: resolved.Resolved) -> {i64: bool}
+    out: {i64: bool} @= {}
+
+    for local in r.locals
+        if !local.value.is_err()
+            out[local.value.must()] @ true
+
+    return out
+
+function is_pinned(c: state.Checked, decls: [ast.Decl], ty: i64, @known: {i64: bool}, depth: i64) -> bool
+    if depth > 64
+        return false
+
+    match table.get(c.types, ty)
+        .named n => return record_pinned(c, decls, decl: n.decl, @known, depth: depth)
+        .fixed f => return is_pinned(c, decls, ty: f.element, @known, depth: depth + 1)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .array | .map | .fallible | .function_ty => return false
+        .case_ty | .failure | .generic | .error => return false
+
+    return false
+
+# Marked, or holding a pinned record by value; each answer kept by its
+# declaration, a record being asked once.
+function record_pinned(c: state.Checked, decls: [ast.Decl], decl: i64, @known: {i64: bool}, depth: i64) -> bool
+    if !known[decl].is_err()
+        return known[decl].must()
+    known[decl] @ false
+    out: bool @= false
+
+    match decls[decl].kind
+        .record_decl rec =>
+            if rec.pinned
+                out @ true
+            else
+                for field in rec.fields
+                    written = state.written_type(c, field.ty)
+
+                    if !written.is_err() && is_pinned(c, decls, ty: written.must(), @known, depth: depth + 1)
+                        out @ true
+        .constant_decl | .function_decl | .variant_decl | .test_decl => out @ false
+
+    known[decl] @ out
+    return out

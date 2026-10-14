@@ -1,0 +1,16 @@
+# A Heroes record holding a counter by value, copied whole.
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_value(@c: Counter) -> i64
+
+record Holder
+    c: Counter
+    k: i64
+
+function main()
+    h: Holder @= Holder(c: Counter(n: 0, rest: zero), k: 1)
+    _ = counter_init(@h.c)
+    h2: Holder @= h
+    print(counter_value(@h2.c), h2.k)

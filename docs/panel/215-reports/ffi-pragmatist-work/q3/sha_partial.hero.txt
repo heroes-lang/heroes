@@ -1,0 +1,13 @@
+# ffi-pragmatist, panel 215, Q3: OpenSSL's low-level SHA256_CTX, built: partial
+extern "openssl/sha.h" package "libcrypto"
+    constant SHA256_DIGEST_LENGTH: i64
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, data: cstr lent, len: u64) -> i32
+    function SHA256_Final(@md: [u8] counted_by SHA256_DIGEST_LENGTH lent, @c: Sha256Ctx) -> i32
+
+function main()
+    c: Sha256Ctx @= Sha256Ctx(num: 0)
+    md: [u8] @= []
+    print(SHA256_Init(@c), " ", SHA256_Update(@c, data: "abc".cstr(), len: 3), " ", SHA256_Final(@md, @c), " ", md[0], " ", md[31])

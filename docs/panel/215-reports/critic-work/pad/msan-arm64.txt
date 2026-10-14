@@ -1,0 +1,12 @@
+leg aarch64, Debian clang version 22.1.8 (1~deb13u4)
+small.hero: memset lines in its C: 0
+small.hero -O0: 0 reports at: none
+small.hero -O1: 0 reports at: none
+small.hero -O2: 0 reports at: none
+small.hero -O3: 0 reports at: none
+small_rz.hero: memset lines in its C: 3
+small_rz.hero -O0: 0 reports at: none
+small_rz.hero -O1: 0 reports at: none
+small_rz.hero -O2: 0 reports at: none
+small_rz.hero -O3: 0 reports at: none
+exit 0

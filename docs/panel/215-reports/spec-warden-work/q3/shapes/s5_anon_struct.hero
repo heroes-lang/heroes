@@ -1,0 +1,23 @@
+extern "shapes.h"
+    record S5 tag s5
+        kind: i32
+        lo: i16
+        hi: i16
+        i: i32
+    function dirty()
+    function s5_nz(@t: S5 lent) -> i64
+    function s5_i(@t: S5 lent) -> i32
+
+function zeroed() -> S5
+    return S5(kind: 2, rest: zero)
+
+function main()
+    dirty()
+    a: S5 @= zeroed()
+    print(s5_i(@a), " ", s5_nz(@a))
+    b @= S5(kind: 1, lo: 2, hi: 3)
+    print(s5_i(@b))
+    c = S5(kind: 1, i: 196610)
+    print(c.lo, " ", c.hi)
+    d @= S5(kind: 1, lo: 2, rest: zero)
+    print(s5_i(@d))

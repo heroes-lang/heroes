@@ -1,0 +1,12 @@
+# ffi-pragmatist, panel 215, Q2: a struct holding an atomic_int, its field bound and the struct copied
+extern "nc2.h"
+    record AtomBox tag atombox
+        n: i32
+        tag: i32
+    function atom_add(@b: AtomBox) -> i32
+
+function main()
+    a: AtomBox @= AtomBox(n: 0, tag: 1)
+    print("add ", atom_add(@a))
+    a2: AtomBox @= a
+    print("copy: n ", a2.n, " add ", atom_add(@a2), "; original add ", atom_add(@a))

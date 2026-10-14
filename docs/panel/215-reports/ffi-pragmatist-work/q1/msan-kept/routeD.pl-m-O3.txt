@@ -1,0 +1,47 @@
+==158==WARNING: MemorySanitizer: use-of-uninitialized-value
+    #0 0x? in hero_lend_audit /tmp/m/runtime/parts/lend.c:302:63
+    #1 0x? in hero_lend_audit_given /tmp/m/runtime/parts/lend.c:330:63
+    #2 0x? in hero_runtime_check_leaks /tmp/m/runtime/parts/alloc.c:268:5
+    #3 0x? in main /tmp/m/w/main.c:793:5
+    #4 0x?  (/lib/x86_64-linux-gnu/libc.so.6+0x?) (BuildId: c495b62edadd6c356265942ec1282d98058a7b41)
+    #5 0x? in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x?) (BuildId: c495b62edadd6c356265942ec1282d98058a7b41)
+    #6 0x? in _start (/tmp/m/w/p-O3+0x?) (BuildId: aafe42793695d831504fa900d864ec3f385ab9d5)
+
+  Uninitialized value was stored to memory at
+    #0 0x? in hero_lend_retire /tmp/m/runtime/parts/lend.c:405:12
+    #1 0x? in hero_lend_local_give /tmp/m/runtime/parts/lend.c:495:5
+
+  Uninitialized value was stored to memory at
+    #0 0x? in __msan_memcpy (/tmp/m/w/p-O3+0x?) (BuildId: aafe42793695d831504fa900d864ec3f385ab9d5)
+    #1 0x? in h_main_main /tmp/m/w/main.hero:37:12
+
+  Uninitialized value was created by an allocation of 't10.sroa.4' in the stack frame
+    #0 0x? in h_main_main /tmp/m/w/main.hero:32:1015
+
+SUMMARY: MemorySanitizer: use-of-uninitialized-value /tmp/m/runtime/parts/lend.c:302:63 in hero_lend_audit
+==158==WARNING: MemorySanitizer: use-of-uninitialized-value
+    #0 0x? in hero_lend_audit /tmp/m/runtime/parts/lend.c:302:63
+    #1 0x? in hero_lend_audit_given /tmp/m/runtime/parts/lend.c:330:63
+    #2 0x? in hero_runtime_check_leaks /tmp/m/runtime/parts/alloc.c:268:5
+    #3 0x? in main /tmp/m/w/main.c:793:5
+    #4 0x?  (/lib/x86_64-linux-gnu/libc.so.6+0x?) (BuildId: c495b62edadd6c356265942ec1282d98058a7b41)
+    #5 0x? in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x?) (BuildId: c495b62edadd6c356265942ec1282d98058a7b41)
+    #6 0x? in _start (/tmp/m/w/p-O3+0x?) (BuildId: aafe42793695d831504fa900d864ec3f385ab9d5)
+
+  Uninitialized value was stored to memory at
+    #0 0x? in hero_lend_retire /tmp/m/runtime/parts/lend.c:405:12
+    #1 0x? in hero_lend_local_give /tmp/m/runtime/parts/lend.c:495:5
+
+  Uninitialized value was stored to memory at
+    #0 0x? in __msan_memmove (/tmp/m/w/p-O3+0x?) (BuildId: aafe42793695d831504fa900d864ec3f385ab9d5)
+    #1 0x? in h_main_main /tmp/m/w/main.hero:41:12
+
+  Uninitialized value was stored to memory at
+    #0 0x? in __msan_memmove (/tmp/m/w/p-O3+0x?) (BuildId: aafe42793695d831504fa900d864ec3f385ab9d5)
+    #1 0x? in h_rec_Cd_desc_copy /tmp/m/w/main.c:168:5
+
+  Uninitialized value was created by an allocation of 't14' in the stack frame
+    #0 0x? in h_main_main /tmp/m/w/main.hero:32:1107
+
+SUMMARY: MemorySanitizer: use-of-uninitialized-value /tmp/m/runtime/parts/lend.c:302:63 in hero_lend_audit
+MemorySanitizer: 2 warnings reported.

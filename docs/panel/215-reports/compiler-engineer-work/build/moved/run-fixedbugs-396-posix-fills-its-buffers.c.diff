@@ -1,0 +1,21 @@
+480a481,484
+> #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pollfd *)0) == 13 ? sizeof(struct pollfd) : 0), __builtin_offsetof(struct pollfd, fd), sizeof(((struct pollfd *)0)->fd), __builtin_offsetof(struct pollfd, events), sizeof(((struct pollfd *)0)->events), __builtin_offsetof(struct pollfd, revents), sizeof(((struct pollfd *)0)->revents)}; hero_pad_zero(hero_lend_b23_0, sizeof(struct pollfd), (size_t)hero_lend_e23_0, hero_pad_s0, 4);
+> #line 38 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
+>     }
+541c545
+< #line 542 "fixedbugs396posixfillsitsbuffers.c"
+---
+> #line 546 "fixedbugs396posixfillsitsbuffers.c"
+601c605
+< #line 602 "fixedbugs396posixfillsitsbuffers.c"
+---
+> #line 606 "fixedbugs396posixfillsitsbuffers.c"
+799c803
+< #line 800 "fixedbugs396posixfillsitsbuffers.c"
+---
+> #line 804 "fixedbugs396posixfillsitsbuffers.c"
+822c826
+< #line 823 "fixedbugs396posixfillsitsbuffers.c"
+---
+> #line 827 "fixedbugs396posixfillsitsbuffers.c"

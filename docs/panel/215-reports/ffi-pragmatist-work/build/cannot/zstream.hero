@@ -1,0 +1,15 @@
+# ffi-pragmatist, panel 215, Q2: zlib's z_stream, whose state points back at the stream's own address
+extern "nc.h" link "z"
+    record ZStream tag z_stream_s partial
+        avail_in: u32
+    constant Z_STREAM_ERROR: i32
+    function zs_init(@s: ZStream) -> i32
+    function zs_finish(@s: ZStream) -> i32
+    function deflateEnd(@s: ZStream) -> i32
+
+function main()
+    s: ZStream @= ZStream(rest: zero)
+    print("init ", zs_init(@s))
+    s2: ZStream @= s
+    print("copy: finish ", zs_finish(@s2), " end ", deflateEnd(@s2), " (Z_STREAM_ERROR is ", Z_STREAM_ERROR, ")")
+    print("original: finish ", zs_finish(@s), " end ", deflateEnd(@s))

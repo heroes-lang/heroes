@@ -1,0 +1,6 @@
+error[ffi_unknown_field]: `shapes.h` declares no `via` in `struct s1`: clang read the header, and that type has no such field
+  at w1_via.hero:4:9
+    |
+  4 |         via: i64
+    |         ^^^
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `struct s1` has a member `via`

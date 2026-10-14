@@ -1,0 +1,26 @@
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(@c: Counter lent) -> i64
+
+# Increments `c.n` while holding the counter's lock.
+function bump(@c: Counter) -> ()?
+    if counter_lock(@c) != 0
+        return fail(code: "lock_failed", msg: "counter_lock failed")
+    c.n @ c.n + 1
+    if counter_unlock(@c) != 0
+        return fail(code: "unlock_failed", msg: "counter_unlock failed")
+    return ok()
+
+function main()
+    c @= Counter(n: 0, rest: zero)
+    if counter_init(@c) != 0
+        print("counter_init failed")
+        exit(code: 1)
+    bump(@c).must()
+    bump(@c).must()
+    bump(@c).must()
+    print(counter_value(@c))

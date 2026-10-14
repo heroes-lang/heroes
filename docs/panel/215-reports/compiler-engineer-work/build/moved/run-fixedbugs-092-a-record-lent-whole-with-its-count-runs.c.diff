@@ -1,0 +1,56 @@
+266a267,268
+> #line 41 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), 1, hero_pad_s0, 2);
+267a270,271
+>     }
+> #line 41 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+286a291,292
+> #line 43 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pad *)0) == 13 ? sizeof(struct pad) : 0), __builtin_offsetof(struct pad, c), sizeof(((struct pad *)0)->c), __builtin_offsetof(struct pad, d), sizeof(((struct pad *)0)->d)}; hero_pad_zero(&h1_p, sizeof(struct pad), 1, hero_pad_s0, 3);
+287a294,295
+>     }
+> #line 43 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+305a314,317
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h2_w.inner, sizeof(struct one), 1, hero_pad_s0, 2);
+> #line 45 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     }
+> #line 45 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+325a338,341
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), 1, hero_pad_s0, 2);
+> #line 47 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     }
+> #line 47 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+338a355,358
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), 1, hero_pad_s0, 2);
+> #line 48 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     }
+> #line 48 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+351a372,373
+> #line 50 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), 1, hero_pad_s0, 2);
+352a375,376
+>     }
+> #line 50 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+365a390,393
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pfd *)0) == 13 ? sizeof(struct pfd) : 0), __builtin_offsetof(struct pfd, fd), sizeof(((struct pfd *)0)->fd), __builtin_offsetof(struct pfd, events), sizeof(((struct pfd *)0)->events), __builtin_offsetof(struct pfd, revents), sizeof(((struct pfd *)0)->revents)}; hero_pad_zero(&h3_q, sizeof(struct pfd), 1, hero_pad_s0, 4);
+> #line 51 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     }
+> #line 51 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+388a417,420
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pfd *)0) == 13 ? sizeof(struct pfd) : 0), __builtin_offsetof(struct pfd, fd), sizeof(((struct pfd *)0)->fd), __builtin_offsetof(struct pfd, events), sizeof(((struct pfd *)0)->events), __builtin_offsetof(struct pfd, revents), sizeof(((struct pfd *)0)->revents)}; hero_pad_zero(&h3_q, sizeof(struct pfd), 1, hero_pad_s0, 4);
+> #line 54 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     }
+> #line 54 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+414a447,454
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pad *)0) == 13 ? sizeof(struct pad) : 0), __builtin_offsetof(struct pad, c), sizeof(((struct pad *)0)->c), __builtin_offsetof(struct pad, d), sizeof(((struct pad *)0)->d)}; hero_pad_zero(&h1_p, sizeof(struct pad), 1, hero_pad_s0, 3);
+> #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     }
+> #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), 1, hero_pad_s0, 2);
+> #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+>     }
+> #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
+430c470
+< #line 431 "fixedbugs092arecordlentwholewithitscountruns.c"
+---
+> #line 471 "fixedbugs092arecordlentwholewithitscountruns.c"

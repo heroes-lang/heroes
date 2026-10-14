@@ -1,0 +1,6 @@
+record Counter
+    n: i64
+    name: str
+
+function bump(@c: Counter)
+    c.n @ c.n + 1

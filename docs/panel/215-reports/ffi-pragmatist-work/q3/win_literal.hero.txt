@@ -1,0 +1,23 @@
+# ffi-pragmatist, panel 215, Q3 on Windows: sockaddr and fd_set, built: literal
+extern "q3win.h" link "ws2_32"
+    constant SOCK_STREAM: i32
+    record SockAddr tag sockaddr
+        sa_family: u16
+        sa_data: i8[14]
+    record fd_set
+        fd_count: u32
+        fd_array: u64[64]
+    function wsa_start() -> i32
+    function socket(domain: i32, kind: i32, protocol: i32) -> u64
+    function bind(s: u64, @addr: SockAddr lent, len: i32) -> i32
+    function fds_add(s: u64, @set: fd_set)
+    function fds_count(@set: fd_set) -> i32
+
+function main()
+    print("wsa ", wsa_start())
+    s = socket(domain: 2, kind: SOCK_STREAM, protocol: 0)
+    a: SockAddr @= SockAddr(sa_family: 2, sa_data: [-72, 111, 127, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0])
+    print("bind ", bind(s: s, @a, len: 16))
+    r: fd_set @= fd_set(fd_count: 0, fd_array: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    fds_add(s: s, @r)
+    print("count ", fds_count(@r))

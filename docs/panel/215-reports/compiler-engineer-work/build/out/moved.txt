@@ -1,0 +1,68 @@
+run/ffi-a-construction-polls-an-sdl3-event: +9 -1 (zeroing 2, #line 5, closing 2, other 0)
+    REMOVED < #line 385 "ffiaconstructionpollsansdl3event.c"
+run/ffi-a-filled-record-is-asked-for: +7 -3 (zeroing 1, #line 5, closing 1, other 0)
+    REMOVED < #line 302 "ffiafilledrecordisaskedfor.c"
+    REMOVED < #line 314 "ffiafilledrecordisaskedfor.c"
+    REMOVED < #line 326 "ffiafilledrecordisaskedfor.c"
+run/ffi-a-typedef-the-note-names-binds-by-its-own-name: +17 -1 (zeroing 4, #line 9, closing 4, other 0)
+    REMOVED < #line 242 "ffiatypedefthenotenamesbindsbyitsownname.c"
+run/ffi-counted-by-a-stated-extent: +5 -1 (zeroing 1, #line 3, closing 1, other 0)
+    REMOVED < #line 488 "fficountedbyastatedextent.c"
+run/ffi-lent-on-an-out-parameter: +5 -1 (zeroing 1, #line 3, closing 1, other 0)
+    REMOVED < #line 234 "ffilentonanoutparameter.c"
+run/ffi-rest-zero-a-nested-group-record: +9 -1 (zeroing 2, #line 5, closing 2, other 0)
+    REMOVED < #line 307 "ffirestzeroanestedgrouprecord.c"
+run/ffi-rest-zero-a-partial-record: +5 -1 (zeroing 1, #line 3, closing 1, other 0)
+    REMOVED < #line 215 "ffirestzeroapartialrecord.c"
+run/ffi-rest-zero-a-record-of-long-arrays: +9 -1 (zeroing 2, #line 5, closing 2, other 0)
+    REMOVED < #line 270 "ffirestzeroarecordoflongarrays.c"
+run/ffi-rest-zero-a-union-none-of-whose-members-is-named: +21 -1 (zeroing 5, #line 11, closing 5, other 0)
+    REMOVED < #line 327 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+run/ffi-rest-zero-a-union-with-one-member-named: +9 -1 (zeroing 2, #line 5, closing 2, other 0)
+    REMOVED < #line 327 "ffirestzeroaunionwithonemembernamed.c"
+run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts: +5 -1 (zeroing 1, #line 3, closing 1, other 0)
+    REMOVED < #line 213 "fixedbugs092acountinacellpasttherecordaborts.c"
+run/fixedbugs-092-a-record-lent-whole-with-its-count-runs: +41 -1 (zeroing 10, #line 21, closing 10, other 0)
+    REMOVED < #line 431 "fixedbugs092arecordlentwholewithitscountruns.c"
+run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell: +6 -2 (zeroing 1, #line 4, closing 1, other 0)
+    REMOVED < #line 507 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+    REMOVED < #line 524 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record: +9 -1 (zeroing 2, #line 5, closing 2, other 0)
+    REMOVED < #line 230 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote: +15 -3 (zeroing 3, #line 9, closing 3, other 0)
+    REMOVED < #line 287 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+    REMOVED < #line 369 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+    REMOVED < #line 423 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+run/fixedbugs-396-a-buffer-c-fills: +5 -1 (zeroing 1, #line 3, closing 1, other 0)
+    REMOVED < #line 1180 "fixedbugs396abuffercfills.c"
+run/fixedbugs-396-a-local-lent-in-place-is-guarded: +25 -5 (zeroing 5, #line 15, closing 5, other 0)
+    REMOVED < #line 608 "fixedbugs396alocallentinplaceisguarded.c"
+    REMOVED < #line 622 "fixedbugs396alocallentinplaceisguarded.c"
+    REMOVED < #line 638 "fixedbugs396alocallentinplaceisguarded.c"
+run/fixedbugs-396-posix-fills-its-buffers: +8 -4 (zeroing 1, #line 6, closing 1, other 0)
+    REMOVED < #line 542 "fixedbugs396posixfillsitsbuffers.c"
+    REMOVED < #line 602 "fixedbugs396posixfillsitsbuffers.c"
+    REMOVED < #line 800 "fixedbugs396posixfillsitsbuffers.c"
+run/fixedbugs-396-sha256-final-fills-its-digest: +13 -1 (zeroing 3, #line 7, closing 3, other 0)
+    REMOVED < #line 503 "fixedbugs396sha256finalfillsitsdigest.c"
+run/fixedbugs-396-sha256-final-into-one-cell-aborts: +13 -1 (zeroing 3, #line 7, closing 3, other 0)
+    REMOVED < #line 233 "fixedbugs396sha256finalintoonecellaborts.c"
+run/fixedbugs-396-sha256-final-past-sixteen-aborts: +13 -1 (zeroing 3, #line 7, closing 3, other 0)
+    REMOVED < #line 249 "fixedbugs396sha256finalpastsixteenaborts.c"
+run/fixedbugs-413-a-record-c-knows-by-its-address: +95 -7 (zeroing 22, #line 51, closing 22, other 0)
+    REMOVED < #line 233 "fixedbugs413arecordcknowsbyitsaddress.c"
+    REMOVED < #line 245 "fixedbugs413arecordcknowsbyitsaddress.c"
+    REMOVED < #line 291 "fixedbugs413arecordcknowsbyitsaddress.c"
+run/fixedbugs-413-libuv-keeps-every-handles-address: +10 -2 (zeroing 2, #line 6, closing 2, other 0)
+    REMOVED < #line 237 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+    REMOVED < #line 336 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+run/fixedbugs-413-zlib-knows-a-stream-by-its-address: +46 -2 (zeroing 11, #line 24, closing 11, other 0)
+    REMOVED < #line 203 "fixedbugs413zlibknowsastreambyitsaddress.c"
+    REMOVED < #line 419 "fixedbugs413zlibknowsastreambyitsaddress.c"
+run/fixedbugs-438-a-write-cut-short-leaves-the-old-text: +18 -14 (zeroing 1, #line 16, closing 1, other 0)
+    REMOVED < #line 458 "fixedbugs438awritecutshortleavestheoldtext.c"
+    REMOVED < #line 482 "fixedbugs438awritecutshortleavestheoldtext.c"
+    REMOVED < #line 503 "fixedbugs438awritecutshortleavestheoldtext.c"
+run/fixedbugs-a-tag-names-a-handle-and-a-record: +5 -1 (zeroing 1, #line 3, closing 1, other 0)
+    REMOVED < #line 232 "fixedbugsatagnamesahandleandarecord.c"
+TOTAL +423 -59: zeroing 91, #line 241, closing 91, other 0

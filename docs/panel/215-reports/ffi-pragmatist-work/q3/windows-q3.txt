@@ -1,0 +1,15 @@
+== win_literal
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+tar: Ignoring unknown extended header keyword 'LIBARCHIVE.xattr.com.apple.provenance'
+wrote win_literal.exe
+wsa 0
+bind 0
+count 1
+exit 0
+== win_rz
+wrote win_rz.exe
+wsa 0
+bind 0
+count 1
+exit 0

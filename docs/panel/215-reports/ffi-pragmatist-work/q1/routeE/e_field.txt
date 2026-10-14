@@ -1,0 +1,3 @@
+error[ffi_unknown_field]: `cd.h` declares no `pad` in `cd`: clang read the header, and that type has no such field
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `cd` has a member `pad`
+exit 1

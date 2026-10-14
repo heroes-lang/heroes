@@ -1,0 +1,15 @@
+# A1: build a sock_path, hand it to sp_send, print the result.
+
+extern "sockpath.h"
+    record SockPath tag sock_path
+        family: u16
+        path: i8[108]
+    function sp_send(@p: SockPath lent) -> i32
+
+function main()
+    text = "/tmp/heroes.sock"
+    sp @= SockPath(family: 1, rest: zero)
+    for i in range(from: 0, to: text.len())
+        sp.path[i] @ text[i].to_i8().must()
+    n = sp_send(@sp)
+    print(n)

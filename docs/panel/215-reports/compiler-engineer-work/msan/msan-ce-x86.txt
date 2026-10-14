@@ -1,0 +1,73 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77)
+ctlprobe.hero -O0: exit 1, 1 reports at: 2 ctl.h:9; 1 ctlprobe.hero:9;; printed:48
+ctlprobe.hero -O1: exit 1, 1 reports at: 2 ctl.h:9; 1 ctlprobe.hero:9;; printed:48
+ctlprobe.hero -O2: exit 1, 1 reports at: 2 ctl.h:9; 1 ctlprobe.hero:9;; printed:48
+ctlprobe.hero -O3: exit 1, 1 reports at: 2 ctl.h:9; 1 ctlprobe.hero:9;; printed:48
+ctlprobe.hero -O1 -fno-inline: exit 1, 1 reports at: 2 ctl.h:9; 1 ctlprobe.hero:9;; printed:48
+ctlprobe.hero -O2 -fno-inline: exit 1, 1 reports at: 2 ctl.h:9; 1 ctlprobe.hero:9;; printed:48
+ctlprobe.hero -O3 -fno-inline: exit 1, 1 reports at: 2 ctl.h:9; 1 ctlprobe.hero:9;; printed:48
+small.hero -O0: exit 1, 3 reports at: 2 small.h:6; 1 small.hero:29;; printed:64
+small.hero -O1: exit 0, 0 reports at: none; printed:64
+small.hero -O2: exit 0, 0 reports at: none; printed:64
+small.hero -O3: exit 0, 0 reports at: none; printed:64
+small.hero -O1 -fno-inline: exit 0, 0 reports at: none; printed:64
+small.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed:64
+small.hero -O3 -fno-inline: exit 0, 0 reports at: none; printed:64
+small_rz.hero -O0: exit 1, 3 reports at: 2 small.h:6; 1 small_rz.hero:29;; printed:64
+small_rz.hero -O1: exit 0, 0 reports at: none; printed:64
+small_rz.hero -O2: exit 0, 0 reports at: none; printed:64
+small_rz.hero -O3: exit 0, 0 reports at: none; printed:64
+small_rz.hero -O1 -fno-inline: exit 0, 0 reports at: none; printed:64
+small_rz.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed:64
+small_rz.hero -O3 -fno-inline: exit 0, 0 reports at: none; printed:64
+cret.hero -O0: exit 1, 3 reports at: 2 cret.h:11; 1 cret.hero:13;; printed:16
+cret.hero -O1: exit 0, 0 reports at: none; printed:16
+cret.hero -O2: exit 0, 0 reports at: none; printed:16
+cret.hero -O3: exit 0, 0 reports at: none; printed:16
+cret.hero -O1 -fno-inline: exit 0, 0 reports at: none; printed:16
+cret.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed:16
+cret.hero -O3 -fno-inline: exit 0, 0 reports at: none; printed:16
+rzpad.hero -O0: exit 1, 4 reports at: 3 rzpad.h:10; 2 rzpad.h:7; 2 rzpad.hero:24;; printed: 2 2 1 1
+rzpad.hero -O1: exit 0, 0 reports at: none; printed: 2 2 1 1
+rzpad.hero -O2: exit 0, 0 reports at: none; printed: 2 2 1 1
+rzpad.hero -O3: exit 0, 0 reports at: none; printed: 2 2 1 1
+rzpad.hero -O1 -fno-inline: exit 0, 0 reports at: none; printed: 2 2 1 1
+rzpad.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 2 2 1 1
+rzpad.hero -O3 -fno-inline: exit 0, 0 reports at: none; printed: 2 2 1 1
+ffi-rest-zero-a-nested-group-record.hero -O0: exit 0 expected:same, 0 reports at: none; printed:2 3 0
+ffi-rest-zero-a-nested-group-record.hero -O1: exit 0 expected:same, 0 reports at: none; printed:2 3 0
+ffi-rest-zero-a-nested-group-record.hero -O2: exit 0 expected:same, 0 reports at: none; printed:2 3 0
+ffi-rest-zero-a-nested-group-record.hero -O3: exit 0 expected:same, 0 reports at: none; printed:2 3 0
+ffi-rest-zero-a-nested-group-record.hero -O1 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:2 3 0
+ffi-rest-zero-a-nested-group-record.hero -O2 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:2 3 0
+ffi-rest-zero-a-nested-group-record.hero -O3 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:2 3 0
+ffi-rest-zero-a-partial-record.hero -O0: exit 1 expected:same, 2 reports at: none; printed:4 0
+ffi-rest-zero-a-partial-record.hero -O1: exit 0 expected:same, 0 reports at: none; printed:4 0
+ffi-rest-zero-a-partial-record.hero -O2: exit 0 expected:same, 0 reports at: none; printed:4 0
+ffi-rest-zero-a-partial-record.hero -O3: exit 0 expected:same, 0 reports at: none; printed:4 0
+ffi-rest-zero-a-partial-record.hero -O1 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:4 0
+ffi-rest-zero-a-partial-record.hero -O2 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:4 0
+ffi-rest-zero-a-partial-record.hero -O3 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:4 0
+ffi-rest-zero-a-record-of-long-arrays.hero -O0: exit 0 expected:same, 0 reports at: none; printed:0 0
+ffi-rest-zero-a-record-of-long-arrays.hero -O1: exit 0 expected:same, 0 reports at: none; printed:0 0
+ffi-rest-zero-a-record-of-long-arrays.hero -O2: exit 0 expected:same, 0 reports at: none; printed:0 0
+ffi-rest-zero-a-record-of-long-arrays.hero -O3: exit 0 expected:same, 0 reports at: none; printed:0 0
+ffi-rest-zero-a-record-of-long-arrays.hero -O1 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:0 0
+ffi-rest-zero-a-record-of-long-arrays.hero -O2 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:0 0
+ffi-rest-zero-a-record-of-long-arrays.hero -O3 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:0 0
+ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O0: exit 0 expected:same, 0 reports at: none; printed:0 0 0
+ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O1: exit 0 expected:same, 0 reports at: none; printed:0 0 0
+ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O2: exit 0 expected:same, 0 reports at: none; printed:0 0 0
+ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O3: exit 0 expected:same, 0 reports at: none; printed:0 0 0
+ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O1 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:0 0 0
+ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O2 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:0 0 0
+ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O3 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:0 0 0
+ffi-rest-zero-a-union-with-one-member-named.hero -O0: exit 0 expected:same, 0 reports at: none; printed:1.5
+ffi-rest-zero-a-union-with-one-member-named.hero -O1: exit 0 expected:same, 0 reports at: none; printed:1.5
+ffi-rest-zero-a-union-with-one-member-named.hero -O2: exit 0 expected:same, 0 reports at: none; printed:1.5
+ffi-rest-zero-a-union-with-one-member-named.hero -O3: exit 0 expected:same, 0 reports at: none; printed:1.5
+ffi-rest-zero-a-union-with-one-member-named.hero -O1 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:1.5
+ffi-rest-zero-a-union-with-one-member-named.hero -O2 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:1.5
+ffi-rest-zero-a-union-with-one-member-named.hero -O3 -fno-inline: exit 0 expected:same, 0 reports at: none; printed:1.5
+done 0

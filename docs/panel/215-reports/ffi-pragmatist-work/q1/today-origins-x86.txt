@@ -1,0 +1,4 @@
+-O0:  7 allocation of 'tmp'; 7 allocation of 'tmp14'; 7 allocation of 'tmp24';  first frames:  6 in h_main_main ; 12 in hero_lend_sum ; 3 in memcmp ; 3 in send ; 2 in write ;
+-O1:  5 allocation of 't14';  first frames:  2 in h_main_main ; 2 in hero_lend_audit ; 1 in memcmp ; 1 in send ;
+-O2:  5 allocation of 't10.sroa.4'; 5 allocation of 't14';  first frames:  4 in h_main_main ; 4 in hero_lend_audit ; 2 in memcmp ; 2 in send ; 1 in write ;
+-O3:  5 allocation of 't10.sroa.4'; 5 allocation of 't14';  first frames:  4 in h_main_main ; 4 in hero_lend_audit ; 2 in memcmp ; 2 in send ; 1 in write ;

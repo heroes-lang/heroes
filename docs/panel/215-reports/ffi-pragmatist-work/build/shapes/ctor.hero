@@ -1,0 +1,15 @@
+# A counter returned by a constructor helper: the helper's result copies it out.
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_value(@c: Counter) -> i64
+
+function made() -> Counter
+    c: Counter @= Counter(n: 0, rest: zero)
+    _ = counter_init(@c)
+    return c
+
+function main()
+    c: Counter @= made()
+    print(counter_value(@c))

@@ -1,0 +1,8 @@
+extern "shapes.h"
+    record VU
+        fd: i32
+        handle: ptr
+
+function main()
+    u = VU(fd: 1, handle: nullptr)
+    print(u.fd)

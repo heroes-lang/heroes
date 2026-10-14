@@ -1,0 +1,11 @@
+extern "shapes.h"
+    record S5 tag s5
+        kind: i32
+        lo: i16
+        hi: i16
+        i: i32
+    function s5_i(@t: S5 lent) -> i32
+
+function main()
+    b @= S5(kind: 1, lo: 2, hi: 3, i: 4)
+    print(s5_i(@b))

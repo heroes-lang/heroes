@@ -1,0 +1,90 @@
+  emission: 1258 passed, 7 failed
+SKIP emission/run/fixedbugs-437-a-program-whose-runner-is-killed-dies-with-it
+  this machine lacks what the case binds, so it is judged where that is: `sys/prctl.h`, which clang does not find on the include path the compiler searches
+SKIP emission/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux
+  this machine lacks what the case binds, so it is judged where that is: `sys/prctl.h`, which clang does not find on the include path the compiler searches
+FAIL emission/run/ffi-counted-by-a-stated-extent
+  tests/golden/run/ffi-counted-by-a-stated-extent.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-counted-by-a-stated-extent.c
+  line 465:
+    blessed:     (void)fill_pair(&h1_pair);
+    now:         { static const size_t hero_pad_spans[] = {offsetof(struct pair, a), sizeof(((struct pair *)0)->a), offsetof(struct pair, b), sizeof(((struct pair *)0)->b)}; hero_pad_zero(&h1_pair, sizeof(struct pair), hero_pad_spans, 2); }
+  line 466:
+    blessed:     t74 = h1_pair;
+    now:     #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+  line 467:
+    blessed: #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    now:         (void)fill_pair(&h1_pair);
+  (603 lines blessed, 605 now)
+FAIL emission/run/ffi-lent-on-an-out-parameter
+  tests/golden/run/ffi-lent-on-an-out-parameter.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-lent-on-an-out-parameter.c
+  line 209:
+    blessed:     (void)widen(&h1_s);
+    now:         { static const size_t hero_pad_spans[] = {offsetof(struct span, lo), sizeof(((struct span *)0)->lo), offsetof(struct span, hi), sizeof(((struct span *)0)->hi)}; hero_pad_zero(&h1_s, sizeof(struct span), hero_pad_spans, 2); }
+  line 210:
+    blessed:     t9 = h1_s;
+    now:     #line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+  line 211:
+    blessed: #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+    now:         (void)widen(&h1_s);
+  (321 lines blessed, 323 now)
+FAIL emission/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts
+  tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.c
+  line 194:
+    blessed:     t6 = fill_len(&h0_o, (void *)&h1_n);
+    now:         { static const size_t hero_pad_spans[] = {offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), hero_pad_spans, 1); }
+  line 196:
+    blessed:     hero_print_int(t6);
+    now:         t6 = fill_len(&h0_o, (void *)&h1_n);
+  line 198:
+    blessed:     hero_print_end();
+    now:         hero_print_int(t6);
+  (298 lines blessed, 300 now)
+FAIL emission/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs
+  tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-092-a-record-lent-whole-with-its-count-runs.c
+  line 268:
+    blessed:     t15 = fill(&h0_o, t14);
+    now:         { static const size_t hero_pad_spans[] = {offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), hero_pad_spans, 1); }
+  line 270:
+    blessed:     hero_print_int(t15);
+    now:         t15 = fill(&h0_o, t14);
+  line 272:
+    blessed:     hero_print_end();
+    now:         hero_print_int(t15);
+  (562 lines blessed, 582 now)
+FAIL emission/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell
+  tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-092-getsockopt-reads-its-length-through-a-cell.c
+  line 489:
+    blessed:     t48 = getsockopt(t27, t37, t47, &h3_l, (void *)&h4_n);
+    now:         { static const size_t hero_pad_spans[] = {offsetof(struct linger, l_onoff), sizeof(((struct linger *)0)->l_onoff), offsetof(struct linger, l_linger), sizeof(((struct linger *)0)->l_linger)}; hero_pad_zero(&h3_l, sizeof(struct linger), hero_pad_spans, 2); }
+  line 491:
+    blessed:     hero_print_int(t48);
+    now:         t48 = getsockopt(t27, t37, t47, &h3_l, (void *)&h4_n);
+  line 493:
+    blessed:     hero_print_end();
+    now:         hero_print_int(t48);
+  (645 lines blessed, 647 now)
+FAIL emission/run/fixedbugs-396-a-local-lent-in-place-is-guarded
+  tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-396-a-local-lent-in-place-is-guarded.c
+  line 604:
+    blessed:     (void)keeper_init(&(*ph0_k));
+    now:         { static const size_t hero_pad_spans[] = {offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), offsetof(struct keeper, count), sizeof(((struct keeper *)0)->count)}; hero_pad_zero(&(*ph0_k), sizeof(struct keeper), hero_pad_spans, 2); }
+  line 606:
+    blessed:     return;
+    now:         (void)keeper_init(&(*ph0_k));
+  line 607:
+    blessed: #line 608 "fixedbugs396alocallentinplaceisguarded.c"
+    now:     #line 62 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+  (1077 lines blessed, 1087 now)
+FAIL emission/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text
+  tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-438-a-write-cut-short-leaves-the-old-text.c
+  line 340:
+    blessed:     t5 = getrlimit(t4, &h1_limit);
+    now:         { static const size_t hero_pad_spans[] = {offsetof(struct rlimit, rlim_cur), sizeof(((struct rlimit *)0)->rlim_cur), offsetof(struct rlimit, rlim_max), sizeof(((struct rlimit *)0)->rlim_max)}; hero_pad_zero(&h1_limit, sizeof(struct rlimit), hero_pad_spans, 2); }
+  line 342:
+    blessed:     t6 = INT64_C(0);
+    now:         t5 = getrlimit(t4, &h1_limit);
+  line 344:
+    blessed:     t7 = t5 != t6;
+    now:         t6 = INT64_C(0);
+  (1548 lines blessed, 1550 now)
+harness: 1258 passed, 7 failed

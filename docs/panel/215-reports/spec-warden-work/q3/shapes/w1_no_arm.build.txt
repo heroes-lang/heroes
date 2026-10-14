@@ -1,0 +1,6 @@
+error[missing_fields]: this construction of `S1` leaves out `fd` and `handle`, which share no byte with the fields it names, so C would build it with them zero: `shapes.h` puts them in no union with any of those
+  at w1_no_arm.hero:9:10
+    |
+  9 |     b @= S1(kind: 2)
+    |          ^^^^^^^^^^^
+  note: a group's `record` is built naming every field outside the header's unions and exactly one member of each union, an anonymous struct's fields counting as one (§ 13)

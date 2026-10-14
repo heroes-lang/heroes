@@ -1,0 +1,11 @@
+# ffi-pragmatist, panel 215: a record lent to zlib's crc32, whose buffer is `const Bytef *`
+extern "cd.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+extern "zlib.h" link "z"
+    function crc32(crc: u64, @buf: Cd counted_by len lent, len: u32) -> u64
+
+function main()
+    a: Cd @= Cd(c: 1, d: 2.0)
+    print(crc32(crc: 0, @a, len: 16))

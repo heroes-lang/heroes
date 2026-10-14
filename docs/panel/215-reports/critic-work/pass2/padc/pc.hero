@@ -1,0 +1,51 @@
+# Critic, panel 215 pass 2: route G's neighbours. Each record crosses a Heroes
+# call by value and is lent from a place no zeroed lend region holds (a field
+# of a Heroes record, an array), as `fieldlend.hero` does for `struct cd`.
+extern "pc.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    record Tp tag tp
+        d: f64
+        c: i8
+    record Ocd tag ocd
+        inner: Cd
+    function w_cd(@p: Cd) -> i64
+    function w_tp(@p: Tp) -> i64
+    function w_ocd(@p: Ocd) -> i64
+    function w_cds(@p: [Cd] counted_by 2 lent) -> i64
+
+record HTp
+    h: Tp
+    k: i64
+
+record HOcd
+    h: Ocd
+    k: i64
+
+record HCd
+    h: Cd
+    k: i64
+
+function tp_through(x: Tp) -> Tp
+    return x
+
+function ocd_through(x: Ocd) -> Ocd
+    return x
+
+function cd_through(x: Cd) -> Cd
+    return x
+
+function main()
+    t = Tp(d: 2.0, c: 1, rest: zero)
+    ht: HTp @= HTp(h: tp_through(x: t), k: 3)
+    n1 = w_tp(@ht.h)
+    o = Ocd(inner: Cd(c: 1, d: 2.0, rest: zero))
+    ho: HOcd @= HOcd(h: ocd_through(x: o), k: 4)
+    n2 = w_ocd(@ho.h)
+    a = Cd(c: 1, d: 2.0, rest: zero)
+    hc: HCd @= HCd(h: cd_through(x: a), k: 5)
+    n3 = w_cd(@hc.h)
+    xs: [Cd] @= [cd_through(x: a), cd_through(x: a)]
+    n4 = w_cds(@xs)
+    print(n1, " ", n2, " ", n3, " ", n4)

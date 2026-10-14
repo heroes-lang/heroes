@@ -1,0 +1,13 @@
+# A2: build a tagged with kind 2 and a zero union, print tg_kind.
+
+extern "union.h"
+    record Tagged tag tagged
+        kind: i32
+        fd: i32
+        handle: ptr
+    function tg_kind(@t: Tagged lent) -> i32
+
+function main()
+    t @= Tagged(kind: 2, rest: zero)
+    k = tg_kind(@t)
+    print(k)

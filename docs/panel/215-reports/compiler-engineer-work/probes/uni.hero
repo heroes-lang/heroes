@@ -1,0 +1,13 @@
+# Compiler-engineer, panel 215: a padding zero computed from the declared
+# fields alone would write over the half of `h` that `fd` does not cover.
+extern "uni.h"
+    record S tag s
+        kind: i32
+        fd: i32
+    function set_h(@p: S)
+    function get_h(@p: S) -> i64
+
+function main()
+    v: S @= S(kind: 1, rest: zero)
+    set_h(@v)
+    print(get_h(@v))

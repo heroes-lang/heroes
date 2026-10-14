@@ -1,0 +1,15 @@
+# Compiler-engineer, panel 215 build: an array of group records handed to C
+# WITHOUT `@`, the shape beside the critic's array lend.
+extern "pc.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    function w_cds(p: [Cd] counted_by 2 lent) -> i64
+
+function cd_through(x: Cd) -> Cd
+    return x
+
+function main()
+    a = Cd(c: 1, d: 2.0, rest: zero)
+    xs: [Cd] = [cd_through(x: a), cd_through(x: a)]
+    print(w_cds(p: xs))

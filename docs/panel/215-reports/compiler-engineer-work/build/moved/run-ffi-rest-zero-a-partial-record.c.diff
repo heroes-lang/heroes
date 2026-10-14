@@ -1,0 +1,9 @@
+199a200,203
+> #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(SP, kind), sizeof(((SP *)0)->kind), __builtin_offsetof(SP, u.c), sizeof(((SP *)0)->u.c), __builtin_offsetof(SP, u.d), sizeof(((SP *)0)->u.d)}; hero_pad_zero(&h0_s, sizeof(SP), 1, hero_pad_s0, 3);
+> #line 18 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
+>     }
+214c218
+< #line 215 "ffirestzeroapartialrecord.c"
+---
+> #line 219 "ffirestzeroapartialrecord.c"

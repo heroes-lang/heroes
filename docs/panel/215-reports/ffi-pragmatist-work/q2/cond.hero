@@ -1,0 +1,13 @@
+# ffi-pragmatist, panel 215, Q2: a pthread_cond_t copied, the original destroyed, the copy signalled
+extern "nc2.h"
+    record CondBox tag condbox partial
+        tag: i32
+    function cond_init(@b: CondBox) -> i32
+    function cond_signal(@b: CondBox) -> i32
+    function cond_destroy(@b: CondBox) -> i32
+
+function main()
+    c: CondBox @= CondBox(tag: 1, rest: zero)
+    print("init ", cond_init(@c))
+    c2: CondBox @= c
+    print("original: destroy ", cond_destroy(@c), "; copy: signal ", cond_signal(@c2), " destroy ", cond_destroy(@c2))
