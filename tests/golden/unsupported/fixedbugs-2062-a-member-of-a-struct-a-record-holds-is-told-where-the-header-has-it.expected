@@ -1,0 +1,7 @@
+error[ffi_unknown_field]: `fixedbugs-2062-records.h` declares `x` in `struct nested` only inside `pos`, a struct `struct nested` holds, as `pos.x`: clang read the header, and a field of a group's `record` is a member of the type itself
+  at tests/golden/unsupported/fixedbugs-2062-a-member-of-a-struct-a-record-holds-is-told-where-the-header-has-it.hero:12:9
+     |
+  12 |         x: i32  #~ ffi_unknown_field
+     |         ^
+  note: a group's `record` names the members the header gives its type itself (§4.19, § 13): bind `Nested` `partial`, naming only those, `kind`, which builds today
+  note: reach `pos.x` through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, `static inline int nested_x(const struct nested *t) { return t->pos.x; }`, which this group then names in `fixedbugs-2062-records.h`'s place

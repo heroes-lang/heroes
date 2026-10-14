@@ -79,6 +79,8 @@ record Member
     # promotes its members (C11 6.7.2.1p13); empty for an anonymous member.
     # `__builtin_offsetof(T, path)` and `sizeof(((T *)0)->path)` take it.
     path: str
+    # The type as the dump prints it, its name taken off (defect 2062).
+    type_text: str
 
 # A member a program can name on T: its own, or one an anonymous member
 # promotes (C11 6.7.2.1p13). `group` is the index of the anonymous member it
@@ -195,8 +197,7 @@ function members(rows: [str], from: i64) -> [Member]?
     bits: [bool] @= []
     starts_at: [i64] @= []
     flex: [bool] @= []
-    unions: [bool] @= []
-    places: [str] @= []
+    typed: [str] @= []
     closed: bool @= false
 
     while at < rows.len() && !closed
@@ -227,22 +228,16 @@ function members(rows: [str], from: i64) -> [Member]?
 
         if space < 0
             named @ named.push(text)
+            typed @ typed.push("")
             flex @ flex.push(false)
-            unions @ unions.push(false)
-            places @ places.push("")
         else
             named @ named.push(text.slice(from: space + 1, to: text.len()))
+            typed @ typed.push(text.slice(from: 0, to: space))
             flexible: bool @= false
 
             if space >= 2
                 flexible @ text[space - 2] == '[' && text[space - 1] == ']'
             flex @ flex.push(flexible)
-            unions @ unions.push(space == text.len() - 1 && layout_rows.starts(text: text, prefix: "union "))
-
-            if space == text.len() - 1
-                places @ places.push(place_of(text.slice(from: 0, to: space)))
-            else
-                places @ places.push("")
 
     if !closed
         return fail(code: "none", msg: "the block never closes")
@@ -252,8 +247,15 @@ function members(rows: [str], from: i64) -> [Member]?
 
     while k < depths.len()
         deeper = k + 1 < depths.len() && depths[k + 1] > depths[k]
+
+        # Only an anonymous member's type is read: its first word, its place.
+        anonymous = named[k].len() == 0
+        place: str @= ""
+
+        if anonymous
+            place @ place_of(typed[k])
         out @ out.push(
-            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: unions[k] && deeper, place: places[k], path: paths[k])
+            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: anonymous && deeper && layout_rows.starts(text: typed[k], prefix: "union "), place: place, path: paths[k], type_text: typed[k])
         )
         k @ k + 1
 
