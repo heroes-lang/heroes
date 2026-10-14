@@ -262,7 +262,7 @@ function spawned(scratch: str, program: str, words: [str], in_path: str, write_l
     # cases and 19 of the annotation groups, CI run 35651518558, each printing
     # `the operating system's own reason is 32`. POSIX refuses NOTHING, and the
     # orphan's bytes land in the file a LATER case is judged on: measured on
-    # Darwin at 497a048f, a 17-byte capture arriving as 150 bytes, 58 of them
+    # Darwin at 3f642d0a, a 17-byte capture arriving as 150 bytes, 58 of them
     # NUL and three lines of them written by another case's process.
     #
     # A serial makes the second impossible rather than loud, and the first
@@ -2134,7 +2134,7 @@ test "fixedbugs: on Windows every program `heroes build` links reads the UTF-8 c
         words: ["clang", "-shared", "-fms-runtime-lib=dll", "-Wl,-nodefaultlib:libcmt", "-Wl,-nodefaultlib:libcmtd", "-Wl,-nodefaultlib:msvcrtd", w.root + "/lib238.c", "-o", w.root + "/lib238.dll"]
     ).must()
 
-    # A fixture that fails says why: the CI's run of `61e085ae` exited 1120
+    # A fixture that fails says why: the CI's run of `4d8184a2` exited 1120
     # here and kept no word of it. The assert prints what clang said.
     if library.code != 0
         assert library.out + library.err == ""

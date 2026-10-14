@@ -305,11 +305,11 @@ test "another project's issue goes through the redirect, and ours and an anchor 
 
 test "a backticked word git names a commit is written bare, and any other stays in its span"
     commits: {str: bool} @= {}
-    commits["24cb4fd4"] @ true
-    assert protect(text: "Repaired at `24cb4fd4`.", commits: commits) == "Repaired at 24cb4fd4."
+    commits["7d2f03be"] @ true
+    assert protect(text: "Repaired at `7d2f03be`.", commits: commits) == "Repaired at 7d2f03be."
     assert protect(text: "the `deadbeef` word", commits: commits) == "the `deadbeef` word"
-    assert protect(text: "``24cb4fd4``", commits: commits) == "``24cb4fd4``"
-    assert hash_words("at `24cb4fd4` and `2026` and `DEADBEEF1` and `0123456789abcdef`") == ["24cb4fd4", "0123456789abcdef"]
+    assert protect(text: "``7d2f03be``", commits: commits) == "``7d2f03be``"
+    assert hash_words("at `7d2f03be` and `2026` and `DEADBEEF1` and `0123456789abcdef`") == ["7d2f03be", "0123456789abcdef"]
 
 test "a rendered body is read for what would still link, mention or backlink"
     assert live("see `#1`, `@x` and https://redirect.github.com/a/b/issues/1").len() == 0

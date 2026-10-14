@@ -198,7 +198,7 @@ function drop_told(@c: cursor.Cursor, text: str, from: i64)
 # went with the debris, told only once the first mistake was repaired. A
 # closer of another kind inside an opener is that list's junk, its own
 # report's or none, so `[0X20, )]` keeps its `]`. **Only a closer the drop
-# takes** (the round's gate of 2026-10-02, redoing `ce5caf89`): past a
+# takes** (the round's gate of 2026-10-02, redoing `7f527a20`): past a
 # statement that ended with its own block, `k = match n` over a failed arm,
 # the drop takes nothing and the line under the cursor is the next
 # statement's, which tells its own `)`; read to its line end, the scan told

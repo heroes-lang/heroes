@@ -62,7 +62,7 @@ decided item 10 by accident would take a milestone's work without its row.
 open defect, so **M-deferral-ledger closes untagged** while 029 stands, on
 M-anchored-spec's precedent (chain rows 45 to 47), and its tag lands on the first
 commit where every list it leaves open is clean — the way `m-cstr-lifetime`'s did on
-2026-09-09. It closed that way at `481ec6ae`, 2026-09-13.
+2026-09-09. It closed that way at `3652ae9d`, 2026-09-13.
 
 **All three defects were re-run at that closing commit rather than inherited**, so
 this milestone opens on a measurement and not a memory (2026-09-13, Darwin arm64,

@@ -1561,7 +1561,7 @@ test "every place a comment can sit inside a parameter list survives, and a list
 # and dropped the blank line under it, so the remark was the next member's
 # documentation in the re-parse and the tree guard refused at exit 2 a
 # program `check` accepts. The shapes beside it, measured 2026-09-25 on the
-# seed of f1e2132f: before a middle member and before the last, exit 2; two
+# seed of f8bebbfd: before a middle member and before the last, exit 2; two
 # remarks with a blank between and under, exit 2; before the FIRST member
 # the blank was deleted at exit 0 with the same tree, because no comment
 # between the head and its first member is ever a doc (`parse/group.hero`

@@ -60,7 +60,7 @@ static const unsigned char *hero_map_val_at_const(const HeroMapHeader *m, int64_
  * descriptor, which a live map always has, is set to none before the block
  * goes (defect 314, below), and a read asked nothing of it, so a map made for
  * four entries, released and then asked its length, answered from the freed
- * block at exit 0, measured on this Mac at `56def9b4`. One load and one test a
+ * block at exit 0, measured on this Mac at `b1784b65`. One load and one test a
  * read, inlined, `hero_array_require`'s. */
 _Noreturn static void hero_map_read_released(void) {
     hero_panic("a map read after its last reference was released — a compiler bug, please report it");

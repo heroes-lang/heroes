@@ -89,5 +89,5 @@ backends is differential testing in the full sense, and that is the one thing th
 milestone deliberately leaves to a later one.
 
 **Corrected 2026-10-14.** `docs/work/DONE.md`, which the paragraphs above cite,
-was deleted on 2026-10-05; its entries read at `d8a9913e`, the last commit
+was deleted on 2026-10-05; its entries read at `c911dd61`, the last commit
 that held the maps.

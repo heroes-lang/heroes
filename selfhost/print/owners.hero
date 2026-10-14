@@ -361,7 +361,7 @@ test "a comment's owner says bracket or trails"
     assert lines.owner[0] == TRAILS
     assert lines.owner[1] == BRACKETED
 
-# The second skeptic seat's `a: 1  # c` over `,  # d` (e0e08d18): a comma
+# The second skeptic seat's `a: 1  # c` over `,  # d` (6fe1be14): a comma
 # after a comment keeps its line, and one right after its value does not.
 test "a comma after a comment is alone"
     text = "function f(a: i64) -> [i64]\n    x = (a + 1) * 2\n    return [ok\n        (1), g(a: 1  # c\n        ,  # d\n        b: 2)]\n"

@@ -66,7 +66,7 @@ themes, and the rules behind it live in `site/README.md` § Style guide and
 
 6. **The banner carries no sentence either: the promise is markdown, and it
    is the site's line** (author instruction 2026-09-03). The site's hero
-   promise changed in `0367070` and the banner went on saying the old one, so a
+   promise changed in `f28e86b` and the banner went on saying the old one, so a
    sentence in a drawing ages exactly the way rule 1 says a number does. The
    line under the banner in `README.md` is now the same words, with the same
    `<em>`, as the `promise` paragraph in `site/src/html/index.html`, and when

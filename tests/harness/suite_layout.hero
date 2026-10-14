@@ -456,11 +456,11 @@ constant CEILING: i64
 #
 # **One moved down on 2026-10-07, for defect 259.** `check/table.hero` 389 ->
 # **370**, what it measures in this suite's unit once lane b14-check split
-# defect 259's memo out into `check/type_fit.hero` (`b2be2c9c`): a ceiling
+# defect 259's memo out into `check/type_fit.hero` (`3909ac43`): a ceiling
 # left above what its file measures is room for growth nobody sees.
 #
 # **And down again the same night, for defect 502.** `check/table.hero` 370
-# -> **353**, what it measures at lane b14-p409's tip (`0c8df40c`) once
+# -> **353**, what it measures at lane b14-p409's tip (`0b5ceba9`) once
 # defect 409 moved the type table's two runs out into `check/type_runs.hero`
 # and its pushes into `append_node`. Measured in this suite's unit on that
 # tree merged with lane b15-harness's; the trunk before that merge measures
@@ -473,7 +473,7 @@ constant CEILING: i64
 # `shut`, a new member of the knot the module doc maps (`broken` the entry,
 # `spread`, `opened`, `shut`, `one_line`, `part` and `element` calling
 # `spread` again), which Heroes refuses to cut into two modules (lane
-# b14-text, `f38c25b2`).
+# b14-text, `a5fdcd0f`).
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1870"
@@ -500,7 +500,7 @@ constant DECIDED: [str]
 # THE PARSER'S MODULES HAVE A BUDGET, and not only each file a ceiling
 # (panel 187's R9, the compiler engineer's route for what a finished recovery
 # is, design.md §1.1: simplicity sets the ceiling). Between defect 130's
-# filing (`0338b598`) and the sitting (`07ccb72a`) the front end the parser
+# filing (`6af3b2d5`) and the sitting (`1becc52c`) the front end the parser
 # reaches went from 8,407 lines to 19,201 and `parse/` from 2,403 to 8,696,
 # every file under its ceiling: a per-file ceiling is met by adding files.
 # A repair here pays for its lines by deleting or moving others; a
@@ -521,7 +521,7 @@ constant DECIDED: [str]
 # **Raised 2026-10-07, 8696 -> 8699, for defect 456 (`blocking`).** `heroes
 # check` exited 134 on a parenthesised type broken across lines at a body's
 # end: `parse/brace_habit.hero`'s `a_closer_too_many` and `stray_run` read one
-# token past a body cursor's last (lane b14-text, `428a5cfd`). The bound is
+# token past a body cursor's last (lane b14-text, `51c00077`). The bound is
 # five lines in the file that reads past the end, and the row had two lines
 # of room at lane b14-parse's close (8,694): a crash in the parser is repaired
 # where the read is, never moved elsewhere to fit a count.
@@ -689,7 +689,7 @@ function run_all(scratch: str, only: str) -> report.Report?
     # 2026-10-07): the appends they make, the texts they grow against the
     # allowances that name THEM, and the budget of each directory holding one
     # of them, summed over every module of that directory. Until that day a
-    # narrowed walk asked the ceiling alone, so lane win214's `b8ad7f9e`, a
+    # narrowed walk asked the ceiling alone, so lane win214's `4ec99f3c`, a
     # text grown by `+` in a loop, was first seen by the whole walk at the
     # gate, four sites. An allowance for a module the walk did not take is not
     # asked, since it would read as *no longer grown there*, a false red; nor
@@ -1047,7 +1047,7 @@ test "the ceiling is per file, and a decided file keeps its own"
     #
     # **AND THEY DID NOT, FOR SIX COMMITS.** This assert read `resolve_state`
     # at 308 while the table said 315, so `heroes test tests/harness/main.hero`
-    # was 92/1 from `9599d97` to `d08062f` — and that commit's own diff says
+    # was 92/1 from `ba8db62` to `6082296` — and that commit's own diff says
     # what it was doing, in the comment above DECIDED: *"`resolve_state.hero`
     # 308 -> 315 ... `parse_use.hero` is a NEW entry at 310"*. The knowledge was
     # written down two screens up. What was missing is a caller: this suite is
@@ -1101,7 +1101,7 @@ test "the ceiling is per file, and a decided file keeps its own"
     # milestone split the produce pipeline out to `cli_produce.hero`, and 207
     # code lines needs no entry — that took it to 15. A row leaving is the
     # ratchet working. A row arriving is a file nobody could cut, and that is
-    # the author's to allow: `parse_use.hero` arrived at 310 in `9599d97`, when
+    # the author's to allow: `parse_use.hero` arrived at 310 in `ba8db62`, when
     # `use` learned to be a path.
     #
     # This count exists so neither direction happens quietly — it went red the
@@ -1196,7 +1196,7 @@ test "an append to the lexer's state through the field is found, and one in a co
 
 # DEFECT 502, held as a test (2026-10-07): each of the twelve pushes defect
 # 409 made grow in place, written back through its field as the trunk held it
-# at `56def9b4` (`check/table.hero`, `decls.hero`, `walk.hero`,
+# at `b1784b65` (`check/table.hero`, `decls.hero`, `walk.hero`,
 # `moved_walk.hero`, `emit/writer.hero`, `module/reading.hero`), is found,
 # and the spelling lane b14-p409 wrote in its place is not. Until that day
 # every one read green here.

@@ -10,7 +10,7 @@ use ir
 use ir/containers
 
 # The reading this file replaced, word for word as `ir/phases.hero` held it at
-# b7edbc35: the oracle the generated blocks below hold `releases` to.
+# 994c8889: the oracle the generated blocks below hold `releases` to.
 # The index just past this slot's last whole-slot store, 0 when it was
 # never written: the sweep's load must come after it.
 function last_write(blk: containers.Block, slot_at: i64) -> i64

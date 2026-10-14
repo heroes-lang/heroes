@@ -11,7 +11,7 @@
 # the rest of the union and the padding kept what the prologue left. When
 # the prologue zeroed every temporary that was zeros; after panel 182 it
 # is indeterminate memory inside a value the IR calls defined. 132 such
-# sites in the seed and 83 in the blessed corpus at `64003edd`, measured
+# sites in the seed and 83 in the blessed corpus at `ee547b62`, measured
 # by this suite before the repair, and seen by nothing else: the verifier
 # sees one definition, clang does not warn about a partly written
 # aggregate, ASan does not track uninitialised bytes, and the panel's own

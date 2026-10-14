@@ -679,7 +679,7 @@ function checkRepositoryIsOpen(html: string, pagePath: string): string[] {
 
 /**
  * The second promise that expired the same way. Code contributions opened to
- * authorized contributors, through an issue first, on 2026-10-11 (b6accb55,
+ * authorized contributors, through an issue first, on 2026-10-11 (cbead4c5,
  * `CONTRIBUTING.md`), and that commit's own decision issue said no page of the
  * site stated the policy. Six passages in two editions did, and `llms.txt`
  * a seventh: *"Code is not accepted here yet, so there is no patch to send"*,

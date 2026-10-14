@@ -78,7 +78,7 @@ _Noreturn static void hero_str_mark_lost(void) {
  * **AND THE MARK, SO A STRING READ AFTER ITS LAST RELEASE STOPS AT THE READ**
  * (defect 462, 2026-10-07). Only a new reference and a release asked the mark,
  * so a read of a block already given back went on with whatever the freed
- * bytes held. Measured on this Mac at `56def9b4`: panel 190's control, this
+ * bytes held. Measured on this Mac at `b1784b65`: panel 190's control, this
  * tree's C of a function with two returns with one release written twice,
  * printed five NUL bytes where `p-one` had been, at `-O0` and `-O2`; a
  * 65,536-byte string C released to its last reference answered its length and
@@ -163,7 +163,7 @@ static HeroStrHeader *hero_str_hdr_checked(HeroStr s) {
  * Windows box's did not, and panel 190's control, one string released twice,
  * exited 0 there with the right output; this Mac's allocator does not either
  * for a block of 20,000 bytes or more, and the same release exited 0 here
- * (measured at `dad2da47`, 5,000 bytes named, 20,000 to 4,000,000 not). A
+ * (measured at `461b1de8`, 5,000 bytes named, 20,000 to 4,000,000 not). A
  * count found at 0 was then taken to -1 in freed memory. So the runtime
  * writes the mark over itself before the block goes, and a count of 0 or
  * below is refused by name; what the allocator writes over it afterwards is

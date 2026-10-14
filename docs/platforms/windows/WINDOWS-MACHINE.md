@@ -448,7 +448,7 @@ in the path, so a clang upgrade must update this line.
 ## The one line that builds the compiler here
 
 From `CLAUDE.md` § Commands, plus the `/STACK:` reserve that M-argv-execution
-step 13 measured as necessary (`8c10d5a` — Windows gives the main thread 1 MB
+step 13 measured as necessary (`f4d812b` — Windows gives the main thread 1 MB
 where POSIX gives 8, and the recursive-descent frontend spends it):
 
 ```
@@ -488,7 +488,7 @@ beside the binary, neither measured on this box yet — where the Mac and Linux
 say `… in main.down`.
 
 **Seed build time on the second box: 7.168 s**, measured 2026-09-21
-(`real 0m7.168s`, first build after a clone, at commit `43115d67`), against
+(`real 0m7.168s`, first build after a clone, at commit `177eb835`), against
 4.50 s on the Mac the same day. The compiler printed `heroes 0.2.0` and its own
 tests read **675 tests, all passed** in `2m46.981s`. Two `getenv` deprecation
 warnings come out of the UCRT header on the way — `_CRT_INSECURE_DEPRECATE`,

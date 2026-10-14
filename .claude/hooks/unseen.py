@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A commit's message read for the characters its reader cannot see.
 
-Why this exists. The body of `fe3f788e` holds one raw U+200B: the tool that
+Why this exists. The body of `c62e63b8` holds one raw U+200B: the tool that
 wrote its message file decoded a written `\\u200b`, defect 356's hazard, and the
 `unseen` suite that defect added reads files, never a commit's message, which
 is outward-facing on a public repository and append-only (defect 378, counted

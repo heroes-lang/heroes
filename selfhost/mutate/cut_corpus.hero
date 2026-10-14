@@ -16,7 +16,7 @@
 # `.claude/rules/module-shape.md`). A check reads its program's `use`
 # closure, and the cost of each of its mutants grows with it, so the cut
 # leaves out a program whose closure holds more than `CLOSURE_CAP` bytes.
-# Measured on the tree the frozen plan was cut from (c85bccb8), the nine
+# Measured on the tree the frozen plan was cut from (9568acb8), the nine
 # programs the Python left out are the nine whose closure holds 728,205
 # bytes or more (`selfhost/grammar_expr.hero` the least), and the largest
 # it kept holds 299,470 (`tests/harness/suite_records.hero`): the cap

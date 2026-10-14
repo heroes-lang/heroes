@@ -9,7 +9,7 @@
 # `'a'`), and an operator takes a set of families (spec § 7).
 #
 # **The sets below are the checker's answers, not a reading of the spec.**
-# Measured 2026-09-28 on the compiler at `a6eab736`: every binary operator
+# Measured 2026-09-28 on the compiler at `44f631dd`: every binary operator
 # against every literal kind beside a value of `i64`, `u8`, `f64`, `str`,
 # `bool` and `ptr`, on either side; the three prefix operators; a pattern's
 # sign; and every literal against every literal. They agree with spec § 7

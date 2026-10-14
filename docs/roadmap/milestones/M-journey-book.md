@@ -15,5 +15,5 @@ the packaging, precision in the substrate** — Bowie belongs in this book, neve
 in an error message.
 
 **Corrected 2026-10-14.** `DESIGN-LOG.md` and `docs/records/book/beats.md`,
-cited above, were deleted on 2026-10-05; they read at `d8a9913e`. The beats are
+cited above, were deleted on 2026-10-05; they read at `c911dd61`. The beats are
 the 132 files of `docs/records/book/beats/`.

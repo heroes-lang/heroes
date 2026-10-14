@@ -175,7 +175,7 @@ three literals of its tests, the two paths asserted absent; the table's
 
 **`emit` and `unseen` were missing until 2026-10-06**, both found at batch 12's
 close. `tests/golden/emit/` holds emissions kept by hand that an emitter change
-moves: the batch's trial gate at `bead6e45` read `emit` 7 and 1 on
+moves: the batch's trial gate at `4dc08bb7` read `emit` 7 and 1 on
 `ffi-lent-emits-nothing`, moved by defect 361's guard includes, which its lane
 had not run because the `selfhost/emit/**` row named `emission` alone. And
 `tests/harness/suite_unseen.hero` (defect 356, panel 192's R12) reads every
@@ -315,7 +315,7 @@ byte-identical**, which `cmp` of `heroes build selfhost/main.hero --emit-c` with
 the change and without it settles, the rest of the tree held at one commit: a
 comment that moves no line gives it; a comment that adds or removes a line moves
 the `#line` directives and does not. Measured the day it was given: the one
-change under `selfhost/print/` from `6461f3e6` to `a9be36dc`, a comment line of
+change under `selfhost/print/` from `2b1f5cc7` to `461be3b9`, a comment line of
 `fmt.hero` whose path became its issue's URL, emitted 52,126,543 bytes either
 way and `cmp` printed nothing. The probe M-inferred-cell's changes to
 `selfhost/print/` owed (three of its six runs unfinished on 2026-10-11, none
@@ -495,8 +495,8 @@ had happened before this rule without a batch going back.
 make batches holding at least about fifteen defects together, because
 otherwise it gets too long.* Given on the coordinator's plan for panel 188's
 landing, a lane of five and a lane of two; measured that day by the commits'
-dates, seven round gates in 27 hours (`e2d59fdb`, 2026-10-02 13:36, to
-`da0ff6c9`, 2026-10-03 16:17), the seventh over one defect. Minutes later,
+dates, seven round gates in 27 hours (`dfb86d29`, 2026-10-02 13:36, to
+`041aba4b`, 2026-10-03 16:17), the seventh over one defect. Minutes later,
 meant as: *make batches of at most twenty defects*; and then, meant as: *you
 choose the range, but dare a little: ten to twenty, sixteen to thirty-two.*
 The coordinator chose **sixteen to thirty-two**: the open list of that
@@ -565,7 +565,7 @@ while the CI's x86-64 leg timed out on it, clang 22.1.8 against 18.1.3). So:
   gate. **Superseded 2026-10-09** by § The optimistic chain: every defect
   closes at the gate, a red leg filing a new one.
 
-The first round under it, 2026-10-02: four lanes, one gate, `e2d59fdb`, the
+The first round under it, 2026-10-02: four lanes, one gate, `dfb86d29`, the
 full net 4,449 passed and 0 failed. The text below is the rule as it stood
 before, kept.
 
@@ -802,7 +802,7 @@ could.* Measured on the trunk's compiler the same day, `real` equal to `user`:
   to this, above), those of the tree the run stands in, found from the
   command's own `cd` since 2026-10-07 (defect 348: a lane's run from a session
   on the trunk was judged against the trunk); a `git commit` on the same command line as a gate is refused
-  (two commits went past a red `records` in one week, `f22c8baf`, `efaf5564`,
+  (two commits went past a red `records` in one week, `b5862c0a`, `2f42c1fc`,
   because the chain read the pipe's last exit); a gate piped into `head` or
   `tail` is refused (seven `emit` goldens stayed red for two steps behind an
   output cut at forty lines); and a `git commit` whose index holds a `.hero`

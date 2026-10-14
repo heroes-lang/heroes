@@ -306,10 +306,10 @@ function twins_of(issues: [cards.Issue]) -> {str: [str]}
     return out
 
 test "a closed defect renders its days, prefix, labels, sections, record and comment"
-    text = cards.card_text(kind: "defect", area: "compiler", milestone: "none", filed: "2026-10-03", commit: "24cb4fd404db577b2a309a360c6e1a4b4ffd6238", github: "none") + "- [x] **235 — a header name** | what #3 | where · **class: adjacent**\n\n    **Origin:** lane x, 2026-10-03.\n\n## The repair\n\n**Closed 2026-10-04** with the batch, at `24cb4fd4`.\n"
+    text = cards.card_text(kind: "defect", area: "compiler", milestone: "none", filed: "2026-10-03", commit: "7d2f03bee011003fbd37562924582b0660789f03", github: "none") + "- [x] **235 — a header name** | what #3 | where · **class: adjacent**\n\n    **Origin:** lane x, 2026-10-03.\n\n## The repair\n\n**Closed 2026-10-04** with the batch, at `7d2f03be`.\n"
     issue = cards.issue_of(path: "issues/2026-10/03/2026-10-03-1200-defect-235-a-header-name.md", text: text)
     commits: {str: bool} @= {}
-    commits["24cb4fd4"] @ true
+    commits["7d2f03be"] @ true
     days: {str: str} = {}
     made: {str: str} = {}
     unfollowed: {str: bool} = {}
@@ -331,14 +331,14 @@ test "a closed defect renders its days, prefix, labels, sections, record and com
     assert got.defect == "235"
     assert got.closed_day == "2026-10-04"
     assert got.closed_from == "body"
-    assert got.comment == "Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238"
+    assert got.comment == "Fixed by 7d2f03bee011003fbd37562924582b0660789f03"
     assert strings.starts_with(
         text: got.body,
         prefix: "Filed 2026-10-03 · closed 2026-10-04\n\n### What happens\n\nwhat `#3`\n"
     )
     assert strings.contains(
         text: got.body,
-        needle: "with the batch, at 24cb4fd4.\n\n24cb4fd404db577b2a309a360c6e1a4b4ffd6238\n"
+        needle: "with the batch, at 7d2f03be.\n\n7d2f03bee011003fbd37562924582b0660789f03\n"
     )
     assert strings.ends_with(
         text: got.body,
@@ -468,7 +468,7 @@ test "the two files of a number issued twice each name the other, and the title 
 test "a ratification opens with its sitting's number once, a path alone takes the slug's words, and the first paragraph titles what else has none"
     made: {str: str} @= {}
     made_by: {str: str} @= {}
-    made["issues/x/2026-10-11-1846-panel-212-ratify.md"] @ "c1d49c6297d946c017a5d5e300791a23a9635cae"
+    made["issues/x/2026-10-11-1846-panel-212-ratify.md"] @ "e32d942131cc3930caaa7c259633df1c26c58a44"
     made_by["issues/x/2026-10-11-1846-panel-212-ratify.md"] @ "addition"
     unfollowed: {str: bool} = {}
     days: {str: str} = {}

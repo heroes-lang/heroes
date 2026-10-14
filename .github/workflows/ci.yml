@@ -563,7 +563,7 @@ jobs:
       # was broken. That is exactly how defect 008 stayed green for as long as
       # it existed.
       #
-      # Measured on the author's Windows box 2026-09-06, at `bcf6c41a`: the
+      # Measured on the author's Windows box 2026-09-06, at `7d5139ca`: the
       # plain line builds a compiler that does `build selfhost/lexer.hero
       # --dump-ir` at exit 0 — the module that died at exit 127 with both
       # streams empty in September — and `build selfhost/main.hero --emit-c`,

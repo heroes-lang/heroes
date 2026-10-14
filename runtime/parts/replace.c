@@ -48,7 +48,7 @@
  * the words said when one is refused, are `selfhost/cli/publish.hero`'s. This
  * part answers and does not decide.
  *
- * THE WINDOWS ARM, MEASURED ON THE BOX on 2026-09-30 (lane 136, at `9cc3a295`):
+ * THE WINDOWS ARM, MEASURED ON THE BOX on 2026-09-30 (lane 136, at `2339c6a7`):
  * the compiler's own tests 947, all passed, and `surface`, `fixes` and `probe`
  * at 0 failed. `fmt --in-place` on a 16 MB NTFS volume left the file byte for
  * byte at 8, 32 and 64 KB free (ERROR_DISK_FULL, 112), where the write before

@@ -387,7 +387,7 @@ test "a family the probe does not make is named with the seven, and a path that 
     # and `fmt` exited 2 on every program with one (defect 125).
     # 11 -> 12 on 2026-10-03: `braces173`, panel 184's R1 (defect 173), the
     # surface suite's `fmt` rows over `}}` and `{{` in an `f` literal. Lane
-    # fbrace's f6fdda79 grew the list and not this count; the round's gate
+    # fbrace's da807d77 grew the list and not this count; the round's gate
     # read this test red and wrote the count.
     # 12 -> 13 on 2026-10-05: `escape251`, panel 192's R5 (defect 251), the
     # surface suite's `fmt` rows over `\u{1b}` in a string and an `f` literal.

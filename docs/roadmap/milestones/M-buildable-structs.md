@@ -2,18 +2,18 @@
 
 **Opened 2026-10-14, at row 66, by the author's instruction**, meant as: *when
 you have finished, start the next step*, given once M-typed-inspection had
-closed; in its own lane, `lane-buildable-structs`, from `fab354f7`.
+closed; in its own lane, `lane-buildable-structs`, from `a0dba582`.
 
 **What the opening found, which this page had not said**: panel 194's R1 with
 K had landed already, under this milestone's name, while its row stayed
-`scheduled`. `838d2719` (step 1, `rest: zero`, the bit in `Checked`, the
-whole-object zero `emit/zeroed.hero` writes), `a975e3d6` (step 2, the
-`ffi_field_type` note naming `i8`) and `54c5f618` (step 3, § 13's two
+`scheduled`. `85427033` (step 1, `rest: zero`, the bit in `Checked`, the
+whole-object zero `emit/zeroed.hero` writes), `3d372639` (step 2, the
+`ffi_field_type` note naming `i8`) and `8bb5bf13` (step 3, § 13's two
 sentences), all of 2026-10-06, reached the trunk through lane b13-bs's merge
-into batch 13's round (`3e2a5035`). Panel 196's spec-warden measured the two
+into batch 13's round (`de64903c`). Panel 196's spec-warden measured the two
 sentences at 9,583 real, panel 194's spec-warden's prediction (9,583 ± 3)
 scored a hit, and the round's `--refresh` priced the merged document at 9,831
-(`5c782a8f`, 2026-10-07; the ledger's row 7467). Defects 187, 397, 401 and
+(`f81d4db7`, 2026-10-07; the ledger's row 7467). Defects 187, 397, 401 and
 549 have changed the form's own modules since (`git log` over them, read
 2026-10-14). What the milestone still owes is the open `feature` and `task` issues of its
 GitHub milestone, 1332 to 1337, the first of which is the landing that already
@@ -26,7 +26,7 @@ these two, though the parser reads them in one position (both read
 **Measured 2026-10-14, the compiler-engineer's prediction for R1's landing**
 (panel 194, *200 to 330 `selfhost/` insertions, no DECIDED row moved but
 possibly `ast.hero`, a cold `--emit-c` within 0.5% of its parent*), on
-`838d2719` against its parent: **393 insertions**, by `git diff --numstat
+`85427033` against its parent: **393 insertions**, by `git diff --numstat
 -- selfhost` with the 63 lines `expr_kinds.hero` took from `ast.hero`
 left out, so **above the range**. The overrun is the sitting's own amendment,
 which no seat built before predicting: the whole-object zero

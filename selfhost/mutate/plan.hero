@@ -27,7 +27,7 @@ constant DEFAULT: str
 # (`cli/digest.hero`): a run writes its plan's into `run.json`, and two runs
 # are read against each other only over one plan. **Cut again on 2026-10-11
 # (defect 661)** by `heroes mutate --recovery --cut` from the exported tree of
-# `397381f1` with that commit's compiler: the plan frozen on 2026-09-30 held
+# `cf0ff4ee` with that commit's compiler: the plan frozen on 2026-09-30 held
 # 2,138 cells in the form panel 209 retired, each told `old_cell_symbol`, and a
 # differential across that change read 19,186 findings that were the
 # migration's and no round's. Until that day the three digests were

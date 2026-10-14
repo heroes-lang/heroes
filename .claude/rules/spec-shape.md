@@ -92,7 +92,7 @@ reported as `spec/<name>`; they are written here without that prefix because
 citation shape no instrument can see** (CL-037), and the re-shaping of
 2026-09-10 moved every line: the 678 line-number citations that records carried
 that day stay true at their date and read against the layout at commit
-`834d804f`, which is why they were not rewritten (CLAUDE.md §14).
+`ce0eda8f`, which is why they were not rewritten (CLAUDE.md §14).
 
 ## What was refused, and by whom, so it is not proposed again as new
 

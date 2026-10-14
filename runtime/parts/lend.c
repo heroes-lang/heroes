@@ -46,7 +46,7 @@
  * nothing: the region stayed readable and writable, so C reading or writing
  * through an address it kept past the call did so in silence, ASan, its free
  * fill and Guard Malloc all blind to a mapping that is not the heap. Measured
- * on this Mac at `56def9b4`, a C function keeping the address of an `@` local
+ * on this Mac at `b1784b65`, a C function keeping the address of an `@` local
  * and of a 32-byte buffer and writing through each after its function had
  * returned: exit 0 at `-O0`, `-O2` and under `--sanitize` at both; through a
  * buffer of 2,000,000 bytes, whose region was unmapped at its give-back, exit

@@ -11,7 +11,7 @@
 # (`shell.machine_lacks_the_library`): a refusal holding one of the three
 # spellings and differing from its expectation was taken for the machine's.
 # The compiler under test was the only witness to its own excuse, and measured
-# on 2026-10-04 at `703af779` the form read green over each of these:
+# on 2026-10-04 at `fd76fc45` the form read green over each of these:
 #
 # - a changed message in any of the 21 cases whose expectation IS such a
 #   message: `136 passed, 0 failed`, the case skipped in silence;

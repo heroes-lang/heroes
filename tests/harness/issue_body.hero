@@ -311,18 +311,18 @@ test "a defect's fields, its labelled paragraphs, its notes and its repair stand
         ""
         "## The repair"
         ""
-        "Repaired at `24cb4fd4`."
+        "Repaired at `7d2f03be`."
     ]
     got = sections(
         kind: "defect",
         rows: rows,
         opening: issue_title.opening_of(kind: "defect", rows: rows),
-        hash: "24cb4fd404db577b2a309a360c6e1a4b4ffd6238"
+        hash: "7d2f03bee011003fbd37562924582b0660789f03"
     )
     text = got.join("\n")
     assert strings.starts_with(
         text: text,
-        prefix: "### What happens\n\nwhat\n\n### Where to look\n\nwhere\n\n### Origin\n\nlane x, 2026-10-03.\n\n### Class\n\n**adjacent**, 2026-10-03, a reason.\n\n### Notes\n\nA note.\n\n    indented code\n\n### The repair\n\nRepaired at `24cb4fd4`.\n\n24cb4fd404db577b2a309a360c6e1a4b4ffd6238\n"
+        prefix: "### What happens\n\nwhat\n\n### Where to look\n\nwhere\n\n### Origin\n\nlane x, 2026-10-03.\n\n### Class\n\n**adjacent**, 2026-10-03, a reason.\n\n### Notes\n\nA note.\n\n    indented code\n\n### The repair\n\nRepaired at `7d2f03be`.\n\n7d2f03bee011003fbd37562924582b0660789f03\n"
     )
 
 test "a decision's prior art follows its origin, its verdict comes last, and a heading the form lacks stays under notes"

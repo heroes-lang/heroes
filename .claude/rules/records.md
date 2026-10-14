@@ -26,7 +26,7 @@ that quietly loses its inconvenient half is worth less than none.
 in parentheses on first use. `tests/harness/suite_records.hero` knows which
 trees are records and treats them accordingly, and `records/appended` is what
 makes this section a rule rather than a sentence: it went unperformed until
-2026-09-12, and `76799a18` had already removed a line from the record with every
+2026-09-12, and `5bf3ebdb` had already removed a line from the record with every
 suite green.
 
 ## A tree of entries: one file each, and no map
@@ -50,9 +50,9 @@ citation still landed where it always had (CL-037: a line number is the one
 citation shape no instrument can see). That day all three were deleted. Every
 living citation by line was resolved first to the file it named; a living file
 names an entry by its path from then on, which `records/citations` checks. The
-citations inside dated records read against the maps at `d8a9913e`, the last
+citations inside dated records read against the maps at `c911dd61`, the last
 commit that held them, as the specification's line citations read against
-`834d804f` (`.claude/rules/spec-shape.md`). **The rule this leaves**: when a
+`ce0eda8f` (`.claude/rules/spec-shape.md`). **The rule this leaves**: when a
 record's shape changes, the citations into it that a living file holds are
 rewritten to the new shape in the same change, and no file is kept only so an
 old citation still resolves.

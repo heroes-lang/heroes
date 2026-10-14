@@ -11,7 +11,7 @@
 # WHOLE compilation's text, where the lexer reads one file's: a bracket an
 # earlier module left open made the parser see no swap where the lexer had
 # written one, and the later module's own second mistake went untold
-# (measured on the trunk's compiler at `9d1c209d`, a module of `fn g() -> i64
+# (measured on the trunk's compiler at `6e6c0c61`, a module of `fn g() -> i64
 # {` behind a root ending inside `x = (1 + 2`).
 #
 # So the lexer keeps, for every word it refused whose fix is a certain swap,

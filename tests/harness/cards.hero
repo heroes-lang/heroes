@@ -654,7 +654,7 @@ function failure_of<T>(got: T?) -> str
 # 84 was mended) and the three `site/src/lib/chain.ts`, the chain's other
 # reader, names. Until that day a row was open unless it held `| done `, so a
 # word nobody wrote here before read as an open milestone in silence: row 84
-# said `closed 2026-10-10` from `d32c19a1`, the close of M-inferred-cell, and
+# said `closed 2026-10-10` from `e1b41cb8`, the close of M-inferred-cell, and
 # `records/homes` would have taken an open task of that closed milestone.
 function chain_states(text: str) -> {str: bool}?
     is_open: {str: bool} @= {}
@@ -792,7 +792,7 @@ test "every value is held to its vocabulary"
     assert offences_of(kind: "task", area: "none", milestone: "M-Upper", filed: "2026-10-04", commit: "none", github: "none").len() == 1
     assert offences_of(kind: "task", area: "none", milestone: "M-ir-lowering", filed: "2026-10-04", commit: "none", github: "none").len() == 0
     assert offences_of(kind: "task", area: "none", milestone: "none", filed: "2026-02-30", commit: "none", github: "none").len() == 1
-    assert offences_of(kind: "task", area: "none", milestone: "none", filed: "2026-10-04", commit: "5ba5296c", github: "none").len() == 1
+    assert offences_of(kind: "task", area: "none", milestone: "none", filed: "2026-10-04", commit: "5012a816", github: "none").len() == 1
     assert offences_of(kind: "task", area: "none", milestone: "none", filed: "2026-10-04", commit: "5ba5296c0123456789abcdef0123456789abcdef", github: "none").len() == 0
     assert offences_of(kind: "task", area: "none", milestone: "none", filed: "2026-10-04", commit: "5BA5296C0123456789ABCDEF0123456789ABCDEF", github: "none").len() == 1
     assert offences_of(kind: "task", area: "none", milestone: "none", filed: "2026-10-04", commit: "none", github: "https://github.com/heroes-lang/heroes/issues/12").len() == 0
@@ -800,7 +800,7 @@ test "every value is held to its vocabulary"
     assert offences_of(kind: "task", area: "none", milestone: "none", filed: "2026-10-04", commit: "none", github: "https://github.com/someone/else/issues/12").len() == 1
 
 test "the body's own readings: the origin's day, the repairs, the first field's milestone"
-    body = "- [ ] **M-ir-lowering** | a thing | x\n\n    **Origin:** found on\n    2026-09-03 by a run, filed 2026-09-04.\n\n    Repaired at `5ba5296c`, then Repaired at `c539f58d`.\n"
+    body = "- [ ] **M-ir-lowering** | a thing | x\n\n    **Origin:** found on\n    2026-09-03 by a run, filed 2026-09-04.\n\n    Repaired at `5012a816`, then Repaired at `860d5583`.\n"
     assert origin_day(body) == "2026-09-03"
     assert origin_day("- [ ] **x** | y | z\n") == ""
     assert origin_day("- [ ] x\n\n    **Origin:** the author.\n\n    2026-09-01 below\n") == ""
@@ -809,7 +809,7 @@ test "the body's own readings: the origin's day, the repairs, the first field's 
     # the rule names `**Origin:**` and a day after it that is not its birth.
     assert origin_day("# A rule\n\nThe day the `**Origin:**` names, since 2026-09-12.\n") == ""
     assert origin_day("# A rule\n\nThe `**Origin:**` words.\n\n    **Origin:** a lane, 2026-10-01.\n") == "2026-10-01"
-    assert repaired_hashes(body) == ["5ba5296c", "c539f58d"]
+    assert repaired_hashes(body) == ["5012a816", "860d5583"]
     assert repaired_hashes("Repaired at `not a hash`").len() == 0
     assert first_field_milestone("- [ ] **M-ir-lowering** | a | b") == "M-ir-lowering"
     assert first_field_milestone("- [x] **M-ir-lowering.1** | a | b") == "M-ir-lowering"

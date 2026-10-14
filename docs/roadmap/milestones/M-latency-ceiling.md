@@ -7,8 +7,8 @@ compiler down*, a rule with no instrument that holds it over months.
 **What was measured.** `heroes check selfhost/main.hero` takes 5.8 s and the
 write-time hook pays it on every write of a compiler module; one module checks
 in 0.18 s (`.claude/rules/verification.md`, 2026-09-29). Clang compiled the
-seed in 3.4 s in August (`seed/README.md`), 17.98 s at `3f77bd3a3` and 7.86 s
-at `676c3941c` (2026-10-14, `real` beside `user`). Part 11's metric 4 counts
+seed in 3.4 s in August (`seed/README.md`), 17.98 s at `5876e9153` and 7.86 s
+at `612e686d8` (2026-10-14, `real` beside `user`). Part 11's metric 4 counts
 the turns a model takes to reach green, and every turn pays a `heroes check`:
 latency is part of what the language claims, not only a comfort.
 `CONTRIBUTING.md` ranks speed below the other reasons for a change.

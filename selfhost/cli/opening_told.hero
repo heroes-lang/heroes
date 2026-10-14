@@ -11,7 +11,7 @@
 # none of the program's C, under the unit's own words; then the same text
 # without the groups' include lines. Refused with them and compiled without
 # them, the headers are what clang refused, and the program is told at exit 1.
-# Measured by the sitting on the tree before that night's readers, `08230cbfa`:
+# Measured by the sitting on the tree before that night's readers, `70c3eb495`:
 # 18 of their 23 cases told at exit 1 by this question alone, with +168 lines
 # where the readers spent +1,506.
 #

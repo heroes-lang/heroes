@@ -1,7 +1,7 @@
 # A function's signature as `fmt` prints it, with every comment inside it
 # kept where the author wrote it (design.md §4.15; defects 095 and 101).
 # Split out of `print/fmt.hero` on 2026-09-26, when the second skeptic seat
-# over e0e08d18 found the three shapes the old split between them lost: a
+# over 6fe1be14 found the three shapes the old split between them lost: a
 # comment inside a written `-> ()` moved into the parameter list, one inside
 # the result type of a signature with no parameters did the same, and one
 # after a parameter's `@` moved above it. The words are

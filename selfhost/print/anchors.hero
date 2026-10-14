@@ -19,7 +19,7 @@
 # that point on is taken as kept: each is refused, the loud direction, and
 # the ones before it are compared as ever. Compared by text alone there, a
 # comment inside `-> ()` moved into the parameter list at exit 0 (the second
-# skeptic seat's `k01`, over e0e08d18).
+# skeptic seat's `k01`, over 6fe1be14).
 #
 # A comment inside a releaser set is compared by its place in the set too,
 # the word whose set holds it and the set's tokens before it
@@ -108,7 +108,7 @@ function first_moved_read(was: source.Source, input: parse.ParseOutput, now: sou
     # on can be shown to keep its place, so the first of them is refused.
     # Compared by text alone past that point, a comment inside `-> ()` read
     # as kept tokens moved across `) -> (` at exit 0 (the skeptic seat's
-    # `k01`, over e0e08d18).
+    # `k01`, over 6fe1be14).
     parted = parting(one: stream(was, lines: a, kept: kept_a), other: stream(now, lines: b, kept: kept_b))
     k: i64 @= 0
 
@@ -329,7 +329,7 @@ function trimmed(text: str) -> str
 
 ## Tests
 
-# The skeptic seat's six moves over 832478b3 (`zz_probe.hero`), each of
+# The skeptic seat's six moves over f4f9945b (`zz_probe.hero`), each of
 # which the guard of that commit answered with 0, and the controls.
 function moved_line(original: str, moved: str) -> i64
     a = parse.parse(original)
@@ -394,7 +394,7 @@ test "a comment moved inside a releaser set is seen, and one whose set the words
     assert moved_line(original: reordered, moved: written) == 0
     assert moved_line(original: written, moved: written) == 0
 
-# The second skeptic seat's `k01` over e0e08d18: a comment inside `-> ()`
+# The second skeptic seat's `k01` over 6fe1be14: a comment inside `-> ()`
 # hid the `()` from the guard, the streams parted, and the move into the
 # parameter list was compared by text alone and passed.
 test "a comment inside a unit result moved into the parameter list is seen, and kept inside it or trailing the signature it is not"

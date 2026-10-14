@@ -12,12 +12,12 @@ pack, and a fresh clone of 580 MiB where the tree alone compresses to about 36.
 It is regenerated at every batch's close and on every lane that touches
 `selfhost/`: 62 regenerations in the two weeks to 2026-10-14, and 39 of the
 356 merges of the four weeks before carried a seed settled by rebuilding. At
-`676c3941c` it is 51,688,146 bytes and 1,400,548 lines, and 48% of its bytes
+`612e686d8` it is 51,688,146 bytes and 1,400,548 lines, and 48% of its bytes
 are `#line` directives naming a `.hero` file (`selfhost/emit/c_text.hero`'s
 `line_directive`); between `v0.3.0` and `v0.4.0` 62% of the lines that changed
 were `#line` lines. Nobody reads a seed diff, and the commit that brought the
-seed in said so (*152 commits is 152 seed reviews*, `92aacd19a`). Clang took
-17.98 s on the seed of `3f77bd3a3` and 7.86 s on the seed of `676c3941c`
+seed in said so (*152 commits is 152 seed reviews*, `d86aa5d8c`). Clang took
+17.98 s on the seed of `5876e9153` and 7.86 s on the seed of `612e686d8`
 (`/usr/bin/time -p`, `real` against `user` 17.20 and 7.60, so neither run was
 waiting), against the 3.4 s `seed/README.md` measured in August.
 
@@ -86,8 +86,8 @@ not `M-light-clone`, the effect on a stranger rather than what the tree gains.
 (measurement 045 § 7). Three sentences above are wrong and stand as they were
 written. *The seed is 70% of the repository's history: 1,222 versions*: the
 1,222 counted every line its command printed, commits, tags and trees beside
-the blobs; the seed's versions were 294 at `3f77bd3a3` and are 301 at
-`13dd2ebdd`, and they are 87% of the pack a clone receives, where the 70% read
+the blobs; the seed's versions were 294 at `5876e9153` and are 301 at
+`c4532d741`, and they are 87% of the pack a clone receives, where the 70% read
 the local repository's own pack. *A fresh clone of 580 MiB* was a clone of the
 local repository; a clone from GitHub was 616.61 MiB. And the condition *a
 sample of intermediate commits built in two stages, so that `git bisect` stays

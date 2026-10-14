@@ -800,7 +800,7 @@ function verb_probes() -> [probe.Probe]
 # paragraph predicts, which each fixture's header derives from that
 # sentence's clauses. A sentence and a parser that part go red here on the
 # day they part, which nothing did when the false clause entered at
-# `e497646a`. The code is asserted where the prediction names a refusal panel
+# `6a003611`. The code is asserted where the prediction names a refusal panel
 # 180 made (R2, R3); the other refusals' codes are the fixtures' own marks,
 # which `annotations` compares, and an accepted shape has no `main`, so that
 # sweep, which checks a program whole, reads only the refused ones.
@@ -1006,7 +1006,7 @@ test "the tables are what this module is, so they are counted"
     # 9 -> 13 on 2026-10-06, defect 271's JSON half (panel 193): a fix's place
     # and first round, withheld and written inside `certain137-inside`,
     # elsewhere in `applyx`, a guess's place with no first round, and a CRLF
-    # line's end (defect 373). The commit that added them, `155603c7`, left
+    # line's end (defect 373). The commit that added them, `a42553ad`, left
     # this count at 9, so the net's own tests read 1 failed until this line.
     assert render_probes().len() == 13
 
@@ -1111,14 +1111,14 @@ test "the tables are what this module is, so they are counted"
     # a name and its value, inside parentheses, in the part before a
     # bracket, in nested brackets, and on a file's last line twice.
     # 78 -> 85 on 2026-09-26, defect 101's third round, the skeptic seat's
-    # findings over 832478b3: a comment after a `)` alone on its line at a
+    # findings over f4f9945b: a comment after a `)` alone on its line at a
     # block's end, a run with a shallower comment first, a comment trailing
     # `-> ()`, one trailing the author's `)` line, one inside a type, one
     # inside index brackets, and a `)` inside an interpolation's hole, each
     # pinned byte for byte at exit 0 where that commit refused it or moved
     # it out of its block.
     # 85 -> 94 on 2026-09-26, defect 101's fourth round, the second skeptic
-    # seat's findings over e0e08d18: a comment inside a written `-> ()`, one
+    # seat's findings over 6fe1be14: a comment inside a written `-> ()`, one
     # after a `.`, one just inside the parentheses around an operand, one
     # after the outer of two parentheses, one in a parameter's or an
     # argument's lead, one inside the result type of a signature with no
@@ -1127,7 +1127,7 @@ test "the tables are what this module is, so they are counted"
     # exit 0 where that commit refused it, moved it, or printed it a column
     # too far.
     # 94 -> 100 on 2026-09-26, defect 101's fifth round, the third skeptic
-    # seat's findings over 83ac68c1: a comment inside the author's
+    # seat's findings over 89ce570e: a comment inside the author's
     # parentheses in an index, two around the outer one, one just inside
     # the outer of two pairs, one around a mutated place, one after a
     # qualified type's dot, and the lines of a block's head, each pinned
@@ -1174,7 +1174,7 @@ test "the tables are what this module is, so they are counted"
     # formatted at exit 0 as its own canonical form, where fmt exited 2, and
     # run.
     # 151 -> 156 on 2026-10-01, lane 135c's batch gate, defect 141 (rows added
-    # at `fa64c7da`, this count found by the net's own tests at the gate):
+    # at `954ccea1`, this count found by the net's own tests at the gate):
     # `check --apply` handing back a clean file whose last line is open, a
     # file of one remark, and a file with a hole, byte for byte, nothing on
     # stdout with `--in-place`, and a module whose last byte is a stray
@@ -1200,7 +1200,7 @@ test "the tables are what this module is, so they are counted"
     # syntax-tree, scopes and IR dumps each held to a line, and `mutate`
     # scoring the file.
     # 176 -> 177 on 2026-10-06: `check --apply` telling a certain fix in a
-    # module only a later round reads (`applylater/`), added by `de2e9770`
+    # module only a later round reads (`applylater/`), added by `1896942a`
     # with this count left behind.
     # 177 -> 185 the same day, defect 371 (panel 193's R4): `check --apply
     # --json` answering the applied document, whole over a clean file, its

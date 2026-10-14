@@ -156,7 +156,7 @@ static void hero_spawn_measure_home(void) {
      * 93,823,035,207,680 bytes in the Linux arm64 container, and no thread can
      * be given that: `examples/threads` panicked at its first spawn, *the
      * operating system refused to start a thread*, with this file as it stood
-     * at `02e507bc`; and the compiler's own thread, which takes the larger of
+     * at `5bcf0368`; and the compiler's own thread, which takes the larger of
      * its 256 MiB and the floor, was asked for that much too, and granted it
      * in a container whose `vm.overcommit_memory` is 1. The main thread then
      * grows until memory ends, so there is no floor to keep: a thread asked

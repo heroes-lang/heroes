@@ -211,7 +211,7 @@ function compress(@forest: Forest, v: i64)
 ## Tests
 
 # The fixpoint this module replaced, word for word as `ir/values.hero` held it
-# at b7edbc35 under the name `dominators`: `rows[b][d]` says whether d
+# at 994c8889 under the name `dominators`: `rows[b][d]` says whether d
 # dominates b. The oracle every test below holds the tree to.
 function fixpoint(blocks: [containers.Block]) -> [[bool]]
     count = blocks.len()

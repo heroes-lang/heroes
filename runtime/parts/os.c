@@ -740,7 +740,7 @@ static HeroStr hero_bytes_shown(const char *buffer, int64_t got, int64_t *status
  * so that a second copy of the walk cannot drift.
  *
  * **Defects 273 and 274 live here, and nowhere else** (panel 189's R7, the
- * ffi-pragmatist's composition). `df453108` and `34836e73` repaired them in
+ * ffi-pragmatist's composition). `71488f58` and `57bc980c` repaired them in
  * `hero_file_read`'s own body; the compiler reads every source, a header's
  * key and the runtime's through `hero_file_read_shown`, and with the old read
  * left there Linux arm64 died *out of memory* on a `use`d directory again,

@@ -105,7 +105,7 @@ constant RECORD: [str]
 # reasoning notes into `docs/work/DONE.md`. The seven notes were records and the
 # entry was live — it is removed because there is nothing to exempt, not because
 # it was wrong, and `records/exemptions` below is what obliged the two halves to
-# move together. The text is at `git show 365fe929:docs/reasoning/`.
+# move together. The text is at `git show 3d2e984c:docs/reasoning/`.
 
 # Files git tracks that NOBODY WRITES. Not records, which are prose somebody
 # meant; artifacts, whose bytes are chosen by a tool.
@@ -729,7 +729,7 @@ constant ITALIAN_BY_DESIGN: [str]
 # and the difference is the whole reason there are two.
 #
 # **The line rule alone caught 10 of 42.** Measured 2026-09-04 by replaying the
-# 42 Italian spans this repository actually held, out of `d7c2661b`, against the
+# 42 Italian spans this repository actually held, out of `6a11e4e7`, against the
 # check as first written: it found the Italian *pages*, whose paragraphs are
 # Italian end to end, and it walked straight past the shape this repository is
 # full of — six Italian words quoted inside an English sentence. `*"convoca il
@@ -1053,7 +1053,7 @@ function narrowed(@r: report.Report, scratch: str, only: str)
 # `TAGGED_OVER` (`m-readable-bytes` over defects 061 and 062) and
 # `CARRIED_OVER` (`m-agreed-retention` over 129 and 130), went the same day:
 # each named a tag that is no longer the newest and never again can be, tags
-# being immovable and the newest judged alone (`git show 0a235eeb:tests/harness/suite_records.hero`
+# being immovable and the newest judged alone (`git show 9f876589:tests/harness/suite_records.hero`
 # holds them).
 function tagged(@r: report.Report, scratch: str, held: github_issues.Listing)
     listed = shell.run(
@@ -2011,7 +2011,7 @@ function selects_prefix(entry: str, present: [str]) -> bool
 # corrected underneath, with its date, never deleted. Four documents state it —
 # the contract, `.claude/rules/records.md`, this file's own RECORD comment, and
 # `docs/work/DONE.md`'s preamble — and until 2026-09-12 nothing performed it.
-# Commit `76799a18` removed one `- [x]` line from the record and every suite
+# Commit `5bf3ebdb` removed one `- [x]` line from the record and every suite
 # stayed green. A rule stated everywhere and executed nowhere is CL-031's story,
 # told here about the rule those four documents exist to protect.
 #
@@ -2024,7 +2024,7 @@ function selects_prefix(entry: str, present: [str]) -> bool
 #
 # The number is the record's FIRST LINE, not its banner's: two of the three
 # records have no banner at all. Above it is the preamble, which is prose
-# somebody may correct — `7c2198ff` rewrote eighteen lines of DONE's and was
+# somebody may correct — `b2efc3ff` rewrote eighteen lines of DONE's and was
 # right to. Below it is the record.
 constant APPEND_ONLY: [str]
     [
@@ -2325,7 +2325,7 @@ function unmerged(@r: report.Report, scratch: str)
 # author deleted all three that day, meant as: *I prefer cleanliness for the
 # future to keeping the historical legacy*. Every living citation by line was
 # resolved to the file it named first; the ones inside dated records read
-# against the maps as they stand at `d8a9913e`, the last commit that held them.
+# against the maps as they stand at `c911dd61`, the last commit that held them.
 constant ENTRY_TREES: [str]
     [
         "docs/records/book/beats"
@@ -3348,14 +3348,14 @@ function ignored_by_git(scratch: str, tree: str, tokens: [str]) -> {str: bool}
 # THE LAST COMMIT THAT HOLDS `issues/`. The author's fourth answer of
 # 2026-10-12 keeps the dated records as written, read against the last commit
 # that holds the folder, as the specification's line citations read against
-# `834d804f` and the old maps against `d8a9913e`: so once the folder has left
+# `ce0eda8f` and the old maps against `c911dd61`: so once the folder has left
 # the tree, a citation of an issue file, or of a file of a tree that moved into
 # it, is resolved in this commit's tree (`archive_of`). **The coordinator sets
 # it in the commit that removes the folder**; while the folder stands it is not
 # read, and once the folder is gone an empty value fails `records/citations`
 # loudly rather than leaving every such citation dead or unjudged.
 constant ISSUES_ARCHIVED_AT: str
-    "92e08d824de230ccb0f95eb74bbe19a2f4faff0d"
+    "03f9fb9b58f41ef9552696dbda9969fc5adf5d63"
 
 # What the archive answers a run: `tree` while the folder stands, so nothing
 # is added; `read`, every path under `ISSUES` at `ISSUES_ARCHIVED_AT`;
@@ -3888,8 +3888,8 @@ function expectations(@r: report.Report, scratch: str)
 # ratification is written beneath its sitting's stub by one commit and its
 # decision closed by `close`, which names that commit, so every tree without
 # the commit holds a `Pending` nobody asks about any more. Measured 2026-10-14:
-# the round's tree at `a0dd1aa55` holds panel 214 `Pending`, GitHub closed its
-# decision at 07:59:37Z after `fda81bd14` wrote the answer, and this check read
+# the round's tree at `66777f8ed` holds panel 214 `Pending`, GitHub closed its
+# decision at 07:59:37Z after `348fad5ca` wrote the answer, and this check read
 # that tree red. So the tree is placed among the author's answers by the
 # sittings it holds answered (`records_github.answers_received`), and a
 # ratification GitHub closed after the latest of them is not held against it
@@ -5372,7 +5372,7 @@ test "a removal below the record's first line is caught and one above it is not"
     assert caught.len() == 1
     assert strings.contains(text: caught[0], needle: "the decision somebody deleted")
 
-    # And the preamble is editable on purpose: `7c2198ff` rewrote eighteen
+    # And the preamble is editable on purpose: `b2efc3ff` rewrote eighteen
     # lines of DONE's and was right to.
     assert removed_below(text: diffed, floor: 5000).len() == 0
 

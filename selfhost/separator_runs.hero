@@ -1,7 +1,7 @@
 # A separator another language ends its lines with, told once a run: Rust's,
 # Go's and JavaScript's `,` after a statement or an arm, C's `;` after a
 # statement, a field, a case or a signature (design.md §4.15, §4.17; defect
-# 178, 2026-10-03; the members' rule of defect 132, `68e46a13`, read the same).
+# 178, 2026-10-03; the members' rule of defect 132, `1897dfb1`, read the same).
 #
 # A line end ends what its line holds, so a `,` or a `;` written where a line
 # ends is one habit, and on every line of a declaration it was told once a

@@ -722,8 +722,8 @@ test "the cited roots are the compiler, the runtime, the seed and the tests"
     assert !under_roots("testsuite/x")
 
 test "a closed feature's what-was-done names its card's commit, or self where the card says so"
-    item = "- [x] **M-issue-files** | w | h\n\n## What was done\n\nLanded at `24cb4fd4`.\n"
-    text = cards.card_text(kind: "feature", area: "cli", milestone: "M-issue-files", filed: "2026-10-03", commit: "24cb4fd404db577b2a309a360c6e1a4b4ffd6238", github: "none") + item
+    item = "- [x] **M-issue-files** | w | h\n\n## What was done\n\nLanded at `7d2f03be`.\n"
+    text = cards.card_text(kind: "feature", area: "cli", milestone: "M-issue-files", filed: "2026-10-03", commit: "7d2f03bee011003fbd37562924582b0660789f03", github: "none") + item
     assert done_offence(cards.issue_of(path: "issues/x.md", text: text)) == ""
     other = cards.card_text(kind: "task", area: "cli", milestone: "M-issue-files", filed: "2026-10-03", commit: "self", github: "none") + "- [x] **M-issue-files** | w | h\n\n## What was done\n\nThis file's own commit (`self`).\n"
     assert done_offence(cards.issue_of(path: "issues/y.md", text: other)) == ""

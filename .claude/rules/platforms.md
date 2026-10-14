@@ -57,7 +57,7 @@ read (§ What may run beside a gate in `.claude/rules/verification.md`, the
 same shape this Mac's gate has). Measured 2026-10-03, on the author's
 noticing that Docker showed one CPU of eight busy: the sequential leg held
 one (`docker stats`, 100% of 800%, memory 299 MiB of 7.65 GiB), so more
-memory or CPUs would have bought nothing; the parallel leg on `02e507bc`
+memory or CPUs would have bought nothing; the parallel leg on `5bcf0368`
 read 400% and its 21 count lines were the sequential leg's on the same
 commit, line for line by `diff`, the suites in 11 minutes against the
 sequential 24 to 27 of 2026-10-02, on a busy Mac. Independent invocations

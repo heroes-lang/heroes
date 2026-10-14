@@ -20,7 +20,7 @@ saying which sitting moved it, never up"*), `clang_floor.hero`'s `FLOOR` (chases
 the CI's oldest leg, zero slack by construction) and `suite_canonical.hero`'s
 bracket (`assert LEAST < 371 && LEAST > 300`). The rest are bare numbers.
 
-## The measurement that opened it, taken at `7d31838a`
+## The measurement that opened it, taken at `d65dc646`
 
 **Ceilings sit at the value measured the day they were written, so the first
 legitimate addition hits the wall.**

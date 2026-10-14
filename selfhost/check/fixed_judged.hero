@@ -19,7 +19,7 @@
 # repaired program having nothing left to refuse.
 #
 # **Until the same night this module listed the positions** (defect 423's
-# first repair, `3e92cbfb`): a binding's value, a store, a constant, a
+# first repair, `e66ff396`): a binding's value, a store, a constant, a
 # `return`, an argument, literals and branches, judged by whether the value
 # fit the `[T]`. A use, `len(x)`, and a value through `ok(...)` or a call
 # were not on the list (defects 432 and 433), and every position added would

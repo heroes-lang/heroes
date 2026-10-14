@@ -205,7 +205,7 @@ function holder_of(text: str, span: token.Span, outline: text_outline.Outline) -
 # `int` where a type goes in an `extern` group: what is right there is the
 # header's type, which the text does not hold, so the repair is a guess in
 # every place, shown and never applied (defect 172, 2026-10-03). It was a
-# certain `i32` from defect 135's L6 (`c61a1d04`) until then, and that is
+# certain `i32` from defect 135's L6 (`ef281340`) until then, and that is
 # right only where the header says `int`: measured over every place, a
 # result, a field, a callback's parameter, an out-parameter, a fixed array
 # and a constant the header gives 64 bits each took `i32`, checked clean and

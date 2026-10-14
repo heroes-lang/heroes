@@ -496,7 +496,7 @@ function prior_art_rows(body: str) -> credit.Section
 # **GitHub holds today's issues, and the tree under test may be older than a
 # sitting one of them names** (defect 2039): a sitting's decision is opened
 # from its own lane before its file is pushed (`/panel` step 4), so the trunk
-# at `0b8307daf`, whose highest sitting is 212, went red on all four CI legs on
+# at `90d1e3f7e`, whose highest sitting is 212, went red on all four CI legs on
 # issue 2037, which names panel 213's file, and so did the lanes' `records`
 # runs. So the tree is placed among the sittings by its own value, the highest
 # it holds (`credit.highest_sitting`), and a sitting numbered above it is not
@@ -505,7 +505,7 @@ function prior_art_rows(body: str) -> credit.Section
 #
 # **Not by the issue's age against the commit's**, the other reading of
 # "older": measured 2026-10-13, issue 2037 was opened at 23:07:58Z and the
-# trunk at 00:18:33Z was still `0b8307daf` (21:49:10Z), holding no sitting
+# trunk at 00:18:33Z was still `90d1e3f7e` (21:49:10Z), holding no sitting
 # 213, so a commit made in that window, this repair's own among them, is newer
 # than the issue and lacks the file all the same, and a rule keyed on the
 # commit's time reads it red until the sitting's lane lands. A committer's
@@ -975,8 +975,8 @@ test "a ratification GitHub closed after every answer the tree holds is not held
     assert first[150].must().number == 1500
     assert answered_at(first[150].must()).must() == epoch_of("2026-09-21T00:00:00Z").must()
 
-    # Issue 2057's shape at the round's tree `a0dd1aa55`: 213 answered, 214
-    # pending, GitHub closing 214's ratification after `fda81bd14` wrote it.
+    # Issue 2057's shape at the round's tree `66777f8ed`: 213 answered, 214
+    # pending, GitHub closing 214's ratification after `348fad5ca` wrote it.
     round = answers_received(answered: [150, 213], first: first)
     assert round.sitting == 213
     assert round.closed == "2026-10-14T02:56:48Z"

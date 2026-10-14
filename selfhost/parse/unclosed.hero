@@ -132,7 +132,7 @@ function swallows_the_body(c: cursor.Cursor, text: str, from: i64) -> bool
 # it that the lexer named never closed, the cursor still in that reach: every
 # line there was read inside the bracket and laid out as none, so no head in it
 # has a block below it however its body is written, and the absence is the
-# opener's (defect 131's class, lane recovery-b4). Since `52b2d378` the parser
+# opener's (defect 131's class, lane recovery-b4). Since `6b6d490a` the parser
 # resumes where the lexer paired a closer, and a `[` left out inside `ok(`
 # left the `(` open over every `if` below, each named without the body it has;
 # before, a search for a `]` passed over those lines, their mistakes unsaid.

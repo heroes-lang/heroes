@@ -60,7 +60,7 @@ precedent):
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
   the constant's line, told `ffi_constant_type` with no new code (defect 094,
-  lane b12-ffi13, repaired at `41c5d1b4`, 2026-10-06); and a number's constant
+  lane b12-ffi13, repaired at `e86a26e5`, 2026-10-06); and a number's constant
   whose header value C cannot read or leaves undefined, judged at its
   accessor's `return` at the constant's line, where clang's warnings that the
   value is undefined are errors, told the same way (defects 2071 and 2072,
@@ -79,7 +79,7 @@ precedent):
   `emit/ffi_lend.hero` reads it into `field_lend_written` on the lend. This is
   the one member that points at a **call** rather than at a declaration.
 - **a header a group names, or one it includes, that clang refuses on its
-  own**: added 2026-10-06 (defect 360, batch 12, repaired at `e0dc8780`). Told
+  own**: added 2026-10-06 (defect 360, batch 12, repaired at `6464dd6c`). Told
   `ffi_header_refused` at exit 1 on the group's string with clang's located
   words, narrowed by the include stack as `ffi_missing_header` is; until then
   it was *internal error: compiling the generated C failed* at exit 2, the

@@ -392,7 +392,7 @@ test "an absolute path in a group head is the machine's, not the program's"
 # compilation's text from its first byte, so a bracket the root left open,
 # which the module's lexer never saw, made the module's `fn` no function to
 # the parser: its brace habit went untold until the root's bracket was closed
-# (measured on the trunk's compiler at `9d1c209d`).
+# (measured on the trunk's compiler at `6e6c0c61`).
 test "a module's foreign head is read as its own lexer swapped it, past a bracket the root left open"
     inputs: [source.InputFile] = [
         source.user_file(name: "main.hero", text: "use b\n\nfunction main()\n    x = (1 + 2\n")

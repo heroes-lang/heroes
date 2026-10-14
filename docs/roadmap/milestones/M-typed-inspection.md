@@ -4,7 +4,7 @@
 **Opened 2026-10-12, at row 65, by the author's answers**
 (https://github.com/heroes-lang/heroes/issues/2029), once M-issue-files had closed,
 and ahead of M-panic-location, which this page placed first. What prompted it:
-the editor extension learnt to debug a program that day (`d7bb2bfe`), and a
+the editor extension learnt to debug a program that day (`cbd782af`), and a
 stopped frame showed the emitted C's names, `h4_p = {f_x:3, f_y:4}` for a record
 `p` with fields `x` and `y`, which is the half this page delivers. The opening
 sitting below is asked for once, by the same answers (CLAUDE.md § 4).

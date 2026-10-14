@@ -62,7 +62,7 @@ function item_offences(text: str, first: i64) -> [str]
 # title closed by `**` and the bar after it, then what it does and where to
 # look, set apart by ` | `, a field free to quote ` | ` itself. **The class
 # rule read the line's end and its number its start, and nothing read between**
-# (defect 190): item 130's line as `8349d264` left it, its title never closed
+# (defect 190): item 130's line as `57ca0efc` left it, its title never closed
 # and not one bar in it, read whole after that commit and every one until it
 # was restored. The class token is the class rule's to read (`line_class`).
 function line_shape(first: str) -> str
@@ -567,7 +567,7 @@ test "an open item's body runs to the next item, a banner or a line at column ze
     assert classed(regions[1].text).kind == ""
 
 # DEFECT 190, held as a test (2026-10-04): a defect item's line is read whole
-# between its number and its class token. Item 130's line as `8349d264` left
+# between its number and its class token. Item 130's line as `57ca0efc` left
 # it read whole; so does each shape beside it here, refused by name, and a
 # field quoting ` | `, as 190's own does, is no offence.
 test "fixedbugs: a defect item's line is read whole, its title closed and its two fields there (defect 190)"

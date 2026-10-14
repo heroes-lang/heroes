@@ -4,7 +4,7 @@
  * WHY THIS EXISTS. `write_file` was `fopen(path, "wb")` and then the bytes,
  * so the file was emptied before the first byte of the new text reached it: a
  * reader beside it could find it empty or cut, and a process killed in between
- * left it so, the old text gone. Measured 2026-10-07 on this Mac at `dad2da47`:
+ * left it so, the old text gone. Measured 2026-10-07 on this Mac at `461b1de8`:
  * a child under a 4096-byte ceiling on what it may write (RLIMIT_FSIZE through
  * `hero_run_limit_writes`, the kernel's nearest thing to a full disk) wrote
  * 1 MB over "OLD" and left 4096 bytes of the new text, the old lost; and a

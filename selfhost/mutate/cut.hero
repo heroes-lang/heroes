@@ -384,7 +384,7 @@ test "a checkout, a folder that holds something and a tree that is not there are
 # The witness that this generator is the Python's: ten programs of the
 # frozen corpus that between them hold a site of all 96 operators, their
 # tokens as the lexer of the tree the frozen plan was cut from dumped them
-# (c85bccb8's `lex --dump-tokens --json`, `tests/golden/recovery/cut/`, the
+# (9568acb8's `lex --dump-tokens --json`, `tests/golden/recovery/cut/`, the
 # ten programs' texts of that day under its own `corpus/` since defect 661,
 # when the plan beside it was cut again from the migrated tree),
 # and what the Python instrument (`recovery.py`, `ops.py`, `model.py`,

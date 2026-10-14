@@ -44,7 +44,7 @@ static const unsigned char *hero_array_data_const(const HeroArrayHeader *a) {
  * the element descriptor, which a live array always has, is set to none
  * before the block goes (defect 314, below), and only a new reference and a
  * release asked it, so a read after the last release went on in freed memory:
- * measured on this Mac at `56def9b4`, an array of four released and then asked
+ * measured on this Mac at `b1784b65`, an array of four released and then asked
  * its length answered from freed memory at exit 0 (4 in one run, 0 in
  * another), and asked an element read through the descriptor's null and was
  * told *a null pointer was read through*, which names a handle. One load and one test a read, of the word the read's own
@@ -97,7 +97,7 @@ HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap) {
  * **AND THE RUNTIME WRITES THE BLOCK DEAD ITSELF** (defect 314, 2026-10-07):
  * a freed block's first word being the allocator's, a release after the last
  * passed wherever the allocator wrote a pointer there, measured at
- * `dad2da47` on this Mac at 1, 4 and 32 elements (exit 0, the block freed
+ * `461b1de8` on this Mac at 1, 4 and 32 elements (exit 0, the block freed
  * twice), where the Windows heap stopped it as heap corruption with no word
  * of the runtime's. So the element descriptor, which a live array always has
  * (`hero_array_new` refuses none, a constant's block names its own), is set

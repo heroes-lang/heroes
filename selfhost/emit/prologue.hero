@@ -24,7 +24,7 @@
 #   lookup is where it did not). So a C local clang thinks may be read
 #   uninitialised is a LOWERING bug, which is what -Werror=uninitialized
 #   is in the flag set to catch, and a zero would hide it: the seed held
-#   81,680 zeroed values at `0fc98107`, every one dead by four
+#   81,680 zeroed values at `28a75ca1`, every one dead by four
 #   instruments, each taken out of that check. clang sees a read BY
 #   VALUE; a read through an address (`release(&t)`) it does not see,
 #   and there the verifier stands alone.

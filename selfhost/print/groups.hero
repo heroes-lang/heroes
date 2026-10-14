@@ -139,7 +139,7 @@ test "a group's parentheses are told from a call's, a literal's brackets being t
     assert lines.tokens[open].kind == .lparen
     assert !calls(lines, index: open)
 
-# The second skeptic seat's shapes over e0e08d18: a value's extent reaches
+# The second skeptic seat's shapes over 6fe1be14: a value's extent reaches
 # the author's parentheses at its edges and not those around it, and a `(`
 # on a list's next line opens no call (the lexer's terminator separates the
 # two elements).

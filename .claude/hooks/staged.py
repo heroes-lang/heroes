@@ -6,7 +6,7 @@ write-time hook would have asked of it: a file that reached the tree some other
 way, a merge or a `git mv`, is seen here, the last moment before a suite would
 have to find it (CL-079). Until 2026-10-07 it asked the SESSION's directory, so
 a commit made in a lane's worktree was judged by the trunk's index: lane
-b9-harness's `a3fb46d5` staged three cases `heroes fmt` refuses and the guard
+b9-harness's `5e804a37` staged three cases `heroes fmt` refuses and the guard
 accepted it, while the trunk's own staged files could refuse a lane's commit
 that held none of them (defect 287). The index is now the one of the directory
 the commit runs in, `git -C` or the command's own `cd` (`guard_bash.placed`),

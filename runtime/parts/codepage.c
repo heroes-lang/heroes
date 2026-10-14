@@ -130,7 +130,7 @@ static int32_t hero_win_char_at(const unsigned char *s, size_t *at) {
  * MB_ERR_INVALID_CHARS: it refuses the three bytes of a surrogate standing
  * alone, so a walk could name such a FILE and could not enter such a
  * DIRECTORY, and said *cannot read* of a readable folder (panel 191's critic,
- * measured on the box, red at `7f4c0cc5` and under the route alike). */
+ * measured on the box, red at `374a019b` and under the route alike). */
 static wchar_t *hero_win_wide(const char *name, const wchar_t *suffix) {
     const unsigned char *s = (const unsigned char *)name;
     size_t units = 0;

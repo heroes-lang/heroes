@@ -9,7 +9,7 @@ which has no `mapfile`, so `git commit -F <file> --` took the whole index, 35
 files, and missed 22 the commit meant. And measured the same evening: a
 conflicted merge takes no pathspec (git refuses a partial commit during a
 merge, and during a cherry-pick), so it is concluded with the whole index, and
-`GIT_EDITOR=true git merge --continue` concluded `fae893f7` with nothing
+`GIT_EDITOR=true git merge --continue` concluded `ce4d8f15` with nothing
 asking what the index held. Measured again on 2026-10-07 in a scratch
 repository, git 2.56.0: a file staged during a conflicted merge or
 cherry-pick rides into the commit `--continue` makes; `git commit -- .` takes

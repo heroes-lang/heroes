@@ -62,7 +62,7 @@ zero spec tokens and this milestone opens no sitting to obtain one.
 
 **The stack is the browser route's first hard number, and it was measured for
 another platform** (M-thread-stacks, on the author's Windows box, 2026-09-06 at
-`bcf6c41a`). A recursive-descent compiler in wasm gets a fixed slice of linear
+`7d5139ca`). A recursive-descent compiler in wasm gets a fixed slice of linear
 memory chosen once at link time, which is structurally the Windows main thread's
 1 MB rather than a stack that grows. That box now builds the seed with **the
 contract's plain line**, no `/STACK` flag, and takes `build selfhost/lexer.hero
@@ -111,5 +111,5 @@ capability with no other caller.
 may name keeps one more input: a listing of what a program reaches through its
 `extern` groups was considered as a row of its own on 2026-10-14 and not
 entered (`docs/roadmap/scheduling.md`); this sitting is its one caller. The
-seed is 1,400,548 lines at `676c3941c`, not 733,838. This row moves from 78 to
+seed is 1,400,548 lines at `612e686d8`, not 733,838. This row moves from 78 to
 82.

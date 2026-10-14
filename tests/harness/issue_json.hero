@@ -134,11 +134,11 @@ test "a closed issue's payload carries its days at noon, its labels and its one 
         closed_day: "2026-10-04",
         closed_from: "body",
         raised: false,
-        comment: "Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238"
+        comment: "Fixed by 7d2f03bee011003fbd37562924582b0660789f03"
     )
-    assert payload(r) == "{\"issue\":{\"title\":\"Defect 235: t\",\"body\":\"b\\n\",\"created_at\":\"2026-10-03T12:00:00Z\",\"updated_at\":\"2026-10-04T12:00:00Z\",\"closed_at\":\"2026-10-04T12:00:00Z\",\"closed\":true,\"labels\":[\"kind:defect\",\"area:cli\"]},\"comments\":[{\"body\":\"Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238\",\"created_at\":\"2026-10-04T12:00:00Z\"}]}"
+    assert payload(r) == "{\"issue\":{\"title\":\"Defect 235: t\",\"body\":\"b\\n\",\"created_at\":\"2026-10-03T12:00:00Z\",\"updated_at\":\"2026-10-04T12:00:00Z\",\"closed_at\":\"2026-10-04T12:00:00Z\",\"closed\":true,\"labels\":[\"kind:defect\",\"area:cli\"]},\"comments\":[{\"body\":\"Fixed by 7d2f03bee011003fbd37562924582b0660789f03\",\"created_at\":\"2026-10-04T12:00:00Z\"}]}"
     assert line(r) == "{\"path\":\"issues/a.md\",\"milestone\":null,\"defect\":\"235\",\"payload\":" + payload(r) + "}"
-    assert numbered(r: r, milestone: 84) == "{\"issue\":{\"title\":\"Defect 235: t\",\"body\":\"b\\n\",\"created_at\":\"2026-10-03T12:00:00Z\",\"updated_at\":\"2026-10-04T12:00:00Z\",\"closed_at\":\"2026-10-04T12:00:00Z\",\"closed\":true,\"labels\":[\"kind:defect\",\"area:cli\"],\"milestone\":84},\"comments\":[{\"body\":\"Fixed by 24cb4fd404db577b2a309a360c6e1a4b4ffd6238\",\"created_at\":\"2026-10-04T12:00:00Z\"}]}"
+    assert numbered(r: r, milestone: 84) == "{\"issue\":{\"title\":\"Defect 235: t\",\"body\":\"b\\n\",\"created_at\":\"2026-10-03T12:00:00Z\",\"updated_at\":\"2026-10-04T12:00:00Z\",\"closed_at\":\"2026-10-04T12:00:00Z\",\"closed\":true,\"labels\":[\"kind:defect\",\"area:cli\"],\"milestone\":84},\"comments\":[{\"body\":\"Fixed by 7d2f03bee011003fbd37562924582b0660789f03\",\"created_at\":\"2026-10-04T12:00:00Z\"}]}"
     open_one = issue_render.Rendered(
         path: "issues/b.md",
         refusal: "",

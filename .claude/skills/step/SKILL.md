@@ -99,7 +99,7 @@ in this shape and says why (`.claude/rules/records.md` § The issues).
   that* is an inference, so it is either run or written down as a guess.
 
   **This line said "the two" until 2026-09-02 and the third one was red for six
-  commits.** `9599d97` re-baselined `suite_layout`'s ceiling table and left two
+  commits.** `ba8db62` re-baselined `suite_layout`'s ceiling table and left two
   asserts reading the old numbers — and that commit's own diff *states both new
   numbers in prose*, two screens above the asserts. `DESIGN-LOG` had already
   recorded the identical failure on 2026-08-31, *"a suite that had never been
@@ -198,7 +198,7 @@ Milestone close — the checklist (this is its only copy):
   `docs/roadmap/milestones/`**, and the rest goes to the journal.
 
   **This bullet pointed at a § The milestones that does not exist, from
-  2026-09-12 until 2026-09-14.** `abc3d503`, *"The ROADMAP becomes the chain and
+  2026-09-12 until 2026-09-14.** `72d5a623`, *"The ROADMAP becomes the chain and
   the status, and nothing else"*, deleted 301 lines and left the document with two
   sections; the line went on ordering a close to prune a third. **Four closes ran
   against it** — `m-reflection-verdict`, `m-declared-thresholds`,

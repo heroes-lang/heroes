@@ -535,8 +535,8 @@ def verdict(command, cwd=None, seen=frozenset()):
 
     # **A gate and a commit never share a command line** (2026-09-29, CL-079).
     # Twice in one week a commit went past a red `records` because the chain
-    # read the exit status of the pipe's last command (journal 061, `f22c8baf`,
-    # `efaf5564`). The gate's line is read, then the commit is its own command,
+    # read the exit status of the pipe's last command (journal 061, `b5862c0a`,
+    # `2f42c1fc`). The gate's line is read, then the commit is its own command,
     # a `find` running it or an alias standing for it read too (defect 534).
     if any(is_gate(w) for w in parsed) and any(
         git_args(ran, "commit") is not None
