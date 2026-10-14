@@ -1,0 +1,12 @@
+# fixedbugs, defect 2061, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `constant NOWHERE: i64` over `#define NOWHERE nosuch_value`: exit
+# 2, *use of undeclared identifier 'nosuch_value'*.
+#
+# FIX: told on the constant, the name its macro leaves standing named.
+
+extern "fixedbugs-2061-reach.h"
+    constant NOWHERE: i64  #~ ffi_unknown_name
+
+function main()
+    print(NOWHERE)

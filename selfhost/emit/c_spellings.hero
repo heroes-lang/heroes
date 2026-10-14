@@ -17,7 +17,8 @@
 # either width fails the width assertion on the other platform —
 # this file's own lesson applied to itself). So the width arrives as
 # a PARAMETER the driver owns, still derived and never tabled, and
-# the caveat names both widths without naming the host.
+# the caveat names each platform's width and this target's, from the
+# parameter, without naming the host (defect 2067).
 
 ## The answer
 
@@ -131,17 +132,16 @@ function spelling(c_type: str, word_bits: i64) -> Spelling?
     # to know the repair. `long double` is the live example.
     return fail(code: "none", msg: "no Heroes spelling for this C type")
 
-# The spelling for a C type whose width is the machine's word, with
-# the note that says so. The width both ways round, so the sentence is
-# true whichever leg the reader is on.
+# The spelling for a C type whose width is the machine's word, with the
+# note that says so: which platform is which, each a fact of its target's
+# ABI (LLP64 on Windows, LP64 on 64-bit Linux and Darwin), and this target's
+# width from the parameter. Until defect 2067 it was built from the two
+# numbers alone, *Windows is 64 where the Unixes are 32, or the reverse* on
+# the Windows box, its first half false there and the rest a hedge.
 function word_width(sign: str, word_bits: i64) -> Spelling
-    other: i64 @= 32
-
-    if word_bits == 32
-        other @ 64
     heroes = sign + word_bits.to_str()
     caveat: str? = ok(
-        "C's `long` is the platform's word, not a width the header chose: " + word_bits.to_str() + " bits on this machine, and " + other.to_str() + " elsewhere — Windows is " + other.to_str() + " where the Unixes are " + word_bits.to_str() + ", or the reverse. `" + heroes + "` is the answer for this target; a program that must build on both declares the width it means there and converts at the call"
+        "C's `long` is the platform's word, not a width the header chose: 32 bits on Windows, 64 on 64-bit Linux and Darwin, and " + word_bits.to_str() + " on this target. `" + heroes + "` is the answer for this target; a program that must build on both declares the width it means there and converts at the call"
     )
     return Spelling(heroes: heroes, caveat: caveat)
 
@@ -177,6 +177,12 @@ test "the table: pointers, fixed widths, the derived word, the decline"
     assert !l64.must().caveat.is_err()
     u32w = spelling(c_type: "unsigned long", word_bits: 32)
     assert u32w.must().heroes == "u32"
+
+    # Both renderings, the target's width read from the parameter and each
+    # platform's named, so the note is true on every leg (defect 2067): the
+    # Unixes' build and the Windows box's.
+    assert l64.must().caveat.must() == "C's `long` is the platform's word, not a width the header chose: 32 bits on Windows, 64 on 64-bit Linux and Darwin, and 64 on this target. `i64` is the answer for this target; a program that must build on both declares the width it means there and converts at the call"
+    assert spelling(c_type: "long", word_bits: 32).must().caveat.must() == "C's `long` is the platform's word, not a width the header chose: 32 bits on Windows, 64 on 64-bit Linux and Darwin, and 32 on this target. `i32` is the answer for this target; a program that must build on both declares the width it means there and converts at the call"
 
     # The float rows are fixed-width everywhere: no caveat.
     assert spelling(c_type: "double", word_bits: 64).must().heroes == "f64"

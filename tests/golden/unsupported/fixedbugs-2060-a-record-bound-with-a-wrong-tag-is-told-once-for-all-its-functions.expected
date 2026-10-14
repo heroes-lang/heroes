@@ -1,0 +1,6 @@
+error[ffi_unknown_tag]: `fixedbugs-2060-records.h` has no `struct lock_t` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  at tests/golden/unsupported/fixedbugs-2060-a-record-bound-with-a-wrong-tag-is-told-once-for-all-its-functions.hero:14:21
+     |
+  14 |     record Lock tag lock_t  #~ ffi_unknown_tag
+     |                     ^^^^^^
+  note: `lock_t` is the name of a typedef in the header, of `struct lock_s`: the tag is the word the header writes after `struct`, `record Lock tag lock_s`, or the record takes the typedef by its own name, with no `tag`, `record lock_t` (§ 13)

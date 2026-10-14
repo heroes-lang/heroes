@@ -12,11 +12,14 @@
 # This shape: the header's spelling shown by a RESULT of the record's type,
 # in the assertion clang refuses.
 
+# Since 2026-10-14 (defect 2060) the function's result of the record is
+# no longer told `ffi_return_type` beside it: the record's own refusal is the
+# repair, and its note gives the spelling that builds.
 extern "fixedbugs-145-types.h"
     record S tag anon_s  #~ ffi_unknown_tag
         a: i32
         b: i32
-    function give_anon_s() -> S  #~ ffi_return_type
+    function give_anon_s() -> S
 
 function main()
     print(1)

@@ -30,6 +30,8 @@ use emit/ffi_record
 use emit/ffi_layout
 use emit/ffi_built
 use emit/ffi_field
+use emit/ffi_nested
+use emit/ffi_cascade
 use emit/ffi_tag
 use emit/ffi_incomplete
 use emit/ffi_build
@@ -42,6 +44,7 @@ use emit/ffi_unavailable
 use emit/ffi_extent
 use emit/ffi_unit
 use emit/ffi_asked
+use emit/ffi_reach
 use cli/pointee_ask
 use parse
 use resolve
@@ -99,6 +102,14 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     # it names or leaves out (panel 186 R7, `emit/ffi_built.hero`), at the
     # construction: a span no reader below claims, so nothing is dropped.
     found @ ffi_built.at_constructions(s, decls, c, p, text: text)
+
+    # A binding whose header's macros name what clang finds undeclared
+    # (`emit/ffi_reach.hero`, defect 2061), told before any reader of a line
+    # at its declaration: the result clang gives a call it cannot see
+    # declared is no header's type.
+    for line in ffi_lookup.lines(text: text)
+        for told in ffi_reach.told(s, tree, decls, line: line, reached: asked.reached)
+            found @ ffi_lookup.add_once(found, d: told)
 
     for line in ffi_lookup.lines(text: text)
         wrong = ffi_declared.wrong_type(s, decls, tree, line: line, results: asked.results, word_bits: word_bits)
@@ -170,6 +181,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !macro_f.is_err()
             found @ ffi_lookup.add_once(found, d: macro_f.must())
+
+        # A field the header has inside another member, and one whose type
+        # has no name (defect 2062), each read before the field's own reader.
+        inside = ffi_nested.unknown_inside(s, decls, line: line, nested: asked.nested)
+
+        if !inside.is_err()
+            found @ ffi_lookup.add_once(found, d: inside.must())
         unknown_f = ffi_field.unknown_field(s, decls, line: line)
 
         if !unknown_f.is_err()
@@ -190,6 +208,10 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !const_f.is_err()
             found @ ffi_lookup.add_once(found, d: const_f.must())
+        unnamed = ffi_nested.unnamed_member(s, tree, decls, line: line, fields: asked.fields)
+
+        if !unnamed.is_err()
+            found @ ffi_lookup.add_once(found, d: unnamed.must())
         field = ffi_field.field_type(
             s,
             tree,
@@ -320,7 +342,8 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         for lent in ffi_unit.lend_refusals(s, decls, tree, answered, line: line)
             found @ ffi_lookup.add_once(found, d: lent)
 
-    return found
+    # A record refused at its declaration is told once (defect 2060).
+    return ffi_cascade.without_consequences(s, tree, decls, found: found)
 
 ## Tests
 

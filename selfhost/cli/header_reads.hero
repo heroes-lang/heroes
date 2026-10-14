@@ -1,0 +1,116 @@
+# Whether a refused header reads a header of C's own itself, asked of clang on
+# the failure path alone, so a note never says it does not include one it
+# does (design.md §4.17, §4.19; defect 2073, 2026-10-14, found by batch 17's
+# ffi lane beside defect 2047).
+#
+# **The reason was a guess and the move was a measurement.** Where a header
+# compiles once a header of C's own is written before it (`cli/header_order`'s
+# `standard`, panel 204's R3), the note said *a header of C's own it uses and
+# does not include*, and `cli/name_order.hero` *a header of C's own it does
+# not include*: true of a header that names `FILE` and never includes
+# `<stdio.h>`, false of `insys.h`, whose line 1 `#define off_t ...` breaks
+# the `<stdio.h>` its line 2 includes, of one that includes it lines later,
+# of one that reaches it through a header of its own, and of one testing
+# `#ifdef EOF` above its own include (the lane's `build/rep/2073`).
+#
+# **So clang is asked which files the header opens**: `-H` lists every file a
+# unit enters, one line each, its depth in dots. The prerequisite's own file
+# is read from a unit of it alone, the one its `#include <...>` resolves to
+# under the unit's words; the header reads it where that file stands among
+# the files entered below the header's own line, before the next file of
+# the unit's own depth. Nothing is inferred from a file's name.
+
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/strings
+use emit/clang_place
+use emit/ffi_lookup
+
+# Whether `target`, read alone as a unit's group reads it, enters the file
+# `prerequisite` resolves to, itself or through a header it includes; false
+# where clang could not be asked.
+function reads(t: toolchain.Toolchain, under: compiling.Compiling, target: str, prerequisite: str) -> bool
+    words = strings.with_all(list: compiling.unit_words(under), more: ["-H"])
+    alone = order_trial.compiled(t, words: words, text: order_trial.opening([prerequisite], question: ""))
+
+    if !alone.asked
+        return false
+    file = opened(said: alone.said, header: prerequisite)
+
+    if file.is_err()
+        return false
+    read = order_trial.compiled(t, words: words, text: order_trial.opening([target], question: ""))
+    return read.asked && entered_below(said: read.said, header: target, file: file.must())
+
+# One line of clang's `-H` list: how deep the file was entered, and its path.
+record Entered
+    depth: i64
+    path: str
+
+function entered(said: str) -> [Entered]
+    out: [Entered] @= []
+
+    for row in ffi_lookup.lines(text: said)
+        line = clang_place.without_return(row)
+        depth: i64 @= 0
+
+        while depth < line.len() && line[depth] == '.'
+            depth @ depth + 1
+
+        if depth > 0 && depth < line.len() && line[depth] == ' '
+            out @ out.push(Entered(depth: depth, path: line.slice(from: depth + 1, to: line.len())))
+
+    return out
+
+# The path of the first file entered at the unit's own depth that an
+# `#include` of `header` names.
+function opened(said: str, header: str) -> str?
+    for one in entered(said)
+        if one.depth == 1 && spelled(path: one.path, header: header)
+            return ok(one.path)
+
+    return fail(code: "none", msg: "the header was not entered")
+
+# Whether `file` is entered below the first line of the unit's own depth an
+# `#include` of `header` names, before the next line of that depth.
+function entered_below(said: str, header: str, file: str) -> bool
+    inside: bool @= false
+    wanted = clang_place.slashed(file)
+
+    for one in entered(said)
+        if one.depth == 1
+            if inside
+                return false
+            inside @ spelled(path: one.path, header: header)
+        else if inside && clang_place.slashed(one.path) == wanted
+            return true
+
+    return false
+
+function spelled(path: str, header: str) -> bool
+    for one in clang_place.spellings(path)
+        if one == header
+            return true
+
+    return false
+
+## Tests
+
+# clang's `-H` list as Apple clang 21 prints it, its SDK line first; the
+# Windows box's paths take a backslash.
+test "a header reads a header of C's own where the file is entered below its own line (defect 2073)"
+    stdio = ". /sdk/usr/include/SDKSettings.json\n. ./runtime/heroes_unit.h\n. /sdk/usr/include/stdio.h\n.. /sdk/usr/include/_stdio.h\n"
+    assert opened(said: stdio, header: "stdio.h").must() == "/sdk/usr/include/stdio.h"
+    insys = ". ./runtime/heroes_unit.h\n. ./insys.h\n.. /sdk/usr/include/stdio.h\n... /sdk/usr/include/_stdio.h\n. ./runtime/heroes_guard_close.h\n"
+    assert entered_below(said: insys, header: "insys.h", file: "/sdk/usr/include/stdio.h")
+    through = ". ./through.h\n.. ./mid.h\n... /sdk/usr/include/stdio.h\n"
+    assert entered_below(said: through, header: "through.h", file: "/sdk/usr/include/stdio.h")
+
+    # A header that never enters it, and a file of that name another header
+    # of the unit enters after it, are not its own.
+    nofile = ". ./nofile.h\n. ./runtime/heroes_standard.h\n.. /sdk/usr/include/stdio.h\n"
+    assert !entered_below(said: nofile, header: "nofile.h", file: "/sdk/usr/include/stdio.h")
+    windows = ". .\\insys.h\r\n.. C:\\sdk\\include\\stdio.h\r\n"
+    assert entered_below(said: windows, header: "insys.h", file: "C:/sdk/include/stdio.h")
+    assert entered("no list here\n").len() == 0

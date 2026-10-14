@@ -1,0 +1,6 @@
+error[ffi_macro_name]: `fixedbugs-2061-reach.h` defines `LIMIT` as a macro naming `make_limit`, a macro that expands only where it is called, not a value: it has none until it is called, and a macro has no parameter types for clang to hold a declaration to
+  at tests/golden/unsupported/fixedbugs-2061-a-constant-naming-a-macro-written-with-parameters-is-no-value.hero:10:5
+     |
+  10 |     constant LIMIT: i64  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline <C result> hero_LIMIT(<its parameters, in C>) { return LIMIT(<their names>); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_LIMIT` there like any function, and clang holds that declaration to your function (§ 13)

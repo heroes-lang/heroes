@@ -1,0 +1,14 @@
+# fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
+#
+# The first spelling the repaired note gives as building today, and the
+# tenth blind reader's: the record `partial`, naming only the member the header gives the
+# type itself. Pinned so the note's *which builds today* has a witness.
+
+extern "fixedbugs-2062-tagged.h"
+    record Tagged tag tagged partial
+        kind: i32
+    function tg_kind(@t: Tagged lent) -> i32
+
+function main()
+    t @= Tagged(kind: 2, rest: zero)
+    print(tg_kind(@t))

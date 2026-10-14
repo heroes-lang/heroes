@@ -1,0 +1,243 @@
+# A refused header's message names a file of the C library or the toolchain
+# as an `#include <...>` names it, never by the path this machine installed it
+# at (design.md §4.17, §4.19; defect 2047, 2026-10-14).
+#
+# **The same mistake read two ways on two machines.** After `#include
+# <stdint.h>`, `typedef long int64_t;` is refused `ffi_header_refused`, and the
+# note clang attaches stands in the C library's own header: it was told *at
+# `/Applications/Xcode.app/.../usr/include/sys/_types/_int64_t.h` line 30* on
+# this Mac and at `/usr/lib/llvm-22/...` on Linux, where every other path of
+# the message is the program's own and relative. A file the refused header
+# reaches through a header of C's own, and every include clang followed to
+# it, read the same way (the lane's shapes `insys` and `tool`).
+#
+# **The directories are clang's own answer**, asked on that path alone: `clang
+# -E -v` under the unit's words prints the directories an `#include <...>`
+# searches, the toolchain's, the SDK's and every `-I`, and a backquoted path
+# the message names under one of them, the longest, is written from there in
+# angle brackets: *at `<sys/_types/_int64_t.h>` line 30*. Only an absolute
+# directory is taken: a relative path is the program's own already, and the
+# group's header and its directory are named as the group names them before
+# anything here reads the message (`emit/clang_place.shown`).
+
+use diag
+use cli/toolchain
+use cli/compiling
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use emit/clang_place
+use emit/ffi_lookup
+
+constant STARTS: str
+    "#include <...> search starts here:"
+
+constant ENDS: str
+    "End of search list."
+
+constant FRAMEWORK: str
+    " (framework directory)"
+
+# `told` with every backquoted path under a directory clang searches written as
+# an `#include <...>` names it; clang asked only where one holds such a path.
+function shown(t: toolchain.Toolchain, under: compiling.Compiling, told: [diag.Diagnostic]) -> [diag.Diagnostic]
+    if !any_absolute(told)
+        return told
+    dirs = searched(t, words: compiling.unit_words(under))
+
+    if dirs.len() == 0
+        return told
+    out: [diag.Diagnostic] @= []
+
+    for d in told
+        one: diag.Diagnostic @= d
+        one.message @ written(d.message, dirs: dirs)
+        notes: [str] @= []
+
+        for note in d.notes
+            notes @ notes.push(written(note, dirs: dirs))
+
+        one.notes @ notes
+        out @ out.push(one)
+
+    return out
+
+# Whether a message or a note backquotes an absolute path.
+function any_absolute(told: [diag.Diagnostic]) -> bool
+    for d in told
+        for text in strings.with_all(list: [d.message], more: d.notes)
+            for quoted in backquoted(text)
+                if absolute(quoted)
+                    return true
+
+    return false
+
+# The absolute directories clang searches for `#include <...>` under `words`,
+# slashed, each ending in `/`, longest first; none where clang said nothing.
+function searched(t: toolchain.Toolchain, words: [str]) -> [str]
+    dir = t.build + "/system-paths"
+    none: [str] = []
+
+    if process.mkdir_all(dir).is_err()
+        return none
+    empty = dir + "/empty.c"
+
+    if publish.write_whole(path: empty, text: "", keyed: true).is_err()
+        return none
+    err = publish.private_name(dir + "/said.txt")
+    line = response_file.carried(line: strings.with_all(list: ["clang", "-E", "-v"], more: words), dir: dir)
+    ran = process.run(program: "clang", words: line.push(empty), out: process.discard(), err: err)
+    said = read_back.words(err)
+    publish.discard(err)
+
+    if !ran.started || said.is_err()
+        return none
+    return dirs_of(said.must())
+
+# The directories between clang's two lines, absolute ones, slashed, ending in
+# `/`, longest first.
+function dirs_of(said: str) -> [str]
+    out: [str] @= []
+    inside: bool @= false
+
+    for row in ffi_lookup.lines(text: said)
+        line = ffi_lookup.trimmed(clang_place.without_return(row))
+
+        if line == STARTS
+            inside @ true
+        else if line == ENDS
+            inside @ false
+        else if inside
+            dir: str @= line
+
+            if strings.ends_with(text: dir, suffix: FRAMEWORK)
+                dir @ dir.slice(from: 0, to: dir.len() - FRAMEWORK.len())
+
+            if absolute(dir)
+                slashed = clang_place.slashed(dir)
+
+                if strings.ends_with(text: slashed, suffix: "/")
+                    out @ out.push(slashed)
+                else
+                    out @ out.push(slashed + "/")
+
+    return longest_first(out)
+
+# ORDER: longest first, so a path under two directories is written from the
+# deeper one, `/usr/include/aarch64-linux-gnu/` before `/usr/include/`.
+function longest_first(dirs: [str]) -> [str]
+    out: [str] @= []
+    left: [str] @= dirs
+
+    while left.len() > 0
+        at: i64 @= 0
+        k: i64 @= 1
+
+        while k < left.len()
+            if left[k].len() > left[at].len()
+                at @ k
+            k @ k + 1
+
+        out @ out.push(left[at])
+        rest: [str] @= []
+        k @ 0
+
+        while k < left.len()
+            if k != at
+                rest @ rest.push(left[k])
+            k @ k + 1
+
+        left @ rest
+
+    return out
+
+# `text` with each backquoted path under one of `dirs` written `<...>`.
+function written(text: str, dirs: [str]) -> str
+    parts = pieces(text)
+
+    if parts.len() < 3
+        return text
+    out: [str] @= []
+    k: i64 @= 0
+
+    while k < parts.len()
+        part: str @= parts[k]
+
+        if k % 2 == 1 && k < parts.len() - 1 && absolute(part)
+            part @ included_as(part, dirs: dirs)
+        out @ out.push(part)
+        k @ k + 1
+
+    return out.join("`")
+
+# A path as an `#include <...>` names it from the first of `dirs` it lies
+# under, or as it was.
+function included_as(path: str, dirs: [str]) -> str
+    p = clang_place.slashed(path)
+
+    for dir in dirs
+        if p.len() > dir.len() && clang_place.same_bytes(text: p, from: 0, part: dir)
+            return "<" + p.slice(from: dir.len(), to: p.len()) + ">"
+
+    return path
+
+# The backquoted spans of a text.
+function backquoted(text: str) -> [str]
+    parts = pieces(text)
+    out: [str] @= []
+    k: i64 @= 1
+
+    while k < parts.len() - 1
+        out @ out.push(parts[k])
+        k @ k + 2
+
+    return out
+
+# A text cut at each backquote, a byte no UTF-8 character holds.
+function pieces(text: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == '`'
+            out @ out.push(text.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    return out.push(text.slice(from: from, to: text.len()))
+
+# A path from the root of this machine's file system: `/...`, or a drive's,
+# `C:\...` or `C:/...`.
+function absolute(path: str) -> bool
+    if path.len() > 0 && path[0] == '/'
+        return true
+    return path.len() > 2 && path[1] == ':' && (path[2] == '\\' || path[2] == '/')
+
+## Tests
+
+# clang's words as Apple clang 21 prints them on this Mac, a `-I` relative
+# and the SDK's frameworks, and Debian clang 22's multiarch beside its own.
+test "the directories clang searches are read between its two lines, absolute ones, longest first (defect 2047)"
+    mac = "clang -cc1 version 21.0.0\n#include \"...\" search starts here:\n#include <...> search starts here:\n ../runtime\n .\n /Applications/X.app/usr/lib/clang/21/include\n /Applications/X.app/SDKs/MacOSX.sdk/usr/include\n /Applications/X.app/SDKs/MacOSX.sdk/System/Library/Frameworks (framework directory)\nEnd of search list.\n"
+    got = dirs_of(mac)
+    assert got.len() == 3
+    assert got[0] == "/Applications/X.app/SDKs/MacOSX.sdk/System/Library/Frameworks/"
+    assert got[2] == "/Applications/X.app/usr/lib/clang/21/include/"
+    linux = "#include <...> search starts here:\n /usr/lib/llvm-22/lib/clang/22/include\n /usr/local/include\n /usr/include/aarch64-linux-gnu\n /usr/include\nEnd of search list.\n"
+    dirs = dirs_of(linux)
+    assert included_as("/usr/include/aarch64-linux-gnu/bits/stdint-intn.h", dirs: dirs) == "<bits/stdint-intn.h>"
+    assert included_as("/usr/include/stdint.h", dirs: dirs) == "<stdint.h>"
+    assert included_as("/opt/other/x.h", dirs: dirs) == "/opt/other/x.h"
+    windows = "#include <...> search starts here:\r\n C:\\Program Files\\LLVM\\lib\\clang\\23\\include\r\nEnd of search list.\r\n"
+    assert included_as("C:\\Program Files\\LLVM\\lib\\clang\\23\\include\\stddef.h", dirs: dirs_of(windows)) == "<stddef.h>"
+
+test "only a backquoted absolute path under a searched directory is written anew"
+    dirs = ["/sdk/usr/include/"]
+    note = "clang adds, at `/sdk/usr/include/sys/_types/_int64_t.h` line 30: previous definition is here"
+    assert written(note, dirs: dirs) == "clang adds, at `<sys/_types/_int64_t.h>` line 30: previous definition is here"
+    assert written("`abs.h` line 2 reads `typedef long int64_t;`", dirs: dirs) == "`abs.h` line 2 reads `typedef long int64_t;`"
+    assert written("no quote here /sdk/usr/include/x.h", dirs: dirs) == "no quote here /sdk/usr/include/x.h"
+    assert absolute("C:/x") && absolute("/x") && !absolute("./x") && !absolute("x.h")

@@ -12,10 +12,13 @@
 # This shape: a typedef of an anonymous union, which a record binds for
 # reading (panel 073), named as a tag.
 
+# Since 2026-10-14 (defect 2060) the function's parameter of the record is
+# no longer told `ffi_parameter_type` beside it: the record's own refusal is the
+# repair, and its note gives the spelling that builds.
 extern "fixedbugs-145-types.h"
     record U tag anon_u partial  #~ ffi_unknown_tag
         i: i32
-    function use_anon_u(@p: U) -> i32  #~ ffi_parameter_type
+    function use_anon_u(@p: U) -> i32
 
 function main()
     print(1)

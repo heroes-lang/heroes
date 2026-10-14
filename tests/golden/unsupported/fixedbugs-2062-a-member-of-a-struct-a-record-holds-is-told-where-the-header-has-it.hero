@@ -1,0 +1,16 @@
+# fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `x`, a member of the struct `pos` that `struct nested` holds, as
+# a field: *declares no `x`*, its note's two fixes unable to work.
+#
+# FIX: the note says `x` is inside `pos`, as `pos.x`, a struct where the
+# first case's is a union, and what builds.
+
+extern "fixedbugs-2062-records.h"
+    record Nested tag nested
+        kind: i32
+        x: i32  #~ ffi_unknown_field
+
+function main()
+    n = Nested(kind: 2, rest: zero)
+    print(n.kind)
