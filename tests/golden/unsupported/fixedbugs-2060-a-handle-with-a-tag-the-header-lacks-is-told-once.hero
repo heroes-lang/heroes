@@ -1,0 +1,14 @@
+# fixedbugs, defect 2060, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: a handle whose tag the header does not have, `opaque_ss`, told
+# `ffi_unknown_name`, and the function it is handed to `ffi_parameter_type`
+# too. Defect 145's header.
+#
+# FIX: the same: the handle's refusal at its declaration is the one told.
+
+extern "fixedbugs-145-types.h"
+    record H tag opaque_ss  #~ ffi_unknown_name
+    function use_tagged(p: H) -> i32
+
+function main()
+    print(1)
