@@ -180,7 +180,7 @@ hands lldb besides the binary is one fixed formatter, `heroes_lldb.py`,
 packaged beside its script: the first of the launch's `initCommands` is
 `command script import "<the extension's folder>/lldb/heroes_lldb.py"`,
 and any `initCommands` the configuration names run after it, unchanged
-(panel 213, provisional, author ratification pending).
+(panel 213, ratified by the author on 2026-10-14).
 
 If the program does not build, nothing is launched: the compiler's own words
 go to the **Heroes** output channel, and each diagnostic, or each `???` hole,

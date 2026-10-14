@@ -1,5 +1,5 @@
-# What a debugger is not shown (design.md §3.1; panel 213's R1, provisional,
-# author ratification pending): the word the emitter writes before a C local
+# What a debugger is not shown (design.md §3.1; panel 213's R1, ratified by
+# the author on 2026-10-14): the word the emitter writes before a C local
 # it invented, so that a frame stopped on an author's line lists the author's
 # parameters and bindings alone, and the line each unit defines it by.
 #
