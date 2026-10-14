@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-2061-reach.h` defines `NOWHERE` as a macro naming `nosuch_value`, which no header this module reads declares — clang read the headers and could not find it
+  at tests/golden/unsupported/fixedbugs-2061-a-constant-naming-nothing-declared-is-told.hero:9:5
+    |
+  9 |     constant NOWHERE: i64  #~ ffi_unknown_name
+    |     ^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` is checked against what its header makes the name (§4.19), and a macro through the name it leaves: name the header that declares `nosuch_value` in a group above this one, or bind the name the header's documentation gives in place of `NOWHERE`

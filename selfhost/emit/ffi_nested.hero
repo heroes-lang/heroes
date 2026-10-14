@@ -1,0 +1,337 @@
+# A group record's field the header has only inside a member of another
+# type, and a field declared as a member whose type has no name, told with
+# where the header has it and the spellings that build (design.md §4.19,
+# §4.17; spec § 13; defect 2062, 2026-10-14).
+#
+# **The message is true and the note sent the author nowhere.** `struct
+# tagged { int kind; union { int fd; void *handle; } via; }` bound with `fd:
+# i32` beside `kind` is told *`union.h` declares no `fd` in `struct tagged`*,
+# which is C's own verdict (panel 215's critic: clang says *no member named
+# 'fd' in 'struct tagged'*), but its note said *correct the spelling, or name
+# the header whose `struct tagged` has a member `fd`*, and neither can work:
+# the header declares `fd` inside `via`. Where the refused round found the
+# field inside another member (`cli/member_ask.hero`), the first line stays,
+# and the notes say where, `via.fd`, and what builds today, each measured by
+# building it on 2026-10-14 (the lane's `build/rep/2062/repairs/`): the record
+# `partial`, naming only members the header gives the type itself, a
+# construction ended `rest: zero`; a function of the program's own in a
+# header that includes the group's, which the group then names in its place
+# (a header with no include guard is refused read twice); a macro there,
+# `#define fd via.fd`, as `fixedbugs-151-unions.h` reaches `s6_addr`; and,
+# where the holder's type has a name and the holder is the type's own
+# member, that type bound as a record of the group.
+#
+# **A member whose type has no name is the other half**: `via: i32` was told
+# *`Tagged.via` is `union (unnamed union at ./shapes.h:4:27)`*, its note
+# *correct `via`*, which no type a field is declared with can do, and the
+# type's text names the header's file and line, spelled otherwise by clang 21
+# and 22. What the language accepts does not move here: panel 215 is sitting
+# on group records (2026-10-14), and a new accepted form is its to rule.
+
+use ast
+use token
+use source
+use diag
+use emit/ffi_asked
+use emit/ffi_lookup
+use emit/extern_field
+use emit/ffi_field
+
+# clang's *no member named 'fd' in 'struct tagged'* at a field the refused
+# round found inside another member: told where, read before
+# `ffi_field.unknown_field`, which tells a field the type lacks.
+function unknown_inside(s: source.Source, decls: [ast.Decl], line: str, nested: {str: ffi_asked.Nested}) -> diag.Diagnostic?
+    tail = ffi_lookup.after(text: line, marker: "no member named '")
+
+    if nested.len() == 0 || tail.is_err()
+        return fail(code: "none", msg: "not a missing member the round found inside another")
+    member = ffi_lookup.up_to_quote(tail.must())
+    spelled = ffi_lookup.after(text: tail.must(), marker: "' in '")
+
+    if spelled.is_err()
+        return fail(code: "none", msg: "no type named on the line")
+    c_type = ffi_lookup.up_to_quote(spelled.must())
+    found: ffi_field.DeclaredField? @= ffi_field.field_at_line(s, decls, line: line, member: member)
+
+    if found.is_err()
+        found @ ffi_field.field_by_tag(s, decls, c_type: c_type, member: member)
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group record names this field")
+    owner = owner_of(s, decls, span: found.must().span)
+
+    if owner.is_err()
+        return fail(code: "none", msg: "no record holds this field")
+    return inside(
+        header: found.must().header,
+        owner: owner.must(),
+        member: member,
+        c_type: c_type,
+        nested: nested,
+        span: found.must().span
+    )
+
+# The group record whose field is written at `span`.
+function owner_of(s: source.Source, decls: [ast.Decl], span: token.Span) -> str?
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                for field in rec.fields
+                    if field.name.start == span.start
+                        return ok(source.span_text(s, decl.name))
+            .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return fail(code: "none", msg: "no record holds a field there")
+
+# A field assertion clang refused where the header's type for the member has
+# no name of its own, read before `ffi_field.field_type`.
+function unnamed_member(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str, fields: {str: ffi_asked.Typed}) -> diag.Diagnostic?
+    rest = ffi_lookup.after(text: line, marker: extern_field.FIELD_ASSERTION)
+
+    if !ffi_lookup.has(text: line, needle: ffi_lookup.FAILED) || rest.is_err()
+        return fail(code: "none", msg: "not a field assertion")
+    parts = ffi_lookup.words(text: rest.must())
+
+    if parts.len() < 2 || fields[parts[0] + " " + parts[1]].is_err()
+        return fail(code: "none", msg: "no type the round asked")
+    found = ffi_field.record_field(s, tree, decls, type_name: parts[0], member: parts[1])
+
+    if found.is_err()
+        return fail(code: "none", msg: "no group record has this field")
+    spelled = fields[parts[0] + " " + parts[1]].must().spelled
+    return unnamed_told(
+        header: found.must().header,
+        owner: parts[0],
+        member: parts[1],
+        spelled: spelled,
+        declared: found.must().declared,
+        span: found.must().field_span
+    )
+
+# The refusal of `owner`'s `member` where the refused round found it inside
+# another member of the header's type (`cli/member_ask.hero`), or none.
+function inside(header: str, owner: str, member: str, c_type: str, nested: {str: ffi_asked.Nested}, span: token.Span) -> diag.Diagnostic?
+    found = nested[owner + " " + member]
+
+    if found.is_err()
+        return fail(code: "none", msg: "not found inside another member")
+    return ok(told(header: header, owner: owner, member: member, c_type: c_type, n: found.must(), span: span))
+
+# The field's refusal, at the field the author wrote: what the header
+# declares and where, then what builds.
+function told(header: str, owner: str, member: str, c_type: str, n: ffi_asked.Nested, span: token.Span) -> diag.Diagnostic
+    path = n.holder + "." + member
+    top = first_part(n.holder)
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_unknown_field",
+        message: "`" + header + "` declares no `" + member + "` in `" + c_type + "`: clang read the header, and that type has no such field",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "`" + member + "` is a member of " + holder_phrase(holder: n.holder, kind: n.kind) + " inside `" + c_type + "`, which C reaches as `" + path + "`: a group's `record` names the members the header gives its type itself (§4.19, § 13)"
+    )
+
+    if n.members.len() > 0
+        named_here: [str] @= n.outside
+
+        if named_here.len() == 0
+            named_here @ n.members
+        d.notes @ d.notes.push(
+            "what builds today: bind `" + owner + "` `partial`, naming only " + listed(named_here) + ", and end a construction of it with `rest: zero`, which leaves `" + top + "` to C"
+        )
+    else
+        d.notes @ d.notes.push(
+            "`" + c_type + "` has no member of its own but `" + top + "`, so a `partial` record has none to name"
+        )
+    d.notes @ d.notes.push(
+        reached(header: header, c_type: c_type, path: path, member: member, field_type: n.field_type)
+    )
+    d.notes @ d.notes.push(
+        "or reach it by a macro, as C's own headers reach `s6_addr`: a header of the program's own that includes `" + header + "` and defines `#define " + member + " " + path + "`, which this group then names in `" + header + "`'s place, so `" + member + "` stays a field; the macro renames every `" + member + "` read after it"
+    )
+
+    if n.named != "" && top == n.holder
+        d.notes @ d.notes.push(
+            "or bind `" + n.named + "`, the type of `" + n.holder + "`, as a record of this group, and declare `" + n.holder + "` a field of it (§ 13)"
+        )
+    return d
+
+# `the union `via``, `the struct `pos``, or `` `pos`, a `point_t` ``.
+function holder_phrase(holder: str, kind: str) -> str
+    if kind == "union" || kind == "struct"
+        return "the " + kind + " `" + holder + "`"
+    return "`" + holder + "`, a `" + kind + "`"
+
+# The refusal of a field declared as a member whose type clang spells with no
+# name of its own, or none where it has one.
+function unnamed_told(header: str, owner: str, member: str, spelled: str, declared: str, span: token.Span) -> diag.Diagnostic?
+    if !unnamed(spelled)
+        return fail(code: "none", msg: "a type with a name")
+    return ok(
+        unnamed_field(header: header, owner: owner, member: member, kind: kind_of(spelled), declared: declared, span: span)
+    )
+
+# A field declared as a member whose type has no name of its own: told so,
+# never with the type's text, which names the header's file and line.
+function unnamed_field(header: str, owner: str, member: str, kind: str, declared: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_field_type",
+        message: "`" + owner + "." + member + "` is " + kind_phrase(kind) + " with no name of its own in `" + header + "`, not `" + declared + "` — clang read the header's struct and the field disagrees",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "no type a field is declared with names " + kind_phrase(kind) + " the header gives no name (§ 13): bind `" + owner + "` `partial` without `" + member + "`, which builds today, and reach `" + member + "`'s members through a function of the program's own in a header that includes `" + header + "`, which this group then names in `" + header + "`'s place"
+    )
+    return d
+
+# Whether a type as clang spells it is a union or a struct with no name of its
+# own: its first word, and clang naming it by where it stands.
+function unnamed(spelled: str) -> bool
+    kind = kind_of(spelled)
+    return (kind == "union" || kind == "struct") && has(text: spelled, needle: " at ")
+
+# `union` or `struct`, a type text's first word, or the whole text.
+function kind_of(type_text: str) -> str
+    for word in ["union", "struct"]
+        if type_text.len() > word.len() && type_text.slice(from: 0, to: word.len() + 1) == word + " "
+            return word
+
+    return type_text
+
+function kind_phrase(kind: str) -> str
+    if kind == "union" || kind == "struct"
+        return "a " + kind
+    return "a `" + kind + "`"
+
+# The note that reaches the member through a function of the program's own,
+# drafted whole where the field's type is a plain name.
+function reached(header: str, c_type: str, path: str, member: str, field_type: str) -> str
+    place = ", which this group then names in `" + header + "`'s place"
+
+    if field_type == ""
+        return "or reach `" + path + "` through a function of the program's own in a header that includes `" + header + "` and reads `t->" + path + "`" + place
+    return "or reach `" + path + "` through a function of the program's own in a header that includes `" + header + "`, `static inline " + field_type + " " + bare(c_type) + "_" + member + "(const " + c_type + " *t) { return t->" + path + "; }`" + place
+
+# A C type's name without its `struct ` or `union `.
+function bare(c_type: str) -> str
+    for word in ["struct ", "union "]
+        if c_type.len() > word.len() && c_type.slice(from: 0, to: word.len()) == word
+            return c_type.slice(from: word.len(), to: c_type.len())
+
+    return c_type
+
+function first_part(holder: str) -> str
+    at: i64 @= 0
+
+    while at < holder.len()
+        if holder[at] == '.'
+            return holder.slice(from: 0, to: at)
+        at @ at + 1
+
+    return holder
+
+# `a`, `a` and `b`, or `a`, `b` and `c`.
+function listed(names: [str]) -> str
+    quoted: [str] @= []
+
+    for name in names
+        quoted @ quoted.push("`" + name + "`")
+
+    if quoted.len() == 1
+        return quoted[0]
+    return quoted.slice(from: 0, to: quoted.len() - 1).join(", ") + " and " + quoted[quoted.len() - 1]
+
+function has(text: str, needle: str) -> bool
+    at: i64 @= 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+test "a field inside a union member is told where it is, with what builds (defect 2062)"
+    span = token.Span(start: 0, end: 2)
+    via = ffi_asked.Nested(
+        holder: "via",
+        kind: "union",
+        named: "",
+        field_type: "int",
+        outside: ["kind"],
+        members: ["kind"]
+    )
+    d = told(header: "union.h", owner: "Tagged", member: "fd", c_type: "struct tagged", n: via, span: span)
+    assert d.code == "ffi_unknown_field"
+    assert d.message == "`union.h` declares no `fd` in `struct tagged`: clang read the header, and that type has no such field"
+    assert d.notes[0] == "`fd` is a member of the union `via` inside `struct tagged`, which C reaches as `via.fd`: a group's `record` names the members the header gives its type itself (§4.19, § 13)"
+    assert d.notes[1] == "what builds today: bind `Tagged` `partial`, naming only `kind`, and end a construction of it with `rest: zero`, which leaves `via` to C"
+    assert d.notes[2] == "or reach `via.fd` through a function of the program's own in a header that includes `union.h`, `static inline int tagged_fd(const struct tagged *t) { return t->via.fd; }`, which this group then names in `union.h`'s place"
+    assert d.notes[3] == "or reach it by a macro, as C's own headers reach `s6_addr`: a header of the program's own that includes `union.h` and defines `#define fd via.fd`, which this group then names in `union.h`'s place, so `fd` stays a field; the macro renames every `fd` read after it"
+    assert d.notes.len() == 4
+
+    # A named holder's type is offered as a record, two levels down is not.
+    holds = ffi_asked.Nested(
+        holder: "via",
+        kind: "union",
+        named: "union named_u",
+        field_type: "",
+        outside: [],
+        members: ["kind", "n"]
+    )
+    named = told(header: "s.h", owner: "Holds", member: "fd", c_type: "struct holds", n: holds, span: span)
+    assert named.notes[1] == "what builds today: bind `Holds` `partial`, naming only `kind` and `n`, and end a construction of it with `rest: zero`, which leaves `via` to C"
+    assert named.notes[2] == "or reach `via.fd` through a function of the program's own in a header that includes `s.h` and reads `t->via.fd`, which this group then names in `s.h`'s place"
+    assert named.notes[4] == "or bind `union named_u`, the type of `via`, as a record of this group, and declare `via` a field of it (§ 13)"
+    inner = ffi_asked.Nested(
+        holder: "inner.u",
+        kind: "union",
+        named: "union u_t",
+        field_type: "int",
+        outside: [],
+        members: []
+    )
+    deep = told(header: "s.h", owner: "Deep", member: "fd", c_type: "struct deep", n: inner, span: span)
+    assert deep.notes.len() == 4
+    assert deep.notes[0] == "`fd` is a member of the union `inner.u` inside `struct deep`, which C reaches as `inner.u.fd`: a group's `record` names the members the header gives its type itself (§4.19, § 13)"
+    assert deep.notes[1] == "`struct deep` has no member of its own but `inner`, so a `partial` record has none to name"
+
+    # Found only where the round found it.
+    lookup: {str: ffi_asked.Nested} @= {}
+    lookup["Tagged fd"] @ via
+    assert !inside(header: "union.h", owner: "Tagged", member: "fd", c_type: "struct tagged", nested: lookup, span: span).is_err()
+    assert inside(
+        header: "union.h",
+        owner: "Tagged",
+        member: "nofield",
+        c_type: "struct tagged",
+        nested: lookup,
+        span: span
+    ).is_err()
+
+test "a member whose type has no name is told so, never by the type's text"
+    assert unnamed("union (unnamed union at ./shapes.h:4:27)")
+    assert unnamed("union tagged::(unnamed at ./shapes.h:4:27)")
+    assert !unnamed("union named_u")
+    assert !unnamed("int")
+    span = token.Span(start: 0, end: 3)
+    assert unnamed_told(
+        header: "h.h",
+        owner: "T",
+        member: "via",
+        spelled: "union named_u",
+        declared: "i32",
+        span: span
+    ).is_err()
+    d = unnamed_told(
+        header: "shapes.h",
+        owner: "Tagged",
+        member: "via",
+        spelled: "union (unnamed union at ./shapes.h:4:27)",
+        declared: "i32",
+        span: span
+    ).must()
+    assert d.message == "`Tagged.via` is a union with no name of its own in `shapes.h`, not `i32` — clang read the header's struct and the field disagrees"
+    assert listed(["a", "b", "c"]) == "`a`, `b` and `c`"

@@ -256,10 +256,14 @@ function macro_name(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: st
     if found.must().is_constant
         message @ "`" + header + "` defines `" + name + "` as a macro that takes arguments, not a value: it has none until it is called, and a macro has no parameter types for clang to hold a declaration to"
     d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_macro_name", message: message, span: found.must().span)
-    d.notes @ d.notes.push(
-        "bind a function of the program's own that calls it: in a header beside this file, `" + shim(s, tree, decls, name: name) + "`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_" + name + "` there like any function, and clang holds that declaration to your function (§ 13)"
-    )
+    d.notes @ d.notes.push(macro_repair(s, tree, decls, name: name))
     return ok(d)
+
+# The note a bound macro's refusal carries, the function the program writes
+# instead, which a macro naming another one that takes arguments carries too
+# (`emit/ffi_reach.hero`, defect 2061).
+function macro_repair(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: str) -> str
+    return "bind a function of the program's own that calls it: in a header beside this file, `" + shim(s, tree, decls, name: name) + "`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_" + name + "` there like any function, and clang holds that declaration to your function (§ 13)"
 
 # The function the note drafts: the declaration's parameter names, a
 # placeholder for every type, and `void` only where the declaration takes no

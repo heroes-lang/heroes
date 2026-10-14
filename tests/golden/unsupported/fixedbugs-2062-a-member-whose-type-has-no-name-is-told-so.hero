@@ -1,0 +1,17 @@
+# fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `via`, the union member spelled right, declared `i32`: told
+# *`Tagged.via` is `union (unnamed union at <file>:<line>:<col>)`*, its note
+# *correct `via`*, which no type a field is declared with can do.
+#
+# FIX: told as a union with no name of its own, the record `partial` without
+# it and a function of the program's own the spellings that build.
+
+extern "fixedbugs-2062-records.h"
+    record Tagged tag tagged
+        kind: i32
+        via: i32  #~ ffi_field_type
+
+function main()
+    t = Tagged(kind: 2, rest: zero)
+    print(t.kind)

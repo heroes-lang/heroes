@@ -1,0 +1,21 @@
+# fixedbugs, defect 2060, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `record Lock tag lock_t` over `typedef struct lock_s { ... }
+# lock_t;`, three functions taking `@l: Lock`: `ffi_unknown_tag` on the tag,
+# then `ffi_parameter_type` on each function, telling the author to declare
+# as a `record` the record they declared. Four errors for one mistake, as
+# this Mac's `pthread_mutex_t` gave with its three functions.
+#
+# FIX: a record refused at its own declaration takes its functions'
+# parameter and result messages with it (`emit/ffi_cascade.hero`); its note
+# gives the spelling that builds.
+
+extern "fixedbugs-2060-records.h"
+    record Lock tag lock_t  #~ ffi_unknown_tag
+        state: i32
+    function lock_init(@l: Lock) -> i32
+    function lock_take(@l: Lock) -> i32
+    function lock_give(@l: Lock) -> i32
+
+function main()
+    print(1)

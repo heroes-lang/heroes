@@ -1,0 +1,252 @@
+# Where a header has a field a group's record names that is no member of the
+# record's type itself, asked of clang on a refused build's path alone
+# (design.md §4.19, §4.17; defect 2062, 2026-10-14).
+#
+# **A record's field is a member of the header's type itself** (spec § 13):
+# C reaches `fd` in `struct tagged { int kind; union { int fd; void *handle;
+# } via; }` as `t.via.fd`, and a field `fd: i32` of `record Tagged tag
+# tagged` is refused by clang, *no member named 'fd' in 'struct tagged'*. The
+# message says so, truly; its note sent the author to a spelling or another
+# header, neither of which builds. Nine of panel 215's ten blind readers
+# wrote that record from the specification; the tenth bound it `partial`
+# with `kind` alone, which builds.
+#
+# **So a refused round whose clang found no such member asks the header's
+# layout** of the records each list's units read, the record-layout dump the
+# layout check reads (`emit/layout_text.hero`, `emit/layout_rows.hero`),
+# under the probe's words: a member the dump finds at a deeper level, by its
+# C path, is one the header has inside another member, and the holder's type
+# is read by its first word and by whether clang names it by where it stands
+# (`emit/layout_text.hero`'s premise: nothing more of a type's text is read).
+# `emit/ffi_field.hero` tells the field so, with the spellings that build. A
+# dump that does not compile answers nothing, and the field is told as before.
+
+use ast
+use source
+use emit/externs as emit_externs
+use emit/ffi_asked
+use emit/ffi_lookup
+use emit/layout_text
+use emit/layout_rows
+use cli/toolchain
+use cli/probing
+use cli/bound_macro
+use cli/process
+use cli/publish
+use cli/response_file
+use cli/read_back
+use cli/digest
+use parse
+
+# clang's words for a member a type does not have.
+constant NO_MEMBER: str
+    "no member named '"
+
+# Each group record's field the header has only inside another member, keyed
+# `<record> <field>`, of every list whose units read the record; nothing
+# where `message` names no missing member.
+function nested(t: toolchain.Toolchain, asking: [probing.Probing], s: source.Source, decls: [ast.Decl], message: str) -> {str: ffi_asked.Nested}
+    out: {str: ffi_asked.Nested} @= {}
+
+    if !ffi_lookup.has(text: message, needle: NO_MEMBER)
+        return out
+
+    for one in asking
+        wanted: [layout_text.Asked] @= []
+
+        for asked in layout_text.asked(s, decls)
+            if emit_externs.held(ok(one.records), decl: asked.decl) && !source.is_library(s, decls[asked.decl].name.start)
+                wanted @ wanted.push(asked)
+
+        if wanted.len() == 0
+            continue
+        probe = bound_macro.probe_of(t, one: one)
+
+        if probe.read.is_err()
+            continue
+        dumped = dump(t, words: probe.words, text: layout_text.dump_unit(probe.headers, wanted))
+
+        if dumped.is_err()
+            continue
+        rows = layout_rows.wrapper_rows(dumped.must())
+        heads = layout_text.heads(rows)
+
+        for asked in wanted
+            from = heads[asked.decl]
+
+            if from.is_err()
+                continue
+            read = layout_text.members(rows: rows, from: from.must())
+
+            if read.is_err()
+                continue
+
+            for found in inside(s, decl: decls[asked.decl], read: read.must())
+                if out[found.key].is_err()
+                    out[found.key] @ found.nested
+
+    return out
+
+# One field found inside another member, and its key.
+record Found
+    key: str
+    nested: ffi_asked.Nested
+
+# The fields of `decl` its type has only inside another member, read from the
+# type's members as the dump gives them.
+function inside(s: source.Source, decl: ast.Decl, read: [layout_text.Member]) -> [Found]
+    out: [Found] @= []
+    top: {str: bool} @= {}
+
+    for seen in layout_text.visible(read)
+        top[read[seen.at].name] @ true
+
+    match decl.kind
+        .record_decl rec =>
+            owner = source.span_text(s, decl.name)
+            outside: [str] @= []
+
+            for field in rec.fields
+                name = source.span_text(s, field.name)
+
+                if !top[name].is_err()
+                    outside @ outside.push(name)
+
+            for field in rec.fields
+                name = source.span_text(s, field.name)
+
+                if !top[name].is_err()
+                    continue
+                at = deeper(read, name: name)
+
+                if at.is_err()
+                    continue
+                path = read[at.must()].path
+                holder = path.slice(from: 0, to: path.len() - name.len() - 1)
+                held = by_path(read, path: holder)
+
+                if held.is_err()
+                    continue
+                out @ out.push(
+                    Found(key: owner + " " + name, nested: ffi_asked.Nested(holder: holder, kind: kind_of(read[held.must()].type_text), named: named_of(read[held.must()].type_text), field_type: plain(read[at.must()].type_text), outside: outside, members: others(read, top: top, holder: holder)))
+                )
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return out
+
+    return out
+
+# The first member named `name` that C reaches through another, by its path.
+function deeper(read: [layout_text.Member], name: str) -> i64?
+    k: i64 @= 0
+
+    while k < read.len()
+        path = read[k].path
+
+        if read[k].name == name && path.len() > name.len() + 1 && path[path.len() - name.len() - 1] == '.'
+            return ok(k)
+        k @ k + 1
+
+    return fail(code: "none", msg: "no member of that name inside another")
+
+# The member C names by `path`.
+function by_path(read: [layout_text.Member], path: str) -> i64?
+    k: i64 @= 0
+
+    while k < read.len()
+        if read[k].path == path
+            return ok(k)
+        k @ k + 1
+
+    return fail(code: "none", msg: "no member at that path")
+
+# `union` or `struct`, the type text's first word, or the whole text where it
+# is a type's name alone (`point_t`).
+function kind_of(type_text: str) -> str
+    for word in ["union", "struct"]
+        if type_text.len() > word.len() && type_text.slice(from: 0, to: word.len() + 1) == word + " "
+            return word
+
+    return type_text
+
+# The type as the header names it, or empty where clang names it by where it
+# stands, a type with no name of its own.
+function named_of(type_text: str) -> str
+    if ffi_lookup.has(text: type_text, needle: " at ")
+        return ""
+    return type_text
+
+# A field's type where it is a plain name a function can return, else empty.
+function plain(type_text: str) -> str
+    for needle in [" at ", "(", "[", ":"]
+        if ffi_lookup.has(text: type_text, needle: needle)
+            return ""
+
+    return type_text
+
+# The members the header gives the type itself, the holder's own top-level
+# member left out, in the dump's order.
+function others(read: [layout_text.Member], top: {str: bool}, holder: str) -> [str]
+    first: str @= holder
+    dot = ffi_lookup.char_index_of(text: holder, needle: ".")
+
+    if !dot.is_err()
+        first @ holder.slice(from: 0, to: dot.must())
+    out: [str] @= []
+
+    for seen in layout_text.visible(read)
+        name = read[seen.at].name
+
+        if name != first && !top[name].is_err()
+            out @ out.push(name)
+
+    return out
+
+# clang's record-layout dump of `text` under `words`, or none where it did
+# not compile.
+function dump(t: toolchain.Toolchain, words: [str], text: str) -> str?
+    dir = t.build + "/member-ask"
+    process.mkdir_all(dir)?
+    unit = dir + "/dump-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    out_path = publish.private_name(dir + "/dump.txt")
+    line: [str] @= ["clang", "-fsyntax-only", "-Xclang", "-fdump-record-layouts"]
+
+    for word in words
+        line @ line.push(word)
+
+    line @ response_file.carried(line: line, dir: dir)
+    ran = process.run(program: "clang", words: line.push(unit), out: out_path, err: process.discard())
+    dumped = read_back.words(out_path)
+    publish.discard(out_path)
+
+    if !ran.started || ran.code != 0 || dumped.is_err()
+        return fail(code: "unread", msg: "the dump did not compile")
+    return dumped
+
+## Tests
+
+# The dump of `struct tagged { int kind; union { int fd; void *handle; }
+# via; }` as Apple clang 21 prints it under its wrapper.
+constant TAGGED: str
+    "         0 | struct hero_ly_0\n         0 |   struct tagged v\n         0 |     int kind\n         8 |     union tagged::(unnamed at ./union.h:3:5) via\n         8 |       int fd\n         8 |       void * handle\n           | [sizeof=16, dsize=16, align=8]\n"
+
+test "a field the header has only inside a union member is found there, with what builds beside it (defect 2062)"
+    text = "extern \"union.h\"\n    record Tagged tag tagged\n        kind: i32\n        fd: i32\n        handle: ptr\n\nfunction touch(t: Tagged)\n    _ = t\n\nfunction main()\n    print(1)\n"
+    s = source.new_source(name: "t.hero", text: text)
+    decls = parse.parse_source(s).decls
+    rows = layout_rows.rows_of(TAGGED)
+    read = layout_text.members(rows: rows, from: layout_text.heads(rows)[0].must()).must()
+    found = inside(s, decl: decls[0], read: read)
+    assert found.len() == 2
+    assert found[0].key == "Tagged fd"
+    fd = found[0].nested
+    assert fd.holder == "via" && fd.kind == "union" && fd.named == "" && fd.field_type == "int"
+    assert fd.outside == ["kind"] && fd.members == ["kind"]
+    assert found[1].nested.field_type == "void *"
+
+test "a holder's kind and name are its type's first word and its name alone"
+    assert kind_of("union tagged::(unnamed at ./u.h:3:5)") == "union"
+    assert kind_of("struct point") == "struct"
+    assert kind_of("point_t") == "point_t"
+    assert named_of("union (unnamed union at ./u.h:3:5)") == ""
+    assert named_of("union named_u") == "union named_u"
+    assert plain("void (*)(int)") == "" && plain("int[4]") == "" && plain("int") == "int"

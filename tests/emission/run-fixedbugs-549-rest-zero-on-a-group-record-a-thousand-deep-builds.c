@@ -4149,7 +4149,7 @@ G999 h_fixedbugs549restzeroonagrouprecordathousanddeepbuilds_deep(void) {
     HERO_NODEBUG G999 t1; HERO_ENTRY_STOP; goto bb0;
 #line 2014 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
 bb0:
-    t1 = (G999){};
+    t1 = *(G999 *)__builtin_memset(&t1, 0, sizeof t1);
 #line 2015 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"
     __builtin_memset(&t1, 0, sizeof t1);
 #line 2015 "tests/golden/run/fixedbugs-549-rest-zero-on-a-group-record-a-thousand-deep-builds.hero"

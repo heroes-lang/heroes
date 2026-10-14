@@ -1,0 +1,14 @@
+error[ffi_unknown_tag]: `fixedbugs-2060-records.h` has no `struct lock_t` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  at tests/golden/unsupported/fixedbugs-2060-a-function-s-own-mistake-beside-a-refused-record-is-still-told.hero:8:21
+    |
+  8 |     record Lock tag lock_t  #~ ffi_unknown_tag
+    |                     ^^^^^^
+  note: `lock_t` is the name of a typedef in the header, of `struct lock_s`: the tag is the word the header writes after `struct`, `record Lock tag lock_s`, or the record takes the typedef by its own name, with no `tag`, `record lock_t` (§ 13)
+
+error[ffi_return_type]: `lock_init` returns `int32_t` in `fixedbugs-2060-records.h`, not `bool` — clang read the header
+  at tests/golden/unsupported/fixedbugs-2060-a-function-s-own-mistake-beside-a-refused-record-is-still-told.hero:10:5
+     |
+  10 |     function lock_init(@l: Lock) -> bool  #~ ffi_return_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `lock_init`
+  fix (guess): declare the result `i32`

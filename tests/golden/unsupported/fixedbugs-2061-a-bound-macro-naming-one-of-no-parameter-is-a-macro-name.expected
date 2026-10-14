@@ -1,0 +1,6 @@
+error[ffi_macro_name]: `fixedbugs-2061-reach.h` defines `seven` as a macro naming `seven_now`, a macro that expands only where it is called, not a function: a macro has no parameter types for clang to hold this declaration to
+  at tests/golden/unsupported/fixedbugs-2061-a-bound-macro-naming-one-of-no-parameter-is-a-macro-name.hero:11:5
+     |
+  11 |     function seven() -> i32  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline <C result> hero_seven(<its parameters, in C>) { return seven(<their names>); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_seven` there like any function, and clang holds that declaration to your function (§ 13)

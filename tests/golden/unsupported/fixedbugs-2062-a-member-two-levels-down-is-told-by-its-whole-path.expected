@@ -1,0 +1,9 @@
+error[ffi_unknown_field]: `fixedbugs-2062-records.h` declares no `fd` in `struct deep`: clang read the header, and that type has no such field
+  at tests/golden/unsupported/fixedbugs-2062-a-member-two-levels-down-is-told-by-its-whole-path.hero:12:9
+     |
+  12 |         fd: i32  #~ ffi_unknown_field
+     |         ^^
+  note: `fd` is a member of the union `inner.u` inside `struct deep`, which C reaches as `inner.u.fd`: a group's `record` names the members the header gives its type itself (§4.19, § 13)
+  note: what builds today: bind `Deep` `partial`, naming only `kind`, and end a construction of it with `rest: zero`, which leaves `inner` to C
+  note: or reach `inner.u.fd` through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, `static inline int deep_fd(const struct deep *t) { return t->inner.u.fd; }`, which this group then names in `fixedbugs-2062-records.h`'s place
+  note: or reach it by a macro, as C's own headers reach `s6_addr`: a header of the program's own that includes `fixedbugs-2062-records.h` and defines `#define fd inner.u.fd`, which this group then names in `fixedbugs-2062-records.h`'s place, so `fd` stays a field; the macro renames every `fd` read after it

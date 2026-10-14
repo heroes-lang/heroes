@@ -41,6 +41,7 @@ use cli/header_refused
 use cli/headers_together
 use cli/order_groups
 use cli/declared_after
+use cli/header_reads
 
 # The C11 headers (C11 7.1.2) but the four every unit reads already, the
 # likeliest a header leans on first.
@@ -160,10 +161,17 @@ function refused(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     prerequisite = standard(t, under: under, written: written, target: header, question: "")
 
     if !prerequisite.is_err()
+        p = prerequisite.must()
+        why: str @= "a header of C's own it uses and does not include"
+
+        # A header that reads it itself is told so, never *does not include*
+        # (defect 2073, `cli/header_reads.hero`).
+        if header_reads.reads(t, under: under, target: header, prerequisite: p)
+            why @ "a header of C's own it reads itself, and written first `" + p + "` is read before every line of `" + header + "`"
         out: diag.Diagnostic @= d
         out.notes @ replaced(
             d.notes,
-            said: "`" + header + "` compiles after `" + prerequisite.must() + "`, a header of C's own it uses and does not include: write a group naming `" + prerequisite.must() + "` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)"
+            said: "`" + header + "` compiles after `" + p + "`, " + why + ": write a group naming `" + p + "` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)"
         )
         return out
 

@@ -1,0 +1,18 @@
+# fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
+#
+# The second spelling the repaired note gives, the function it drafts: the union's member
+# reached through a function of the program's own in a header that includes
+# the group's, the group naming that header in its place.
+
+extern "fixedbugs-2062-own.h"
+    record Tagged tag tagged partial
+        kind: i32
+    function tg_kind(@t: Tagged lent) -> i32
+    function tagged_fd(@t: Tagged lent) -> i32
+    function tagged_set_fd(@t: Tagged, fd: i32)
+
+function main()
+    t @= Tagged(kind: 2, rest: zero)
+    tagged_set_fd(@t, fd: 7)
+    print(tg_kind(@t))
+    print(tagged_fd(@t))

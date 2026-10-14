@@ -1,0 +1,14 @@
+# fixedbugs, defect 2073, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `names_val`, declared only where `<stdio.h>` was read before the
+# header's first line, the header including `<stdio.h>` itself below: told
+# *only after `stdio.h`, a header of C's own it does not include*, false
+# (`cli/name_order.hero`, the same guess).
+#
+# FIX: asked of clang's `-H` list as the header's refusal is.
+
+extern "fixedbugs-2073-names.h"
+    function names_val() -> i32  #~ ffi_unknown_name
+
+function main()
+    print(names_val())

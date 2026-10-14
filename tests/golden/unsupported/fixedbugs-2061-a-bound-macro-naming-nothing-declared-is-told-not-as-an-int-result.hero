@@ -1,0 +1,14 @@
+# fixedbugs, defect 2061, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `#define nowhere nosuch_fn`, nothing declaring `nosuch_fn`: told
+# `ffi_return_type`, *`nowhere` returns `int`*, a false message: the `int` is
+# the result C gives a call to a function it never saw declared.
+#
+# FIX: the walk ends at a name that is no macro, clang finds it undeclared,
+# and the binding is told so before any reader of its declaration's lines.
+
+extern "fixedbugs-2061-reach.h"
+    function nowhere(x: f64) -> f64  #~ ffi_unknown_name
+
+function main()
+    print(nowhere(-3.0))

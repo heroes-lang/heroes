@@ -1,0 +1,27 @@
+# fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `fd` and `handle`, members of the union `via` that `struct tagged`
+# holds, written as the record's fields: *`...` declares no `fd` in `struct
+# tagged`*, true of C, its note sending the author to a spelling or another
+# header, neither of which builds. Nine of panel 215's ten blind readers
+# wrote this record from the specification.
+#
+# CAUSE: the note read clang's *no member named 'fd' in 'struct tagged'* as a
+# member the header lacks.
+#
+# FIX: the refused round asks the header's layout (`cli/member_ask.hero`); the
+# first line stays, and the notes say where `fd` is, `via.fd`, and the
+# spellings that build today: the record `partial`, a function of the
+# program's own, a macro (`emit/ffi_nested.hero`). What the language accepts
+# does not move.
+
+extern "fixedbugs-2062-records.h"
+    record Tagged tag tagged
+        kind: i32
+        fd: i32  #~ ffi_unknown_field
+        handle: ptr  #~ ffi_unknown_field
+    function tg_kind(@t: Tagged lent) -> i32
+
+function main()
+    t @= Tagged(kind: 2, rest: zero)
+    print(tg_kind(@t))

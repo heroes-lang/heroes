@@ -1,0 +1,237 @@
+# What each function and constant a group binds reaches through its header's
+# object-like macros, asked of clang on a refused build's path alone
+# (design.md §4.19; defect 2061, 2026-10-14). `emit/ffi_reach.hero` tells a
+# binding whose macros reach a name clang found undeclared.
+#
+# **Asked of clang's own macro table**: the unit's opening as far as the
+# groups' end, the compiler's own headers and every group's header inside the
+# guard's opening line, preprocessed with `-E -dM`, which prints each macro
+# standing there, one written with parameters with their list. That is
+# where every probe and the pointee check's dump read a bound name: the dump
+# includes the groups' headers alone, and the unit's probes read a name the
+# guard's close gives back pushed again (`cli/bound_kept.hero`). A bound name
+# defined as one identifier, in parentheses or not, is walked to the macro
+# that identifier names, and on, until a name that is no macro, or one
+# written with parameters, which is where the probe's parenthesised call
+# stops (`emit/ffi_reach.hero`). A body of any other shape answers nothing,
+# so the round's readers say what they said before.
+#
+# Asked only where clang's words find a name undeclared, which is the only
+# line `emit/ffi_reach.hero` reads; a build that compiles never asks.
+
+use ast
+use source
+use bytes
+use emit/c_text
+use emit/externs as emit_externs
+use emit/macro_guard
+use emit/ffi_asked
+use emit/ffi_lookup
+use emit/ffi_reach
+use cli/toolchain
+use cli/probing
+use cli/bound_said
+use cli/bound_ask
+use cli/bound_names
+use cli/bound_macro
+use cli/strings
+use parse
+
+# What every bound function and constant of each list's groups reaches, the
+# first list's answer kept where two lists bind one name; nothing where
+# `message` finds no name undeclared.
+function reached(t: toolchain.Toolchain, asking: [probing.Probing], s: source.Source, decls: [ast.Decl], message: str) -> {str: ffi_asked.Reach}
+    out: {str: ffi_asked.Reach} @= {}
+
+    if !undeclared_in(message)
+        return out
+
+    for one in asking
+        headers = bound_names.groups_of(one.headers)
+        names = names_of(s, decls, headers: headers)
+
+        if names.len() == 0
+            continue
+        probe = bound_macro.probe_of(t, one: one)
+
+        if probe.read.is_err()
+            continue
+        lines: [str] @= [macro_guard.FIRST_LINE]
+        lines @ strings.with_all(list: lines, more: c_text.includes(emit_externs.SEEDS))
+        lines @ lines.push(macro_guard.OPEN_LINE)
+        lines @ strings.with_all(list: lines, more: c_text.includes(headers))
+        said = bound_ask.preprocessed(t, probe: probe, text: lines.join("\n") + "\n", mode: ["-E", "-dM"])
+
+        if said.is_err()
+            continue
+        table = bound_said.defines(said.must())
+
+        for name in names
+            if out[name].is_err()
+                walked = walk(table, from: name)
+
+                if !walked.is_err()
+                    out[name] @ walked.must()
+
+    return out
+
+# Whether any line of clang's words finds a name undeclared.
+function undeclared_in(message: str) -> bool
+    for line in ffi_lookup.lines(text: message)
+        if !ffi_reach.undeclared(line).is_err()
+            return true
+
+    return false
+
+# The functions and constants the program's own groups bind from `headers`,
+# in declaration order, each once.
+function names_of(s: source.Source, decls: [ast.Decl], headers: [str]) -> [str]
+    wanted: {str: bool} @= {}
+
+    for header in headers
+        wanted[header] @ true
+
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for decl in decls
+        found = macro_guard.header_of(decl)
+
+        if found.is_err() || source.is_library(s, decl.name.start) || wanted[emit_externs.unquoted(s, span: found.must())].is_err()
+            continue
+        name = source.span_text(s, decl.name)
+        named: bool @= false
+
+        match decl.kind
+            .function_decl | .constant_decl           => named @ true
+            .record_decl | .variant_decl | .test_decl => named @ false
+
+        if named && seen[name].is_err()
+            seen[name] @ true
+            out @ out.push(name)
+
+    return out
+
+# Where `from`'s object-like macros end in `table`: the name left standing
+# and whether it is written with parameters; none where `from` is no object-like macro,
+# a body is not one identifier, or the walk comes back to a name it passed.
+function walk(table: {str: bound_said.Define}, from: str) -> ffi_asked.Reach?
+    first = table[from]
+
+    if first.is_err() || called_like_a_function(first.must(), name: from)
+        return fail(code: "none", msg: "no object-like macro")
+    through: [str] @= []
+    seen: {str: bool} @= {}
+    seen[from] @ true
+    body: str @= first.must().body
+
+    while true
+        word = sole_name(body)
+
+        if word.is_err() || !seen[word.must()].is_err()
+            return fail(code: "none", msg: "the macro names no one name")
+        next = table[word.must()]
+
+        if next.is_err()
+            return ok(ffi_asked.Reach(name: word.must(), function_like: false, through: through))
+
+        if called_like_a_function(next.must(), name: word.must())
+            return ok(ffi_asked.Reach(name: word.must(), function_like: true, through: through))
+        seen[word.must()] @ true
+        through @ through.push(word.must())
+        body @ next.must().body
+
+    return fail(code: "none", msg: "unreachable")
+
+# Whether the `-dM` line defines `name` with a parameter list: C's own rule,
+# a `(` straight after the name.
+function called_like_a_function(define: bound_said.Define, name: str) -> bool
+    at = "#define ".len() + name.len()
+    return at < define.line.len() && define.line[at] == '('
+
+# The one identifier a macro's body is, in any number of parentheses each
+# around the whole of it, or none.
+function sole_name(body: str) -> str?
+    text: str @= trimmed(body)
+
+    while text.len() >= 2 && text[0] == '(' && text[text.len() - 1] == ')' && wraps(text)
+        text @ trimmed(text.slice(from: 1, to: text.len() - 1))
+
+    if text.len() == 0 || bytes.is_digit(text[0])
+        return fail(code: "none", msg: "not an identifier")
+
+    at: i64 @= 0
+
+    while at < text.len()
+        if !bound_said.ident(text[at])
+            return fail(code: "none", msg: "not an identifier")
+        at @ at + 1
+
+    return ok(text)
+
+# Whether the first `(` of `text` closes at its last byte.
+function wraps(text: str) -> bool
+    depth: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == '('
+            depth @ depth + 1
+        else if text[at] == ')'
+            depth @ depth - 1
+
+            if depth == 0
+                return at == text.len() - 1
+        at @ at + 1
+
+    return false
+
+function trimmed(text: str) -> str
+    from: i64 @= 0
+    to: i64 @= text.len()
+
+    while from < to && (text[from] == ' ' || text[from] == '\t')
+        from @ from + 1
+
+    while to > from && (text[to - 1] == ' ' || text[to - 1] == '\t')
+        to @ to - 1
+
+    return text.slice(from: from, to: to)
+
+## Tests
+
+test "a bound name is walked through its object-like macros to the name the probe leaves standing (defect 2061)"
+    table = bound_said.defines(
+        "#define absval myabs\n#define myabs(x) my_fabs(x)\n#define chain (mid)\n#define mid absval\n#define alias my_fabs\n#define seven_now() 7\n#define seven seven_now\n#define LIMIT (1 << 4)\n#define self self\n#define loop_a loop_b\n#define loop_b loop_a\n"
+    )
+    direct = walk(table, from: "absval").must()
+    assert direct.name == "myabs" && direct.function_like && direct.through.len() == 0
+    through = walk(table, from: "chain").must()
+    assert through.name == "myabs" && through.through == ["mid", "absval"]
+    plain = walk(table, from: "alias").must()
+    assert plain.name == "my_fabs" && !plain.function_like
+
+    # A macro of no parameter is called all the same: `()`.
+    assert walk(table, from: "seven").must().function_like
+
+    # A body that is not one name, a name defined as itself, a loop, a
+    # macro written with parameters and a name that is no macro answer nothing.
+    assert walk(table, from: "LIMIT").is_err()
+    assert walk(table, from: "self").is_err()
+    assert walk(table, from: "loop_a").is_err()
+    assert walk(table, from: "myabs").is_err()
+    assert walk(table, from: "my_fabs").is_err()
+
+test "only one identifier in whole parentheses is a name"
+    assert sole_name(" myabs").must() == "myabs"
+    assert sole_name(" ((myabs) )").must() == "myabs"
+    assert sole_name(" (a)(b)").is_err()
+    assert sole_name(" 0x10").is_err()
+    assert sole_name("").is_err()
+
+test "only a function or a constant the program's own groups bind is walked"
+    text = "extern \"a.h\"\n    function absval(x: f64) -> f64\n    constant LIMIT: i64\n    record Pair tag pair\n        left: i64\n\nextern \"b.h\"\n    function other() -> i64\n\nfunction main()\n    print(LIMIT)\n"
+    s = source.new_source(name: "t.hero", text: text)
+    assert names_of(s, parse.parse_source(s).decls, headers: ["a.h"]) == ["absval", "LIMIT"]
+    assert undeclared_in("x.c:1:2: error: use of undeclared identifier 'myabs'\n")
+    assert !undeclared_in("x.c:1:2: error: expected expression\n")

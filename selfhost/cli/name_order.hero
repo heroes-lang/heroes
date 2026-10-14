@@ -25,6 +25,7 @@ use cli/toolchain
 use cli/compiling
 use cli/order_trial
 use cli/order_groups
+use cli/header_reads
 use cli/header_order
 use cli/strings
 
@@ -82,6 +83,10 @@ function unknown(d: diag.Diagnostic, s: source.Source, decls: [ast.Decl], t: too
     if prerequisite.is_err()
         return d
     out.message @ "`" + header + "` declares `" + name + "` only after `" + prerequisite.must() + "`, a header of C's own it does not include: clang read it without and could not find it"
+
+    # One it reads itself is read first only from a group above (defect 2073).
+    if header_reads.reads(t, under: under, target: header, prerequisite: prerequisite.must())
+        out.message @ "`" + header + "` declares `" + name + "` only where `" + prerequisite.must() + "`, a header of C's own it reads itself, is read before every line of it: clang read it where its group stands and could not find it"
     out.notes @ notes.push(
         "write a group naming `" + prerequisite.must() + "` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)"
     )

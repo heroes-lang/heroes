@@ -13,10 +13,13 @@
 # names the struct behind it, so the note gives its tag, `tag tagged_s`, or
 # the typedef's own name with no `tag`.
 
+# Since 2026-10-14 (defect 2060) the function's parameter of the record is
+# no longer told `ffi_parameter_type` beside it: the record's own refusal is the
+# repair, and its note gives the spelling that builds.
 extern "fixedbugs-145-types.h"
     record T tag tagged_t  #~ ffi_unknown_tag
         a: i32
-    function use_tagged(@p: T) -> i32  #~ ffi_parameter_type
+    function use_tagged(@p: T) -> i32
 
 function main()
     print(1)

@@ -1,0 +1,13 @@
+# fixedbugs, defect 2061, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `constant LIMIT: i64` over `#define LIMIT make_limit`, `make_limit(x)`
+# a macro: exit 2, clang saying *use of undeclared identifier 'make_limit'* at
+# the result assertion, a line of the generated C with no `#line`.
+#
+# FIX: told on the constant, which has no value until the macro is called.
+
+extern "fixedbugs-2061-reach.h"
+    constant LIMIT: i64  #~ ffi_macro_name
+
+function main()
+    print(LIMIT)
