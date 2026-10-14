@@ -1,0 +1,15 @@
+# Defect 2043, 2026-10-13. A constant whose body is literals is laid out once
+# by clang (defect 382), and the function that reads it returned its address
+# from a line of the generated C: a `step` into `DIGITS` stopped in that file,
+# and a breakpoint on the `constant` line resolved to no location at all. The
+# return is now the constant's own line, so a `step` into it stops there, as
+# a step into any function stops on its `function` line, `finish` comes back
+# to the reading line, and a breakpoint on the constant's line holds.
+
+constant DIGITS: [i64]
+    [3, -1, 4]
+
+function main()
+    first = DIGITS[1]
+    last = DIGITS[2]
+    print(first + last)

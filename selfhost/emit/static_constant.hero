@@ -29,6 +29,18 @@
 # both builds share at each of the three lines, because that file advances a
 # line per line whether clang reads them or skips them.
 #
+# THE RETURN IS THE CONSTANT'S OWN LINE (defect 2043; design.md §3.1, as
+# panel 200's R4 amended it). A `step` into a function and a breakpoint on it
+# stop at the first instruction after the frame's setup, and the address the
+# function returns is that instruction: written under the generated file, a
+# `step` into `K` showed the generated C and a breakpoint on `K`'s line
+# resolved nowhere, on arm64 and x86-64 alike (`xcrun dwarfdump
+# --debug-line`). Under the constant's `#line` it is on the `constant` line,
+# as the prologue of a constant built at every read is. The `}` stays the
+# generated file's, the exit being the compiler's (defect 335); it makes no
+# instruction of its own on either target, the epilogue sharing the return's
+# line.
+#
 # WHICH BODY IS LAID OUT is decided by the IR, never by a reading of the
 # source: one block, whose instructions are literals, array and case
 # constructions over them, and the ownership pass's own loads, stores and
@@ -100,8 +112,9 @@ function open(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
 
     writer.at_span(@w, s, offset: f.span.start)
     writer.line(@w, text: signature.signature(f, c, names, s, decls) + " {")
-    writer.at_generated(@w)
+    writer.at_span(@w, s, offset: f.span.start)
     writer.line(@w, text: "    return " + laid.returned + ";")
+    writer.at_generated(@w)
     writer.line(@w, text: "}")
     writer.at_generated(@w)
     writer.line(@w, text: "#else")
@@ -337,3 +350,47 @@ test "the switch's three lines are each read where the generated file is believe
         at @ at + 1
 
     assert seen == 3
+
+# A `step` into the constant stops on its `constant` line (defect 2043): the
+# return is written right under the constant's `#line`, and the `}` after it
+# right under the generated file's.
+test "the laid-out constant returns on its own line, and closes on the generated file"
+    text = "constant K: [i64]\n    [1, 2]\n\nfunction main()\n    print(K[1])\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    p = lowered(text)
+    names = ctype.new_names(s, parsed.decls)
+    w: writer.Writer @= writer.new_writer("t")
+
+    for f in p.functions
+        if f.name == "K"
+            open(@w, c, names, s, parsed.decls, f: f, laid: laid_for(p, c, names, s, parsed.decls, f: f).must())
+            close(@w)
+
+    got = writer.finish(w)
+    previous: str @= ""
+    returned: i64 @= 0
+    closed: i64 @= 0
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < got.len()
+        if got[at] == 10
+            one = got.slice(from: start, to: at)
+
+            if one.len() > 11 && one.slice(from: 0, to: 11) == "    return "
+                assert previous == "#line 1 \"t.hero\""
+                returned @ returned + 1
+
+            if one == "}"
+                assert previous.len() > 12 && previous.slice(from: 0, to: 6) == "#line "
+                assert previous.slice(from: previous.len() - 6, to: previous.len()) == " \"t.c\""
+                closed @ closed + 1
+            previous @ one
+            start @ at + 1
+        at @ at + 1
+
+    assert returned == 1
+    assert closed == 1
