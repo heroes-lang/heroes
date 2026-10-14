@@ -419,6 +419,8 @@ not yet run again, a measured rehearsal of a history rewrite (measurement
 
 - **M-bounded-seed** enters at 67 and opens: the seed is 70% of the history and
   48% of its bytes are `#line` directives; its page has the numbers.
+  *Corrected the same evening*: 87% of what a clone receives, not 70%, and
+  301 versions where the page read 1,222 (measurement 045 § 7).
 - **M-witnessed-seed** enters at 68: the fixpoint proves consistency and not
   provenance, and `archive/bootstrap-rs/` is the only second implementation
   the seed was ever compared with, so it leaves the tree only after that

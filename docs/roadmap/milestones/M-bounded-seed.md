@@ -81,3 +81,26 @@ September, so the history would grow by tens of MiB a month again.
 **Named for the deliverable**, the seed bounded. Not `M-smaller-seed`, a
 direction a later emitter may reverse; not `M-release-seed`, half the policy;
 not `M-light-clone`, the effect on a stranger rather than what the tree gains.
+
+**Corrected 2026-10-14, the same evening, by the run on the tree to rewrite**
+(measurement 045 § 7). Three sentences above are wrong and stand as they were
+written. *The seed is 70% of the repository's history: 1,222 versions*: the
+1,222 counted every line its command printed, commits, tags and trees beside
+the blobs; the seed's versions were 294 at `3f77bd3a3` and are 301 at
+`13dd2ebdd`, and they are 87% of the pack a clone receives, where the 70% read
+the local repository's own pack. *A fresh clone of 580 MiB* was a clone of the
+local repository; a clone from GitHub was 616.61 MiB. And the condition *a
+sample of intermediate commits built in two stages, so that `git bisect` stays
+usable* is not met by keeping the seed at the releases alone: 2,279 of the
+3,619 commits would carry a seed whose runtime interface their own tree no
+longer has, which clang refuses at its first lines, 37 of the 66 tagged commits
+would carry none, and `seed/README.md`'s recovery chain (*every milestone tag
+from `m-selfhost-fixpoint` on carries its own `seed/heroes.c`*, § If the seed
+is already broken) would hold at five tags of 69. No choice of kept seeds keeps
+every commit buildable from a default clone, because the language moves under
+an older compiler as well as the runtime does: keeping the seed wherever the
+runtime's interface changed, six of the 32 tags measured that carry an older
+seed and two of ten commits drawn at random still stop at the second stage,
+and each of the eight builds as it was. The commits as they were, under
+`refs/archive/`, keep every one. Which seeds the rewrite keeps goes back to the
+author, with four variants measured.
