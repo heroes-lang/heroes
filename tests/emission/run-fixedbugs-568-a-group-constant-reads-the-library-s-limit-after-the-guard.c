@@ -159,8 +159,9 @@ void h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_main(void);
 
 #line 11 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMIT(void) {
-#line 163 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 11 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_LIMIT;
+#line 165 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -177,8 +178,9 @@ int32_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMI
 
 #line 12 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(void) {
-#line 181 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 12 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_HUGE;
+#line 184 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -195,8 +197,9 @@ double h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_HUGE(
 
 #line 13 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(void) {
-#line 199 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 13 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return CASE_LOW;
+#line 203 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -244,7 +247,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
     return;
-#line 248 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
+#line 251 "fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

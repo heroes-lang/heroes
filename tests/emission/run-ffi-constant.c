@@ -167,8 +167,9 @@ void h_fficonstant_main(void);
 
 #line 45 "tests/golden/run/ffi-constant.hero"
 double h_fficonstant_M_PI(void) {
-#line 171 "fficonstant.c"
+#line 45 "tests/golden/run/ffi-constant.hero"
     return M_PI;
+#line 173 "fficonstant.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -185,8 +186,9 @@ double h_fficonstant_M_PI(void) {
 
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
-#line 189 "fficonstant.c"
+#line 49 "tests/golden/run/ffi-constant.hero"
     return SEEK_SET;
+#line 192 "fficonstant.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -203,8 +205,9 @@ int64_t h_fficonstant_SEEK_SET(void) {
 
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
-#line 207 "fficonstant.c"
+#line 50 "tests/golden/run/ffi-constant.hero"
     return SEEK_END;
+#line 211 "fficonstant.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -259,7 +262,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/run/ffi-constant.hero"
     return;
-#line 263 "fficonstant.c"
+#line 266 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

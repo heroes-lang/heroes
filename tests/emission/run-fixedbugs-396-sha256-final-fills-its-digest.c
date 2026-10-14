@@ -186,8 +186,9 @@ void h_fixedbugs396sha256finalfillsitsdigest_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
-#line 190 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return SHA256_DIGEST_LENGTH;
+#line 192 "fixedbugs396sha256finalfillsitsdigest.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -204,8 +205,9 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 208 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return EVP_MAX_MD_SIZE;
+#line 211 "fixedbugs396sha256finalfillsitsdigest.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -499,7 +501,7 @@ bb0:
     if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
-#line 503 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 505 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);

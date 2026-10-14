@@ -162,8 +162,9 @@ void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void);
 
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
-#line 166 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     return ERANGE;
+#line 168 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -217,7 +218,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     return;
-#line 221 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 222 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -153,8 +153,9 @@ void h_fixedbugs584adeprecatedenumeratorreadbuildssilent_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
 int64_t h_fixedbugs584adeprecatedenumeratorreadbuildssilent_OLD_LIMIT(void) {
-#line 157 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
+#line 14 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
     return OLD_LIMIT;
+#line 159 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -186,7 +187,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
     return;
-#line 190 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
+#line 191 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

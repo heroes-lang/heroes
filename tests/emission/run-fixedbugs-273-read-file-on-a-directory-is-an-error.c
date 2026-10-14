@@ -297,26 +297,30 @@ bb6:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 301 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 303 "fixedbugs273readfileonadirectoryisanerror.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 307 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 310 "fixedbugs273readfileonadirectoryisanerror.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 313 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 317 "fixedbugs273readfileonadirectoryisanerror.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 319 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 324 "fixedbugs273readfileonadirectoryisanerror.c"
 }
 
 #line 167 "<heroes library>"
@@ -550,7 +554,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 554 "fixedbugs273readfileonadirectoryisanerror.c"
+#line 558 "fixedbugs273readfileonadirectoryisanerror.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

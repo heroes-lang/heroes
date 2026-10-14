@@ -486,8 +486,9 @@ bb15:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 490 "main.c"
+#line 123 "<heroes library>"
     return HERO_STR_OK;
+#line 492 "main.c"
 }
 
 #line 153 "<heroes library>"
@@ -609,7 +610,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 613 "main.c"
+#line 614 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -682,7 +683,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 686 "main.c"
+#line 687 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -752,7 +753,7 @@ bb2:
 #line 221 "<heroes library>"
 bb3:
     t14 = h0_out;
-#line 756 "main.c"
+#line 757 "main.c"
     hero_array_incref(t14);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

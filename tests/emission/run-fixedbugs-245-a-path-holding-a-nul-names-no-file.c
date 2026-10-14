@@ -686,26 +686,30 @@ bb10:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 690 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 692 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 696 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 699 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 702 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 706 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 708 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 713 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 167 "<heroes library>"
@@ -939,7 +943,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 943 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 947 "fixedbugs245apathholdinganulnamesnofile.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1066,7 +1070,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1070 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 1074 "fixedbugs245apathholdinganulnamesnofile.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

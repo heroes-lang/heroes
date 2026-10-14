@@ -6487,8 +6487,9 @@ bb8:
 
 #line 45 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_OK(void) {
-#line 6491 "main.c"
+#line 45 "examples/ledger/db/sqlite.hero"
     return SQLITE_OK;
+#line 6493 "main.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -6505,8 +6506,9 @@ int64_t h_dbsqlite_SQLITE_OK(void) {
 
 #line 46 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_ROW(void) {
-#line 6509 "main.c"
+#line 46 "examples/ledger/db/sqlite.hero"
     return SQLITE_ROW;
+#line 6512 "main.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -6523,8 +6525,9 @@ int64_t h_dbsqlite_SQLITE_ROW(void) {
 
 #line 47 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_DONE(void) {
-#line 6527 "main.c"
+#line 47 "examples/ledger/db/sqlite.hero"
     return SQLITE_DONE;
+#line 6531 "main.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -6541,8 +6544,9 @@ int64_t h_dbsqlite_SQLITE_DONE(void) {
 
 #line 48 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_INTEGER(void) {
-#line 6545 "main.c"
+#line 48 "examples/ledger/db/sqlite.hero"
     return SQLITE_INTEGER;
+#line 6550 "main.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -6559,8 +6563,9 @@ int64_t h_dbsqlite_SQLITE_INTEGER(void) {
 
 #line 49 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_FLOAT(void) {
-#line 6563 "main.c"
+#line 49 "examples/ledger/db/sqlite.hero"
     return SQLITE_FLOAT;
+#line 6569 "main.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -6577,8 +6582,9 @@ int64_t h_dbsqlite_SQLITE_FLOAT(void) {
 
 #line 50 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_TEXT(void) {
-#line 6581 "main.c"
+#line 50 "examples/ledger/db/sqlite.hero"
     return SQLITE_TEXT;
+#line 6588 "main.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -6595,8 +6601,9 @@ int64_t h_dbsqlite_SQLITE_TEXT(void) {
 
 #line 51 "examples/ledger/db/sqlite.hero"
 int64_t h_dbsqlite_SQLITE_NULL(void) {
-#line 6599 "main.c"
+#line 51 "examples/ledger/db/sqlite.hero"
     return SQLITE_NULL;
+#line 6607 "main.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -6613,8 +6620,9 @@ int64_t h_dbsqlite_SQLITE_NULL(void) {
 
 #line 56 "examples/ledger/db/sqlite.hero"
 void * h_dbsqlite_SQLITE_TRANSIENT(void) {
-#line 6617 "main.c"
+#line 56 "examples/ledger/db/sqlite.hero"
     return SQLITE_TRANSIENT;
+#line 6626 "main.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -6720,7 +6728,7 @@ bb3:
     t10 = h3_f0;
 #line 161 "examples/ledger/db/sqlite.hero"
     t11 = t10.as.err;
-#line 6724 "main.c"
+#line 6732 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb4:
@@ -6806,7 +6814,7 @@ bb8:
     t27 = h4_f1;
 #line 164 "examples/ledger/db/sqlite.hero"
     t28 = t27.as.err;
-#line 6810 "main.c"
+#line 6818 "main.c"
     hero_panic_must(t28);
     hero_unreachable();
 bb9:
@@ -6892,7 +6900,7 @@ bb13:
     t44 = h5_f2;
 #line 167 "examples/ledger/db/sqlite.hero"
     t45 = t44.as.err;
-#line 6896 "main.c"
+#line 6904 "main.c"
     hero_panic_must(t45);
     hero_unreachable();
 bb14:
@@ -7057,7 +7065,7 @@ bb20:
     t67 = h8_f4;
 #line 176 "examples/ledger/db/sqlite.hero"
     t68 = t67.as.err;
-#line 7061 "main.c"
+#line 7069 "main.c"
     hero_panic_must(t68);
     hero_unreachable();
 bb21:
@@ -7095,7 +7103,7 @@ bb22:
     t81 = h9_f5;
 #line 178 "examples/ledger/db/sqlite.hero"
     t82 = t81.as.err;
-#line 7099 "main.c"
+#line 7107 "main.c"
     hero_panic_must(t82);
     hero_unreachable();
 bb23:
@@ -7139,7 +7147,7 @@ bb25:
     t93 = h10_f6;
 #line 180 "examples/ledger/db/sqlite.hero"
     t94 = t93.as.err;
-#line 7143 "main.c"
+#line 7151 "main.c"
     hero_panic_must(t94);
     hero_unreachable();
 bb26:
@@ -7171,7 +7179,7 @@ bb27:
     goto bb23;
 #line 181 "examples/ledger/db/sqlite.hero"
 bb28:
-#line 7175 "main.c"
+#line 7183 "main.c"
     t103 = h11_ret0;
     h_0opt_e405689_retain(&t103);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -7310,7 +7318,7 @@ bb3:
     goto bb1;
 #line 250 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7314 "main.c"
+#line 7322 "main.c"
     t18 = h2_ret0;
     h_0opt_24dfc0bb_retain(&t18);
     hero_str_release_at(&h1_reason);
@@ -7345,7 +7353,7 @@ bb0:
     }
 #line 254 "examples/ledger/db/sqlite.hero"
     return t3;
-#line 7349 "main.c"
+#line 7357 "main.c"
 }
 
 #line 276 "examples/ledger/db/sqlite.hero"
@@ -7580,7 +7588,7 @@ bb8:
     goto bb9;
 #line 280 "examples/ledger/db/sqlite.hero"
 bb9:
-#line 7584 "main.c"
+#line 7592 "main.c"
     t40 = h8_ret0;
     h_0opt_a8ea2_retain(&t40);
     h_0opt_f87774a_release(hero_slot_escape(&h2_problem));
@@ -7644,7 +7652,7 @@ bb1:
     t11 = h1_f0;
 #line 286 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 7648 "main.c"
+#line 7656 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -7653,7 +7661,7 @@ bb2:
     t9 = h1_f0;
 #line 286 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 7657 "main.c"
+#line 7665 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -7774,7 +7782,7 @@ bb3:
     goto bb1;
 #line 295 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7778 "main.c"
+#line 7786 "main.c"
     t22 = h4_ret0;
     h_0opt_791f9719_retain(&t22);
     h_0opt_791f9719_release(hero_slot_escape(&h5_own5));
@@ -7812,7 +7820,7 @@ bb0:
     }
 #line 299 "examples/ledger/db/sqlite.hero"
     return t3;
-#line 7816 "main.c"
+#line 7824 "main.c"
 }
 
 #line 303 "examples/ledger/db/sqlite.hero"
@@ -7876,7 +7884,7 @@ bb3:
     goto bb1;
 #line 305 "examples/ledger/db/sqlite.hero"
 bb4:
-#line 7880 "main.c"
+#line 7888 "main.c"
     t10 = h1_ret0;
     h_0opt_a8ea2_retain(&t10);
     h_0opt_a8ea2_release(hero_slot_escape(&h2_own2));
@@ -7999,7 +8007,7 @@ bb6:
     goto bb4;
 #line 331 "examples/ledger/db/sqlite.hero"
 bb7:
-#line 8003 "main.c"
+#line 8011 "main.c"
     t20 = h2_ret0;
     h_0opt_70720e79_retain(&t20);
     h_0opt_70720e79_release(hero_slot_escape(&h3_own3));
@@ -8093,7 +8101,7 @@ bb3:
     t9 = h3_f0;
 #line 339 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8097 "main.c"
+#line 8105 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
@@ -8141,7 +8149,7 @@ bb5:
     goto bb1;
 #line 340 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8145 "main.c"
+#line 8153 "main.c"
     t24 = h4_ret0;
     h_0opt_a8ea2_retain(&t24);
     h_0opt_e1f4933_release(hero_slot_escape(&h3_f0));
@@ -8236,7 +8244,7 @@ bb3:
     t9 = h3_f0;
 #line 344 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8240 "main.c"
+#line 8248 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 bb4:
@@ -8284,7 +8292,7 @@ bb5:
     goto bb1;
 #line 345 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8288 "main.c"
+#line 8296 "main.c"
     t24 = h4_ret0;
     h_0opt_a8ea2_retain(&t24);
     h_0opt_e1f4933_release(hero_slot_escape(&h3_f0));
@@ -8377,7 +8385,7 @@ bb2:
     t11 = h4_f0;
 #line 360 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.err;
-#line 8381 "main.c"
+#line 8389 "main.c"
     hero_panic_must(t12);
     hero_unreachable();
 bb3:
@@ -8439,7 +8447,7 @@ bb5:
     goto bb3;
 #line 368 "examples/ledger/db/sqlite.hero"
 bb6:
-#line 8443 "main.c"
+#line 8451 "main.c"
     t29 = h6_ret0;
     h_0opt_a8ea2_retain(&t29);
     h_0opt_e1f4933_release(hero_slot_escape(&h4_f0));
@@ -8496,7 +8504,7 @@ bb1:
     t11 = h1_f0;
 #line 374 "examples/ledger/db/sqlite.hero"
     t12 = t11.as.ok;
-#line 8500 "main.c"
+#line 8508 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_own2));
     return t12;
@@ -8505,7 +8513,7 @@ bb2:
     t9 = h1_f0;
 #line 374 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8509 "main.c"
+#line 8517 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -8569,7 +8577,7 @@ bb1:
     h4_own4 = t13;
 #line 382 "examples/ledger/db/sqlite.hero"
     h_0opt_e405689_release(&t16);
-#line 8573 "main.c"
+#line 8581 "main.c"
     h_0opt_e405689_retain(&t13);
     h_0opt_e1f4933_release(hero_slot_escape(&h2_f0));
     h_0opt_e1f4933_release(hero_slot_escape(&h3_own3));
@@ -8580,7 +8588,7 @@ bb2:
     t9 = h2_f0;
 #line 382 "examples/ledger/db/sqlite.hero"
     t10 = t9.as.err;
-#line 8584 "main.c"
+#line 8592 "main.c"
     hero_panic_must(t10);
     hero_unreachable();
 }
@@ -8624,7 +8632,7 @@ bb0:
 bb1:
 #line 387 "examples/ledger/db/sqlite.hero"
     t21 = h2_r0;
-#line 8628 "main.c"
+#line 8636 "main.c"
     h_0opt_e201354_retain(&t21);
     h_dbsqlite_Cell_release(hero_slot_escape(&h1_s0));
     h_0opt_e201354_release(hero_slot_escape(&h2_r0));
@@ -8775,7 +8783,7 @@ bb6:
     h_0opt_e201354_release(&t32);
 #line 387 "examples/ledger/db/sqlite.hero"
     goto bb1;
-#line 8779 "main.c"
+#line 8787 "main.c"
 }
 
 #line 394 "examples/ledger/db/sqlite.hero"
@@ -8817,7 +8825,7 @@ bb0:
 bb1:
 #line 395 "examples/ledger/db/sqlite.hero"
     t27 = h2_r0;
-#line 8821 "main.c"
+#line 8829 "main.c"
     h_0opt_f87774a_retain(&t27);
     h_dbsqlite_Cell_release(hero_slot_escape(&h1_s0));
     h_0opt_f87774a_release(hero_slot_escape(&h2_r0));
@@ -9003,7 +9011,7 @@ bb6:
     h_0opt_f87774a_release(&t41);
 #line 395 "examples/ledger/db/sqlite.hero"
     goto bb1;
-#line 9007 "main.c"
+#line 9015 "main.c"
 }
 
 #line 405 "examples/ledger/db/sqlite.hero"
@@ -9079,7 +9087,7 @@ bb2:
 bb3:
 #line 406 "examples/ledger/db/sqlite.hero"
     t12 = h2_r0;
-#line 9083 "main.c"
+#line 9091 "main.c"
     hero_str_incref(t12);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
@@ -9094,7 +9102,7 @@ HeroStr h_reportlines_BALANCE_HEADING(void) {
 #line 11 "examples/ledger/report/lines.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3a42ef76);
-#line 9098 "main.c"
+#line 9106 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -9211,7 +9219,7 @@ bb3:
 bb4:
 #line 25 "examples/ledger/report/lines.hero"
     t55 = h2_out;
-#line 9215 "main.c"
+#line 9223 "main.c"
     hero_array_incref(t55);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h3_xs0);
@@ -9405,7 +9413,7 @@ bb7:
     hero_array_push_owned(&h2_out, &t50);
 #line 21 "examples/ledger/report/lines.hero"
     goto bb3;
-#line 9409 "main.c"
+#line 9417 "main.c"
 }
 
 #line 27 "examples/ledger/report/lines.hero"
@@ -9507,7 +9515,7 @@ bb0:
     h10_own10 = t20;
 #line 28 "examples/ledger/report/lines.hero"
     hero_str_decref(t29);
-#line 9511 "main.c"
+#line 9519 "main.c"
     hero_str_incref(t20);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -9637,7 +9645,7 @@ bb5:
     t19 = h2_f0;
 #line 35 "examples/ledger/report/lines.hero"
     t20 = t19.as.err;
-#line 9641 "main.c"
+#line 9649 "main.c"
     hero_panic_must(t20);
     hero_unreachable();
 bb6:
@@ -9767,7 +9775,7 @@ bb5:
     t18 = h2_f0;
 #line 43 "examples/ledger/report/lines.hero"
     t19 = t18.as.err;
-#line 9771 "main.c"
+#line 9779 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -9897,7 +9905,7 @@ bb9:
     goto bb7;
 #line 55 "examples/ledger/report/lines.hero"
 bb10:
-#line 9901 "main.c"
+#line 9909 "main.c"
     t29 = h3_ret0;
     hero_str_release_at(&h4_own4);
     return t29;
@@ -9905,8 +9913,9 @@ bb10:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 9909 "main.c"
+#line 123 "<heroes library>"
     return HERO_STR_OK;
+#line 9919 "main.c"
 }
 
 #line 153 "<heroes library>"
@@ -10028,7 +10037,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 10032 "main.c"
+#line 10041 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -10052,7 +10061,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 10056 "main.c"
+#line 10065 "main.c"
 }
 HERO_TU_LOCAL bool h_bookentry_Amount_eq(const h_bookentry_Amount *a, const h_bookentry_Amount *b) {
     if (!(a->f_cents == b->f_cents)) return false;

@@ -175,8 +175,9 @@ HeroArrayHeader * h_library_args(void);
 
 #line 20 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 int32_t h_fixedbugs436achildthatstopsiswaitedonandnotkilled_SIGSTOP(void) {
-#line 179 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 20 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     return SIGSTOP;
+#line 181 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -218,7 +219,7 @@ bb0:
     h2_own2 = t3;
 #line 36 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
     hero_str_decref(t4);
-#line 222 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 223 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -336,7 +337,7 @@ bb3:
     goto bb1;
 #line 42 "tests/golden/run/fixedbugs-436-a-child-that-stops-is-waited-on-and-not-killed.hero"
 bb4:
-#line 340 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 341 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_str_release_at(&h0_program);
     hero_array_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -405,7 +406,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 409 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
+#line 410 "fixedbugs436achildthatstopsiswaitedonandnotkilled.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

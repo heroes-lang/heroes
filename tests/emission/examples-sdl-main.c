@@ -265,8 +265,9 @@ bb3:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 269 "main.c"
+#line 123 "<heroes library>"
     return HERO_STR_OK;
+#line 271 "main.c"
 }
 
 #line 153 "<heroes library>"
@@ -388,7 +389,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 392 "main.c"
+#line 393 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
