@@ -27,7 +27,13 @@
 constant SPEC: str
     "spec/heroes-spec.md"
 
-# design.md §1.6, **raised to 10240 by author decision (2026-09-14)**, taken
+# design.md §1.6, **raised to 16384 by author decision (2026-10-14)**, the day the
+# chain was re-ordered consolidation first, with two rules beside it: the
+# consolidation block spends at most 1,500 real tokens before the thesis
+# harness has run, and the next raise rests on what that harness measures a
+# token of specification to buy. It relaxes nothing.
+#
+# It was raised to 10240 by author decision (2026-09-14), taken
 # while M-marked-acquisition was landing `acquires <releaser>` and the document
 # stood at 7921 real against 8192 — 211 free after the FFI floor, which is two
 # forms' room and not three. It relaxes nothing: §1.6's payment rule is
@@ -54,7 +60,7 @@ constant SPEC: str
 # counts the same content as Opus 5 and wraps it differently, so a maximum
 # over a SET is not a property of the document.
 constant CEILING: i64
-    10240
+    16384
 
 # THE SOFT LINE IS RETIRED, and it is the named removal that pays for the
 # raise above (panel 123 R7). It was 2000, set when the spec measured 2231 on

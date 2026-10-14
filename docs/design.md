@@ -22,7 +22,7 @@ Two practical notes for the implementation:
 - **Bowie references belong in prose, never in the language surface.** Section headings in example
   files, chapter epigraphs, the README, the book — all fair game. But keyword names, error message
   text, and library function names stay plain and literal, because they are read by a machine that
-  has to parse them and by a model that has to learn them from a 10240-token spec. A cute error
+  has to parse them and by a model that has to learn them from a spec of about ten thousand tokens. A cute error
   message costs spec tokens and comprehension; a cute README costs nothing. This is the same
   discipline as Part 1.10 (ASCII-only syntax): personality in the packaging, precision in the
   substrate.
@@ -252,8 +252,9 @@ annotations at use sites; anything derivable is derived. Note this is the *oppos
 
 ### 1.6 The spec budget
 
-**The entire language specification — syntax, semantics, built-in library — must fit in 10240
-tokens, measured by `claude-opus-5` through `POST /v1/messages/count_tokens`.** About nine pages.
+**The entire language specification — syntax, semantics, built-in library — must fit in 16384
+tokens, measured by `claude-opus-5` through `POST /v1/messages/count_tokens`.** The document
+stood at 10,048 the day this number was set.
 That document is not documentation, it is *the prompt*, so the tokeniser that counts it must be the
 one that reads it — a sentence this section did not contain until 2026-09-09, and its absence cost
 998 tokens (`docs/measurements/023-the-instrument-was-not-the-readers.md`).
@@ -282,7 +283,16 @@ three. The instrument is unchanged and **the raise relaxes nothing**: the paymen
 unconditional at every level, so every row of `docs/measurements/010` is owed exactly as before.
 It is **10 × 1024 and not 10000**, because the site derives this number rather than restating it
 and says it in K — `site/src/lib/claims.ts`'s `ceilingK` refuses a ceiling that is not a whole
-number of them, which is what keeps one number in one home. **Raised
+number of them, which is what keeps one number in one home. **Raised again to 16384 by author
+decision 2026-10-14**, the day the chain was re-ordered consolidation first, with the document at
+10,048 real and 132 free after the FFI floor: the author's reading was that the number had served
+as a discipline and as a sentence for the site, and that no measurement ties ten thousand tokens to
+a model's reading. **Two rules come with it, and they are what make it a thermostat rather than a
+thermometer** (panel 024's warden, below): the rows from M-buildable-structs to
+M-compatibility-promise, the consolidation block, spend at most **1,500** real tokens before the
+thesis harness has run, and an addition past them waits for it; and the next raise rests on what
+that harness measures a token of specification to buy, an ablation by section, never on the
+document having approached the ceiling. It is **16 × 1024**, for the site's reason above. **Raised
 before that to 8192 by author decision 2026-09-12**, to make room inside this document for the grammar's
 productions (panel 133, which found that every free-standing grammar in the survey has been
 archived and that the one arrangement still alive is Wirth's, the productions beside the prose they
@@ -4253,7 +4263,7 @@ that compiles and diffs. This is the only thing that makes it possible to evolve
 silently breaking it.
 
 **Write the spec in condensed English early — around step 7, not at the end.** It is the control
-instrument: if it doesn't fit in 10240 tokens, too much has been added, and you find out in an hour
+instrument: if it doesn't fit in 16384 tokens, too much has been added, and you find out in an hour
 instead of three months. Count it with a real tokeniser, not by estimation — the BPE vocabulary
 contains arbitrary choices nobody predicts.
 
