@@ -294,11 +294,23 @@ function test_chain() -> {str: bool}
 constant DEFECT_ITEM: str
     "- [ ] **a header name is refused** | what happens | where to look · **class: blocking**\n\n    **Origin:** a lane, 2026-10-12.\n\n    **Class: blocking**, 2026-10-12, a correct program refused.\n"
 
+# Whether this clone cannot answer what a draft's test asks of the tree's
+# history (`issue_git.history_unread`), said as a `SKIP` naming `subject` and
+# its scratch removed, so a test that asked nothing never passes in silence
+# (defect 2065).
+function unanswered(scratch: str, subject: str) -> bool
+    unread = issue_git.history_unread(scratch: scratch, tree: ".")
+
+    if unread == ""
+        return false
+    print(issue_git.skip_said(subject: "issue_draft: " + subject, why: unread))
+    _ = shell.remove_tree(scratch).is_err()
+    return true
+
 test "a defect's draft in today's card shape renders with no number and no Record line"
     scratch = shell.own_scratch()
 
-    if issue_git.shallow(scratch).default(true)
-        _ = shell.remove_tree(scratch).is_err()
+    if unanswered(scratch: scratch, subject: "a defect's draft in today's card shape")
         return
     text = cards.card_text(kind: "defect", area: "compiler", milestone: "none", filed: "2026-10-12", commit: "none", github: "none") + DEFECT_ITEM
     got = test_draft(scratch: scratch, name: "2026-10-12-1800-a-header-name-is-refused.md", text: text)
@@ -320,8 +332,7 @@ test "a defect's draft in today's card shape renders with no number and no Recor
 test "a draft is refused for its card, its address, `self`, an old number, its item, its class and its prior art"
     scratch = shell.own_scratch()
 
-    if issue_git.shallow(scratch).default(true)
-        _ = shell.remove_tree(scratch).is_err()
+    if unanswered(scratch: scratch, subject: "a draft refused for its card and its sections")
         return
     bad_card = test_draft(scratch: scratch, name: "2026-10-12-1800-a.md", text: "- [ ] **a** | b | c\n")
     assert strings.contains(text: bad_card.refused[0], needle: "line 1 is")
@@ -373,8 +384,7 @@ test "a draft is refused for its card, its address, `self`, an old number, its i
 test "a decision taken renders closed with its settling comment, and a commit git does not know is refused"
     scratch = shell.own_scratch()
 
-    if issue_git.shallow(scratch).default(true)
-        _ = shell.remove_tree(scratch).is_err()
+    if unanswered(scratch: scratch, subject: "a decision taken, closed with its settling comment")
         return
     head = issue_git.pinned(scratch: scratch, pin: "HEAD").must()
     taken = test_draft(
@@ -401,8 +411,7 @@ test "a decision taken renders closed with its settling comment, and a commit gi
 test "a draft that is a file of the tree is refused, and a long defect title leaves room for its number"
     scratch = shell.own_scratch()
 
-    if issue_git.shallow(scratch).default(true)
-        _ = shell.remove_tree(scratch).is_err()
+    if unanswered(scratch: scratch, subject: "a draft that is a file of the tree, and a long title")
         return
     known: {str: bool} = {}
     tree_file = drafted(
@@ -425,8 +434,7 @@ test "a draft that is a file of the tree is refused, and a long defect title lea
 test "a decision taken is a ticked item naming its commit, every defect states one class, and the card agrees with its origin and the chain"
     scratch = shell.own_scratch()
 
-    if issue_git.shallow(scratch).default(true)
-        _ = shell.remove_tree(scratch).is_err()
+    if unanswered(scratch: scratch, subject: "a decision taken naming its commit, and a card agreeing with the chain")
         return
     head = issue_git.pinned(scratch: scratch, pin: "HEAD").must()
     prose = test_draft(

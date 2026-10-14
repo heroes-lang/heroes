@@ -678,6 +678,27 @@ function blocks(dir: str, root: str) -> i64?
 
     return ok(count)
 
+# The `SKIP` lines a test run printed, each with the reason lines indented
+# beneath it, in order.
+function skips_in(out: str) -> [str]
+    said: [str] @= []
+    inside: bool @= false
+
+    for line in strings.lines(out)
+        if strings.starts_with(text: line, prefix: "SKIP ")
+            inside @ true
+            said @ said.push(line)
+        else if inside && strings.starts_with(text: line, prefix: "  ")
+            said @ said.push(line)
+        else
+            inside @ false
+
+    return said
+
+test "a run's skips are read with their reasons, and nothing else"
+    assert skips_in("ok   \"a\"\nSKIP x: y\n  because\n  and so\nok   \"b\"\n  not a reason\nSKIP z\n") == ["SKIP x: y", "  because", "  and so", "SKIP z"]
+    assert skips_in("ok   \"a\"\n").len() == 0
+
 test "the modules a root reaches are read from its use lines, and one naming no file is no module"
     assert reached(dir: "tests/harness", root: "issues").must().len() > reached(dir: "tests/harness", root: "report").must().len()
     assert reached(dir: "tests/harness", root: "issues").must()[0] == "issues"
@@ -694,6 +715,12 @@ test "the issue program's own tests run with the net's own, every block its modu
     for line in strings.lines(ran.out)
         if strings.starts_with(text: line, prefix: "FAIL \"")
             failed @ failed.push(line)
+
+    # A test the issue program's run stepped aside is said here too, with its
+    # reason, so the net's own run is never a silent pass over what it did not
+    # ask (defect 2065).
+    for line in skips_in(ran.out)
+        print(ISSUE_PROGRAM + ": " + line)
 
     # The failing tests by name, then the whole verdict.
     assert failed.join("\n") == ""
