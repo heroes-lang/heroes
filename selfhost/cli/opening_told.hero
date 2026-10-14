@@ -11,9 +11,9 @@
 # none of the program's C, under the unit's own words; then the same text
 # without the groups' include lines. Refused with them and compiled without
 # them, the headers are what clang refused, and the program is told at exit 1.
-# Measured by the sitting on the tree before defects 2044 to 2053: 18 of their
-# 23 cases told at exit 1 by this question alone, with +168 lines where the
-# readers spent +1,506.
+# Measured by the sitting on the tree before that night's readers, `08230cbfa`:
+# 18 of their 23 cases told at exit 1 by this question alone, with +168 lines
+# where the readers spent +1,506.
 #
 # **Told on the group whose header the opening refuses first when the groups'
 # include lines are added one by one in their order** (the critic's repair):
