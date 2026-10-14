@@ -1,0 +1,18 @@
+> breakpoint set --file fixedbugs-2068-a-step-into-a-header-s-constant.hero --line 13
+!resolved: fixedbugs-2068-a-step-into-a-header-s-constant.hero:13
+> run
+!stop: breakpoint at fixedbugs-2068-a-step-into-a-header-s-constant.hero:13
+> step
+!stop: step in at fixedbugs-2068-a-step-into-a-header-s-constant.hero:10
+> bt
+!frame: h_fixedbugs2068astepintoaheadersconstant_INT_MAX at fixedbugs-2068-a-step-into-a-header-s-constant.hero:10
+!frame: h_fixedbugs2068astepintoaheadersconstant_main at fixedbugs-2068-a-step-into-a-header-s-constant.hero:13
+> finish
+!stop: step out at fixedbugs-2068-a-step-into-a-header-s-constant.hero:13
+> breakpoint set --file fixedbugs-2068-a-step-into-a-header-s-constant.hero --line 10
+!resolved: fixedbugs-2068-a-step-into-a-header-s-constant.hero:10
+> continue
+!stop: breakpoint at fixedbugs-2068-a-step-into-a-header-s-constant.hero:10
+> up
+!at: fixedbugs-2068-a-step-into-a-header-s-constant.hero:14
+> continue

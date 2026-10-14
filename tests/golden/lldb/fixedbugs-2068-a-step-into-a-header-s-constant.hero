@@ -1,0 +1,15 @@
+# Defect 2068, 2026-10-14. A constant a header holds is read through an
+# accessor the compiler writes, `return INT_MAX;`, and that line stood under
+# the generated C's own `#line`: a `step` into `INT_MAX` stopped in the
+# generated file, and a breakpoint on the `constant` line resolved to no
+# location. The return is now the constant's own line, as defect 2043 made a
+# laid-out constant's, so a `step` into it stops there, `finish` comes back
+# to the reading line, and a breakpoint on the constant's line holds.
+
+extern "limits.h"
+    constant INT_MAX: i64
+
+function main()
+    top = INT_MAX
+    again = INT_MAX
+    print(top == again)
