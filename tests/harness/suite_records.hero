@@ -270,6 +270,26 @@ constant REFUSED: [str]
         "M-distinct-pointers"
         "M-pointer-types"
         "M-opaque-handles"
+        "M-smaller-seed"
+        "M-release-seed"
+        "M-light-clone"
+        "M-trusted-seed"
+        "M-diverse-compiling"
+        "M-triaged-issues"
+        "M-issue-triage"
+        "M-settled-backlog"
+        "M-settled-issues"
+        "M-fast-check"
+        "M-compile-speed"
+        "M-language-shootout"
+        "M-polyglot-benchmark"
+        "M-benchmark"
+        "M-public-launch"
+        "M-blog-posts"
+        "M-first-readers"
+        "M-reach-manifest"
+        "M-separate-site"
+        "M-incremental-frontend"
     ]
 
 # Measured 2026-08-25: 40 rows in the ROADMAP's alias table (39 until
@@ -540,8 +560,16 @@ constant REFUSED: [str]
 # **86 -> 87 on 2026-10-04**, `M-issue-files`, opened by author instruction at
 # row 83: every item one file of `issues/`. Its plan was written as
 # `M-issue-cards` and never committed under it, so no record carries that name.
+# **88 -> 94 on 2026-10-14**, six rows entered with the chain's re-ordering,
+# consolidation first, by the author's instruction: `M-bounded-seed`, opened at
+# row 67, `M-witnessed-seed`, `M-rechecked-issues`, `M-latency-ceiling`,
+# `M-compared-languages` and `M-launch-posts`. `REFUSED` gains twenty names: the
+# runners-up of the six, each refused in its `docs/roadmap/names.md` row, and
+# the three rows considered and not entered, `M-reach-manifest`,
+# `M-separate-site` and `M-incremental-frontend`, whose rules
+# `docs/roadmap/scheduling.md` gives under the same day.
 constant ROWS: i64
-    88
+    94
 
 # **`WATCHED` stood here until 2026-09-07 and nothing had read it since
 # 2026-08-19.** It listed `design.md` and `CLAUDE.md` as *"the two documents whose

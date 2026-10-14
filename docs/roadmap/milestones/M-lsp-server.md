@@ -14,3 +14,10 @@ is the answer: a server that re-checks a program on every save cannot wait for
 44.1 s says the emission half is architectural (panel 093 R4 puts the emitted
 text in the cache key). The frontend half is the one an editor feels, so it lands
 here; the emission half keeps its numbers in that item as its trigger.
+
+**Re-ordered 2026-10-14, by the author's instruction**: from 74 to 83,
+immediately before the gate. The packages are written by the assistant through
+`heroes check --json`, so the server serves the people who arrive with the
+launch. The incremental frontend this page gave it on 2026-09-03 leaves it and
+becomes M-latency-ceiling's return condition. The 8 s above was measured on
+2026-08-26; `heroes check selfhost/main.hero` read 5.8 s on 2026-09-29.

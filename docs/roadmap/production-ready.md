@@ -47,3 +47,6 @@ candidate is not proposed again as new*.
 ---
 
 *******************************************************************************
+
+**Corrected 2026-10-14**: row 3's *arm64 Linux unowned* has been false since
+M-arm-platform closed on 2026-09-18.

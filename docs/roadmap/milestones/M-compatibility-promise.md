@@ -33,3 +33,11 @@ row earns.
 
 **What it does not deliver**: the `1.0.0` tag itself, which is the author's act
 on a clean `main` and never a milestone's.
+
+**Re-ordered 2026-10-14, by the author's instruction**: from 79 to 73, closing
+the consolidation block and ahead of the packages, so that the instrument this
+page describes runs while the largest body of Heroes after the compiler is
+written. The paragraph is still published at the gate. It carries one promise
+more, written the day the history was rewritten once to keep the seed only at
+the releases (M-bounded-seed): `main` and the published tags are never
+rewritten again.

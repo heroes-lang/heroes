@@ -23,3 +23,8 @@ write Heroes; open it in the middle and you find the thing you were looking for.
 - **Metric 2's held-out tasks land here** (author decision 2026-08-24): they must
   be author-written or they measure the assistant's priors, and this is the one
   milestone whose own work *is* the author writing programs.
+
+**Corrected 2026-10-14.** The site already holds a guide of fourteen chapters
+in two languages (`site/src/html/docs/`), chapter for chapter the subjects
+listed above, which is where this book starts. The specification's budget is
+no longer 4096: it was 10240 on 2026-10-14.

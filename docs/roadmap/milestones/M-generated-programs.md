@@ -87,3 +87,7 @@ compiler that has been shot at. **The sixth oracle is dated rather than
 promised**: when M-qbe-backend exists, the same generated program through two
 backends is differential testing in the full sense, and that is the one thing this
 milestone deliberately leaves to a later one.
+
+**Corrected 2026-10-14.** `docs/work/DONE.md`, which the paragraphs above cite,
+was deleted on 2026-10-05; its entries read at `d8a9913e`, the last commit
+that held the maps.

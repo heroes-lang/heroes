@@ -106,3 +106,10 @@ which engine; whether a wasm build of `heroes` is a second binary under §10 or
 the same program for another target; and whether the allow-list is a property of
 the playground or a `heroes` flag, which is §10's stopping rule asked about a
 capability with no other caller.
+
+**Corrected 2026-10-14.** This page's question of what a stranger's program
+may name keeps one more input: a listing of what a program reaches through its
+`extern` groups was considered as a row of its own on 2026-10-14 and not
+entered (`docs/roadmap/scheduling.md`); this sitting is its one caller. The
+seed is 1,400,548 lines at `676c3941c`, not 733,838. This row moves from 78 to
+82.

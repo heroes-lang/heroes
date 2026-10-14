@@ -184,3 +184,25 @@ read its request through `fdopen` and `fgets` directly.
 `examples/`, in the corpus's three configurations, in the loopback shape — server
 and client in one process, deterministic output — because a listening server does
 not fit `main.expected`.
+
+**Questions added 2026-10-14 for the opening sitting**, by the author's
+instruction, about what the packages do for a model that writes Heroes, since
+a model in a new language most often invents an API: (x) an interface card per
+package, its signatures and one line each, measured with `heroes measure`
+under a total budget, which is also what would admit `heroes doc` under
+CLAUDE.md § 10's rule; (xi) Go's package and function names as an advantage
+and a trap, with the "did you mean" of `selfhost/resolve/near_names.hero`
+measured on qualified names; (xii) question (ix), thin or thick, settled by a
+paid reader test rather than by opinion; (xiii) the effect measured, the
+thesis harness's tasks run before and after this milestone. **One more
+acceptance**: the repository's own hooks, twelve Python files under
+`.claude/hooks/` doing files, processes, git, JSON and exit codes, rewritten
+in Heroes over these packages, a program somebody uses every day.
+
+**Corrected the same day**, facts above that have moved: a function value
+reaches a C callback parameter since M-c-callbacks; question (vi) is answered
+by panel 114's R1, *no conditional-compilation form enters the language*;
+panel 036's `compile "shim.c"` was a deferral read as a veto (issue 927); the
+contextual words are sixteen, not six (`selfhost/keywords.hero`); and step 0's
+three repairs landed as defects 381, 010 and 143 while issue 860 stayed open.
+This row moves from 67 to 75.
