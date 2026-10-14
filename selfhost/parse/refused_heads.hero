@@ -13,7 +13,7 @@
 # Two facts decide it, both about the line in hand:
 #
 # - **the word**, in the languages it comes from: a table of the words
-#   `keywords.foreign_word` knows, since what `class` or `let` heads is a fact
+#   `foreign_words.foreign_word` knows, since what `class` or `let` heads is a fact
 #   about those languages and no token here says it;
 # - **whether the line binds**: `const x = 5` and `int x = 5` bind a value
 #   and open nothing, where `const B: i64` and `int main()` head a block. A
@@ -33,7 +33,7 @@
 
 use token
 use cursor
-use keywords
+use foreign_words
 use lexer
 
 ## The answer
@@ -84,7 +84,7 @@ function binds(c: cursor.Cursor, from: i64) -> bool
 # cases, and none standing there is a mistake of its own (defect 133's
 # class, lane recovery-b7). The registry answers, so this keeps no table.
 function declares(word: str) -> str?
-    found = keywords.foreign_word(text: word, called: false)
+    found = foreign_words.foreign_word(text: word, called: false)
 
     if found.is_err()
         return fail(code: "not_foreign", msg: word)
@@ -105,7 +105,7 @@ function first_opens(text: str) -> bool
 
 test "every word in the table is one the registry refuses"
     for word in ["struct", "enum", "union", "class", "fn", "func", "def", "const", "int", "elif", "switch", "case", "try", "catch", "let", "var", "import", "include", "throw", "raise", "null", "nil", "None"]
-        assert !keywords.foreign_word(text: word, called: false).is_err()
+        assert !foreign_words.foreign_word(text: word, called: false).is_err()
 
 test "a refused head opens a block where its word heads one and its line binds nothing"
     assert first_opens("fn inner()\n")

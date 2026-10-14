@@ -406,7 +406,7 @@ test "a constant's word is read off the line under its declaration"
     words = quoted_on_next_line(path: KEYWORD_SOURCE, marker: "constant WORD_")
     assert words.len() >= LEAST_CONTEXTUAL
     assert words[0] == "as"
-    assert words[words.len() - 1] == "when"
+    assert words[words.len() - 1] == "zero"
 
 test "a field is cut between its two markers, and a missing one is empty"
     assert between(text: "op: .rem, power: 9))", open: "op: .", close: ",") == "rem"

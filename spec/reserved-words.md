@@ -7,7 +7,7 @@ text below; where the word stands in a place its own repair does not fit, such
 as `struct` inside a body or `int(` called, the message says instead what is
 right there (`selfhost/foreign_at.hero`). This file is the registry; the golden
 tests in `check/` pin the text, and the `spec` suite holds each row to
-`selfhost/keywords.hero`'s `declared_word`, or runs it.
+`selfhost/foreign_words.hero`'s `declared_word`, or runs it.
 
 | Foreign word | Error text |
 |---|---|

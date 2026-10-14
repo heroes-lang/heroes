@@ -1385,6 +1385,43 @@ test "fmt keeps an alias, and this is a fixed defect"
         s = source.new_source(name: "t.hero", text: text)
         assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
 
+test "fmt keeps the words rest: zero where they end a list, on one line and broken"
+    # A new surface form lands in every tool that re-prints a program, the
+    # formatter first (`.claude/rules/diagnostics-and-goldens.md`): panel 194's
+    # words are taken off the list into `Ast.rests` (`parse/rest_words.hero`)
+    # and printed back by `bodies.written`, so a printer that forgot them would
+    # DELETE them, and `fmt --in-place` would turn a group record built at zero
+    # into one the build refuses. Until 2026-10-14 only `canonical`, over the
+    # run goldens that hold them, said otherwise. The shapes: the whole record,
+    # a field and the words, a method call, a list broken with a comment above
+    # the words; and beside them a variant case, which keeps its list whole, and
+    # `rest` and `zero` as an ordinary label and name.
+    text = "function main()\n    u = Utsname(rest: zero)\n    s = SA(kind: 1, rest: zero)\n    w = x.with(kind: 1, rest: zero)\n    v = SA(\n        kind: 1,\n        # the fields it does not name\n        rest: zero\n    )\n    c = .circle(rest: zero)\n    z = f(r: rest, z: zero)\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
+    # Written loosely, the words take the canonical spacing and stay last.
+    loose = "function main()\n    s = SA(kind:1,rest:  zero)\n"
+    pl = parse.parse(loose)
+    assert pl.diagnostics.len() == 0
+    sl = source.new_source(name: "t.hero", text: loose)
+    assert format_file(pl.tree, sl, pl.comments, pl.uses, pl.decls) == "function main()\n    s = SA(kind: 1, rest: zero)\n"
+
+    # Past the width the list breaks one argument to a line, and the words are
+    # the last of them, as they must be (`rest_not_last`).
+    long = "function main()\n    t = Utsname(sysname: [1, 2, 3, 4], nodename: [5, 6, 7, 8], release: [9, 10, 11, 12], version: [13, 14], machine: [15, 16, 17, 18], rest: zero)\n"
+    pg = parse.parse(long)
+    assert pg.diagnostics.len() == 0
+    sg = source.new_source(name: "t.hero", text: long)
+    broken = format_file(pg.tree, sg, pg.comments, pg.uses, pg.decls)
+    assert broken == "function main()\n    t = Utsname(\n        sysname: [1, 2, 3, 4],\n        nodename: [5, 6, 7, 8],\n        release: [9, 10, 11, 12],\n        version: [13, 14],\n        machine: [15, 16, 17, 18],\n        rest: zero\n    )\n"
+    again = parse.parse(broken)
+    assert again.diagnostics.len() == 0
+    sa = source.new_source(name: "t.hero", text: broken)
+    assert format_file(again.tree, sa, again.comments, again.uses, again.decls) == broken
+
 test "fmt keeps a callback in an extern group, at every position the checker judges"
     # CLAUDE.md §9: a new surface form lands in every tool that reads the
     # language, and this is the one that lies quietest — a form it has not

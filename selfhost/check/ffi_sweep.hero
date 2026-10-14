@@ -37,6 +37,7 @@ use check/lower
 use check/ffi
 use check/fixed_repairs
 use ffi_errors
+use keywords
 
 # It asks the value, not the world: the legal set is built by reading the
 # declarations in hand, so a position added later is refused by default.
@@ -176,7 +177,7 @@ function into_fields(@found: {i64: ffi_errors.BuiltInto}, c: state.Checker, a: a
     rests: bool @= true
 
     for f in fields
-        if source.span_text(s, f.name) == "rest"
+        if source.span_text(s, f.name) == keywords.WORD_REST
             rests @ false
 
     # The values this construction is the first to build, so a second field

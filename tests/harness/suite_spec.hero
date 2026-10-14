@@ -113,9 +113,11 @@ constant SPEC_TOKENS: i64
 # (panel 035 D: the spec is *the prompt*, and compiler output can never be in
 # one). It gets a number anyway, because it grew +85 across eight milestones
 # with no commit ever naming a delta, for the plain reason that `measure`
-# defaults to the other file.
+# defaults to the other file. 1139 -> 1141 on 2026-10-14: the registry names
+# `selfhost/foreign_words.hero` as the home of `declared_word`, which was
+# `selfhost/keywords.hero` until the foreign words left it that day.
 constant REGISTRY_TOKENS: i64
-    1139
+    1141
 
 # **The ceiling, 10240 by author decision 2026-09-14**, taken while
 # M-marked-acquisition was landing `acquires <releaser>` and the document stood
@@ -281,6 +283,12 @@ constant BUILTIN_SOURCE: str
 constant KEYWORD_SOURCE: str
     "selfhost/keywords.hero"
 
+# The foreign words' table, `declared_word`, which was half of KEYWORD_SOURCE
+# until 2026-10-14 (M-buildable-structs: `rest` and `zero` joined the
+# contextual words, and the file's two tables were its seam).
+constant FOREIGN_SOURCE: str
+    "selfhost/foreign_words.hero"
+
 # The editor's grammar, and the table it must agree with.
 #
 # **This file is a FOURTH copy of what the language is** — after the compiler,
@@ -373,7 +381,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     recorded(@r, scratch: scratch, compiler: compiler)
     ledger(@r, scratch: scratch, compiler: compiler)
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
-    refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
+    refused = words_in_arms(path: FOREIGN_SOURCE, marker: "=> ok(ForeignWord(")
     named(@r, spec: text.must(), reserved: reserved)
     offered(@r, spec: text.must(), reserved: reserved)
     rejected(@r, spec: text.must(), refused: refused)
@@ -725,7 +733,7 @@ function offered(@r: report.Report, spec: str, reserved: [str])
 
 # No word the lexer refuses appears in the spec's code.
 function rejected(@r: report.Report, spec: str, refused: [str])
-    if !floors.sound(@r, label: "spec/rejected", found: refused.len(), floor: LEAST_FOREIGN, what: "refused words read out of " + KEYWORD_SOURCE)
+    if !floors.sound(@r, label: "spec/rejected", found: refused.len(), floor: LEAST_FOREIGN, what: "refused words read out of " + FOREIGN_SOURCE)
         return
     mentioned: {str: bool} @= {}
 
@@ -2194,7 +2202,7 @@ test "the compiler's two lists are read out of its own source"
     joined = reserved.join(" ")
     assert strings.contains(text: joined, needle: "print")
     assert strings.contains(text: joined, needle: "to_str")
-    refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
+    refused = words_in_arms(path: FOREIGN_SOURCE, marker: "=> ok(ForeignWord(")
     assert refused.len() >= LEAST_FOREIGN
     words = refused.join(" ")
     assert strings.contains(text: words, needle: "fn")
@@ -2213,7 +2221,7 @@ test "the compiler's two lists are read out of its own source"
 
 test "every check here can fire — CLAUDE.md §9, a check nobody has seen fail is a decoration"
     reserved = names_in_table(path: BUILTIN_SOURCE, marker: "Builtin(name: ")
-    refused = words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord(")
+    refused = words_in_arms(path: FOREIGN_SOURCE, marker: "=> ok(ForeignWord(")
 
     # A document that mentions no built-in at all: every reserved name is
     # missing, and the failure says so by name.
@@ -2503,13 +2511,13 @@ function words_painted(@r: report.Report, refused: [str])
         report.keep_failure(@r, label: "spec/colouring", detail: "  cannot read " + GRAMMAR)
         return
 
-    if floors.sound(@r, label: "spec/colouring", found: refused.len(), floor: LEAST_FOREIGN, what: "refused words read out of " + KEYWORD_SOURCE)
+    if floors.sound(@r, label: "spec/colouring", found: refused.len(), floor: LEAST_FOREIGN, what: "refused words read out of " + FOREIGN_SOURCE)
         words_agree(
             @r,
             want: refused,
             got: textmate.scoped_words(grammar: text.must(), scope: FOREIGN_SCOPE),
             scope: FOREIGN_SCOPE,
-            source: "`declared_word` in " + KEYWORD_SOURCE + " refuses",
+            source: "`declared_word` in " + FOREIGN_SOURCE + " refuses",
             lesson: "A word the lexer refuses and the grammar leaves plain is a mistake shown as\n  legal while it is typed; one the grammar paints and the lexer reads is a\n  correct program painted as an error."
         )
     contextual = suite_grammar.quoted_on_next_line(path: KEYWORD_SOURCE, marker: "constant WORD_")
@@ -3121,10 +3129,10 @@ function registry_probes() -> [Probe]
 
 function registered(@r: report.Report, scratch: str, compiler: str)
     text = read_file(REGISTRY)
-    source = read_file(KEYWORD_SOURCE)
+    source = read_file(FOREIGN_SOURCE)
 
     if text.is_err() || source.is_err()
-        report.keep_failure(@r, label: "spec/registry", detail: "  cannot read " + REGISTRY + " or " + KEYWORD_SOURCE)
+        report.keep_failure(@r, label: "spec/registry", detail: "  cannot read " + REGISTRY + " or " + FOREIGN_SOURCE)
         return
     arms = foreign_arms(source.must())
     words: [str] @= []
@@ -3133,7 +3141,7 @@ function registered(@r: report.Report, scratch: str, compiler: str)
         for word in arm.words
             words @ words.push(word)
 
-    if !floors.sound(@r, label: "spec/registry", found: words.len(), floor: LEAST_FOREIGN, what: "foreign words read with their messages out of " + KEYWORD_SOURCE)
+    if !floors.sound(@r, label: "spec/registry", found: words.len(), floor: LEAST_FOREIGN, what: "foreign words read with their messages out of " + FOREIGN_SOURCE)
         return
     rows = registry_rows(text.must())
     wrong: [str] @= registry_disagreements(rows: rows, arms: arms)
@@ -3650,7 +3658,7 @@ test "each registry row is held to the compiler's arm, and a word, a grouping or
 
     # And the real table: every word `declared_word` refuses, each with its
     # message, the two-line arm and the three-word arm included.
-    real = read_file(KEYWORD_SOURCE)
+    real = read_file(FOREIGN_SOURCE)
     assert !real.is_err()
     found = foreign_arms(real.must())
     words: [str] @= []
@@ -3660,6 +3668,6 @@ test "each registry row is held to the compiler's arm, and a word, a grouping or
             words @ words.push(word)
 
     assert words.len() >= LEAST_FOREIGN
-    assert absent_from(want: words_in_arms(path: KEYWORD_SOURCE, marker: "=> ok(ForeignWord("), got: words).len() == 0
+    assert absent_from(want: words_in_arms(path: FOREIGN_SOURCE, marker: "=> ok(ForeignWord("), got: words).len() == 0
     assert arm_of(arms: found, word: "int").must().message == "`int` is not a word in this language — an integer says its width: `i64`, and also `i8` `i16` `i32` `u8` `u16` `u32` `u64`"
     assert arm_of(arms: found, word: "None").must().words == ["null", "nil", "None"]

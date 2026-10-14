@@ -37,6 +37,7 @@ use source
 use diag
 use resolved
 use handles
+use keywords
 use resolve/state
 use resolve/plain_literal
 use parse/rest_words
@@ -102,7 +103,7 @@ function apart(@r: state.Resolver, a: ast.Ast, s: source.Source, name: token.Spa
 # the first words it could be taken to be read by, for its note: the
 # resolver's `zero_words`, keyed by the local's index, which `noted` reads.
 function seen(@r: state.Resolver, words: token.Span)
-    local = state.lookup_local(r, "zero")
+    local = state.lookup_local(r, keywords.WORD_ZERO)
 
     if local.is_err() || !r.zero_words[local.must()].is_err()
         return
@@ -166,7 +167,7 @@ function reading(s: source.Source, decls: [ast.Decl], e: Ended) -> Reading
 
 function has_rest_field(s: source.Source, fields: [ast.Field]) -> bool
     for f in fields
-        if source.span_text(s, f.name) == "rest"
+        if source.span_text(s, f.name) == keywords.WORD_REST
             return true
 
     return false
