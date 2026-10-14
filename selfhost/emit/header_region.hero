@@ -152,6 +152,105 @@ constant EXTENDED: [str]
         "-Wmicrosoft-redeclare-static"
     ]
 
+# What a header's code is never passed over for, as a refused header's
+# `-Werror` note names it (defect 2054): each word the region keeps an error
+# or refuses, and each the build's own flags make an error that `-Wall`'s
+# ignore does not reach (`-Wshorten-64-to-32`, the two pointer types, a macro
+# defined again: each still an error under the region's two ignores, measured
+# with Apple clang 21 on 2026-10-14, the lane's `build/wall/`). Empty for a
+# word no note names, which the compiler's tests refuse for every word of the
+# three lists.
+function never_for(word: str) -> str
+    if word == "-Wreturn-type"
+        return "a missing return"
+
+    if word == "-Wuninitialized" || word == "-Wconditional-uninitialized"
+        return "an uninitialised read"
+
+    if word == "-Wformat"
+        return "a format reading an argument it was not given or one of another type"
+
+    if word == "-Wimplicit-function-declaration"
+        return "a call to a function nobody declared"
+
+    if word == "-Wshorten-64-to-32"
+        return "a value narrowed to 32 bits"
+
+    if word == "-Wincompatible-pointer-types" || word == "-Wincompatible-pointer-types-discards-qualifiers"
+        return "a pointer of another type"
+
+    if word == "-Wmacro-redefined"
+        return "a macro defined again another way"
+
+    if word == "-Wmicrosoft-redeclare-static"
+        return "a `static` definition of a name declared external before it"
+    return ""
+
+# The note a refusal whose clang words name `-Werror` carries, none for any
+# other: what the region holds a header's code to, built from the lists
+# themselves and the build's `-Werror=` words, `build_words`, so no kind can
+# be missing from it again. A word of `EXTENDED` is an error in a header's
+# code alone, the C this compiler writes holding no such declaration, and
+# the note does not say *too* of it.
+function werror_notes(message: str, build_words: [str]) -> [str]
+    none: [str] = []
+    at = index_of(text: message, needle: "[-Werror,")
+
+    if at < 0
+        return none
+    flag = message.slice(from: at + "[-Werror,".len(), to: message.len() - 1)
+    said: [str] @= []
+
+    for word in never_words(build_words)
+        phrase = never_for(word)
+
+        if phrase != "" && !holds(said, one: phrase)
+            said @ said.push(phrase)
+
+    last = said[said.len() - 1]
+    listed = said.slice(from: 0, to: said.len() - 1).join(", ") + ", or " + last
+    head: str @= "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found"
+
+    if holds(EXTENDED, one: flag)
+        head @ "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code alone, wherever the header was found: C11 leaves it undefined where a target's extension accepts it, and the C this compiler writes holds no such declaration"
+    return [
+        head + ": a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for " + listed
+    ]
+
+# Every word a header's code is held to: `KEPT`, the build's `-Werror=` words
+# the region does not quiet, then `EXTENDED`.
+function never_words(build_words: [str]) -> [str]
+    out: [str] @= KEPT
+
+    for word in build_words
+        if word.len() > 8 && word.slice(from: 0, to: 8) == "-Werror="
+            plain = "-W" + word.slice(from: 8, to: word.len())
+
+            if !holds(QUIETED, one: plain) && !holds(out, one: plain)
+                out @ out.push(plain)
+
+    for word in EXTENDED
+        out @ out.push(word)
+
+    return out
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+function index_of(text: str, needle: str) -> i64
+    at: i64 @= 0
+
+    while at + needle.len() <= text.len()
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return at
+        at @ at + 1
+
+    return -1
+
 # The lines before the groups' includes: the push, the ignores, the kept,
 # then the parts of a kept group passed over again, then the extensions
 # refused.
@@ -179,6 +278,37 @@ constant CLOSING: str
     "#pragma clang diagnostic pop"
 
 ## Tests
+
+# A note naming each kind once, from the lists and the build's words.
+test "a header's -Werror note names every kind its code is held to, and says too only of what the program's C is held to (defect 2054)"
+    words = [
+        "-std=gnu11"
+        "-Werror=return-type"
+        "-Werror=uninitialized"
+        "-Werror=shorten-64-to-32"
+        "-Werror=sign-conversion"
+        "-Werror=incompatible-pointer-types"
+    ]
+    noted = werror_notes(
+        message: "implicit conversion loses integer precision: 'long' to 'int' [-Werror,-Wshorten-64-to-32]",
+        build_words: words
+    )
+    assert noted.len() == 1
+    assert noted[0] == "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a format reading an argument it was not given or one of another type, a call to a function nobody declared, a value narrowed to 32 bits, a pointer of another type, or a `static` definition of a name declared external before it"
+    windows = werror_notes(
+        message: "redeclaring non-static 'hero_str_len' as static is a Microsoft extension [-Werror,-Wmicrosoft-redeclare-static]",
+        build_words: words
+    )
+    assert index_of(text: windows[0], needle: "in a header's own code alone, wherever the header was found: C11 leaves it undefined") > 0
+    assert index_of(text: windows[0], needle: "own code too") < 0
+    assert werror_notes(message: "call to undeclared function 'f'", build_words: words).len() == 0
+
+    # Every word of the region's lists has its words in the note.
+    for word in KEPT
+        assert never_for(word) != ""
+
+    for word in EXTENDED
+        assert never_for(word) != ""
 
 test "a header's own code is quiet of -Wall and sign conversion alone, a missing return, an uninitialised read and a mismatched format kept"
     got = opening()
