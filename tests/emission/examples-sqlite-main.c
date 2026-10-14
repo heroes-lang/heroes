@@ -187,9 +187,18 @@ void h_main_main(void);
 
 #line 32 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_OK(void) {
+#line 191 "main.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 32 "examples/sqlite/main.hero"
     return SQLITE_OK;
-#line 193 "main.c"
+#line 201 "main.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -206,9 +215,18 @@ int64_t h_main_SQLITE_OK(void) {
 
 #line 33 "examples/sqlite/main.hero"
 int64_t h_main_SQLITE_ROW(void) {
+#line 219 "main.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 33 "examples/sqlite/main.hero"
     return SQLITE_ROW;
-#line 212 "main.c"
+#line 229 "main.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -246,7 +264,7 @@ bb0:
     t7 = sqlite3_exec(t1, hero_cstr_nonnull(t3), t4, t5, t6);
 #line 77 "examples/sqlite/main.hero"
     return t7;
-#line 250 "main.c"
+#line 268 "main.c"
 }
 
 #line 80 "examples/sqlite/main.hero"
@@ -370,7 +388,7 @@ bb6:
     goto bb4;
 #line 96 "examples/sqlite/main.hero"
 bb7:
-#line 374 "main.c"
+#line 392 "main.c"
     t27 = h6_ret0;
     hero_lend_local_give(hero_lend_h3_tail);
     hero_lend_local_give(hero_lend_h2_statement);
@@ -493,7 +511,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 113 "examples/sqlite/main.hero"
     return;
-#line 497 "main.c"
+#line 515 "main.c"
 }
 #undef h0_db
 HERO_TU_LOCAL bool h_main_Db_eq(sqlite3 * const *a, sqlite3 * const *b) {

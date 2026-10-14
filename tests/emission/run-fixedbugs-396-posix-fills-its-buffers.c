@@ -216,9 +216,18 @@ void h_fixedbugs396posixfillsitsbuffers_main(void);
 
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
+#line 220 "fixedbugs396posixfillsitsbuffers.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     return POLLIN;
-#line 222 "fixedbugs396posixfillsitsbuffers.c"
+#line 230 "fixedbugs396posixfillsitsbuffers.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -235,9 +244,18 @@ int32_t h_fixedbugs396posixfillsitsbuffers_POLLIN(void) {
 
 #line 22 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
 int32_t h_fixedbugs396posixfillsitsbuffers_POLLOUT(void) {
+#line 248 "fixedbugs396posixfillsitsbuffers.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 22 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     return POLLOUT;
-#line 241 "fixedbugs396posixfillsitsbuffers.c"
+#line 258 "fixedbugs396posixfillsitsbuffers.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -436,7 +454,7 @@ bb2:
     t30 = h1_f0;
 #line 34 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t31 = t30.as.err;
-#line 440 "fixedbugs396posixfillsitsbuffers.c"
+#line 458 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t31);
     hero_unreachable();
 bb3:
@@ -540,7 +558,7 @@ bb4:
     t45 = h2_f1;
 #line 35 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t46 = t45.as.err;
-#line 544 "fixedbugs396posixfillsitsbuffers.c"
+#line 562 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t46);
     hero_unreachable();
 bb5:
@@ -600,7 +618,7 @@ bb6:
     t69 = h4_f2;
 #line 42 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t70 = t69.as.err;
-#line 604 "fixedbugs396posixfillsitsbuffers.c"
+#line 622 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t70);
     hero_unreachable();
 bb7:
@@ -798,7 +816,7 @@ bb7:
     hero_print_bool(t131);
 #line 50 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     hero_print_end();
-#line 802 "fixedbugs396posixfillsitsbuffers.c"
+#line 820 "fixedbugs396posixfillsitsbuffers.c"
     hero_array_release_at(&h0_fds);
     h_0opt_e1ec52d_release(hero_slot_escape(&h1_f0));
     h_0opt_e1ec52d_release(hero_slot_escape(&h2_f1));
@@ -821,7 +839,7 @@ bb8:
     t85 = h5_f3;
 #line 44 "tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero"
     t86 = t85.as.err;
-#line 825 "fixedbugs396posixfillsitsbuffers.c"
+#line 843 "fixedbugs396posixfillsitsbuffers.c"
     hero_panic_must(t86);
     hero_unreachable();
 }

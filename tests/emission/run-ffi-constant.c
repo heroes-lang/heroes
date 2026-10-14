@@ -186,9 +186,18 @@ double h_fficonstant_M_PI(void) {
 
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
+#line 190 "fficonstant.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 49 "tests/golden/run/ffi-constant.hero"
     return SEEK_SET;
-#line 192 "fficonstant.c"
+#line 200 "fficonstant.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -205,9 +214,18 @@ int64_t h_fficonstant_SEEK_SET(void) {
 
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
+#line 218 "fficonstant.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 50 "tests/golden/run/ffi-constant.hero"
     return SEEK_END;
-#line 211 "fficonstant.c"
+#line 228 "fficonstant.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -262,7 +280,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/run/ffi-constant.hero"
     return;
-#line 266 "fficonstant.c"
+#line 284 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

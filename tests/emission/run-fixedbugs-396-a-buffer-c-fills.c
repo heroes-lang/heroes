@@ -222,9 +222,18 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
 int64_t h_fixedbugs396abuffercfills_DIGEST_LEN(void) {
+#line 226 "fixedbugs396abuffercfills.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 20 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     return DIGEST_LEN;
-#line 228 "fixedbugs396abuffercfills.c"
+#line 236 "fixedbugs396abuffercfills.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -296,7 +305,7 @@ bb0:
     hero_print_int(t9);
 #line 40 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 300 "fixedbugs396abuffercfills.c"
+#line 309 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_other);
     hero_array_release_at(&h1_own1);
     return;
@@ -1177,7 +1186,7 @@ bb0:
     hero_print_int(t186);
 #line 113 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
     hero_print_end();
-#line 1181 "fixedbugs396abuffercfills.c"
+#line 1190 "fixedbugs396abuffercfills.c"
     hero_array_release_at(&h0_md);
     hero_array_release_at(&h1_before);
     hero_array_release_at(&h2_named);

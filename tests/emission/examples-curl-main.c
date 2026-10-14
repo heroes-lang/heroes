@@ -196,9 +196,18 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 
 #line 39 "examples/curl/main.hero"
 int32_t h_main_CURLOPT_URL(void) {
+#line 200 "main.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 39 "examples/curl/main.hero"
     return CURLOPT_URL;
-#line 202 "main.c"
+#line 210 "main.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -215,9 +224,18 @@ int32_t h_main_CURLOPT_URL(void) {
 
 #line 40 "examples/curl/main.hero"
 int64_t h_main_CURLE_OK(void) {
+#line 228 "main.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 40 "examples/curl/main.hero"
     return CURLE_OK;
-#line 221 "main.c"
+#line 238 "main.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -234,9 +252,18 @@ int64_t h_main_CURLE_OK(void) {
 
 #line 41 "examples/curl/main.hero"
 int64_t h_main_CURLE_UNSUPPORTED_PROTOCOL(void) {
+#line 256 "main.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 41 "examples/curl/main.hero"
     return CURLE_UNSUPPORTED_PROTOCOL;
-#line 240 "main.c"
+#line 266 "main.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -403,7 +430,7 @@ bb5:
     t22 = h4_f1;
 #line 78 "examples/curl/main.hero"
     t23 = t22.as.err;
-#line 407 "main.c"
+#line 434 "main.c"
     hero_panic_must(t23);
     hero_unreachable();
 bb6:
@@ -534,7 +561,7 @@ bb10:
     t39 = h6_f2;
 #line 84 "examples/curl/main.hero"
     t40 = t39.as.err;
-#line 538 "main.c"
+#line 565 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb11:
@@ -618,7 +645,7 @@ bb15:
     t60 = h9_f4;
 #line 90 "examples/curl/main.hero"
     t61 = t60.as.err;
-#line 622 "main.c"
+#line 649 "main.c"
     hero_panic_must(t61);
     hero_unreachable();
 bb16:
@@ -674,7 +701,7 @@ bb18:
     if (hero_handle_ended(t74, hero_life_0_0) && h2_handle == t74) h2_handle = hero_handle_dead();
 #line 92 "examples/curl/main.hero"
     }
-#line 678 "main.c"
+#line 705 "main.c"
     h_0opt_f87774a_release(hero_slot_escape(&h0_f0));
     hero_str_release_at(&h1_r0);
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f1));
@@ -697,7 +724,7 @@ bb18:
 int64_t h_library_HERO_STR_OK(void) {
 #line 123 "<heroes library>"
     return HERO_STR_OK;
-#line 701 "main.c"
+#line 728 "main.c"
 }
 
 #line 153 "<heroes library>"
@@ -819,7 +846,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 823 "main.c"
+#line 850 "main.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

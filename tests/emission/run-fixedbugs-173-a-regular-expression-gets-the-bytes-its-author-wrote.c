@@ -185,9 +185,18 @@ void h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 int32_t h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_REG_EXTENDED(void) {
+#line 189 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 15 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     return REG_EXTENDED;
-#line 191 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 199 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -284,7 +293,7 @@ bb3:
     goto bb1;
 #line 31 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
 bb4:
-#line 288 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 297 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     t21 = h4_ret0;
     hero_lend_local_give(hero_lend_h2_re);
     return t21;
@@ -366,7 +375,7 @@ bb0:
     hero_print_end();
 #line 39 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     return;
-#line 370 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 379 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
 }
 
 #line 41 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
@@ -420,7 +429,7 @@ bb0:
     t12 = HERO_STR_LIT(hero_str_7280d90);
 #line 44 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
     h_fixedbugs173aregularexpressiongetsthebytesitsauthorwrote_report(t10, t11, t12);
-#line 424 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+#line 433 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);

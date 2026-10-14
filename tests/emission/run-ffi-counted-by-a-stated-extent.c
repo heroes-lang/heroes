@@ -198,9 +198,18 @@ void h_fficountedbyastatedextent_main(void);
 
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
 int64_t h_fficountedbyastatedextent_HELD_LEN(void) {
+#line 202 "fficountedbyastatedextent.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return HELD_LEN;
-#line 204 "fficountedbyastatedextent.c"
+#line 212 "fficountedbyastatedextent.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -258,7 +267,7 @@ bb0:
     t19 = (struct held){.buf = {t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16}, .after = t18};
 #line 29 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return t19;
-#line 262 "fficountedbyastatedextent.c"
+#line 271 "fficountedbyastatedextent.c"
 }
 
 #line 31 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
@@ -485,7 +494,7 @@ bb0:
     hero_lend_local_give(hero_lend_h1_pair);
 #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
     return;
-#line 489 "fficountedbyastatedextent.c"
+#line 498 "fficountedbyastatedextent.c"
 }
 #undef h1_pair
 HERO_TU_LOCAL bool h_fficountedbyastatedextent_Held_eq(const struct held *a, const struct held *b) {
