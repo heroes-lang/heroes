@@ -1,13 +1,6 @@
 error[ffi_unknown_tag]: `fixedbugs-145-types.h` has no `struct anon_s` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
-  at tests/golden/unsupported/fixedbugs-145-a-result-spells-the-typedef.hero:16:18
+  at tests/golden/unsupported/fixedbugs-145-a-result-spells-the-typedef.hero:19:18
      |
-  16 |     record S tag anon_s  #~ ffi_unknown_tag
+  19 |     record S tag anon_s  #~ ffi_unknown_tag
      |                  ^^^^^^
   note: `anon_s` is the name of a typedef in the header, and no struct carries that tag: a record takes a typedef by its own name, with no `tag`, `record anon_s` (§ 13)
-
-error[ffi_return_type]: `give_anon_s` returns `anon_s` in `fixedbugs-145-types.h`, not `S` — clang read the header
-  at tests/golden/unsupported/fixedbugs-145-a-result-spells-the-typedef.hero:19:5
-     |
-  19 |     function give_anon_s() -> S  #~ ffi_return_type
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: an `extern` is checked against the real header (§4.19): a result is declared as the header's type or one that holds every value of it — or the header named is not the one that declares this `give_anon_s`

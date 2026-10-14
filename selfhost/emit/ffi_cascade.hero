@@ -1,0 +1,160 @@
+# A group record refused at its own declaration is told there once, and a
+# function's parameter or result of that record is not told again
+# (design.md §4.17; defect 2060, 2026-10-14).
+#
+# **One mistake, told as two or four.** `record T tag tagged_t` over
+# `typedef struct tagged_s { ... } tagged_t;` is refused `ffi_unknown_tag`,
+# whose note gives the spelling that builds; clang then refuses every
+# function of the group taking `T`, since `struct tagged_t *` is not the
+# header's `struct tagged_s *`, and each was told `ffi_parameter_type`,
+# whose note asks the author to declare as a `record` the very record they
+# declared. This Mac's `pthread_mutex_t` with its three functions gave four
+# errors; defect 145's cases pinned two each. The record's own refusal is the
+# repair: once its tag is the header's, the functions' types are.
+#
+# **Read from what is told, never from clang's words**: a record is refused
+# where `found` holds a diagnostic of a record's own classes on its tag or its
+# declaration (`ffi_unknown_tag`, a tag of a union or another kind, a tag the
+# header does not have); a parameter told is dropped where it is declared of
+# that record, read by name from the parameter message `emit/ffi_narrowed.hero`
+# writes, and a result told where the function returns that record. Anything
+# else told about the function stays.
+
+use ast
+use token
+use source
+use diag
+use type_text
+use parse
+
+# The classes that refuse a record at its own declaration.
+constant OWN: [str]
+    [
+        "ffi_unknown_tag"
+        "ffi_tag_is_a_union"
+        "ffi_tag_of_another_kind"
+        "ffi_unknown_name"
+    ]
+
+# `found` without the parameter and result diagnostics a refused record's
+# declaration already accounts for.
+function without_consequences(s: source.Source, tree: ast.Ast, decls: [ast.Decl], found: [diag.Diagnostic]) -> [diag.Diagnostic]
+    refused = refused_records(s, decls, found)
+
+    if refused.len() == 0
+        return found
+    out: [diag.Diagnostic] @= []
+
+    for d in found
+        if !consequence(s, tree, decls, d: d, refused: refused)
+            out @ out.push(d)
+
+    return out
+
+# The names of the group records `found` refuses at their own declaration.
+function refused_records(s: source.Source, decls: [ast.Decl], found: [diag.Diagnostic]) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for d in found
+        if !own(d.code)
+            continue
+
+        for decl in decls
+            match decl.kind
+                .record_decl rec =>
+                    at_tag = !rec.tag.is_err() && rec.tag.must() == d.span
+
+                    if !rec.header.is_err() && (at_tag || decl.span == d.span || decl.name == d.span)
+                        out[source.span_text(s, decl.name)] @ true
+                .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+
+    return out
+
+function own(code: str) -> bool
+    for one in OWN
+        if one == code
+            return true
+
+    return false
+
+# Whether `d` is a group function's parameter or result of a refused record.
+function consequence(s: source.Source, tree: ast.Ast, decls: [ast.Decl], d: diag.Diagnostic, refused: {str: bool}) -> bool
+    if d.code != "ffi_parameter_type" && d.code != "ffi_return_type"
+        return false
+
+    for decl in decls
+        if decl.span != d.span
+            continue
+
+        match decl.kind
+            .function_decl fd =>
+                if fd.value.header.is_err()
+                    return false
+
+                if d.code == "ffi_return_type"
+                    return !refused[written(s, tree, ty: fd.value.result)].is_err()
+                named = parameter_named(d.message)
+
+                for param in fd.value.params
+                    if !named.is_err() && source.span_text(s, param.name) == named.must()
+                        return !refused[written(s, tree, ty: param.ty)].is_err()
+            .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# The type's name as the author wrote it.
+function written(s: source.Source, tree: ast.Ast, ty: i64) -> str
+    return type_text.named_text(source.span_text(s, tree.types[ty].span))
+
+# The parameter a parameter message names, as `emit/ffi_narrowed.hero` writes
+# it: its name in backquotes, then ` of `; none where it says *a parameter*.
+function parameter_named(message: str) -> str?
+    if message.len() < 2 || message[0] != '`'
+        return fail(code: "none", msg: "no parameter named")
+    at: i64 @= 1
+
+    while at < message.len() && message[at] != '`'
+        at @ at + 1
+
+    if at + 4 >= message.len() || message.slice(from: at + 1, to: at + 5) != " of "
+        return fail(code: "none", msg: "no parameter named")
+    return ok(message.slice(from: 1, to: at))
+
+## Tests
+
+test "a record refused at its tag takes its functions' parameter and result messages with it (defect 2060)"
+    text = "extern \"t.h\"\n    record T tag tagged_t\n        a: i32\n    function use_tagged(@p: T, n: i64) -> i32\n    function give() -> T\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    decls = parsed.decls
+    tag = diag.new_diagnostic(code: "ffi_unknown_tag", message: "no struct", span: record_tag(decls))
+    param = diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`p` of `use_tagged` is declared a different kind of thing from the header's `struct tagged_s *`",
+        span: decls[1].span
+    )
+    other = diag.new_diagnostic(
+        code: "ffi_parameter_type",
+        message: "`n` of `use_tagged` is declared wider than the header's `int`",
+        span: decls[1].span
+    )
+    result = diag.new_diagnostic(code: "ffi_return_type", message: "`give` returns `tagged_t`", span: decls[2].span)
+    kept = without_consequences(s, parsed.tree, decls, found: [tag, param, other, result])
+    assert kept.len() == 2
+    assert kept[0].code == "ffi_unknown_tag"
+    assert kept[1].message == other.message
+
+    # With no record refused, nothing is dropped.
+    assert without_consequences(s, parsed.tree, decls, found: [param, result]).len() == 2
+
+test "the parameter a message names is read as the message writes it"
+    assert parameter_named("`p` of `f` is declared ...").must() == "p"
+    assert parameter_named("a parameter of `f` is declared ...").is_err()
+    assert parameter_named("`f` does not return `i64`").is_err()
+
+function record_tag(decls: [ast.Decl]) -> token.Span
+    match decls[0].kind
+        .record_decl rec                                             => return rec.tag.must()
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return decls[0].span
+
+    return decls[0].span

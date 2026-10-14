@@ -1,0 +1,13 @@
+# fixedbugs, defect 2060, lane b17-ffi, 2026-10-14.
+#
+# The control beside the repair: `lock_init` takes the refused record AND
+# declares its result `bool` where the header returns `int32_t`, a mistake
+# of the function's own, which stays told beside the record's.
+
+extern "fixedbugs-2060-records.h"
+    record Lock tag lock_t  #~ ffi_unknown_tag
+        state: i32
+    function lock_init(@l: Lock) -> bool  #~ ffi_return_type
+
+function main()
+    print(1)

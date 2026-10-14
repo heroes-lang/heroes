@@ -31,6 +31,7 @@ use emit/ffi_layout
 use emit/ffi_built
 use emit/ffi_field
 use emit/ffi_nested
+use emit/ffi_cascade
 use emit/ffi_tag
 use emit/ffi_incomplete
 use emit/ffi_build
@@ -341,7 +342,8 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         for lent in ffi_unit.lend_refusals(s, decls, tree, answered, line: line)
             found @ ffi_lookup.add_once(found, d: lent)
 
-    return found
+    # A record refused at its declaration is told once (defect 2060).
+    return ffi_cascade.without_consequences(s, tree, decls, found: found)
 
 ## Tests
 
