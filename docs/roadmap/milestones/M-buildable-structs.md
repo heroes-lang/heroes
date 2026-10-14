@@ -73,6 +73,27 @@ page's plan, and what follows from it is the author's or a sitting's. For
 issue 1333 it counts **no** string field the program writes, so route T's
 first return condition is not met.
 
+**What issues 1333, 1334 and 1335 need, read 2026-10-14 with the sittings
+they cite.** **1333** (route T, a string into a fixed field) waits on two
+measurements and no rule: its first return condition, three string fields of
+the third kind in M-core-packages, reads none (measurement 044); its second
+is a reader test, a paid run and so the author's to allow, or a run in which
+the byte loop or C writing through the field's counted lend hands C an
+unterminated field at exit 0, unrun, and owed a definition of which C reader
+of the field expects a terminator before it can be run. **1334** (padding
+lost through a call by value) is a ruling no rule reaches: R1 promises no
+padding, and the remedy, records crossing calls by address or by `memcpy`, is
+how every record crosses a call, the backend's architecture and a sitting's
+(CLAUDE.md § 4). Re-run that day on the lane's compiler in `heroes-linux`
+(x86-64, clang 22.1.8) with the critic's own probe and script: MemorySanitizer
+reports 3 at `-O0`, all at the lend after `cd_through`, and none at `-O1` to
+`-O3`, where on 2026-09-25 the critic read reports at all four. **1335** (`m2
+= m` copies a mutex) is a ruling too, whether a group record can say it is not
+a value, a new mark and a sitting's; its measurement, unrun until that day:
+on both legs a copy of a locked mutex reads locked (`trylock` 16), unlocks and
+locks again at 0, the original then unlocks at 0, and each destroys at 0, at
+exit 0: two locks where the program wrote one, and no message.
+
 **Scheduled 2026-09-18** out of panel 164, which recorded *a real five-field
 `utsname` needs 1280 literal zeros*. **This file opened 2026-09-25**, with
 panel 178, while the milestone's row stays `scheduled`: one `**OPEN**` row at a
