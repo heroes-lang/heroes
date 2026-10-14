@@ -18,19 +18,16 @@ and its measurements are CL-069.
 
 **This file's own cost is measured on the READER's tokeniser**, not a vendored
 one: `heroes measure CLAUDE.md`'s `real` row, which
-`tests/harness/suite_spec.hero`'s `contract` check judges. Until panel 134 it
-judged the vendored maximum and this file sat 1806 tokens over while the tool
-reported nine to spare. The ceiling is the measured size plus room, never a round
-figure (CL-069). Crossing it is **housekeeping**: MOVE a rule into
-`.claude/rules/`, the case law or a skill, never cut one. A commit moving either
-judged document past `DELTA_GATE` says in its body what paid for it.
+`tests/harness/suite_spec.hero`'s `contract` check judges. The ceiling is the
+measured size plus room, never a round figure (CL-069). Crossing it is
+**housekeeping**: MOVE a rule into `.claude/rules/`, the case law or a skill,
+never cut one. A commit moving either judged document past `DELTA_GATE` says in
+its body what paid for it.
 
 ## Hard stops
 
 Refusals, not trade-offs; no measurement and no deadline outranks them.
-`.claude/settings.json` and `.claude/hooks/` enforce them, because until
-2026-09-07 they were prose and the local settings pre-approved all three git
-ones (CL-041).
+`.claude/settings.json` and `.claude/hooks/` enforce them (CL-041).
 
 - **Never `git add -A`, `git add .`, `git add -u`, `git commit -a`, `git
   stash`.** A commit carries only this conversation's files, and **the pathspec
@@ -47,7 +44,9 @@ ones (CL-041).
   push publishes the branch (CL-042, CL-073). **The repository is public since
   2026-09-08** (M-open-repository), so every push is outward-facing and a commit
   body is read by strangers. **Except an issue's writes through
-  `tests/harness/issues.hero`, asked once** (author, 2026-10-12).
+  `tests/harness/issues.hero`, asked once** (author, 2026-10-12), **and the
+  pushes of a session the author leaves unattended, asked once as they leave,
+  for that session alone** (author, 2026-10-14).
 - **Destructive operations are asked for.**
 - **`UPDATE_GOLDEN=1` does not exist**, and in `tests/golden/check/` and
   `tests/golden/ir/` it is forbidden outright.
