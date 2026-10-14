@@ -1,0 +1,20 @@
+== x86_64-linux-gnu
+define dso_local { i8, double } @pass_cd(i8 %0, double %1) #0 {
+define dso_local i64 @pass_ci(i64 %0) #0 {
+define dso_local i64 @pass_fc(i64 %0) #0 {
+define dso_local void @pass_big(ptr dead_on_unwind noalias writable sret(%struct.big) align 8 %0, ptr noundef byval(%struct.big) align 8 %1) #0 {
+== aarch64-linux-gnu
+define dso_local [2 x i64] @pass_cd([2 x i64] %0) #0 {
+define dso_local i64 @pass_ci(i64 %0) #0 {
+define dso_local i64 @pass_fc(i64 %0) #0 {
+define dso_local void @pass_big(ptr dead_on_unwind noalias writable sret(%struct.big) align 8 %0, ptr noundef %1) #0 {
+== arm64-apple-macos
+define [2 x i64] @pass_cd([2 x i64] %0) #0 {
+define i64 @pass_ci(i64 %0) #0 {
+define i64 @pass_fc(i64 %0) #0 {
+define void @pass_big(ptr dead_on_unwind noalias writable sret(%struct.big) align 8 %0, ptr noundef %1) #0 {
+== x86_64-pc-windows-msvc
+define dso_local void @pass_cd(ptr dead_on_unwind noalias writable sret(%struct.cd) align 8 %0, ptr noundef %1) #0 {
+define dso_local i64 @pass_ci(i64 %0) #0 {
+define dso_local i64 @pass_fc(i64 %0) #0 {
+define dso_local void @pass_big(ptr dead_on_unwind noalias writable sret(%struct.big) align 8 %0, ptr noundef %1) #0 {

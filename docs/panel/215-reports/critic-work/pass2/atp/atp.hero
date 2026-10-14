@@ -1,0 +1,17 @@
+# Critic, panel 215 pass 2: does every `@` reach its callee as the caller's
+# place? A generic function and a method called by UFCS, beside the plain call.
+record P
+    n: i64
+
+function bump(@p: P)
+    p.n @ p.n + 1
+
+function grow<T>(@xs: [T], x: T)
+    xs @ xs.push(x)
+
+function main()
+    v: P @= P(n: 1)
+    bump(@v)
+    ps: [P] @= []
+    grow(@ps, x: v)
+    print(v.n, " ", ps.len())

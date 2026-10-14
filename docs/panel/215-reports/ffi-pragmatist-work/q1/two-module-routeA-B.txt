@@ -1,0 +1,10 @@
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77); main.hero; units: 3
+-O0: 5 reports; printed: 16 0 0; frames:  1 main.hero:12; 1 main.hero:13; 1 main.hero:14; 1 main.hero:15; 2 pad.h:12; 2 pad.h:7; 1 pad.h:8;
+-O1: 0 reports; printed: 16 1 0; frames: none
+-O2: 0 reports; printed: 16 1 0; frames: none
+-O3: 0 reports; printed: 16 1 0; frames: none
+leg aarch64, Debian clang version 22.1.8 (1~deb13u4); main.hero; units: 3
+-O0: 0 reports; printed: 16 1 0; frames: none
+-O1: 0 reports; printed: 16 1 0; frames: none
+-O2: 0 reports; printed: 16 1 0; frames: none
+-O3: 0 reports; printed: 16 1 0; frames: none

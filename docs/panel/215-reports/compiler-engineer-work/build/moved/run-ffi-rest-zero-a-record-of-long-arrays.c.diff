@@ -1,0 +1,14 @@
+232a233,236
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct big, name), sizeof(((struct big *)0)->name), __builtin_offsetof(struct big, n), sizeof(((struct big *)0)->n), __builtin_offsetof(struct big, tail), sizeof(((struct big *)0)->tail)}; hero_pad_zero(&h0_a, sizeof(struct big), 1, hero_pad_s0, 3);
+> #line 32 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+>     }
+> #line 32 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+252a257,260
+> #line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct big, name), sizeof(((struct big *)0)->name), __builtin_offsetof(struct big, n), sizeof(((struct big *)0)->n), __builtin_offsetof(struct big, tail), sizeof(((struct big *)0)->tail)}; hero_pad_zero(&h1_b, sizeof(struct big), 1, hero_pad_s0, 3);
+> #line 35 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
+>     }
+269c277
+< #line 270 "ffirestzeroarecordoflongarrays.c"
+---
+> #line 278 "ffirestzeroarecordoflongarrays.c"

@@ -1,0 +1,24 @@
+# Critic, panel 215 pass 2: two records `==` calls equal, one of which crossed
+# a Heroes call by value, and how many of its padding bytes C reads nonzero.
+extern "dv.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    function dirty()
+    function pad_nonzero(@p: Cd) -> i32
+
+record Holder
+    h: Cd
+    k: i64
+
+function cd_through(x: Cd) -> Cd
+    return x
+
+function work()
+    a: Cd @= Cd(c: 1, d: 2.0, rest: zero)
+    x: Holder @= Holder(h: cd_through(x: a), k: 3)
+    print(x.h == a, " ", pad_nonzero(@a), " ", pad_nonzero(@x.h))
+
+function main()
+    dirty()
+    work()

@@ -1,0 +1,6 @@
+error[missing_fields]: this construction of `S5` leaves out `hi`, which shares no byte with the fields it names, so C would build it with `hi` zero: `shapes.h` puts `hi` in no union with any of those
+  at w5_half.hero:10:10
+     |
+  10 |     b @= S5(kind: 1, lo: 2)
+     |          ^^^^^^^^^^^^^^^^^^
+  note: a group's `record` is built naming every field outside the header's unions and exactly one member of each union, an anonymous struct's fields counting as one (§ 13)

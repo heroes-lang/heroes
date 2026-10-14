@@ -1,0 +1,54 @@
+leg aarch64, Debian clang version 22.1.8 (1~deb13u4)
+== sa_linux_literal
+wrote sa_linux_literal
+bind 0
+getsockname 0 port 47215
+exit 0
+== sa_linux_rz
+wrote sa_linux_rz
+bind 0
+getsockname 0 port 47215
+exit 0
+== sha_literal
+wrote sha_literal
+1 1 1 186 173
+exit 0
+== sha_rz
+wrote sha_rz
+1 1 1 186 173
+exit 0
+== sha_partial
+wrote sha_partial
+1 1 1 186 173
+exit 0
+== fds_linux_literal
+error[ffi_unknown_tag]: `q3.h` has no `struct fd_set` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  note: `fd_set` is the name of a typedef in the header, and no struct carries that tag: a record takes a typedef by its own name, with no `tag`, `record fd_set` (§ 13)
+error[ffi_parameter_type]: `s` of `fds_add` is declared a different kind of thing from the header's `fd_set *` — clang read the header, and the two do not convert
+  note: §4.19: a parameter is declared as what the header says. `fd_set *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout
+== fds_linux_rz
+error[ffi_unknown_tag]: `q3.h` has no `struct fd_set` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+  note: `fd_set` is the name of a typedef in the header, and no struct carries that tag: a record takes a typedef by its own name, with no `tag`, `record fd_set` (§ 13)
+error[ffi_parameter_type]: `s` of `fds_add` is declared a different kind of thing from the header's `fd_set *` — clang read the header, and the two do not convert
+  note: §4.19: a parameter is declared as what the header says. `fd_set *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout
+== sa_darwin_rz
+error[ffi_unknown_field]: `q3.h` declares no `sa_len` in `struct sockaddr`: clang read the header, and that type has no such field
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `struct sockaddr` has a member `sa_len`
+error[ffi_field_type]: `SockAddr.sa_family` is `sa_family_t` (`unsigned short`) in `q3.h`, an unsigned 16-bit integer, not `u8` — clang read the header's struct and the field disagrees
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `sa_family`, or name the header that spells `SockAddr` this way
+./sa_darwin_rz: 1: Syntax error: "(" unexpected
+exit 2
+leg aarch64, Debian clang version 22.1.8 (1~deb13u4)
+== fds_linux_literal
+wrote fds_linux_literal
+select 1 ready 1
+exit 0
+== fds_linux_rz
+wrote fds_linux_rz
+select 1 ready 1
+exit 0
+== sa_darwin_rz
+error[ffi_unknown_field]: `q3.h` declares no `sa_len` in `struct sockaddr`: clang read the header, and that type has no such field
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `struct sockaddr` has a member `sa_len`
+error[ffi_field_type]: `SockAddr.sa_family` is `sa_family_t` (`unsigned short`) in `q3.h`, an unsigned 16-bit integer, not `u8` — clang read the header's struct and the field disagrees
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `sa_family`, or name the header that spells `SockAddr` this way

@@ -1,0 +1,25 @@
+187a188,191
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(lock_t, __size), sizeof(((lock_t *)0)->__size), __builtin_offsetof(lock_t, __align), sizeof(((lock_t *)0)->__align)}; hero_pad_zero(&h0_m, sizeof(lock_t), 1, hero_pad_s0, 2);
+> #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+>     }
+> #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+193a198,201
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(lock_t, __size), sizeof(((lock_t *)0)->__size), __builtin_offsetof(lock_t, __align), sizeof(((lock_t *)0)->__align)}; hero_pad_zero(&h0_m, sizeof(lock_t), 1, hero_pad_s0, 2);
+> #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+>     }
+> #line 23 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+208a217,218
+> #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(pattern_t, re_nsub), sizeof(((pattern_t *)0)->re_nsub), __builtin_offsetof(pattern_t, __opaque), sizeof(((pattern_t *)0)->__opaque)}; hero_pad_zero(&h1_p, sizeof(pattern_t), 1, hero_pad_s0, 2);
+209a220,221
+>     }
+> #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+215a228,231
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(pattern_t, re_nsub), sizeof(((pattern_t *)0)->re_nsub), __builtin_offsetof(pattern_t, __opaque), sizeof(((pattern_t *)0)->__opaque)}; hero_pad_zero(&h1_p, sizeof(pattern_t), 1, hero_pad_s0, 2);
+> #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+>     }
+> #line 25 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
+241c257
+< #line 242 "ffiatypedefthenotenamesbindsbyitsownname.c"
+---
+> #line 258 "ffiatypedefthenotenamesbindsbyitsownname.c"

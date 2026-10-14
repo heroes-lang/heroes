@@ -1,0 +1,47 @@
+602a603,606
+> #line 62 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct keeper *)0) == 13 ? sizeof(struct keeper) : 0), __builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, count), sizeof(((struct keeper *)0)->count)}; hero_pad_zero(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_s0, 3);
+> #line 62 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+>     }
+607c611
+< #line 608 "fixedbugs396alocallentinplaceisguarded.c"
+---
+> #line 612 "fixedbugs396alocallentinplaceisguarded.c"
+617a622,625
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct keeper *)0) == 13 ? sizeof(struct keeper) : 0), __builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, count), sizeof(((struct keeper *)0)->count)}; hero_pad_zero(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_s0, 3);
+> #line 65 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+>     }
+> #line 65 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+621c629
+< #line 622 "fixedbugs396alocallentinplaceisguarded.c"
+---
+> #line 630 "fixedbugs396alocallentinplaceisguarded.c"
+637c645
+< #line 638 "fixedbugs396alocallentinplaceisguarded.c"
+---
+> #line 646 "fixedbugs396alocallentinplaceisguarded.c"
+703a712,713
+> #line 80 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct keeper *)0) == 13 ? sizeof(struct keeper) : 0), __builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, count), sizeof(((struct keeper *)0)->count)}; hero_pad_zero(&h2_k, sizeof(struct keeper), 1, hero_pad_s0, 3);
+704a715,716
+>     }
+> #line 80 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+707a720,723
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct keeper *)0) == 13 ? sizeof(struct keeper) : 0), __builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, count), sizeof(((struct keeper *)0)->count)}; hero_pad_zero(&h2_k, sizeof(struct keeper), 1, hero_pad_s0, 3);
+> #line 81 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+>     }
+> #line 81 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+712a729,730
+> #line 81 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct keeper *)0) == 13 ? sizeof(struct keeper) : 0), __builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, count), sizeof(((struct keeper *)0)->count)}; hero_pad_zero(&h2_k, sizeof(struct keeper), 1, hero_pad_s0, 3);
+713a732,733
+>     }
+> #line 81 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+904c924
+< #line 905 "fixedbugs396alocallentinplaceisguarded.c"
+---
+> #line 925 "fixedbugs396alocallentinplaceisguarded.c"
+920c940
+< #line 921 "fixedbugs396alocallentinplaceisguarded.c"
+---
+> #line 941 "fixedbugs396alocallentinplaceisguarded.c"

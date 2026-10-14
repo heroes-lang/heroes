@@ -1,0 +1,24 @@
+# ffi-pragmatist, panel 215, Q2 on Windows: a CRITICAL_SECTION copied while entered
+extern "win.h"
+    record CsBox tag csbox partial
+        tag: i32
+    function cs_init(@b: CsBox)
+    function cs_enter(@b: CsBox)
+    function cs_try(@b: CsBox) -> i32
+    function cs_leave(@b: CsBox)
+    function cs_delete(@b: CsBox)
+    function cs_lockcount(@b: CsBox) -> i32
+
+function main()
+    a: CsBox @= CsBox(tag: 1, rest: zero)
+    cs_init(@a)
+    cs_enter(@a)
+    b: CsBox @= a
+    print("copy: lockcount ", cs_lockcount(@b), " try ", cs_try(@b))
+    cs_leave(@b)
+    cs_leave(@b)
+    cs_leave(@a)
+    print("original: lockcount ", cs_lockcount(@a), "; copy: lockcount ", cs_lockcount(@b))
+    cs_delete(@a)
+    cs_delete(@b)
+    print("both deleted")

@@ -1,0 +1,15 @@
+212a213,216
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(hero_mutex, id), sizeof(((hero_mutex *)0)->id), __builtin_offsetof(hero_mutex, m.__sig), sizeof(((hero_mutex *)0)->m.__sig), __builtin_offsetof(hero_mutex, m.__opaque), sizeof(((hero_mutex *)0)->m.__opaque)}; hero_pad_zero(&h0_m, sizeof(hero_mutex), 1, hero_pad_s0, 3);
+> #line 19 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
+>     }
+> #line 19 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
+218a223,224
+> #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(hero_mutex, id), sizeof(((hero_mutex *)0)->id), __builtin_offsetof(hero_mutex, m.__sig), sizeof(((hero_mutex *)0)->m.__sig), __builtin_offsetof(hero_mutex, m.__opaque), sizeof(((hero_mutex *)0)->m.__opaque)}; hero_pad_zero(&h0_m, sizeof(hero_mutex), 1, hero_pad_s0, 3);
+219a226,227
+>     }
+> #line 20 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
+229c237
+< #line 230 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"
+---
+> #line 238 "fixedbugs094thesystemsmutexinitialiserbuildsarecord.c"

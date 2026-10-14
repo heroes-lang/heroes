@@ -1,0 +1,9 @@
+extern "shapes.h"
+    record S4 tag s4
+        kind: i32
+        fd: i32
+    function s4_fd(@t: S4 lent) -> i32
+
+function main()
+    t @= S4(kind: 2, rest: zero)
+    print(s4_fd(@t))

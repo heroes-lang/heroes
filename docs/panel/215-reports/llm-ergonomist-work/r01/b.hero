@@ -1,0 +1,20 @@
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(@c: Counter lent) -> i64
+
+function increment(@c: Counter)
+    assert counter_lock(@c) == 0
+    c.n @ c.n + 1
+    assert counter_unlock(@c) == 0
+
+function main()
+    c @= Counter(n: 0, rest: zero)
+    assert counter_init(@c) == 0
+    increment(@c)
+    increment(@c)
+    increment(@c)
+    print(counter_value(@c))

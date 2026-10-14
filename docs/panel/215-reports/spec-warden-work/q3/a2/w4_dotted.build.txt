@@ -1,0 +1,5 @@
+error[expected_field_type]: expected `:` and the field's type, found `.`
+  at w4_dotted.hero:4:12
+    |
+  4 |         via.fd: i32
+    |            ^

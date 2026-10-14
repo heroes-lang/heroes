@@ -1,0 +1,26 @@
+# B: a mutex-guarded counter, bumped three times.
+
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(@c: Counter lent) -> i64
+
+# Add one to `n` while holding the counter's lock.
+function bump(@c: Counter)
+    rc_lock = counter_lock(@c)
+    assert rc_lock == 0
+    c.n @ c.n + 1
+    rc_unlock = counter_unlock(@c)
+    assert rc_unlock == 0
+
+function main()
+    c @= Counter(n: 0, rest: zero)
+    rc_init = counter_init(@c)
+    assert rc_init == 0
+    bump(@c)
+    bump(@c)
+    bump(@c)
+    print(counter_value(@c))

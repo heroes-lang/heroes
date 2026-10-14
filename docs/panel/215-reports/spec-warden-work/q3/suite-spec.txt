@@ -1,0 +1,26 @@
+  spec: 27 passed, 4 failed
+FAIL spec/budget
+  the spec measures 7703 and the record says 7655 — a delta of 48.
+  If the change is intended, write the new number into SPEC_TOKENS in the SAME
+  commit, and put the delta plus its payment in the commit body: either a named
+  removal, or a registered falsifiable prediction naming BOTH the instrument that
+  will score it and the milestone it is scored at — and the instrument has to
+  exist today (panel 012, as amended by panel 046). A prediction naming an
+  instrument nobody has built is an observation, not a payment.
+  If it is not intended, the spec grew by accident, which is the case this
+  check exists for.
+FAIL spec/spendable
+  `measure spec/heroes-spec.md` does not say "is 10108 and the check goes red at 10240".
+  The two instruments have drifted: this file goes red at REAL_TOKENS + FFI_FLOOR
+  >= CEILING, and what `measure` prints is what a session reads BEFORE amending
+  the spec. Whichever of the two moved, the other has to move with it — the
+  number is one number in two places, one printed and one checked (defect 017).
+FAIL spec/real
+  `measure spec/heroes-spec.md` does not print "10048   claude-opus-5, 2026-10-13".
+  The record is in two places, this file and `selfhost/cli/measure.hero`, for
+  the reason CEILING is: one printed and one checked. Whichever moved, the
+  other moves with it (defect 017's class), and the model id and the date
+  travel WITH the number because a count without them is not a measurement.
+FAIL spec/ledger
+  the ledger's newest row says 7655 and the compiler measures 7703 — the record and the document disagree
+harness: 27 passed, 4 failed

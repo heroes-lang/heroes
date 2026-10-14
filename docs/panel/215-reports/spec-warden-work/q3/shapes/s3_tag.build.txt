@@ -1,0 +1,6 @@
+error[ffi_tag_is_a_union]: `shapes.h` declares `v3` as a `union`, not a struct — C keeps the two in one namespace and will not let one stand for the other
+  at s3_tag.hero:2:18
+    |
+  2 |     record V tag v3
+    |                  ^^
+  note: a `tag` names a struct (§4.19), and a `record` binds a union only by a typedef's name, as `record W` over `typedef union { … } W;` does. If `shapes.h` gives `v3` a typedef, bind that name; if not, give it one in a header of the program's own, `typedef union v3 V;`, and bind `record V`, or reach it as a `ptr` through C functions

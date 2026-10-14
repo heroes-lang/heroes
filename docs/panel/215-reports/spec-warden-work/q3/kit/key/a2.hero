@@ -1,0 +1,11 @@
+# Panel 215 re-run, the A2 key: the union `via` is a named member of a union
+# with no type name, so the record leaves it to `partial`, and `rest: zero`
+# zeroes it (spec § 13). Built and run 2026-10-14 at 7e5c02048: prints 2.
+extern "union.h"
+    record Tagged tag tagged partial
+        kind: i32
+    function tg_kind(@t: Tagged lent) -> i32
+
+function main()
+    t: Tagged @= Tagged(kind: 2, rest: zero)
+    print(tg_kind(@t))

@@ -1,0 +1,10 @@
+# ffi-pragmatist, panel 215, Q2: FILE bound by value, so that a program could copy one
+extern "nc4.h"
+    record CFile tag FILE partial
+        _flags: i16
+    function fopen(path: cstr lent, mode: cstr lent) -> CFile
+
+function main()
+    f = fopen(path: "/dev/null".cstr(), mode: "r".cstr())
+    g = f
+    print(g._flags)

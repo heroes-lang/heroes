@@ -1,0 +1,17 @@
+# ffi-pragmatist, panel 215, Q2: a struct holding a pthread_mutex_t, copied while locked (issue 1335's shape)
+extern "nc.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_lock(@c: Counter) -> i32
+    function counter_trylock(@c: Counter) -> i32
+    function counter_unlock(@c: Counter) -> i32
+    function counter_destroy(@c: Counter) -> i32
+
+function main()
+    m: Counter @= Counter(n: 0, rest: zero)
+    print("init ", counter_init(@m), " lock ", counter_lock(@m))
+    m2: Counter @= m
+    print("copy: trylock ", counter_trylock(@m2), " unlock ", counter_unlock(@m2), " lock ", counter_lock(@m2))
+    print("original: unlock ", counter_unlock(@m), " destroy ", counter_destroy(@m))
+    print("copy: unlock ", counter_unlock(@m2), " destroy ", counter_destroy(@m2))

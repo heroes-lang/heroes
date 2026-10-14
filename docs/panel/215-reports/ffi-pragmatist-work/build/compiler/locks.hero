@@ -1,0 +1,180 @@
+# PANEL 215'S BUILD OF Q2'S ROUTE C, not a landing (issue 1335): which group
+# records hold a lock at any depth, asked of clang at `build` beside the
+# layout check, every other header fact being told there too. The question
+# and its reading are `emit/lock_screen.hero`; the copies refused are
+# `check/lock_copies.hero`.
+#
+# **Which members are asked.** A record the layout screen vouched for names
+# every member its struct has, each a field whose Heroes type the build's
+# field assertions hold to the header's, so it is asked of its own type
+# alone and what its fields hold follows from their own records. Every
+# `partial` record and every record the screen could not vouch for is read
+# from clang's record-layout dump, every member at every depth by its C
+# path. An array member's elements, which the dump does not expand, are
+# dumped in a round of their own (`__typeof__` of `path[0]`), at most
+# `ROUNDS` deep.
+
+use ast
+use source
+use check/state
+use ir/containers
+use emit/layout_text
+use emit/layout_rows
+use emit/layout_screen
+use emit/lock_screen
+use cli/toolchain
+use cli/process
+use cli/publish
+use cli/digest
+use cli/kept
+use cli/pointee
+use cli/read_back
+use cli/layout
+use cli/compiling
+
+constant ROUNDS: i64
+    4
+
+# The numbers element wrappers are dumped under, above every declaration's.
+constant ELEMENTS: i64
+    1000000000
+
+# A dumped wrapper's record, its C type, and the C path its members hang
+# from: empty for the record itself, `many[0]` for an element of `many`.
+record Owner
+    decl: i64
+    c_type: str
+    prefix: str
+
+# What the route read, for the cost it is measured at: the questions asked,
+# the records dumped, the element wrappers dumped, and the dump rounds run.
+record Asked
+    found: {i64: lock_screen.Found}
+    questions: i64
+    dumped: i64
+    elements: i64
+    rounds: i64
+
+function found(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}) -> Asked
+    none: {i64: lock_screen.Found} = {}
+    screen = layout.screened(t, p, c, s, decls, probe: probe, records: records)
+
+    if screen.is_err()
+        return Asked(found: none, questions: 0, dumped: 0, elements: 0, rounds: 0)
+    sc = screen.must()
+    flagged = layout_screen.flagged(sc.said)
+    questions: [lock_screen.Question] @= []
+    dumped: [layout_text.Asked] @= []
+    owners: {i64: Owner} @= {}
+
+    for one in sc.wanted
+        questions @ questions.push(lock_screen.Question(decl: one.decl, c_type: one.c_type, path: ""))
+
+        if is_partial(decls, decl: one.decl) || !flagged[one.decl].is_err()
+            dumped @ dumped.push(one)
+            owners[one.decl] @ Owner(decl: one.decl, c_type: one.c_type, prefix: "")
+
+    asking: [layout_text.Asked] @= dumped
+    next: i64 @= ELEMENTS
+    rounds: i64 @= 0
+
+    while asking.len() > 0 && rounds < ROUNDS
+        made = dump_kept(sc.asking, text: layout_text.dump_unit(sc.asking.headers, wanted: asking))
+        rounds @ rounds + 1
+
+        if made.is_err()
+            break
+        rows = layout_rows.wrapper_rows(made.must())
+        heads = layout_text.heads(rows)
+        more: [layout_text.Asked] @= []
+
+        for one in asking
+            owner = owners[one.decl].must()
+            at = heads[one.decl]
+
+            if at.is_err()
+                continue
+            read = layout_text.members(rows: rows, from: at.must())
+
+            if read.is_err()
+                continue
+
+            for m in read.must()
+                if m.path.len() == 0 || m.bitfield
+                    continue
+                path: str @= m.path
+
+                if owner.prefix.len() > 0
+                    path @ owner.prefix + "." + m.path
+                path @ path + "[0]".repeat(m.rank.to_u64().must())
+                questions @ questions.push(lock_screen.Question(decl: owner.decl, c_type: owner.c_type, path: path))
+
+                if m.rank > 0
+                    owners[next] @ Owner(decl: owner.decl, c_type: owner.c_type, prefix: path)
+                    more @ more.push(
+                        layout_text.Asked(decl: next, c_type: "__typeof__(((" + owner.c_type + " *)0)->" + path + ")")
+                    )
+                    next @ next + 1
+
+        asking @ more
+
+    out = Asked(
+        found: none,
+        questions: questions.len(),
+        dumped: dumped.len(),
+        elements: next - ELEMENTS,
+        rounds: rounds
+    )
+    said = asked_kept(sc.asking, text: lock_screen.unit(sc.asking.headers, questions: questions))
+
+    if said.is_err() || lock_screen.strays(said.must())
+        return out
+    return Asked(
+        found: lock_screen.answers(said.must(), questions: questions),
+        questions: out.questions,
+        dumped: out.dumped,
+        elements: out.elements,
+        rounds: rounds
+    )
+
+function is_partial(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .record_decl rec                                             => return rec.partial
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# A dump, kept under the digest of the unit that asked for it.
+function dump_kept(a: layout.Asking, text: str) -> str?
+    path = a.dir + "/locks-dump-" + digest.digest(text) + ".txt"
+    known = kept.read(path)
+
+    if !known.is_err()
+        return known
+    made = layout.dump(a, dump_text: text)
+
+    if !made.is_err() && made.must().len() <= layout.KEPT_DUMP
+        kept.write(path: path, text: made.must())?
+    return made
+
+# What clang said of the identity unit, kept under the unit's digest.
+function asked_kept(a: layout.Asking, text: str) -> str?
+    path = a.dir + "/locks-said-" + digest.digest(text) + ".txt"
+    known = kept.read(path)
+
+    if !known.is_err()
+        return known
+    unit = pointee.unit_path(dir: a.dir, stem: "locks", text: text)
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    err_path = publish.private_name(a.dir + "/locks-stderr.txt")
+    line: [str] @= ["clang", "-fsyntax-only", "-ferror-limit=0"]
+    line @ layout.searched(a, line: line)
+    line @ line.push(unit)
+    ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
+    said = read_back.words(err_path)
+    publish.discard(err_path)
+
+    if !ran.started || said.is_err()
+        return fail(code: "unread", msg: "the lock unit was not run")
+    kept.write(path: path, text: said.must())?
+    return said

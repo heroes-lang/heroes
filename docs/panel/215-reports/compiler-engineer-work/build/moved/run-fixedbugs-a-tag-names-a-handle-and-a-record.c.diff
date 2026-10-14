@@ -1,0 +1,9 @@
+200a201,204
+> #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct addrinfo, ai_flags), sizeof(((struct addrinfo *)0)->ai_flags), __builtin_offsetof(struct addrinfo, ai_family), sizeof(((struct addrinfo *)0)->ai_family), __builtin_offsetof(struct addrinfo, ai_socktype), sizeof(((struct addrinfo *)0)->ai_socktype), __builtin_offsetof(struct addrinfo, ai_protocol), sizeof(((struct addrinfo *)0)->ai_protocol), __builtin_offsetof(struct addrinfo, ai_addrlen), sizeof(((struct addrinfo *)0)->ai_addrlen), __builtin_offsetof(struct addrinfo, ai_canonname), sizeof(((struct addrinfo *)0)->ai_canonname), __builtin_offsetof(struct addrinfo, ai_addr), sizeof(((struct addrinfo *)0)->ai_addr), __builtin_offsetof(struct addrinfo, ai_next), sizeof(((struct addrinfo *)0)->ai_next)}; hero_pad_zero(&h0_h, sizeof(struct addrinfo), 1, hero_pad_s0, 8);
+> #line 38 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
+>     }
+231c235
+< #line 232 "fixedbugsatagnamesahandleandarecord.c"
+---
+> #line 236 "fixedbugsatagnamesahandleandarecord.c"

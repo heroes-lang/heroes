@@ -1,0 +1,29 @@
+# Compiler-engineer, panel 215: does `rest: zero` leave every byte C reads
+# zero, padding and a union included, at the construction and after a
+# by-value return through a Heroes function?
+extern "rzpad.h"
+    record PU
+        kind: i32
+        c: i8
+        d: f64
+    record PP partial
+        kind: i32
+    function pu_all(@s: PU) -> i64
+    function pp_all(@s: PP) -> i64
+
+function pu_back() -> PU
+    return PU(kind: 1, c: 7, rest: zero)
+
+function pp_back() -> PP
+    return PP(kind: 2, rest: zero)
+
+function main()
+    a: PU @= PU(kind: 1, c: 7, rest: zero)
+    n1 = pu_all(@a)
+    b: PU @= pu_back()
+    n2 = pu_all(@b)
+    c: PP @= PP(kind: 2, rest: zero)
+    n3 = pp_all(@c)
+    d: PP @= pp_back()
+    n4 = pp_all(@d)
+    print(" ", n1, " ", n2, " ", n3, " ", n4)

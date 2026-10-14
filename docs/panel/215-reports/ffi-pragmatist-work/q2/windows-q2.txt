@@ -1,0 +1,30 @@
+leg x86_64, clang version 23.1.1 (https://github.com/llvm/llvm-project 6dfe1677ab8dffbc6ec13d53a1e0215d75147689), x86_64-pc-windows-msvc
+== cs
+wrote cs.exe
+copy: lockcount -2 try 1
+original: lockcount -1; copy: lockcount -1
+both deleted
+exit 0
+== srw
+wrote srw.exe
+copy: try 0
+copy: try after its unlock 1
+original: try after its unlock 1
+exit 0
+== mtx
+wrote mtx.exe
+init 0 lock 0 (thrd_busy is 3)
+copy: trylock 3 unlock 0; original: unlock 0
+exit 0
+== atom
+error[ffi_missing_header]: `pthread.h` is not on this machine's include path, and `nc2.h`, the header this group names, includes it at line 3
+== file
+error[ffi_missing_header]: `pthread.h` is not on this machine's include path, and `nc2.h`, the header this group names, includes it at line 3
+== atom4
+wrote atom4.exe
+add 1
+copy: n 1 add 2; original add 2
+exit 0
+== file4
+error[ffi_unknown_tag]: `nc4.h` has no `struct FILE` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+error[ffi_return_type]: `fopen` returns `FILE *` (`struct _iobuf *`) in `nc4.h`, not `CFile` — clang read the header

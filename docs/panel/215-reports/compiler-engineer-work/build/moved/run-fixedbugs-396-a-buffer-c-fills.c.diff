@@ -1,0 +1,9 @@
+728a729,732
+> #line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pair *)0) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)}; hero_pad_zero(hero_lend_b77_0, sizeof(struct pair), (size_t)hero_lend_e77_0, hero_pad_s0, 3);
+> #line 95 "tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero"
+>     }
+1179c1183
+< #line 1180 "fixedbugs396abuffercfills.c"
+---
+> #line 1184 "fixedbugs396abuffercfills.c"

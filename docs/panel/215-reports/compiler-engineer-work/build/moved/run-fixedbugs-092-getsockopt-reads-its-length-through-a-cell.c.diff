@@ -1,0 +1,13 @@
+487a488,491
+> #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct linger *)0) == 13 ? sizeof(struct linger) : 0), __builtin_offsetof(struct linger, l_onoff), sizeof(((struct linger *)0)->l_onoff), __builtin_offsetof(struct linger, l_linger), sizeof(((struct linger *)0)->l_linger)}; hero_pad_zero(&h3_l, sizeof(struct linger), 1, hero_pad_s0, 3);
+> #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
+>     }
+506c510
+< #line 507 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+---
+> #line 511 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+523c527
+< #line 524 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+---
+> #line 528 "fixedbugs092getsockoptreadsitslengththroughacell.c"

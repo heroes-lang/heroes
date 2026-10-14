@@ -1,0 +1,21 @@
+== Linux arm64
+         0 | struct tq
+         0 |   struct item * tqh_first
+         8 |   struct item ** tqh_last
+           | [sizeof=16, align=8]
+         0 | struct counter
+         0 |   pthread_mutex_t lock
+         0 |     struct __pthread_mutex_s __data
+         0 |       int __lock
+         4 |       unsigned int __count
+         8 |       int __owner
+        12 |       unsigned int __nusers
+        16 |       int __kind
+        20 |       int __spins
+        24 |       struct __pthread_internal_list __list
+        24 |         struct __pthread_internal_list * __prev
+        32 |         struct __pthread_internal_list * __next
+         0 |     char[48] __size
+         0 |     long __align
+        48 |   long n
+           | [sizeof=56, align=8]

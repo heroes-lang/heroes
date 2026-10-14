@@ -1,0 +1,15 @@
+# ffi-pragmatist, panel 215: a record built zero, passed through another module by value, read as bytes by C
+use rec
+
+extern "pad.h"
+    function w_cd(@p: rec.Cd) -> i64
+    function same_cd(@a: rec.Cd, @b: rec.Cd) -> i32
+    function fnv_cd(@p: rec.Cd) -> u32
+
+function main()
+    a: rec.Cd @= rec.Cd(c: 1, d: 2.0, rest: zero)
+    b: rec.Cd @= rec.through(x: a)
+    n = w_cd(@b)
+    s = same_cd(a: @a, b: @b)
+    h = fnv_cd(@b)
+    print(n, " ", s, " ", h)

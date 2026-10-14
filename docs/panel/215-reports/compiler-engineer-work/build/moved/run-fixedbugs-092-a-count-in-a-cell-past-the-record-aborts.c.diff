@@ -1,0 +1,9 @@
+192a193,196
+> #line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), 1, hero_pad_s0, 2);
+> #line 18 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
+>     }
+212c216
+< #line 213 "fixedbugs092acountinacellpasttherecordaborts.c"
+---
+> #line 217 "fixedbugs092acountinacellpasttherecordaborts.c"

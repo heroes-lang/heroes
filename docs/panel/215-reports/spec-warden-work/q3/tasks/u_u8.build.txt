@@ -1,0 +1,44 @@
+error[ffi_field_type]: `Utsname.sysname` is `char[256]` in `sys/utsname.h`, not `u8[256]` — clang read the header's struct and the field disagrees
+  at u_u8.hero:3:9
+    |
+  3 |         sysname: u8[256]
+    |         ^^^^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `sysname`, or name the header that spells `Utsname` this way
+  note: where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`
+  fix (guess): declare `sysname` with `i8[256]`
+
+error[ffi_field_type]: `Utsname.nodename` is `char[256]` in `sys/utsname.h`, not `u8[256]` — clang read the header's struct and the field disagrees
+  at u_u8.hero:4:9
+    |
+  4 |         nodename: u8[256]
+    |         ^^^^^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `nodename`, or name the header that spells `Utsname` this way
+  note: where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`
+  fix (guess): declare `nodename` with `i8[256]`
+
+error[ffi_field_type]: `Utsname.release` is `char[256]` in `sys/utsname.h`, not `u8[256]` — clang read the header's struct and the field disagrees
+  at u_u8.hero:5:9
+    |
+  5 |         release: u8[256]
+    |         ^^^^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `release`, or name the header that spells `Utsname` this way
+  note: where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`
+  fix (guess): declare `release` with `i8[256]`
+
+error[ffi_field_type]: `Utsname.version` is `char[256]` in `sys/utsname.h`, not `u8[256]` — clang read the header's struct and the field disagrees
+  at u_u8.hero:6:9
+    |
+  6 |         version: u8[256]
+    |         ^^^^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `version`, or name the header that spells `Utsname` this way
+  note: where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`
+  fix (guess): declare `version` with `i8[256]`
+
+error[ffi_field_type]: `Utsname.machine` is `char[256]` in `sys/utsname.h`, not `u8[256]` — clang read the header's struct and the field disagrees
+  at u_u8.hero:7:9
+    |
+  7 |         machine: u8[256]
+    |         ^^^^^^^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `machine`, or name the header that spells `Utsname` this way
+  note: where the header writes `char`, the field is `i8`: C's `char` is signed in every build, which passes `-fsigned-char`
+  fix (guess): declare `machine` with `i8[256]`

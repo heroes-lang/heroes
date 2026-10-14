@@ -1,0 +1,37 @@
+leg aarch64, Debian clang version 22.1.8 (1~deb13u4)
+== mutex
+wrote mutex
+init 0 lock 0
+copy: trylock 16 unlock 0 lock 0
+original: unlock 0 destroy 0
+copy: unlock 0 destroy 0
+exit 0
+== cond
+wrote cond
+init 0
+original: destroy 0; copy: signal 0 destroy 0
+exit 0
+== mtx
+wrote mtx
+init 0 lock 0 (thrd_busy is 1)
+copy: trylock 1 unlock 0; original: unlock 0
+exit 0
+== atom
+wrote atom
+add 1
+copy: n 1 add 2; original add 2
+exit 0
+== zstream
+wrote zstream
+init 0
+copy: finish -2 end -2 (Z_STREAM_ERROR is -2)
+original: finish 1 end 0
+exit 0
+== file
+error[ffi_unknown_tag]: `nc2.h` has no `struct FILE` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+error[ffi_return_type]: `fopen` returns `FILE *` (`struct _IO_FILE *`) in `nc2.h`, not `CFile` — clang read the header
+== valist
+error[ffi_unknown_tag]: `nc2.h` has no `struct va_list` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+== jmpbuf
+error[ffi_unknown_tag]: `nc2.h` has no `struct jmp_buf` — clang read the header, and the struct it cannot lay out is an empty one C made up at this line
+error[ffi_parameter_type]: `env` of `setjmp` is declared a different kind of thing from the header's `struct __jmp_buf_tag *` — clang read the header, and the two do not convert

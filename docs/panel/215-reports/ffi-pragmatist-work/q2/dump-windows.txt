@@ -1,0 +1,6 @@
+         0 | struct csbox
+         0 |   struct _RTL_CRITICAL_SECTION cs
+        40 |   int tag
+         0 | struct srwbox
+         0 |   struct _RTL_SRWLOCK l
+         8 |   int tag

@@ -1,0 +1,23 @@
+# Task B written the copying way: a by-value parameter and a return, the mutex copied each call.
+extern "counter.h"
+    record Counter tag counter partial pinned
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_lock(@c: Counter) -> i32
+    function counter_unlock(@c: Counter) -> i32
+    function counter_value(@c: Counter) -> i64
+
+function bump(c: Counter) -> Counter
+    d: Counter @= c
+    _ = counter_lock(@d)
+    d.n @ d.n + 1
+    _ = counter_unlock(@d)
+    return d
+
+function main()
+    c: Counter @= Counter(rest: zero)
+    _ = counter_init(@c)
+    c @ bump(c: c)
+    c @ bump(c: c)
+    c @ bump(c: c)
+    print(counter_value(@c))

@@ -1,0 +1,9 @@
+extern "union.h"
+    record Tagged tag tagged
+        kind: i32
+        fd: i32
+    function tg_kind(@t: Tagged lent) -> i64
+
+function main()
+    t @= Tagged(kind: 2, rest: zero)
+    print(tg_kind(@t))

@@ -1,0 +1,17 @@
+222a223,226
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct slot, name), sizeof(((struct slot *)0)->name), __builtin_offsetof(struct slot, id), sizeof(((struct slot *)0)->id)}; hero_pad_zero(&h0_s, sizeof(struct slot), 1, hero_pad_s0, 2);
+> #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
+>     }
+> #line 47 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
+301c305
+< #line 302 "ffiafilledrecordisaskedfor.c"
+---
+> #line 306 "ffiafilledrecordisaskedfor.c"
+313c317
+< #line 314 "ffiafilledrecordisaskedfor.c"
+---
+> #line 318 "ffiafilledrecordisaskedfor.c"
+325c329
+< #line 326 "ffiafilledrecordisaskedfor.c"
+---
+> #line 330 "ffiafilledrecordisaskedfor.c"

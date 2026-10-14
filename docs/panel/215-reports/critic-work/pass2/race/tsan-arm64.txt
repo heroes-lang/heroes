@@ -1,0 +1,3 @@
+leg aarch64, Debian clang version 22.1.8 (1~deb13u4)
+-O0: exit 0, printed '200000 true', 0 TSan warnings
+-O2: exit 0, printed '200000 true', 0 TSan warnings

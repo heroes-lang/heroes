@@ -1,0 +1,11 @@
+reader a1(16) char a2(2) b(3) context
+r01 a1:ok:16 xit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes
+r02 a1:ok:16 xit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes
+r03 a1:ok:16 a2:exit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes (a1 re-extracted: the reader wrote a placeholder, then its correction)
+r04 a1:ok:16 xit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes
+r05 a1:ok:16 xit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes
+r06 a1:ok:16 xit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes
+r07 a1:ok:16 xit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes
+r08 a1:ok:16 a2:ok:2 b:ok:3 char:path:i8[ context: yes
+r09 a1:ok:16 xit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes
+r10 a1:ok:16 xit1:error[ffi_unknown_field] b:ok:3 char:path:i8[ context: yes

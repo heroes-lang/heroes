@@ -1,0 +1,17 @@
+# Compiler-engineer, panel 215 build: an ELEMENT of a Heroes array lent to C
+# as one record, the shape beside the field lend; each element came back from
+# a Heroes call by value.
+extern "pc.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    function w_cd(@p: Cd) -> i64
+
+function cd_through(x: Cd) -> Cd
+    return x
+
+function main()
+    a = Cd(c: 1, d: 2.0, rest: zero)
+    xs: [Cd] @= [cd_through(x: a), cd_through(x: a)]
+    n = w_cd(@xs[1])
+    print(n, " ", xs[1].d)

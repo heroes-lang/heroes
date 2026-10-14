@@ -1,0 +1,9 @@
+extern "shapes.h"
+    record S1 tag s1 partial
+        kind: i32
+        via: i64
+    function s1_fd(@t: S1 lent) -> i32
+
+function main()
+    b @= S1(kind: 2, rest: zero)
+    print(s1_fd(@b))

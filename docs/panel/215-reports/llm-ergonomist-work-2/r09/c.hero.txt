@@ -1,0 +1,49 @@
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(@c: Counter lent) -> i64
+
+record Stats
+    first: Counter
+    second: Counter
+    events: i64
+
+# Sets up the caller's counter in place.
+function init_counter(@c: Counter) -> ()?
+    rc = counter_init(@c)
+    if rc != 0
+        return fail(code: "counter_init_failed", msg: f"counter_init returned {rc}")
+    return ok()
+
+# Adds one to n while holding the counter's lock.
+function increment(@c: Counter) -> ()?
+    rc = counter_lock(@c)
+    if rc != 0
+        return fail(code: "lock_failed", msg: f"counter_lock returned {rc}")
+    c.n @ c.n + 1
+    rc2 = counter_unlock(@c)
+    if rc2 != 0
+        return fail(code: "unlock_failed", msg: f"counter_unlock returned {rc2}")
+    return ok()
+
+# The counter's value doubled; the caller's counter is not touched.
+function doubled(c: Counter) -> i64
+    view @= c
+    return counter_value(@view) * 2
+
+function main()
+    s @= Stats(first: Counter(rest: zero), second: Counter(rest: zero), events: 0)
+    init_counter(@s.first).must()
+    init_counter(@s.second).must()
+    for _ in range(from: 0, to: 3)
+        increment(@s.first).must()
+        s.events @ s.events + 1
+    for _ in range(from: 0, to: 2)
+        increment(@s.second).must()
+        s.events @ s.events + 1
+    print(doubled(s.first))
+    print(doubled(s.second))
+    print(s.events)

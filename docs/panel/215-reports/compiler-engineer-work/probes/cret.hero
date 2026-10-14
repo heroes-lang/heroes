@@ -1,0 +1,13 @@
+# Compiler-engineer, panel 215: a record C itself built zero and returned by
+# value, lent straight back to C. No construction of the program's is
+# involved, so route B cannot reach it.
+extern "cret.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    function cd_make() -> Cd
+    function w_cd(@p: Cd) -> i64
+
+function main()
+    a: Cd @= cd_make()
+    print(w_cd(@a))

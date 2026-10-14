@@ -1,0 +1,83 @@
+# PANEL 215'S PROTOTYPE OF ROUTE G, not a landing: before an `extern` call,
+# the padding of every group record lent to it is written zero in place, so C
+# never reads bytes a by-value call or return left unspecified (issue 1334).
+# The place keeps its address: C is handed the place itself, as panel 196's
+# R1 has it, and only bytes no member holds are written.
+#
+# Which bytes are padding is C's own arithmetic: `offsetof` and `sizeof` of
+# each declared field, in the header, so the emitted C is the same on every
+# target. Sound only where the declared fields ARE the struct's members,
+# which `vouched` asks.
+
+use ast
+use source
+use check/state
+use check/table
+use ir
+use ir/containers
+use emit/writer
+use emit/ctype
+use emit/mangle
+use emit/aggregate
+use emit/lend_count
+
+# The zeroing line for each group record the call lends, before the call.
+function zero(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run)
+    for arg in containers.args_of(f, run)
+        match arg
+            .inout_arg io =>
+                ty = lend_count.place_type(c, s, decls, f, at: io.place)
+                spans = spans_of(c, names, s, decls, ty: ty)
+
+                if !spans.is_err()
+                    place = "&" + aggregate.place(c, s, decls, f, at: io.place)
+                    writer.line(@w, text: "    " + statement(spans.must(), place: place))
+            .value_arg => continue
+
+# `{ static const size_t hero_pad_spans[] = {...}; hero_pad_zero(...); }`
+function statement(spans: Spans, place: str) -> str
+    return "{ static const size_t hero_pad_spans[] = {" + spans.pairs.join(", ") + "}; hero_pad_zero(" + place + ", sizeof(" + spans.c_type + "), hero_pad_spans, " + spans.count.to_str() + "); }"
+
+record Spans
+    c_type: str
+    pairs: [str]
+    count: i64
+
+# The member spans of a group record lent whole, or a failure where the
+# record is not one this prototype may zero.
+function spans_of(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64) -> Spans?
+    decl: i64 @= 0 - 1
+
+    match table.get(c.types, ty)
+        .named n                                                  => decl @ n.decl
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a record")
+        .array | .map | .fallible | .function_ty | .fixed         => return fail(code: "none", msg: "not a record")
+        .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "not a record")
+
+    if !vouched(names, decls, decl: decl)
+        return fail(code: "none", msg: "not a record whose fields are its members")
+    name = ctype.of(names, decl: decl)
+    pairs: [str] @= []
+    count: i64 @= 0
+
+    match decls[decl].kind
+        .record_decl rec =>
+            for field in rec.fields
+                member = mangle.field_of(foreign: true, name: source.span_text(s, field.name))
+                pairs @ pairs.push("offsetof(" + name + ", " + member + ")")
+                pairs @ pairs.push("sizeof(((" + name + " *)0)->" + member + ")")
+                count @ count + 1
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a record")
+
+    return ok(Spans(c_type: name, pairs: pairs, count: count))
+
+# A group's record with fields, not `partial`, that the layout screen vouched
+# for on this build (`cli/layout.hero`): its declared fields are the struct's
+# members, none in an anonymous member and none a bit-field.
+function vouched(names: ctype.Names, decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .record_decl rec =>
+            return !rec.header.is_err() && !rec.partial && rec.fields.len() > 0 && !names.lend_units["%vouched " + decl.to_str()].is_err()
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+
+    return false

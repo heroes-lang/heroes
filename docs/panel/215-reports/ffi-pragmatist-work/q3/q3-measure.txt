@@ -1,0 +1,13 @@
+sa_darwin_literal    cl100k  479  lines  20
+sa_darwin_rz         cl100k  398  lines  23
+sa_linux_literal     cl100k  458  lines  19
+sa_linux_rz          cl100k  391  lines  22
+sha_literal          cl100k  379  lines  17
+sha_rz               cl100k  284  lines  17
+sha_partial          cl100k  247  lines  12
+fds_darwin_literal   cl100k  388  lines  16
+fds_darwin_rz        cl100k  292  lines  16
+fds_linux_literal    cl100k  338  lines  16
+fds_linux_rz         cl100k  290  lines  16
+win_literal          cl100k  565
+win_rz               cl100k  376

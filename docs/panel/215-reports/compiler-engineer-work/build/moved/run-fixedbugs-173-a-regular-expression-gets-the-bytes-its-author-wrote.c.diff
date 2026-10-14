@@ -1,0 +1,28 @@
+225a226,229
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(regex_t, re_magic), sizeof(((regex_t *)0)->re_magic), __builtin_offsetof(regex_t, re_nsub), sizeof(((regex_t *)0)->re_nsub), __builtin_offsetof(regex_t, re_endp), sizeof(((regex_t *)0)->re_endp), __builtin_offsetof(regex_t, re_g), sizeof(((regex_t *)0)->re_g)}; hero_pad_zero(&h2_re, sizeof(regex_t), 1, hero_pad_s0, 4);
+> #line 29 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+>     }
+> #line 29 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+247a252,255
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(regex_t, re_magic), sizeof(((regex_t *)0)->re_magic), __builtin_offsetof(regex_t, re_nsub), sizeof(((regex_t *)0)->re_nsub), __builtin_offsetof(regex_t, re_endp), sizeof(((regex_t *)0)->re_endp), __builtin_offsetof(regex_t, re_g), sizeof(((regex_t *)0)->re_g)}; hero_pad_zero(&h2_re, sizeof(regex_t), 1, hero_pad_s0, 4);
+> #line 32 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+>     }
+> #line 32 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+251a260,261
+> #line 33 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(regex_t, re_magic), sizeof(((regex_t *)0)->re_magic), __builtin_offsetof(regex_t, re_nsub), sizeof(((regex_t *)0)->re_nsub), __builtin_offsetof(regex_t, re_endp), sizeof(((regex_t *)0)->re_endp), __builtin_offsetof(regex_t, re_g), sizeof(((regex_t *)0)->re_g)}; hero_pad_zero(&h2_re, sizeof(regex_t), 1, hero_pad_s0, 4);
+252a263,264
+>     }
+> #line 33 "tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero"
+286c298
+< #line 287 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+---
+> #line 299 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+368c380
+< #line 369 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+---
+> #line 381 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+422c434
+< #line 423 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"
+---
+> #line 435 "fixedbugs173aregularexpressiongetsthebytesitsauthorwrote.c"

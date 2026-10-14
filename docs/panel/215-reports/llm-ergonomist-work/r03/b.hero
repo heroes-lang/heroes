@@ -1,0 +1,28 @@
+# B: a mutex-guarded counter, bumped three times.
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i64
+    function counter_lock(@c: Counter lent) -> i64
+    function counter_unlock(@c: Counter lent) -> i64
+    function counter_value(@c: Counter lent) -> i64
+
+# Stops the program if a C call reported failure.
+function check(rc: i64, what: str)
+    if rc != 0
+        print(f"{what} failed: {rc}")
+        exit(code: 1)
+
+# Adds one to the counter's n while holding its lock.
+function bump(@c: Counter)
+    check(counter_lock(@c), "counter_lock")
+    c.n @ c.n + 1
+    check(counter_unlock(@c), "counter_unlock")
+
+function main()
+    c @= Counter(n: 0, rest: zero)
+    check(counter_init(@c), "counter_init")
+    bump(@c)
+    bump(@c)
+    bump(@c)
+    print(counter_value(@c))

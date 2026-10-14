@@ -1,0 +1,31 @@
+# the copying way with an SRWLOCK: a by-value parameter and a result.
+extern "ws.h"
+    record CsBox tag csbox partial
+        n: i64
+    record SrwBox tag srwbox partial
+        n: i64
+    record MBox tag mbox partial
+        n: i64
+    function cs_init(@b: CsBox) -> i32
+    function cs_enter(@b: CsBox) -> i32
+    function cs_try(@b: CsBox) -> i32
+    function cs_leave(@b: CsBox) -> i32
+    function cs_count(@b: CsBox) -> i32
+    function srw_init(@b: SrwBox) -> i32
+    function srw_try(@b: SrwBox) -> i32
+    function srw_release(@b: SrwBox) -> i32
+    function m_init(@b: MBox) -> i32
+    function m_lock(@b: MBox) -> i32
+    function m_try(@b: MBox) -> i32
+
+function bump(b: SrwBox) -> SrwBox
+    d: SrwBox @= b
+    d.n @ d.n + 1
+    return d
+
+function main()
+    s: SrwBox @= SrwBox(n: 0, rest: zero)
+    _ = srw_init(@s)
+    print("try ", srw_try(@s))
+    s @ bump(b: s)
+    print("copy try ", srw_try(@s), " n ", s.n)

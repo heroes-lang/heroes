@@ -1,0 +1,736 @@
+diff --git a/runtime/heroes_guard_close.h b/runtime/heroes_guard_close.h
+index 29fe3f90c..bbf845297 100644
+--- a/runtime/heroes_guard_close.h
++++ b/runtime/heroes_guard_close.h
+@@ -317,6 +317,7 @@
+ #pragma pop_macro("hero_map_release_at")
+ #pragma pop_macro("hero_map_set")
+ #pragma pop_macro("hero_os_pid")
++#pragma pop_macro("hero_pad_zero")
+ #pragma pop_macro("hero_panic")
+ #pragma pop_macro("hero_panic_assert")
+ #pragma pop_macro("hero_panic_assert_sides")
+diff --git a/runtime/heroes_guard_open.h b/runtime/heroes_guard_open.h
+index d51bff063..0ca7449b2 100644
+--- a/runtime/heroes_guard_open.h
++++ b/runtime/heroes_guard_open.h
+@@ -317,6 +317,7 @@
+ #pragma push_macro("hero_map_release_at")
+ #pragma push_macro("hero_map_set")
+ #pragma push_macro("hero_os_pid")
++#pragma push_macro("hero_pad_zero")
+ #pragma push_macro("hero_panic")
+ #pragma push_macro("hero_panic_assert")
+ #pragma push_macro("hero_panic_assert_sides")
+diff --git a/runtime/heroes_runtime.h b/runtime/heroes_runtime.h
+index c79f5d07d..6a060a809 100644
+--- a/runtime/heroes_runtime.h
++++ b/runtime/heroes_runtime.h
+@@ -729,6 +729,8 @@ int64_t hero_lend_count_u64(uint64_t, const char *, const char *);
+ void *hero_lend_local(size_t, const char *, const char *);
+ void hero_lend_local_name(void *, const char *, const char *);
+ void hero_lend_local_give(void *);
++/* Panel 215's route G: zero every byte of `count` objects no member span covers. */
++void hero_pad_zero(void *, size_t, size_t, const size_t *, size_t);
+ 
+ /* -- the map: `{K: V}` (design.md §4.20, panels 006 and 022) -----------------
+  *
+diff --git a/runtime/parts/lend.c b/runtime/parts/lend.c
+index 6136eafdb..413c37460 100644
+--- a/runtime/parts/lend.c
++++ b/runtime/parts/lend.c
+@@ -487,6 +487,34 @@ void hero_lend_local_name(void *local, const char *callee, const char *param) {
+     }
+ }
+ 
++/* PANEL 215'S ROUTE G, RECURSIVE: the padding of `count` group records laid
++ * end to end from `p` zeroed in place before C reads them (issue 1334).
++ * `spans` holds `n` pairs, each a C member's offset and size in the header's
++ * own layout, written by the emitter as `__builtin_offsetof` and `sizeof` of a
++ * member the screen or the layout dump names, so clang computed every number;
++ * a union's arms each give a span, so a byte is written only where it is
++ * padding in every arm. Every byte of the `size` no pair covers is written
++ * zero; nothing a member holds is touched, so a mutex another thread is
++ * locking keeps its bytes. The gaps are found once, from the table, and the
++ * spans need no order: an arm of a union may start below the member before it
++ * in the table. */
++void hero_pad_zero(void *p, size_t size, size_t count, const size_t *spans, size_t n) {
++    unsigned char *b = p;
++    size_t at = 0;
++    while (at < size) {
++        size_t next = size;
++        int covered = 0;
++        for (size_t i = 0; i < n; i++) {
++            size_t off = spans[2 * i], len = spans[2 * i + 1];
++            if (off <= at && at < off + len) { covered = 1; at = off + len; break; }
++            if (off > at && off < next) next = off;
++        }
++        if (covered) continue;
++        for (size_t k = 0; k < count; k++) memset(b + k * size + at, 0, next - at);
++        at = next;
++    }
++}
++
+ void hero_lend_local_give(void *local) {
+     if (hero_lend_depth < 1) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
+     HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
+diff --git a/selfhost/cli/header_types.hero b/selfhost/cli/header_types.hero
+index 0872153b4..ca9e12110 100644
+--- a/selfhost/cli/header_types.hero
++++ b/selfhost/cli/header_types.hero
+@@ -200,6 +200,8 @@ function lend_units(answers: [pointee_ask.Answered]) -> {str: str}
+     for one in answers
+         if one.asked.declared == pointee_ask.UNIT
+             out[one.asked.name + " " + one.asked.index.to_str()] @ one.header_type
++        else if one.asked.declared == "pad"
++            out["%pad " + one.asked.index.to_str()] @ one.header_type
+ 
+     return lend_type.with_read_casts(out, answers)
+ 
+diff --git a/selfhost/cli/layout.hero b/selfhost/cli/layout.hero
+index 99fcc0277..876fae109 100644
+--- a/selfhost/cli/layout.hero
++++ b/selfhost/cli/layout.hero
+@@ -57,6 +57,7 @@ use emit/layout_text
+ use emit/layout_rows
+ use emit/layout_screen
+ use emit/layout_check
++use emit/padding
+ use cli/toolchain
+ use cli/process
+ use cli/publish
+@@ -95,14 +96,19 @@ record Asking
+ 
+ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe) -> ()?
+     every: {i64: bool}? = fail(code: "every", msg: "every group record")
+-    return check_records(t, p, c, s, decls, probe: probe, records: every)
++    laid: {i64: str} @= {}
++    return check_records(t, p, c, s, decls, probe: probe, records: every, @laid)
+ 
+ # The same, of the group records `records` holds where it is given: those a
+ # module's unit reads the headers of, asked of those headers alone, since a
+ # record is laid out as the unit that spells it reads it (panel 202 R1,
+ # `cli/probing.hero`). `p` is the whole program, whose every use of a record
+ # is what the union questions ask about.
+-function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?) -> ()?
++#
++# `laid` takes what route G (panel 215, `emit/padding.hero`) reads of each
++# record: `padding.DECLARED` where the screen vouched for it, else the leaves
++# of its layout dump.
++function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?, @laid: {i64: str}) -> ()?
+     wanted: [layout_text.Asked] @= []
+ 
+     for one in layout_text.asked(s, decls)
+@@ -132,7 +138,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
+         screen = kept.read(dir + "/screen-" + known.must() + ".txt")
+ 
+         if !screen.is_err()
+-            return answered(a, wanted: wanted, sum: known.must(), said: screen.must())
++            return answered(a, wanted: wanted, sum: known.must(), said: screen.must(), @laid)
+     process.mkdir_all(dir)?
+     screen_c = pointee.unit_path(dir: dir, stem: "screen", text: screen_text)
+     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
+@@ -161,7 +167,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
+     listing = deps.pointer_text(rows.must())
+     sum = listing.slice(from: 0, to: 16)
+     kept.write(path: dir + "/screen-" + sum + ".txt", text: said.must())?
+-    verdict = answered(a, wanted: wanted, sum: sum, said: said.must())
++    verdict = answered(a, wanted: wanted, sum: sum, said: said.must(), @laid)
+     publish.write_whole(path: listed, text: listing, keyed: true)?
+     return verdict
+ 
+@@ -171,21 +177,31 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
+ # has no layout is refused first, by the screen's own two answers, unless
+ # clang erred outside the screen too: then the headers did not compile
+ # alone, and the program's own compile says so on the author's line.
+-function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -> ()?
++function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str, @laid: {i64: str}) -> ()?
+     opaque = layout_screen.no_layout(said, wanted: wanted)
+ 
+     if opaque.len() > 0 && !layout_screen.strays(said)
+         return refused_opaque(a, opaque: opaque)
+     flagged = layout_screen.flagged(said)
+     dumped: [layout_text.Asked] @= []
++    laying: [layout_text.Asked] @= []
+ 
++    # Route G (panel 215): a record the screen vouches for names exactly the
++    # struct's members, so its padding is C's arithmetic on the declared
++    # fields; a `partial` one proves nothing, and is laid out by the dump
++    # beside the flagged ones, which alone the check unit asks about.
+     for one in wanted
+         if !flagged[one.decl].is_err()
+             dumped @ dumped.push(one)
++            laying @ laying.push(one)
++        else if partial_record(a.decls, decl: one.decl)
++            laying @ laying.push(one)
++        else
++            laid[one.decl] @ padding.DECLARED
+ 
+-    if dumped.len() == 0
++    if laying.len() == 0
+         return ok()
+-    dump_text = layout_text.dump_unit(a.headers, wanted: dumped)
++    dump_text = layout_text.dump_unit(a.headers, wanted: laying)
+     kept_path = a.dir + "/clang-dump-" + sum + "-" + digest.digest(dump_text) + ".txt"
+     layouts = kept.read(kept_path)
+     rows: str @= ""
+@@ -204,9 +220,43 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
+ 
+         if made.must().len() <= KEPT_DUMP
+             kept.write(path: kept_path, text: made.must())?
++    lay(rows, laying: laying, @laid)
++
++    if dumped.len() == 0
++        return ok()
+     text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
+     return judged(a, sum: sum, text: text)
+ 
++# Route G's reading of each record laid out (panel 215): the leaves of its
++# block, where the reader knows the dump's shape and the block's; a record it
++# cannot read is left out, and nothing is written for it.
++function lay(rows: str, laying: [layout_text.Asked], @laid: {i64: str})
++    read = layout_rows.rows_of(rows)
++
++    if !layout_text.control_holds(read)
++        return
++    opened = layout_text.heads(read)
++
++    for one in laying
++        start = opened[one.decl]
++
++        if !start.is_err()
++            tree = layout_text.members(rows: read, from: start.must())
++
++            if !tree.is_err()
++                text = padding.encoded(tree.must())
++
++                if !text.is_err()
++                    laid[one.decl] @ text.must()
++
++# Whether `decl` is a `partial` record, which the screen proves nothing of.
++function partial_record(decls: [ast.Decl], decl: i64) -> bool
++    match decls[decl].kind
++        .record_decl rec                                             => return rec.partial
++        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
++
++    return false
++
+ # **A record named after a typedef whose type has no layout, refused here,
+ # before any unit compiles** (defect 191, 2026-10-02): the screen's two
+ # questions said where clang erred, which is the verdict, and the type behind
+diff --git a/selfhost/cli/probing.hero b/selfhost/cli/probing.hero
+index 1cefb15b7..41094100c 100644
+--- a/selfhost/cli/probing.hero
++++ b/selfhost/cli/probing.hero
+@@ -201,7 +201,15 @@ function check_all(t: toolchain.Toolchain, p: containers.Program, c: state.Check
+ 
+     for one in probings
+         if !one.probe.is_err() && laid_out(decls, records: one.records)
+-            laid = layout.check_records(t, p, c, s, decls, probe: one.probe.must(), records: ok(one.records))
++            held: {i64: str} @= {}
++            laid = layout.check_records(t, p, c, s, decls, probe: one.probe.must(), records: ok(one.records), @held)
++
++            # Route G (panel 215): each record's membership rides the pointee
++            # answers to the emitter (`header_types.lend_units`).
++            for decl in sort(keys(held))
++                answered @ answered.push(
++                    pointee_ask.Answered(asked: pointee_ask.Pointee(name: "%pad", param: "", index: decl, declared: "pad", file: "", line: 0, depth: false), header_type: held[decl].must(), pointee: "")
++                )
+ 
+             if laid.is_err()
+                 return Checked(verdict: laid, modules: one.modules, unread: unread, unread_modules: unread_modules)
+diff --git a/selfhost/emit/guarded_names.hero b/selfhost/emit/guarded_names.hero
+index b6548a841..781026870 100644
+--- a/selfhost/emit/guarded_names.hero
++++ b/selfhost/emit/guarded_names.hero
+@@ -83,7 +83,7 @@ constant NAMES: [str]
+         "hero_lend_count_u64 hero_lend_give hero_lend_local hero_lend_local_give"
+         "hero_lend_local_name hero_lend_take hero_map_decref hero_map_eq"
+         "hero_map_find hero_map_incref hero_map_keys hero_map_len hero_map_new"
+-        "hero_map_put hero_map_release_at hero_map_set hero_os_pid hero_panic"
++        "hero_map_put hero_map_release_at hero_map_set hero_os_pid hero_pad_zero hero_panic"
+         "hero_panic_assert hero_panic_assert_sides hero_panic_must"
+         "hero_panic_overflow hero_print_bool hero_print_end hero_print_f32"
+         "hero_print_f64 hero_print_int hero_print_str hero_print_uint"
+diff --git a/selfhost/emit/layout_text.hero b/selfhost/emit/layout_text.hero
+index da2e88e0a..4a1712022 100644
+--- a/selfhost/emit/layout_text.hero
++++ b/selfhost/emit/layout_text.hero
+@@ -64,6 +64,11 @@ record Member
+     # read from the text, and only where C cannot be asked (a bit-field has
+     # no `__builtin_offsetof`).
+     byte: i64
++    # The last byte a bit-field's bits reach, `byte + hi / 8` from the
++    # offset column `<byte>:<lo>-<hi>`, else `byte`; -1 where that column is
++    # not the shape this reader knows (panel 215, route G: the bytes a
++    # bit-field holds are the one span C cannot be asked for).
++    last: i64
+     # An anonymous member whose type opens with `union `: the one word of a
+     # type's text that is read, because an anonymous member has no name C
+     # can classify (a NAMED member is classified by C through `path`).
+@@ -194,6 +199,7 @@ function members(rows: [str], from: i64) -> [Member]?
+     named: [str] @= []
+     bits: [bool] @= []
+     starts_at: [i64] @= []
++    lasts: [i64] @= []
+     flex: [bool] @= []
+     unions: [bool] @= []
+     places: [str] @= []
+@@ -224,6 +230,7 @@ function members(rows: [str], from: i64) -> [Member]?
+         depths @ depths.push(spaces / 2 - 1)
+         bits @ bits.push(layout_rows.byte_index(text: row.slice(from: 0, to: bar), needle: ":") >= 0)
+         starts_at @ starts_at.push(layout_rows.leading_number(row.slice(from: 0, to: bar)))
++        lasts @ lasts.push(last_byte(row.slice(from: 0, to: bar)))
+ 
+         if space < 0
+             named @ named.push(text)
+@@ -253,12 +260,31 @@ function members(rows: [str], from: i64) -> [Member]?
+     while k < depths.len()
+         deeper = k + 1 < depths.len() && depths[k + 1] > depths[k]
+         out @ out.push(
+-            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: unions[k] && deeper, place: places[k], path: paths[k])
++            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], last: lasts[k], union_kw: unions[k] && deeper, place: places[k], path: paths[k])
+         )
+         k @ k + 1
+ 
+     return ok(out)
+ 
++# The last byte a member's offset column reaches: `byte + hi / 8` for a
++# bit-field's `<byte>:<lo>-<hi>`, the byte itself for any other, and -1 for
++# a bit-field's column of another shape.
++function last_byte(column: str) -> i64
++    byte = layout_rows.leading_number(column)
++    colon = layout_rows.byte_index(text: column, needle: ":")
++
++    if colon < 0
++        return byte
++    dash = layout_rows.byte_index(text: column, needle: "-")
++
++    if byte < 0 || dash < colon
++        return 0 - 1
++    hi = layout_rows.leading_number(column.slice(from: dash + 1, to: column.len()))
++
++    if hi < 0
++        return 0 - 1
++    return byte + hi / 8
++
+ # Each member's C name on T, from the names of the members above it: a stack
+ # of the levels still open, an anonymous one contributing nothing.
+ function paths_of(depths: [i64], named: [str]) -> [str]
+@@ -369,6 +395,8 @@ test "a block is read by its shape: depth, the empty name of an anonymous member
+     assert got[2].depth == 2 && got[2].name == "" && got[2].nested
+     assert got[3].depth == 3 && got[3].name == "i"
+     assert got[6].bitfield && got[6].name == "flag" && got[6].byte == 12
++    assert got[6].last == 12 && got[3].last == 4
++    assert last_byte("     1:5-8 ") == 2 && last_byte("     1:0-2 ") == 1 && last_byte("    16 ") == 16
+     assert got[3].byte == 4
+     assert got[7].flexible && !got[0].flexible
+     assert got[2].union_kw && !got[1].union_kw && !got[3].union_kw
+diff --git a/selfhost/emit/lend_buffer.hero b/selfhost/emit/lend_buffer.hero
+index 1c1724ea2..83783200a 100644
+--- a/selfhost/emit/lend_buffer.hero
++++ b/selfhost/emit/lend_buffer.hero
+@@ -36,6 +36,7 @@ use emit/lend_count
+ use emit/lend_extent
+ use emit/probe_params
+ use emit/nodebug
++use emit/padding
+ use widths
+ 
+ # The contract between this writer and `emit/ffi_extent.hero`'s reader.
+@@ -54,6 +55,9 @@ record Buffer
+     callee: str
+     param: str
+     check: str
++    # Route G (panel 215): the lines zeroing each element's padding in the
++    # buffer, where the elements are a group's records.
++    pad: [str]
+ 
+ # Every buffer one extern call lends, in argument order.
+ function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run, decl: i64) -> [Buffer]
+@@ -70,8 +74,17 @@ function buffers(c: state.Checked, names: ctype.Names, s: source.Source, decls:
+             match arg
+                 .inout_arg io =>
+                     tag = run.start.to_str() + "_" + index.to_str()
++                    pad = padding.buffer_lines(
++                        c,
++                        names,
++                        s,
++                        decls,
++                        element: element.must(),
++                        buffer: "hero_lend_b" + tag,
++                        extent: "hero_lend_e" + tag
++                    )
+                     out @ out.push(
+-                        Buffer(index: index, name: "hero_lend_b" + tag, extent_name: "hero_lend_e" + tag, extent: extent_text(c, s, decls, f, given: given, decl: decl, index: index), place: aggregate.place(c, s, decls, f, at: io.place), callee: callee, param: params[index], check: pointee_check(c, names, s, decls, decl: decl, index: index, element: element.must()))
++                        Buffer(index: index, name: "hero_lend_b" + tag, extent_name: "hero_lend_e" + tag, extent: extent_text(c, s, decls, f, given: given, decl: decl, index: index), place: aggregate.place(c, s, decls, f, at: io.place), callee: callee, param: params[index], check: pointee_check(c, names, s, decls, decl: decl, index: index, element: element.must()), pad: pad)
+                     )
+                 .value_arg => index @ index
+         index @ index + 1
+@@ -207,6 +220,9 @@ function before(@w: writer.Writer, held: [Buffer], arguments: [str]) -> [str]
+             text: "    " + nodebug.MARK + "void *" + b.name + " = hero_lend_take(" + b.place + ", " + b.extent_name + ", " + lend_count.quoted(b.callee) + ", " + lend_count.quoted(b.param) + ");"
+         )
+ 
++        for line in b.pad
++            writer.line(@w, text: "    " + line)
++
+         if b.index < out.len()
+             out[b.index] @ b.name
+ 
+diff --git a/selfhost/emit/ops.hero b/selfhost/emit/ops.hero
+index e8cfc5f2c..34eeaeaf9 100644
+--- a/selfhost/emit/ops.hero
++++ b/selfhost/emit/ops.hero
+@@ -26,6 +26,7 @@ use emit/field_lend
+ use emit/lend_extent
+ use emit/lend_buffer
+ use emit/lend_local
++use emit/padding
+ use emit/extern_probe
+ use emit/writer
+ use emit/handle_traffic
+@@ -153,6 +154,7 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
+             # `_Static_assert` is a declaration and the call is a statement.
+             lend_extent.assertions(@w, c, names, s, decls, f, run: run, decl: e.decl)
+             lend_local.label(@w, c, s, decls, f, run: run, decl: e.decl)
++            padding.zero(@w, c, names, s, decls, f, run: run)
+ 
+             # An array lent through `@` crosses as a buffer the runtime places
+             # against a page nothing may touch (panel 196's R4,
+diff --git a/selfhost/emit/padding.hero b/selfhost/emit/padding.hero
+new file mode 100644
+index 000000000..0a06bffd4
+--- /dev/null
++++ b/selfhost/emit/padding.hero
+@@ -0,0 +1,331 @@
++# PANEL 215'S ROUTE G, RECURSIVE, built for the sitting and not a landing:
++# before an `extern` call, the padding of every group record it lends is
++# written zero in place, so C never reads bytes a by-value call or return left
++# unspecified (issue 1334). The place keeps its address, as panel 196's R1
++# has it, and only bytes no C member holds are written.
++#
++# WHICH BYTES A MEMBER HOLDS is C's own arithmetic, `__builtin_offsetof` and
++# `sizeof` of each member, so clang computes every number on every target.
++# Which members there are comes from the layout round (`cli/layout.hero`),
++# under `KEY` in `ctype.Names.lend_units`: `DECLARED` for a record the screen
++# vouches for, whose declared fields are exactly the struct's members, and
++# for any other record the leaves of the header's layout dump, one per entry:
++# `p <path>` a member, `n <byte> <bytes>` the bytes a named bit-field's bits
++# reach (the one span C cannot be asked for, read from the dump's offset
++# column), `f <path>` a flexible array member, holding every byte from its
++# offset to the end. A union gives one span per arm, so a byte is written only
++# where it is padding in every arm. A record with no entry is not written.
++#
++# AND IT RECURSES: a field that is another record of the group gives that
++# record's members under its own path (`inner.d`), and a field that is a fixed
++# array of records has each element's padding zeroed in a loop over the
++# elements (`a[k]`), as are the elements of an array lent through `@`, in the
++# region `hero_lend_take` fills (`emit/lend_buffer.hero`).
++
++use ast
++use source
++use handles
++use check/state
++use check/table
++use ir
++use ir/containers
++use emit/writer
++use emit/ctype
++use emit/mangle
++use emit/aggregate
++use emit/lend_count
++use emit/layout_text
++
++# The key a record's membership rides under in `ctype.Names.lend_units`,
++# which no C name a counted parameter is keyed by can begin with.
++constant KEY: str
++    "%pad "
++
++# A record whose declared fields are the struct's members.
++constant DECLARED: str
++    "="
++
++# What the members of one record hold, as spans of the outer type, and the
++# arrays of records among them, whose elements are zeroed one by one.
++record Held
++    spans: [str]
++    arrays: [Nested]
++
++# A member that is a fixed array of group records: its path on the outer type
++# and the record of its elements.
++record Nested
++    path: str
++    element: i64
++
++# The zeroing lines before an `extern` call, for each group record, or fixed
++# array of them, the call lends through `@`. An array lent through `@` is
++# zeroed in its buffer instead (`buffer_lines`).
++function zero(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run)
++    for arg in containers.args_of(f, run)
++        match arg
++            .inout_arg io =>
++                ty = lend_count.place_type(c, s, decls, f, at: io.place)
++                address = "&" + aggregate.place(c, s, decls, f, at: io.place)
++
++                for line in of_place(c, names, s, decls, ty: ty, address: address)
++                    writer.line(@w, text: "    " + line)
++            .value_arg => continue
++
++# The lines that zero what a place of type `ty` at `address` holds: a group
++# record's padding, or each element's of a fixed array of them.
++function of_place(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, address: str) -> [str]
++    element = innermost(c, ty: ty)
++    decl = record_of(c, decls, ty: element)
++
++    if decl < 0
++        return []
++    t = ctype.of(names, decl: decl)
++    count: str @= "1"
++
++    if element != ty
++        count @ "sizeof(*(" + address + ")) / sizeof(" + t + ")"
++    return passes(c, names, s, decls, decl: decl, base: address, count: count, depth: 0)
++
++# The lines that zero each of the `extent` elements of type `element` in an
++# array lend's buffer, after `hero_lend_take` filled it.
++function buffer_lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], element: i64, buffer: str, extent: str) -> [str]
++    decl = record_of(c, decls, ty: element)
++
++    if decl < 0
++        return []
++    return passes(c, names, s, decls, decl: decl, base: buffer, count: "(size_t)" + extent, depth: 0)
++
++# One block for `count` records of `decl` laid end to end from `base`: the
++# gaps of each, then each array of records a member holds, element by element.
++function passes(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, base: str, count: str, depth: i64) -> [str]
++    t = ctype.of(names, decl: decl)
++    held = members(c, names, s, decls, decl: decl, t: t, prefix: "", at: "0")
++
++    if held.is_err()
++        return []
++    listed = "hero_pad_s" + depth.to_str()
++    spans: [str] @= held.must().spans
++    pairs = spans.len() / 2
++
++    if pairs == 0
++        spans @ ["0", "0"]
++    out: [str] @= [
++        "{ static const size_t " + listed + "[] = {" + spans.join(", ") + "}; hero_pad_zero(" + base + ", sizeof(" + t + "), " + count + ", " + listed + ", " + pairs.to_str() + ");"
++    ]
++
++    for one in held.must().arrays
++        k = "hero_pad_k" + depth.to_str()
++        e = ctype.of(names, decl: one.element)
++        inner = "(unsigned char *)(" + base + ") + " + k + " * sizeof(" + t + ") + __builtin_offsetof(" + t + ", " + one.path + ")"
++        out @ out.push("for (size_t " + k + " = 0; " + k + " < " + count + "; " + k + "++) {")
++
++        for line in passes(c, names, s, decls, decl: one.element, base: inner, count: "sizeof(((" + t + " *)0)->" + one.path + ") / sizeof(" + e + ")", depth: depth + 1)
++            out @ out.push(line)
++
++        out @ out.push("}")
++
++    out @ out.push("}")
++    return out
++
++# What the members of record `decl` hold, as spans of the outer type `t`, the
++# record standing at `prefix` in it (`inner.`), its offset there `at`.
++function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, t: str, prefix: str, at: str) -> Held?
++    said = names.lend_units[KEY + decl.to_str()]
++
++    if said.is_err()
++        return fail(code: "none", msg: "the layout round said nothing of this record")
++    spans: [str] @= []
++    arrays: [Nested] @= []
++
++    if said.must() == DECLARED
++        spans @ whole_if_union(t: t, prefix: prefix)
++
++    for field in fields_of(decls, decl: decl)
++        path = prefix + mangle.field_of(foreign: true, name: source.span_text(s, field.name))
++        written = state.written_type(c, field.ty)
++
++        if written.is_err()
++            continue
++        element = innermost(c, ty: written.must())
++        inner = record_of(c, decls, ty: element)
++
++        # A declared field that is another record of the group: its members,
++        # under its path, where the screen vouched for this record.
++        if said.must() == DECLARED && inner >= 0 && element == written.must()
++            sub = members(
++                c,
++                names,
++                s,
++                decls,
++                decl: inner,
++                t: t,
++                prefix: path + ".",
++                at: "__builtin_offsetof(" + t + ", " + path + ")"
++            )
++
++            if !sub.is_err()
++                spans @ joined(list: spans, more: sub.must().spans)
++
++                for one in sub.must().arrays
++                    arrays @ arrays.push(one)
++
++                continue
++
++        if said.must() == DECLARED
++            spans @ joined(list: spans, more: span(t: t, path: path))
++
++        # A fixed array of records: its elements, one by one.
++        if inner >= 0 && element != written.must() && !names.lend_units[KEY + inner.to_str()].is_err()
++            arrays @ arrays.push(Nested(path: path, element: inner))
++
++    if said.must() == DECLARED
++        return ok(Held(spans: spans, arrays: arrays))
++    d = ctype.of(names, decl: decl)
++
++    for entry in entries(said.must())
++        rest = entry.slice(from: 2, to: entry.len())
++
++        if entry[0] == 'p'
++            spans @ joined(list: spans, more: span(t: t, path: prefix + rest))
++        else if entry[0] == 'f'
++            spans @ joined(
++                list: spans,
++                more: ["__builtin_offsetof(" + t + ", " + prefix + rest + ")", "sizeof(" + d + ") - __builtin_offsetof(" + d + ", " + rest + ")"]
++            )
++        else if entry[0] == 'n'
++            gap = layout_text_space(rest)
++
++            if gap < 0
++                return fail(code: "none", msg: "a bit-field's entry is not two numbers")
++            spans @ joined(
++                list: spans,
++                more: ["(" + at + ") + " + rest.slice(from: 0, to: gap), rest.slice(from: gap + 1, to: rest.len())]
++            )
++        else
++            return fail(code: "none", msg: "an entry of a kind this reader does not know")
++
++    return ok(Held(spans: spans, arrays: arrays))
++
++# **A union the screen vouches for is covered whole.** A record bound to a
++# union by one arm (`record UN` over `typedef union { char c; double d; } UN;`
++# naming `c`) passes the screen, a union's initialiser filling one member, so
++# its declared fields are not its members: measured, spanning `c` alone zeroed
++# `d`'s other seven bytes, `2.5` read back as `0.0`. Whether the object at
++# `prefix` is a union is C's answer, `__builtin_classify_type` 13 as
++# `emit/extern_union.hero` asks it; a struct gives a span of no bytes.
++function whole_if_union(t: str, prefix: str) -> [str]
++    if prefix == ""
++        return ["0", "(__builtin_classify_type(*(" + t + " *)0) == 13 ? sizeof(" + t + ") : 0)"]
++    path = prefix.slice(from: 0, to: prefix.len() - 1)
++    member = "((" + t + " *)0)->" + path
++    return [
++        "__builtin_offsetof(" + t + ", " + path + ")"
++        "(__builtin_classify_type(" + member + ") == 13 ? sizeof(" + member + ") : 0)"
++    ]
++
++# The two numbers of a bit-field's span, split at their one space.
++function layout_text_space(text: str) -> i64
++    at: i64 @= 0
++
++    while at < text.len()
++        if text[at] == ' '
++            return at
++        at @ at + 1
++
++    return 0 - 1
++
++function span(t: str, path: str) -> [str]
++    return ["__builtin_offsetof(" + t + ", " + path + ")", "sizeof(((" + t + " *)0)->" + path + ")"]
++
++function joined(list: [str], more: [str]) -> [str]
++    out: [str] @= list
++
++    for one in more
++        out @ out.push(one)
++
++    return out
++
++# The entries of a membership, split at each `;`.
++function entries(text: str) -> [str]
++    out: [str] @= []
++    start: i64 @= 0
++    at: i64 @= 0
++
++    while at <= text.len()
++        if at == text.len() || text[at] == ';'
++            if at > start + 1
++                out @ out.push(text.slice(from: start, to: at))
++            start @ at + 1
++        at @ at + 1
++
++    return out
++
++# The membership of a record from the leaves of its layout dump, or absent
++# where a bit-field's bytes could not be read: then nothing is written for it.
++# A record or union member gives its leaves, an unnamed bit-field nothing,
++# being padding (C11 6.7.2.1p12), and an empty anonymous member nothing.
++function encoded(tree: [layout_text.Member]) -> str?
++    out: [str] @= []
++
++    for m in tree
++        if m.nested
++            continue
++
++        if m.bitfield
++            if m.name.len() == 0
++                continue
++
++            if m.byte < 0 || m.last < m.byte
++                return fail(code: "none", msg: "a bit-field whose bytes the dump does not give")
++            out @ out.push("n " + m.byte.to_str() + " " + (m.last - m.byte + 1).to_str())
++        else if m.flexible
++            out @ out.push("f " + m.path)
++        else if m.path.len() > 0
++            out @ out.push("p " + m.path)
++
++    return ok(out.join(";"))
++
++# The element type of a fixed array, through every dimension, or `ty` itself.
++function innermost(c: state.Checked, ty: i64) -> i64
++    at: i64 @= ty
++    going: bool @= true
++
++    while going
++        going @ false
++
++        match table.get(c.types, at)
++            .fixed x =>
++                at @ x.element
++                going @ true
++            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
++            .array | .map | .fallible | .function_ty | .named         => continue
++            .case_ty | .failure | .generic | .error                   => continue
++
++    return at
++
++# The group record a type names, with fields, or -1: a handle is a pointer.
++function record_of(c: state.Checked, decls: [ast.Decl], ty: i64) -> i64
++    match table.get(c.types, ty)
++        .named n =>
++            match decls[n.decl].kind
++                .record_decl rec =>
++                    if !rec.header.is_err() && rec.fields.len() > 0 && !handles.is_handle(decls[n.decl])
++                        return n.decl
++                .constant_decl | .function_decl | .variant_decl | .test_decl => return 0 - 1
++        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return 0 - 1
++        .array | .map | .fallible | .function_ty | .fixed         => return 0 - 1
++        .case_ty | .failure | .generic | .error                   => return 0 - 1
++
++    return 0 - 1
++
++function fields_of(decls: [ast.Decl], decl: i64) -> [ast.Field]
++    match decls[decl].kind
++        .record_decl rec                                             => return rec.fields
++        .constant_decl | .function_decl | .variant_decl | .test_decl => return []
++
++    return []
++
++test "a membership is read entry by entry, and a dump's leaves are its entries"
++    assert entries("p a;p inner.d;n 1 2") == ["p a", "p inner.d", "n 1 2"]
++    assert entries("") == []
++    assert layout_text_space("1 2") == 1

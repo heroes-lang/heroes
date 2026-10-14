@@ -1,0 +1,13 @@
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77); main.hero; units: 3
+-O0 plain: eq true true true|write 16 16 16|send 16 16 16|memcmp 0 -122 -15|sha true false false|
+-O0 msan: 21 reports; frames:  2 main.hero:24:76; 6 main.hero:46:11; 6 main.hero:47:11; 3 main.hero:48:11; 5 main.hero:50:11;
+-O0 origins: 
+-O1 plain: eq true true true|write 16 16 16|send 16 16 16|memcmp 0 0 0|sha true true true|
+-O1 msan: 5 reports; frames:  1 main.hero:24:76; 2 main.hero:46:11; 2 main.hero:47:11; 1 main.hero:48:11; 1 main.hero:50:11;
+-O1 origins: 
+-O2 plain: eq true true true|write 16 16 16|send 16 16 16|memcmp 0 0 0|sha true true true|
+-O2 msan: 10 reports; frames:  2 main.hero:24:76; 4 main.hero:46:11; 4 main.hero:47:11; 2 main.hero:48:11; 2 main.hero:50:11;
+-O2 origins: 
+-O3 plain: eq true true true|write 16 16 16|send 16 16 16|memcmp 0 0 0|sha true true true|
+-O3 msan: 10 reports; frames:  2 main.hero:24:76; 4 main.hero:46:11; 4 main.hero:47:11; 2 main.hero:48:11; 2 main.hero:50:11;
+-O3 origins: 

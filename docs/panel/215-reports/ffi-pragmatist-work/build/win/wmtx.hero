@@ -1,0 +1,30 @@
+# a C11 mtx_t (UCRT) held, the record built by a helper and kept in a [T].
+extern "ws.h"
+    record CsBox tag csbox partial
+        n: i64
+    record SrwBox tag srwbox partial
+        n: i64
+    record MBox tag mbox partial
+        n: i64
+    function cs_init(@b: CsBox) -> i32
+    function cs_enter(@b: CsBox) -> i32
+    function cs_try(@b: CsBox) -> i32
+    function cs_leave(@b: CsBox) -> i32
+    function cs_count(@b: CsBox) -> i32
+    function srw_init(@b: SrwBox) -> i32
+    function srw_try(@b: SrwBox) -> i32
+    function srw_release(@b: SrwBox) -> i32
+    function m_init(@b: MBox) -> i32
+    function m_lock(@b: MBox) -> i32
+    function m_try(@b: MBox) -> i32
+
+function made() -> MBox
+    b: MBox @= MBox(n: 0, rest: zero)
+    _ = m_init(@b)
+    return b
+
+function main()
+    ms: [MBox] @= [MBox(n: 0, rest: zero)]
+    _ = m_init(@ms[0])
+    b: MBox @= made()
+    print(m_lock(@b), " ", ms.len())
