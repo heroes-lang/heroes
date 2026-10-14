@@ -1,0 +1,13 @@
+# fixedbugs, defect 2061, lane b17-ffi, 2026-10-14.
+#
+# The control beside the defect: `absval` names `myabs`, a macro written with
+# parameters, and the header declares a function `myabs` beside it, so the
+# probe's `(absval)(a0)` reaches a declaration and the build is not refused;
+# the call expands both macros, `1000.0`, as C reads the header. The walk the
+# repair added is asked only on a refused build, and this one builds.
+
+extern "fixedbugs-2061-beside.h"
+    function absval(x: f64) -> f64
+
+function main()
+    print(absval(-3.0))

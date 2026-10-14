@@ -1,0 +1,14 @@
+# fixedbugs, defect 2061, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `function seven() -> i32` over `#define seven seven_now` and
+# `#define seven_now() 7`: exit 2, clang's only line at `hero_ref = (const
+# void *)&seven;`, a line of the generated C with no `#line`.
+#
+# FIX: a macro written with an empty parameter list expands only where it is
+# called too, and is told so.
+
+extern "fixedbugs-2061-reach.h"
+    function seven() -> i32  #~ ffi_macro_name
+
+function main()
+    print(seven())

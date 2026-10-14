@@ -1,0 +1,6 @@
+error[ffi_macro_name]: `fixedbugs-2061-math.h` defines `absval` as a macro naming `fabs`, a macro that expands only where it is called, not a function: a macro has no parameter types for clang to hold this declaration to
+  at tests/golden/unsupported/fixedbugs-2061-a-bound-macro-naming-a-math-name-written-with-parameters-is-a-macro-name.hero:13:5
+     |
+  13 |     function absval(x: f64) -> f64  #~ ffi_macro_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: bind a function of the program's own that calls it: in a header beside this file, `static inline <C result> hero_absval(<C type> x) { return absval(x); }`, with the C types the macro's documentation gives where the placeholders stand; then name that header in an `extern` group and declare `hero_absval` there like any function, and clang holds that declaration to your function (§ 13)

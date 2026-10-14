@@ -42,6 +42,7 @@ use emit/ffi_unavailable
 use emit/ffi_extent
 use emit/ffi_unit
 use emit/ffi_asked
+use emit/ffi_reach
 use cli/pointee_ask
 use parse
 use resolve
@@ -99,6 +100,14 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     # it names or leaves out (panel 186 R7, `emit/ffi_built.hero`), at the
     # construction: a span no reader below claims, so nothing is dropped.
     found @ ffi_built.at_constructions(s, decls, c, p, text: text)
+
+    # A binding whose header's macros name what clang finds undeclared
+    # (`emit/ffi_reach.hero`, defect 2061), told before any reader of a line
+    # at its declaration: the result clang gives a call it cannot see
+    # declared is no header's type.
+    for line in ffi_lookup.lines(text: text)
+        for told in ffi_reach.told(s, tree, decls, line: line, reached: asked.reached)
+            found @ ffi_lookup.add_once(found, d: told)
 
     for line in ffi_lookup.lines(text: text)
         wrong = ffi_declared.wrong_type(s, decls, tree, line: line, results: asked.results, word_bits: word_bits)

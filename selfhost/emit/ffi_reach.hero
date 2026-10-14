@@ -1,0 +1,172 @@
+# A name a group binds whose header defines it as a macro naming another,
+# which clang finds undeclared, told on the binding as what the header makes
+# it (design.md §4.19, §4.17; panel 185 R1; defect 2061, 2026-10-14).
+#
+# **The probe calls the bound name in parentheses** (panel 092), and a macro
+# written with parameters expands only before a `(`. So `#define myabs(x)
+# my_fabs(x)` beside `#define absval myabs`, `absval` bound, has the probe's
+# `(absval)(a0)` read as `(myabs)(a0)`, the macro left standing, and clang
+# says *use of undeclared identifier 'myabs'*: a name no group declares, which
+# every reader here asks a group's declaration of, so the build stopped with
+# `internal error` at exit 2, the compiler blamed for the author's binding.
+# `#define absval fabs` over `#define fabs(x) my_fabs(x)` reached the pointee
+# check's dump the same way, *call to undeclared library function 'fabs'*.
+#
+# **What the name reaches is clang's answer, never this file's reading of
+# clang's words**: `cli/reach_ask.hero` walks each bound name through the
+# header's `-dM` table at the groups' end, its object-like macros one after
+# another, to the name they leave standing and whether that one is written
+# with parameters. A clang line naming that name undeclared is the binding's:
+# a macro that expands only where it is called is `ffi_macro_name`, as a
+# bound one is (design.md §4.19), with the same function of the program's own
+# drafted, which calls the bound name and so expands the whole chain; a name
+# that is no macro is one no header of the module declares,
+# `ffi_unknown_name`. A name that
+# reaches a declared function, `#define absval my_fabs`, or one with a
+# function of its own name beside the macro, `beside.h`'s `myabs`, compiles,
+# and nothing here is asked.
+
+use ast
+use source
+use diag
+use emit/ffi_lookup
+use emit/ffi_asked
+use emit/ffi_declared
+use parse
+
+# clang's three words for a name it finds undeclared: as a value, as a call,
+# and as a call of a name it knows from the C library.
+constant UNDECLARED: [str]
+    [
+        "use of undeclared identifier '"
+        "call to undeclared function '"
+        "call to undeclared library function '"
+    ]
+
+# The name clang finds undeclared on `line`, or none.
+function undeclared(line: str) -> str?
+    for marker in UNDECLARED
+        after = ffi_lookup.after(text: line, marker: marker)
+
+        if !after.is_err()
+            return ok(ffi_lookup.up_to_quote(after.must()))
+
+    return fail(code: "none", msg: "not an undeclared-name line")
+
+# Every binding whose macros reach the name clang finds undeclared on `line`,
+# told, each once and in declaration order.
+function told(s: source.Source, tree: ast.Ast, decls: [ast.Decl], line: str, reached: {str: ffi_asked.Reach}) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    name = undeclared(line)
+
+    if name.is_err() || reached.len() == 0
+        return out
+    seen: {str: bool} @= {}
+
+    for decl in decls
+        bound = source.span_text(s, decl.name)
+        reach = reached[bound]
+
+        if reach.is_err() || reach.must().name != name.must() || !seen[bound].is_err()
+            continue
+        seen[bound] @ true
+        found = ffi_lookup.declaration(s, decls, name: bound)
+
+        if !found.is_err()
+            out @ out.push(diagnostic(s, tree, decls, bound: bound, found: found.must(), reach: reach.must()))
+
+    return out
+
+# The binding's refusal: what its macros name, in order, then what the last
+# of them is.
+function diagnostic(s: source.Source, tree: ast.Ast, decls: [ast.Decl], bound: str, found: ffi_lookup.Declared, reach: ffi_asked.Reach) -> diag.Diagnostic
+    head = "`" + found.header + "` defines `" + bound + "` as a macro naming " + chain(reach)
+
+    if reach.function_like
+        message: str @= head + ", a macro that expands only where it is called, not a function: a macro has no parameter types for clang to hold this declaration to"
+
+        if found.is_constant
+            message @ head + ", a macro that expands only where it is called, not a value: it has none until it is called, and a macro has no parameter types for clang to hold a declaration to"
+        d: diag.Diagnostic @= diag.new_diagnostic(code: "ffi_macro_name", message: message, span: found.span)
+        d.notes @ d.notes.push(ffi_declared.macro_repair(s, tree, decls, name: bound))
+        return d
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_unknown_name",
+        message: head + ", which no header this module reads declares — clang read the headers and could not find it",
+        span: found.span
+    )
+    d.notes @ d.notes.push(
+        "an `extern` is checked against what its header makes the name (§4.19), and a macro through the name it leaves: name the header that declares `" + reach.name + "` in a group above this one, or bind the name the header's documentation gives in place of `" + bound + "`"
+    )
+    return d
+
+# `myabs`, or `mid`, which names `myabs`: each macro passed through, then the
+# name left standing.
+function chain(reach: ffi_asked.Reach) -> str
+    names: [str] @= reach.through
+    names @ names.push(reach.name)
+    quoted: [str] @= []
+
+    for name in names
+        quoted @ quoted.push("`" + name + "`")
+
+    return quoted.join(", which names ")
+
+## Tests
+
+function program(text: str) -> source.Source
+    return source.new_source(name: "t.hero", text: text)
+
+test "a binding whose macro names one that expands only where it is called is told on the binding (defect 2061)"
+    text = "extern \"fnn.h\"\n    function absval(x: f64) -> f64\n    constant LIMIT: i64\n\nfunction main()\n    print(absval(-3.0) + 1.0)\n    print(LIMIT)\n"
+    parsed = parse.parse(text)
+    s = program(text)
+    reached: {str: ffi_asked.Reach} @= {}
+    reached["absval"] @ ffi_asked.Reach(name: "myabs", function_like: true, through: [])
+    reached["LIMIT"] @ ffi_asked.Reach(name: "make_limit", function_like: true, through: ["mid"])
+    got = told(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: "t.hero:2:85: error: use of undeclared identifier 'myabs'",
+        reached: reached
+    )
+    assert got.len() == 1
+    assert got[0].code == "ffi_macro_name"
+    assert got[0].message == "`fnn.h` defines `absval` as a macro naming `myabs`, a macro that expands only where it is called, not a function: a macro has no parameter types for clang to hold this declaration to"
+    assert source.span_text(s, got[0].span) == "function absval(x: f64) -> f64"
+    assert ffi_lookup.has(
+        text: got[0].notes[0],
+        needle: "`static inline <C result> hero_absval(<C type> x) { return absval(x); }`"
+    )
+
+    # A constant's chain is named step by step, and it is no value.
+    value = told(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: "t.c:75:29: error: use of undeclared identifier 'make_limit'",
+        reached: reached
+    )
+    assert value[0].message == "`fnn.h` defines `LIMIT` as a macro naming `mid`, which names `make_limit`, a macro that expands only where it is called, not a value: it has none until it is called, and a macro has no parameter types for clang to hold a declaration to"
+
+    # The library's own word for a call, and a name nothing reaches.
+    assert told(s, parsed.tree, parsed.decls, line: "t.hero:2:20: error: call to undeclared library function 'myabs' with type 'double (double)'", reached: reached).len() == 1
+    assert told(s, parsed.tree, parsed.decls, line: "t.hero:2:85: error: use of undeclared identifier 'other'", reached: reached).len() == 0
+    assert told(s, parsed.tree, parsed.decls, line: "t.hero:2:85: error: expected expression", reached: reached).len() == 0
+
+test "a binding whose macro names what no header declares is told so, never as the call's implicit int (defect 2061)"
+    text = "extern \"nosuch.h\"\n    function absval(x: f64) -> f64\n\nfunction main()\n    print(absval(-3.0))\n"
+    parsed = parse.parse(text)
+    s = program(text)
+    reached: {str: ffi_asked.Reach} @= {}
+    reached["absval"] @ ffi_asked.Reach(name: "nosuch_fn", function_like: false, through: [])
+    got = told(
+        s,
+        parsed.tree,
+        parsed.decls,
+        line: "t.hero:2:85: error: call to undeclared function 'nosuch_fn'; ISO C99 and later do not support implicit function declarations",
+        reached: reached
+    )
+    assert got[0].code == "ffi_unknown_name"
+    assert got[0].message == "`nosuch.h` defines `absval` as a macro naming `nosuch_fn`, which no header this module reads declares — clang read the headers and could not find it"
