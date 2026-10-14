@@ -76,18 +76,24 @@ function lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [a
     if given.len() != arguments.len()
         return fail(code: "none", msg: "a construction names a field for every argument, and this one does not")
 
-    # Past `typeorder`'s depth the whole write is `{}` (defect 549): clang
-    # reaches the first scalar of `{0}` by brace elision, a recursion as deep
-    # as the records the group's record holds by value, which died at 1,000
-    # (Apple clang 21, arm64 macOS) where `{}` builds, `-std=gnu11` taking the
-    # empty braces as C23 does. Below it panel 194's C11 `{0}` stands.
-    whole: str @= "{0}"
+    # Past `typeorder`'s depth no initialiser is written (defects 549 and
+    # 2058): clang reaches the first scalar of `{0}` by brace elision, a
+    # recursion as deep as the records the group's record holds by value,
+    # which died at 1,000 (Apple clang 21, arm64 macOS), and so did a
+    # designated `{.inner = {0}}` and a designator chain to the scalar; `{}`
+    # built, but it is C23's and panel 194 ruled it out. So the whole write
+    # reads the cell back through the memset that zeroes it, C11 with no
+    # initialiser to recurse into, an exact overlap of one type (C11
+    # 6.5.16.1p3), measured clean under `-std=c11 -pedantic-errors` and the
+    # build's flags at a thousand deep; the memset after it stands, the
+    # whole-object zero panel 194 rules. Below the depth its `{0}` stands.
+    first: str @= target + " = (" + name + "){0};"
     known: {i64: i64} @= {}
 
     if depth_of(c, decls, decl: decl, cap: typeorder.IN_ORDER_FROM + 1, @known) > typeorder.IN_ORDER_FROM
-        whole @ "{}"
+        first @ target + " = *(" + name + " *)__builtin_memset(&" + target + ", 0, sizeof " + target + ");"
     out: [str] @= [
-        target + " = (" + name + ")" + whole + ";"
+        first
         "__builtin_memset(&" + target + ", 0, sizeof " + target + ");"
     ]
     k: i64 @= 0

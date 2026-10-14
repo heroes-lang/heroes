@@ -1,0 +1,148 @@
+# fixedbugs, defect 2058, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: past `typeorder`'s depth of 32, `rest: zero`'s whole write was
+# `t = (T){};`, C23's empty braces, which panel 194 ruled out and which
+# `-Werror=c23-extensions` refuses; `{0}` there kills clang by brace elision
+# (defect 549), and so do a designated `{.inner = {0}}` and a designator
+# chain to the scalar (measured at a thousand deep, Apple clang 21).
+#
+# FIX: past the depth the whole write reads the cell back through the memset
+# that zeroes it, `t = *(T *)__builtin_memset(&t, 0, sizeof t);`, C11 with
+# no initialiser (`emit/zeroed.hero`); the memset after it stands. Records
+# forty deep, a union at the bottom, an array of them beside: every field
+# zero but the one named.
+
+extern "fixedbugs-2058-deep.h"
+    record D0
+        i: i32
+        f: f32
+        v: i64
+    record D1
+        inner: D0
+        n: i32
+    record D2
+        inner: D1
+        n: i32
+    record D3
+        inner: D2
+        n: i32
+    record D4
+        inner: D3
+        n: i32
+    record D5
+        inner: D4
+        n: i32
+    record D6
+        inner: D5
+        n: i32
+    record D7
+        inner: D6
+        n: i32
+    record D8
+        inner: D7
+        n: i32
+    record D9
+        inner: D8
+        n: i32
+    record D10
+        inner: D9
+        n: i32
+    record D11
+        inner: D10
+        n: i32
+    record D12
+        inner: D11
+        n: i32
+    record D13
+        inner: D12
+        n: i32
+    record D14
+        inner: D13
+        n: i32
+    record D15
+        inner: D14
+        n: i32
+    record D16
+        inner: D15
+        n: i32
+    record D17
+        inner: D16
+        n: i32
+    record D18
+        inner: D17
+        n: i32
+    record D19
+        inner: D18
+        n: i32
+    record D20
+        inner: D19
+        n: i32
+    record D21
+        inner: D20
+        n: i32
+    record D22
+        inner: D21
+        n: i32
+    record D23
+        inner: D22
+        n: i32
+    record D24
+        inner: D23
+        n: i32
+    record D25
+        inner: D24
+        n: i32
+    record D26
+        inner: D25
+        n: i32
+    record D27
+        inner: D26
+        n: i32
+    record D28
+        inner: D27
+        n: i32
+    record D29
+        inner: D28
+        n: i32
+    record D30
+        inner: D29
+        n: i32
+    record D31
+        inner: D30
+        n: i32
+    record D32
+        inner: D31
+        n: i32
+    record D33
+        inner: D32
+        n: i32
+    record D34
+        inner: D33
+        n: i32
+    record D35
+        inner: D34
+        n: i32
+    record D36
+        inner: D35
+        n: i32
+    record D37
+        inner: D36
+        n: i32
+    record D38
+        inner: D37
+        n: i32
+    record D39
+        inner: D38
+        n: i32
+    record W
+        deep: D39
+        pair: D38[2]
+        tag: i32
+    function w_deepest(@w: W lent) -> i64
+
+function main()
+    w @= W(tag: 7, rest: zero)
+    print(w.tag)
+    print(w_deepest(@w))
+    d = D33(n: 3, rest: zero)
+    print(d.n)
