@@ -11,8 +11,11 @@
 #include <string.h>
 
 /* glibc's mutex: a typedef of an anonymous union whose widest member is a
-   byte array no program names. */
-typedef union { char __size[40]; long __align; } lock_t;
+   byte array no program names. Its `__align` is glibc's `long int`, 64 bits
+   on Linux and Darwin; written `long long` here, 64 bits on every leg, since
+   Windows' `long` is 32 and the binding's `i64` was refused there (defect
+   2066, the CI's Windows leg at 3f77bd3a3). */
+typedef union { char __size[40]; long long __align; } lock_t;
 static inline int32_t lock_init(lock_t *m) { memset(m->__size, 0x5a, sizeof m->__size); return 0; }
 static inline int64_t lock_marked(const lock_t *m) { int64_t k = 0; for (size_t i = 0; i < sizeof m->__size; i++) k += m->__size[i] == 0x5a; return k; }
 
