@@ -341,9 +341,9 @@ until M-bootstrap-archive), `.t` is spec § Types — and a
 user's own type is deliberately left uncoloured, because inferring it from a
 capital letter is a premise about a convention the spec does not state. `.k`
 also takes the words of the same file's `contextual()`, `owned`, `link`, `as`
-and the rest, and only where the parser reads them as marks: on a `use` line,
-on an `extern` line, and on the indented lines of an extern group, never as a
-name followed by `:`. Elsewhere they are names and stay plain; the editor's
+and the others, and only where the parser reads them as marks: on a `use` line,
+on an `extern` line, on the indented lines of an extern group, never as a
+name followed by `:`, and `rest: zero` where it ends a call's list. Elsewhere they are names and stay plain; the editor's
 grammar under `editors/` paints the same places by the same rule. Blocks
 are generated *from* the source file, so highlighting and byte-fidelity arrive
 together.

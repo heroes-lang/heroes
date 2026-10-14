@@ -1,4 +1,4 @@
-# A foreign word where it STANDS in a text: the repair `keywords.foreign_word`
+# A foreign word where it STANDS in a text: the repair `foreign_words.foreign_word`
 # gives it once told whether the byte after it is `(` (defect 015), kept
 # `certain` only where the word it writes is right in that place, and the word
 # a certain swap writes over it (defect 133; design.md §4.17).
@@ -8,8 +8,8 @@
 # it to read a construct as the certain swap writes it
 # (`parse/swap_reading.hero`). Read in one place, the byte and the place that
 # decide whether a swap is certain cannot be read two ways, so the parser
-# never reads a swap `check --apply` would not write. `keywords.hero` keeps
-# the tables and the answer; this module keeps where in a text they are
+# never reads a swap `check --apply` would not write. `foreign_words.hero`
+# keeps the tables and the answer; this module keeps where in a text they are
 # asked.
 #
 # **A swap is certain only where the word it writes is right where it
@@ -31,7 +31,7 @@
 # place are read once, by the stage that writes the fix.
 
 use token
-use keywords
+use foreign_words
 use word_place
 use word_neighbours
 use text_outline
@@ -45,7 +45,7 @@ constant ERR_NO_SWAP: str
 
 # The repair the word at `span` gets where it stands in `text`, whose outline
 # `outline` holds or is read into.
-function repair_at(text: str, span: token.Span, @outline: text_outline.Outline) -> keywords.ForeignWord?
+function repair_at(text: str, span: token.Span, @outline: text_outline.Outline) -> foreign_words.ForeignWord?
     found = foreign_word_at(text, span)
 
     if found.is_err()
@@ -56,7 +56,7 @@ function repair_at(text: str, span: token.Span, @outline: text_outline.Outline) 
 # where it stands. Asked apart from the table, so the lexer, which asks the
 # table of every word it reads, hands the outline over only for a word the
 # table refuses.
-function repair_of(text: str, span: token.Span, one: keywords.ForeignWord, @outline: text_outline.Outline) -> keywords.ForeignWord
+function repair_of(text: str, span: token.Span, one: foreign_words.ForeignWord, @outline: text_outline.Outline) -> foreign_words.ForeignWord
     writes = swap_of(one.repair)
     word = text.slice(from: span.start, to: span.end)
 
@@ -80,7 +80,7 @@ function repair_of(text: str, span: token.Span, one: keywords.ForeignWord, @outl
 # only its fields. Until then `class Q` in a body over `function f()` said
 # *use `record`*, and the program that followed it was refused twice anew,
 # at the `record` in a body and at the function inside it.
-function a_class(text: str, span: token.Span, one: keywords.ForeignWord, @outline: text_outline.Outline) -> keywords.ForeignWord
+function a_class(text: str, span: token.Span, one: foreign_words.ForeignWord, @outline: text_outline.Outline) -> foreign_words.ForeignWord
     place = word_place.place_of(text, span, @outline)
     methods = functions_below(text, span: span)
 
@@ -93,7 +93,7 @@ function a_class(text: str, span: token.Span, one: keywords.ForeignWord, @outlin
 
     if methods
         message @ message + ", and a `record` holds only its fields: each function in this block is declared at the top level, taking the record as a parameter"
-    return keywords.ForeignWord(message: message, repair: one.repair)
+    return foreign_words.ForeignWord(message: message, repair: one.repair)
 
 # Whether a line of the block below the word at `span`, deeper than the
 # word's line, opens with a function's word, `function` or another
@@ -132,9 +132,9 @@ function functions_below(text: str, span: token.Span) -> bool
 
 # The table's entry for the word at `span`, told whether the byte after it is
 # `(` (defect 015), before any place is read.
-function foreign_word_at(text: str, span: token.Span) -> keywords.ForeignWord?
+function foreign_word_at(text: str, span: token.Span) -> foreign_words.ForeignWord?
     called = span.end < text.len() && text[span.end] == '('
-    return keywords.foreign_word(text: text.slice(from: span.start, to: span.end), called: called)
+    return foreign_words.foreign_word(text: text.slice(from: span.start, to: span.end), called: called)
 
 # Whether the word at `span` is one the lexer refuses as foreign: the table
 # alone answers, since every foreign word has a repair wherever it stands.
@@ -142,7 +142,7 @@ function is_foreign(text: str, span: token.Span) -> bool
     return !foreign_word_at(text, span).is_err()
 
 # The word a repair swaps in, or a failure where it is no swap.
-function swap_of(repair: keywords.Repair) -> str?
+function swap_of(repair: foreign_words.Repair) -> str?
     return match repair
         .swap fix => ok(fix.word)
         .hint _   => fail(code: ERR_NO_SWAP, msg: "a hint is shown, never applied")
@@ -151,11 +151,11 @@ function swap_of(repair: keywords.Repair) -> str?
 
 # The swap, where the word it writes is right in the place the word stands;
 # otherwise what is right there.
-function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: str, writes: str, @outline: text_outline.Outline) -> keywords.ForeignWord
+function placed(text: str, span: token.Span, one: foreign_words.ForeignWord, word: str, writes: str, @outline: text_outline.Outline) -> foreign_words.ForeignWord
     place = word_place.place_of(text, span, @outline)
 
     if writes == "use" && word_neighbours.header_after(text, end: span.end)
-        return keywords.ForeignWord(
+        return foreign_words.ForeignWord(
             message: "`" + word + "` is not a word in this language — a C header is named by an `extern` group, with the signatures it declares indented below it: `extern \"stdio.h\"`",
             repair: .hint(word: "extern", title: "`extern` is where to look")
         )
@@ -167,7 +167,7 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
         return one
 
     if writes == "else if" && place == .statement && word_neighbours.continues_an_if(text, span)
-        return keywords.ForeignWord(
+        return foreign_words.ForeignWord(
             message: "`" + word + "` is not a word in this language — `else if` continues the `if` above it with a condition of its own: `else if x == 2`",
             repair: .guidance
         )
@@ -183,7 +183,7 @@ function placed(text: str, span: token.Span, one: keywords.ForeignWord, word: st
         if holder == "variant"
             members @ "its cases"
         message @ "`" + word + "` is not a word in this language — a `" + holder + "` holds only " + members + ", and a `function` in it is declared at the top level of the file, taking the " + holder + " as a parameter"
-    return keywords.ForeignWord(
+    return foreign_words.ForeignWord(
         message: message + in_braces(text: text, span, writes: writes, place: place),
         repair: repair_there(writes, place: place)
     )
@@ -214,15 +214,15 @@ function holder_of(text: str, span: token.Span, outline: text_outline.Outline) -
 # § 13), so there `i64` is right wherever `i32` is and more, as the spec's
 # own `constant SQLITE_OK: i64` writes it; everywhere else the type is the
 # header's own width, `i32` where it says `int`.
-function in_a_group(text: str, span: token.Span, word: str) -> keywords.ForeignWord
+function in_a_group(text: str, span: token.Span, word: str) -> foreign_words.ForeignWord
     lead = "`" + word + "` is not a word in this language — in an `extern` group "
 
     if word_place.may_be_wider(text, span)
-        return keywords.ForeignWord(
+        return foreign_words.ForeignWord(
             message: lead + "a result or a constant may be wider than the header's type: `i64` holds every C integer but an unsigned 64-bit one, which is `u64`",
             repair: .hint(word: "i64", title: "replace `" + word + "` with `i64`, unless the header's type is unsigned and 64 bits wide")
         )
-    return keywords.ForeignWord(
+    return foreign_words.ForeignWord(
         message: lead + "a type is the header's own width and sign: `i32` where the header says `int`, `i64` where it says `int64_t`",
         repair: .hint(word: "i32", title: "replace `" + word + "` with `i32`, where the header says `int`")
     )
@@ -332,7 +332,7 @@ function declared_example(writes: str) -> str
 
 # The repair where the swap is not right: `const x = 5` in a body loses its
 # word, a guess; everything else is the message's to say.
-function repair_there(writes: str, place: word_place.Place) -> keywords.Repair
+function repair_there(writes: str, place: word_place.Place) -> foreign_words.Repair
     if writes == "constant" && place == .statement
         return .drop
     return .guidance
@@ -345,7 +345,7 @@ function certain_swap(text: str, span: token.Span, @outline: text_outline.Outlin
     found = repair_at(text, span, @outline)
 
     if found.is_err()
-        return fail(code: keywords.ERR_NOT_FOREIGN, msg: text.slice(from: span.start, to: span.end))
+        return fail(code: foreign_words.ERR_NOT_FOREIGN, msg: text.slice(from: span.start, to: span.end))
     return swap_of(found.must().repair)
 
 ## Tests
@@ -356,7 +356,7 @@ function swap_in(text: str, span: token.Span) -> str?
     return certain_swap(text, span, @outline)
 
 # The repair at `span`, the same way.
-function repair_in(text: str, span: token.Span) -> keywords.ForeignWord?
+function repair_in(text: str, span: token.Span) -> foreign_words.ForeignWord?
     outline: text_outline.Outline @= text_outline.unread()
     return repair_at(text, span, @outline)
 
@@ -421,8 +421,8 @@ test "a swap is certain only where the word it writes is right"
     assert swap_in("elif", token.Span(start: 0, end: 4)).is_err()
 
 test "the repair where the word stands is the table's answer where that answer is right"
-    assert repair_in("int(", token.Span(start: 0, end: 3)).must() == keywords.foreign_word(text: "int", called: true).must()
-    assert repair_in("x: int", token.Span(start: 3, end: 6)).must() == keywords.foreign_word(text: "int", called: false).must()
+    assert repair_in("int(", token.Span(start: 0, end: 3)).must() == foreign_words.foreign_word(text: "int", called: true).must()
+    assert repair_in("x: int", token.Span(start: 3, end: 6)).must() == foreign_words.foreign_word(text: "int", called: false).must()
     assert repair_in("main", token.Span(start: 0, end: 4)).is_err()
     assert is_foreign("int(", token.Span(start: 0, end: 3))
     assert !is_foreign("main", token.Span(start: 0, end: 4))

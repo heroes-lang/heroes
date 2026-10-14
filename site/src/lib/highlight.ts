@@ -289,12 +289,16 @@ export function tokenize(source: string): Token[] {
    * Where the parser reads a contextual word as a mark, and nowhere else
    * (spec § 1's `Use`, § 13's `Extern`, `Member` and `CParam`): `as` on a
    * `use` line after its path; `link` or `package` on an `extern` line after
-   * its header's string; the other twelve on the indented lines of an extern
+   * its header's string; `rest` and `zero` together, as the words `rest:
+   * zero` that end a call's list (spec § 13, `selfhost/parse/rest_words.hero`):
+   * after a `(` or a `,` or opening a line, and before a `,`, a `)`, a comment
+   * or the line's end; the other eleven on the indented lines of an extern
    * group, which runs from a column-0 `extern` line to the next line whose
    * first character is neither a space nor `#`, and never where the word is
    * followed by `:`, which makes it a parameter's or a field's name. The
    * editor's grammar paints the same places by the same rule
-   * (`editors/vscode/syntaxes/heroes.tmLanguage.json`, `#contextual`).
+   * (`editors/vscode/syntaxes/heroes.tmLanguage.json`, `#use`, `#extern`,
+   * `#extern-member` and `#rest-zero`).
    */
   let lineHead: string | null = null;
   let inExtern = false;
@@ -304,10 +308,32 @@ export function tokenize(source: string): Token[] {
     lineHead = first !== ' ' && head !== null ? head[0] : null;
     if (first !== ' ' && first !== '#' && first !== '\n' && first !== '') inExtern = lineHead === 'extern';
   };
+  /** The line after `at`, its newline left out. */
+  const restOfLine = (at: number) => {
+    const stop = source.indexOf('\n', at);
+    return source.slice(at, stop < 0 ? source.length : stop);
+  };
+  /** The character before `at` that is not a space, a newline at a line's start. */
+  const charBefore = (at: number) => {
+    let k = at - 1;
+    while (k >= 0 && source[k] === ' ') k -= 1;
+    return k < 0 ? '\n' : source[k];
+  };
   const markAt = (word: string, start: number, end: number): boolean => {
     if (!marks.has(word)) return false;
     if (word === 'as') return lineHead === 'use' && source[start - 1] === ' ' && previous !== null && previous.kind === 'ident';
     if (word === 'link' || word === 'package') return lineHead === 'extern' && previous !== null && previous.kind === 's';
+    if (word === 'rest') return '(,\n'.includes(charBefore(start)) && /^ *: *zero\b *(?:[,)#]|$)/.test(restOfLine(end));
+    if (word === 'zero') {
+      return (
+        previous !== null &&
+        previous.text === ':' &&
+        beforePrevious !== null &&
+        beforePrevious.kind === 'k' &&
+        beforePrevious.text === 'rest' &&
+        /^ *(?:[,)#]|$)/.test(restOfLine(end))
+      );
+    }
     return inExtern && lineHead === null && !/^ *:/.test(source.slice(end, end + 64));
   };
 

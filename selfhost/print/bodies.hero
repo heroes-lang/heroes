@@ -283,3 +283,19 @@ test "arguments carry their labels and markers, patterns their bindings"
     got = write_block(parsed.tree, s, block: body, indent: 0)
     expected = "declare v: i64 @= 0\nexpr grow(target: @v, by: 2)\ndeclare sh: Shape @= .box(w: 3)\nmatch sh\n  .dot => expr print(0)\n  .box b => expr print(b.w)\n"
     assert got == expected
+
+test "the dump writes the words that end a construction, which the parser keeps off the list"
+    # Panel 194's `rest: zero` lives in `Ast.rests`, not among the arguments,
+    # so a printer reading the list alone would show a construction of a group
+    # record at zero as one naming nothing; `written` puts the words back last.
+    text = "function main()\n    u = Utsname(rest: zero)\n    s = x.with(kind: 1, rest: zero)\n"
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    body: ast.Block @= ast.Block(span: token.Span(start: 0, end: 0), stmts: [])
+
+    match parsed.decls[0].kind
+        .function_decl fd                                          => body @ fd.value.body.must()
+        .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+
+    assert write_block(parsed.tree, s, block: body, indent: 0) == "bind u = Utsname(rest: zero)\nbind s = x.with(kind: 1, rest: zero)\n"

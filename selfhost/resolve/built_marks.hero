@@ -45,6 +45,7 @@ use source
 use diag
 use handles
 use inventory
+use keywords
 use label_errors
 use resolve/state
 use resolve/meant
@@ -259,7 +260,7 @@ function told(a: ast.Ast, s: source.Source, built: str, what: str, arg: ast.Arg)
         span: token.Span(start: at, end: value_span.end)
     )
 
-    if !arg.name.is_err() && source.span_text(s, arg.name.must()) == "rest" && value == "zero"
+    if !arg.name.is_err() && source.span_text(s, arg.name.must()) == keywords.WORD_REST && value == keywords.WORD_ZERO
         d.notes @ d.notes.push(
             "`rest: zero`, the words that end a construction of a group's `record`, every field it does not name zero, take no `@`"
         )
