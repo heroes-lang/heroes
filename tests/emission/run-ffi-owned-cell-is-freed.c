@@ -778,8 +778,9 @@ bb21:
 
 #line 123 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) {
-#line 782 "ffiownedcellisfreed.c"
+#line 123 "<heroes library>"
     return HERO_STR_OK;
+#line 784 "ffiownedcellisfreed.c"
 }
 
 #line 153 "<heroes library>"
@@ -901,7 +902,7 @@ bb6:
     goto bb4;
 #line 159 "<heroes library>"
 bb7:
-#line 905 "ffiownedcellisfreed.c"
+#line 906 "ffiownedcellisfreed.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);

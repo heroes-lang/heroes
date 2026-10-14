@@ -529,26 +529,30 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 533 "fixedbugs245ajoinpartcarriesthenul.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 535 "fixedbugs245ajoinpartcarriesthenul.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 539 "fixedbugs245ajoinpartcarriesthenul.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 542 "fixedbugs245ajoinpartcarriesthenul.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 545 "fixedbugs245ajoinpartcarriesthenul.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 549 "fixedbugs245ajoinpartcarriesthenul.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 551 "fixedbugs245ajoinpartcarriesthenul.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 556 "fixedbugs245ajoinpartcarriesthenul.c"
 }
 
 #line 167 "<heroes library>"
@@ -782,7 +786,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 786 "fixedbugs245ajoinpartcarriesthenul.c"
+#line 790 "fixedbugs245ajoinpartcarriesthenul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

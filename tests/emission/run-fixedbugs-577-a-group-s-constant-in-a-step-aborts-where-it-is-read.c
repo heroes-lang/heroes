@@ -154,8 +154,9 @@ void h_fixedbugs577agroupsconstantinastepabortswhereitisread_main(void);
 
 #line 9 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
 int64_t h_fixedbugs577agroupsconstantinastepabortswhereitisread_INT64_MAX(void) {
-#line 158 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
+#line 9 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
     return INT64_MAX;
+#line 160 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -183,7 +184,7 @@ bb0:
     if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();
 #line 12 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
     return t3;
-#line 187 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
+#line 188 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
 }
 
 #line 14 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
@@ -204,7 +205,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
     return;
-#line 208 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
+#line 209 "fixedbugs577agroupsconstantinastepabortswhereitisread.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

@@ -181,8 +181,9 @@ void h_fixedbugs589acallofmktemplinkssilentonlinux_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
 int32_t h_fixedbugs589acallofmktemplinkssilentonlinux_PR_GET_PDEATHSIG(void) {
-#line 185 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 16 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
     return PR_GET_PDEATHSIG;
+#line 187 "fixedbugs589acallofmktemplinkssilentonlinux.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -270,7 +271,7 @@ bb1:
     t20 = h1_p;
 #line 32 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
     (void)free(t20);
-#line 274 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 275 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h0_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h3_own3));
     return;
@@ -279,7 +280,7 @@ bb2:
     t7 = h0_f0;
 #line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
     t8 = t7.as.err;
-#line 283 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 284 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     hero_panic_must(t8);
     hero_unreachable();
 }

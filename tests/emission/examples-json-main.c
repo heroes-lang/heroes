@@ -6752,26 +6752,30 @@ bb3:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 6756 "main.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 6758 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 6762 "main.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 6765 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 6768 "main.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 6772 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 6774 "main.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 6779 "main.c"
 }
 
 #line 167 "<heroes library>"
@@ -7005,7 +7009,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 7009 "main.c"
+#line 7013 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -7084,7 +7088,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 7088 "main.c"
+#line 7092 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -7103,7 +7107,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 7107 "main.c"
+#line 7111 "main.c"
 }
 HERO_TU_LOCAL void h_parse_Reader_retain(const h_parse_Reader *v) {
     hero_str_incref(v->f_text);

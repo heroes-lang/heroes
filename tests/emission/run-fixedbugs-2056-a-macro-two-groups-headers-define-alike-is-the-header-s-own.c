@@ -163,8 +163,9 @@ void h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_main(void);
 
 #line 12 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
 int32_t h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_WANT_EXTRA(void) {
-#line 167 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
+#line 12 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
     return WANT_EXTRA;
+#line 169 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -181,8 +182,9 @@ int32_t h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_WANT_EXT
 
 #line 18 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
 int64_t h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_LIMIT(void) {
-#line 185 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
+#line 18 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
     return LIMIT;
+#line 188 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -199,8 +201,9 @@ int64_t h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_LIMIT(vo
 
 #line 19 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
 int64_t h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_EXTRA(void) {
-#line 203 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
+#line 19 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
     return EXTRA;
+#line 207 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -246,7 +249,7 @@ bb0:
     hero_print_end();
 #line 25 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
     return;
-#line 250 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
+#line 253 "fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

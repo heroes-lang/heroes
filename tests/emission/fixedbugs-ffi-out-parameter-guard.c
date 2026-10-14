@@ -162,8 +162,9 @@ void h_ffioutparameterguard_main(void);
 
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 int64_t h_ffioutparameterguard_SQLITE_OK(void) {
-#line 166 "ffioutparameterguard.c"
+#line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return SQLITE_OK;
+#line 168 "ffioutparameterguard.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -266,7 +267,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return;
-#line 270 "ffioutparameterguard.c"
+#line 271 "ffioutparameterguard.c"
 }
 #undef h0_db
 #undef h1_stmt

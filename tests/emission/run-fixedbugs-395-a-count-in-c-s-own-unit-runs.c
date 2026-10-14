@@ -200,8 +200,9 @@ void h_fixedbugs395acountincsownunitruns_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
-#line 204 "fixedbugs395acountincsownunitruns.c"
+#line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return HELD_INTS;
+#line 206 "fixedbugs395acountincsownunitruns.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -225,7 +226,7 @@ bb0:
     t1 = h0_k;
 #line 35 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return t1;
-#line 229 "fixedbugs395acountincsownunitruns.c"
+#line 230 "fixedbugs395acountincsownunitruns.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -505,7 +506,7 @@ bb0:
     hero_lend_local_give(hero_lend_h2_n);
 #line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return;
-#line 509 "fixedbugs395acountincsownunitruns.c"
+#line 510 "fixedbugs395acountincsownunitruns.c"
 }
 #undef h2_n
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b) {

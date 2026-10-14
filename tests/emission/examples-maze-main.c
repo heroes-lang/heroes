@@ -3756,26 +3756,30 @@ bb3:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 3760 "main.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 3762 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 3766 "main.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 3769 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 3772 "main.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 3776 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 3778 "main.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 3783 "main.c"
 }
 
 #line 167 "<heroes library>"
@@ -4009,7 +4013,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 4013 "main.c"
+#line 4017 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -4088,7 +4092,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 4092 "main.c"
+#line 4096 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -4107,7 +4111,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 4111 "main.c"
+#line 4115 "main.c"
 }
 HERO_TU_LOCAL void h_grid_Grid_retain(const h_grid_Grid *v) {
     hero_array_incref(v->f_rows);

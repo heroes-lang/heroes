@@ -512,26 +512,30 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 516 "fixedbugs245arepeatcarriesthenul.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 518 "fixedbugs245arepeatcarriesthenul.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 522 "fixedbugs245arepeatcarriesthenul.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 525 "fixedbugs245arepeatcarriesthenul.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 528 "fixedbugs245arepeatcarriesthenul.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 532 "fixedbugs245arepeatcarriesthenul.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 534 "fixedbugs245arepeatcarriesthenul.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 539 "fixedbugs245arepeatcarriesthenul.c"
 }
 
 #line 167 "<heroes library>"
@@ -765,7 +769,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 769 "fixedbugs245arepeatcarriesthenul.c"
+#line 773 "fixedbugs245arepeatcarriesthenul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

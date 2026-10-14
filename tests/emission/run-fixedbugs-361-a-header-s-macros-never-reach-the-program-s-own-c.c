@@ -156,8 +156,9 @@ void h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
 int64_t h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT(void) {
-#line 160 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 16 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
     return LIMIT;
+#line 162 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -197,7 +198,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
     return;
-#line 201 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 202 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

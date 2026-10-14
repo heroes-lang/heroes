@@ -153,8 +153,9 @@ void h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_main(void);
 
 #line 13 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
 int64_t h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(void) {
-#line 157 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 13 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
     return OLD_LIMIT;
+#line 159 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -182,7 +183,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
     return;
-#line 186 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 187 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

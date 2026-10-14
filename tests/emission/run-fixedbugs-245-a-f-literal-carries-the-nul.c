@@ -525,26 +525,30 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 529 "fixedbugs245afliteralcarriesthenul.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 531 "fixedbugs245afliteralcarriesthenul.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 535 "fixedbugs245afliteralcarriesthenul.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 538 "fixedbugs245afliteralcarriesthenul.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 541 "fixedbugs245afliteralcarriesthenul.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 545 "fixedbugs245afliteralcarriesthenul.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 547 "fixedbugs245afliteralcarriesthenul.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 552 "fixedbugs245afliteralcarriesthenul.c"
 }
 
 #line 167 "<heroes library>"
@@ -778,7 +782,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 782 "fixedbugs245afliteralcarriesthenul.c"
+#line 786 "fixedbugs245afliteralcarriesthenul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

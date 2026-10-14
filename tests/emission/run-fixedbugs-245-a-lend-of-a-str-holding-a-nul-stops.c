@@ -491,26 +491,30 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 495 "fixedbugs245alendofastrholdinganulstops.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 497 "fixedbugs245alendofastrholdinganulstops.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 501 "fixedbugs245alendofastrholdinganulstops.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 504 "fixedbugs245alendofastrholdinganulstops.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 507 "fixedbugs245alendofastrholdinganulstops.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 511 "fixedbugs245alendofastrholdinganulstops.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 513 "fixedbugs245alendofastrholdinganulstops.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 518 "fixedbugs245alendofastrholdinganulstops.c"
 }
 
 #line 167 "<heroes library>"
@@ -744,7 +748,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 748 "fixedbugs245alendofastrholdinganulstops.c"
+#line 752 "fixedbugs245alendofastrholdinganulstops.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);

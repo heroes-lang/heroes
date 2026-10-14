@@ -10480,26 +10480,30 @@ bb0:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 10484 "main.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 10486 "main.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 10490 "main.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 10493 "main.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 10496 "main.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 10500 "main.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 10502 "main.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 10507 "main.c"
 }
 
 #line 167 "<heroes library>"
@@ -10733,7 +10737,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 10737 "main.c"
+#line 10741 "main.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -10860,7 +10864,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 10864 "main.c"
+#line 10868 "main.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -10930,7 +10934,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 10934 "main.c"
+#line 10938 "main.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);
@@ -10949,7 +10953,7 @@ bb0:
     (void)hero_exit(t1);
 #line 228 "<heroes library>"
     return;
-#line 10953 "main.c"
+#line 10957 "main.c"
 }
 HERO_TU_LOCAL void h_datarow_Row_retain(const h_datarow_Row *v) {
     hero_str_incref(v->f_team);

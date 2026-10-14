@@ -170,8 +170,9 @@ void h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_main(void);
 
 #line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(void) {
-#line 174 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     return QUIET_FIVE;
+#line 176 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -228,7 +229,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     return;
-#line 232 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 233 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;
