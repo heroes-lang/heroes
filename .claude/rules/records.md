@@ -246,9 +246,10 @@ from the repository's root: a program of the harness and no verb of `heroes`
 - **`open [--kind <kind>] [--milestone M-<name>] [--class <class>] [--json]`**
   lists the open issues, the one reader of the lists (§ The lists) and of the
   skills;
-- **`link [--dry-run]`** makes every `defect NNN` and `panel NNN` a body names
-  a link (below, and `tests/harness/issue_links.hero`), each body that changes
-  written by one `PATCH` and read back, a rerun writing nothing.
+- **`link [--dry-run]`** makes every `defect NNN` and `panel NNN` a body of
+  the project's own names a link (below, and `tests/harness/issue_links.hero`),
+  each body that changes written by one `PATCH` and read back, a rerun writing
+  nothing.
 
 **A closed issue is a record** (§ A record is never rewritten): a sentence of
 it since falsified is corrected underneath, by `comment` and with its date,
@@ -338,7 +339,14 @@ renders one set of bytes:
   `Panel NNN:`, and R9 was silent on the rest (the coordinator's reading,
   where the alternative was to leave them text). A defect two issues answer
   (014), a number nobody holds, a day after the word, code, and what a body
-  already links stay as they are;
+  already links stay as they are. **The project's own issues alone, since
+  2026-10-14** (defect 2063): an issue is the project's where GitHub calls its
+  author `OWNER`, `MEMBER` or `COLLABORATOR` and its body opens `Filed
+  YYYY-MM-DD`, the program's rendering (`github_issues.by_project`), so a
+  stranger's body gains no link, its words being its writer's, and a
+  stranger's issue answers no name but the defect number that is its own: a
+  re-report titled `Defect 235:` leaves 235 linked to its issue, and a
+  stranger's `Panel 216:` is never where `panel 216` links;
 - **the route** of the transcription (R5): each file imported whole, its days,
   labels, milestone, closed state and closing comment in one request, read
   `imported` before the next so that the numbers keep the files' order, serial
