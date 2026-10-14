@@ -56,11 +56,13 @@ record Milestone
     open: bool
 
 # An issue as GitHub lists it; `labels` sorted, `milestone` its title or "",
-# `closed` "" while open.
+# `closed` "" while open, `association` GitHub's `author_association` or "",
+# which says whether the project wrote it (`github_issues.by_project`).
 record Held
     number: i64
     title: str
     body: str
+    association: str
     state: str
     labels: [str]
     milestone: str
@@ -190,8 +192,12 @@ function held_of(j: json_read.Json) -> Held?
         .fields _                                               => milestone @ json_fields.text_at(of: json_fields.field(of: j, name: "milestone")?, name: "title")?
         .null_value | .truth _ | .number _ | .text _ | .items _ => milestone @ ""
 
+    association: str @= ""
+
+    if !json_fields.field(of: j, name: "author_association").is_err()
+        association @ json_fields.text_at(of: j, name: "author_association")?
     return ok(
-        Held(number: json_fields.whole_at(of: j, name: "number")?, title: json_fields.text_at(of: j, name: "title")?, body: json_fields.text_at(of: j, name: "body")?, state: json_fields.text_at(of: j, name: "state")?, labels: names.sort(), milestone: milestone, created: json_fields.text_at(of: j, name: "created_at")?, closed: json_fields.text_at(of: j, name: "closed_at")?, comments: json_fields.whole_at(of: j, name: "comments")?, pull: !json_fields.field(of: j, name: "pull_request").is_err())
+        Held(number: json_fields.whole_at(of: j, name: "number")?, title: json_fields.text_at(of: j, name: "title")?, body: json_fields.text_at(of: j, name: "body")?, association: association, state: json_fields.text_at(of: j, name: "state")?, labels: names.sort(), milestone: milestone, created: json_fields.text_at(of: j, name: "created_at")?, closed: json_fields.text_at(of: j, name: "closed_at")?, comments: json_fields.whole_at(of: j, name: "comments")?, pull: !json_fields.field(of: j, name: "pull_request").is_err())
     )
 
 # An import's answer, read from the body GitHub gave.

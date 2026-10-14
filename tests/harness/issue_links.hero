@@ -31,6 +31,16 @@
 #   holds and a day written after the word stay text; a ratification naming
 #   its own sitting links the sitting's file.
 #
+# **The project's own issues alone, answering and answered** (defect 2063):
+# the repository is public and a stranger's issue takes the next number, so a
+# stranger who reports defect 235 again under the title `Defect 235:` would
+# make two issues answer 235 and leave it text everywhere, and one who opens a
+# decision titled `Panel 216:` before the project does would become where
+# `panel 216` links. So a name is answered by the project's own issues
+# (`github_issues.by_project`), a stranger's defect answering only for its own
+# number, as `records_github.register_of` reads it; and no link is written into
+# a stranger's body, whose words are theirs to edit.
+#
 # A link's words are the words that were there, so a closed issue, a record,
 # gains a link and loses nothing (`.claude/rules/records.md` § The issues);
 # and a body already linked is protected by its own links, so a rerun finds
@@ -41,6 +51,7 @@
 
 use cards
 use credit
+use github_issues
 use issue_github
 use issue_json
 use issue_pace
@@ -80,7 +91,9 @@ record Named
     plural: bool
     digits_at: i64
 
-# Each name to the issues that answer it, then those with exactly one.
+# Each name to the issues that answer it, then those with exactly one: the
+# project's own issues (`ours`), and a stranger's defect for its own number
+# alone.
 function targets(held: [issue_github.Held], sittings: {i64: str}, pin: str) -> Targets
     defects: {i64: [i64]} @= {}
     panels: {i64: [i64]} @= {}
@@ -89,22 +102,30 @@ function targets(held: [issue_github.Held], sittings: {i64: str}, pin: str) -> T
     for h in held
         if h.pull
             continue
+        mine = ours(h)
 
         if labelled(h: h, name: "kind:defect")
             for n in records_github.title_numbers(h.title)
-                if !records_github.holds(numbers: defects[n].default(none), number: h.number)
+                if (mine || n == h.number) && !records_github.holds(numbers: defects[n].default(none), number: h.number)
                     defects[n] @ defects[n].default(none).push(h.number)
+
+            if !mine
+                continue
 
             for n in records_github.body_numbers(h.body)
                 if !records_github.holds(numbers: defects[n].default(none), number: h.number)
                     defects[n] @ defects[n].default(none).push(h.number)
-        else if labelled(h: h, name: "kind:decision")
+        else if mine && labelled(h: h, name: "kind:decision")
             sitting = sitting_of(h.title)
 
             if sitting > 0
                 panels[sitting] @ panels[sitting].default(none).push(h.number)
 
     return Targets(defects: single(defects), panels: single(panels), sittings: sittings, pin: pin)
+
+# Whether the project wrote `h` (`github_issues.by_project`).
+function ours(h: issue_github.Held) -> bool
+    return github_issues.by_project(association: h.association, body: h.body)
 
 function labelled(h: issue_github.Held, name: str) -> bool
     for one in h.labels
@@ -411,11 +432,12 @@ function linking(@s: issue_pace.Session, write: bool, sittings: {i64: str}, pin:
     if keys(t.defects).len() == 0
         issue_pace.warn(
             @s,
-            text: "the listing named no defect any one issue answers, so a pass would link nothing whatever the bodies said: the listing is not the repository's, or the titles' shape moved"
+            text: "the listing named no defect any one issue of the project's own answers, so a pass would link nothing whatever the bodies said: the listing is not the repository's, the titles' shape moved, or GitHub answers this login with another `author_association` (`github_issues.by_project`)"
         )
         return 2
     code: i64 @= 0
     read: i64 @= 0
+    theirs: i64 @= 0
     changed: i64 @= 0
     links: i64 @= 0
     left: i64 @= 0
@@ -427,6 +449,11 @@ function linking(@s: issue_pace.Session, write: bool, sittings: {i64: str}, pin:
         k @ k - 1
 
         if h.pull
+            continue
+
+        # A stranger's words are theirs: no link is written into them.
+        if !ours(h)
+            theirs @ theirs + 1
             continue
         read @ read + 1
         l = linked(body: h.body, own: h.number, t: t)
@@ -476,9 +503,13 @@ function linking(@s: issue_pace.Session, write: bool, sittings: {i64: str}, pin:
         "changed"
     else
         "would change"
+    others: str @= ""
+
+    if theirs > 0
+        others @ ", " + theirs.to_str() + " issues of other authors left as they are"
     issue_pace.say(
         @s,
-        text: "link: " + read.to_str() + " issues read, " + changed.to_str() + " bodies " + done + " with " + links.to_str() + " links, " + left.to_str() + " names left as text (nothing answers them)"
+        text: "link: " + read.to_str() + " issues read, " + changed.to_str() + " bodies " + done + " with " + links.to_str() + " links, " + left.to_str() + " names left as text (nothing answers them)" + others
     )
     return code
 
@@ -489,11 +520,16 @@ function said(reply: issue_wire.Reply?) -> str
 
 ## Tests
 
+# An issue as the program files one: a `MEMBER`'s, its body opening `Filed`.
 function held_of(number: i64, title: str, kind: str, body: str) -> issue_github.Held
+    return written(number: number, title: title, kind: kind, body: "Filed 2026-10-01\n\n" + body, association: "MEMBER")
+
+function written(number: i64, title: str, kind: str, body: str, association: str) -> issue_github.Held
     return issue_github.Held(
         number: number,
         title: title,
         body: body,
+        association: association,
         state: "closed",
         labels: ["kind:" + kind],
         milestone: "",
@@ -583,14 +619,19 @@ test "a body linked once is linked again into itself"
     assert twice.text == once.text
     assert twice.made == 0
 
+# An issue as GitHub lists it, a `MEMBER`'s; its body the program's where it
+# opens `Filed`.
 function listed_json(number: i64, title: str, kind: str, body: str) -> str
-    return "{\"number\":" + number.to_str() + ",\"title\":" + issue_json.quoted(title) + ",\"body\":" + issue_json.quoted(body) + ",\"state\":\"closed\",\"labels\":[{\"name\":\"kind:" + kind + "\"}],\"milestone\":null,\"created_at\":\"2026-10-01T12:00:00Z\",\"closed_at\":\"2026-10-02T12:00:00Z\",\"comments\":0}"
+    return listed_by(number: number, title: title, kind: kind, body: body, association: "MEMBER")
+
+function listed_by(number: i64, title: str, kind: str, body: str, association: str) -> str
+    return "{\"number\":" + number.to_str() + ",\"title\":" + issue_json.quoted(title) + ",\"body\":" + issue_json.quoted(body) + ",\"author_association\":" + issue_json.quoted(association) + ",\"state\":\"closed\",\"labels\":[{\"name\":\"kind:" + kind + "\"}],\"milestone\":null,\"created_at\":\"2026-10-01T12:00:00Z\",\"closed_at\":\"2026-10-02T12:00:00Z\",\"comments\":0}"
 
 test "link writes each body that changes, reads it back, and a dry run or a rerun writes nothing"
     plain = "Filed 2026-10-01\n\nas defect 235 said"
     linked_body = "Filed 2026-10-01\n\nas [defect 235](" + WEB + "300) said"
     page = issue_scripts.issues(
-        [listed_json(number: 301, title: "a decision", kind: "decision", body: plain), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "b")]
+        [listed_json(number: 301, title: "a decision", kind: "decision", body: plain), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "Filed 2026-10-01\n\nb")]
     )
     dry: issue_pace.Session @= issue_pace.scripted([page])
     assert linking(@dry, write: false, sittings: some_sittings(), pin: "p1n") == 0
@@ -609,16 +650,16 @@ test "link writes each body that changes, reads it back, and a dry run or a reru
     assert asked[2].method == "GET"
     assert s.out[0] == WEB + "301 linked: 1"
     rerun_page = issue_scripts.issues(
-        [listed_json(number: 301, title: "a decision", kind: "decision", body: linked_body), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "b")]
+        [listed_json(number: 301, title: "a decision", kind: "decision", body: linked_body), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "Filed 2026-10-01\n\nb")]
     )
     again: issue_pace.Session @= issue_pace.scripted([rerun_page])
     assert linking(@again, write: true, sittings: some_sittings(), pin: "p1n") == 0
     assert again.world.requests.len() == 1
 
 test "a body read back otherwise is told and answers 1, and a refused write answers 2"
-    plain = "as defect 235 said"
+    plain = "Filed 2026-10-01\n\nas defect 235 said"
     page = issue_scripts.issues(
-        [listed_json(number: 301, title: "a decision", kind: "decision", body: plain), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "b")]
+        [listed_json(number: 301, title: "a decision", kind: "decision", body: plain), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "Filed 2026-10-01\n\nb")]
     )
     other = issue_scripts.answer(
         status: 200,
@@ -637,3 +678,56 @@ test "a body read back otherwise is told and answers 1, and a refused write answ
     )
     assert linking(@empty, write: true, sittings: some_sittings(), pin: "p1n") == 2
     assert strings.contains(text: empty.err[0], needle: "named no defect")
+
+test "a stranger's issue answers no name but its own number, and no link is written into it (defect 2063)"
+    project = [
+        held_of(number: 3, title: "Defect 235: x", kind: "defect", body: "b")
+        held_of(number: 2058, title: "Panel 215: a sitting", kind: "decision", body: "b")
+    ]
+
+    # A stranger reports defect 235 again from the public form and opens a
+    # decision titled for the next sitting before the project does; another
+    # titles a defect with its own number.
+    form = "### The program\n\nx"
+    strangers = [
+        written(number: 2101, title: "Defect 235: it is back", kind: "defect", body: form, association: "NONE")
+        written(number: 2106, title: "Panel 216: please merge my idea", kind: "decision", body: form, association: "NONE")
+        written(number: 2107, title: "Def" + "ect 2107: as the program would", kind: "defect", body: "- **236 — a later item**", association: "CONTRIBUTOR")
+        written(number: 2108, title: "Defect 237: x", kind: "defect", body: "Filed 2026-10-14\n\nforged", association: "NONE")
+    ]
+    t = targets(
+        held: [project[0], project[1], strangers[0], strangers[1], strangers[2], strangers[3]],
+        sittings: some_sittings(),
+        pin: "p"
+    )
+    assert t.defects[235].must() == 3
+    assert t.panels[215].must() == 2058
+    assert t.panels[216].is_err()
+    assert t.defects[2107].must() == 2107
+    assert t.defects[236].is_err()
+    assert t.defects[237].is_err()
+
+    # The same titles from the project's own hand answer as before.
+    mine = targets(
+        held: [project[0], held_of(number: 2101, title: "Defect 235: it is back", kind: "defect", body: "b"), held_of(number: 2106, title: "Panel 216: x", kind: "decision", body: "b")],
+        sittings: some_sittings(),
+        pin: "p"
+    )
+    assert mine.defects[235].is_err()
+    assert mine.panels[216].must() == 2106
+
+    # A stranger's body naming defect 235 is left as it is, and said.
+    page = issue_scripts.issues(
+        [listed_by(number: 2101, title: "Defect 235: it is back", kind: "defect", body: "as defect 235 said", association: "NONE"), listed_json(number: 300, title: "Defect 235: x", kind: "defect", body: "Filed 2026-10-01\n\nb")]
+    )
+    s: issue_pace.Session @= issue_pace.scripted([page])
+    assert linking(@s, write: true, sittings: some_sittings(), pin: "p1n") == 0
+    assert s.world.requests.len() == 1
+    assert s.out == ["link: 1 issues read, 0 bodies changed with 0 links, 0 names left as text (nothing answers them), 1 issues of other authors left as they are"]
+
+    # A listing with none of the project's own links nothing and says why.
+    alone: issue_pace.Session @= issue_pace.scripted(
+        [issue_scripts.issues([listed_by(number: 300, title: "Defect 235: x", kind: "defect", body: "Filed 2026-10-01\n\nb", association: "NONE")])]
+    )
+    assert linking(@alone, write: true, sittings: some_sittings(), pin: "p1n") == 2
+    assert strings.contains(text: alone.err[0], needle: "no defect any one issue of the project's own answers")
