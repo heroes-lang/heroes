@@ -1,0 +1,21 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape fm).
+#
+# SYMPTOM: a header defining `f_code` beside a record of the program's own with a
+# field `code`, which the C this compiler writes names `f_code`: refused
+# there, *internal error* at exit 2 (panel 214's critic).
+#
+# FIX: R3, the emitter's own forms where a header's macro meets them
+# (`cli/own_names.hero`, `met`).
+
+extern "ffi-a-header-s-macro-meeting-the-name-of-a-field-is-told.h"  #~ ffi_header_refused
+    function fm_f() -> i32
+
+record Status
+    code: i64
+    name: str
+
+function main()
+    s = Status(code: 3, name: "x")
+    print(s.code + 1)
+    print(fm_f())

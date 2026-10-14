@@ -1,0 +1,14 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape x16).
+#
+# SYMPTOM: a header defining `HERO_TU_LOCAL`, the macro every unit defines after
+# the groups' headers: clang refuses the unit's own definition; told
+# *internal error* at exit 2.
+#
+# FIX: R3 (`cli/own_names.hero`, `kept`).
+
+extern "ffi-a-header-defining-the-unit-s-own-macro-is-told.h"  #~ ffi_header_refused
+    function x16_f() -> i32
+
+function main()
+    print(x16_f())

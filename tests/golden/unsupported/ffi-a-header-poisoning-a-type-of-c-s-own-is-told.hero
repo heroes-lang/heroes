@@ -1,0 +1,15 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape y15).
+#
+# SYMPTOM: `#pragma GCC poison int64_t` in a header: clang refuses `<stdint.h>`,
+# which every unit reads after its groups, and no word of clang's names the
+# header; told *internal error* at exit 2.
+#
+# FIX: R2: only a clang run settles it; the opening compiled with the groups'
+# headers added one by one names this one (`cli/opening_told.hero`).
+
+extern "ffi-a-header-poisoning-a-type-of-c-s-own-is-told.h"  #~ ffi_header_refused
+    function y15_f() -> i32
+
+function main()
+    print(y15_f())

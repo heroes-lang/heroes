@@ -1,0 +1,233 @@
+# Whose a refusal is where no reader of clang's words named it: decided by
+# compiling the unit's opening, never by reading those words (design.md
+# §4.19, §4.17; CLAUDE.md §7's named exception; panel 214's R1 and R2,
+# 2026-10-14, provisional, author ratification pending; the prototype is the
+# compiler-engineer's, the order of the groups the completeness critic's).
+#
+# **The opening decides.** Asked last (`cli/whose.hero`), where the readers
+# would print `internal error`, so every class they tell keeps its words: the
+# unit's opening (`cli/order_trial.hero`), its own headers, the groups'
+# headers in their region and guard and the C library's read after them, with
+# none of the program's C, under the unit's own words; then the same text
+# without the groups' include lines. Refused with them and compiled without
+# them, the headers are what clang refused, and the program is told at exit 1.
+# Measured by the sitting on the tree before defects 2044 to 2053: 18 of their
+# 23 cases told at exit 1 by this question alone, with +168 lines where the
+# readers spent +1,506.
+#
+# **Told on the group whose header the opening refuses first when the groups'
+# include lines are added one by one in their order** (the critic's repair):
+# the prototype compiled each header alone, and a correct header that needs
+# an earlier group's typedef, as § 13 lets it, was blamed for a later
+# header's `#pragma GCC poison int64_t` (cgo issue 50710's lesson, the
+# historian's). The refusal of that first prefix is what is read and told: its
+# first error lies in that header, a file it includes, or a file every unit
+# reads after the groups, never in an earlier header, which compiled without
+# it. Told as the readers tell it where clang's words name that header, on
+# its own words otherwise.
+
+use source
+use ast
+use diag
+use emit/clang_place
+use emit/c_text
+use emit/ffi_lookup
+use cli/compile
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/group_file
+use cli/clang_first
+use cli/clang_excerpt
+use cli/header_refused
+use cli/headers_together
+use cli/declared_after
+use cli/runtime_key
+use cli/strings
+
+# The refusal route O tells, or none: the headers' where the opening is
+# refused with them and compiles without them.
+function told(art: compile.Artifact, s: source.Source, t: toolchain.Toolchain, under: compiling.Compiling, unit_headers: [str]) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    theirs = order_trial.theirs(unit_headers)
+
+    if theirs.len() == 0
+        return none
+    words = compiling.unit_words(under)
+
+    if !involves(t, words: words, headers: theirs)
+        return none
+    count: i64 @= 1
+
+    while count <= theirs.len()
+        ran = order_trial.compiled(
+            t,
+            words: words,
+            text: order_trial.opening(theirs.slice(from: 0, to: count), question: "")
+        )
+
+        if !ran.asked
+            return none
+
+        if !ran.compiles
+            group = group_file.group_of(s, art.decls, path: theirs[count - 1])
+
+            if group.is_err()
+                return none
+            return of_group(stderr: ran.said, s: s, decls: art.decls, runtime: t.runtime, group: group.must())
+        count @ count + 1
+
+    return none
+
+# Whether the opening with `headers` is refused and the same text without
+# their include lines compiles: then the headers are what clang refused, and
+# never the C this compiler wrote for the program.
+function involves(t: toolchain.Toolchain, words: [str], headers: [str]) -> bool
+    text = order_trial.opening(headers, question: "")
+    with = order_trial.compiled(t, words: words, text: text)
+
+    if !with.asked || with.compiles
+        return false
+    without = order_trial.compiled(t, words: words, text: without_headers(text: text, headers: headers))
+    return without.asked && without.compiles
+
+# The opening's text with its groups' include lines taken out and nothing
+# else: the region, the guard and the checks raised after it are kept, so the
+# one difference clang is asked about is the headers.
+function without_headers(text: str, headers: [str]) -> str
+    taken = c_text.includes(headers)
+    kept: [str] @= []
+
+    for line in ffi_lookup.lines(text: text)
+        out: bool @= false
+
+        for one in taken
+            if line == one
+                out @ true
+
+        if !out
+            kept @ kept.push(line)
+
+    return kept.join("\n") + "\n"
+
+# The refusal of the first prefix the opening refused, `group`'s header the
+# last of it, told on `group` alone: as the readers tell a header clang names,
+# where its stack or a note names that header, else on clang's own words.
+function of_group(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, group: group_file.Group) -> [diag.Diagnostic]
+    read = clang_first.read_as(stderr: stderr, s: s, decls: decls, runtime: runtime, involved: true)
+
+    if !read.is_err() && read.must().group.span.start == group.span.start
+        one = read.must()
+        two = header_refused.sides(one)
+
+        if !two.is_err()
+            return [
+                headers_together.told(s, one: two.must().one, other: two.must().other, message: one.first.message, added: two.must().added)
+            ]
+        return [
+            header_refused.told(s, rows: one.rows, first: one.first, steps: one.steps, at: one.at, group: one.group, notes: one.notes)
+        ]
+    noted = outside(stderr: stderr, s: s, decls: decls, runtime: runtime, group: group)
+
+    if noted.len() > 0
+        return noted
+    return unplaced(stderr: stderr, s: s, decls: decls, runtime: runtime, group: group)
+
+# clang's first error in a file of the compiler's own, or of C's own read
+# through one, with a note in `group`'s header: told on that group.
+function outside(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, group: group_file.Group) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    rows = ffi_lookup.lines(text: stderr)
+    first = clang_first.first_error(rows)
+
+    if first.is_err()
+        return none
+    own = runtime_key.made_of(runtime)
+
+    if own.is_err()
+        return none
+    steps = clang_place.stack(stderr: stderr, line: rows[first.must().row])
+    compiled = steps[0].path
+
+    for note in clang_first.attached(rows, after: first.must().row)
+        if clang_first.expansion(note.text)
+            continue
+        reached = group_file.arriving(
+            stderr: stderr,
+            row: rows[note.index],
+            s: s,
+            decls: decls,
+            compiled: compiled,
+            runtime: own.must()
+        )
+
+        if reached.is_err() || reached.must().group.span.start != group.span.start
+            continue
+        d: diag.Diagnostic @= diag.new_diagnostic(
+            code: "ffi_header_refused",
+            message: "`" + group.header + "`, the header this group names, does not compile in this program's unit: clang refuses " + place(at: first.must().place, steps: steps, s: s, decls: decls, compiled: compiled, runtime: own.must()) + ", after it: " + first.must().message,
+            span: group.span
+        )
+        quoted = clang_excerpt.of(rows, after: note.index)
+
+        if !quoted.is_err()
+            d.notes @ d.notes.push(
+                "`" + group.header + "` line " + note.row.to_str() + " reads `" + quoted.must() + "`, where clang adds: " + note.text
+            )
+        d.notes @ d.notes.push(header_refused.REPAIR)
+        return [d]
+
+    return none
+
+# The refusal where clang's words name no group's header, `#pragma GCC poison
+# int64_t` read before `<stdint.h>`: told on `group`, with clang's first
+# error and the file of the compiler's own, or of C's own read through one,
+# it lies in.
+function unplaced(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, group: group_file.Group) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    rows = ffi_lookup.lines(text: stderr)
+    first = clang_first.first_error(rows)
+
+    if first.is_err()
+        return none
+    own = runtime_key.made_of(runtime)
+
+    if own.is_err()
+        return none
+    steps = clang_place.stack(stderr: stderr, line: rows[first.must().row])
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_header_refused",
+        message: "`" + group.header + "`, the header this group names, does not compile in this program's unit: the unit's opening compiles without it and is refused with it, where clang refuses " + place(at: first.must().place, steps: steps, s: s, decls: decls, compiled: steps[0].path, runtime: own.must()) + ": " + first.must().message,
+        span: group.span
+    )
+    d.notes @ d.notes.push(header_refused.REPAIR)
+    return [d]
+
+# The file and line clang refused, as a note names them, never by a path
+# (issue 2047): a header of C's own every unit reads after its groups, as the
+# runtime's line includes it and with no line, which is the platform
+# library's own (`<stdint.h>` line 30 on this Mac, another file of glibc's);
+# a file of the compiler's own, at its line; else as clang printed it.
+function place(at: clang_place.Place, steps: [clang_place.Place], s: source.Source, decls: [ast.Decl], compiled: str, runtime: [str]) -> str
+    library = declared_after.included(steps, s: s, decls: decls, runtime: runtime)
+
+    if !library.is_err()
+        return "`" + library.must() + "`, a header of C's own every unit reads after its groups' headers"
+    row = " at line " + at.row.to_str()
+
+    if group_file.compilers(path: at.path, compiled: compiled, runtime: runtime)
+        return clang_first.own_file(path: at.path, compiled: compiled) + row
+    return "`" + clang_place.shown(path: at.path, directory: "") + "`" + row
+
+## Tests
+
+# The text without the headers is the opening's own but the groups' include
+# lines: the region, the guard and the standard headers stay.
+test "the opening without the headers keeps everything but their include lines"
+    text = order_trial.opening(["b.h", "a.h"], question: "")
+    without = without_headers(text: text, headers: ["b.h", "a.h"])
+    assert !strings.holds(text: without, needle: "#include <b.h>")
+    assert !strings.holds(text: without, needle: "#include <a.h>")
+    assert strings.holds(text: without, needle: "#include \"heroes_guard_open.h\"\n#include \"heroes_guard_close.h\"\n")
+    assert strings.holds(text: without, needle: "#include \"heroes_standard.h\"\n")
+    assert ffi_lookup.lines(text: without).len() == ffi_lookup.lines(text: text).len() - 2

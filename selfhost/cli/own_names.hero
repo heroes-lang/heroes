@@ -1,0 +1,352 @@
+# A header that meets a name of the forms the C this compiler writes keeps to
+# itself, told as the header's (design.md §4.19, §4.17; CLAUDE.md §7's named
+# exception; panel 214's R3, 2026-10-14, provisional, author ratification
+# pending; built by the sitting's compiler-engineer, its emitter's forms the
+# completeness critic's addition).
+#
+# **A blame rule, and no sentence of the specification** (the spec-warden's
+# veto of every sentence reserving a prefix): it acts only once clang has
+# refused, so a header that compiles is never touched, and 26 tracked headers
+# that name their own `hero_mutex` or `h_open` build as before (the critic's
+# 29 programs, 0 moved). A first error in the program's C, under no include,
+# at a name of the forms `h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` or `main`
+# that no group binds, is the header's where:
+#
+# - its first note that is no macro's expansion stands in a group's header
+#   at that same name (`kept`): `int main(void);`, `void
+#   hero_extern_refs(int);`, `#define HERO_TU_LOCAL static`; or
+# - its first note is the expansion of a macro of that very name a group's
+#   header defines (`met`), the emitter's `f_<field>` and `t<N>` among the
+#   forms there, which only a macro can meet: `#define f_code 0` beside a
+#   record's field `code` rewrote `int64_t f_code;`, an internal error at
+#   exit 2 until then.
+#
+# A name of no such form stays the compiler's at exit 2, so an emitter that
+# wrote a name outside its own is never told as a header's; a name of them
+# the emitter wrote by mistake and a header happens to declare is, on
+# purpose, the one place this tells another party than the readers before it
+# (the compiler-engineer's W4).
+
+use source
+use ast
+use diag
+use emit/clang_place
+use emit/ffi_lookup
+use cli/group_file
+use cli/runtime_key
+use cli/runtime_name
+use cli/standard_name
+use cli/clang_first
+use cli/clang_excerpt
+use cli/declared_after
+use cli/toolchain
+use cli/compiling
+use cli/order_trial
+use cli/process
+use cli/strings
+use parse
+
+constant FORMS: str
+    "`h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` and `main`"
+
+# The refusal of either shape below, or none.
+function told(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
+    found = kept(stderr: stderr, s: s, decls: decls, runtime: runtime)
+
+    if !found.is_err()
+        return found
+    return met(stderr: stderr, s: s, decls: decls, runtime: runtime)
+
+# The refusal where a group's header declares a name of those forms the C
+# this compiler writes declares too, or none.
+function kept(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
+    rows = ffi_lookup.lines(text: stderr)
+    first = clang_first.first_error(rows)?
+    steps = clang_place.stack(stderr: stderr, line: rows[first.row])
+    own = runtime_key.made_of(runtime)?
+    line = declared_after.header_line(stderr: stderr, rows: rows, first: first, s: s, decls: decls, runtime: own)?
+
+    if !in_programs_c(steps, s: s, decls: decls) || !reserved(line.name) || bound(name: line.name, s: s, decls: decls)
+        return fail(code: "none", msg: "no name this compiler keeps to itself")
+    d: diag.Diagnostic @= declared_after.opened(
+        line: line,
+        by: "the C this compiler writes for this program",
+        message: first.message
+    )
+    d.notes @ d.notes.push(
+        declared_after.EMITTED + line.name + "` is a name the C it writes for every program declares, of the forms it keeps to itself: " + FORMS
+    )
+    d.fixes @ [declared_after.renamed(s, line: line, why: "a name this compiler keeps to itself")]
+    return ok(d)
+
+# The refusal where a group's header defines as a macro a name of those
+# forms, or the emitter's `f_<field>` or `t<N>`, which the C this compiler
+# writes uses where clang refuses it, or none.
+function met(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> diag.Diagnostic?
+    rows = ffi_lookup.lines(text: stderr)
+    first = clang_first.first_error(rows)?
+    steps = clang_place.stack(stderr: stderr, line: rows[first.row])
+    own = runtime_key.made_of(runtime)?
+    name = runtime_name.caret_name(rows, after: first.row)?
+
+    if !in_programs_c(steps, s: s, decls: decls) || !reserved(name) && emitted_form(name) == "" || bound(name: name, s: s, decls: decls)
+        return fail(code: "none", msg: "no name this compiler keeps to itself")
+
+    for note in clang_first.attached(rows, after: first.row)
+        compiled = clang_place.stack(stderr: stderr, line: rows[note.index])[0].path
+
+        if group_file.compilers(path: note.path, compiled: compiled, runtime: own)
+            return fail(code: "none", msg: "a note in a file of the compiler's own")
+        group = group_file.group_of(s, decls, path: note.path)
+
+        if note.text != "expanded from macro '" + name + "'" || group.is_err()
+            return fail(code: "none", msg: "the first note is no macro of that name in a group's header")
+        line = declared_after.Line(
+            group: group.must(),
+            row: note.row,
+            quoted: clang_excerpt.of(rows, after: note.index),
+            name: name
+        )
+        d: diag.Diagnostic @= diag.new_diagnostic(
+            code: "ffi_header_refused",
+            message: "`" + line.group.header + "`, the header this group names, does not compile in this program's unit: its line " + line.row.to_str() + " defines `" + name + "` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: " + first.message,
+            span: line.group.span
+        )
+
+        if !line.quoted.is_err()
+            d.notes @ d.notes.push(
+                "`" + line.group.header + "` line " + line.row.to_str() + " reads `" + line.quoted.must() + "`"
+            )
+        d.notes @ d.notes.push(declared_after.EMITTED + name + "` is " + whose(name))
+        d.fixes @ [declared_after.renamed(s, line: line, why: "a name this compiler keeps to itself")]
+        return ok(d)
+
+    return fail(code: "none", msg: "no note under the error")
+
+# What the C this compiler writes uses a name of its own forms for.
+function whose(name: str) -> str
+    form = emitted_form(name)
+
+    if form == "field"
+        return "the name the C it writes gives the field `" + name.slice(from: 2, to: name.len()) + "` of a record of the program's own, where it reads or builds one"
+
+    if form == "temporary"
+        return "the name the C it writes gives one of its temporaries, which a function's body declares"
+    return "a name the C it writes for every program declares, of the forms it keeps to itself: " + FORMS
+
+# Whether clang's first error lies in the program's C: under no include, in
+# no group's header, the file clang compiled or the program's `.hero` as the
+# unit's `#line`s name them.
+function in_programs_c(steps: [clang_place.Place], s: source.Source, decls: [ast.Decl]) -> bool
+    return steps.len() == 1 && group_file.group_of(s, decls, path: steps[0].path).is_err()
+
+function reserved(name: str) -> bool
+    if name == "main"
+        return true
+
+    for head in ["h_", "hero_", "Hero", "HERO_", "HEROES_"]
+        if name.len() > head.len() && standard_name.starts(text: name, head: head)
+            return true
+
+    return false
+
+# The emitter's own two forms only a macro can meet: `f_<field>`, a field's
+# member name, and `t<N>`, a temporary; else `""`.
+function emitted_form(name: str) -> str
+    if name.len() > 2 && standard_name.starts(text: name, head: "f_")
+        return "field"
+
+    if name.len() < 2 || name[0] != 't'
+        return ""
+    at: i64 @= 1
+
+    while at < name.len()
+        if name[at] < '0' || name[at] > '9'
+            return ""
+        at @ at + 1
+
+    return "temporary"
+
+# Whether a group of the program binds `name`, which then keeps its C name.
+function bound(name: str, s: source.Source, decls: [ast.Decl]) -> bool
+    for decl in decls
+        match decl.kind
+            .function_decl fd =>
+                if !fd.value.header.is_err() && source.span_text(s, decl.name) == name
+                    return true
+            .constant_decl k =>
+                if !k.header.is_err() && source.span_text(s, decl.name) == name
+                    return true
+            .record_decl rec =>
+                if !rec.header.is_err() && source.span_text(s, decl.name) == name
+                    return true
+            .variant_decl | .test_decl => continue
+
+    return false
+
+## Tests
+
+constant TEXT: str
+    "extern \"f_emit.h\"\n    function eight() -> i32\n\nfunction main()\n    print(eight())\n"
+
+# A name of the compiler's forms no function of the program's own is given
+# is the header's; a group's own name, a name of no such form, and an error
+# under an include stay the compiler's. The two assertions of defect 2049's
+# test in `cli/declared_after.hero` say what the reader before this one did.
+test "a header declaring a name of the compiler's own forms is refused as its own (panel 214's R3)"
+    s = source.new_source(name: "f_emit.hero", text: TEXT)
+    decls = parse.parse(TEXT).decls
+
+    for name in ["h_femit_eight", "h_other_main", "main"]
+        line = "femit.c:95:6: error: conflicting types for '" + name + "'\n   95 | void " + name + "(void);\n      |      ^\n"
+        written = "In file included from build/tu-1/femit.c:20:\n./f_emit.h:1:5: note: previous declaration is here\n    1 | int " + name + "(int x);\n      |     ^\n"
+        said = kept(stderr: line + written, s: s, decls: decls, runtime: "runtime").must()
+        assert said.notes[1] == "this compiler's `" + name + "` is a name the C it writes for every program declares, of the forms it keeps to itself: " + FORMS
+
+    for wrong in ["eight", "femit_main"]
+        line = "femit.c:95:6: error: conflicting types for '" + wrong + "'\n   95 | void " + wrong + "(void);\n      |      ^\n"
+        written = "In file included from build/tu-1/femit.c:20:\n./f_emit.h:1:5: note: previous declaration is here\n    1 | int " + wrong + "(int x);\n      |     ^\n"
+        assert kept(stderr: line + written, s: s, decls: decls, runtime: "runtime").is_err()
+
+    under = "In file included from build/tu-1/femit.c:30:\n./g.h:2:6: error: conflicting types for 'h_femit_main'\n    2 | void h_femit_main(void);\n      |      ^\nIn file included from build/tu-1/femit.c:20:\n./f_emit.h:1:5: note: previous declaration is here\n    1 | int h_femit_main(int x);\n      |     ^\n"
+    assert kept(stderr: under, s: s, decls: decls, runtime: "runtime").is_err()
+
+# A macro of a group's header named as the emitter names a field is the
+# header's, as clang's Apple 21 wrote it for the critic's `fm` (2026-10-14);
+# the same words at a name of no such form are not.
+test "a header's macro meeting the emitter's name of a field is refused as its own (panel 214's R3)"
+    s = source.new_source(name: "f_emit.hero", text: TEXT)
+    decls = parse.parse(TEXT).decls
+    said = "femit.c:81:13: error: expected member name or ';' after declaration specifiers\n   81 |     int64_t f_code;\n      |     ~~~~~~~ ^\nIn file included from build/tu-1/femit.c:22:\n./f_emit.h:1:16: note: expanded from macro 'f_code'\n    1 | #define f_code 0\n      |                ^\n"
+    d = met(stderr: said, s: s, decls: decls, runtime: "runtime").must()
+    assert d.code == "ffi_header_refused"
+    assert d.message == "`f_emit.h`, the header this group names, does not compile in this program's unit: its line 1 defines `f_code` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: expected member name or ';' after declaration specifiers"
+    assert d.notes[0] == "`f_emit.h` line 1 reads `#define f_code 0`"
+    assert emitted_form("t12") == "temporary"
+    assert emitted_form("t") == ""
+    assert emitted_form("tx1") == ""
+    other = "femit.c:81:13: error: expected member name or ';' after declaration specifiers\n   81 |     int64_t code;\n      |     ~~~~~~~ ^\nIn file included from build/tu-1/femit.c:22:\n./f_emit.h:1:16: note: expanded from macro 'code'\n    1 | #define code 0\n      |                ^\n"
+    assert met(stderr: other, s: s, decls: decls, runtime: "runtime").is_err()
+
+# **Panel 214's R4: the runtime's names held to those forms**, the one false
+# blame every route shares (the compiler-engineer's NC1): a runtime that
+# declared `int abs(long x);` would make a correct header including
+# `<stdlib.h>` the header's mistake. So the unit's opening with C's own
+# headers in a group's place compiles clean, under the unit's own words: the
+# 25 of C11 every platform's library has, and where the box is not Windows
+# the two its library refuses with no runtime at all (`<tgmath.h>` against the
+# ucrt's complex types, `<stdnoreturn.h>` against `__declspec(noreturn)`, both
+# clang 23.1.1 on the box, 2026-10-14) and 53 of POSIX. Measured that day,
+# nothing printed: this Mac's Apple clang 21, 80 headers; the Linux arm64
+# image's clang 22.1.8, the same 80 and `<threads.h>` and `<uchar.h>`, which
+# this Mac's SDK lacks; the box, the 25.
+test "the unit's opening with C's own headers in a group's place compiles clean (panel 214's R4)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-words").must()
+    words = compiling.unit_words(
+        compiling.Compiling(level: "-O0", sanitize: false, search_include: [], package_flags: [], runtime: t.runtime, source_dir: ".")
+    )
+    headers: [str] @= words_of(C11)
+
+    if process.exe_suffix() != ".exe"
+        headers @ strings.with_all(list: headers, more: words_of(ELSEWHERE))
+    ran = order_trial.compiled(t, words: words, text: order_trial.opening(headers, question: ""))
+    assert ran.asked
+    assert ran.said == ""
+    assert ran.compiles
+
+# And every file-scope name the runtime's two headers declare, and every
+# macro they define, is of the forms above or C's own: the names of a unit of
+# `heroes_unit.h` and `hero_os.h` beside those of clang's `<stdbool.h>` and
+# `<stddef.h>`, which they include, by clang's own dump. Measured 2026-10-14
+# on this Mac: 192 names, the compiler-engineer's count, ten not of the
+# forms, the `<stdint.h>` types the runtime spells from clang's builtins;
+# every macro `HERO_` or `HEROES_`.
+test "the runtime's names and macros are of the compiler's own forms or C's own (panel 214's R4)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-words").must()
+    words = compiling.probe_words(
+        compiling.Compiling(level: "-O0", sanitize: false, search_include: [], package_flags: [], runtime: t.runtime, source_dir: ".")
+    )
+    runtime_unit = "#include \"heroes_unit.h\"\n#include <hero_os.h>\n"
+    clangs_unit = "#include <stdbool.h>\n#include <stddef.h>\n"
+    dump = ["-fsyntax-only", "-fno-color-diagnostics", "-Xclang", "-ast-dump"]
+    clangs = dumped_names(order_trial.output(t, words: words, text: clangs_unit, mode: dump).must())
+    outside: [str] @= []
+
+    for name in sort(keys(dumped_names(order_trial.output(t, words: words, text: runtime_unit, mode: dump).must())))
+        if clangs[name].is_err() && !reserved(name) && !holds(words_of(STANDARD_TYPES), name)
+            outside @ outside.push(name)
+
+    assert outside.join(" ") == ""
+    defined = ["-E", "-dM"]
+    clangs_macros = macro_names(order_trial.output(t, words: words, text: clangs_unit, mode: defined).must())
+    stray: [str] @= []
+
+    for name in sort(keys(macro_names(order_trial.output(t, words: words, text: runtime_unit, mode: defined).must())))
+        if clangs_macros[name].is_err() && !standard_name.starts(text: name, head: "HERO_") && !standard_name.starts(text: name, head: "HEROES_")
+            stray @ stray.push(name)
+
+    assert stray.join(" ") == ""
+
+constant C11: str
+    "assert.h complex.h ctype.h errno.h fenv.h float.h inttypes.h iso646.h limits.h locale.h math.h setjmp.h signal.h stdalign.h stdarg.h stdatomic.h stdbool.h stddef.h stdint.h stdio.h stdlib.h string.h time.h wchar.h wctype.h"
+
+constant ELSEWHERE: str
+    "tgmath.h stdnoreturn.h aio.h arpa/inet.h cpio.h dirent.h dlfcn.h fcntl.h fnmatch.h ftw.h glob.h grp.h iconv.h langinfo.h libgen.h monetary.h net/if.h netdb.h netinet/in.h netinet/tcp.h nl_types.h poll.h pthread.h pwd.h regex.h sched.h search.h semaphore.h spawn.h strings.h sys/ipc.h sys/mman.h sys/msg.h sys/resource.h sys/select.h sys/sem.h sys/shm.h sys/socket.h sys/stat.h sys/statvfs.h sys/time.h sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h syslog.h tar.h termios.h ulimit.h unistd.h utime.h utmpx.h wordexp.h"
+
+constant STANDARD_TYPES: str
+    "int8_t int16_t int32_t int64_t uint8_t uint16_t uint32_t uint64_t intptr_t uintptr_t"
+
+function words_of(text: str) -> [str]
+    return ffi_lookup.words(text)
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+# The names of a dump's top-level declarations, a tag and each enumerator
+# included, none clang declares implicitly.
+function dumped_names(dumped: str) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for row in ffi_lookup.lines(text: dumped)
+        top = strings.starts_with(text: row, prefix: "|-") || strings.starts_with(text: row, prefix: "`-")
+
+        if !top && !strings.holds(text: row, needle: "-EnumConstantDecl ") || strings.holds(text: row, needle: " implicit ")
+            continue
+        quote = clang_place.offset_of(text: row, needle: " '")
+        words = ffi_lookup.words(row)
+
+        if !quote.is_err()
+            before = ffi_lookup.words(row.slice(from: 0, to: quote.must()))
+            out[before[before.len() - 1]] @ true
+        else
+            at: i64 @= 0
+
+            while at + 1 < words.len()
+                if (words[at] == "struct" || words[at] == "union" || words[at] == "enum") && words[at + 1] != "definition"
+                    out[words[at + 1]] @ true
+                at @ at + 1
+
+    return out
+
+# The names of `-dM`'s `#define` lines.
+function macro_names(said: str) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for row in ffi_lookup.lines(text: said)
+        words = ffi_lookup.words(row)
+
+        if words.len() >= 2 && words[0] == "#define"
+            name: [str] @= []
+
+            for ch in words[1].chars()
+                if ch == "("
+                    break
+                name @ name.push(ch)
+
+            out[name.join("")] @ true
+
+    return out

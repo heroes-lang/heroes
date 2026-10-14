@@ -1,0 +1,16 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape x1).
+#
+# SYMPTOM: `int main(void);` in a header: clang's first error lies in the C this
+# compiler writes for the program, at its own `int main(int argc, char
+# **argv)`, the note in the header; told *internal error* at exit 2.
+#
+# FIX: R3: a first error in the program's C at a name of the compiler's own
+# forms no group binds, its note in a group's header at that name, is the
+# header's (`cli/own_names.hero`, `kept`).
+
+extern "ffi-a-header-declaring-main-is-told.h"  #~ ffi_header_refused
+    function x1_f() -> i32
+
+function main()
+    print(x1_f())

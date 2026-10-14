@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `ffi-a-header-declaring-a-function-the-unit-writes-is-told.h`, the header this group names, does not compile: its line 6 declares `hero_extern_refs`, which the C this compiler writes for this program declares too, after the groups' headers, and clang refuses the two: conflicting types for 'hero_extern_refs'
+  at tests/golden/unsupported/ffi-a-header-declaring-a-function-the-unit-writes-is-told.hero:12:8
+     |
+  12 | extern "ffi-a-header-declaring-a-function-the-unit-writes-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `ffi-a-header-declaring-a-function-the-unit-writes-is-told.h` line 6 reads `static void hero_extern_refs(int);`
+  note: this compiler's `hero_extern_refs` is a name the C it writes for every program declares, of the forms it keeps to itself: `h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` and `main`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `hero_extern_refs` in `ffi-a-header-declaring-a-function-the-unit-writes-is-told.h`, a name this compiler keeps to itself

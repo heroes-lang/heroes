@@ -1,0 +1,16 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape x3).
+#
+# SYMPTOM: a header's call of the runtime's `hero_str_len` split over two lines:
+# the reader of a call read only the line clang quoted, so the note at the
+# runtime's declaration made it the compiler's, *internal error* at exit 2.
+#
+# FIX: R2: the unit's opening is refused with the groups' headers and compiles
+# without them, so the headers are what clang refused, whatever file of the
+# compiler's own a note reaches (`cli/opening_told.hero`).
+
+extern "ffi-a-header-s-call-of-the-runtime-over-two-lines-is-told.h"  #~ ffi_header_refused
+    function x3_f() -> i32
+
+function main()
+    print(x3_f())

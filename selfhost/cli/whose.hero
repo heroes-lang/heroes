@@ -25,6 +25,7 @@ use cli/name_order
 use cli/inline_only
 use cli/renamed
 use cli/group_file
+use cli/opening_told
 use diag
 use cli/deep_types
 use cli/link
@@ -112,6 +113,18 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         if lacked.len() > 0
             _ = compile.stage(lacked, s).is_err()
             return fail(code: "diagnostics", msg: "a package names a library this machine does not have")
+
+    # What no reader of clang's words named is the headers' where the unit's
+    # opening is refused with them and compiles without them, told on the
+    # first group whose header the opening refuses in their order
+    # (`cli/opening_told.hero`, panel 214's R2): asked last, so every class
+    # above keeps its words.
+    if code != link.REFUSED
+        late = opening_told.told(art, s, t, under: words, unit_headers: unit_headers)
+
+        if late.len() > 0
+            _ = compile.stage(late, s).is_err()
+            return fail(code: "diagnostics", msg: "a header this program binds does not compile")
 
     # A unit clang refused carries its own path inside the message
     # (`units.tu_object`), the fused test unit's included.

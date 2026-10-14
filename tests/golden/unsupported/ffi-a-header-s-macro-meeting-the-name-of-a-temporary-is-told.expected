@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `ffi-a-header-s-macro-meeting-the-name-of-a-temporary-is-told.h`, the header this group names, does not compile in this program's unit: its line 2 defines `t3` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: expected identifier or '('
+  at tests/golden/unsupported/ffi-a-header-s-macro-meeting-the-name-of-a-temporary-is-told.hero:9:8
+    |
+  9 | extern "ffi-a-header-s-macro-meeting-the-name-of-a-temporary-is-told.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `ffi-a-header-s-macro-meeting-the-name-of-a-temporary-is-told.h` line 2 reads `#define t3 0`
+  note: this compiler's `t3` is the name the C it writes gives one of its temporaries, which a function's body declares
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `t3` in `ffi-a-header-s-macro-meeting-the-name-of-a-temporary-is-told.h`, a name this compiler keeps to itself

@@ -1,0 +1,14 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape x10).
+#
+# SYMPTOM: a header handing the runtime's `HERO_STR_LIT` a number: the error lies in
+# the header, its note in the runtime's macro, which made it the compiler's,
+# *internal error* at exit 2.
+#
+# FIX: R2, as the case beside it (`cli/opening_told.hero`).
+
+extern "ffi-a-header-misusing-a-runtime-macro-is-told.h"  #~ ffi_header_refused
+    function x10_f() -> i32
+
+function main()
+    print(x10_f())

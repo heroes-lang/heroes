@@ -13,6 +13,11 @@ use emit/clang_name
 use emit/externs as emit_externs
 use cli/strings
 
+# The name the Heroes library's lowered code carries in every unit
+# (`source.hero`'s library file).
+constant LIBRARY: str
+    "<heroes library>"
+
 # The group a file of the stack is the header of: the header's string on the
 # group's `extern` line, which the diagnostic points at, and the header as the
 # group wrote it.
@@ -33,10 +38,19 @@ record Group
 # same two files anywhere else are told `ffi_header_refused` at exit 1.
 # Nothing else of the compiler's can be named: a unit includes the runtime's
 # files and the groups' headers alone (`cli/order_trial.hero`'s test, 2035).
+#
+# **And clang names the compiler's own C by the names its `#line`s give it**
+# (panel 214's R5, the critic's measurement over the 605 emissions: 9,699
+# directives to `<heroes library>`, 4,711 restores to the unit's own `.c`): a
+# line of the Heroes library's lowered code is `<heroes library>`'s, and one
+# the compiler wrote around it is the unit's file by its name alone, so both
+# are the compiler's. A line lowered from the program's own functions keeps
+# its `.hero` name, which the debugger reads, and is the compiler's too where
+# no reader makes it the header's (`declared_after.kept`).
 function compilers(path: str, compiled: str, runtime: [str]) -> bool
     p = settled(path)
 
-    if p == settled(compiled)
+    if p == settled(compiled) || p == LIBRARY || p == restored_name(compiled)
         return true
 
     for own in runtime
@@ -44,6 +58,17 @@ function compilers(path: str, compiled: str, runtime: [str]) -> bool
             return true
 
     return false
+
+# The name a unit's `#line` restores give its own file: the file's, without
+# its directory (`emit/writer.hero`'s `generated`, the module's unit name).
+function restored_name(compiled: str) -> str
+    p = settled(compiled)
+    cut: i64 @= p.len()
+
+    while cut > 0 && p[cut - 1] != '/'
+        cut @ cut - 1
+
+    return p.slice(from: cut, to: p.len())
 
 # A path as its segments, either separator a `/`, an empty or a `.` segment
 # dropped, a leading `/` kept: clang prints a header found through `-I rt/`

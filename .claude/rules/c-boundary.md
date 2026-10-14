@@ -130,6 +130,23 @@ precedent):
   `redefine_extname labs llabs` fails on Darwin and links in the Linux arm64
   image, where `llabs` is the symbol's own spelling.
 
+**Since panel 214 (2026-10-14, provisional, author ratification pending) whose
+a refused header is, where no reader names it, is decided by a clang run and
+by a name's form, never by clang's words** (its R1: the readers stay, as how a
+refusal is told). Where the readers would print `internal error`, the unit's
+opening is compiled with the groups' headers and without them; refused with
+them and compiled without them, the headers are what clang refused, told on
+the group whose header the opening refuses first as its include lines are
+added one by one in their order (R2, `cli/opening_told.hero`). A first error
+in the program's C at a name of the compiler's own forms no group binds, `h_`,
+`hero_`, `Hero`, `HERO_`, `HEROES_`, `main`, and the emitter's `f_<field>` and
+`t<N>` where a header's macro meets them, its note in a group's header at that
+name, is the header's (R3, `cli/own_names.hero`): a blame rule acting only
+after clang refused, so the specification reserves no prefix. The runtime's
+own names are held to those forms by the compiler's tests (R4), and
+`<heroes library>` and the unit's own `.c`, as the `#line`s name them, are the
+compiler's files (R5, `group_file.compilers`).
+
 **The narrowing is `declaration()`, not whose text it is.** Every class recovers
 a name and asks whether *this program* declared it `extern`, so a symbol nobody
 declared stays exit 2 and the compiler's fault. The fifth member recovers the

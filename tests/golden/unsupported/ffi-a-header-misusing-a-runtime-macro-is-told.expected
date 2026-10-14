@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `ffi-a-header-misusing-a-runtime-macro-is-told.h`, the header this group names, does not compile: clang refuses it at line 2: member reference base type 'int' is not a structure or union
+  at tests/golden/unsupported/ffi-a-header-misusing-a-runtime-macro-is-told.hero:10:8
+     |
+  10 | extern "ffi-a-header-misusing-a-runtime-macro-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `ffi-a-header-misusing-a-runtime-macro-is-told.h` line 2 reads `static inline int x10_f(void) { HeroStr s = HERO_STR_LIT(8); (void)s; return 10; }`
+  note: clang adds, at the Heroes runtime's `heroes_runtime.h` line 256, which every unit of this program reads: expanded from macro 'HERO_STR_LIT'
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
