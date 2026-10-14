@@ -41,3 +41,7 @@ written. The paragraph is still published at the gate. It carries one promise
 more, written the day the history was rewritten once to keep the seed only at
 the releases (M-bounded-seed): `main` and the published tags are never
 rewritten again.
+
+**Corrected 2026-10-15**: the history keeps the seed at every tag, not only at
+the releases, by the author's decision of that day (M-bounded-seed's page);
+the promise is unchanged.
