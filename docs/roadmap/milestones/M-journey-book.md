@@ -13,3 +13,7 @@ the human texture the technical records drop, the measurements the numbers, and
 The rule from design.md's *The name* applies here and only here: **personality in
 the packaging, precision in the substrate** — Bowie belongs in this book, never
 in an error message.
+
+**Corrected 2026-10-14.** `DESIGN-LOG.md` and `docs/records/book/beats.md`,
+cited above, were deleted on 2026-10-05; they read at `d8a9913e`. The beats are
+the 132 files of `docs/records/book/beats/`.

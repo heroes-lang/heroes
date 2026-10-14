@@ -34,3 +34,10 @@ extension somebody could install and forget about.
   the compiler has already lifted funds the wrong decision at the next sitting.
 - **Packaging**: a `.vsix` that installs, with `heroes doctor` as the extension's
   own health check.
+
+**Corrected 2026-10-14.** Two of the four bullets above have landed: debugging
+through `lldb-dap` with Heroes' formatters (M-typed-inspection, 2026-10-13) and
+a `.vsix` that installs by hand, its version tied to `VERSION` (v0.4.0). What
+remains is the LSP client, the quick fixes from `certain` fixes, formatting on
+save and `heroes doctor` as the health check. The row moves from 75 to 84,
+after M-lsp-server and immediately before the gate.

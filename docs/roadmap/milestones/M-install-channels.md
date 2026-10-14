@@ -35,3 +35,11 @@ is prepared and tested **in private** — a local tap, `brew install
 --build-from-source` — and the act that puts a channel where a stranger can reach
 it is the gate's, which is why this row sits immediately before it (CLAUDE.md
 §14: publishing is a hard stop).
+
+**Corrected 2026-10-14.** *This row sits immediately before the gate* has been
+false since 2026-09-06, when M-online-compiler entered between them; after the
+re-ordering, M-online-compiler, M-lsp-server and M-vscode-extension stand
+between. One channel joins the four: an agent's, a plugin for Claude Code
+holding a skill with the specification and a hook that runs
+`heroes check --brief` after each write. The site already serves
+`site/src/llms.txt`.

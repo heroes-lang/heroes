@@ -67,3 +67,11 @@ across `runtime/`, and the attribution of the two vendored BPE tables.
   owes is `1.0.0`, which is the day the compatibility paragraph above is
   published and not before.
 ---
+
+**Corrected 2026-10-14.** The compatibility paragraph this page owns is
+delivered by M-compatibility-promise, now at row 73, and published here. *`main`
+is protected* (M-open-repository's account above) is false on 2026-10-14:
+GitHub's branch-protection API answers *Branch not protected*. *SPDX headers
+across `runtime/`*: 24 of its 33 `.c` and `.h` files carry one. The first posts
+follow this gate at row 86 (M-launch-posts), and the question of a repository
+of the site's own reopens here.

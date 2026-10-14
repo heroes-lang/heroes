@@ -406,6 +406,63 @@ gap by a count over the table. Panels 178 and 194 sat on it; what their
 landing already did, on 2026-10-06 and while the row stayed `scheduled`, is
 the milestone's page.
 
+
+**2026-10-14, the chain re-ordered consolidation first and six rows entered,
+by the author's instruction**, meant as: *the next steps that consolidate the
+language first, then the core and the other libraries, then the parallel and
+extra things; and somewhere a step that re-checks every open issue so that the
+fewest stay open*; then, the same afternoon, what the language lacks for the
+author's end goal, promoting it, and a comparison with other languages. The
+reading behind it: every scheduled row's page, the 65 open issues counted and
+not yet run again, a measured rehearsal of a history rewrite (measurement
+045), and three reviews of the plan. Each move, by name:
+
+- **M-bounded-seed** enters at 67 and opens: the seed is 70% of the history and
+  48% of its bytes are `#line` directives; its page has the numbers.
+- **M-witnessed-seed** enters at 68: the fixpoint proves consistency and not
+  provenance, and `archive/bootstrap-rs/` is the only second implementation
+  the seed was ever compared with, so it leaves the tree only after that
+  comparison is run again.
+- **M-thesis-harness** moves from 73 to 69, ahead of the packages: the
+  dependency its page states, M-core-packages' HTTP client, does not hold
+  (`selfhost/cli/refresh.hero` already reaches an HTTPS API through `curl`,
+  and `examples/curl` binds libcurl); the site states the claim with no
+  instrument behind it; and the author's held-out tasks are the slow part, so
+  they start first.
+- **M-rechecked-issues** enters at 70, in a lane beside the harness.
+- **M-panic-location** and **M-generated-programs** keep 71 and 72.
+- **M-compatibility-promise** moves from 79 to 73 and closes the consolidation
+  block: its instrument exists already, the corpus at a release tag recompiled
+  by today's compiler, and before the packages it is a ratchet on the largest
+  body of Heroes after the compiler; it also carries the promise that the
+  published history is not rewritten again.
+- **M-latency-ceiling** enters at 74, before the packages.
+- **M-core-packages, M-package-manager, M-web-framework and M-doc-generator**
+  move from 67-70 to 75-78, in their own order.
+- **M-compared-languages** enters at 79.
+- **M-deployable-binary, M-install-channels and M-online-compiler** move from
+  76-78 to 80-82.
+- **M-lsp-server and M-vscode-extension** move from 74-75 to 83-84,
+  immediately before the gate: the packages are written by the assistant
+  through `heroes check --json`, so the server serves the people who arrive
+  with the launch; its incremental frontend becomes M-latency-ceiling's return
+  condition.
+- **M-publication-gate** moves from 80 to 85; **M-launch-posts** enters at 86;
+  the four rows the author put behind the gate on 2026-09-15 keep their order
+  at 87-90.
+
+**Considered and not entered, each with its rule.** `M-reach-manifest`, a
+listing of what a program reaches through its `extern` groups: an inspection
+with one caller, M-online-compiler's sitting, which keeps the question, and
+CLAUDE.md § 6 refuses an effect system under any name. `M-separate-site`, the
+site in a repository of its own: a pin between two repositories for 2% of the
+tree, a second place where the truth lives; the question reopens at the gate.
+`M-incremental-frontend`, a row for a frontend no ceiling yet asks for. No
+sitting: a scheduling changes no language
+(https://github.com/heroes-lang/heroes/issues/820). § The chain holds 90 rows
+with no gap, by a count over the table and by `site/src/lib/chain.ts`, which
+refuses a gap at build time.
+
 ---
 
 **What used to stand under the ROADMAP lives in `docs/roadmap/`** since
