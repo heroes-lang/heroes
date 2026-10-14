@@ -93,7 +93,7 @@ constant LEDGER: str
 # DATED, and prose beside the constant is neither, however dated it looks. The
 # constant is the count; `ledger` below is what holds it to the file.
 constant LEDGER_ROWS: i64
-    111
+    112
 
 # design.md §1.6's figure, pinned — the number `heroes measure` computes from the
 # spec, restated here because something re-derives and compares it on every run.
@@ -119,7 +119,16 @@ constant SPEC_TOKENS: i64
 constant REGISTRY_TOKENS: i64
     1141
 
-# **The ceiling, 10240 by author decision 2026-09-14**, taken while
+# **The ceiling, 16384 by author decision 2026-10-14**, taken the day the chain
+# was re-ordered consolidation first, with the document at 10,048 real against
+# 10240 and 132 free once the FFI floor is deducted. Two rules came with it,
+# design.md §1.6's to keep: the consolidation block spends at most 1,500 real
+# tokens before the thesis harness has run, and the next raise rests on what
+# that harness measures a token of specification to buy, never on the
+# document having approached the ceiling. It relaxes nothing: the payment
+# rule is unconditional at every level. **16 × 1024**, for the reason below.
+#
+# It was 10240 by author decision 2026-09-14, taken while
 # M-marked-acquisition was landing `acquires <releaser>` and the document stood
 # at 7921 real against 8192 — 211 free once the FFI floor is deducted, which is
 # two forms' room and not three. **It relaxes nothing**: §1.6's payment rule is
@@ -145,7 +154,7 @@ constant REGISTRY_TOKENS: i64
 # always answered correctly, and re-basing it would make the next ledger row
 # incomparable with the first thirty-eight.
 constant CEILING: i64
-    10240
+    16384
 
 # THE RECORD: the reader's own count, and the same four constants
 # `selfhost/cli/measure.hero` holds — for the reason `CEILING` is in two

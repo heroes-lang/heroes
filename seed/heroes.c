@@ -1207645,35 +1207645,35 @@ bb0:
     return t1;
 }
 
-#line 56 "selfhost/measure/judged.hero"
+#line 62 "selfhost/measure/judged.hero"
 int64_t h_measurejudged_CEILING(void) {
-#line 56 "selfhost/measure/judged.hero"
+#line 62 "selfhost/measure/judged.hero"
     HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 56 "selfhost/measure/judged.hero"
+#line 62 "selfhost/measure/judged.hero"
 bb0:
-    t1 = INT64_C(10240);
-#line 57 "selfhost/measure/judged.hero"
+    t1 = INT64_C(16384);
+#line 63 "selfhost/measure/judged.hero"
     return t1;
 #line 1207658 "main.c"
 }
 
-#line 80 "selfhost/measure/judged.hero"
+#line 86 "selfhost/measure/judged.hero"
 int64_t h_measurejudged_FFI_FLOOR(void) {
-#line 80 "selfhost/measure/judged.hero"
+#line 86 "selfhost/measure/judged.hero"
     HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 80 "selfhost/measure/judged.hero"
+#line 86 "selfhost/measure/judged.hero"
 bb0:
     t1 = INT64_C(60);
-#line 81 "selfhost/measure/judged.hero"
+#line 87 "selfhost/measure/judged.hero"
     return t1;
 #line 1207670 "main.c"
 }
 
-#line 124 "selfhost/measure/judged.hero"
+#line 130 "selfhost/measure/judged.hero"
 HeroStr h_measurejudged_CONTRACT(void) {
-#line 124 "selfhost/measure/judged.hero"
+#line 130 "selfhost/measure/judged.hero"
     HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
-#line 124 "selfhost/measure/judged.hero"
+#line 130 "selfhost/measure/judged.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3ba1717a);
 #line 1207680 "main.c"
@@ -1207681,282 +1207681,282 @@ bb0:
     return t1;
 }
 
-#line 127 "selfhost/measure/judged.hero"
+#line 133 "selfhost/measure/judged.hero"
 int64_t h_measurejudged_CONTRACT_CEILING(void) {
-#line 127 "selfhost/measure/judged.hero"
+#line 133 "selfhost/measure/judged.hero"
     HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 127 "selfhost/measure/judged.hero"
+#line 133 "selfhost/measure/judged.hero"
 bb0:
     t1 = INT64_C(12288);
-#line 128 "selfhost/measure/judged.hero"
+#line 134 "selfhost/measure/judged.hero"
     return t1;
 #line 1207694 "main.c"
 }
 
-#line 156 "selfhost/measure/judged.hero"
+#line 162 "selfhost/measure/judged.hero"
 int64_t h_measurejudged_DELTA_GATE(void) {
-#line 156 "selfhost/measure/judged.hero"
+#line 162 "selfhost/measure/judged.hero"
     HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
-#line 156 "selfhost/measure/judged.hero"
+#line 162 "selfhost/measure/judged.hero"
 bb0:
     t1 = INT64_C(50);
-#line 157 "selfhost/measure/judged.hero"
+#line 163 "selfhost/measure/judged.hero"
     return t1;
 #line 1207706 "main.c"
 }
 
-#line 163 "selfhost/measure/judged.hero"
+#line 169 "selfhost/measure/judged.hero"
 HeroStr h_measurejudged_room(HeroStr h0_path, int64_t h1_highest) {
-#line 163 "selfhost/measure/judged.hero"
+#line 169 "selfhost/measure/judged.hero"
     int64_t h2_left; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, t1, t2, t4, t8, t9, t10, t11, t13, t14, t15, t16, t20, t22, t23, t24, t25, t27, t28, t29, t30, t32, t33, t34, t35, t39, t40, t41, t42, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t5, t6, t7, t12, t17, t18, t19, t21, t26, t31, t36, t37, t38, t43; HERO_ENTRY_STOP; goto bb0;
-#line 163 "selfhost/measure/judged.hero"
+#line 169 "selfhost/measure/judged.hero"
 bb0:
     t1 = h0_path;
-#line 164 "selfhost/measure/judged.hero"
+#line 170 "selfhost/measure/judged.hero"
     t2 = h_measurejudged_CONTRACT();
-#line 164 "selfhost/measure/judged.hero"
+#line 170 "selfhost/measure/judged.hero"
     t49 = h4_own4;
-#line 164 "selfhost/measure/judged.hero"
+#line 170 "selfhost/measure/judged.hero"
     h4_own4 = t2;
-#line 164 "selfhost/measure/judged.hero"
+#line 170 "selfhost/measure/judged.hero"
     hero_str_decref(t49);
-#line 164 "selfhost/measure/judged.hero"
+#line 170 "selfhost/measure/judged.hero"
     t3 = hero_str_eq(t1, t2);
-#line 164 "selfhost/measure/judged.hero"
+#line 170 "selfhost/measure/judged.hero"
     if (t3) goto bb2; else goto bb3;
-#line 164 "selfhost/measure/judged.hero"
+#line 170 "selfhost/measure/judged.hero"
 bb1:
-#line 174 "selfhost/measure/judged.hero"
+#line 180 "selfhost/measure/judged.hero"
     t17 = h_measurejudged_CEILING();
-#line 174 "selfhost/measure/judged.hero"
+#line 180 "selfhost/measure/judged.hero"
     t18 = h1_highest;
-#line 174 "selfhost/measure/judged.hero"
+#line 180 "selfhost/measure/judged.hero"
     if (__builtin_sub_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 174 "selfhost/measure/judged.hero"
+#line 180 "selfhost/measure/judged.hero"
     h2_left = t19;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t20 = HERO_STR_LIT(hero_str_1decd800);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t21 = h2_left;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t22 = hero_int_to_str(t21);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t50 = h5_own5;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h5_own5 = t22;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t50);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t23 = hero_str_concat(t20, t22);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t51 = h6_own6;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h6_own6 = t23;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t51);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t24 = HERO_STR_LIT(hero_str_452e9c7c);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t25 = hero_str_concat(t23, t24);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t52 = h7_own7;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h7_own7 = t25;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t52);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t26 = h_measurejudged_CEILING();
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t27 = hero_int_to_str(t26);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t53 = h8_own8;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h8_own8 = t27;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t53);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t28 = hero_str_concat(t25, t27);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t54 = h9_own9;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h9_own9 = t28;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t54);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t29 = HERO_STR_LIT(hero_str_2c5ebfc7);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t30 = hero_str_concat(t28, t29);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t55 = h10_own10;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h10_own10 = t30;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t55);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t31 = h_measurejudged_FFI_FLOOR();
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t32 = hero_int_to_str(t31);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t56 = h11_own11;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h11_own11 = t32;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t56);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t33 = hero_str_concat(t30, t32);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t57 = h12_own12;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h12_own12 = t33;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t57);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t34 = HERO_STR_LIT(hero_str_54314e0d);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t35 = hero_str_concat(t33, t34);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t58 = h13_own13;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h13_own13 = t35;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t58);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t36 = h1_highest;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t37 = h_measurejudged_FFI_FLOOR();
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     if (__builtin_add_overflow(t36, t37, &t38)) hero_panic_overflow();
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t39 = hero_int_to_str(t38);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t59 = h14_own14;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h14_own14 = t39;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t59);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t40 = hero_str_concat(t35, t39);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t60 = h15_own15;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h15_own15 = t40;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t60);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t41 = HERO_STR_LIT(hero_str_3c33f96a);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t42 = hero_str_concat(t40, t41);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t61 = h16_own16;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h16_own16 = t42;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t61);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t43 = h_measurejudged_CEILING();
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t44 = hero_int_to_str(t43);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t62 = h17_own17;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h17_own17 = t44;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t62);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t45 = hero_str_concat(t42, t44);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t63 = h18_own18;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h18_own18 = t45;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t63);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t46 = HERO_STR_LIT(hero_str_2e);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t47 = hero_str_concat(t45, t46);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     t64 = h19_own19;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h19_own19 = t47;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     hero_str_decref(t64);
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     h3_ret0 = t47;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
     goto bb4;
-#line 182 "selfhost/measure/judged.hero"
+#line 188 "selfhost/measure/judged.hero"
 bb2:
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t4 = HERO_STR_LIT(hero_str_1decd800);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t5 = h_measurejudged_CONTRACT_CEILING();
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t6 = h1_highest;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow();
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t8 = hero_int_to_str(t7);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t65 = h20_own20;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     h20_own20 = t8;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     hero_str_decref(t65);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t9 = hero_str_concat(t4, t8);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t66 = h21_own21;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     h21_own21 = t9;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     hero_str_decref(t66);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t10 = HERO_STR_LIT(hero_str_45293617);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t11 = hero_str_concat(t9, t10);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t67 = h22_own22;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     h22_own22 = t11;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     hero_str_decref(t67);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t12 = h_measurejudged_CONTRACT_CEILING();
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t13 = hero_int_to_str(t12);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t68 = h23_own23;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     h23_own23 = t13;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     hero_str_decref(t68);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t14 = hero_str_concat(t11, t13);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t69 = h24_own24;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     h24_own24 = t14;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     hero_str_decref(t69);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t15 = HERO_STR_LIT(hero_str_525e3adc);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t16 = hero_str_concat(t14, t15);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     t70 = h25_own25;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     h25_own25 = t16;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     hero_str_decref(t70);
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     h3_ret0 = t16;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     goto bb4;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
 bb3:
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
     goto bb1;
-#line 165 "selfhost/measure/judged.hero"
+#line 171 "selfhost/measure/judged.hero"
 bb4:
 #line 1207962 "main.c"
     t48 = h3_ret0;
