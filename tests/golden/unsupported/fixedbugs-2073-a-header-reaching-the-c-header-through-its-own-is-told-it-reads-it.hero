@@ -1,0 +1,12 @@
+# fixedbugs, defect 2073, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: the same shape, `<stdio.h>` reached through a header of the
+# program's own the refused one includes: told *does not include*, false.
+#
+# FIX: a file entered anywhere below the header's own line is one it reads.
+
+extern "fixedbugs-2073-through.h"  #~ ffi_header_refused
+    function through_six() -> i64
+
+function main()
+    print(through_six())

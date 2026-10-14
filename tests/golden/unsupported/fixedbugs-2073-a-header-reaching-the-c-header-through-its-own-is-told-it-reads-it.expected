@@ -1,0 +1,7 @@
+error[ffi_header_refused]: `fixedbugs-2073-through.h`, the header this group names, does not compile: clang refuses it at line 4: EOF is not defined yet
+  at tests/golden/unsupported/fixedbugs-2073-a-header-reaching-the-c-header-through-its-own-is-told-it-reads-it.hero:8:8
+    |
+  8 | extern "fixedbugs-2073-through.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2073-through.h` line 4 reads `#error EOF is not defined yet`
+  note: `fixedbugs-2073-through.h` compiles after `stdio.h`, a header of C's own it reads itself, and written first `stdio.h` is read before every line of `fixedbugs-2073-through.h`: write a group naming `stdio.h` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)
