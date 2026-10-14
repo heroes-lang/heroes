@@ -112,6 +112,8 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     if groups.len() > 0
         bound: {str: bool} @= macro_guard.bound_names(s, decls)
 
+        # ORDER: none — each name sets one key to true, which every order
+        # leaves the same; `around` and `read_after` order what they write.
         for name in keys(kept)
             bound[name] @ true
 

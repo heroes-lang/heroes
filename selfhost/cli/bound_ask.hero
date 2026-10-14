@@ -76,6 +76,8 @@ function kept_answers(t: toolchain.Toolchain, probe: compiling.Probe, text: str)
     answered = bound_said.answers(said)
     rows: [str] @= []
 
+    # ORDER: ascending key — the rows are the cache file's bytes, the same on
+    # every build of one input; `unkept` reads them back into a map.
     for key_of in sort(keys(answered))
         rows @ rows.push(key_of + "\t" + answered[key_of].must())
 

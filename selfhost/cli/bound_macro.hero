@@ -71,6 +71,8 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
 
         answered = judged(t, probe: probe, s, decls, headers: headers, bound: bound)
 
+        # ORDER: none — each name sets one key to true, which every order
+        # leaves the same.
         for name in keys(answered.kept)
             kept[name] @ true
 
