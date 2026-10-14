@@ -560,9 +560,10 @@ constant CONTRACT: str
     "CLAUDE.md"
 
 # How many tokens one `git check-ignore` carries. `runtime/parts/run.c` panics
-# past `HERO_RUN_MAX_ARGS` 256 words, and a token costs two words, so 127 is the
-# hard ceiling and this leaves room for the two words the command itself takes
-# plus any that grow later. `ignored_by_git` carries the measurement.
+# past `HERO_RUN_MAX_ARGS` 256 words, and a token costs two words, so 126 is the
+# hard ceiling and this leaves room for the four words the command itself takes,
+# `git -C <tree> check-ignore`, plus any that grow later. `ignored_by_git`
+# carries the measurement.
 constant IGNORE_BATCH: i64
     100
 
@@ -3272,12 +3273,17 @@ function slashes(token: str) -> i64
 # citations before they ever reach here, and the Linux container had five. That
 # is the second defect in one afternoon that only the third platform showed, and
 # the reason the contract asks for all three before a commit rather than after.
-function ignored_by_git(scratch: str, tokens: [str]) -> {str: bool}
+#
+# **`tree` is the directory git is asked in** (defect 2065), `.` for this
+# suite: its test asks a repository it plants, since a copy of the tree made
+# without `.git`, as the Linux machine's recipe makes one, has no rules git
+# can read.
+function ignored_by_git(scratch: str, tree: str, tokens: [str]) -> {str: bool}
     out: {str: bool} @= {}
     at: i64 @= 0
 
     while at < tokens.len()
-        words: [str] @= ["git", "check-ignore"]
+        words: [str] @= ["git", "-C", tree, "check-ignore"]
         taken: i64 @= 0
 
         while at < tokens.len() && taken < IGNORE_BATCH
@@ -3470,7 +3476,7 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
     # every cheaper route, and never at all on a clean run. `ignored_by_git`
     # carries the measurement that made this the last step rather than the
     # first.
-    excused = ignored_by_git(scratch: scratch, tokens: tokens)
+    excused = ignored_by_git(scratch: scratch, tree: ".", tokens: tokens)
     speaking: [str] @= []
     unjudged: [str] @= []
     at: i64 @= 0
@@ -4983,11 +4989,28 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
     # defect gets a case). An ignored path that does not exist must be excused,
     # and this asserts it against git's rules rather than against the disk, so it
     # answers the same on a fresh checkout as on a machine that has built the
-    # site. `site/dist` is in `.gitignore` and `site/dist/nosuch.html` has never
+    # site. `site/` ignores `dist/`, and `site/dist/nosuch.html` has never
     # existed anywhere.
-    if shell.can_run_scripts()
+    #
+    # **Asked of a repository this test plants, the tree's own rule copied**
+    # (defect 2065): a copy of the tree made without `.git`, as
+    # `docs/platforms/linux/LINUX-MACHINE.md` makes one, has no rules git can
+    # read, `fatal: not a git repository` whether or not `--no-index` is given
+    # (measured 2026-10-14 on Linux arm64), and this test read red there. A
+    # planted repository answers in that copy, in a fresh `git init` and in the
+    # CI's one-commit clone alike; a machine where git does not start says so.
+    # **And on Windows**: this asked `shell.can_run_scripts()` until then, a
+    # POSIX question this test's subject is not, and the box answers it no, so
+    # the assertions below had never run there; git answers them there all the
+    # same (measured on the box the same day).
+    planted = planted_ignores("build/harness-selftest")
+
+    if planted.is_err()
+        print("SKIP the ignore rule of a dead citation\n  " + planted_failure(planted))
+    else
         excused = ignored_by_git(
             scratch: "build/harness-selftest",
+            tree: planted.must(),
             tokens: ["site/dist/nosuch.html", "site/dist", "CLAUDE.md"]
         )
         assert !excused["site/dist/nosuch.html"].is_err()
@@ -5000,10 +5023,37 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
         # slashed form is what must come back, and the bare one does not on a
         # tree where `site/dist` has never been built.
         assert !excused["site/dist/"].is_err()
+        assert excused["site/dist"].is_err()
 
         # And no tokens means no process: the common case pays nothing.
         none: [str] = []
-        assert ignored_by_git(scratch: "build/harness-selftest", tokens: none).len() == 0
+        assert ignored_by_git(scratch: "build/harness-selftest", tree: planted.must(), tokens: none).len() == 0
+        assert !shell.remove_tree(planted.must()).is_err()
+
+# A repository of its own under `scratch`, `ignores`, holding the tree's rule
+# for the site's build, `site/.gitignore`'s `dist/` (defect 2065): its path, or
+# why git could not make it.
+function planted_ignores(scratch: str) -> str?
+    dir = scratch + "/ignores"
+    _ = shell.remove_tree(dir).is_err()
+    shell.mkdir_all(dir + "/site")?
+    made = shell.attempted(scratch: scratch, program: "git", words: ["git", "-C", dir, "init", "-q"])?
+
+    if !made.started
+        return fail(code: "git", msg: "git does not start on this machine, so its ignore rules cannot be asked here")
+
+    if made.code != 0
+        return fail(
+            code: "git",
+            msg: "`git init` at " + dir + " exited " + made.code.to_str() + ": " + strings.trimmed(made.err) + ", so git's ignore rules cannot be asked here"
+        )
+    write_file(path: dir + "/site/.gitignore", text: "dist/\n")?
+    return ok(dir)
+
+function planted_failure(planted: str?) -> str
+    return match planted
+        .ok _  => ""
+        .err e => e.msg
 
 test "a pointer into a section the contract does not have is caught, and both spellings are read"
     # The two spellings in use, and a bare `§` that belongs to another document.

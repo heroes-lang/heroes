@@ -40,6 +40,38 @@ function shallow(scratch: str) -> bool?
     said = asked(scratch: scratch, words: ["git", "rev-parse", "--is-shallow-repository"])?
     return ok(strings.trimmed(said) == "true")
 
+# Why the clone at `tree` cannot answer what a draft asks of the history, or
+# "": git reads it, its history is whole, and HEAD names a commit (defect
+# 2065). The tests that ask the tree's own history say `SKIP` with this
+# (`skip_said`) and ask nothing, where until 2026-10-14 they returned in
+# silence, a pass that had asked nothing: in the CI's one-commit clone, in a
+# copy made without `.git` as the Linux machine's recipe makes one, and, in a
+# fresh `git init` of such a copy, they failed outright, HEAD naming no commit.
+function history_unread(scratch: str, tree: str) -> str
+    short = asked(scratch: scratch, words: ["git", "-C", tree, "rev-parse", "--is-shallow-repository"])
+
+    match short
+        .ok said =>
+            if strings.trimmed(said) == "true"
+                return "this clone's history is shortened, as the CI's one-commit checkout is, so the commits a draft names cannot be asked for"
+        .err e => return "git cannot read the history at " + tree + ": " + e.msg
+
+    head = shell.run(
+        scratch: scratch,
+        program: "git",
+        words: ["git", "-C", tree, "rev-parse", "--verify", "--quiet", "HEAD^{commit}"]
+    )
+
+    if head.is_err() || head.must().code != 0
+        return "HEAD names no commit at " + tree + ", so there is no history to ask"
+    return ""
+
+# What a test says where the clone cannot answer it (`history_unread`), the
+# shape of a suite's skip (`report.keep_skip`): `SKIP`, what was not asked,
+# and why beneath.
+function skip_said(subject: str, why: str) -> str
+    return "SKIP " + subject + "\n  " + why
+
 # The forty digits of the commit `pin` names, or why there is none.
 function pinned(scratch: str, pin: str) -> str?
     ran = shell.run(scratch: scratch, program: "git", words: ["git", "rev-parse", "--verify", "--quiet", pin + "^{commit}"])?
@@ -116,8 +148,10 @@ function fed(scratch: str, words: [str], lines: [str]) -> str?
 
 test "git answers a pin, commits' days and which words are commits"
     scratch = shell.own_scratch()
+    unread = history_unread(scratch: scratch, tree: ".")
 
-    if shallow(scratch).default(true)
+    if unread != ""
+        print(skip_said(subject: "issue_git: a pin, commits' days and which words are commits", why: unread))
         _ = shell.remove_tree(scratch).is_err()
         return
     head = pinned(scratch: scratch, pin: "HEAD").must()
@@ -129,4 +163,32 @@ test "git answers a pin, commits' days and which words are commits"
     named = commits_among(scratch: scratch, words: [head.slice(from: 0, to: 12), "0000000"]).must()
     assert !named[head.slice(from: 0, to: 12)].is_err()
     assert named["0000000"].is_err()
+    _ = shell.remove_tree(scratch).is_err()
+
+test "a clone that cannot answer a draft's history says why, and one that can says nothing (defect 2065)"
+    scratch = shell.own_scratch()
+    empty = scratch + "/empty"
+    shell.mkdir_all(empty).must()
+    made = shell.attempted(scratch: scratch, program: "git", words: ["git", "-C", empty, "init", "-q"]).must()
+
+    if !made.started || made.code != 0
+        print(skip_said(subject: "issue_git: a clone's history", why: "git did not make a repository at " + empty))
+        _ = shell.remove_tree(scratch).is_err()
+        return
+    assert strings.contains(
+        text: history_unread(scratch: scratch, tree: empty),
+        needle: "HEAD names no commit at " + empty
+    )
+
+    # This tree answers as git says it should: read, shortened or whole.
+    here = history_unread(scratch: scratch, tree: ".")
+    short = shallow(scratch)
+
+    if short.is_err()
+        assert strings.starts_with(text: here, prefix: "git cannot read the history at .")
+    else if short.must()
+        assert strings.starts_with(text: here, prefix: "this clone's history is shortened")
+    else
+        assert here == "" || strings.starts_with(text: here, prefix: "HEAD names no commit")
+    assert skip_said(subject: "x", why: "y") == "SKIP x\n  y"
     _ = shell.remove_tree(scratch).is_err()
