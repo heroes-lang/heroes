@@ -1,0 +1,25 @@
+Debian clang version 22.1.8 (1~deb13u4)
+hs A exit=1 | err: hs.h:2 static declaration of 'hero_str_len' follows non-static declaration | note: heroes_runtime.h:278 previous declaration is here
+hs H exit=1 | err: heroes_runtime.h:278 conflicting types for 'hero_str_len' | note: hs.h:2 previous definition is here
+hs I exit=0 | err: - | note: -
+i64 A exit=0 | err: - | note: -
+i64 H exit=0 | err: - | note: -
+i64 I exit=0 | err: - | note: -
+e_fabs A exit=1 | err: e_fabs.h:1 redefinition of 'fabs' as different kind of symbol | note: e_fabs.c:22 '/p/x/e_fabs.h' included multiple times,
+e_fabs H exit=1 | err: e_fabs.h:1 redefinition of 'fabs' as different kind of symbol | note: e_fabs.H.c:20 '/p/x/e_fabs.h' included multiple times,
+e_fabs I exit=0 | err: - | note: -
+imp A exit=1 | err: imp.h:1 call to undeclared function 'hero_str_le'; ISO C99 and later do not su | note: imp.h:1 did you mean 'hero_str_len'?
+imp H exit=1 | err: imp.h:1 call to undeclared function 'hero_str_le'; ISO C99 and later do not su | note: -
+imp I exit=0 | err: - | note: -
+e_std A exit=1 | err: mathcalls.h:176 conflicting types for 'sqrt' | note: e_std.h:1 previous definition is here
+e_std H exit=1 | err: mathcalls.h:176 conflicting types for 'sqrt' | note: e_std.h:1 previous definition is here
+e_std I exit=0 | err: - | note: -
+j_typo A exit=1 | err: j_typo.h:1 unknown type name 'HeroSt'; did you mean 'HeroStr'? | note: heroes_runtime.h:147 'HeroStr' declared here
+j_typo H exit=1 | err: j_typo.h:1 use of undeclared identifier 'HeroSt' | note: -
+j_typo I exit=0 | err: - | note: -
+w2053a A exit=1 | err: fixedbugs-2053-a-header-that-defines-a-called-runtime-function-again-as-static-is-refused-on-windows.h:5 static declaration of 'hero_str_len' follows non-static declaration | note: heroes_runtime.h:278 previous declaration is here
+w2053a H exit=1 | err: fixedbugs-2053-a-header-that-defines-a-called-runtime-function-again-as-static-is-refused-on-windows.h:5 unknown type name 'HeroStr' | note: -
+w2053a I exit=0 | err: - | note: -
+w2053b A exit=1 | err: fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows.h:5 static declaration of 'hero_str_len' follows non-static declaration | note: heroes_runtime.h:278 previous declaration is here
+w2053b H exit=1 | err: fixedbugs-2053-a-header-that-defines-an-uncalled-runtime-function-again-as-static-is-refused-on-windows.h:5 unknown type name 'HeroStr' | note: -
+w2053b I exit=0 | err: - | note: -

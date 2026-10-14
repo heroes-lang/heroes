@@ -1,0 +1,124 @@
+clang: warning: diagnostic formatting in SARIF mode is currently unstable [-Wsarif-format-unstable]
+
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/cos02/schemas/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "artifacts": [
+        {
+          "length": 36109,
+          "location": {
+            "index": 0,
+            "uri": "file:///Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/math.h"
+          },
+          "mimeType": "text/plain",
+          "roles": [
+            "resultFile"
+          ]
+        },
+        {
+          "length": 88,
+          "location": {
+            "index": 1,
+            "uri": "file://<copy>/build/plat/x/e_std.h"
+          },
+          "mimeType": "text/plain",
+          "roles": [
+            "resultFile"
+          ]
+        }
+      ],
+      "columnKind": "unicodeCodePoints",
+      "invocations": [
+        {
+          "executionSuccessful": false
+        }
+      ],
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "file:///Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/math.h"
+                },
+                "region": {
+                  "endColumn": 15,
+                  "startColumn": 15,
+                  "startLine": 467
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "conflicting types for 'sqrt'"
+          },
+          "ruleId": "err_conflicting_types",
+          "ruleIndex": 0
+        },
+        {
+          "level": "note",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 1,
+                  "uri": "file://<copy>/build/plat/x/e_std.h"
+                },
+                "region": {
+                  "endColumn": 19,
+                  "startColumn": 19,
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "previous definition is here"
+          },
+          "ruleId": "note_previous_definition",
+          "ruleIndex": 1
+        }
+      ],
+      "tool": {
+        "driver": {
+          "fullName": "",
+          "informationUri": "https://clang.llvm.org/docs/UsersManual.html",
+          "language": "en-US",
+          "name": "clang",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error",
+                "rank": 50
+              },
+              "fullDescription": {
+                "text": ""
+              },
+              "id": "err_conflicting_types",
+              "name": ""
+            },
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "note"
+              },
+              "fullDescription": {
+                "text": ""
+              },
+              "id": "note_previous_definition",
+              "name": ""
+            }
+          ],
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}
+
+1 error generated.

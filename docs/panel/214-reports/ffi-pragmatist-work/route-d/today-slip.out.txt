@@ -1,0 +1,7 @@
+error[ffi_field_type]: `Vector2.x` is `float` in `raylib.h`, a 32-bit float, not `f64` — clang read the header's struct and the field disagrees
+  at build/slip/main.hero:3:9
+    |
+  3 |         x: f64
+    |         ^
+  note: a group's `record` IS the header's struct (§4.19), so every field is at the header's own width and sign: correct `x`, or name the header that spells `Vector2` this way
+  fix (guess): declare `x` with `f32`

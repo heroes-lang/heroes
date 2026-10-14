@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `j_typo.h`, the header this group names, does not compile: clang refuses it at line 1: unknown type name 'HeroSt'; did you mean 'HeroStr'?
+  at build/rep/j_typo.hero:1:8
+    |
+  1 | extern "j_typo.h"
+    |        ^^^^^^^^^^
+  note: `j_typo.h` line 1 reads `static inline int eight(void) { HeroSt s; (void)s; return 8; }`
+  note: clang adds, at `HeroStr`, a name of the Heroes runtime's own, which every unit of this program declares before any group's header, and clang suggests in the refused line: 'HeroStr' declared here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

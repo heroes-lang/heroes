@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `hs.h`, the header this group names, does not compile: clang refuses it at line 2: static declaration of 'hero_str_len' follows non-static declaration
+  at build/rep/hs.hero:1:8
+    |
+  1 | extern "hs.h"
+    |        ^^^^^^
+  note: `hs.h` line 2 reads `static inline int hero_str_len(int x) { return x; }`
+  note: clang adds, at the Heroes runtime's own `hero_str_len`, which every unit of this program declares before any group's header: previous declaration is here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `hero_str_len` in `hs.h`, a name the Heroes runtime declares first in every unit

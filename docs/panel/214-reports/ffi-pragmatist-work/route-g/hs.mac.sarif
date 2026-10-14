@@ -1,0 +1,207 @@
+clang: warning: diagnostic formatting in SARIF mode is currently unstable [-Wsarif-format-unstable]
+
+{
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/cos02/schemas/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "artifacts": [
+        {
+          "length": 130,
+          "location": {
+            "index": 0,
+            "uri": "file://<copy>/build/plat/x/hs.h"
+          },
+          "mimeType": "text/plain",
+          "roles": [
+            "resultFile"
+          ]
+        },
+        {
+          "length": 46150,
+          "location": {
+            "index": 1,
+            "uri": "file://<copy>/build/plat/runtime/heroes_runtime.h"
+          },
+          "mimeType": "text/plain",
+          "roles": [
+            "resultFile"
+          ]
+        }
+      ],
+      "columnKind": "unicodeCodePoints",
+      "invocations": [
+        {
+          "executionSuccessful": false
+        }
+      ],
+      "results": [
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "file://<copy>/build/plat/x/hs.h"
+                },
+                "region": {
+                  "endColumn": 19,
+                  "startColumn": 19,
+                  "startLine": 2
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "static declaration of 'hero_str_len' follows non-static declaration"
+          },
+          "ruleId": "err_static_non_static",
+          "ruleIndex": 0
+        },
+        {
+          "level": "note",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 1,
+                  "uri": "file://<copy>/build/plat/runtime/heroes_runtime.h"
+                },
+                "region": {
+                  "endColumn": 9,
+                  "startColumn": 9,
+                  "startLine": 278
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "previous declaration is here"
+          },
+          "ruleId": "note_previous_declaration",
+          "ruleIndex": 1
+        },
+        {
+          "level": "error",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "file://<copy>/build/plat/x/hs.h"
+                },
+                "region": {
+                  "endColumn": 54,
+                  "endLine": 3,
+                  "startColumn": 53,
+                  "startLine": 3
+                }
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 0,
+                  "uri": "file://<copy>/build/plat/x/hs.h"
+                },
+                "region": {
+                  "endColumn": 53,
+                  "startColumn": 53,
+                  "startLine": 3
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "passing 'int' to parameter of incompatible type 'HeroStr'"
+          },
+          "ruleId": "err_typecheck_convert_incompatible",
+          "ruleIndex": 2
+        },
+        {
+          "level": "note",
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "index": 1,
+                  "uri": "file://<copy>/build/plat/runtime/heroes_runtime.h"
+                },
+                "region": {
+                  "endColumn": 30,
+                  "startColumn": 30,
+                  "startLine": 278
+                }
+              }
+            }
+          ],
+          "message": {
+            "text": "passing argument to parameter 's' here"
+          },
+          "ruleId": "note_parameter_named_here",
+          "ruleIndex": 3
+        }
+      ],
+      "tool": {
+        "driver": {
+          "fullName": "",
+          "informationUri": "https://clang.llvm.org/docs/UsersManual.html",
+          "language": "en-US",
+          "name": "clang",
+          "rules": [
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error",
+                "rank": 50
+              },
+              "fullDescription": {
+                "text": ""
+              },
+              "id": "err_static_non_static",
+              "name": ""
+            },
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "note"
+              },
+              "fullDescription": {
+                "text": ""
+              },
+              "id": "note_previous_declaration",
+              "name": ""
+            },
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "error",
+                "rank": 50
+              },
+              "fullDescription": {
+                "text": ""
+              },
+              "id": "err_typecheck_convert_incompatible",
+              "name": ""
+            },
+            {
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "note"
+              },
+              "fullDescription": {
+                "text": ""
+              },
+              "id": "note_parameter_named_here",
+              "name": ""
+            }
+          ],
+          "version": "Apple clang version 21.0.0 (clang-2100.3.34.2)"
+        }
+      }
+    }
+  ],
+  "version": "2.1.0"
+}
+
+2 errors generated.

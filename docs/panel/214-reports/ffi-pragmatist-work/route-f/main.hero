@@ -1,0 +1,4 @@
+use errno
+
+function main()
+    print(errno.location())

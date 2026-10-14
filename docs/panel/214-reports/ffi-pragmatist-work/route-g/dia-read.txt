@@ -1,0 +1,111 @@
+== hs.mac
+hs.h:2:19: error: static declaration of 'hero_str_len' follows non-static declaration [] [Semantic Issue]
+Number FIXITs = 0
+hs.c:22:10: note: in file included from <copy>/build/plat/x/hs.c:22: [] []
+Number FIXITs = 0
+heroes_runtime.h:278:9: note: previous declaration is here [] []
+Number FIXITs = 0
+hs.c:2:10: note: in file included from <copy>/build/plat/x/hs.c:2: [] []
+Number FIXITs = 0
+heroes_unit.h:26:10: note: in file included from <copy>/build/plat/runtime/heroes_unit.h:26: [] []
+Number FIXITs = 0
+hs.h:3:53: error: passing 'int' to parameter of incompatible type 'HeroStr' [] [Semantic Issue]
+Range: <copy>/build/plat/x/hs.h:3:53 <copy>/build/plat/x/hs.h:3:54
+Number FIXITs = 0
+hs.c:22:10: note: in file included from <copy>/build/plat/x/hs.c:22: [] []
+Number FIXITs = 0
+heroes_runtime.h:278:30: note: passing argument to parameter 's' here [] [Semantic Issue]
+Number FIXITs = 0
+hs.c:2:10: note: in file included from <copy>/build/plat/x/hs.c:2: [] []
+Number FIXITs = 0
+heroes_unit.h:26:10: note: in file included from <copy>/build/plat/runtime/heroes_unit.h:26: [] []
+Number FIXITs = 0
+Number of diagnostics: 2
+== hs.linux
+hs.h:2:19: error: static declaration of 'hero_str_len' follows non-static declaration [] [Semantic Issue]
+Number FIXITs = 0
+hs.c:22:10: note: in file included from /p/x/hs.c:22: [] []
+Number FIXITs = 0
+heroes_runtime.h:278:9: note: previous declaration is here [] []
+Number FIXITs = 0
+hs.c:2:10: note: in file included from /p/x/hs.c:2: [] []
+Number FIXITs = 0
+heroes_unit.h:26:10: note: in file included from /p/runtime/heroes_unit.h:26: [] []
+Number FIXITs = 0
+hs.h:3:53: error: passing 'int' to parameter of incompatible type 'HeroStr' [] [Semantic Issue]
+Range: /p/x/hs.h:3:53 /p/x/hs.h:3:54
+Number FIXITs = 0
+hs.c:22:10: note: in file included from /p/x/hs.c:22: [] []
+Number FIXITs = 0
+heroes_runtime.h:278:30: note: passing argument to parameter 's' here [] [Semantic Issue]
+Number FIXITs = 0
+hs.c:2:10: note: in file included from /p/x/hs.c:2: [] []
+Number FIXITs = 0
+heroes_unit.h:26:10: note: in file included from /p/runtime/heroes_unit.h:26: [] []
+Number FIXITs = 0
+Number of diagnostics: 2
+== hs.win
+hs.h:2:19: error: redeclaring non-static 'hero_str_len' as static is a Microsoft extension [-Wmicrosoft-redeclare-static] [Semantic Issue]
+Number FIXITs = 0
+hs.c:22:10: note: in file included from C:/w/p214-ffi/plat/x/hs.c:22: [] []
+Number FIXITs = 0
+heroes_runtime.h:278:9: note: previous declaration is here [] []
+Number FIXITs = 0
+hs.c:2:10: note: in file included from C:/w/p214-ffi/plat/x/hs.c:2: [] []
+Number FIXITs = 0
+heroes_unit.h:26:10: note: in file included from C:/w/p214-ffi/plat/runtime\heroes_unit.h:26: [] []
+Number FIXITs = 0
+hs.h:2:19: error: conflicting types for 'hero_str_len' [] [Semantic Issue]
+Number FIXITs = 0
+hs.c:22:10: note: in file included from C:/w/p214-ffi/plat/x/hs.c:22: [] []
+Number FIXITs = 0
+heroes_runtime.h:278:9: note: previous declaration is here [] []
+Number FIXITs = 0
+hs.c:2:10: note: in file included from C:/w/p214-ffi/plat/x/hs.c:2: [] []
+Number FIXITs = 0
+heroes_unit.h:26:10: note: in file included from C:/w/p214-ffi/plat/runtime\heroes_unit.h:26: [] []
+Number FIXITs = 0
+hs.h:3:53: error: passing 'int' to parameter of incompatible type 'HeroStr' [] [Semantic Issue]
+Range: C:/w/p214-ffi/plat/x\hs.h:3:53 C:/w/p214-ffi/plat/x\hs.h:3:54
+Number FIXITs = 0
+hs.c:22:10: note: in file included from C:/w/p214-ffi/plat/x/hs.c:22: [] []
+== e_std.mac
+math.h:467:15: error: conflicting types for 'sqrt' [] [Semantic Issue]
+Number FIXITs = 0
+e_std.c:47:10: note: in file included from <copy>/build/plat/x/e_std.c:47: [] []
+Number FIXITs = 0
+heroes_standard.h:60:10: note: in file included from <copy>/build/plat/runtime/heroes_standard.h:60: [] []
+Number FIXITs = 0
+e_std.h:1:19: note: previous definition is here [] []
+Number FIXITs = 0
+e_std.c:22:10: note: in file included from <copy>/build/plat/x/e_std.c:22: [] []
+Number FIXITs = 0
+Number of diagnostics: 1
+== e_std.linux
+mathcalls.h:176:13: error: conflicting types for 'sqrt' [] [Semantic Issue]
+Number FIXITs = 0
+e_std.c:47:10: note: in file included from /p/x/e_std.c:47: [] []
+Number FIXITs = 0
+heroes_standard.h:60:10: note: in file included from /p/runtime/heroes_standard.h:60: [] []
+Number FIXITs = 0
+math.h:282:10: note: in file included from /usr/include/math.h:282: [] []
+Number FIXITs = 0
+e_std.h:1:19: note: previous definition is here [] []
+Number FIXITs = 0
+e_std.c:22:10: note: in file included from /p/x/e_std.c:22: [] []
+Number FIXITs = 0
+Number of diagnostics: 1
+== e_std.win
+C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt\corecrt_math.h:519:54: error: conflicting types for 'sqrt' [] [Semantic Issue]
+Number FIXITs = 0
+e_std.c:47:10: note: in file included from C:/w/p214-ffi/plat/x/e_std.c:47: [] []
+Number FIXITs = 0
+heroes_standard.h:60:10: note: in file included from C:/w/p214-ffi/plat/runtime\heroes_standard.h:60: [] []
+Number FIXITs = 0
++-C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt\math.h:11:10: note: in file included from C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt\math.h:11: [] []
+Number FIXITs = 0
+e_std.h:1:19: note: previous definition is here [] []
+Number FIXITs = 0
+e_std.c:22:10: note: in file included from C:/w/p214-ffi/plat/x/e_std.c:22: [] []
+Number FIXITs = 0
+Number of diagnostics: 1
