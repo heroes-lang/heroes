@@ -56,7 +56,7 @@ use cli/grammar
 # number, and the first line rewritten in every blessed file under
 # tests/emission/ and every `.expected` under tests/golden/emit/.
 constant VERSION: str
-    "0.3.0"
+    "0.4.0"
 
 # EVERY COMMAND RUNS ON A THREAD WHOSE STACK THIS COMPILER CHOOSES (panel 184
 # R5, ratified 2026-10-01; defect 169). The parser, the resolver, the checker,

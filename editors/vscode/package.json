@@ -2,7 +2,7 @@
   "name": "heroes-lang",
   "displayName": "Heroes",
   "description": "Syntax highlighting, editor configuration, a file icon theme, the compiler's diagnostics and debugging for the Heroes language (.hero)",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "heroes-lang",
   "private": true,
   "license": "Apache-2.0",
