@@ -118,9 +118,18 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 14 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
 int64_t h_fixedbugs573alistingleftstandingistoldastheprograms_HERO_DIR_FILES(void) {
+#line 122 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 14 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
     return HERO_DIR_FILES;
-#line 124 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 132 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#pragma clang diagnostic pop
 }
 
 #line 16 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
@@ -237,7 +246,7 @@ bb1:
     t29 = hero_str_lend(t28);
 #line 24 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
     (void)hero_fs_remove(hero_cstr_nonnull(t29));
-#line 241 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 250 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     hero_str_release_at(&h0_dir);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_own2);
@@ -259,21 +268,21 @@ bb2:
 bb3:
 #line 21 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
     goto bb1;
-#line 263 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 272 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
 #line 109 "<heroes library>"
     return HERO_OS_OK;
-#line 270 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 279 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
-#line 277 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 286 "fixedbugs573alistingleftstandingistoldastheprograms.c"
 }
 
 #line 186 "<heroes library>"
@@ -384,7 +393,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 388 "fixedbugs573alistingleftstandingistoldastheprograms.c"
+#line 397 "fixedbugs573alistingleftstandingistoldastheprograms.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

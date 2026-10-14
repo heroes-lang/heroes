@@ -156,9 +156,18 @@ void h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_main(void);
 
 #line 16 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
 int64_t h_fixedbugs361aheadersmacrosneverreachtheprogramsownc_LIMIT(void) {
+#line 160 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 16 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
     return LIMIT;
-#line 162 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 170 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -198,7 +207,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-361-a-header-s-macros-never-reach-the-program-s-own-c.hero"
     return;
-#line 202 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
+#line 211 "fixedbugs361aheadersmacrosneverreachtheprogramsownc.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

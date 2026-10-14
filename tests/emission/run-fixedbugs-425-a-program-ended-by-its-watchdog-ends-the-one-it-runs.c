@@ -144,9 +144,18 @@ HeroArrayHeader * h_library_args(void);
 
 #line 34 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_HERO_DIR_FILES(void) {
+#line 148 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 34 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     return HERO_DIR_FILES;
-#line 150 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 158 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#pragma clang diagnostic pop
 }
 
 #line 37 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -176,7 +185,7 @@ bb0:
     h2_own2 = t3;
 #line 40 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     hero_str_decref(t4);
-#line 180 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 189 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -306,7 +315,7 @@ bb4:
     h7_code = t26;
     (void)hero_run_reset();
     t27 = h7_code;
-#line 310 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 319 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_release_at(&h2_program);
     hero_array_release_at(&h3_xs0);
     hero_str_release_at(&h5_word);
@@ -363,7 +372,7 @@ bb2:
     if (t11) goto bb5; else goto bb6;
 #line 67 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb3:
-#line 367 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 376 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -462,7 +471,7 @@ bb8:
 bb9:
 #line 72 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     goto bb7;
-#line 466 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 475 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 75 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -521,7 +530,7 @@ bb5:
 bb6:
 #line 82 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     goto bb4;
-#line 525 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 534 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 87 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -545,7 +554,7 @@ bb0:
     t6 = h1_count;
 #line 90 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     return t6;
-#line 549 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 558 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 92 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -634,7 +643,7 @@ bb1:
     t31 = hero_str_lend(t30);
 #line 107 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     (void)hero_dir_remove_tree(hero_cstr_nonnull(t31));
-#line 638 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 647 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_release_at(&h0_dir);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -701,7 +710,7 @@ bb6:
     hero_print_end();
 #line 106 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     goto bb4;
-#line 705 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 714 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 109 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -737,7 +746,7 @@ bb0:
     if (t5) goto bb2; else goto bb3;
 #line 112 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb1:
-#line 741 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 750 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_array_release_at(&h0_words);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -829,21 +838,21 @@ bb7:
     hero_print_end();
 #line 119 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     goto bb1;
-#line 833 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 842 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
 #line 109 "<heroes library>"
     return HERO_OS_OK;
-#line 840 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 849 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
-#line 847 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 856 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 186 "<heroes library>"
@@ -954,7 +963,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 958 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 967 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -1024,7 +1033,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 1028 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 1037 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

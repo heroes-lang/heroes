@@ -212,23 +212,50 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 
 #line 34 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 int64_t h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_HERO_DIR_FILES(void) {
+#line 216 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 34 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     return HERO_DIR_FILES;
-#line 218 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 226 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#pragma clang diagnostic pop
 }
 
 #line 35 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 int64_t h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_HERO_STAGE_DONE(void) {
+#line 232 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 35 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     return HERO_STAGE_DONE;
-#line 225 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 242 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#pragma clang diagnostic pop
 }
 
 #line 36 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 int64_t h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_HERO_OS_OK(void) {
+#line 248 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
 #line 36 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
     return HERO_OS_OK;
-#line 232 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 258 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#pragma clang diagnostic pop
 }
 
 #line 38 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
@@ -238,7 +265,7 @@ HeroStr h_fixedbugs461thepublishroutekeepstheownertheaclandthestreams_TEXT(void)
 #line 38 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 242 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 269 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -583,7 +610,7 @@ bb8:
     goto bb9;
 #line 57 "tests/golden/run/fixedbugs-461-the-publish-route-keeps-the-owner-the-acl-and-the-streams.hero"
 bb9:
-#line 587 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 614 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     hero_str_release_at(&h0_dir);
     hero_str_release_at(&h1_path);
     hero_str_release_at(&h2_staged);
@@ -605,28 +632,28 @@ bb9:
 int64_t h_library_HERO_OS_OK(void) {
 #line 109 "<heroes library>"
     return HERO_OS_OK;
-#line 609 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 636 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
 #line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
-#line 616 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 643 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
 #line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
-#line 623 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 650 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
-#line 630 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 657 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
 }
 
 #line 167 "<heroes library>"
@@ -860,7 +887,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 864 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 891 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -987,7 +1014,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 991 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
+#line 1018 "fixedbugs461thepublishroutekeepstheownertheaclandthestreams.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
