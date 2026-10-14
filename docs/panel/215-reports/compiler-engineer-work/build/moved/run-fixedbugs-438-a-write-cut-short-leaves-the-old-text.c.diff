@@ -1,0 +1,61 @@
+338a339,342
+> #line 54 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct rlimit *)0) == 13 ? sizeof(struct rlimit) : 0), __builtin_offsetof(struct rlimit, rlim_cur), sizeof(((struct rlimit *)0)->rlim_cur), __builtin_offsetof(struct rlimit, rlim_max), sizeof(((struct rlimit *)0)->rlim_max)}; hero_pad_zero(&h1_limit, sizeof(struct rlimit), 1, hero_pad_s0, 3);
+> #line 54 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
+>     }
+457c461
+< #line 458 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 462 "fixedbugs438awritecutshortleavestheoldtext.c"
+481c485
+< #line 482 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 486 "fixedbugs438awritecutshortleavestheoldtext.c"
+502c506
+< #line 503 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 507 "fixedbugs438awritecutshortleavestheoldtext.c"
+568c572
+< #line 569 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 573 "fixedbugs438awritecutshortleavestheoldtext.c"
+597c601
+< #line 598 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 602 "fixedbugs438awritecutshortleavestheoldtext.c"
+940c944
+< #line 941 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 945 "fixedbugs438awritecutshortleavestheoldtext.c"
+961c965
+< #line 962 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 966 "fixedbugs438awritecutshortleavestheoldtext.c"
+967c971
+< #line 968 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 972 "fixedbugs438awritecutshortleavestheoldtext.c"
+973c977
+< #line 974 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 978 "fixedbugs438awritecutshortleavestheoldtext.c"
+979c983
+< #line 980 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 984 "fixedbugs438awritecutshortleavestheoldtext.c"
+1214c1218
+< #line 1215 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 1219 "fixedbugs438awritecutshortleavestheoldtext.c"
+1341c1345
+< #line 1342 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 1346 "fixedbugs438awritecutshortleavestheoldtext.c"
+1411c1415
+< #line 1412 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 1416 "fixedbugs438awritecutshortleavestheoldtext.c"
+1430c1434
+< #line 1431 "fixedbugs438awritecutshortleavestheoldtext.c"
+---
+> #line 1435 "fixedbugs438awritecutshortleavestheoldtext.c"

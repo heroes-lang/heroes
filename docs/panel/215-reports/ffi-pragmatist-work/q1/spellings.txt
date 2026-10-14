@@ -1,0 +1,16 @@
+== a: function write(fd: i32, @buf: Cd, n: u64) -> i64
+error[ffi_parameter_type]: `buf` of `write` lends a whole record to C, and the header takes it as `const void *` — C converts any record's address to that in silence, and how far it reaches is another argument this declaration ties to nothing
+  at w_a.hero:5:30
+  note: §4.19: name the parameter that carries the count, `@buf: <record> counted_by <count>`, and every call is held to the record's own size, in bytes, before C runs — at build time where the count is a constant, at the call where it is read at run time; the count may be an `@` cell C reads, as `getsockopt`'s length is
+== b: function write(fd: i32, @buf: Cd counted_by n lent, n: u64) -> i64
+wrote w_b
+         001  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0   @
+           1   6  \n                                                    
+== c: function write(fd: i32, @buf: [Cd] counted_by n lent, n: u64) -> i64
+error[never_rebound]: `a` is declared a mutable cell and nothing re-binds it — a value written once is a binding: write `=` where the `@=` is
+  at w_c.hero:8:5
+  fix (certain): write `=`: `a` is a binding
+== d: function write(fd: i32, @buf: Cd counted_by 16 lent, n: u64) -> i64
+wrote w_d
+         001  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0  \0   @
+           1   6  \n                                                    

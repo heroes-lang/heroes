@@ -1,0 +1,26 @@
+# Compiler-engineer, panel 215: what a pinned record must still allow.
+extern "mx.h"
+    record Box tag box partial pinned
+        n: i64
+    function box_init(@b: Box) -> i32
+    function box_lock(@b: Box) -> i32
+    function box_unlock(@b: Box) -> i32
+
+record Holder
+    b: Box
+    k: i64
+
+function bump(@b: Box)
+    _ = box_lock(@b)
+    b.n @ b.n + 1
+    _ = box_unlock(@b)
+
+function main()
+    m: Box @= Box(n: 0, rest: zero)
+    _ = box_init(@m)
+    bump(@m)
+    print(m.n)
+    h: Holder @= Holder(b: Box(n: 5, rest: zero), k: 1)
+    _ = box_init(@h.b)
+    bump(@h.b)
+    print(h.b.n, " ", h.k)

@@ -1,0 +1,14 @@
+patched by routeG.pl
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77); main.hero; units: 3
+-O0 plain: eq true true true|write 16 16 16|send 16 16 16|memcmp 0 0 0|sha true true true|
+-O0 msan: 0 reports; frames: none
+-O0 origins: 
+-O1 plain: eq true true true|write 16 16 16|send 16 16 16|memcmp 0 0 0|sha true true true|
+-O1 msan: 0 reports; frames: none
+-O1 origins: 
+-O2 plain: eq true true true|write 16 16 16|send 16 16 16|memcmp 0 0 0|sha true true true|
+-O2 msan: 0 reports; frames: none
+-O2 origins: 
+-O3 plain: eq true true true|write 16 16 16|send 16 16 16|memcmp 0 0 0|sha true true true|
+-O3 msan: 0 reports; frames: none
+-O3 origins: 

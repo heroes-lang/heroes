@@ -1,0 +1,25 @@
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_lock(@c: Counter) -> i32
+    function counter_unlock(@c: Counter) -> i32
+    function counter_value(@c: Counter) -> i64
+
+record Pair
+    left: Counter
+    right: i64
+
+function bump(@c: Counter)
+    _ = counter_lock(@c)
+    c.n @ c.n + 1
+    _ = counter_unlock(@c)
+
+function main()
+    p: Pair @= Pair(left: Counter(rest: zero), right: 0)
+    _ = counter_init(@p.left)
+    bump(@p.left)
+    xs: [Counter] @= [Counter(rest: zero)]
+    _ = counter_init(@xs[0])
+    bump(@xs[0])
+    print(counter_value(@p.left) + counter_value(@xs[0]))

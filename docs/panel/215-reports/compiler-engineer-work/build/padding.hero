@@ -1,0 +1,331 @@
+# PANEL 215'S ROUTE G, RECURSIVE, built for the sitting and not a landing:
+# before an `extern` call, the padding of every group record it lends is
+# written zero in place, so C never reads bytes a by-value call or return left
+# unspecified (issue 1334). The place keeps its address, as panel 196's R1
+# has it, and only bytes no C member holds are written.
+#
+# WHICH BYTES A MEMBER HOLDS is C's own arithmetic, `__builtin_offsetof` and
+# `sizeof` of each member, so clang computes every number on every target.
+# Which members there are comes from the layout round (`cli/layout.hero`),
+# under `KEY` in `ctype.Names.lend_units`: `DECLARED` for a record the screen
+# vouches for, whose declared fields are exactly the struct's members, and
+# for any other record the leaves of the header's layout dump, one per entry:
+# `p <path>` a member, `n <byte> <bytes>` the bytes a named bit-field's bits
+# reach (the one span C cannot be asked for, read from the dump's offset
+# column), `f <path>` a flexible array member, holding every byte from its
+# offset to the end. A union gives one span per arm, so a byte is written only
+# where it is padding in every arm. A record with no entry is not written.
+#
+# AND IT RECURSES: a field that is another record of the group gives that
+# record's members under its own path (`inner.d`), and a field that is a fixed
+# array of records has each element's padding zeroed in a loop over the
+# elements (`a[k]`), as are the elements of an array lent through `@`, in the
+# region `hero_lend_take` fills (`emit/lend_buffer.hero`).
+
+use ast
+use source
+use handles
+use check/state
+use check/table
+use ir
+use ir/containers
+use emit/writer
+use emit/ctype
+use emit/mangle
+use emit/aggregate
+use emit/lend_count
+use emit/layout_text
+
+# The key a record's membership rides under in `ctype.Names.lend_units`,
+# which no C name a counted parameter is keyed by can begin with.
+constant KEY: str
+    "%pad "
+
+# A record whose declared fields are the struct's members.
+constant DECLARED: str
+    "="
+
+# What the members of one record hold, as spans of the outer type, and the
+# arrays of records among them, whose elements are zeroed one by one.
+record Held
+    spans: [str]
+    arrays: [Nested]
+
+# A member that is a fixed array of group records: its path on the outer type
+# and the record of its elements.
+record Nested
+    path: str
+    element: i64
+
+# The zeroing lines before an `extern` call, for each group record, or fixed
+# array of them, the call lends through `@`. An array lent through `@` is
+# zeroed in its buffer instead (`buffer_lines`).
+function zero(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, run: ir.Run)
+    for arg in containers.args_of(f, run)
+        match arg
+            .inout_arg io =>
+                ty = lend_count.place_type(c, s, decls, f, at: io.place)
+                address = "&" + aggregate.place(c, s, decls, f, at: io.place)
+
+                for line in of_place(c, names, s, decls, ty: ty, address: address)
+                    writer.line(@w, text: "    " + line)
+            .value_arg => continue
+
+# The lines that zero what a place of type `ty` at `address` holds: a group
+# record's padding, or each element's of a fixed array of them.
+function of_place(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, address: str) -> [str]
+    element = innermost(c, ty: ty)
+    decl = record_of(c, decls, ty: element)
+
+    if decl < 0
+        return []
+    t = ctype.of(names, decl: decl)
+    count: str @= "1"
+
+    if element != ty
+        count @ "sizeof(*(" + address + ")) / sizeof(" + t + ")"
+    return passes(c, names, s, decls, decl: decl, base: address, count: count, depth: 0)
+
+# The lines that zero each of the `extent` elements of type `element` in an
+# array lend's buffer, after `hero_lend_take` filled it.
+function buffer_lines(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], element: i64, buffer: str, extent: str) -> [str]
+    decl = record_of(c, decls, ty: element)
+
+    if decl < 0
+        return []
+    return passes(c, names, s, decls, decl: decl, base: buffer, count: "(size_t)" + extent, depth: 0)
+
+# One block for `count` records of `decl` laid end to end from `base`: the
+# gaps of each, then each array of records a member holds, element by element.
+function passes(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, base: str, count: str, depth: i64) -> [str]
+    t = ctype.of(names, decl: decl)
+    held = members(c, names, s, decls, decl: decl, t: t, prefix: "", at: "0")
+
+    if held.is_err()
+        return []
+    listed = "hero_pad_s" + depth.to_str()
+    spans: [str] @= held.must().spans
+    pairs = spans.len() / 2
+
+    if pairs == 0
+        spans @ ["0", "0"]
+    out: [str] @= [
+        "{ static const size_t " + listed + "[] = {" + spans.join(", ") + "}; hero_pad_zero(" + base + ", sizeof(" + t + "), " + count + ", " + listed + ", " + pairs.to_str() + ");"
+    ]
+
+    for one in held.must().arrays
+        k = "hero_pad_k" + depth.to_str()
+        e = ctype.of(names, decl: one.element)
+        inner = "(unsigned char *)(" + base + ") + " + k + " * sizeof(" + t + ") + __builtin_offsetof(" + t + ", " + one.path + ")"
+        out @ out.push("for (size_t " + k + " = 0; " + k + " < " + count + "; " + k + "++) {")
+
+        for line in passes(c, names, s, decls, decl: one.element, base: inner, count: "sizeof(((" + t + " *)0)->" + one.path + ") / sizeof(" + e + ")", depth: depth + 1)
+            out @ out.push(line)
+
+        out @ out.push("}")
+
+    out @ out.push("}")
+    return out
+
+# What the members of record `decl` hold, as spans of the outer type `t`, the
+# record standing at `prefix` in it (`inner.`), its offset there `at`.
+function members(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, t: str, prefix: str, at: str) -> Held?
+    said = names.lend_units[KEY + decl.to_str()]
+
+    if said.is_err()
+        return fail(code: "none", msg: "the layout round said nothing of this record")
+    spans: [str] @= []
+    arrays: [Nested] @= []
+
+    if said.must() == DECLARED
+        spans @ whole_if_union(t: t, prefix: prefix)
+
+    for field in fields_of(decls, decl: decl)
+        path = prefix + mangle.field_of(foreign: true, name: source.span_text(s, field.name))
+        written = state.written_type(c, field.ty)
+
+        if written.is_err()
+            continue
+        element = innermost(c, ty: written.must())
+        inner = record_of(c, decls, ty: element)
+
+        # A declared field that is another record of the group: its members,
+        # under its path, where the screen vouched for this record.
+        if said.must() == DECLARED && inner >= 0 && element == written.must()
+            sub = members(
+                c,
+                names,
+                s,
+                decls,
+                decl: inner,
+                t: t,
+                prefix: path + ".",
+                at: "__builtin_offsetof(" + t + ", " + path + ")"
+            )
+
+            if !sub.is_err()
+                spans @ joined(list: spans, more: sub.must().spans)
+
+                for one in sub.must().arrays
+                    arrays @ arrays.push(one)
+
+                continue
+
+        if said.must() == DECLARED
+            spans @ joined(list: spans, more: span(t: t, path: path))
+
+        # A fixed array of records: its elements, one by one.
+        if inner >= 0 && element != written.must() && !names.lend_units[KEY + inner.to_str()].is_err()
+            arrays @ arrays.push(Nested(path: path, element: inner))
+
+    if said.must() == DECLARED
+        return ok(Held(spans: spans, arrays: arrays))
+    d = ctype.of(names, decl: decl)
+
+    for entry in entries(said.must())
+        rest = entry.slice(from: 2, to: entry.len())
+
+        if entry[0] == 'p'
+            spans @ joined(list: spans, more: span(t: t, path: prefix + rest))
+        else if entry[0] == 'f'
+            spans @ joined(
+                list: spans,
+                more: ["__builtin_offsetof(" + t + ", " + prefix + rest + ")", "sizeof(" + d + ") - __builtin_offsetof(" + d + ", " + rest + ")"]
+            )
+        else if entry[0] == 'n'
+            gap = layout_text_space(rest)
+
+            if gap < 0
+                return fail(code: "none", msg: "a bit-field's entry is not two numbers")
+            spans @ joined(
+                list: spans,
+                more: ["(" + at + ") + " + rest.slice(from: 0, to: gap), rest.slice(from: gap + 1, to: rest.len())]
+            )
+        else
+            return fail(code: "none", msg: "an entry of a kind this reader does not know")
+
+    return ok(Held(spans: spans, arrays: arrays))
+
+# **A union the screen vouches for is covered whole.** A record bound to a
+# union by one arm (`record UN` over `typedef union { char c; double d; } UN;`
+# naming `c`) passes the screen, a union's initialiser filling one member, so
+# its declared fields are not its members: measured, spanning `c` alone zeroed
+# `d`'s other seven bytes, `2.5` read back as `0.0`. Whether the object at
+# `prefix` is a union is C's answer, `__builtin_classify_type` 13 as
+# `emit/extern_union.hero` asks it; a struct gives a span of no bytes.
+function whole_if_union(t: str, prefix: str) -> [str]
+    if prefix == ""
+        return ["0", "(__builtin_classify_type(*(" + t + " *)0) == 13 ? sizeof(" + t + ") : 0)"]
+    path = prefix.slice(from: 0, to: prefix.len() - 1)
+    member = "((" + t + " *)0)->" + path
+    return [
+        "__builtin_offsetof(" + t + ", " + path + ")"
+        "(__builtin_classify_type(" + member + ") == 13 ? sizeof(" + member + ") : 0)"
+    ]
+
+# The two numbers of a bit-field's span, split at their one space.
+function layout_text_space(text: str) -> i64
+    at: i64 @= 0
+
+    while at < text.len()
+        if text[at] == ' '
+            return at
+        at @ at + 1
+
+    return 0 - 1
+
+function span(t: str, path: str) -> [str]
+    return ["__builtin_offsetof(" + t + ", " + path + ")", "sizeof(((" + t + " *)0)->" + path + ")"]
+
+function joined(list: [str], more: [str]) -> [str]
+    out: [str] @= list
+
+    for one in more
+        out @ out.push(one)
+
+    return out
+
+# The entries of a membership, split at each `;`.
+function entries(text: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= text.len()
+        if at == text.len() || text[at] == ';'
+            if at > start + 1
+                out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# The membership of a record from the leaves of its layout dump, or absent
+# where a bit-field's bytes could not be read: then nothing is written for it.
+# A record or union member gives its leaves, an unnamed bit-field nothing,
+# being padding (C11 6.7.2.1p12), and an empty anonymous member nothing.
+function encoded(tree: [layout_text.Member]) -> str?
+    out: [str] @= []
+
+    for m in tree
+        if m.nested
+            continue
+
+        if m.bitfield
+            if m.name.len() == 0
+                continue
+
+            if m.byte < 0 || m.last < m.byte
+                return fail(code: "none", msg: "a bit-field whose bytes the dump does not give")
+            out @ out.push("n " + m.byte.to_str() + " " + (m.last - m.byte + 1).to_str())
+        else if m.flexible
+            out @ out.push("f " + m.path)
+        else if m.path.len() > 0
+            out @ out.push("p " + m.path)
+
+    return ok(out.join(";"))
+
+# The element type of a fixed array, through every dimension, or `ty` itself.
+function innermost(c: state.Checked, ty: i64) -> i64
+    at: i64 @= ty
+    going: bool @= true
+
+    while going
+        going @ false
+
+        match table.get(c.types, at)
+            .fixed x =>
+                at @ x.element
+                going @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .array | .map | .fallible | .function_ty | .named         => continue
+            .case_ty | .failure | .generic | .error                   => continue
+
+    return at
+
+# The group record a type names, with fields, or -1: a handle is a pointer.
+function record_of(c: state.Checked, decls: [ast.Decl], ty: i64) -> i64
+    match table.get(c.types, ty)
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl rec =>
+                    if !rec.header.is_err() && rec.fields.len() > 0 && !handles.is_handle(decls[n.decl])
+                        return n.decl
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return 0 - 1
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return 0 - 1
+        .array | .map | .fallible | .function_ty | .fixed         => return 0 - 1
+        .case_ty | .failure | .generic | .error                   => return 0 - 1
+
+    return 0 - 1
+
+function fields_of(decls: [ast.Decl], decl: i64) -> [ast.Field]
+    match decls[decl].kind
+        .record_decl rec                                             => return rec.fields
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return []
+
+    return []
+
+test "a membership is read entry by entry, and a dump's leaves are its entries"
+    assert entries("p a;p inner.d;n 1 2") == ["p a", "p inner.d", "n 1 2"]
+    assert entries("") == []
+    assert layout_text_space("1 2") == 1

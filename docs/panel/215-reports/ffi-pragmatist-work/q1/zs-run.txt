@@ -1,0 +1,4 @@
+== zs.hero (this Mac): a record lent to SHA256_Update's const void *
+wrote zs
+1 1
+exit 0

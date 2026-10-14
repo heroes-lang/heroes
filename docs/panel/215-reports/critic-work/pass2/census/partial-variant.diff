@@ -1,0 +1,20 @@
+--- selfhost/check/pinned.hero	2026-10-14 11:21:03
++++ selfhost/check/pinned.hero (the variant)	2026-10-14 11:26:13
+@@ -41,7 +41,7 @@
+     for d in decls
+         match d.kind
+             .record_decl rec =>
+-                if rec.pinned
++                if rec.pinned || rec.partial
+                     return true
+             .constant_decl | .function_decl | .variant_decl | .test_decl => continue
+ 
+@@ -172,7 +172,7 @@
+ 
+     match decls[decl].kind
+         .record_decl rec =>
+-            if rec.pinned
++            if rec.pinned || rec.partial
+                 out @ true
+             else
+                 for field in rec.fields

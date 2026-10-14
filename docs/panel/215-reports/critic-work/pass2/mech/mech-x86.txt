@@ -1,0 +1,26 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+1
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77)
+runtime small.hero -O0: 3 reports at: 1 small.hero:29; 1 small.hero:38;
+runtime small.hero -O1: 0 reports at: none
+runtime small.hero -O2: 0 reports at: none
+runtime small.hero -O3: 0 reports at: none
+runtime small.hero -O2 -fno-inline: 0 reports at: none
+runtime_poison small.hero -O0: 3 reports at: 1 small.hero:29; 1 small.hero:38;
+runtime_poison small.hero -O1: 2 reports at: 1 small.hero:29;
+runtime_poison small.hero -O2: 2 reports at: 1 small.hero:29;
+runtime_poison small.hero -O3: 2 reports at: 1 small.hero:29;
+runtime_poison small.hero -O2 -fno-inline: 3 reports at: 1 small.hero:29; 1 small.hero:38;
+q1m -O0 plain run 1: 
+q1m -O0 plain run 2: 
+q1m -O0 plain run 3: 
+q1m -O2 plain run 1: 
+q1m -O2 plain run 2: 
+q1m -O2 plain run 3: 
+main -O0 plain run 1: eq true true true|memcmp 0 -224 0|sha true false true|
+main -O0 plain run 2: eq true true true|memcmp -116 0 -247|sha false true false|
+main -O0 plain run 3: eq true true true|memcmp 0 -224 0|sha true false true|
+main -O2 plain run 1: eq true true true|memcmp 0 0 0|sha true true true|
+main -O2 plain run 2: eq true true true|memcmp 0 0 0|sha true true true|
+main -O2 plain run 3: eq true true true|memcmp 0 0 0|sha true true true|
+docker run --rm -e LIBS=-lcrypto -v "$PWD":/src:ro heroes-linux bash   0.02s user 0.04s system 0% cpu 3:35.33 total

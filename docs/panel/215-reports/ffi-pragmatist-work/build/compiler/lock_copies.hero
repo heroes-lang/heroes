@@ -1,0 +1,225 @@
+# PANEL 215'S BUILD OF Q2'S ROUTE C, not a landing (issue 1335): the copies
+# of a record C forbids to copy, refused at `build` once clang has said
+# which group records hold a lock (`cli/locks.hero`). The positions are
+# panel 215's prototype of route B (`check/pinned.hero` in the
+# compiler-engineer's work), unchanged in what they allow: what reaches C as
+# the place itself, an `@` lend of the cell or of a field, a field read or
+# write through it, and a construction or a group's constant that
+# initialises its cell or a field of a construction. Everything else of the
+# type copies C's bytes, the lock among them: a binding from a place, a
+# by-value parameter, a result, an argument handed on by value, an element,
+# a comparison. A Heroes record or a fixed array holding one by value holds
+# it too, which is `partial`'s "for it and for any value holding it" (spec
+# § 13). What differs from B is only where the set comes from: the header,
+# by type identity, and never a word the binding writes.
+
+use ast
+use source
+use resolved
+use diag
+use check/state
+use check/table
+use check/lending
+use check/leasing
+use emit/lock_screen
+
+constant CODE: str
+    "ffi_lock_copied"
+
+function copies(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], c: state.Checked, found: {i64: lock_screen.Found}) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    if found.len() == 0
+        return out
+    why: {i64: str} @= {}
+    signatures(s, decls, c, found: found, @why, @out)
+    into = lending.argument_of(a)
+    written = leasing.written_roots(a)
+    based = bases(a)
+    starts = initialisers(r)
+    at: i64 @= 0
+
+    while at < a.exprs.len() && at < c.expr_types.len()
+        held = locked(s, decls, c, found: found, ty: c.expr_types[at], @why, depth: 0)
+
+        if held.len() > 0 && written[at].is_err() && based[at].is_err()
+            lent = !into[at].is_err() && leasing.marked_in(a, call: into[at].must(), value: at)
+            made = fresh(a, r, at: at) && (!starts[at].is_err() || constructs(a, r, decls, into: into, at: at))
+
+            if !lent && !made
+                d: diag.Diagnostic @= diag.new_diagnostic(
+                    code: CODE,
+                    message: "this copies " + held + ", which C forbids to copy",
+                    span: a.exprs[at].span
+                )
+                d.notes @ notes(extra: "")
+                out @ out.push(d)
+        at @ at + 1
+
+    return out
+
+function notes(extra: str) -> [str]
+    out: [str] @= [
+        "a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked"
+    ]
+
+    if extra.len() > 0
+        out @ out.push(extra)
+    out @ out.push(
+        "lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`"
+    )
+    return out
+
+# A parameter that is not `@`, or a result, of a type holding a lock.
+function signatures(s: source.Source, decls: [ast.Decl], c: state.Checked, found: {i64: lock_screen.Found}, @why: {i64: str}, @out: [diag.Diagnostic])
+    for d in decls
+        match d.kind
+            .function_decl fd =>
+                # An extern's signature is the header's, and its result is a
+                # fresh value C made, which lands in a cell; what a call hands
+                # C by value is judged at its argument (measured: refusing the
+                # declaration refused `counter_make() -> Counter`, a binding
+                # today's compiler builds).
+                if fd.value.is_extern
+                    continue
+
+                for p in fd.value.params
+                    ty = state.written_type(c, p.ty)
+
+                    if !p.mutable && !ty.is_err()
+                        held = locked(s, decls, c, found: found, ty: ty.must(), @why, depth: 0)
+
+                        if held.len() > 0
+                            name = source.span_text(s, p.name)
+                            one: diag.Diagnostic @= diag.new_diagnostic(
+                                code: CODE,
+                                message: "`" + name + "` takes by value " + held + ", a copy C forbids",
+                                span: p.name
+                            )
+                            one.notes @ notes(extra: "")
+                            one.fixes @ [
+                                diag.Fix(title: "take it by place, and lend it at each call with `@`", replacement: "@" + name, span: p.name, certainty: .guess)
+                            ]
+                            out @ out.push(one)
+
+                result = state.written_type(c, fd.value.result)
+
+                if !result.is_err()
+                    held = locked(s, decls, c, found: found, ty: result.must(), @why, depth: 0)
+
+                    if held.len() > 0
+                        one: diag.Diagnostic @= diag.new_diagnostic(
+                            code: CODE,
+                            message: "`" + source.span_text(s, d.name) + "` returns " + held + ", a copy out of its place, which C forbids",
+                            span: d.name
+                        )
+                        one.notes @ notes(
+                            extra: "build it where it lives, `c: T @= T(...)`, then hand it to a function that takes `@c`"
+                        )
+                        out @ out.push(one)
+            .constant_decl | .record_decl | .variant_decl | .test_decl => continue
+
+# What a value of `ty` holds that C forbids to copy, said for the message,
+# or "" where it holds none.
+function locked(s: source.Source, decls: [ast.Decl], c: state.Checked, found: {i64: lock_screen.Found}, ty: i64, @why: {i64: str}, depth: i64) -> str
+    if depth > 64
+        return ""
+
+    match table.get(c.types, ty)
+        .named n => return record_locked(s, decls, c, found: found, decl: n.decl, @why, depth: depth)
+        .fixed f => return locked(s, decls, c, found: found, ty: f.element, @why, depth: depth + 1)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ""
+        .array | .map | .fallible | .function_ty => return ""
+        .case_ty | .failure | .generic | .error => return ""
+
+    return ""
+
+# A group record clang found a lock in, or a record holding one by value;
+# each answer kept by its declaration, a record being asked once.
+function record_locked(s: source.Source, decls: [ast.Decl], c: state.Checked, found: {i64: lock_screen.Found}, decl: i64, @why: {i64: str}, depth: i64) -> str
+    if !why[decl].is_err()
+        return why[decl].must()
+    why[decl] @ ""
+    name = source.span_text(s, decls[decl].name)
+    out: str @= ""
+
+    if !found[decl].is_err()
+        f = found[decl].must()
+        at: str @= "itself"
+
+        if f.path.len() > 0
+            at @ "at `" + f.path + "`"
+        out @ "a `" + name + "`, whose C struct `" + f.c_type + "` holds a `" + f.lock + "` " + at
+    else
+        match decls[decl].kind
+            .record_decl rec =>
+                for field in rec.fields
+                    written = state.written_type(c, field.ty)
+
+                    if out.len() == 0 && !written.is_err()
+                        inner = locked(s, decls, c, found: found, ty: written.must(), @why, depth: depth + 1)
+
+                        if inner.len() > 0
+                            out @ "a `" + name + "`, whose field `" + source.span_text(s, field.name) + "` holds " + inner
+            .constant_decl | .function_decl | .variant_decl | .test_decl => out @ ""
+
+    why[decl] @ out
+    return out
+
+# A value that has no place yet: a construction or a group's constant.
+function fresh(a: ast.Ast, r: resolved.Resolved, at: i64) -> bool
+    match a.exprs[at].kind
+        .call =>
+            return true
+        .name =>
+            match r.uses[at]
+                .top                                      => return true
+                .local | .builtin | .module | .unresolved => return false
+        .method | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return false
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index         => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error  => return false
+
+    return false
+
+# Whether `at` is an argument of a record's construction.
+function constructs(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], into: {i64: i64}, at: i64) -> bool
+    if into[at].is_err()
+        return false
+
+    match a.exprs[into[at].must()].kind
+        .call cl =>
+            match r.uses[cl.callee]
+                .top t =>
+                    match decls[t.at].kind
+                        .record_decl                                                 => return true
+                        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+                .local | .builtin | .module | .unresolved => return false
+        .method | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return false
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index                 => return false
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error          => return false
+
+    return false
+
+# Every expression that is the base of a field or an index expression.
+function bases(a: ast.Ast) -> {i64: bool}
+    out: {i64: bool} @= {}
+
+    for e in a.exprs
+        match e.kind
+            .field f                                                                         => out[f.base] @ true
+            .index i                                                                         => out[i.base] @ true
+            .call | .method | .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp => continue
+            .bool_lit | .field_name | .null_ptr | .hole | .unary | .binary | .variant_case   => continue
+            .array | .map | .try_expr | .if_expr | .match_expr | .error                      => continue
+
+    return out
+
+# Every expression that initialises a local where it is declared.
+function initialisers(r: resolved.Resolved) -> {i64: bool}
+    out: {i64: bool} @= {}
+
+    for local in r.locals
+        if !local.value.is_err()
+            out[local.value.must()] @ true
+
+    return out

@@ -1,0 +1,14 @@
+use lib
+
+record Holder
+    left: lib.Counter
+    count: i64
+
+function main()
+    c: lib.Counter @= lib.Counter(n: 0, name: "a")
+    lib.bump(@c)
+    h: Holder @= Holder(left: lib.Counter(n: 10, name: "b"), count: 1)
+    lib.bump(@h.left)
+    xs: [lib.Counter] @= [lib.Counter(n: 20, name: "c")]
+    lib.bump(@xs[0])
+    print(c.n, " ", h.left.n, " ", xs[0].n, " ", h.count)

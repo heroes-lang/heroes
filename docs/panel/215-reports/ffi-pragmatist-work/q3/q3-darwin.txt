@@ -1,0 +1,31 @@
+leg arm64, Apple clang version 21.0.0 (clang-2100.3.34.2) (this Mac)
+== sa_darwin_literal
+wrote sa_darwin_literal
+bind 0
+getsockname 0 port 47215
+exit 0
+== sa_darwin_rz
+wrote sa_darwin_rz
+bind 0
+getsockname 0 port 47215
+exit 0
+== sha_literal
+wrote sha_literal
+1 1 1 186 173
+exit 0
+== sha_rz
+wrote sha_rz
+1 1 1 186 173
+exit 0
+== sha_partial
+wrote sha_partial
+1 1 1 186 173
+exit 0
+== fds_darwin_literal
+wrote fds_darwin_literal
+select 1 ready 1
+exit 0
+== fds_darwin_rz
+wrote fds_darwin_rz
+select 1 ready 1
+exit 0

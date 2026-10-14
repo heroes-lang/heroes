@@ -1,0 +1,5 @@
+error[fixed_array_length]: `i8[256]` holds exactly 256, and this literal has 1 — a fixed array's length is part of its type, so the two must agree (§4.19)
+  at u_short.hero:11:36
+     |
+  11 |     u: Utsname @= Utsname(sysname: [0], rest: zero)
+     |                                    ^^^

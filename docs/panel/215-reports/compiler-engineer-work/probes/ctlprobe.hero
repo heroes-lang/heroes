@@ -1,0 +1,9 @@
+# Compiler-engineer, panel 215: the positive control alone. ctl_write stores
+# every field of a struct addrinfo and never its 4 padding bytes, then writes
+# the whole object: MemorySanitizer must report at every level, or a clean
+# reading elsewhere proves nothing.
+extern "ctl.h"
+    function ctl_write() -> i64
+
+function main()
+    print(ctl_write())

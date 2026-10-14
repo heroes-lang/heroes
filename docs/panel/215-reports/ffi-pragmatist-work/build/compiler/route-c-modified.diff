@@ -1,0 +1,222 @@
+diff --git a/selfhost/cli/compile.hero b/selfhost/cli/compile.hero
+index 872e28974..75d8a806f 100644
+--- a/selfhost/cli/compile.hero
++++ b/selfhost/cli/compile.hero
+@@ -21,6 +21,7 @@ use diag_render
+ use parse
+ use modules
+ use resolve
++use resolved
+ use rename_fit
+ use checker
+ use check/state
+@@ -132,8 +133,11 @@ record Artifact
+     decls: [ast.Decl]
+     checked: state.Checked
+     program: containers.Program
++    # The resolver's answer, which panel 215's build of route C walks at
++    # `build` for the copies of a record whose header holds a lock.
++    resolved: resolved.Resolved
+ 
+-function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program) -> Artifact
++function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, r: resolved.Resolved) -> Artifact
+     none_c: [str] = []
+     none_p: [str] = []
+     none_t: [str] = []
+@@ -147,7 +151,8 @@ function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: container
+         tree: tree,
+         decls: decls,
+         checked: c,
+-        program: p
++        program: p,
++        resolved: r
+     )
+ 
+ # The pipeline to a translation unit. The failure's code carries the
+@@ -209,7 +214,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
+ 
+         if c.holes.len() > 0
+             io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
+-        return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
++        return ok(halted(parsed.tree, parsed.decls, c: c, p: p, r: out))
+ 
+     # §4.16: the hole is not an error, and there is still no binary.
+     # Both halves — and the files named are the ones the holes are IN,
+@@ -307,7 +312,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
+         if !stop_n.is_err()
+             return leave(stop_n.must(), stage_name: "the C emission")
+     return ok(
+-        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p)
++        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p, resolved: out)
+     )
+ 
+ # **A stage that stops names itself.** This used to answer "a stage
+diff --git a/selfhost/cli/layout.hero b/selfhost/cli/layout.hero
+index 99fcc0277..3851994a1 100644
+--- a/selfhost/cli/layout.hero
++++ b/selfhost/cli/layout.hero
+@@ -313,6 +313,43 @@ function judged(a: Asking, sum: str, text: str) -> ()?
+         return fail(code: "clang", msg: said)
+     return ok()
+ 
++# What the screen said about the group records `records` holds, read from
++# the answer `check_records` kept under the same key (panel 215's build of
++# Q2's route C): the records it could not vouch for are the ones route C
++# reads the dump of. Absent where nothing was kept, a screen whose headers
++# did not compile alone, which the program's own compile tells.
++record Screened
++    wanted: [layout_text.Asked]
++    said: str
++    asking: Asking
++
++function screened(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}) -> Screened?
++    wanted: [layout_text.Asked] @= []
++
++    for one in layout_text.asked(s, decls)
++        if emit_externs.held(ok(records), decl: one.decl)
++            wanted @ wanted.push(one)
++
++    if wanted.len() == 0 || probe.read.is_err()
++        return fail(code: "none", msg: "nothing to ask")
++    u = extern_union.used(p, c, decls)
++    screen_text = layout_screen.screen_unit(probe.headers, wanted, s, decls, c, u)
++    key = digest.digest(
++        t.fingerprint + "|layout|" + t.compiler_key + "|" + screen_text + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
++    )
++    dir = t.build + "/layout-" + key
++    memo: {str: str} @= probe.digests
++    known = deps.vouched(dir + "/screen.deps.txt", @memo)
++
++    if known.is_err()
++        return fail(code: "none", msg: "no screen kept")
++    said = kept.read(dir + "/screen-" + known.must() + ".txt")
++
++    if said.is_err()
++        return fail(code: "none", msg: "no screen kept")
++    a = Asking(t: t, dir: dir, headers: probe.headers, s: s, decls: decls, c: c, u: u, words: probe.words)
++    return ok(Screened(wanted: wanted, said: said.must(), asking: a))
++
+ # The line with the probe's words after it, carried in a file (defect 586,
+ # `response_file.carried`): a package's compile words are among them.
+ function searched(a: Asking, line: [str]) -> [str]
+diff --git a/selfhost/cli/rounds.hero b/selfhost/cli/rounds.hero
+index 29efaf4d9..787ecad05 100644
+--- a/selfhost/cli/rounds.hero
++++ b/selfhost/cli/rounds.hero
+@@ -32,6 +32,9 @@ use cli/defined_twice
+ use cli/pragma_ask
+ use cli/bound_macro
+ use diag
++use emit/lock_screen
++use check/lock_copies
++use cli/locks
+ 
+ # What the rounds came back with: the verdict, the failure already told where
+ # it is the author's (`whose.of_refusal`); where the binary landed; the tags
+@@ -161,6 +164,15 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
+             modules: checked.modules
+         )
+ 
++    # Panel 215's build of Q2's route C: a copy of a group record whose C
++    # struct holds a lock, told before any unit compiles (`cli/locks.hero`).
++    copied = lock_told(t, art, s, planned.probings)
++
++    if copied.len() > 0
++        _ = compile.stage(copied, s).is_err()
++        locked: ()? = fail(code: "diagnostics", msg: "a group record whose C struct holds a lock is copied")
++        return assemble.Round(verdict: locked, refusals: [], binary: "", modules: [])
++
+     # One C function two modules' groups bind and their headers declare two
+     # ways, told before any unit compiles (panel 202's C1,
+     # `cli/two_ways.hero`): the author's, said here, and no round after it.
+@@ -230,3 +242,26 @@ function holds(list: [str], one: str) -> bool
+             return true
+ 
+     return false
++
++# Every probe's records asked which hold a lock, then the program's copies of
++# them (panel 215's build of Q2's route C).
++function lock_told(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, probings: [probing.Probing]) -> [diag.Diagnostic]
++    found: {i64: lock_screen.Found} @= {}
++
++    for one in probings
++        if !one.probe.is_err() && probing.laid_out(art.decls, records: one.records)
++            asked = locks.found(
++                t,
++                art.program,
++                art.checked,
++                s,
++                art.decls,
++                probe: one.probe.must(),
++                records: one.records
++            )
++
++            # ORDER: none — a union of answers by declaration.
++            for decl in keys(asked.found)
++                found[decl] @ asked.found[decl].must()
++
++    return lock_copies.copies(art.tree, art.resolved, s, art.decls, art.checked, found: found)
+diff --git a/selfhost/emit/layout_text.hero b/selfhost/emit/layout_text.hero
+index da2e88e0a..49062d888 100644
+--- a/selfhost/emit/layout_text.hero
++++ b/selfhost/emit/layout_text.hero
+@@ -79,6 +79,10 @@ record Member
+     # promotes its members (C11 6.7.2.1p13); empty for an anonymous member.
+     # `__builtin_offsetof(T, path)` and `sizeof(((T *)0)->path)` take it.
+     path: str
++    # How many array levels the member's type text ends with (panel 215's
++    # build of route C): the dump does not expand an array's elements, so a
++    # lock inside one is asked of `path[0]`.
++    rank: i64
+ 
+ # A member a program can name on T: its own, or one an anonymous member
+ # promotes (C11 6.7.2.1p13). `group` is the index of the anonymous member it
+@@ -197,6 +201,7 @@ function members(rows: [str], from: i64) -> [Member]?
+     flex: [bool] @= []
+     unions: [bool] @= []
+     places: [str] @= []
++    ranks: [i64] @= []
+     closed: bool @= false
+ 
+     while at < rows.len() && !closed
+@@ -225,6 +230,11 @@ function members(rows: [str], from: i64) -> [Member]?
+         bits @ bits.push(layout_rows.byte_index(text: row.slice(from: 0, to: bar), needle: ":") >= 0)
+         starts_at @ starts_at.push(layout_rows.leading_number(row.slice(from: 0, to: bar)))
+ 
++        if space < 0
++            ranks @ ranks.push(0)
++        else
++            ranks @ ranks.push(rank_of(text.slice(from: 0, to: space)))
++
+         if space < 0
+             named @ named.push(text)
+             flex @ flex.push(false)
+@@ -253,12 +263,27 @@ function members(rows: [str], from: i64) -> [Member]?
+     while k < depths.len()
+         deeper = k + 1 < depths.len() && depths[k + 1] > depths[k]
+         out @ out.push(
+-            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: unions[k] && deeper, place: places[k], path: paths[k])
++            Member(depth: depths[k], name: named[k], nested: deeper, bitfield: bits[k], flexible: flex[k], byte: starts_at[k], union_kw: unions[k] && deeper, place: places[k], path: paths[k], rank: ranks[k])
+         )
+         k @ k + 1
+ 
+     return ok(out)
+ 
++# How many array levels a type's text ends with: `struct c[2]` 1, `int[2][3]`
++# 2, `int[]` 1, `int *` 0.
++function rank_of(type_text: str) -> i64
++    n: i64 @= 0
++    at: i64 @= type_text.len() - 1
++
++    while at >= 0 && type_text[at] == ']'
++        while at >= 0 && type_text[at] != '['
++            at @ at - 1
++
++        n @ n + 1
++        at @ at - 1
++
++    return n
++
+ # Each member's C name on T, from the names of the members above it: a stack
+ # of the levels still open, an anonymous one contributing nothing.
+ function paths_of(depths: [i64], named: [str]) -> [str]

@@ -1,0 +1,29 @@
+extern "shapes.h"
+    record VU
+        fd: i32
+        handle: ptr
+    record S4 tag s4
+        kind: i32
+        via: VU
+    function dirty()
+    function s4_nz(@t: S4 lent) -> i64
+    function s4_fd(@t: S4 lent) -> i32
+    function vu_nz(@u: VU lent) -> i64
+
+function zeroed() -> S4
+    return S4(kind: 2, rest: zero)
+
+function nested() -> S4
+    return S4(kind: 2, via: VU(rest: zero))
+
+function main()
+    dirty()
+    a: S4 @= zeroed()
+    print(s4_fd(@a), " ", s4_nz(@a))
+    dirty()
+    n: S4 @= nested()
+    print(s4_fd(@n), " ", s4_nz(@n))
+    b @= S4(kind: 2, via: VU(fd: 7))
+    print(s4_fd(@b), " ", b.via.fd)
+    u @= VU(fd: 9)
+    print(u.fd, " ", vu_nz(@u) > 0)

@@ -1,0 +1,6 @@
+zstream heroes: build 0 | init 0|copy: finish -2 end -2 (Z_STREAM_ERROR is -2)|original: finish 1 end 0|
+zstream heroes-c: build 0 | init 0|copy: finish -2 end -2 (Z_STREAM_ERROR is -2)|original: finish 1 end 0|
+tq heroes: build 0 | pushed into the copy: copy first -1, original first 7|
+tq heroes-c: build 0 | pushed into the copy: copy first -1, original first 7|
+spin heroes: build 0 | init 0 lock 0|copy trylock 16|
+spin heroes-c: build 0 | init 0 lock 0|copy trylock 16|

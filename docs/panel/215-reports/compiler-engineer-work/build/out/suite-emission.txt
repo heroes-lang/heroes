@@ -1,0 +1,318 @@
+  emission: 1239 passed, 26 failed
+SKIP emission/run/fixedbugs-437-a-program-whose-runner-is-killed-dies-with-it
+  this machine lacks what the case binds, so it is judged where that is: `sys/prctl.h`, which clang does not find on the include path the compiler searches
+SKIP emission/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux
+  this machine lacks what the case binds, so it is judged where that is: `sys/prctl.h`, which clang does not find on the include path the compiler searches
+FAIL emission/run/ffi-a-construction-polls-an-sdl3-event
+  tests/golden/run/ffi-a-construction-polls-an-sdl3-event.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-a-construction-polls-an-sdl3-event.c
+  line 236:
+    blessed:     t12 = SDL_PushEvent(&h0_sent);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(SDL_Event, type), sizeof(((SDL_Event *)0)->type), __builtin_offsetof(SDL_Event, common.type), sizeof(((SDL_Event *)0)->common.type), __builtin_offsetof(SDL_Event, common.reserved), sizeof(((SDL_Event *)0)->common.reserved), __builtin_offsetof(SDL_Event, common.timestamp), sizeof(((SDL_Event *)0)->common.timestamp), __builtin_offsetof(SDL_Event, display.type), sizeof(((SDL_Event *)0)->display.type), __builtin_offsetof(SDL_Event, display.reserved), sizeof(((SDL_Event *)0)->display.reserved), __builtin_offsetof(SDL_Event, display.timestamp), sizeof(((SDL_Event *)0)->display.timestamp), __builtin_offsetof(SDL_Event, display.displayID), sizeof(((SDL_Event *)0)->display.displayID), __builtin_offsetof(SDL_Event, display.data1), sizeof(((SDL_Event *)0)->display.data1), __builtin_offsetof(SDL_Event, display.data2), sizeof(((SDL_Event *)0)->display.data2), __builtin_offsetof(SDL_Event, window.type), sizeof(((SDL_Event *)0)->window.type), __builtin_offsetof(SDL_Event, window.reserved), sizeof(((SDL_Event *)0)->window.reserved), __builtin_offsetof(SDL_Event, window.timestamp), sizeof(((SDL_Event *)0)->window.timestamp), __builtin_offsetof(SDL_Event, window.windowID), sizeof(((SDL_Event *)0)->window.windowID), __builtin_offsetof(SDL_Event, window.data1), sizeof(((SDL_Event *)0)->window.data1), __builtin_offsetof(SDL_Event, window.data2), sizeof(((SDL_Event *)0)->window.data2), __builtin_offsetof(SDL_Event, kdevice.type), sizeof(((SDL_Event *)0)->kdevice.type), __builtin_offsetof(SDL_Event, kdevice.reserved), sizeof(((SDL_Event *)0)->kdevice.reserved), __builtin_offsetof(SDL_Event, kdevice.timestamp), sizeof(((SDL_Event *)0)->kdevice.timestamp), __builtin_offsetof(SDL_Event, kdevice.which), sizeof(((SDL_Event *)0)->kdevice.which), __builtin_offsetof(SDL_Event, key.type), sizeof(((SDL_Event *)0)->key.type), __builtin_offsetof(SDL_Event, key.reserved), sizeof(((SDL_Event *)0)->key.reserved), __builtin_offsetof(SDL_Event, key.timestamp), sizeof(((SDL_Event *)0)->key.timestamp), __builtin_offsetof(SDL_Event, key.windowID), sizeof(((SDL_Event *)0)->key.windowID), __builtin_offsetof(SDL_Event, key.which), sizeof(((SDL_Event *)0)->key.which), __builtin_offsetof(SDL_Event, key.scancode), sizeof(((SDL_Event *)0)->key.scancode), __builtin_offsetof(SDL_Event, key.key), sizeof(((SDL_Event *)0)->key.key), __builtin_offsetof(SDL_Event, key.mod), sizeof(((SDL_Event *)0)->key.mod), __builtin_offsetof(SDL_Event, key.raw), sizeof(((SDL_Event *)0)->key.raw), __builtin_offsetof(SDL_Event, key.down), sizeof(((SDL_Event *)0)->key.down), __builtin_offsetof(SDL_Event, key.repeat), sizeof(((SDL_Event *)0)->key.repeat), __builtin_offsetof(SDL_Event, edit.type), sizeof(((SDL_Event *)0)->edit.type), __builtin_offsetof(SDL_Event, edit.reserved), sizeof(((SDL_Event *)0)->edit.reserved), __builtin_offsetof(SDL_Event, edit.timestamp), sizeof(((SDL_Event *)0)->edit.timestamp), __builtin_offsetof(SDL_Event, edit.windowID), sizeof(((SDL_Event *)0)->edit.windowID), __builtin_offsetof(SDL_Event, edit.text), sizeof(((SDL_Event *)0)->edit.text), __builtin_offsetof(SDL_Event, edit.start), sizeof(((SDL_Event *)0)->edit.start), __builtin_offsetof(SDL_Event, edit.length), sizeof(((SDL_Event *)0)->edit.length), __builtin_offsetof(SDL_Event, edit_candidates.type), sizeof(((SDL_Event *)0)->edit_candidates.type), __builtin_offsetof(SDL_Event, edit_candidates.reserved), sizeof(((SDL_Event *)0)->edit_candidates.reserved), __builtin_offsetof(SDL_Event, edit_candidates.timestamp), sizeof(((SDL_Event *)0)->edit_candidates.timestamp), __builtin_offsetof(SDL_Event, edit_candidates.windowID), sizeof(((SDL_Event *)0)->edit_candidates.windowID), __builtin_offsetof(SDL_Event, edit_candidates.candidates), sizeof(((SDL_Event *)0)->edit_candidates.candidates), __builtin_offsetof(SDL_Event, edit_candidates.num_candidates), sizeof(((SDL_Event *)0)->edit_candidates.num_candidates), __builtin_offsetof(SDL_Event, edit_candidates.selected_candidate), sizeof(((SDL_Event *)0)->edit_candidates.selected_candidate), __builtin_offsetof(SDL_Event, edit_candidates.horizontal), sizeof(((SDL_Event *)0)->edit_candidates.horizontal), __builtin_offsetof(SDL_Event, edit_candidates.padding1), sizeof(((SDL_Event *)0)->edit_candidates.padding1), __builtin_offsetof(SDL_Event, edit_candidates.padding2), sizeof(((SDL_Event *)0)->edit_candidates.padding2), __builtin_offsetof(SDL_Event, edit_candidates.padding3), sizeof(((SDL_Event *)0)->edit_candidates.padding3), __builtin_offsetof(SDL_Event, text.type), sizeof(((SDL_Event *)0)->text.type), __builtin_offsetof(SDL_Event, text.reserved), sizeof(((SDL_Event *)0)->text.reserved), __builtin_offsetof(SDL_Event, text.timestamp), sizeof(((SDL_Event *)0)->text.timestamp), __builtin_offsetof(SDL_Event, text.windowID), sizeof(((SDL_Event *)0)->text.windowID), __builtin_offsetof(SDL_Event, text.text), sizeof(((SDL_Event *)0)->text.text), __builtin_offsetof(SDL_Event, mdevice.type), sizeof(((SDL_Event *)0)->mdevice.type), __builtin_offsetof(SDL_Event, mdevice.reserved), sizeof(((SDL_Event *)0)->mdevice.reserved), __builtin_offsetof(SDL_Event, mdevice.timestamp), sizeof(((SDL_Event *)0)->mdevice.timestamp), __builtin_offsetof(SDL_Event, mdevice.which), sizeof(((SDL_Event *)0)->mdevice.which), __builtin_offsetof(SDL_Event, motion.type), sizeof(((SDL_Event *)0)->motion.type), __builtin_offsetof(SDL_Event, motion.reserved), sizeof(((SDL_Event *)0)->motion.reserved), __builtin_offsetof(SDL_Event, motion.timestamp), sizeof(((SDL_Event *)0)->motion.timestamp), __builtin_offsetof(SDL_Event, motion.windowID), sizeof(((SDL_Event *)0)->motion.windowID), __builtin_offsetof(SDL_Event, motion.which), sizeof(((SDL_Event *)0)->motion.which), __builtin_offsetof(SDL_Event, motion.state), sizeof(((SDL_Event *)0)->motion.state), __builtin_offsetof(SDL_Event, motion.x), sizeof(((SDL_Event *)0)->motion.x), __builtin_offsetof(SDL_Event, motion.y), sizeof(((SDL_Event *)0)->motion.y), __builtin_offsetof(SDL_Event, motion.xrel), sizeof(((SDL_Event *)0)->motion.xrel), __builtin_offsetof(SDL_Event, motion.yrel), sizeof(((SDL_Event *)0)->motion.yrel), __builtin_offsetof(SDL_Event, button.type), sizeof(((SDL_Event *)0)->button.type), __builtin_offsetof(SDL_Event, button.reserved), sizeof(((SDL_Event *)0)->button.reserved), __builtin_offsetof(SDL_Event, button.timestamp), sizeof(((SDL_Event *)0)->button.timestamp), __builtin_offsetof(SDL_Event, button.windowID), sizeof(((SDL_Event *)0)->button.windowID), __builtin_offsetof(SDL_Event, button.which), sizeof(((SDL_Event *)0)->button.which), __builtin_offsetof(SDL_Event, button.button), sizeof(((SDL_Event *)0)->button.button), __builtin_offsetof(SDL_Event, button.down), sizeof(((SDL_Event *)0)->button.down), __builtin_offsetof(SDL_Event, button.clicks), sizeof(((SDL_Event *)0)->button.clicks), __builtin_offsetof(SDL_Event, button.padding), sizeof(((SDL_Event *)0)->button.padding), __builtin_offsetof(SDL_Event, button.x), sizeof(((SDL_Event *)0)->button.x), __builtin_offsetof(SDL_Event, button.y), sizeof(((SDL_Event *)0)->button.y), __builtin_offsetof(SDL_Event, wheel.type), sizeof(((SDL_Event *)0)->wheel.type), __builtin_offsetof(SDL_Event, wheel.reserved), sizeof(((SDL_Event *)0)->wheel.reserved), __builtin_offsetof(SDL_Event, wheel.timestamp), sizeof(((SDL_Event *)0)->wheel.timestamp), __builtin_offsetof(SDL_Event, wheel.windowID), sizeof(((SDL_Event *)0)->wheel.windowID), __builtin_offsetof(SDL_Event, wheel.which), sizeof(((SDL_Event *)0)->wheel.which), __builtin_offsetof(SDL_Event, wheel.x), sizeof(((SDL_Event *)0)->wheel.x), __builtin_offsetof(SDL_Event, wheel.y), sizeof(((SDL_Event *)0)->wheel.y), __builtin_offsetof(SDL_Event, wheel.direction), sizeof(((SDL_Event *)0)->wheel.direction), __builtin_offsetof(SDL_Event, wheel.mouse_x), sizeof(((SDL_Event *)0)->wheel.mouse_x), __builtin_offsetof(SDL_Event, wheel.mouse_y), sizeof(((SDL_Event *)0)->wheel.mouse_y), __builtin_offsetof(SDL_Event, wheel.integer_x), sizeof(((SDL_Event *)0)->wheel.integer_x), __builtin_offsetof(SDL_Event, wheel.integer_y), sizeof(((SDL_Event *)0)->wheel.integer_y), __builtin_offsetof(SDL_Event, jdevice.type), sizeof(((SDL_Event *)0)->jdevice.type), __builtin_offsetof(SDL_Event, jdevice.reserved), sizeof(((SDL_Event *)0)->jdevice.reserved), __builtin_offsetof(SDL_Event, jdevice.timestamp), sizeof(((SDL_Event *)0)->jdevice.timestamp), __builtin_offsetof(SDL_Event, jdevice.which), sizeof(((SDL_Event *)0)->jdevice.which), __builtin_offsetof(SDL_Event, jaxis.type), sizeof(((SDL_Event *)0)->jaxis.type), __builtin_offsetof(SDL_Event, jaxis.reserved), sizeof(((SDL_Event *)0)->jaxis.reserved), __builtin_offsetof(SDL_Event, jaxis.timestamp), sizeof(((SDL_Event *)0)->jaxis.timestamp), __builtin_offsetof(SDL_Event, jaxis.which), sizeof(((SDL_Event *)0)->jaxis.which), __builtin_offsetof(SDL_Event, jaxis.axis), sizeof(((SDL_Event *)0)->jaxis.axis), __builtin_offsetof(SDL_Event, jaxis.padding1), sizeof(((SDL_Event *)0)->jaxis.padding1), __builtin_offsetof(SDL_Event, jaxis.padding2), sizeof(((SDL_Event *)0)->jaxis.padding2), __builtin_offsetof(SDL_Event, jaxis.padding3), sizeof(((SDL_Event *)0)->jaxis.padding3), __builtin_offsetof(SDL_Event, jaxis.value), sizeof(((SDL_Event *)0)->jaxis.value), __builtin_offsetof(SDL_Event, jaxis.padding4), sizeof(((SDL_Event *)0)->jaxis.padding4), __builtin_offsetof(SDL_Event, jball.type), sizeof(((SDL_Event *)0)->jball.type), __builtin_offsetof(SDL_Event, jball.reserved), sizeof(((SDL_Event *)0)->jball.reserved), __builtin_offsetof(SDL_Event, jball.timestamp), sizeof(((SDL_Event *)0)->jball.timestamp), __builtin_offsetof(SDL_Event, jball.which), sizeof(((SDL_Event *)0)->jball.which), __builtin_offsetof(SDL_Event, jball.ball), sizeof(((SDL_Event *)0)->jball.ball), __builtin_offsetof(SDL_Event, jball.padding1), sizeof(((SDL_Event *)0)->jball.padding1), __builtin_offsetof(SDL_Event, jball.padding2), sizeof(((SDL_Event *)0)->jball.padding2), __builtin_offsetof(SDL_Event, jball.padding3), sizeof(((SDL_Event *)0)->jball.padding3), __builtin_offsetof(SDL_Event, jball.xrel), sizeof(((SDL_Event *)0)->jball.xrel), __builtin_offsetof(SDL_Event, jball.yrel), sizeof(((SDL_Event *)0)->jball.yrel), __builtin_offsetof(SDL_Event, jhat.type), sizeof(((SDL_Event *)0)->jhat.type), __builtin_offsetof(SDL_Event, jhat.reserved), sizeof(((SDL_Event *)0)->jhat.reserved), __builtin_offsetof(SDL_Event, jhat.timestamp), sizeof(((SDL_Event *)0)->jhat.timestamp), __builtin_offsetof(SDL_Event, jhat.which), sizeof(((SDL_Event *)0)->jhat.which), __builtin_offsetof(SDL_Event, jhat.hat), sizeof(((SDL_Event *)0)->jhat.hat), __builtin_offsetof(SDL_Event, jhat.value), sizeof(((SDL_Event *)0)->jhat.value), __builtin_offsetof(SDL_Event, jhat.padding1), sizeof(((SDL_Event *)0)->jhat.padding1), __builtin_offsetof(SDL_Event, jhat.padding2), sizeof(((SDL_Event *)0)->jhat.padding2), __builtin_offsetof(SDL_Event, jbutton.type), sizeof(((SDL_Event *)0)->jbutton.type), __builtin_offsetof(SDL_Event, jbutton.reserved), sizeof(((SDL_Event *)0)->jbutton.reserved), __builtin_offsetof(SDL_Event, jbutton.timestamp), sizeof(((SDL_Event *)0)->jbutton.timestamp), __builtin_offsetof(SDL_Event, jbutton.which), sizeof(((SDL_Event *)0)->jbutton.which), __builtin_offsetof(SDL_Event, jbutton.button), sizeof(((SDL_Event *)0)->jbutton.button), __builtin_offsetof(SDL_Event, jbutton.down), sizeof(((SDL_Event *)0)->jbutton.down), __builtin_offsetof(SDL_Event, jbutton.padding1), sizeof(((SDL_Event *)0)->jbutton.padding1), __builtin_offsetof(SDL_Event, jbutton.padding2), sizeof(((SDL_Event *)0)->jbutton.padding2), __builtin_offsetof(SDL_Event, jbattery.type), sizeof(((SDL_Event *)0)->jbattery.type), __builtin_offsetof(SDL_Event, jbattery.reserved), sizeof(((SDL_Event *)0)->jbattery.reserved), __builtin_offsetof(SDL_Event, jbattery.timestamp), sizeof(((SDL_Event *)0)->jbattery.timestamp), __builtin_offsetof(SDL_Event, jbattery.which), sizeof(((SDL_Event *)0)->jbattery.which), __builtin_offsetof(SDL_Event, jbattery.state), sizeof(((SDL_Event *)0)->jbattery.state), __builtin_offsetof(SDL_Event, jbattery.percent), sizeof(((SDL_Event *)0)->jbattery.percent), __builtin_offsetof(SDL_Event, gdevice.type), sizeof(((SDL_Event *)0)->gdevice.type), __builtin_offsetof(SDL_Event, gdevice.reserved), sizeof(((SDL_Event *)0)->gdevice.reserved), __builtin_offsetof(SDL_Event, gdevice.timestamp), sizeof(((SDL_Event *)0)->gdevice.timestamp), __builtin_offsetof(SDL_Event, gdevice.which), sizeof(((SDL_Event *)0)->gdevice.which), __builtin_offsetof(SDL_Event, gaxis.type), sizeof(((SDL_Event *)0)->gaxis.type), __builtin_offsetof(SDL_Event, gaxis.reserved), sizeof(((SDL_Event *)0)->gaxis.reserved), __builtin_offsetof(SDL_Event, gaxis.timestamp), sizeof(((SDL_Event *)0)->gaxis.timestamp), __builtin_offsetof(SDL_Event, gaxis.which), sizeof(((SDL_Event *)0)->gaxis.which), __builtin_offsetof(SDL_Event, gaxis.axis), sizeof(((SDL_Event *)0)->gaxis.axis), __builtin_offsetof(SDL_Event, gaxis.padding1), sizeof(((SDL_Event *)0)->gaxis.padding1), __builtin_offsetof(SDL_Event, gaxis.padding2), sizeof(((SDL_Event *)0)->gaxis.padding2), __builtin_offsetof(SDL_Event, gaxis.padding3), sizeof(((SDL_Event *)0)->gaxis.padding3), __builtin_offsetof(SDL_Event, gaxis.value), sizeof(((SDL_Event *)0)->gaxis.value), __builtin_offsetof(SDL_Event, gaxis.padding4), sizeof(((SDL_Event *)0)->gaxis.padding4), __builtin_offsetof(SDL_Event, gbutton.type), sizeof(((SDL_Event *)0)->gbutton.type), __builtin_offsetof(SDL_Event, gbutton.reserved), sizeof(((SDL_Event *)0)->gbutton.reserved), __builtin_offsetof(SDL_Event, gbutton.timestamp), sizeof(((SDL_Event *)0)->gbutton.timestamp), __builtin_offsetof(SDL_Event, gbutton.which), sizeof(((SDL_Event *)0)->gbutton.which), __builtin_offsetof(SDL_Event, gbutton.button), sizeof(((SDL_Event *)0)->gbutton.button), __builtin_offsetof(SDL_Event, gbutton.down), sizeof(((SDL_Event *)0)->gbutton.down), __builtin_offsetof(SDL_Event, gbutton.padding1), sizeof(((SDL_Event *)0)->gbutton.padding1), __builtin_offsetof(SDL_Event, gbutton.padding2), sizeof(((SDL_Event *)0)->gbutton.padding2), __builtin_offsetof(SDL_Event, gtouchpad.type), sizeof(((SDL_Event *)0)->gtouchpad.type), __builtin_offsetof(SDL_Event, gtouchpad.reserved), sizeof(((SDL_Event *)0)->gtouchpad.reserved), __builtin_offsetof(SDL_Event, gtouchpad.timestamp), sizeof(((SDL_Event *)0)->gtouchpad.timestamp), __builtin_offsetof(SDL_Event, gtouchpad.which), sizeof(((SDL_Event *)0)->gtouchpad.which), __builtin_offsetof(SDL_Event, gtouchpad.touchpad), sizeof(((SDL_Event *)0)->gtouchpad.touchpad), __builtin_offsetof(SDL_Event, gtouchpad.finger), sizeof(((SDL_Event *)0)->gtouchpad.finger), __builtin_offsetof(SDL_Event, gtouchpad.x), sizeof(((SDL_Event *)0)->gtouchpad.x), __builtin_offsetof(SDL_Event, gtouchpad.y), sizeof(((SDL_Event *)0)->gtouchpad.y), __builtin_offsetof(SDL_Event, gtouchpad.pressure), sizeof(((SDL_Event *)0)->gtouchpad.pressure), __builtin_offsetof(SDL_Event, gsensor.type), sizeof(((SDL_Event *)0)->gsensor.type), __builtin_offsetof(SDL_Event, gsensor.reserved), sizeof(((SDL_Event *)0)->gsensor.reserved), __builtin_offsetof(SDL_Event, gsensor.timestamp), sizeof(((SDL_Event *)0)->gsensor.timestamp), __builtin_offsetof(SDL_Event, gsensor.which), sizeof(((SDL_Event *)0)->gsensor.which), __builtin_offsetof(SDL_Event, gsensor.sensor), sizeof(((SDL_Event *)0)->gsensor.sensor), __builtin_offsetof(SDL_Event, gsensor.data), sizeof(((SDL_Event *)0)->gsensor.data), __builtin_offsetof(SDL_Event, gsensor.sensor_timestamp), sizeof(((SDL_Event *)0)->gsensor.sensor_timestamp), __builtin_offsetof(SDL_Event, adevice.type), sizeof(((SDL_Event *)0)->adevice.type), __builtin_offsetof(SDL_Event, adevice.reserved), sizeof(((SDL_Event *)0)->adevice.reserved), __builtin_offsetof(SDL_Event, adevice.timestamp), sizeof(((SDL_Event *)0)->adevice.timestamp), __builtin_offsetof(SDL_Event, adevice.which), sizeof(((SDL_Event *)0)->adevice.which), __builtin_offsetof(SDL_Event, adevice.recording), sizeof(((SDL_Event *)0)->adevice.recording), __builtin_offsetof(SDL_Event, adevice.padding1), sizeof(((SDL_Event *)0)->adevice.padding1), __builtin_offsetof(SDL_Event, adevice.padding2), sizeof(((SDL_Event *)0)->adevice.padding2), __builtin_offsetof(SDL_Event, adevice.padding3), sizeof(((SDL_Event *)0)->adevice.padding3), __builtin_offsetof(SDL_Event, cdevice.type), sizeof(((SDL_Event *)0)->cdevice.type), __builtin_offsetof(SDL_Event, cdevice.reserved), sizeof(((SDL_Event *)0)->cdevice.reserved), __builtin_offsetof(SDL_Event, cdevice.timestamp), sizeof(((SDL_Event *)0)->cdevice.timestamp), __builtin_offsetof(SDL_Event, cdevice.which), sizeof(((SDL_Event *)0)->cdevice.which), __builtin_offsetof(SDL_Event, sensor.type), sizeof(((SDL_Event *)0)->sensor.type), __builtin_offsetof(SDL_Event, sensor.reserved), sizeof(((SDL_Event *)0)->sensor.reserved), __builtin_offsetof(SDL_Event, sensor.timestamp), sizeof(((SDL_Event *)0)->sensor.timestamp), __builtin_offsetof(SDL_Event, sensor.which), sizeof(((SDL_Event *)0)->sensor.which), __builtin_offsetof(SDL_Event, sensor.data), sizeof(((SDL_Event *)0)->sensor.data), __builtin_offsetof(SDL_Event, sensor.sensor_timestamp), sizeof(((SDL_Event *)0)->sensor.sensor_timestamp), __builtin_offsetof(SDL_Event, quit.type), sizeof(((SDL_Event *)0)->quit.type), __builtin_offsetof(SDL_Event, quit.reserved), sizeof(((SDL_Event *)0)->quit.reserved), __builtin_offsetof(SDL_Event, quit.timestamp), sizeof(((SDL_Event *)0)->quit.timestamp), __builtin_offsetof(SDL_Event, user.type), sizeof(((SDL_Event *)0)->user.type), __builtin_offsetof(SDL_Event, user.reserved), sizeof(((SDL_Event *)0)->user.reserved), __builtin_offsetof(SDL_Event, user.timestamp), sizeof(((SDL_Event *)0)->user.timestamp), __builtin_offsetof(SDL_Event, user.windowID), sizeof(((SDL_Event *)0)->user.windowID), __builtin_offsetof(SDL_Event, user.code), sizeof(((SDL_Event *)0)->user.code), __builtin_offsetof(SDL_Event, user.data1), sizeof(((SDL_Event *)0)->user.data1), __builtin_offsetof(SDL_Event, user.data2), sizeof(((SDL_Event *)0)->user.data2), __builtin_offsetof(SDL_Event, tfinger.type), sizeof(((SDL_Event *)0)->tfinger.type), __builtin_offsetof(SDL_Event, tfinger.reserved), sizeof(((SDL_Event *)0)->tfinger.reserved), __builtin_offsetof(SDL_Event, tfinger.timestamp), sizeof(((SDL_Event *)0)->tfinger.timestamp), __builtin_offsetof(SDL_Event, tfinger.touchID), sizeof(((SDL_Event *)0)->tfinger.touchID), __builtin_offsetof(SDL_Event, tfinger.fingerID), sizeof(((SDL_Event *)0)->tfinger.fingerID), __builtin_offsetof(SDL_Event, tfinger.x), sizeof(((SDL_Event *)0)->tfinger.x), __builtin_offsetof(SDL_Event, tfinger.y), sizeof(((SDL_Event *)0)->tfinger.y), __builtin_offsetof(SDL_Event, tfinger.dx), sizeof(((SDL_Event *)0)->tfinger.dx), __builtin_offsetof(SDL_Event, tfinger.dy), sizeof(((SDL_Event *)0)->tfinger.dy), __builtin_offsetof(SDL_Event, tfinger.pressure), sizeof(((SDL_Event *)0)->tfinger.pressure), __builtin_offsetof(SDL_Event, tfinger.windowID), sizeof(((SDL_Event *)0)->tfinger.windowID), __builtin_offsetof(SDL_Event, pinch.type), sizeof(((SDL_Event *)0)->pinch.type), __builtin_offsetof(SDL_Event, pinch.reserved), sizeof(((SDL_Event *)0)->pinch.reserved), __builtin_offsetof(SDL_Event, pinch.timestamp), sizeof(((SDL_Event *)0)->pinch.timestamp), __builtin_offsetof(SDL_Event, pinch.scale), sizeof(((SDL_Event *)0)->pinch.scale), __builtin_offsetof(SDL_Event, pinch.windowID), sizeof(((SDL_Event *)0)->pinch.windowID), __builtin_offsetof(SDL_Event, pproximity.type), sizeof(((SDL_Event *)0)->pproximity.type), __builtin_offsetof(SDL_Event, pproximity.reserved), sizeof(((SDL_Event *)0)->pproximity.reserved), __builtin_offsetof(SDL_Event, pproximity.timestamp), sizeof(((SDL_Event *)0)->pproximity.timestamp), __builtin_offsetof(SDL_Event, pproximity.windowID), sizeof(((SDL_Event *)0)->pproximity.windowID), __builtin_offsetof(SDL_Event, pproximity.which), sizeof(((SDL_Event *)0)->pproximity.which), __builtin_offsetof(SDL_Event, pproximity.pen_state), sizeof(((SDL_Event *)0)->pproximity.pen_state), __builtin_offsetof(SDL_Event, pproximity.device_type), sizeof(((SDL_Event *)0)->pproximity.device_type), __builtin_offsetof(SDL_Event, ptouch.type), sizeof(((SDL_Event *)0)->ptouch.type), __builtin_offsetof(SDL_Event, ptouch.reserved), sizeof(((SDL_Event *)0)->ptouch.reserved), __builtin_offsetof(SDL_Event, ptouch.timestamp), sizeof(((SDL_Event *)0)->ptouch.timestamp), __builtin_offsetof(SDL_Event, ptouch.windowID), sizeof(((SDL_Event *)0)->ptouch.windowID), __builtin_offsetof(SDL_Event, ptouch.which), sizeof(((SDL_Event *)0)->ptouch.which), __builtin_offsetof(SDL_Event, ptouch.pen_state), sizeof(((SDL_Event *)0)->ptouch.pen_state), __builtin_offsetof(SDL_Event, ptouch.x), sizeof(((SDL_Event *)0)->ptouch.x), __builtin_offsetof(SDL_Event, ptouch.y), sizeof(((SDL_Event *)0)->ptouch.y), __builtin_offsetof(SDL_Event, ptouch.eraser), sizeof(((SDL_Event *)0)->ptouch.eraser), __builtin_offsetof(SDL_Event, ptouch.down), sizeof(((SDL_Event *)0)->ptouch.down), __builtin_offsetof(SDL_Event, ptouch.device_type), sizeof(((SDL_Event *)0)->ptouch.device_type), __builtin_offsetof(SDL_Event, pmotion.type), sizeof(((SDL_Event *)0)->pmotion.type), __builtin_offsetof(SDL_Event, pmotion.reserved), sizeof(((SDL_Event *)0)->pmotion.reserved), __builtin_offsetof(SDL_Event, pmotion.timestamp), sizeof(((SDL_Event *)0)->pmotion.timestamp), __builtin_offsetof(SDL_Event, pmotion.windowID), sizeof(((SDL_Event *)0)->pmotion.windowID), __builtin_offsetof(SDL_Event, pmotion.which), sizeof(((SDL_Event *)0)->pmotion.which), __builtin_offsetof(SDL_Event, pmotion.pen_state), sizeof(((SDL_Event *)0)->pmotion.pen_state), __builtin_offsetof(SDL_Event, pmotion.x), sizeof(((SDL_Event *)0)->pmotion.x), __builtin_offsetof(SDL_Event, pmotion.y), sizeof(((SDL_Event *)0)->pmotion.y), __builtin_offsetof(SDL_Event, pmotion.device_type), sizeof(((SDL_Event *)0)->pmotion.device_type), __builtin_offsetof(SDL_Event, pbutton.type), sizeof(((SDL_Event *)0)->pbutton.type), __builtin_offsetof(SDL_Event, pbutton.reserved), sizeof(((SDL_Event *)0)->pbutton.reserved), __builtin_offsetof(SDL_Event, pbutton.timestamp), sizeof(((SDL_Event *)0)->pbutton.timestamp), __builtin_offsetof(SDL_Event, pbutton.windowID), sizeof(((SDL_Event *)0)->pbutton.windowID), __builtin_offsetof(SDL_Event, pbutton.which), sizeof(((SDL_Event *)0)->pbutton.which), __builtin_offsetof(SDL_Event, pbutton.pen_state), sizeof(((SDL_Event *)0)->pbutton.pen_state), __builtin_offsetof(SDL_Event, pbutton.x), sizeof(((SDL_Event *)0)->pbutton.x), __builtin_offsetof(SDL_Event, pbutton.y), sizeof(((SDL_Event *)0)->pbutton.y), __builtin_offsetof(SDL_Event, pbutton.button), sizeof(((SDL_Event *)0)->pbutton.button), __builtin_offsetof(SDL_Event, pbutton.down), sizeof(((SDL_Event *)0)->pbutton.down), __builtin_offsetof(SDL_Event, pbutton.device_type), sizeof(((SDL_Event *)0)->pbutton.device_type), __builtin_offsetof(SDL_Event, paxis.type), sizeof(((SDL_Event *)0)->paxis.type), __builtin_offsetof(SDL_Event, paxis.reserved), sizeof(((SDL_Event *)0)->paxis.reserved), __builtin_offsetof(SDL_Event, paxis.timestamp), sizeof(((SDL_Event *)0)->paxis.timestamp), __builtin_offsetof(SDL_Event, paxis.windowID), sizeof(((SDL_Event *)0)->paxis.windowID), __builtin_offsetof(SDL_Event, paxis.which), sizeof(((SDL_Event *)0)->paxis.which), __builtin_offsetof(SDL_Event, paxis.pen_state), sizeof(((SDL_Event *)0)->paxis.pen_state), __builtin_offsetof(SDL_Event, paxis.x), sizeof(((SDL_Event *)0)->paxis.x), __builtin_offsetof(SDL_Event, paxis.y), sizeof(((SDL_Event *)0)->paxis.y), __builtin_offsetof(SDL_Event, paxis.axis), sizeof(((SDL_Event *)0)->paxis.axis), __builtin_offsetof(SDL_Event, paxis.value), sizeof(((SDL_Event *)0)->paxis.value), __builtin_offsetof(SDL_Event, paxis.device_type), sizeof(((SDL_Event *)0)->paxis.device_type), __builtin_offsetof(SDL_Event, render.type), sizeof(((SDL_Event *)0)->render.type), __builtin_offsetof(SDL_Event, render.reserved), sizeof(((SDL_Event *)0)->render.reserved), __builtin_offsetof(SDL_Event, render.timestamp), sizeof(((SDL_Event *)0)->render.timestamp), __builtin_offsetof(SDL_Event, render.windowID), sizeof(((SDL_Event *)0)->render.windowID), __builtin_offsetof(SDL_Event, drop.type), sizeof(((SDL_Event *)0)->drop.type), __builtin_offsetof(SDL_Event, drop.reserved), sizeof(((SDL_Event *)0)->drop.reserved), __builtin_offsetof(SDL_Event, drop.timestamp), sizeof(((SDL_Event *)0)->drop.timestamp), __builtin_offsetof(SDL_Event, drop.windowID), sizeof(((SDL_Event *)0)->drop.windowID), __builtin_offsetof(SDL_Event, drop.x), sizeof(((SDL_Event *)0)->drop.x), __builtin_offsetof(SDL_Event, drop.y), sizeof(((SDL_Event *)0)->drop.y), __builtin_offsetof(SDL_Event, drop.source), sizeof(((SDL_Event *)0)->drop.source), __builtin_offsetof(SDL_Event, drop.data), sizeof(((SDL_Event *)0)->drop.data), __builtin_offsetof(SDL_Event, clipboard.type), sizeof(((SDL_Event *)0)->clipboard.type), __builtin_offsetof(SDL_Event, clipboard.reserved), sizeof(((SDL_Event *)0)->clipboard.reserved), __builtin_offsetof(SDL_Event, clipboard.timestamp), sizeof(((SDL_Event *)0)->clipboard.timestamp), __builtin_offsetof(SDL_Event, clipboard.owner), sizeof(((SDL_Event *)0)->clipboard.owner), __builtin_offsetof(SDL_Event, clipboard.num_mime_types), sizeof(((SDL_Event *)0)->clipboard.num_mime_types), __builtin_offsetof(SDL_Event, clipboard.mime_types), sizeof(((SDL_Event *)0)->clipboard.mime_types), __builtin_offsetof(SDL_Event, padding), sizeof(((SDL_Event *)0)->padding)}; hero_pad_zero(&h0_sent, sizeof(SDL_Event), 1, hero_pad_s0, 287);
+  line 238:
+    blessed:     hero_print_bool(t12);
+    now:         }
+  line 240:
+    blessed:     hero_print_end();
+    now:         t12 = SDL_PushEvent(&h0_sent);
+  (514 lines blessed, 522 now)
+FAIL emission/run/ffi-a-filled-record-is-asked-for
+  tests/golden/run/ffi-a-filled-record-is-asked-for.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-a-filled-record-is-asked-for.c
+  line 223:
+    blessed:     t2 = slot_fill(&h0_s);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct slot, name), sizeof(((struct slot *)0)->name), __builtin_offsetof(struct slot, id), sizeof(((struct slot *)0)->id)}; hero_pad_zero(&h0_s, sizeof(struct slot), 1, hero_pad_s0, 2);
+  line 225:
+    blessed:     t3 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t2};
+    now:         }
+  line 227:
+    blessed:     t23 = h3_own3;
+    now:         t2 = slot_fill(&h0_s);
+  (440 lines blessed, 444 now)
+FAIL emission/run/ffi-a-typedef-the-note-names-binds-by-its-own-name
+  tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-a-typedef-the-note-names-binds-by-its-own-name.c
+  line 188:
+    blessed:     t2 = lock_init(&h0_m);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(lock_t, __size), sizeof(((lock_t *)0)->__size), __builtin_offsetof(lock_t, __align), sizeof(((lock_t *)0)->__align)}; hero_pad_zero(&h0_m, sizeof(lock_t), 1, hero_pad_s0, 2);
+  line 190:
+    blessed:     t3 = HERO_STR_LIT(hero_str_20);
+    now:         }
+  line 192:
+    blessed:     hero_lend_local_name(hero_lend_h0_m, "lock_marked", "m");
+    now:         t2 = lock_init(&h0_m);
+  (331 lines blessed, 347 now)
+FAIL emission/run/ffi-counted-by-a-stated-extent
+  tests/golden/run/ffi-counted-by-a-stated-extent.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-counted-by-a-stated-extent.c
+  line 465:
+    blessed:     (void)fill_pair(&h1_pair);
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pair *)0) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)}; hero_pad_zero(&h1_pair, sizeof(struct pair), 1, hero_pad_s0, 3);
+  line 466:
+    blessed:     t74 = h1_pair;
+    now:     #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+  line 467:
+    blessed: #line 49 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+    now:         }
+  (603 lines blessed, 607 now)
+FAIL emission/run/ffi-lent-on-an-out-parameter
+  tests/golden/run/ffi-lent-on-an-out-parameter.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-lent-on-an-out-parameter.c
+  line 209:
+    blessed:     (void)widen(&h1_s);
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct span *)0) == 13 ? sizeof(struct span) : 0), __builtin_offsetof(struct span, lo), sizeof(((struct span *)0)->lo), __builtin_offsetof(struct span, hi), sizeof(((struct span *)0)->hi)}; hero_pad_zero(&h1_s, sizeof(struct span), 1, hero_pad_s0, 3);
+  line 210:
+    blessed:     t9 = h1_s;
+    now:     #line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+  line 211:
+    blessed: #line 18 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+    now:         }
+  (321 lines blessed, 325 now)
+FAIL emission/run/ffi-rest-zero-a-nested-group-record
+  tests/golden/run/ffi-rest-zero-a-nested-group-record.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-rest-zero-a-nested-group-record.c
+  line 254:
+    blessed:     t9 = outer_union(&h0_a);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct outer, k), sizeof(((struct outer *)0)->k), __builtin_offsetof(struct outer, inner.kind), sizeof(((struct outer *)0)->inner.kind), __builtin_offsetof(struct outer, inner.c), sizeof(((struct outer *)0)->inner.c), __builtin_offsetof(struct outer, inner.d), sizeof(((struct outer *)0)->inner.d), __builtin_offsetof(struct outer, inner.x), sizeof(((struct outer *)0)->inner.x)}; hero_pad_zero(&h0_a, sizeof(struct outer), 1, hero_pad_s0, 5);
+  line 256:
+    blessed:     hero_print_int(t3);
+    now:         }
+  line 258:
+    blessed:     hero_print_str(t4);
+    now:         t9 = outer_union(&h0_a);
+  (412 lines blessed, 420 now)
+FAIL emission/run/ffi-rest-zero-a-partial-record
+  tests/golden/run/ffi-rest-zero-a-partial-record.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-rest-zero-a-partial-record.c
+  line 201:
+    blessed:     t5 = sp_union(&h0_s);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(SP, kind), sizeof(((SP *)0)->kind), __builtin_offsetof(SP, u.c), sizeof(((SP *)0)->u.c), __builtin_offsetof(SP, u.d), sizeof(((SP *)0)->u.d)}; hero_pad_zero(&h0_s, sizeof(SP), 1, hero_pad_s0, 3);
+  line 203:
+    blessed:     hero_print_int(t3);
+    now:         }
+  line 205:
+    blessed:     hero_print_str(t4);
+    now:         t5 = sp_union(&h0_s);
+  (295 lines blessed, 299 now)
+FAIL emission/run/ffi-rest-zero-a-record-of-long-arrays
+  tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-rest-zero-a-record-of-long-arrays.c
+  line 233:
+    blessed:     t5 = big_arrays(&h0_a);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct big, name), sizeof(((struct big *)0)->name), __builtin_offsetof(struct big, n), sizeof(((struct big *)0)->n), __builtin_offsetof(struct big, tail), sizeof(((struct big *)0)->tail)}; hero_pad_zero(&h0_a, sizeof(struct big), 1, hero_pad_s0, 3);
+  line 235:
+    blessed:     hero_print_int(t3);
+    now:         }
+  line 237:
+    blessed:     hero_print_str(t4);
+    now:         t5 = big_arrays(&h0_a);
+  (713 lines blessed, 721 now)
+FAIL emission/run/ffi-rest-zero-a-union-none-of-whose-members-is-named
+  tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-rest-zero-a-union-none-of-whose-members-is-named.c
+  line 247:
+    blessed:     t5 = sa_union(&h0_s);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)}; hero_pad_zero(&h0_s, sizeof(SA), 1, hero_pad_s0, 4);
+  line 249:
+    blessed:     t6 = HERO_STR_LIT(hero_str_20);
+    now:         }
+  line 251:
+    blessed:     hero_lend_local_name(hero_lend_h0_s, "sa_x", "s");
+    now:         t5 = sa_union(&h0_s);
+  (433 lines blessed, 453 now)
+FAIL emission/run/ffi-rest-zero-a-union-with-one-member-named
+  tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero no longer emits what it was blessed to emit — tests/emission/run-ffi-rest-zero-a-union-with-one-member-named.c
+  line 269:
+    blessed:     t8 = sa_x(&h0_w);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)}; hero_pad_zero(&h0_w, sizeof(SA), 1, hero_pad_s0, 4);
+  line 271:
+    blessed:     hero_print_int(t3);
+    now:         }
+  line 273:
+    blessed:     hero_print_str(t4);
+    now:         t8 = sa_x(&h0_w);
+  (432 lines blessed, 440 now)
+FAIL emission/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts
+  tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.c
+  line 194:
+    blessed:     t6 = fill_len(&h0_o, (void *)&h1_n);
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), 1, hero_pad_s0, 2);
+  line 196:
+    blessed:     hero_print_int(t6);
+    now:         }
+  line 198:
+    blessed:     hero_print_end();
+    now:         t6 = fill_len(&h0_o, (void *)&h1_n);
+  (298 lines blessed, 302 now)
+FAIL emission/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs
+  tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-092-a-record-lent-whole-with-its-count-runs.c
+  line 268:
+    blessed:     t15 = fill(&h0_o, t14);
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct one *)0) == 13 ? sizeof(struct one) : 0), __builtin_offsetof(struct one, a), sizeof(((struct one *)0)->a)}; hero_pad_zero(&h0_o, sizeof(struct one), 1, hero_pad_s0, 2);
+  line 270:
+    blessed:     hero_print_int(t15);
+    now:         }
+  line 272:
+    blessed:     hero_print_end();
+    now:         t15 = fill(&h0_o, t14);
+  (562 lines blessed, 602 now)
+FAIL emission/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell
+  tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-092-getsockopt-reads-its-length-through-a-cell.c
+  line 489:
+    blessed:     t48 = getsockopt(t27, t37, t47, &h3_l, (void *)&h4_n);
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct linger *)0) == 13 ? sizeof(struct linger) : 0), __builtin_offsetof(struct linger, l_onoff), sizeof(((struct linger *)0)->l_onoff), __builtin_offsetof(struct linger, l_linger), sizeof(((struct linger *)0)->l_linger)}; hero_pad_zero(&h3_l, sizeof(struct linger), 1, hero_pad_s0, 3);
+  line 491:
+    blessed:     hero_print_int(t48);
+    now:         }
+  line 493:
+    blessed:     hero_print_end();
+    now:         t48 = getsockopt(t27, t37, t47, &h3_l, (void *)&h4_n);
+  (645 lines blessed, 649 now)
+FAIL emission/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record
+  tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.c
+  line 213:
+    blessed:     t4 = hero_lock(&h0_m);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(hero_mutex, id), sizeof(((hero_mutex *)0)->id), __builtin_offsetof(hero_mutex, m.__sig), sizeof(((hero_mutex *)0)->m.__sig), __builtin_offsetof(hero_mutex, m.__opaque), sizeof(((hero_mutex *)0)->m.__opaque)}; hero_pad_zero(&h0_m, sizeof(hero_mutex), 1, hero_pad_s0, 3);
+  line 215:
+    blessed:     hero_print_int(t4);
+    now:         }
+  line 217:
+    blessed:     hero_print_end();
+    now:         t4 = hero_lock(&h0_m);
+  (310 lines blessed, 318 now)
+FAIL emission/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote
+  tests/golden/run/fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-173-a-regular-expression-gets-the-bytes-its-author-wrote.c
+  line 226:
+    blessed:     t6 = regcomp(&h2_re, hero_cstr_nonnull(t4), t5);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(regex_t, re_magic), sizeof(((regex_t *)0)->re_magic), __builtin_offsetof(regex_t, re_nsub), sizeof(((regex_t *)0)->re_nsub), __builtin_offsetof(regex_t, re_endp), sizeof(((regex_t *)0)->re_endp), __builtin_offsetof(regex_t, re_g), sizeof(((regex_t *)0)->re_g)}; hero_pad_zero(&h2_re, sizeof(regex_t), 1, hero_pad_s0, 4);
+  line 228:
+    blessed:     t7 = INT64_C(0);
+    now:         }
+  line 230:
+    blessed:     t8 = t6 != t7;
+    now:         t6 = regcomp(&h2_re, hero_cstr_nonnull(t4), t5);
+  (506 lines blessed, 518 now)
+FAIL emission/run/fixedbugs-396-a-buffer-c-fills
+  tests/golden/run/fixedbugs-396-a-buffer-c-fills.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-396-a-buffer-c-fills.c
+  line 730:
+    blessed:     (void)fill_pairs2((void *)hero_lend_b77_0);
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pair *)0) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)}; hero_pad_zero(hero_lend_b77_0, sizeof(struct pair), (size_t)hero_lend_e77_0, hero_pad_s0, 3);
+  line 732:
+    blessed:     h5_pairs = hero_lend_give(h5_pairs, hero_lend_b77_0, hero_lend_e77_0);
+    now:         }
+  line 734:
+    blessed:     }
+    now:         (void)fill_pairs2((void *)hero_lend_b77_0);
+  (1314 lines blessed, 1318 now)
+FAIL emission/run/fixedbugs-396-a-local-lent-in-place-is-guarded
+  tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-396-a-local-lent-in-place-is-guarded.c
+  line 604:
+    blessed:     (void)keeper_init(&(*ph0_k));
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct keeper *)0) == 13 ? sizeof(struct keeper) : 0), __builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, count), sizeof(((struct keeper *)0)->count)}; hero_pad_zero(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_s0, 3);
+  line 606:
+    blessed:     return;
+    now:         }
+  line 607:
+    blessed: #line 608 "fixedbugs396alocallentinplaceisguarded.c"
+    now:     #line 62 "tests/golden/run/fixedbugs-396-a-local-lent-in-place-is-guarded.hero"
+  (1077 lines blessed, 1097 now)
+FAIL emission/run/fixedbugs-396-posix-fills-its-buffers
+  tests/golden/run/fixedbugs-396-posix-fills-its-buffers.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-396-posix-fills-its-buffers.c
+  line 482:
+    blessed:     t54 = poll((void *)hero_lend_b23_0, t52, t53);
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pollfd *)0) == 13 ? sizeof(struct pollfd) : 0), __builtin_offsetof(struct pollfd, fd), sizeof(((struct pollfd *)0)->fd), __builtin_offsetof(struct pollfd, events), sizeof(((struct pollfd *)0)->events), __builtin_offsetof(struct pollfd, revents), sizeof(((struct pollfd *)0)->revents)}; hero_pad_zero(hero_lend_b23_0, sizeof(struct pollfd), (size_t)hero_lend_e23_0, hero_pad_s0, 4);
+  line 484:
+    blessed:     h3_watched = hero_lend_give(h3_watched, hero_lend_b23_0, hero_lend_e23_0);
+    now:         }
+  line 486:
+    blessed:     }
+    now:         t54 = poll((void *)hero_lend_b23_0, t52, t53);
+  (944 lines blessed, 948 now)
+FAIL emission/run/fixedbugs-396-sha256-final-fills-its-digest
+  tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-396-sha256-final-fills-its-digest.c
+  line 276:
+    blessed:     t8 = SHA256_Init(&h0_c);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct SHA256state_st, h), sizeof(((struct SHA256state_st *)0)->h), __builtin_offsetof(struct SHA256state_st, Nl), sizeof(((struct SHA256state_st *)0)->Nl), __builtin_offsetof(struct SHA256state_st, Nh), sizeof(((struct SHA256state_st *)0)->Nh), __builtin_offsetof(struct SHA256state_st, data), sizeof(((struct SHA256state_st *)0)->data), __builtin_offsetof(struct SHA256state_st, num), sizeof(((struct SHA256state_st *)0)->num), __builtin_offsetof(struct SHA256state_st, md_len), sizeof(((struct SHA256state_st *)0)->md_len)}; hero_pad_zero(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_s0, 6);
+  line 278:
+    blessed:     t9 = HERO_STR_LIT(hero_str_20);
+    now:         }
+  line 280:
+    blessed:     t10 = HERO_STR_LIT(hero_str_1998f2);
+    now:         t8 = SHA256_Init(&h0_c);
+  (603 lines blessed, 615 now)
+FAIL emission/run/fixedbugs-396-sha256-final-into-one-cell-aborts
+  tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-396-sha256-final-into-one-cell-aborts.c
+  line 187:
+    blessed:     t4 = SHA256_Init(&h0_c);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct SHA256state_st, h), sizeof(((struct SHA256state_st *)0)->h), __builtin_offsetof(struct SHA256state_st, Nl), sizeof(((struct SHA256state_st *)0)->Nl), __builtin_offsetof(struct SHA256state_st, Nh), sizeof(((struct SHA256state_st *)0)->Nh), __builtin_offsetof(struct SHA256state_st, data), sizeof(((struct SHA256state_st *)0)->data), __builtin_offsetof(struct SHA256state_st, num), sizeof(((struct SHA256state_st *)0)->num), __builtin_offsetof(struct SHA256state_st, md_len), sizeof(((struct SHA256state_st *)0)->md_len)}; hero_pad_zero(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_s0, 6);
+  line 189:
+    blessed:     t5 = HERO_STR_LIT(hero_str_20);
+    now:         }
+  line 191:
+    blessed:     t6 = HERO_STR_LIT(hero_str_1998f2);
+    now:         t4 = SHA256_Init(&h0_c);
+  (314 lines blessed, 326 now)
+FAIL emission/run/fixedbugs-396-sha256-final-past-sixteen-aborts
+  tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-396-sha256-final-past-sixteen-aborts.c
+  line 197:
+    blessed:     t4 = SHA256_Init(&h0_c);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct SHA256state_st, h), sizeof(((struct SHA256state_st *)0)->h), __builtin_offsetof(struct SHA256state_st, Nl), sizeof(((struct SHA256state_st *)0)->Nl), __builtin_offsetof(struct SHA256state_st, Nh), sizeof(((struct SHA256state_st *)0)->Nh), __builtin_offsetof(struct SHA256state_st, data), sizeof(((struct SHA256state_st *)0)->data), __builtin_offsetof(struct SHA256state_st, num), sizeof(((struct SHA256state_st *)0)->num), __builtin_offsetof(struct SHA256state_st, md_len), sizeof(((struct SHA256state_st *)0)->md_len)}; hero_pad_zero(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_s0, 6);
+  line 199:
+    blessed:     t5 = HERO_STR_LIT(hero_str_20);
+    now:         }
+  line 201:
+    blessed:     t6 = HERO_STR_LIT(hero_str_1998f2);
+    now:         t4 = SHA256_Init(&h0_c);
+  (333 lines blessed, 345 now)
+FAIL emission/run/fixedbugs-413-a-record-c-knows-by-its-address
+  tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-413-a-record-c-knows-by-its-address.c
+  line 229:
+    blessed:     t1 = keep_init(&(*ph0_k));
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_s0, 2);
+  line 231:
+    blessed:     return t1;
+    now:         }
+  line 232:
+    blessed: #line 233 "fixedbugs413arecordcknowsbyitsaddress.c"
+    now:     #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+  (981 lines blessed, 1069 now)
+FAIL emission/run/fixedbugs-413-libuv-keeps-every-handles-address
+  tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-413-libuv-keeps-every-handles-address.c
+  line 233:
+    blessed:     t2 = uv_timer_init(t1, &(*ph1_t));
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct uv_timer_s, data), sizeof(((struct uv_timer_s *)0)->data), __builtin_offsetof(struct uv_timer_s, loop), sizeof(((struct uv_timer_s *)0)->loop), __builtin_offsetof(struct uv_timer_s, type), sizeof(((struct uv_timer_s *)0)->type), __builtin_offsetof(struct uv_timer_s, close_cb), sizeof(((struct uv_timer_s *)0)->close_cb), __builtin_offsetof(struct uv_timer_s, handle_queue.next), sizeof(((struct uv_timer_s *)0)->handle_queue.next), __builtin_offsetof(struct uv_timer_s, handle_queue.prev), sizeof(((struct uv_timer_s *)0)->handle_queue.prev), __builtin_offsetof(struct uv_timer_s, u.fd), sizeof(((struct uv_timer_s *)0)->u.fd), __builtin_offsetof(struct uv_timer_s, u.reserved), sizeof(((struct uv_timer_s *)0)->u.reserved), __builtin_offsetof(struct uv_timer_s, next_closing), sizeof(((struct uv_timer_s *)0)->next_closing), __builtin_offsetof(struct uv_timer_s, flags), sizeof(((struct uv_timer_s *)0)->flags), __builtin_offsetof(struct uv_timer_s, timer_cb), sizeof(((struct uv_timer_s *)0)->timer_cb), __builtin_offsetof(struct uv_timer_s, node.heap), sizeof(((struct uv_timer_s *)0)->node.heap), __builtin_offsetof(struct uv_timer_s, node.queue.next), sizeof(((struct uv_timer_s *)0)->node.queue.next), __builtin_offsetof(struct uv_timer_s, node.queue.prev), sizeof(((struct uv_timer_s *)0)->node.queue.prev), __builtin_offsetof(struct uv_timer_s, timeout), sizeof(((struct uv_timer_s *)0)->timeout), __builtin_offsetof(struct uv_timer_s, repeat), sizeof(((struct uv_timer_s *)0)->repeat), __builtin_offsetof(struct uv_timer_s, start_id), sizeof(((struct uv_timer_s *)0)->start_id)}; hero_pad_zero(&(*ph1_t), sizeof(struct uv_timer_s), 1, hero_pad_s0, 17);
+  line 235:
+    blessed:     return t2;
+    now:         }
+  line 236:
+    blessed: #line 237 "fixedbugs413libuvkeepseveryhandlesaddress.c"
+    now:     #line 32 "tests/golden/run/fixedbugs-413-libuv-keeps-every-handles-address.hero"
+  (431 lines blessed, 439 now)
+FAIL emission/run/fixedbugs-413-zlib-knows-a-stream-by-its-address
+  tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-413-zlib-knows-a-stream-by-its-address.c
+  line 199:
+    blessed:     t4 = deflateInit_(&(*ph0_s), t1, hero_cstr_nonnull(t2), t3);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct z_stream_s, next_in), sizeof(((struct z_stream_s *)0)->next_in), __builtin_offsetof(struct z_stream_s, avail_in), sizeof(((struct z_stream_s *)0)->avail_in), __builtin_offsetof(struct z_stream_s, total_in), sizeof(((struct z_stream_s *)0)->total_in), __builtin_offsetof(struct z_stream_s, next_out), sizeof(((struct z_stream_s *)0)->next_out), __builtin_offsetof(struct z_stream_s, avail_out), sizeof(((struct z_stream_s *)0)->avail_out), __builtin_offsetof(struct z_stream_s, total_out), sizeof(((struct z_stream_s *)0)->total_out), __builtin_offsetof(struct z_stream_s, msg), sizeof(((struct z_stream_s *)0)->msg), __builtin_offsetof(struct z_stream_s, state), sizeof(((struct z_stream_s *)0)->state), __builtin_offsetof(struct z_stream_s, zalloc), sizeof(((struct z_stream_s *)0)->zalloc), __builtin_offsetof(struct z_stream_s, zfree), sizeof(((struct z_stream_s *)0)->zfree), __builtin_offsetof(struct z_stream_s, opaque), sizeof(((struct z_stream_s *)0)->opaque), __builtin_offsetof(struct z_stream_s, data_type), sizeof(((struct z_stream_s *)0)->data_type), __builtin_offsetof(struct z_stream_s, adler), sizeof(((struct z_stream_s *)0)->adler), __builtin_offsetof(struct z_stream_s, reserved), sizeof(((struct z_stream_s *)0)->reserved)}; hero_pad_zero(&(*ph0_s), sizeof(struct z_stream_s), 1, hero_pad_s0, 14);
+  line 201:
+    blessed:     return t4;
+    now:         }
+  line 202:
+    blessed: #line 203 "fixedbugs413zlibknowsastreambyitsaddress.c"
+    now:     #line 28 "tests/golden/run/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero"
+  (505 lines blessed, 549 now)
+FAIL emission/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text
+  tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-438-a-write-cut-short-leaves-the-old-text.c
+  line 340:
+    blessed:     t5 = getrlimit(t4, &h1_limit);
+    now:         { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct rlimit *)0) == 13 ? sizeof(struct rlimit) : 0), __builtin_offsetof(struct rlimit, rlim_cur), sizeof(((struct rlimit *)0)->rlim_cur), __builtin_offsetof(struct rlimit, rlim_max), sizeof(((struct rlimit *)0)->rlim_max)}; hero_pad_zero(&h1_limit, sizeof(struct rlimit), 1, hero_pad_s0, 3);
+  line 342:
+    blessed:     t6 = INT64_C(0);
+    now:         }
+  line 344:
+    blessed:     t7 = t5 != t6;
+    now:         t5 = getrlimit(t4, &h1_limit);
+  (1548 lines blessed, 1552 now)
+FAIL emission/run/fixedbugs-a-tag-names-a-handle-and-a-record
+  tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero no longer emits what it was blessed to emit — tests/emission/run-fixedbugs-a-tag-names-a-handle-and-a-record.c
+  line 202:
+    blessed:     t8 = getaddrinfo(hero_cstr_nonnull(t6), t7, &h0_h, &h1_r);
+    now:         { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct addrinfo, ai_flags), sizeof(((struct addrinfo *)0)->ai_flags), __builtin_offsetof(struct addrinfo, ai_family), sizeof(((struct addrinfo *)0)->ai_family), __builtin_offsetof(struct addrinfo, ai_socktype), sizeof(((struct addrinfo *)0)->ai_socktype), __builtin_offsetof(struct addrinfo, ai_protocol), sizeof(((struct addrinfo *)0)->ai_protocol), __builtin_offsetof(struct addrinfo, ai_addrlen), sizeof(((struct addrinfo *)0)->ai_addrlen), __builtin_offsetof(struct addrinfo, ai_canonname), sizeof(((struct addrinfo *)0)->ai_canonname), __builtin_offsetof(struct addrinfo, ai_addr), sizeof(((struct addrinfo *)0)->ai_addr), __builtin_offsetof(struct addrinfo, ai_next), sizeof(((struct addrinfo *)0)->ai_next)}; hero_pad_zero(&h0_h, sizeof(struct addrinfo), 1, hero_pad_s0, 8);
+  line 204:
+    blessed:     hero_handle_acquired(h1_r, "freeaddrinfo");
+    now:         }
+  line 206:
+    blessed:     h2_rc = t8;
+    now:         t8 = getaddrinfo(hero_cstr_nonnull(t6), t7, &h0_h, &h1_r);
+  (324 lines blessed, 328 now)
+harness: 1239 passed, 26 failed

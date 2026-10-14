@@ -1,0 +1,13 @@
+# A1: build a sock_path holding "/tmp/heroes.sock", every other byte zero, and send it.
+extern "sockpath.h"
+    record SockPath tag sock_path
+        family: u16
+        path: i8[108]
+    function sp_send(@p: SockPath lent) -> i64
+
+function main()
+    text = "/tmp/heroes.sock"
+    sp @= SockPath(family: 1, rest: zero)
+    for i in range(from: 0, to: text.len())
+        sp.path[i] @ to_i8(text[i]).must()
+    print(sp_send(@sp))

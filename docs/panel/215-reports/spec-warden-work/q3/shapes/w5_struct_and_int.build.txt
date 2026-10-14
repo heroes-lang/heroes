@@ -1,0 +1,6 @@
+error[ffi_union_field]: this construction of `S5` names `lo` and `i`, and `hi` and `i`, which are the same bytes pair by pair: `shapes.h` puts each pair in one union inside the struct, so C would keep only the one written last of each
+  at w5_struct_and_int.hero:10:10
+     |
+  10 |     b @= S5(kind: 1, lo: 2, hi: 3, i: 4)
+     |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a `record` over a C union names one or more of each union's members and reads any, and is built naming exactly one, an anonymous struct's fields counting as one (§ 13): name the one the program writes

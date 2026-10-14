@@ -1,0 +1,178 @@
+# PANEL 215'S BUILD OF Q2'S ROUTE C, not a landing (issue 1335): a group
+# record whose C struct holds a lock, at any depth, is a record C forbids to
+# copy, decided by clang from the header by TYPE IDENTITY and never by a
+# word the program writes.
+#
+# **The question, in C.** For each lock type L the standards name (POSIX
+# XSH 2.9.9's six, C11's two, Windows' three) and each member path P of a
+# group record's struct T that the dump names:
+# `__builtin_types_compatible_p(__typeof__(((T *)0)->P), L)`, one spelling
+# per type on every platform, whatever the dump prints for it.
+#
+# **No header is included that the program did not include.** A lock type
+# the program's headers never declare cannot be the type of a member they
+# declare; and a header of this unit's own would meet the program's: on the
+# Windows box `<windows.h>` after raylib's names is four errors (`Rectangle`,
+# `CloseWindow`, `ShowCursor`, `DrawTextA`), measured 2026-10-14. So each L
+# is asked first whether it is a type here at all (`hero_lk_ty`).
+#
+# **And only a lock that is a record or a union is asked.** A typedef is not
+# a type in C: glibc's `pthread_spinlock_t` is `volatile int` and Darwin's
+# `sem_t` is `int`, and `__builtin_types_compatible_p` ignores the
+# qualifier, so either would call every `int` member a lock (measured
+# 2026-10-14: `int~spin 1` under glibc's `-std=gnu11`, `int~sem_t 1` on
+# Darwin). `__builtin_classify_type` of a value of L is 12 or 13 or L is
+# not asked, and those two locks are what this route cannot see there.
+#
+# Read as `layout_screen.hero` reads its own: by where clang erred, at
+# `#line <n> "<file>"`, never by what it said.
+
+use emit/c_text
+use emit/layout_rows
+
+constant LOCKS: [str]
+    [
+        "pthread_mutex_t"
+        "pthread_cond_t"
+        "pthread_rwlock_t"
+        "pthread_spinlock_t"
+        "pthread_barrier_t"
+        "sem_t"
+        "mtx_t"
+        "cnd_t"
+        "CRITICAL_SECTION"
+        "SRWLOCK"
+        "CONDITION_VARIABLE"
+    ]
+
+constant TY: str
+    "hero_lk_ty"
+
+constant HAS: str
+    "hero_lk_has"
+
+constant IS: str
+    "hero_lk_is"
+
+# One question: whether the member at `path` of the record `decl`'s C type
+# is a lock. An empty path asks the type itself.
+record Question
+    decl: i64
+    c_type: str
+    path: str
+
+# What clang said yes to: the member's C path and the lock's name.
+record Found
+    path: str
+    lock: str
+    c_type: str
+
+function member_type(one: Question) -> str
+    if one.path.len() == 0
+        return one.c_type
+    return "__typeof__(((" + one.c_type + " *)0)->" + one.path + ")"
+
+function unit(headers: [str], questions: [Question]) -> str
+    lines: [str] @= c_text.includes(headers)
+    j: i64 @= 0
+
+    for lock in LOCKS
+        v = "hero_lk_v_" + j.to_str()
+        lines @ lines.push("#line " + (j + 1).to_str() + " \"" + TY + "\"")
+        lines @ lines.push(
+            "typedef " + lock + " hero_lk_t_" + j.to_str() + "; extern hero_lk_t_" + j.to_str() + " " + v + "; _Static_assert(__builtin_classify_type(" + v + ") == 12 || __builtin_classify_type(" + v + ") == 13, \"" + TY + "\");"
+        )
+        j @ j + 1
+
+    q: i64 @= 0
+
+    for one in questions
+        lines @ lines.push("#line " + (q + 1).to_str() + " \"" + HAS + "\"")
+        lines @ lines.push("typedef " + member_type(one) + " hero_lk_m_" + q.to_str() + ";")
+        k: i64 @= 0
+
+        while k < LOCKS.len()
+            lines @ lines.push("#line " + (q * LOCKS.len() + k + 1).to_str() + " \"" + IS + "\"")
+            lines @ lines.push(
+                "_Static_assert(!__builtin_types_compatible_p(hero_lk_m_" + q.to_str() + ", hero_lk_t_" + k.to_str() + "), \"" + IS + "\");"
+            )
+            k @ k + 1
+
+        q @ q + 1
+
+    return lines.join("\n") + "\n"
+
+# The first lock found in each record, by declaration: a yes at `hero_lk_is`
+# where the member exists and the lock is an askable type.
+function answers(said: str, questions: [Question]) -> {i64: Found}
+    ty = erred(said: said, file: TY)
+    has = erred(said: said, file: HAS)
+    is = erred(said: said, file: IS)
+    out: {i64: Found} @= {}
+
+    # ORDER: ascending row, so the first question of a record answers it.
+    for row in sort(keys(is))
+        k = row - 1
+        q = k / LOCKS.len()
+        j = k % LOCKS.len()
+
+        if q < questions.len() && has[q + 1].is_err() && ty[j + 1].is_err()
+            one = questions[q]
+
+            if out[one.decl].is_err()
+                out[one.decl] @ Found(path: one.path, lock: LOCKS[j], c_type: one.c_type)
+
+    return out
+
+# Whether clang erred anywhere but at this unit's own positions: then the
+# headers did not compile alone, and nothing here is read as an answer.
+function strays(said: str) -> bool
+    for row in layout_rows.rows_of(said)
+        if is_error(row)
+            colon = layout_rows.byte_index(text: row, needle: ":")
+
+            if colon >= 0
+                file = row.slice(from: 0, to: colon)
+
+                if file != TY && file != HAS && file != IS
+                    return true
+
+    return false
+
+function is_error(row: str) -> bool
+    return layout_rows.byte_index(text: row, needle: ": error: ") >= 0 || layout_rows.byte_index(text: row, needle: ": fatal error: ") >= 0
+
+# The rows clang reported an ERROR at under `#line <n> "<file>"`.
+function erred(said: str, file: str) -> {i64: bool}
+    out: {i64: bool} @= {}
+    prefix = file + ":"
+
+    for row in layout_rows.rows_of(said)
+        if row.len() > prefix.len() && row.slice(from: 0, to: prefix.len()) == prefix && is_error(row)
+            n: i64 @= 0
+            at: i64 @= prefix.len()
+
+            while at < row.len() && row[at] >= '0' && row[at] <= '9'
+                n @ n * 10 + (row[at] - '0').to_i64().must()
+                at @ at + 1
+
+            if n >= 1
+                out[n] @ true
+
+    return out
+
+## Tests
+
+test "a yes is read only where the member exists and the lock is a type here"
+    questions = [
+        Question(decl: 3, c_type: "struct counter", path: "lock")
+        Question(decl: 3, c_type: "struct counter", path: "nosuch")
+        Question(decl: 5, c_type: "struct w", path: "cs")
+    ]
+    n = LOCKS.len()
+    said = "hero_lk_is:1:16: error: static assertion failed\nhero_lk_has:2:43: error: no member\nhero_lk_is:" + (n + 1).to_str() + ":16: error: x\nhero_lk_ty:9:9: error: unknown type name\nhero_lk_is:" + (2 * n + 9).to_str() + ":16: error: x\n"
+    got = answers(said, questions: questions)
+    assert got[3].must().path == "lock" && got[3].must().lock == "pthread_mutex_t"
+    assert got[5].is_err()
+    assert !strays(said)
+    assert strays(said + "./x.h:2:3: error: y\n")

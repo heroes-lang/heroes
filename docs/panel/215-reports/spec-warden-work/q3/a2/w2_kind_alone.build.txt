@@ -1,0 +1,6 @@
+error[ffi_incomplete_record]: `Tagged` does not name `via`, and `union.h` says the struct has it — a group's `record` IS the header's struct, so a field left out is a field C fills with zero
+  at w2_kind_alone.hero:2:12
+    |
+  2 |     record Tagged tag tagged
+    |            ^^^^^^
+  note: the assertions above check every field you DO name and cannot see one you leave out: every `Tagged` built here would carry a zero `via` into C, which is a value rather than a crash

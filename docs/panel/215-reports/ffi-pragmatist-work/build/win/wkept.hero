@@ -1,0 +1,38 @@
+# every lend, kept: the places themselves reach C.
+extern "ws.h"
+    record CsBox tag csbox partial
+        n: i64
+    record SrwBox tag srwbox partial
+        n: i64
+    record MBox tag mbox partial
+        n: i64
+    function cs_init(@b: CsBox) -> i32
+    function cs_enter(@b: CsBox) -> i32
+    function cs_try(@b: CsBox) -> i32
+    function cs_leave(@b: CsBox) -> i32
+    function cs_count(@b: CsBox) -> i32
+    function srw_init(@b: SrwBox) -> i32
+    function srw_try(@b: SrwBox) -> i32
+    function srw_release(@b: SrwBox) -> i32
+    function m_init(@b: MBox) -> i32
+    function m_lock(@b: MBox) -> i32
+    function m_try(@b: MBox) -> i32
+
+record Both
+    c: CsBox
+    s: SrwBox
+
+function hold(@b: CsBox) -> i32
+    _ = cs_enter(@b)
+    b.n @ b.n + 1
+    return cs_leave(@b)
+
+function main()
+    x: Both @= Both(c: CsBox(n: 0, rest: zero), s: SrwBox(n: 5, rest: zero))
+    _ = cs_init(@x.c)
+    _ = srw_init(@x.s)
+    _ = hold(@x.c)
+    _ = hold(@x.c)
+    m: MBox @= MBox(n: 0, rest: zero)
+    _ = m_init(@m)
+    print(x.c.n, " ", srw_try(@x.s), " ", x.s.n, " ", m_lock(@m), " ", m_try(@m))

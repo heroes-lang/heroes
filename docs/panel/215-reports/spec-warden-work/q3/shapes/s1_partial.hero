@@ -1,0 +1,13 @@
+extern "shapes.h"
+    record S1 tag s1 partial
+        kind: i32
+    function dirty()
+    function s1_nz(@t: S1 lent) -> i64
+
+function zeroed() -> S1
+    return S1(kind: 2, rest: zero)
+
+function main()
+    dirty()
+    a: S1 @= zeroed()
+    print(s1_nz(@a))

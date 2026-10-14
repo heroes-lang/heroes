@@ -1,0 +1,4 @@
+== crc.hero (this Mac)
+error[ffi_parameter_type]: `buf` of `crc32` is declared a different kind of thing from the header's `const unsigned char *` — clang read the header, and the two do not convert
+  note: §4.19: a parameter is declared as what the header says. `const unsigned char *` has no name in this language — if it is a struct, declare it as a `record` inside this same `extern` group and the header owns its layout
+exit 1

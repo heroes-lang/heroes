@@ -1,0 +1,29 @@
+246a247,250
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)}; hero_pad_zero(&h0_s, sizeof(SA), 1, hero_pad_s0, 4);
+> #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+>     }
+> #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+252a257,260
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)}; hero_pad_zero(&h0_s, sizeof(SA), 1, hero_pad_s0, 4);
+> #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+>     }
+> #line 38 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+270a279,282
+> #line 41 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(UD, c), sizeof(((UD *)0)->c), __builtin_offsetof(UD, d), sizeof(((UD *)0)->d)}; hero_pad_zero(&h1_u, sizeof(UD), 1, hero_pad_s0, 2);
+> #line 41 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+>     }
+298a311,314
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)}; hero_pad_zero(&h2_n, sizeof(SA), 1, hero_pad_s0, 4);
+> #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+>     }
+> #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+304a321,324
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)}; hero_pad_zero(&h2_n, sizeof(SA), 1, hero_pad_s0, 4);
+> #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+>     }
+> #line 44 "tests/golden/run/ffi-rest-zero-a-union-none-of-whose-members-is-named.hero"
+326c346
+< #line 327 "ffirestzeroaunionnoneofwhosemembersisnamed.c"
+---
+> #line 347 "ffirestzeroaunionnoneofwhosemembersisnamed.c"

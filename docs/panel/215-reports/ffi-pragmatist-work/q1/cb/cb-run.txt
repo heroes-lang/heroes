@@ -1,0 +1,11 @@
+== cb.hero (this Mac)
+wrote cb
+12
+exit 0
+109:typedef int32_t (*h_0fn_5cf1ff1f)(struct cd);
+151:__attribute__((unused)) static void hero_ffi_probe_h_cb_call_cd(h_0fn_5cf1ff1f a0, struct cd a1) { (void)(call_cd)(a0, a1); }
+152:__attribute__((unused)) static void hero_ffi_probe_h_cb_bump_cd(struct cd a0) { (void)(bump_cd)(a0); }
+183:int32_t h_0cb_cb_seen(struct cd h0_x);
+249:int32_t h_0cb_cb_seen(struct cd h0_x) {
+250:    int32_t hero_result = h_cb_seen(h0_x);
+273:    t7 = call_cd((h_0fn_5cf1ff1f)hero_callback_of((void (*)(void))t4), t6);

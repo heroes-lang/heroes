@@ -1,0 +1,31 @@
+# Compiler-engineer, panel 215: the same padded record, lent to C from places
+# no zeroed region holds: a field of a Heroes record, after a by-value call
+# and after a record C returned by value, and an @ parameter handed on.
+extern "small.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    function w_cd(@p: Cd) -> i64
+
+extern "cret2.h"
+    function cd_make() -> Cd
+
+record Holder
+    h: Cd
+    k: i64
+
+function cd_through(x: Cd) -> Cd
+    return x
+
+function send(@p: Cd) -> i64
+    return w_cd(@p)
+
+function main()
+    a = Cd(c: 1, d: 2.0, rest: zero)
+    x: Holder @= Holder(h: cd_through(x: a), k: 3)
+    n1 = w_cd(@x.h)
+    y: Holder @= Holder(h: cd_make(), k: 4)
+    n2 = w_cd(@y.h)
+    b: Cd @= cd_through(x: a)
+    n3 = send(@b)
+    print(n1 + n2 + n3)

@@ -1,0 +1,10 @@
+         0 | struct tq
+         0 |   struct item * tqh_first
+         8 |   struct item ** tqh_last
+           | [sizeof=16, align=8]
+         0 | struct counter
+         0 |   struct _opaque_pthread_mutex_t lock
+         0 |     long __sig
+         8 |     char[56] __opaque
+        64 |   long n
+           | [sizeof=72, align=8]

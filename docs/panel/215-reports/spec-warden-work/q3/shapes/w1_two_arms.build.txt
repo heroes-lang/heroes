@@ -1,0 +1,6 @@
+error[ffi_union_field]: this construction of `S1` names `fd` and `handle`, which are the same bytes: `shapes.h` puts them in one union inside the struct, so C would keep only the one written last
+  at w1_two_arms.hero:9:10
+    |
+  9 |     b @= S1(kind: 2, fd: 7, handle: nullptr)
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a `record` over a C union names one or more of each union's members and reads any, and is built naming exactly one, an anonymous struct's fields counting as one (§ 13): name the one the program writes

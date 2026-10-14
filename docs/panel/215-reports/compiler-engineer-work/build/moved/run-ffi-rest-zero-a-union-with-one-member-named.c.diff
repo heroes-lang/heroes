@@ -1,0 +1,16 @@
+267a268,269
+> #line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)}; hero_pad_zero(&h0_w, sizeof(SA), 1, hero_pad_s0, 4);
+268a271,272
+>     }
+> #line 34 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+298a303,304
+> #line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(SA, kind), sizeof(((SA *)0)->kind), __builtin_offsetof(SA, c), sizeof(((SA *)0)->c), __builtin_offsetof(SA, d), sizeof(((SA *)0)->d), __builtin_offsetof(SA, x), sizeof(((SA *)0)->x)}; hero_pad_zero(&h1_n, sizeof(SA), 1, hero_pad_s0, 4);
+299a306,307
+>     }
+> #line 37 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
+326c334
+< #line 327 "ffirestzeroaunionwithonemembernamed.c"
+---
+> #line 335 "ffirestzeroaunionwithonemembernamed.c"

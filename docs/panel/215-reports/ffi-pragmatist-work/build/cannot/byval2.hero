@@ -1,0 +1,9 @@
+# A C function taking a counter by value, bound as the header declares it.
+extern "byval.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_peek(c: Counter) -> i64
+
+function main()
+    c = Counter(n: 3, rest: zero)
+    print(counter_peek(c: c))

@@ -1,0 +1,29 @@
+# Critic, panel 215 pass 2: a correct program. Every read of `c.n` holds the
+# lock; at -O0 the emitter reads it by copying the whole record, mutex bytes
+# included, while a C thread contends for that mutex.
+extern "race.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function race_start(@c: Counter) -> i32
+    function race_join(@c: Counter) -> i32
+    function counter_lock(@c: Counter) -> i32
+    function counter_unlock(@c: Counter) -> i32
+
+function peek(@c: Counter) -> i64
+    _ = counter_lock(@c)
+    v = c.n
+    _ = counter_unlock(@c)
+    return v
+
+function main()
+    c: Counter @= Counter(rest: zero)
+    _ = counter_init(@c)
+    _ = race_start(@c)
+    seen: i64 @= 0
+
+    for _ in range(from: 0, to: 100000)
+        seen @ peek(@c)
+
+    _ = race_join(@c)
+    print(c.n, " ", seen <= c.n)

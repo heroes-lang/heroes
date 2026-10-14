@@ -1,0 +1,15 @@
+# ffi-pragmatist, panel 215: a Heroes function C calls with a record by value, and a C function
+# taking and returning one by value
+extern "cb.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    function call_cd(f: (function(Cd) -> i32), x: Cd) -> i32
+    function bump_cd(x: Cd) -> Cd
+
+function seen(x: Cd) -> i32
+    return x.c.to_i32().must() + 10
+
+function main()
+    a = Cd(c: 1, d: 2.0)
+    print(call_cd(f: seen, x: bump_cd(x: a)))

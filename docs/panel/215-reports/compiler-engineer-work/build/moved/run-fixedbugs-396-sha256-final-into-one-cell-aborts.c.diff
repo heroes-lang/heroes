@@ -1,0 +1,19 @@
+186a187,190
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct SHA256state_st, h), sizeof(((struct SHA256state_st *)0)->h), __builtin_offsetof(struct SHA256state_st, Nl), sizeof(((struct SHA256state_st *)0)->Nl), __builtin_offsetof(struct SHA256state_st, Nh), sizeof(((struct SHA256state_st *)0)->Nh), __builtin_offsetof(struct SHA256state_st, data), sizeof(((struct SHA256state_st *)0)->data), __builtin_offsetof(struct SHA256state_st, num), sizeof(((struct SHA256state_st *)0)->num), __builtin_offsetof(struct SHA256state_st, md_len), sizeof(((struct SHA256state_st *)0)->md_len)}; hero_pad_zero(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_s0, 6);
+> #line 19 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
+>     }
+> #line 19 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
+197a202,205
+> #line 19 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct SHA256state_st, h), sizeof(((struct SHA256state_st *)0)->h), __builtin_offsetof(struct SHA256state_st, Nl), sizeof(((struct SHA256state_st *)0)->Nl), __builtin_offsetof(struct SHA256state_st, Nh), sizeof(((struct SHA256state_st *)0)->Nh), __builtin_offsetof(struct SHA256state_st, data), sizeof(((struct SHA256state_st *)0)->data), __builtin_offsetof(struct SHA256state_st, num), sizeof(((struct SHA256state_st *)0)->num), __builtin_offsetof(struct SHA256state_st, md_len), sizeof(((struct SHA256state_st *)0)->md_len)}; hero_pad_zero(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_s0, 6);
+> #line 19 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
+>     }
+211a220,223
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct SHA256state_st, h), sizeof(((struct SHA256state_st *)0)->h), __builtin_offsetof(struct SHA256state_st, Nl), sizeof(((struct SHA256state_st *)0)->Nl), __builtin_offsetof(struct SHA256state_st, Nh), sizeof(((struct SHA256state_st *)0)->Nh), __builtin_offsetof(struct SHA256state_st, data), sizeof(((struct SHA256state_st *)0)->data), __builtin_offsetof(struct SHA256state_st, num), sizeof(((struct SHA256state_st *)0)->num), __builtin_offsetof(struct SHA256state_st, md_len), sizeof(((struct SHA256state_st *)0)->md_len)}; hero_pad_zero(&h0_c, sizeof(struct SHA256state_st), 1, hero_pad_s0, 6);
+> #line 20 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
+>     }
+> #line 20 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
+232c244
+< #line 233 "fixedbugs396sha256finalintoonecellaborts.c"
+---
+> #line 245 "fixedbugs396sha256finalintoonecellaborts.c"

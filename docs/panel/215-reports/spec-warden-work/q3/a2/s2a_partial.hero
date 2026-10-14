@@ -1,0 +1,16 @@
+extern "dirty.h"
+    record Tagged tag tagged partial
+        kind: i32
+    function dirty()
+    function tg_kind(@t: Tagged lent) -> i32
+    function tg_nonzero(@t: Tagged lent) -> i64
+    function tg_via_nonzero(@t: Tagged lent) -> i64
+    function tg_size() -> i64
+
+function built() -> Tagged
+    return Tagged(kind: 2, rest: zero)
+
+function main()
+    dirty()
+    t: Tagged @= built()
+    print(tg_kind(@t), " ", tg_via_nonzero(@t), " ", tg_nonzero(@t), " of ", tg_size())

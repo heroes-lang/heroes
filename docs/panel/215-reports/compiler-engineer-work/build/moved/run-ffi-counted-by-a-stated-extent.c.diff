@@ -1,0 +1,9 @@
+463a464,467
+> #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct pair *)0) == 13 ? sizeof(struct pair) : 0), __builtin_offsetof(struct pair, a), sizeof(((struct pair *)0)->a), __builtin_offsetof(struct pair, b), sizeof(((struct pair *)0)->b)}; hero_pad_zero(&h1_pair, sizeof(struct pair), 1, hero_pad_s0, 3);
+> #line 48 "tests/golden/run/ffi-counted-by-a-stated-extent.hero"
+>     }
+487c491
+< #line 488 "fficountedbyastatedextent.c"
+---
+> #line 492 "fficountedbyastatedextent.c"

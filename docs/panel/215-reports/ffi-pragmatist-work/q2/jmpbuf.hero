@@ -1,0 +1,8 @@
+# ffi-pragmatist, panel 215, Q2: jmp_buf bound as a record
+extern "nc2.h"
+    record JmpBuf tag jmp_buf partial
+        x: i64
+    function setjmp(@env: JmpBuf) -> i32
+
+function main()
+    print("unreached")

@@ -1,0 +1,11 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77)
+-O0: 2 reports; frames:       2 purec_a.c:12       1 purec_a.c:13       2 purec_b.c:4 
+-O1: 2 reports; frames:       2 purec_a.c:12       1 purec_a.c:13       2 purec_b.c:4 
+-O2: 2 reports; frames:       2 purec_a.c:12       1 purec_a.c:13       2 purec_b.c:4 
+-O3: 2 reports; frames:       2 purec_a.c:12       1 purec_a.c:13       2 purec_b.c:4 
+leg aarch64, Debian clang version 22.1.8 (1~deb13u4)
+-O0: 0 reports; frames: none
+-O1: 0 reports; frames: none
+-O2: 0 reports; frames: none
+-O3: 0 reports; frames: none

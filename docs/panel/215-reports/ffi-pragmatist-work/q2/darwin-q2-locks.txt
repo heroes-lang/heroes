@@ -1,0 +1,14 @@
+leg arm64, Apple clang version 21.0.0 (clang-2100.3.34.2) (this Mac)
+== mutex
+wrote mutex
+init 0 lock 0
+copy: trylock 16 unlock 0 lock 0
+original: unlock 0 destroy 0
+copy: unlock 0 destroy 0
+exit 0
+== zstream
+wrote zstream
+init 0
+copy: finish -2 end -2 (Z_STREAM_ERROR is -2)
+original: finish 1 end 0
+exit 0

@@ -1,0 +1,81 @@
+# Compiler-engineer, panel 215 build: the shapes beside the critic's, each
+# record C returns by value stored in a Heroes record's field and lent from
+# there, a place no zeroed lend region holds.
+extern "pn.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    record Arr tag arr
+        a: Cd[2]
+        n: i32
+    record Ocd2 tag ocd2
+        inr: Cd
+        z: i8
+    record Deep tag deep
+        k: i8
+        o: Ocd2
+    record An tag an
+        k: i8
+        x: i8
+        y: i64
+    record Bf tag bf partial
+        a: i8
+        d: f64
+    record Pt tag pt partial
+        k: i8
+        d: f64
+    record Uk tag uk
+        kind: i32
+        s: Cd
+    function mk_arr() -> Arr
+    function mk_deep() -> Deep
+    function mk_an() -> An
+    function mk_bf() -> Bf
+    function mk_pt() -> Pt
+    function mk_uk() -> Uk
+    function w_arr(@p: Arr) -> i64
+    function w_deep(@p: Deep) -> i64
+    function w_an(@p: An) -> i64
+    function w_bf(@p: Bf) -> i64
+    function w_pt(@p: Pt) -> i64
+    function w_uk(@p: Uk) -> i64
+    function uk_d(@p: Uk) -> f64
+
+record HArr
+    h: Arr
+    k: i64
+
+record HDeep
+    h: Deep
+    k: i64
+
+record HAn
+    h: An
+    k: i64
+
+record HBf
+    h: Bf
+    k: i64
+
+record HPt
+    h: Pt
+    k: i64
+
+record HUk
+    h: Uk
+    k: i64
+
+function main()
+    a: HArr @= HArr(h: mk_arr(), k: 1)
+    n1 = w_arr(@a.h)
+    d: HDeep @= HDeep(h: mk_deep(), k: 2)
+    n2 = w_deep(@d.h)
+    n: HAn @= HAn(h: mk_an(), k: 3)
+    n3 = w_an(@n.h)
+    b: HBf @= HBf(h: mk_bf(), k: 4)
+    n4 = w_bf(@b.h)
+    p: HPt @= HPt(h: mk_pt(), k: 5)
+    n5 = w_pt(@p.h)
+    u: HUk @= HUk(h: mk_uk(), k: 6)
+    n6 = w_uk(@u.h)
+    print(n1, " ", n2, " ", n3, " ", n4, " ", n5, " ", n6, " ", uk_d(@u.h), " ", a.h.a[1].d, " ", d.h.o.inr.d)
