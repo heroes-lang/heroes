@@ -104,3 +104,25 @@ seed and two of ten commits drawn at random still stop at the second stage,
 and each of the eight builds as it was. The commits as they were, under
 `refs/archive/`, keep every one. Which seeds the rewrite keeps goes back to the
 author, with four variants measured.
+
+**Decided 2026-10-15, by the author: the rewrite keeps the seed at every tag**
+(variant A of measurement 045 § 7), the coordinator's recommendation and its
+reason put beside the four variants measured. Every tagged commit that carries
+a seed keeps its own, so every published tag stays the tree it was, byte for
+byte, and builds as it did, and `seed/README.md`'s recovery chain, *every
+milestone tag from `m-selfhost-fixpoint` on carries its own `seed/heroes.c`*,
+stays true of the past. The rehearsal's pack weighs 124.88 MiB against B's
+72.95; a clone from GitHub is weighed after the push. **One rule for the past
+and the future, as the author asked on 2026-10-14**: every tag builds from its
+own tree. In the past it does by the seed it carries; from part 2's rhythm on
+(issue 2087) it does by the two-stage build the CI checks at every push, and
+that issue owes the recovery chain's sentence its new shape when it lands. A
+commit between two tags is built or bisected under `refs/archive/`, which keeps
+every commit with the seed it carried: part 3's condition on bisect is
+answered so, and its other conditions stand. **And a copy of the repository as
+it was, kept aside** (the author's instruction of 2026-10-15, meant as: *if you
+have a copy of the old repository somewhere, keep it aside, to compare that
+`main` has the same latest files*): a bundle of every ref and a mirror of
+GitHub, under `.claude/worktrees/backup-before-rewrite/`, made again just
+before the force-push; `main`'s files are compared with it after the rewrite
+and after the push, the remapped hashes being the one difference allowed.
