@@ -16,6 +16,7 @@ use cli/toolchain
 use cli/compiling
 use cli/pointee_ask
 use cli/header_ask
+use cli/reach_ask
 use cli/probing
 use cli/header_refused
 use cli/header_alone
@@ -86,6 +87,10 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         answer @ header_ask.ask(t, art, s, struct_tags: struct_tags, asking: asking)
     else
         answer @ asked.must()
+
+    # What each bound name's object-like macros reach, where clang found a
+    # name undeclared (`cli/reach_ask.hero`, defect 2061).
+    answer.reached @ reach_ask.reached(t, asking: asking, s: s, decls: art.decls, message: message)
 
     # A name told absent from a header that declares it read alone is retold
     # with the move of a group that reads it so (panel 204's R3,

@@ -1,0 +1,19 @@
+# fixedbugs, defect 2061, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `#define absval myabs` over `#define myabs(x) my_fabs(x)`, `absval`
+# bound: `internal error: compiling the generated C failed` at exit 2, clang
+# saying *use of undeclared identifier 'myabs'* at the probe's `(absval)(a0)`.
+#
+# CAUSE: the probe calls the name in parentheses, which a macro written with
+# parameters never expands under, and clang named `myabs`, which no group
+# declares, so no reader claimed the line.
+#
+# FIX: each bound name is walked through the header's `-dM` table on the
+# refused path (`cli/reach_ask.hero`) and the binding told as a macro, the
+# function of the program's own drafted (`emit/ffi_reach.hero`).
+
+extern "fixedbugs-2061-reach.h"
+    function absval(x: f64) -> f64  #~ ffi_macro_name
+
+function main()
+    print(absval(-3.0))

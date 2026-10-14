@@ -1,0 +1,16 @@
+# fixedbugs, defect 2061, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: `#define absval fabs` over `#define fabs(x) my_fabs(x)`: exit 2,
+# clang saying *call to undeclared library function 'fabs'* in the pointee
+# check's dump, which reads the groups' headers alone; the unit's own probe
+# compiled, `<math.h>` after the groups declaring a `fabs` the header never
+# does.
+#
+# FIX: the same walk finds `fabs`, a macro written with parameters, and the
+# binding is told on its declaration.
+
+extern "fixedbugs-2061-math.h"
+    function absval(x: f64) -> f64  #~ ffi_macro_name
+
+function main()
+    print(absval(-3.0))
