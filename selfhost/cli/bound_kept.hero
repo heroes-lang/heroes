@@ -108,6 +108,8 @@ function judged(t: toolchain.Toolchain, probe: compiling.Probe, headers: [str], 
     # answer still differs is refused, never left to a wrong value.
     wider: {str: bool} @= bound
 
+    # ORDER: none — each name sets one key to true, which every order leaves
+    # the same.
     for name in keys(kept)
         wider[name] @ true
 
@@ -144,6 +146,8 @@ function reached(table: {str: bound_said.Define}, from: str) -> {str: str}
         words: {str: bool} @= {}
         bound_said.words_of(@words, text: define.must().body)
 
+        # ORDER: ascending word — a word reached from two macros keeps the
+        # first as its parent, and `told` names the chain through it.
         for word in sort(keys(words))
             if define.must().params[word].is_err() && word != from && parents[word].is_err() && !table[word].is_err()
                 parents[word] @ name

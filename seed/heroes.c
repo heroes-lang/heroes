@@ -702266,23 +702266,23 @@ bb11:
     if (t54) goto bb13; else goto bb14;
 #line 112 "selfhost/emit/decls.hero"
 bb12:
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t91 = h20_standard;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t235 = h28_xs4;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     hero_array_incref(t91);
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     h28_xs4 = t91;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     hero_array_decref(t235);
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t92 = INT64_C(0);
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     h29_i4 = t92;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     goto bb23;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
 bb13:
 #line 113 "selfhost/emit/decls.hero"
     t55 = h5_s;
@@ -702304,799 +702304,799 @@ bb13:
     h21_bound = t57;
 #line 113 "selfhost/emit/decls.hero"
     hero_map_decref(t237);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t58 = h11_kept;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t59 = hero_map_keys(t58);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t238 = h58_own58;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     h58_own58 = t59;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     hero_array_decref(t238);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t239 = h22_xs2;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     hero_array_incref(t59);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     h22_xs2 = t59;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     hero_array_decref(t239);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t60 = INT64_C(0);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     h23_i2 = t60;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     goto bb15;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
 bb14:
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     goto bb12;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
 bb15:
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t61 = h23_i2;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t62 = h22_xs2;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t63 = ((void)(t62 == NULL ? ((void)hero_array_len(t62), hero_unreachable()) : (void)0), t62->len);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t64 = t61 < t63;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     if (t64) goto bb16; else goto bb18;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
 bb16:
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t65 = h22_xs2;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t66 = h23_i2;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t67 = ((void)((t65 == NULL || t66 < 0 || t66 >= t65->len) ? ((void)hero_array_at(t65, t66), hero_unreachable()) : (void)0), (void)(t65->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t65 + 1))[t66]);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t240 = h24_name;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     hero_str_incref(t67);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     h24_name = t67;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     hero_str_decref(t240);
     t68 = h24_name;
-#line 116 "selfhost/emit/decls.hero"
+#line 118 "selfhost/emit/decls.hero"
     t69 = true;
-#line 116 "selfhost/emit/decls.hero"
+#line 118 "selfhost/emit/decls.hero"
     hero_map_set(&(h21_bound), &t68, &t69);
-#line 116 "selfhost/emit/decls.hero"
+#line 118 "selfhost/emit/decls.hero"
     goto bb17;
-#line 116 "selfhost/emit/decls.hero"
+#line 118 "selfhost/emit/decls.hero"
 bb17:
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t70 = h23_i2;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     t71 = INT64_C(1);
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow();
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     h23_i2 = t72;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
     goto bb15;
-#line 115 "selfhost/emit/decls.hero"
+#line 117 "selfhost/emit/decls.hero"
 bb18:
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t73 = h13_groups;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t74 = h_emitctext_includes(t73);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t241 = h59_own59;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     h59_own59 = t74;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     hero_array_decref(t241);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t75 = h21_bound;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t76 = h_emitmacroguard_around(t74, t75);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t242 = h60_own60;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     h60_own60 = t76;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     hero_array_decref(t242);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t243 = h25_xs3;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     hero_array_incref(t76);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     h25_xs3 = t76;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     hero_array_decref(t243);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t77 = INT64_C(0);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     h26_i3 = t77;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     goto bb19;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
 bb19:
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t78 = h26_i3;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t79 = h25_xs3;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t80 = ((void)(t79 == NULL ? ((void)hero_array_len(t79), hero_unreachable()) : (void)0), t79->len);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t81 = t78 < t80;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     if (t81) goto bb20; else goto bb22;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
 bb20:
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t82 = h25_xs3;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t83 = h26_i3;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t84 = ((void)((t82 == NULL || t83 < 0 || t83 >= t82->len) ? ((void)hero_array_at(t82, t83), hero_unreachable()) : (void)0), (void)(t82->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t82 + 1))[t83]);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t244 = h27_line;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     hero_str_incref(t84);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     h27_line = t84;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     hero_str_decref(t244);
     t85 = h27_line;
-#line 119 "selfhost/emit/decls.hero"
+#line 121 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t85);
-#line 119 "selfhost/emit/decls.hero"
+#line 121 "selfhost/emit/decls.hero"
     goto bb21;
-#line 119 "selfhost/emit/decls.hero"
+#line 121 "selfhost/emit/decls.hero"
 bb21:
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t86 = h26_i3;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     t87 = INT64_C(1);
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t86, t87, &t88)) hero_panic_overflow();
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     h26_i3 = t88;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
     goto bb19;
-#line 118 "selfhost/emit/decls.hero"
+#line 120 "selfhost/emit/decls.hero"
 bb22:
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     t89 = h21_bound;
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     t90 = h_emitmacroguard_read_after(t89);
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     t245 = h61_own61;
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     h61_own61 = t90;
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     hero_array_decref(t245);
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     t246 = h20_standard;
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     hero_array_incref(t90);
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     h20_standard = t90;
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     hero_array_decref(t246);
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
     goto bb12;
-#line 121 "selfhost/emit/decls.hero"
+#line 123 "selfhost/emit/decls.hero"
 bb23:
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t93 = h29_i4;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t94 = h28_xs4;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t95 = ((void)(t94 == NULL ? ((void)hero_array_len(t94), hero_unreachable()) : (void)0), t94->len);
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t96 = t93 < t95;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     if (t96) goto bb24; else goto bb26;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
 bb24:
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t97 = h28_xs4;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t98 = h29_i4;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t99 = ((void)((t97 == NULL || t98 < 0 || t98 >= t97->len) ? ((void)hero_array_at(t97, t98), hero_unreachable()) : (void)0), (void)(t97->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t97 + 1))[t98]);
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t247 = h30_line;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     hero_str_incref(t99);
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     h30_line = t99;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     hero_str_decref(t247);
     t100 = h30_line;
-#line 124 "selfhost/emit/decls.hero"
+#line 126 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t100);
-#line 124 "selfhost/emit/decls.hero"
+#line 126 "selfhost/emit/decls.hero"
     goto bb25;
-#line 124 "selfhost/emit/decls.hero"
+#line 126 "selfhost/emit/decls.hero"
 bb25:
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t101 = h29_i4;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     t102 = INT64_C(1);
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t101, t102, &t103)) hero_panic_overflow();
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     h29_i4 = t103;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
     goto bb23;
-#line 123 "selfhost/emit/decls.hero"
+#line 125 "selfhost/emit/decls.hero"
 bb26:
-#line 126 "selfhost/emit/decls.hero"
+#line 128 "selfhost/emit/decls.hero"
     t104 = HERO_STR_LIT(hero_str_0);
-#line 126 "selfhost/emit/decls.hero"
+#line 128 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t104);
     t105 = HERO_STR_LIT(hero_str_28a1bab9);
-#line 127 "selfhost/emit/decls.hero"
+#line 129 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t105);
-#line 135 "selfhost/emit/decls.hero"
+#line 137 "selfhost/emit/decls.hero"
     t106 = HERO_STR_LIT(hero_str_6dd3a615);
-#line 135 "selfhost/emit/decls.hero"
+#line 137 "selfhost/emit/decls.hero"
     t248 = h31_macro_line;
-#line 135 "selfhost/emit/decls.hero"
+#line 137 "selfhost/emit/decls.hero"
     hero_str_incref(t106);
-#line 135 "selfhost/emit/decls.hero"
+#line 137 "selfhost/emit/decls.hero"
     h31_macro_line = t106;
-#line 135 "selfhost/emit/decls.hero"
+#line 137 "selfhost/emit/decls.hero"
     hero_str_decref(t248);
-#line 137 "selfhost/emit/decls.hero"
+#line 139 "selfhost/emit/decls.hero"
     t107 = h8_tu_local;
-#line 137 "selfhost/emit/decls.hero"
+#line 139 "selfhost/emit/decls.hero"
     t108 = hero_str_len(t107);
-#line 137 "selfhost/emit/decls.hero"
+#line 139 "selfhost/emit/decls.hero"
     t109 = INT64_C(0);
-#line 137 "selfhost/emit/decls.hero"
+#line 139 "selfhost/emit/decls.hero"
     t110 = t108 > t109;
-#line 137 "selfhost/emit/decls.hero"
+#line 139 "selfhost/emit/decls.hero"
     if (t110) goto bb28; else goto bb29;
-#line 137 "selfhost/emit/decls.hero"
+#line 139 "selfhost/emit/decls.hero"
 bb27:
-#line 139 "selfhost/emit/decls.hero"
+#line 141 "selfhost/emit/decls.hero"
     t116 = h31_macro_line;
-#line 139 "selfhost/emit/decls.hero"
+#line 141 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t116);
-#line 147 "selfhost/emit/decls.hero"
+#line 149 "selfhost/emit/decls.hero"
     t117 = HERO_STR_LIT(hero_str_46679b97);
-#line 147 "selfhost/emit/decls.hero"
+#line 149 "selfhost/emit/decls.hero"
     t249 = h32_quiet_line;
-#line 147 "selfhost/emit/decls.hero"
+#line 149 "selfhost/emit/decls.hero"
     hero_str_incref(t117);
-#line 147 "selfhost/emit/decls.hero"
+#line 149 "selfhost/emit/decls.hero"
     h32_quiet_line = t117;
-#line 147 "selfhost/emit/decls.hero"
+#line 149 "selfhost/emit/decls.hero"
     hero_str_decref(t249);
-#line 149 "selfhost/emit/decls.hero"
+#line 151 "selfhost/emit/decls.hero"
     t118 = h8_tu_local;
-#line 149 "selfhost/emit/decls.hero"
+#line 151 "selfhost/emit/decls.hero"
     t119 = hero_str_len(t118);
-#line 149 "selfhost/emit/decls.hero"
+#line 151 "selfhost/emit/decls.hero"
     t120 = INT64_C(0);
-#line 149 "selfhost/emit/decls.hero"
+#line 151 "selfhost/emit/decls.hero"
     t121 = t119 > t120;
-#line 149 "selfhost/emit/decls.hero"
+#line 151 "selfhost/emit/decls.hero"
     if (t121) goto bb31; else goto bb32;
-#line 149 "selfhost/emit/decls.hero"
+#line 151 "selfhost/emit/decls.hero"
 bb28:
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     t111 = h31_macro_line;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     t112 = HERO_STR_LIT(hero_str_20);
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     t113 = hero_str_concat(t111, t112);
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     t250 = h62_own62;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     h62_own62 = t113;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     hero_str_decref(t250);
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     t114 = h8_tu_local;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     t115 = hero_str_concat(t113, t114);
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     t251 = h63_own63;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     h63_own63 = t115;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     hero_str_decref(t251);
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     t252 = h31_macro_line;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     hero_str_incref(t115);
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     h31_macro_line = t115;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     hero_str_decref(t252);
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     goto bb27;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
 bb29:
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
     goto bb27;
-#line 138 "selfhost/emit/decls.hero"
+#line 140 "selfhost/emit/decls.hero"
 bb30:
-#line 151 "selfhost/emit/decls.hero"
+#line 153 "selfhost/emit/decls.hero"
     t125 = h32_quiet_line;
-#line 151 "selfhost/emit/decls.hero"
+#line 153 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t125);
-#line 157 "selfhost/emit/decls.hero"
+#line 159 "selfhost/emit/decls.hero"
     t126 = h_emitnodebug_DEFINE();
-#line 157 "selfhost/emit/decls.hero"
+#line 159 "selfhost/emit/decls.hero"
     t253 = h64_own64;
-#line 157 "selfhost/emit/decls.hero"
+#line 159 "selfhost/emit/decls.hero"
     h64_own64 = t126;
-#line 157 "selfhost/emit/decls.hero"
+#line 159 "selfhost/emit/decls.hero"
     hero_str_decref(t253);
-#line 157 "selfhost/emit/decls.hero"
+#line 159 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t126);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t127 = h_emitentrystop_DEFINE();
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t254 = h65_own65;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     h65_own65 = t127;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     hero_array_decref(t254);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t255 = h33_xs5;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     hero_array_incref(t127);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     h33_xs5 = t127;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     hero_array_decref(t255);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t128 = INT64_C(0);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     h34_i5 = t128;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     goto bb33;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
 bb31:
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     t122 = h32_quiet_line;
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     t123 = HERO_STR_LIT(hero_str_440f3302);
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     t124 = hero_str_concat(t122, t123);
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     t256 = h66_own66;
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     h66_own66 = t124;
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     hero_str_decref(t256);
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     t257 = h32_quiet_line;
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     hero_str_incref(t124);
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     h32_quiet_line = t124;
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     hero_str_decref(t257);
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     goto bb30;
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
 bb32:
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
     goto bb30;
-#line 150 "selfhost/emit/decls.hero"
+#line 152 "selfhost/emit/decls.hero"
 bb33:
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t129 = h34_i5;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t130 = h33_xs5;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t131 = ((void)(t130 == NULL ? ((void)hero_array_len(t130), hero_unreachable()) : (void)0), t130->len);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t132 = t129 < t131;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     if (t132) goto bb34; else goto bb36;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
 bb34:
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t133 = h33_xs5;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t134 = h34_i5;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t135 = ((void)((t133 == NULL || t134 < 0 || t134 >= t133->len) ? ((void)hero_array_at(t133, t134), hero_unreachable()) : (void)0), (void)(t133->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t133 + 1))[t134]);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t258 = h35_line;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     hero_str_incref(t135);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     h35_line = t135;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     hero_str_decref(t258);
     t136 = h35_line;
-#line 163 "selfhost/emit/decls.hero"
+#line 165 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t136);
-#line 163 "selfhost/emit/decls.hero"
+#line 165 "selfhost/emit/decls.hero"
     goto bb35;
-#line 163 "selfhost/emit/decls.hero"
+#line 165 "selfhost/emit/decls.hero"
 bb35:
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t137 = h34_i5;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     t138 = INT64_C(1);
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t137, t138, &t139)) hero_panic_overflow();
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     h34_i5 = t139;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
     goto bb33;
-#line 162 "selfhost/emit/decls.hero"
+#line 164 "selfhost/emit/decls.hero"
 bb36:
-#line 165 "selfhost/emit/decls.hero"
+#line 167 "selfhost/emit/decls.hero"
     t140 = HERO_STR_LIT(hero_str_0);
-#line 165 "selfhost/emit/decls.hero"
+#line 167 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t140);
-#line 184 "selfhost/emit/decls.hero"
+#line 186 "selfhost/emit/decls.hero"
     t141 = h3_c;
-#line 184 "selfhost/emit/decls.hero"
+#line 186 "selfhost/emit/decls.hero"
     t142 = h4_names;
-#line 184 "selfhost/emit/decls.hero"
+#line 186 "selfhost/emit/decls.hero"
     t143 = h5_s;
-#line 184 "selfhost/emit/decls.hero"
+#line 186 "selfhost/emit/decls.hero"
     t144 = h6_decls;
-#line 184 "selfhost/emit/decls.hero"
+#line 186 "selfhost/emit/decls.hero"
     t145 = h9_records;
-#line 184 "selfhost/emit/decls.hero"
+#line 186 "selfhost/emit/decls.hero"
     h_emitexternrecord_extern_record_assertions(&(*ph0_w), t141, t142, t143, t144, t145);
     t146 = h1_p;
-#line 185 "selfhost/emit/decls.hero"
+#line 187 "selfhost/emit/decls.hero"
     t147 = h3_c;
-#line 185 "selfhost/emit/decls.hero"
+#line 187 "selfhost/emit/decls.hero"
     t148 = h4_names;
-#line 185 "selfhost/emit/decls.hero"
+#line 187 "selfhost/emit/decls.hero"
     t149 = h5_s;
-#line 185 "selfhost/emit/decls.hero"
+#line 187 "selfhost/emit/decls.hero"
     t150 = h6_decls;
-#line 185 "selfhost/emit/decls.hero"
+#line 187 "selfhost/emit/decls.hero"
     h_emitexternunion_union_assertions(&(*ph0_w), t146, t147, t148, t149, t150);
     t151 = h1_p;
-#line 186 "selfhost/emit/decls.hero"
+#line 188 "selfhost/emit/decls.hero"
     t152 = h3_c;
-#line 186 "selfhost/emit/decls.hero"
+#line 188 "selfhost/emit/decls.hero"
     t153 = h4_names;
-#line 186 "selfhost/emit/decls.hero"
+#line 188 "selfhost/emit/decls.hero"
     t154 = h5_s;
-#line 186 "selfhost/emit/decls.hero"
+#line 188 "selfhost/emit/decls.hero"
     t155 = h6_decls;
-#line 186 "selfhost/emit/decls.hero"
+#line 188 "selfhost/emit/decls.hero"
     h_emitexternassert_extern_assertions(&(*ph0_w), t151, t152, t153, t154, t155);
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t156 = h1_p;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t157 = h2_target;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t158 = h5_s;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t159 = h8_tu_local;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t160 = hero_str_len(t159);
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t161 = INT64_C(0);
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t162 = t160 == t161;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t163 = h_emitdecls_live_strings(t156, t157, t158, t162);
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t259 = h67_own67;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     h67_own67 = t163;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     hero_map_decref(t259);
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     t260 = h36_live;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     hero_map_incref(t163);
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     h36_live = t163;
-#line 196 "selfhost/emit/decls.hero"
+#line 198 "selfhost/emit/decls.hero"
     hero_map_decref(t260);
     t164 = false;
-#line 197 "selfhost/emit/decls.hero"
+#line 199 "selfhost/emit/decls.hero"
     h37_any_live = t164;
     t165 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
-#line 198 "selfhost/emit/decls.hero"
+#line 200 "selfhost/emit/decls.hero"
     t261 = h68_own68;
-#line 198 "selfhost/emit/decls.hero"
+#line 200 "selfhost/emit/decls.hero"
     h68_own68 = t165;
-#line 198 "selfhost/emit/decls.hero"
+#line 200 "selfhost/emit/decls.hero"
     hero_map_decref(t261);
-#line 198 "selfhost/emit/decls.hero"
+#line 200 "selfhost/emit/decls.hero"
     t262 = h38_defined;
-#line 198 "selfhost/emit/decls.hero"
+#line 200 "selfhost/emit/decls.hero"
     hero_map_incref(t165);
-#line 198 "selfhost/emit/decls.hero"
+#line 200 "selfhost/emit/decls.hero"
     h38_defined = t165;
-#line 198 "selfhost/emit/decls.hero"
+#line 200 "selfhost/emit/decls.hero"
     hero_map_decref(t262);
     t166 = INT64_C(0);
-#line 199 "selfhost/emit/decls.hero"
+#line 201 "selfhost/emit/decls.hero"
     h39_index = t166;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t167 = h1_p;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t168 = t167.f_strings;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t263 = h40_xs6;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     hero_array_incref(t168);
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     h40_xs6 = t168;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     hero_array_decref(t263);
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t169 = INT64_C(0);
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     h41_i6 = t169;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     goto bb37;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
 bb37:
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t170 = h41_i6;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t171 = h40_xs6;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t172 = ((void)(t171 == NULL ? ((void)hero_array_len(t171), hero_unreachable()) : (void)0), t171->len);
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t173 = t170 < t172;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     if (t173) goto bb38; else goto bb40;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
 bb38:
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t174 = h40_xs6;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t175 = h41_i6;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t176 = ((void)((t174 == NULL || t175 < 0 || t175 >= t174->len) ? ((void)hero_array_at(t174, t175), hero_unreachable()) : (void)0), (void)(t174->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t174 + 1))[t175]);
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t264 = h42_text;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     hero_str_incref(t176);
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     h42_text = t176;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     hero_str_decref(t264);
     t177 = h36_live;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     t178 = h39_index;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     {
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
       HERO_NODEBUG const void *found = hero_map_find(t177, &t178);
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
       if (found == NULL) {
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
         t179 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
       } else {
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
         t179 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
         (&hero_desc_bool)->copy(&t179.as.ok, found);
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
       }
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     }
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     t265 = h69_own69;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     h69_own69 = t179;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_release(&t265);
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     t266 = h43_f0;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_retain(&t179);
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     h43_f0 = t179;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_release(&t266);
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     t180 = h43_f0;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     t181 = t180.tag;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     t182 = INT64_C(1);
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     t183 = t181 == t182;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     t184 = !t183;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
     if (t184) goto bb42; else goto bb43;
-#line 202 "selfhost/emit/decls.hero"
+#line 204 "selfhost/emit/decls.hero"
 bb39:
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t212 = h41_i6;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     t213 = INT64_C(1);
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t212, t213, &t214)) hero_panic_overflow();
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     h41_i6 = t214;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
     goto bb37;
-#line 201 "selfhost/emit/decls.hero"
+#line 203 "selfhost/emit/decls.hero"
 bb40:
-#line 215 "selfhost/emit/decls.hero"
+#line 217 "selfhost/emit/decls.hero"
     t215 = h37_any_live;
-#line 215 "selfhost/emit/decls.hero"
+#line 217 "selfhost/emit/decls.hero"
     if (t215) goto bb48; else goto bb49;
-#line 215 "selfhost/emit/decls.hero"
+#line 217 "selfhost/emit/decls.hero"
 bb41:
-#line 213 "selfhost/emit/decls.hero"
+#line 215 "selfhost/emit/decls.hero"
     t209 = h39_index;
-#line 213 "selfhost/emit/decls.hero"
+#line 215 "selfhost/emit/decls.hero"
     t210 = INT64_C(1);
-#line 213 "selfhost/emit/decls.hero"
+#line 215 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t209, t210, &t211)) hero_panic_overflow();
-#line 213 "selfhost/emit/decls.hero"
+#line 215 "selfhost/emit/decls.hero"
     h39_index = t211;
-#line 213 "selfhost/emit/decls.hero"
+#line 215 "selfhost/emit/decls.hero"
     goto bb39;
-#line 213 "selfhost/emit/decls.hero"
+#line 215 "selfhost/emit/decls.hero"
 bb42:
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     t185 = HERO_STR_LIT(hero_str_5f6714bb);
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     t186 = h42_text;
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     t187 = h_emitmangle_instance(t186);
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     t267 = h70_own70;
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     h70_own70 = t187;
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     hero_str_decref(t267);
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     t188 = hero_str_concat(t185, t187);
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     t268 = h71_own71;
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     h71_own71 = t188;
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     hero_str_decref(t268);
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     t269 = h44_name;
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     hero_str_incref(t188);
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     h44_name = t188;
-#line 207 "selfhost/emit/decls.hero"
+#line 209 "selfhost/emit/decls.hero"
     hero_str_decref(t269);
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     t189 = h38_defined;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     t190 = h44_name;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     {
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
       HERO_NODEBUG const void *found = hero_map_find(t189, &t190);
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
       if (found == NULL) {
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
         t191 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
       } else {
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
         t191 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
         (&hero_desc_bool)->copy(&t191.as.ok, found);
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
       }
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     }
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     t270 = h72_own72;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     h72_own72 = t191;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_release(&t270);
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     t271 = h45_f1;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_retain(&t191);
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     h45_f1 = t191;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_release(&t271);
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     t192 = h45_f1;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     t193 = t192.tag;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     t194 = INT64_C(1);
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     t195 = t193 == t194;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     if (t195) goto bb45; else goto bb46;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
 bb43:
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     goto bb41;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
 bb44:
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
     goto bb41;
-#line 209 "selfhost/emit/decls.hero"
+#line 211 "selfhost/emit/decls.hero"
 bb45:
     t196 = h44_name;
-#line 210 "selfhost/emit/decls.hero"
+#line 212 "selfhost/emit/decls.hero"
     t197 = true;
-#line 210 "selfhost/emit/decls.hero"
+#line 212 "selfhost/emit/decls.hero"
     hero_map_set(&(h38_defined), &t196, &t197);
     t198 = HERO_STR_LIT(hero_str_1afbe540);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t199 = h44_name;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t200 = hero_str_concat(t198, t199);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t272 = h73_own73;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     h73_own73 = t200;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     hero_str_decref(t272);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t201 = HERO_STR_LIT(hero_str_16a4);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t202 = hero_str_concat(t200, t201);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t273 = h74_own74;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     h74_own74 = t202;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     hero_str_decref(t273);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t203 = h42_text;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t204 = h_emitctext_literal(t203);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t274 = h75_own75;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     h75_own75 = t204;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     hero_str_decref(t274);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t205 = hero_str_concat(t202, t204);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t275 = h76_own76;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     h76_own76 = t205;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     hero_str_decref(t275);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t206 = HERO_STR_LIT(hero_str_1536);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t207 = hero_str_concat(t205, t206);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     t276 = h77_own77;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     h77_own77 = t207;
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     hero_str_decref(t276);
-#line 211 "selfhost/emit/decls.hero"
+#line 213 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t207);
     t208 = true;
-#line 212 "selfhost/emit/decls.hero"
+#line 214 "selfhost/emit/decls.hero"
     h37_any_live = t208;
-#line 212 "selfhost/emit/decls.hero"
+#line 214 "selfhost/emit/decls.hero"
     goto bb44;
-#line 212 "selfhost/emit/decls.hero"
+#line 214 "selfhost/emit/decls.hero"
 bb46:
-#line 212 "selfhost/emit/decls.hero"
+#line 214 "selfhost/emit/decls.hero"
     goto bb44;
-#line 212 "selfhost/emit/decls.hero"
+#line 214 "selfhost/emit/decls.hero"
 bb47:
 #line 703102 "main.c"
     hero_array_release_at(&h12_own);
@@ -703158,129 +703158,129 @@ bb47:
     hero_str_release_at(&h77_own77);
     return;
 bb48:
-#line 216 "selfhost/emit/decls.hero"
+#line 218 "selfhost/emit/decls.hero"
     t216 = HERO_STR_LIT(hero_str_0);
-#line 216 "selfhost/emit/decls.hero"
+#line 218 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t216);
-#line 216 "selfhost/emit/decls.hero"
+#line 218 "selfhost/emit/decls.hero"
     goto bb47;
-#line 216 "selfhost/emit/decls.hero"
+#line 218 "selfhost/emit/decls.hero"
 bb49:
-#line 216 "selfhost/emit/decls.hero"
+#line 218 "selfhost/emit/decls.hero"
     goto bb47;
 #line 703172 "main.c"
 }
 
-#line 229 "selfhost/emit/decls.hero"
+#line 231 "selfhost/emit/decls.hero"
 HeroMapHeader * h_emitdecls_live_strings(h_ircontainers_Program h0_p, h_emitdecls_BuildTarget h1_target, h_source_Source h2_s, bool h3_prune_library) {
-#line 229 "selfhost/emit/decls.hero"
+#line 231 "selfhost/emit/decls.hero"
     HeroMapHeader * h4_used = {0}; HeroMapHeader * h5_live = {0}; HERO_NODEBUG HeroArrayHeader * h6_xs0 = {0}; HERO_NODEBUG int64_t h7_i0; h_ircontainers_Function h8_f = {0}; HERO_NODEBUG bool h9_b0; HERO_NODEBUG bool h10_b1; HERO_NODEBUG h_0opt_473cb9ae h11_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h12_xs1 = {0}; HERO_NODEBUG int64_t h13_i1; h_ircontainers_Block h14_blk = {0}; HERO_NODEBUG HeroArrayHeader * h15_xs2 = {0}; HERO_NODEBUG int64_t h16_i2; h_ir_Inst h17_inst = {0}; HERO_NODEBUG h_ir_OpKind h18_s0 = {0}; h_ir_OpKind_c_lit h19_lt = {0}; HERO_NODEBUG h_ir_IntConst h20_s1 = {0}; h_ir_IntConst_c_str_const h21_sc; HERO_NODEBUG HeroMapHeader * h22_own22 = {0}; HERO_NODEBUG HeroMapHeader * h23_own23 = {0}; HERO_NODEBUG h_0opt_473cb9ae h24_own24 = {0}; HERO_NODEBUG h_ircontainers_Program t1; HERO_NODEBUG h_source_Source t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroMapHeader * t4; HERO_NODEBUG h_ircontainers_Program t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_ircontainers_Function t14; HERO_NODEBUG h_ircontainers_Function t15; HERO_NODEBUG h_emitdecls_BuildTarget t16; HERO_NODEBUG bool t17; HERO_NODEBUG bool t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_source_Source t20; HERO_NODEBUG h_ircontainers_Function t21; HERO_NODEBUG h_token_Span t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroMapHeader * t26; HERO_NODEBUG h_ircontainers_Function t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_0opt_473cb9ae t29; HERO_NODEBUG h_0opt_473cb9ae t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_ircontainers_Function t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG h_ircontainers_Block t44; HERO_NODEBUG h_ircontainers_Block t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG bool t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG h_ir_Inst t54; HERO_NODEBUG h_ir_Inst t55; HERO_NODEBUG h_ir_OpKind t56; HERO_NODEBUG h_ir_OpKind t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG h_ir_OpKind t59; HERO_NODEBUG h_ir_OpKind_c_lit t60; HERO_NODEBUG h_ir_OpKind_c_lit t61; HERO_NODEBUG h_ir_IntConst t62; HERO_NODEBUG h_ir_IntConst t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG h_ir_IntConst t65; HERO_NODEBUG h_ir_IntConst_c_str_const t66; HERO_NODEBUG h_ir_IntConst_c_str_const t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG bool t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG HeroMapHeader * t79; HERO_NODEBUG HeroMapHeader * t80; HERO_NODEBUG HeroMapHeader * t81; HERO_NODEBUG HeroMapHeader * t82; HERO_NODEBUG HeroMapHeader * t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG h_ircontainers_Function t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG h_0opt_473cb9ae t87; HERO_NODEBUG h_0opt_473cb9ae t88; HERO_NODEBUG h_ircontainers_Block t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG h_ir_Inst t91; HERO_NODEBUG h_ir_OpKind t92; HERO_NODEBUG h_ir_OpKind_c_lit t93; HERO_NODEBUG h_ir_IntConst t94; HERO_ENTRY_STOP; goto bb0;
-#line 229 "selfhost/emit/decls.hero"
+#line 231 "selfhost/emit/decls.hero"
 bb0:
     t1 = h0_p;
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     t2 = h2_s;
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     t3 = h_emitbuiltins_reachable(t1, t2);
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     t80 = h22_own22;
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     h22_own22 = t3;
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     hero_map_decref(t80);
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     t81 = h4_used;
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     hero_map_incref(t3);
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     h4_used = t3;
-#line 230 "selfhost/emit/decls.hero"
+#line 232 "selfhost/emit/decls.hero"
     hero_map_decref(t81);
     t4 = hero_map_new(&hero_desc_int, &hero_desc_bool, 0);
-#line 231 "selfhost/emit/decls.hero"
+#line 233 "selfhost/emit/decls.hero"
     t82 = h23_own23;
-#line 231 "selfhost/emit/decls.hero"
+#line 233 "selfhost/emit/decls.hero"
     h23_own23 = t4;
-#line 231 "selfhost/emit/decls.hero"
+#line 233 "selfhost/emit/decls.hero"
     hero_map_decref(t82);
-#line 231 "selfhost/emit/decls.hero"
+#line 233 "selfhost/emit/decls.hero"
     t83 = h5_live;
-#line 231 "selfhost/emit/decls.hero"
+#line 233 "selfhost/emit/decls.hero"
     hero_map_incref(t4);
-#line 231 "selfhost/emit/decls.hero"
+#line 233 "selfhost/emit/decls.hero"
     h5_live = t4;
-#line 231 "selfhost/emit/decls.hero"
+#line 233 "selfhost/emit/decls.hero"
     hero_map_decref(t83);
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t5 = h0_p;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t6 = t5.f_functions;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t84 = h6_xs0;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     hero_array_incref(t6);
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     h6_xs0 = t6;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     hero_array_decref(t84);
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t7 = INT64_C(0);
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     h7_i0 = t7;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     goto bb1;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
 bb1:
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t8 = h7_i0;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t9 = h6_xs0;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len);
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t11 = t8 < t10;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     if (t11) goto bb2; else goto bb4;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
 bb2:
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t12 = h6_xs0;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t13 = h7_i0;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? ((void)hero_array_at(t12, t13), hero_unreachable()) : (void)0), (void)(t12->elem->size != sizeof(h_ircontainers_Function) ? hero_unreachable() : (void)0), ((h_ircontainers_Function const *)(const void *)(t12 + 1))[t13]);
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t85 = h8_f;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     h_ircontainers_Function_retain(&t14);
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     h8_f = t14;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     h_ircontainers_Function_release(&t85);
     t15 = h8_f;
-#line 234 "selfhost/emit/decls.hero"
+#line 236 "selfhost/emit/decls.hero"
     t16 = h1_target;
-#line 234 "selfhost/emit/decls.hero"
+#line 236 "selfhost/emit/decls.hero"
     t17 = h_emitdecls_emitted(t15, t16);
-#line 234 "selfhost/emit/decls.hero"
+#line 236 "selfhost/emit/decls.hero"
     t18 = !t17;
-#line 234 "selfhost/emit/decls.hero"
+#line 236 "selfhost/emit/decls.hero"
     if (t18) goto bb6; else goto bb7;
-#line 234 "selfhost/emit/decls.hero"
+#line 236 "selfhost/emit/decls.hero"
 bb3:
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t76 = h7_i0;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     t77 = INT64_C(1);
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t76, t77, &t78)) hero_panic_overflow();
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     h7_i0 = t78;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
     goto bb1;
-#line 233 "selfhost/emit/decls.hero"
+#line 235 "selfhost/emit/decls.hero"
 bb4:
-#line 251 "selfhost/emit/decls.hero"
+#line 253 "selfhost/emit/decls.hero"
     t79 = h5_live;
 #line 703286 "main.c"
     hero_map_incref(t79);
@@ -703301,518 +703301,518 @@ bb4:
     h_0opt_473cb9ae_release(hero_slot_escape(&h24_own24));
     return t79;
 bb5:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t19 = h3_prune_library;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h10_b1 = t19;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     if (t19) goto bb9; else goto bb10;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb6:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     goto bb3;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb7:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     goto bb5;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb8:
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t35 = h8_f;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t36 = t35.f_blocks;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t86 = h12_xs1;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     hero_array_incref(t36);
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     h12_xs1 = t36;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     hero_array_decref(t86);
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t37 = INT64_C(0);
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     h13_i1 = t37;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     goto bb15;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
 bb9:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t20 = h2_s;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t21 = h8_f;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t22 = t21.f_span;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t23 = t22.f_start;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t24 = h_source_is_library(t20, t23);
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h10_b1 = t24;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     goto bb10;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb10:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t25 = h10_b1;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h9_b0 = t25;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     if (t25) goto bb11; else goto bb12;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb11:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t26 = h4_used;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t27 = h8_f;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t28 = t27.f_decl;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     {
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
       HERO_NODEBUG const void *found = hero_map_find(t26, &t28);
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
       if (found == NULL) {
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
         t29 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
       } else {
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
         t29 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
         (&hero_desc_bool)->copy(&t29.as.ok, found);
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
       }
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     }
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t87 = h24_own24;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h24_own24 = t29;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_release(&t87);
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t88 = h11_f0;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_retain(&t29);
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h11_f0 = t29;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h_0opt_473cb9ae_release(&t88);
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t30 = h11_f0;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t31 = t30.tag;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t32 = INT64_C(1);
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t33 = t31 == t32;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     h9_b0 = t33;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     goto bb12;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb12:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     t34 = h9_b0;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     if (t34) goto bb13; else goto bb14;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb13:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     goto bb3;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb14:
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
     goto bb8;
-#line 237 "selfhost/emit/decls.hero"
+#line 239 "selfhost/emit/decls.hero"
 bb15:
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t38 = h13_i1;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t39 = h12_xs1;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t40 = ((void)(t39 == NULL ? ((void)hero_array_len(t39), hero_unreachable()) : (void)0), t39->len);
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t41 = t38 < t40;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     if (t41) goto bb16; else goto bb18;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
 bb16:
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t42 = h12_xs1;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t43 = h13_i1;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t44 = ((void)((t42 == NULL || t43 < 0 || t43 >= t42->len) ? ((void)hero_array_at(t42, t43), hero_unreachable()) : (void)0), (void)(t42->elem->size != sizeof(h_ircontainers_Block) ? hero_unreachable() : (void)0), ((h_ircontainers_Block const *)(const void *)(t42 + 1))[t43]);
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t89 = h14_blk;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     h_ircontainers_Block_retain(&t44);
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     h14_blk = t44;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     h_ircontainers_Block_release(&t89);
     t45 = h14_blk;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t46 = t45.f_insts;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t90 = h15_xs2;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     hero_array_incref(t46);
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     h15_xs2 = t46;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     hero_array_decref(t90);
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t47 = INT64_C(0);
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     h16_i2 = t47;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     goto bb19;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
 bb17:
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t73 = h13_i1;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     t74 = INT64_C(1);
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t73, t74, &t75)) hero_panic_overflow();
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     h13_i1 = t75;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     goto bb15;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
 bb18:
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
     goto bb3;
-#line 240 "selfhost/emit/decls.hero"
+#line 242 "selfhost/emit/decls.hero"
 bb19:
     t48 = h16_i2;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t49 = h15_xs2;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t50 = ((void)(t49 == NULL ? ((void)hero_array_len(t49), hero_unreachable()) : (void)0), t49->len);
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t51 = t48 < t50;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     if (t51) goto bb20; else goto bb22;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
 bb20:
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t52 = h15_xs2;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t53 = h16_i2;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t54 = ((void)((t52 == NULL || t53 < 0 || t53 >= t52->len) ? ((void)hero_array_at(t52, t53), hero_unreachable()) : (void)0), (void)(t52->elem->size != sizeof(h_ir_Inst) ? hero_unreachable() : (void)0), ((h_ir_Inst const *)(const void *)(t52 + 1))[t53]);
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t91 = h17_inst;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     h_ir_Inst_retain(&t54);
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     h17_inst = t54;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     h_ir_Inst_release(&t91);
     t55 = h17_inst;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     t56 = t55.f_op;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     t92 = h18_s0;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     h_ir_OpKind_retain(&t56);
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     h18_s0 = t56;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     h_ir_OpKind_release(&t92);
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     t57 = h18_s0;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     t58 = t57.tag;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     switch (t58) {
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 0: goto bb24;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 1: goto bb25;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 2: goto bb25;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 3: goto bb25;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 4: goto bb25;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 5: goto bb25;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 6: goto bb25;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 7: goto bb25;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 8: goto bb25;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 9: goto bb26;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 10: goto bb26;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 11: goto bb26;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 12: goto bb26;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 13: goto bb26;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 14: goto bb26;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 15: goto bb27;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 16: goto bb27;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 17: goto bb27;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 18: goto bb27;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 19: goto bb27;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 20: goto bb27;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 21: goto bb27;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         case 22: goto bb27;
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
         default: hero_unreachable();
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
     }
-#line 242 "selfhost/emit/decls.hero"
+#line 244 "selfhost/emit/decls.hero"
 bb21:
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t70 = h16_i2;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     t71 = INT64_C(1);
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t70, t71, &t72)) hero_panic_overflow();
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     h16_i2 = t72;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     goto bb19;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
 bb22:
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     goto bb17;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
 bb23:
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
     goto bb21;
-#line 241 "selfhost/emit/decls.hero"
+#line 243 "selfhost/emit/decls.hero"
 bb24:
-#line 243 "selfhost/emit/decls.hero"
+#line 245 "selfhost/emit/decls.hero"
     t59 = h18_s0;
-#line 243 "selfhost/emit/decls.hero"
+#line 245 "selfhost/emit/decls.hero"
     t60 = t59.as.c_lit;
-#line 243 "selfhost/emit/decls.hero"
+#line 245 "selfhost/emit/decls.hero"
     t93 = h19_lt;
-#line 243 "selfhost/emit/decls.hero"
+#line 245 "selfhost/emit/decls.hero"
     h_ir_OpKind_c_lit_retain(&t60);
-#line 243 "selfhost/emit/decls.hero"
+#line 245 "selfhost/emit/decls.hero"
     h19_lt = t60;
-#line 243 "selfhost/emit/decls.hero"
+#line 245 "selfhost/emit/decls.hero"
     h_ir_OpKind_c_lit_release(&t93);
     t61 = h19_lt;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     t62 = t61.f_value;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     t94 = h20_s1;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     h_ir_IntConst_retain(&t62);
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     h20_s1 = t62;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     h_ir_IntConst_release(&t94);
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     t63 = h20_s1;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     t64 = t63.tag;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     switch (t64) {
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
         case 0: goto bb30;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
         case 1: goto bb30;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
         case 2: goto bb30;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
         case 3: goto bb29;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
         case 4: goto bb30;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
         default: hero_unreachable();
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     }
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
 bb25:
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     goto bb21;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
 bb26:
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     goto bb21;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
 bb27:
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     goto bb21;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
 bb28:
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
     goto bb23;
-#line 244 "selfhost/emit/decls.hero"
+#line 246 "selfhost/emit/decls.hero"
 bb29:
     t65 = h20_s1;
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
     t66 = t65.as.c_str_const;
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
     h21_sc = t66;
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
     t67 = h21_sc;
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
     t68 = t67.f_at;
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
     t69 = true;
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
     hero_map_set(&(h5_live), &t68, &t69);
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
     goto bb28;
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
 bb30:
-#line 245 "selfhost/emit/decls.hero"
+#line 247 "selfhost/emit/decls.hero"
     goto bb21;
 #line 703686 "main.c"
 }
 
-#line 261 "selfhost/emit/decls.hero"
+#line 263 "selfhost/emit/decls.hero"
 void h_emitdecls_test_shim(h_emitwriter_Writer *ph0_w, h_ircontainers_Program h1_p, h_source_Source h2_s) {
-#line 261 "selfhost/emit/decls.hero"
+#line 263 "selfhost/emit/decls.hero"
     int64_t h3_position; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; h_ircontainers_Function h6_f = {0}; bool h7_is_test; HERO_NODEBUG h_ircontainers_FnKind h8_s0; HERO_NODEBUG bool h9_b0; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_ircontainers_Program t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_ircontainers_Function t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_ircontainers_Function t17; HERO_NODEBUG h_ircontainers_FnKind t18; HERO_NODEBUG h_ircontainers_FnKind t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_source_Source t24; HERO_NODEBUG h_ircontainers_Function t25; HERO_NODEBUG h_token_Span t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG bool t29; HERO_NODEBUG bool t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_source_Source t38; HERO_NODEBUG h_ircontainers_Function t39; HERO_NODEBUG h_token_Span t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG h_ircontainers_Function t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG h_ircontainers_Function t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_ENTRY_STOP; goto bb0;
-#line 261 "selfhost/emit/decls.hero"
+#line 263 "selfhost/emit/decls.hero"
 bb0:
     h_emitwriter_blank(&(*ph0_w));
     h_emitwriter_at_generated(&(*ph0_w));
     t1 = HERO_STR_LIT(hero_str_7fd9f6b0);
-#line 264 "selfhost/emit/decls.hero"
+#line 266 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t1);
     t2 = HERO_STR_LIT(hero_str_3b177f1a);
-#line 265 "selfhost/emit/decls.hero"
+#line 267 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t2);
     t3 = HERO_STR_LIT(hero_str_372d9005);
-#line 266 "selfhost/emit/decls.hero"
+#line 268 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t3);
     t4 = HERO_STR_LIT(hero_str_153fba6);
-#line 267 "selfhost/emit/decls.hero"
+#line 269 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t4);
     t5 = INT64_C(0);
-#line 268 "selfhost/emit/decls.hero"
+#line 270 "selfhost/emit/decls.hero"
     h3_position = t5;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t6 = h1_p;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t7 = t6.f_functions;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t62 = h4_xs0;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     hero_array_incref(t7);
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     h4_xs0 = t7;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     hero_array_decref(t62);
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t8 = INT64_C(0);
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     h5_i0 = t8;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     goto bb1;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
 bb1:
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t9 = h5_i0;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t10 = h4_xs0;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t12 = t9 < t11;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     if (t12) goto bb2; else goto bb4;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
 bb2:
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t13 = h4_xs0;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t14 = h5_i0;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t15 = ((void)((t13 == NULL || t14 < 0 || t14 >= t13->len) ? ((void)hero_array_at(t13, t14), hero_unreachable()) : (void)0), (void)(t13->elem->size != sizeof(h_ircontainers_Function) ? hero_unreachable() : (void)0), ((h_ircontainers_Function const *)(const void *)(t13 + 1))[t14]);
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t63 = h6_f;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     h_ircontainers_Function_retain(&t15);
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     h6_f = t15;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     h_ircontainers_Function_release(&t63);
     t16 = false;
-#line 271 "selfhost/emit/decls.hero"
+#line 273 "selfhost/emit/decls.hero"
     h7_is_test = t16;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
     t17 = h6_f;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
     t18 = t17.f_kind;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
     h8_s0 = t18;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
     t19 = h8_s0;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
     t20 = t19.tag;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
     switch (t20) {
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
         case 0: goto bb7;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
         case 1: goto bb7;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
         case 2: goto bb7;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
         case 3: goto bb6;
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
         default: hero_unreachable();
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
     }
-#line 273 "selfhost/emit/decls.hero"
+#line 275 "selfhost/emit/decls.hero"
 bb3:
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t53 = h5_i0;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     t54 = INT64_C(1);
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t53, t54, &t55)) hero_panic_overflow();
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     h5_i0 = t55;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
     goto bb1;
-#line 270 "selfhost/emit/decls.hero"
+#line 272 "selfhost/emit/decls.hero"
 bb4:
-#line 286 "selfhost/emit/decls.hero"
+#line 288 "selfhost/emit/decls.hero"
     t56 = HERO_STR_LIT(hero_str_748741d9);
-#line 286 "selfhost/emit/decls.hero"
+#line 288 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t56);
     t57 = HERO_STR_LIT(hero_str_2652167c);
-#line 287 "selfhost/emit/decls.hero"
+#line 289 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t57);
     t58 = HERO_STR_LIT(hero_str_3608ef81);
-#line 288 "selfhost/emit/decls.hero"
+#line 290 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t58);
     t59 = HERO_STR_LIT(hero_str_1fa856ff);
-#line 289 "selfhost/emit/decls.hero"
+#line 291 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t59);
     t60 = HERO_STR_LIT(hero_str_757c752f);
-#line 290 "selfhost/emit/decls.hero"
+#line 292 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t60);
     t61 = HERO_STR_LIT(hero_str_7d);
-#line 291 "selfhost/emit/decls.hero"
+#line 293 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t61);
 #line 703818 "main.c"
     hero_array_release_at(&h4_xs0);
@@ -703826,231 +703826,231 @@ bb4:
     hero_str_release_at(&h16_own16);
     return;
 bb5:
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     t23 = h7_is_test;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     h9_b0 = t23;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     if (t23) goto bb9; else goto bb10;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
 bb6:
-#line 274 "selfhost/emit/decls.hero"
+#line 276 "selfhost/emit/decls.hero"
     t21 = true;
-#line 274 "selfhost/emit/decls.hero"
+#line 276 "selfhost/emit/decls.hero"
     h7_is_test = t21;
-#line 274 "selfhost/emit/decls.hero"
+#line 276 "selfhost/emit/decls.hero"
     goto bb5;
-#line 274 "selfhost/emit/decls.hero"
+#line 276 "selfhost/emit/decls.hero"
 bb7:
     t22 = h7_is_test;
-#line 275 "selfhost/emit/decls.hero"
+#line 277 "selfhost/emit/decls.hero"
     h7_is_test = t22;
-#line 275 "selfhost/emit/decls.hero"
+#line 277 "selfhost/emit/decls.hero"
     goto bb5;
-#line 275 "selfhost/emit/decls.hero"
+#line 277 "selfhost/emit/decls.hero"
 bb8:
-#line 275 "selfhost/emit/decls.hero"
+#line 277 "selfhost/emit/decls.hero"
     goto bb3;
-#line 275 "selfhost/emit/decls.hero"
+#line 277 "selfhost/emit/decls.hero"
 bb9:
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     t24 = h2_s;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     t25 = h6_f;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     t26 = t25.f_span;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     t27 = t26.f_start;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     t28 = h_source_is_library(t24, t27);
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     t29 = !t28;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     h9_b0 = t29;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     goto bb10;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
 bb10:
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     t30 = h9_b0;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
     if (t30) goto bb11; else goto bb12;
-#line 277 "selfhost/emit/decls.hero"
+#line 279 "selfhost/emit/decls.hero"
 bb11:
     t31 = HERO_STR_LIT(hero_str_3a48b4c6);
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     t32 = h3_position;
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     t33 = hero_int_to_str(t32);
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     t64 = h10_own10;
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     h10_own10 = t33;
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     hero_str_decref(t64);
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     t34 = hero_str_concat(t31, t33);
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     t65 = h11_own11;
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     h11_own11 = t34;
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     hero_str_decref(t65);
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     t35 = HERO_STR_LIT(hero_str_3a);
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     t36 = hero_str_concat(t34, t35);
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     t66 = h12_own12;
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     h12_own12 = t36;
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     hero_str_decref(t66);
-#line 278 "selfhost/emit/decls.hero"
+#line 280 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t36);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t37 = HERO_STR_LIT(hero_str_2a358b8e);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t38 = h2_s;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t39 = h6_f;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t40 = t39.f_span;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t41 = t40.f_start;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t42 = h_source_component_at(t38, t41);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t67 = h13_own13;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     h13_own13 = t42;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     hero_str_decref(t67);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t43 = h6_f;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t44 = t43.f_decl;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t45 = h_emitmangle_test_name(t42, t44);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t68 = h14_own14;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     h14_own14 = t45;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     hero_str_decref(t68);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t46 = hero_str_concat(t37, t45);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t69 = h15_own15;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     h15_own15 = t46;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     hero_str_decref(t69);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t47 = HERO_STR_LIT(hero_str_a8e9e);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t48 = hero_str_concat(t46, t47);
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     t70 = h16_own16;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     h16_own16 = t48;
-#line 281 "selfhost/emit/decls.hero"
+#line 283 "selfhost/emit/decls.hero"
     hero_str_decref(t70);
-#line 279 "selfhost/emit/decls.hero"
+#line 281 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t48);
-#line 283 "selfhost/emit/decls.hero"
+#line 285 "selfhost/emit/decls.hero"
     t49 = HERO_STR_LIT(hero_str_4288f7b4);
-#line 283 "selfhost/emit/decls.hero"
+#line 285 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t49);
     t50 = h3_position;
-#line 284 "selfhost/emit/decls.hero"
+#line 286 "selfhost/emit/decls.hero"
     t51 = INT64_C(1);
-#line 284 "selfhost/emit/decls.hero"
+#line 286 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t50, t51, &t52)) hero_panic_overflow();
-#line 284 "selfhost/emit/decls.hero"
+#line 286 "selfhost/emit/decls.hero"
     h3_position = t52;
-#line 284 "selfhost/emit/decls.hero"
+#line 286 "selfhost/emit/decls.hero"
     goto bb8;
-#line 284 "selfhost/emit/decls.hero"
+#line 286 "selfhost/emit/decls.hero"
 bb12:
-#line 284 "selfhost/emit/decls.hero"
+#line 286 "selfhost/emit/decls.hero"
     goto bb8;
 #line 703979 "main.c"
 }
 
-#line 296 "selfhost/emit/decls.hero"
+#line 298 "selfhost/emit/decls.hero"
 void h_emitdecls_shim(h_emitwriter_Writer *ph0_w, h_ircontainers_Function h1_f, h_source_Source h2_s) {
-#line 296 "selfhost/emit/decls.hero"
+#line 298 "selfhost/emit/decls.hero"
     HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_source_Source t4; HERO_NODEBUG h_ircontainers_Function t5; HERO_NODEBUG h_token_Span t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_ircontainers_Function t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_ENTRY_STOP; goto bb0;
-#line 296 "selfhost/emit/decls.hero"
+#line 298 "selfhost/emit/decls.hero"
 bb0:
     h_emitwriter_blank(&(*ph0_w));
     h_emitwriter_at_generated(&(*ph0_w));
     t1 = HERO_STR_LIT(hero_str_7fd9f6b0);
-#line 299 "selfhost/emit/decls.hero"
+#line 301 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t1);
     t2 = HERO_STR_LIT(hero_str_3b177f1a);
-#line 300 "selfhost/emit/decls.hero"
+#line 302 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t2);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t3 = HERO_STR_LIT(hero_str_4522500);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t4 = h2_s;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t5 = h1_f;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t6 = t5.f_span;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t7 = t6.f_start;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t8 = h_source_component_at(t4, t7);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t18 = h3_own3;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     h3_own3 = t8;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     hero_str_decref(t18);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t9 = h1_f;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t10 = t9.f_name;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t11 = h_emitmangle_function_name(t8, t10);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t19 = h4_own4;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     h4_own4 = t11;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     hero_str_decref(t19);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t12 = hero_str_concat(t3, t11);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t20 = h5_own5;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     h5_own5 = t12;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     hero_str_decref(t20);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t13 = HERO_STR_LIT(hero_str_a8e9e);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t14 = hero_str_concat(t12, t13);
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     t21 = h6_own6;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     h6_own6 = t14;
-#line 303 "selfhost/emit/decls.hero"
+#line 305 "selfhost/emit/decls.hero"
     hero_str_decref(t21);
-#line 301 "selfhost/emit/decls.hero"
+#line 303 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t14);
-#line 305 "selfhost/emit/decls.hero"
+#line 307 "selfhost/emit/decls.hero"
     t15 = HERO_STR_LIT(hero_str_1fa856ff);
-#line 305 "selfhost/emit/decls.hero"
+#line 307 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t15);
     t16 = HERO_STR_LIT(hero_str_757c752f);
-#line 306 "selfhost/emit/decls.hero"
+#line 308 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t16);
     t17 = HERO_STR_LIT(hero_str_7d);
-#line 307 "selfhost/emit/decls.hero"
+#line 309 "selfhost/emit/decls.hero"
     h_emitwriter_line(&(*ph0_w), t17);
 #line 704056 "main.c"
     hero_str_release_at(&h3_own3);
@@ -704060,226 +704060,226 @@ bb0:
     return;
 }
 
-#line 314 "selfhost/emit/decls.hero"
+#line 316 "selfhost/emit/decls.hero"
 bool h_emitdecls_has(HeroStr h0_text, HeroStr h1_needle) {
-#line 314 "selfhost/emit/decls.hero"
+#line 316 "selfhost/emit/decls.hero"
     HeroArrayHeader * h2_cs = {0}; HeroArrayHeader * h3_needle_cs = {0}; int64_t h4_start; bool h5_matched; int64_t h6_offset; HERO_NODEBUG bool h7_ret0; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG bool t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG bool t38; HERO_NODEBUG bool t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG bool t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG bool t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_ENTRY_STOP; goto bb0;
-#line 314 "selfhost/emit/decls.hero"
+#line 316 "selfhost/emit/decls.hero"
 bb0:
     t1 = h0_text;
-#line 315 "selfhost/emit/decls.hero"
+#line 317 "selfhost/emit/decls.hero"
     t2 = hero_str_chars(t1);
-#line 315 "selfhost/emit/decls.hero"
+#line 317 "selfhost/emit/decls.hero"
     t50 = h8_own8;
-#line 315 "selfhost/emit/decls.hero"
+#line 317 "selfhost/emit/decls.hero"
     h8_own8 = t2;
-#line 315 "selfhost/emit/decls.hero"
+#line 317 "selfhost/emit/decls.hero"
     hero_array_decref(t50);
-#line 315 "selfhost/emit/decls.hero"
+#line 317 "selfhost/emit/decls.hero"
     t51 = h2_cs;
-#line 315 "selfhost/emit/decls.hero"
+#line 317 "selfhost/emit/decls.hero"
     hero_array_incref(t2);
-#line 315 "selfhost/emit/decls.hero"
+#line 317 "selfhost/emit/decls.hero"
     h2_cs = t2;
-#line 315 "selfhost/emit/decls.hero"
+#line 317 "selfhost/emit/decls.hero"
     hero_array_decref(t51);
     t3 = h1_needle;
-#line 316 "selfhost/emit/decls.hero"
+#line 318 "selfhost/emit/decls.hero"
     t4 = hero_str_chars(t3);
-#line 316 "selfhost/emit/decls.hero"
+#line 318 "selfhost/emit/decls.hero"
     t52 = h9_own9;
-#line 316 "selfhost/emit/decls.hero"
+#line 318 "selfhost/emit/decls.hero"
     h9_own9 = t4;
-#line 316 "selfhost/emit/decls.hero"
+#line 318 "selfhost/emit/decls.hero"
     hero_array_decref(t52);
-#line 316 "selfhost/emit/decls.hero"
+#line 318 "selfhost/emit/decls.hero"
     t53 = h3_needle_cs;
-#line 316 "selfhost/emit/decls.hero"
+#line 318 "selfhost/emit/decls.hero"
     hero_array_incref(t4);
-#line 316 "selfhost/emit/decls.hero"
+#line 318 "selfhost/emit/decls.hero"
     h3_needle_cs = t4;
-#line 316 "selfhost/emit/decls.hero"
+#line 318 "selfhost/emit/decls.hero"
     hero_array_decref(t53);
-#line 318 "selfhost/emit/decls.hero"
+#line 320 "selfhost/emit/decls.hero"
     t5 = h3_needle_cs;
-#line 318 "selfhost/emit/decls.hero"
+#line 320 "selfhost/emit/decls.hero"
     t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 318 "selfhost/emit/decls.hero"
+#line 320 "selfhost/emit/decls.hero"
     t7 = INT64_C(0);
-#line 318 "selfhost/emit/decls.hero"
+#line 320 "selfhost/emit/decls.hero"
     t8 = t6 == t7;
-#line 318 "selfhost/emit/decls.hero"
+#line 320 "selfhost/emit/decls.hero"
     if (t8) goto bb2; else goto bb3;
-#line 318 "selfhost/emit/decls.hero"
+#line 320 "selfhost/emit/decls.hero"
 bb1:
-#line 321 "selfhost/emit/decls.hero"
+#line 323 "selfhost/emit/decls.hero"
     t10 = h3_needle_cs;
-#line 321 "selfhost/emit/decls.hero"
+#line 323 "selfhost/emit/decls.hero"
     t11 = ((void)(t10 == NULL ? ((void)hero_array_len(t10), hero_unreachable()) : (void)0), t10->len);
-#line 321 "selfhost/emit/decls.hero"
+#line 323 "selfhost/emit/decls.hero"
     t12 = h2_cs;
-#line 321 "selfhost/emit/decls.hero"
+#line 323 "selfhost/emit/decls.hero"
     t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
-#line 321 "selfhost/emit/decls.hero"
+#line 323 "selfhost/emit/decls.hero"
     t14 = t11 > t13;
-#line 321 "selfhost/emit/decls.hero"
+#line 323 "selfhost/emit/decls.hero"
     if (t14) goto bb5; else goto bb6;
-#line 321 "selfhost/emit/decls.hero"
+#line 323 "selfhost/emit/decls.hero"
 bb2:
-#line 319 "selfhost/emit/decls.hero"
+#line 321 "selfhost/emit/decls.hero"
     t9 = true;
-#line 319 "selfhost/emit/decls.hero"
+#line 321 "selfhost/emit/decls.hero"
     h7_ret0 = t9;
-#line 319 "selfhost/emit/decls.hero"
+#line 321 "selfhost/emit/decls.hero"
     goto bb19;
-#line 319 "selfhost/emit/decls.hero"
+#line 321 "selfhost/emit/decls.hero"
 bb3:
-#line 319 "selfhost/emit/decls.hero"
+#line 321 "selfhost/emit/decls.hero"
     goto bb1;
-#line 319 "selfhost/emit/decls.hero"
+#line 321 "selfhost/emit/decls.hero"
 bb4:
-#line 323 "selfhost/emit/decls.hero"
+#line 325 "selfhost/emit/decls.hero"
     t16 = INT64_C(0);
-#line 323 "selfhost/emit/decls.hero"
+#line 325 "selfhost/emit/decls.hero"
     h4_start = t16;
-#line 323 "selfhost/emit/decls.hero"
+#line 325 "selfhost/emit/decls.hero"
     goto bb7;
-#line 323 "selfhost/emit/decls.hero"
+#line 325 "selfhost/emit/decls.hero"
 bb5:
-#line 322 "selfhost/emit/decls.hero"
+#line 324 "selfhost/emit/decls.hero"
     t15 = false;
-#line 322 "selfhost/emit/decls.hero"
+#line 324 "selfhost/emit/decls.hero"
     h7_ret0 = t15;
-#line 322 "selfhost/emit/decls.hero"
+#line 324 "selfhost/emit/decls.hero"
     goto bb19;
-#line 322 "selfhost/emit/decls.hero"
+#line 324 "selfhost/emit/decls.hero"
 bb6:
-#line 322 "selfhost/emit/decls.hero"
+#line 324 "selfhost/emit/decls.hero"
     goto bb4;
-#line 322 "selfhost/emit/decls.hero"
+#line 324 "selfhost/emit/decls.hero"
 bb7:
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
     t17 = h4_start;
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
     t18 = h2_cs;
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
     t19 = ((void)(t18 == NULL ? ((void)hero_array_len(t18), hero_unreachable()) : (void)0), t18->len);
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
     t20 = h3_needle_cs;
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
     t21 = ((void)(t20 == NULL ? ((void)hero_array_len(t20), hero_unreachable()) : (void)0), t20->len);
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
     if (__builtin_sub_overflow(t19, t21, &t22)) hero_panic_overflow();
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
     t23 = t17 <= t22;
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
     if (t23) goto bb8; else goto bb9;
-#line 325 "selfhost/emit/decls.hero"
+#line 327 "selfhost/emit/decls.hero"
 bb8:
     t24 = true;
-#line 326 "selfhost/emit/decls.hero"
+#line 328 "selfhost/emit/decls.hero"
     h5_matched = t24;
     t25 = INT64_C(0);
-#line 327 "selfhost/emit/decls.hero"
+#line 329 "selfhost/emit/decls.hero"
     h6_offset = t25;
-#line 327 "selfhost/emit/decls.hero"
+#line 329 "selfhost/emit/decls.hero"
     goto bb10;
-#line 327 "selfhost/emit/decls.hero"
+#line 329 "selfhost/emit/decls.hero"
 bb9:
-#line 339 "selfhost/emit/decls.hero"
+#line 341 "selfhost/emit/decls.hero"
     t48 = false;
-#line 339 "selfhost/emit/decls.hero"
+#line 341 "selfhost/emit/decls.hero"
     h7_ret0 = t48;
-#line 339 "selfhost/emit/decls.hero"
+#line 341 "selfhost/emit/decls.hero"
     goto bb19;
-#line 339 "selfhost/emit/decls.hero"
+#line 341 "selfhost/emit/decls.hero"
 bb10:
-#line 329 "selfhost/emit/decls.hero"
+#line 331 "selfhost/emit/decls.hero"
     t26 = h6_offset;
-#line 329 "selfhost/emit/decls.hero"
+#line 331 "selfhost/emit/decls.hero"
     t27 = h3_needle_cs;
-#line 329 "selfhost/emit/decls.hero"
+#line 331 "selfhost/emit/decls.hero"
     t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len);
-#line 329 "selfhost/emit/decls.hero"
+#line 331 "selfhost/emit/decls.hero"
     t29 = t26 < t28;
-#line 329 "selfhost/emit/decls.hero"
+#line 331 "selfhost/emit/decls.hero"
     if (t29) goto bb11; else goto bb12;
-#line 329 "selfhost/emit/decls.hero"
+#line 331 "selfhost/emit/decls.hero"
 bb11:
     t30 = h2_cs;
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     t31 = h4_start;
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     t32 = h6_offset;
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow();
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     t34 = ((void)((t30 == NULL || t33 < 0 || t33 >= t30->len) ? ((void)hero_array_at(t30, t33), hero_unreachable()) : (void)0), (void)(t30->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t30 + 1))[t33]);
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     t35 = h3_needle_cs;
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     t36 = h6_offset;
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     t37 = ((void)((t35 == NULL || t36 < 0 || t36 >= t35->len) ? ((void)hero_array_at(t35, t36), hero_unreachable()) : (void)0), (void)(t35->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t35 + 1))[t36]);
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     t38 = !hero_str_eq(t34, t37);
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
     if (t38) goto bb14; else goto bb15;
-#line 330 "selfhost/emit/decls.hero"
+#line 332 "selfhost/emit/decls.hero"
 bb12:
-#line 335 "selfhost/emit/decls.hero"
+#line 337 "selfhost/emit/decls.hero"
     t43 = h5_matched;
-#line 335 "selfhost/emit/decls.hero"
+#line 337 "selfhost/emit/decls.hero"
     if (t43) goto bb17; else goto bb18;
-#line 335 "selfhost/emit/decls.hero"
+#line 337 "selfhost/emit/decls.hero"
 bb13:
-#line 333 "selfhost/emit/decls.hero"
+#line 335 "selfhost/emit/decls.hero"
     t40 = h6_offset;
-#line 333 "selfhost/emit/decls.hero"
+#line 335 "selfhost/emit/decls.hero"
     t41 = INT64_C(1);
-#line 333 "selfhost/emit/decls.hero"
+#line 335 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t40, t41, &t42)) hero_panic_overflow();
-#line 333 "selfhost/emit/decls.hero"
+#line 335 "selfhost/emit/decls.hero"
     h6_offset = t42;
-#line 333 "selfhost/emit/decls.hero"
+#line 335 "selfhost/emit/decls.hero"
     goto bb10;
-#line 333 "selfhost/emit/decls.hero"
+#line 335 "selfhost/emit/decls.hero"
 bb14:
-#line 331 "selfhost/emit/decls.hero"
+#line 333 "selfhost/emit/decls.hero"
     t39 = false;
-#line 331 "selfhost/emit/decls.hero"
+#line 333 "selfhost/emit/decls.hero"
     h5_matched = t39;
-#line 331 "selfhost/emit/decls.hero"
+#line 333 "selfhost/emit/decls.hero"
     goto bb12;
-#line 331 "selfhost/emit/decls.hero"
+#line 333 "selfhost/emit/decls.hero"
 bb15:
-#line 331 "selfhost/emit/decls.hero"
+#line 333 "selfhost/emit/decls.hero"
     goto bb13;
-#line 331 "selfhost/emit/decls.hero"
+#line 333 "selfhost/emit/decls.hero"
 bb16:
-#line 337 "selfhost/emit/decls.hero"
+#line 339 "selfhost/emit/decls.hero"
     t45 = h4_start;
-#line 337 "selfhost/emit/decls.hero"
+#line 339 "selfhost/emit/decls.hero"
     t46 = INT64_C(1);
-#line 337 "selfhost/emit/decls.hero"
+#line 339 "selfhost/emit/decls.hero"
     if (__builtin_add_overflow(t45, t46, &t47)) hero_panic_overflow();
-#line 337 "selfhost/emit/decls.hero"
+#line 339 "selfhost/emit/decls.hero"
     h4_start = t47;
-#line 337 "selfhost/emit/decls.hero"
+#line 339 "selfhost/emit/decls.hero"
     goto bb7;
-#line 337 "selfhost/emit/decls.hero"
+#line 339 "selfhost/emit/decls.hero"
 bb17:
-#line 336 "selfhost/emit/decls.hero"
+#line 338 "selfhost/emit/decls.hero"
     t44 = true;
-#line 336 "selfhost/emit/decls.hero"
+#line 338 "selfhost/emit/decls.hero"
     h7_ret0 = t44;
-#line 336 "selfhost/emit/decls.hero"
+#line 338 "selfhost/emit/decls.hero"
     goto bb19;
-#line 336 "selfhost/emit/decls.hero"
+#line 338 "selfhost/emit/decls.hero"
 bb18:
-#line 336 "selfhost/emit/decls.hero"
+#line 338 "selfhost/emit/decls.hero"
     goto bb16;
-#line 336 "selfhost/emit/decls.hero"
+#line 338 "selfhost/emit/decls.hero"
 bb19:
 #line 704285 "main.c"
     t49 = h7_ret0;
@@ -1046432,21 +1046432,21 @@ bb3:
     goto bb1;
 #line 61 "selfhost/cli/bound_macro.hero"
 bb4:
-#line 84 "selfhost/cli/bound_macro.hero"
+#line 86 "selfhost/cli/bound_macro.hero"
     t88 = h4_out;
-#line 84 "selfhost/cli/bound_macro.hero"
+#line 86 "selfhost/cli/bound_macro.hero"
     t89 = h6_kept;
-#line 84 "selfhost/cli/bound_macro.hero"
+#line 86 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t88);
-#line 84 "selfhost/cli/bound_macro.hero"
+#line 86 "selfhost/cli/bound_macro.hero"
     hero_map_incref(t89);
-#line 84 "selfhost/cli/bound_macro.hero"
+#line 86 "selfhost/cli/bound_macro.hero"
     t90 = (h_cliboundkept_Told){.f_diagnostics = t88, .f_kept = t89};
-#line 84 "selfhost/cli/bound_macro.hero"
+#line 86 "selfhost/cli/bound_macro.hero"
     t103 = h28_own28;
-#line 84 "selfhost/cli/bound_macro.hero"
+#line 86 "selfhost/cli/bound_macro.hero"
     h28_own28 = t90;
-#line 84 "selfhost/cli/bound_macro.hero"
+#line 86 "selfhost/cli/bound_macro.hero"
     h_cliboundkept_Told_release(&t103);
 #line 1046452 "main.c"
     h_cliboundkept_Told_retain(&t90);
@@ -1046559,340 +1046559,340 @@ bb8:
     h14_answered = t39;
 #line 72 "selfhost/cli/bound_macro.hero"
     h_cliboundkept_Told_release(&t108);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t40 = h14_answered;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t41 = t40.f_kept;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t42 = hero_map_keys(t41);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t109 = h31_own31;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     h31_own31 = t42;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t109);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t110 = h15_xs1;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t42);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     h15_xs1 = t42;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t110);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t43 = INT64_C(0);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     h16_i1 = t43;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     goto bb11;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
 bb9:
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     goto bb3;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
 bb10:
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     goto bb8;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
 bb11:
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t44 = h16_i1;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t45 = h15_xs1;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t46 = ((void)(t45 == NULL ? ((void)hero_array_len(t45), hero_unreachable()) : (void)0), t45->len);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t47 = t44 < t46;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     if (t47) goto bb12; else goto bb14;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
 bb12:
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t48 = h15_xs1;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t49 = h16_i1;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t50 = ((void)((t48 == NULL || t49 < 0 || t49 >= t48->len) ? ((void)hero_array_at(t48, t49), hero_unreachable()) : (void)0), (void)(t48->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t48 + 1))[t49]);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t111 = h17_name;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t50);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     h17_name = t50;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t111);
     t51 = h17_name;
-#line 75 "selfhost/cli/bound_macro.hero"
+#line 77 "selfhost/cli/bound_macro.hero"
     t52 = true;
-#line 75 "selfhost/cli/bound_macro.hero"
+#line 77 "selfhost/cli/bound_macro.hero"
     hero_map_set(&(h6_kept), &t51, &t52);
-#line 75 "selfhost/cli/bound_macro.hero"
+#line 77 "selfhost/cli/bound_macro.hero"
     goto bb13;
-#line 75 "selfhost/cli/bound_macro.hero"
+#line 77 "selfhost/cli/bound_macro.hero"
 bb13:
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t53 = h16_i1;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     t54 = INT64_C(1);
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t53, t54, &t55)) hero_panic_overflow();
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     h16_i1 = t55;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
     goto bb11;
-#line 74 "selfhost/cli/bound_macro.hero"
+#line 76 "selfhost/cli/bound_macro.hero"
 bb14:
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t56 = h14_answered;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t57 = t56.f_diagnostics;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t112 = h18_xs2;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t57);
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     h18_xs2 = t57;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t112);
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t58 = INT64_C(0);
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     h19_i2 = t58;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     goto bb15;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
 bb15:
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t59 = h19_i2;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t60 = h18_xs2;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t61 = ((void)(t60 == NULL ? ((void)hero_array_len(t60), hero_unreachable()) : (void)0), t60->len);
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t62 = t59 < t61;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     if (t62) goto bb16; else goto bb18;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
 bb16:
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t63 = h18_xs2;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t64 = h19_i2;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t65 = ((void)((t63 == NULL || t64 < 0 || t64 >= t63->len) ? ((void)hero_array_at(t63, t64), hero_unreachable()) : (void)0), (void)(t63->elem->size != sizeof(h_diag_Diagnostic) ? hero_unreachable() : (void)0), ((h_diag_Diagnostic const *)(const void *)(t63 + 1))[t64]);
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t113 = h20_d;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     h_diag_Diagnostic_retain(&t65);
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     h20_d = t65;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     h_diag_Diagnostic_release(&t113);
     t66 = h2_s;
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     t67 = h20_d;
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     t68 = t67.f_span;
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     t69 = h_source_span_text(t66, t68);
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     t114 = h32_own32;
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     h32_own32 = t69;
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t114);
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     t115 = h21_name;
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t69);
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     h21_name = t69;
-#line 78 "selfhost/cli/bound_macro.hero"
+#line 80 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t115);
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     t70 = h5_seen;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     t71 = h21_name;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     {
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
       HERO_NODEBUG const void *found = hero_map_find(t70, &t71);
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
       if (found == NULL) {
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
         t72 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
       } else {
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
         t72 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
         (&hero_desc_bool)->copy(&t72.as.ok, found);
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
       }
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     }
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     t116 = h33_own33;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     h33_own33 = t72;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_release(&t116);
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     t117 = h22_f1;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_retain(&t72);
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     h22_f1 = t72;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_release(&t117);
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     t73 = h22_f1;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     t74 = t73.tag;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     t75 = INT64_C(1);
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     t76 = t74 == t75;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
     if (t76) goto bb20; else goto bb21;
-#line 80 "selfhost/cli/bound_macro.hero"
+#line 82 "selfhost/cli/bound_macro.hero"
 bb17:
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t82 = h19_i2;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     t83 = INT64_C(1);
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t82, t83, &t84)) hero_panic_overflow();
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     h19_i2 = t84;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     goto bb15;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
 bb18:
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     goto bb3;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
 bb19:
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
     goto bb17;
-#line 77 "selfhost/cli/bound_macro.hero"
+#line 79 "selfhost/cli/bound_macro.hero"
 bb20:
-#line 81 "selfhost/cli/bound_macro.hero"
+#line 83 "selfhost/cli/bound_macro.hero"
     t77 = h21_name;
-#line 81 "selfhost/cli/bound_macro.hero"
+#line 83 "selfhost/cli/bound_macro.hero"
     t78 = true;
-#line 81 "selfhost/cli/bound_macro.hero"
+#line 83 "selfhost/cli/bound_macro.hero"
     hero_map_set(&(h5_seen), &t77, &t78);
     t80 = h20_d;
-#line 82 "selfhost/cli/bound_macro.hero"
+#line 84 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h4_out, &t80);
-#line 82 "selfhost/cli/bound_macro.hero"
+#line 84 "selfhost/cli/bound_macro.hero"
     goto bb19;
-#line 82 "selfhost/cli/bound_macro.hero"
+#line 84 "selfhost/cli/bound_macro.hero"
 bb21:
-#line 82 "selfhost/cli/bound_macro.hero"
+#line 84 "selfhost/cli/bound_macro.hero"
     goto bb19;
 #line 1046796 "main.c"
 }
 
-#line 88 "selfhost/cli/bound_macro.hero"
+#line 90 "selfhost/cli/bound_macro.hero"
 h_clicompiling_Probe h_cliboundmacro_probe_of(h_clitoolchain_Toolchain h0_t, h_cliprobing_Probing h1_one) {
-#line 88 "selfhost/cli/bound_macro.hero"
+#line 90 "selfhost/cli/bound_macro.hero"
     HERO_NODEBUG h_0opt_2e7f11e3 h2_f0 = {0}; HERO_NODEBUG h_0opt_2e7f11e3 h3_f1 = {0}; HERO_NODEBUG h_clicompiling_Probe h4_ret0 = {0}; HERO_NODEBUG h_clicompiling_Probe h5_own5 = {0}; HERO_NODEBUG h_cliprobing_Probing t1; HERO_NODEBUG h_0opt_2e7f11e3 t2; HERO_NODEBUG h_0opt_2e7f11e3 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_cliprobing_Probing t8; HERO_NODEBUG h_0opt_2e7f11e3 t9; HERO_NODEBUG h_0opt_2e7f11e3 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_2e7f11e3 t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG h_0opt_2e7f11e3 t16; HERO_NODEBUG h_clicompiling_Probe t17; HERO_NODEBUG h_clitoolchain_Toolchain t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_cliprobing_Probing t20; HERO_NODEBUG h_clicompiling_Compiling t21; HERO_NODEBUG h_cliprobing_Probing t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG h_clicompiling_Probe t24; HERO_NODEBUG h_clicompiling_Probe t25; HERO_NODEBUG h_0opt_2e7f11e3 t26; HERO_NODEBUG h_clicompiling_Probe t27; HERO_NODEBUG h_0opt_2e7f11e3 t28; HERO_ENTRY_STOP; goto bb0;
-#line 88 "selfhost/cli/bound_macro.hero"
+#line 90 "selfhost/cli/bound_macro.hero"
 bb0:
     t1 = h1_one;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     t2 = t1.f_probe;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     t26 = h2_f0;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     h_0opt_2e7f11e3_retain(&t2);
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     h2_f0 = t2;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     h_0opt_2e7f11e3_release(&t26);
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     t3 = h2_f0;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     t4 = t3.tag;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     t5 = INT64_C(1);
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     t6 = t4 == t5;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     t7 = !t6;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
     if (t7) goto bb2; else goto bb3;
-#line 89 "selfhost/cli/bound_macro.hero"
+#line 91 "selfhost/cli/bound_macro.hero"
 bb1:
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     t18 = h0_t;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     t19 = t18.f_build;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     t20 = h1_one;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     t21 = t20.f_under;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     t22 = h1_one;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     t23 = t22.f_headers;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     t24 = h_clicompiling_probe(t19, t21, t23);
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     t27 = h5_own5;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     h5_own5 = t24;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     h_clicompiling_Probe_release(&t27);
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     h4_ret0 = t24;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
     goto bb6;
-#line 91 "selfhost/cli/bound_macro.hero"
+#line 93 "selfhost/cli/bound_macro.hero"
 bb2:
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t8 = h1_one;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t9 = t8.f_probe;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t28 = h3_f1;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     h_0opt_2e7f11e3_retain(&t9);
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     h3_f1 = t9;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     h_0opt_2e7f11e3_release(&t28);
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t10 = h3_f1;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t11 = t10.tag;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t12 = INT64_C(0);
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t13 = t11 == t12;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     if (t13) goto bb4; else goto bb5;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
 bb3:
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
 bb4:
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t16 = h3_f1;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t17 = t16.as.ok;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     h4_ret0 = t17;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     goto bb6;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
 bb5:
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t14 = h3_f1;
-#line 90 "selfhost/cli/bound_macro.hero"
+#line 92 "selfhost/cli/bound_macro.hero"
     t15 = t14.as.err;
 #line 1046898 "main.c"
     hero_panic_must(t15);
@@ -1046906,1040 +1046906,1040 @@ bb6:
     return t25;
 }
 
-#line 96 "selfhost/cli/bound_macro.hero"
+#line 98 "selfhost/cli/bound_macro.hero"
 h_cliboundkept_Told h_cliboundmacro_judged(h_clitoolchain_Toolchain h0_t, h_clicompiling_Probe h1_probe, h_source_Source h2_s, HeroArrayHeader * h3_decls, HeroArrayHeader * h4_headers, HeroArrayHeader * h5_bound) {
-#line 96 "selfhost/cli/bound_macro.hero"
+#line 98 "selfhost/cli/bound_macro.hero"
     HeroArrayHeader * h6_lines = {0}; int64_t h7_place; HERO_NODEBUG HeroArrayHeader * h8_xs0 = {0}; HERO_NODEBUG int64_t h9_i0; HeroStr h10_header = {0}; HeroMapHeader * h11_pushed = {0}; HeroStr h12_text = {0}; h_0opt_36226bb0 h13_said = {0}; HERO_NODEBUG h_0opt_36226bb0 h14_f0 = {0}; HeroArrayHeader * h15_out = {0}; HeroArrayHeader * h16_doubted = {0}; HERO_NODEBUG HeroArrayHeader * h17_xs1 = {0}; HERO_NODEBUG int64_t h18_i1; h_cliboundnames_Bound h19_b = {0}; HERO_NODEBUG h_0opt_36226bb0 h20_f1 = {0}; HeroArrayHeader * h21_steps = {0}; HeroStr h22_own = {0}; int64_t h23_later; HERO_NODEBUG bool h24_b0; HERO_NODEBUG bool h25_b1; HERO_NODEBUG h_0opt_36226bb0 h26_f2 = {0}; HERO_NODEBUG HeroArrayHeader * h27_xs2 = {0}; HERO_NODEBUG int64_t h28_i2; h_diag_Diagnostic h29_d = {0}; HeroArrayHeader * h30_moved = {0}; int64_t h31_last; HERO_NODEBUG HeroArrayHeader * h32_xs3 = {0}; HERO_NODEBUG int64_t h33_i3; h_cliboundnames_Bound h34_b = {0}; HERO_NODEBUG h_0opt_36226bb0 h35_f3 = {0}; h_0opt_f87774a h36_then = {0}; HERO_NODEBUG bool h37_b2; HERO_NODEBUG h_0opt_f87774a h38_f4 = {0}; HERO_NODEBUG h_0opt_f87774a h39_f5 = {0}; HERO_NODEBUG h_0opt_36226bb0 h40_f6 = {0}; HERO_NODEBUG h_0opt_f87774a h41_f7 = {0}; HERO_NODEBUG HeroStr h42_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h43_f8 = {0}; HERO_NODEBUG h_0opt_36226bb0 h44_f9 = {0}; HERO_NODEBUG h_cliboundkept_Told h45_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h46_own46 = {0}; HERO_NODEBUG HeroArrayHeader * h47_own47 = {0}; HERO_NODEBUG HeroArrayHeader * h48_own48 = {0}; HERO_NODEBUG HeroArrayHeader * h49_own49 = {0}; HERO_NODEBUG HeroArrayHeader * h50_own50 = {0}; HERO_NODEBUG HeroArrayHeader * h51_own51 = {0}; HERO_NODEBUG HeroMapHeader * h52_own52 = {0}; HERO_NODEBUG HeroArrayHeader * h53_own53 = {0}; HERO_NODEBUG HeroStr h54_own54 = {0}; HERO_NODEBUG h_0opt_36226bb0 h55_own55 = {0}; HERO_NODEBUG HeroArrayHeader * h56_own56 = {0}; HERO_NODEBUG HeroArrayHeader * h57_own57 = {0}; HERO_NODEBUG h_cliboundkept_Told h58_own58 = {0}; HERO_NODEBUG HeroArrayHeader * h59_own59 = {0}; HERO_NODEBUG h_diag_Diagnostic h60_own60 = {0}; HERO_NODEBUG HeroStr h61_own61 = {0}; HERO_NODEBUG HeroStr h62_own62 = {0}; HERO_NODEBUG HeroArrayHeader * h63_own63 = {0}; HERO_NODEBUG HeroArrayHeader * h64_own64 = {0}; HERO_NODEBUG h_cliboundkept_Told h65_own65 = {0}; HERO_NODEBUG h_cliboundkept_Told h66_own66 = {0}; HERO_NODEBUG HeroStr h67_own67 = {0}; HERO_NODEBUG HeroStr h68_own68 = {0}; HERO_NODEBUG HeroStr h69_own69 = {0}; HERO_NODEBUG h_0opt_f87774a h70_own70 = {0}; HERO_NODEBUG HeroStr h71_own71 = {0}; HERO_NODEBUG HeroStr h72_own72 = {0}; HERO_NODEBUG HeroStr h73_own73 = {0}; HERO_NODEBUG h_0opt_f87774a h74_own74 = {0}; HERO_NODEBUG h_cliboundkept_Told h75_own75 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_source_Source t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroMapHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroMapHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG h_clitoolchain_Toolchain t42; HERO_NODEBUG h_clicompiling_Probe t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_0opt_36226bb0 t45; HERO_NODEBUG h_0opt_36226bb0 t46; HERO_NODEBUG h_0opt_36226bb0 t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG bool t50; HERO_NODEBUG h_cliboundkept_Told t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG h_cliboundnames_Bound t62; HERO_NODEBUG h_0opt_36226bb0 t63; HERO_NODEBUG h_0opt_36226bb0 t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG bool t67; HERO_NODEBUG h_0opt_36226bb0 t68; HERO_NODEBUG HeroFailure t69; HERO_NODEBUG h_0opt_36226bb0 t70; HERO_NODEBUG HeroMapHeader * t71; HERO_NODEBUG h_cliboundnames_Bound t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG bool t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG h_cliboundnames_Bound t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroArrayHeader * t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroStr t88; HERO_NODEBUG bool t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG h_cliboundnames_Bound t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG h_clitoolchain_Toolchain t99; HERO_NODEBUG h_clicompiling_Probe t100; HERO_NODEBUG h_source_Source t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG h_cliboundnames_Bound t104; HERO_NODEBUG HeroArrayHeader * t105; HERO_NODEBUG int64_t t106; HERO_NODEBUG int64_t t107; HERO_NODEBUG int64_t t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG int64_t t110; HERO_NODEBUG HeroStr t111; HERO_NODEBUG HeroArrayHeader * t112; HERO_NODEBUG int64_t t113; HERO_NODEBUG HeroStr t114; HERO_NODEBUG h_diag_Diagnostic t115; HERO_NODEBUG HeroArrayHeader * t117; HERO_NODEBUG h_cliboundnames_Bound t118; HERO_NODEBUG int64_t t119; HERO_NODEBUG int64_t t120; HERO_NODEBUG int64_t t121; HERO_NODEBUG HeroStr t122; HERO_NODEBUG HeroStr t123; HERO_NODEBUG bool t124; HERO_NODEBUG HeroStr t125; HERO_NODEBUG h_cliboundnames_Bound t126; HERO_NODEBUG HeroStr t127; HERO_NODEBUG h_cliboundnames_Bound t128; HERO_NODEBUG int64_t t129; HERO_NODEBUG HeroStr t130; HERO_NODEBUG HeroStr t131; HERO_NODEBUG bool t132; HERO_NODEBUG bool t133; HERO_NODEBUG HeroArrayHeader * t134; HERO_NODEBUG int64_t t135; HERO_NODEBUG h_cliboundnames_Bound t136; HERO_NODEBUG int64_t t137; HERO_NODEBUG int64_t t138; HERO_NODEBUG int64_t t139; HERO_NODEBUG int64_t t140; HERO_NODEBUG int64_t t141; HERO_NODEBUG bool t142; HERO_NODEBUG bool t143; HERO_NODEBUG h_cliboundnames_Bound t145; HERO_NODEBUG int64_t t147; HERO_NODEBUG int64_t t148; HERO_NODEBUG int64_t t149; HERO_NODEBUG h_clitoolchain_Toolchain t150; HERO_NODEBUG h_clicompiling_Probe t151; HERO_NODEBUG h_source_Source t152; HERO_NODEBUG HeroArrayHeader * t153; HERO_NODEBUG HeroArrayHeader * t154; HERO_NODEBUG h_0opt_36226bb0 t155; HERO_NODEBUG h_0opt_36226bb0 t156; HERO_NODEBUG int64_t t157; HERO_NODEBUG int64_t t158; HERO_NODEBUG bool t159; HERO_NODEBUG h_0opt_36226bb0 t160; HERO_NODEBUG HeroFailure t161; HERO_NODEBUG h_0opt_36226bb0 t162; HERO_NODEBUG HeroMapHeader * t163; HERO_NODEBUG HeroArrayHeader * t164; HERO_NODEBUG HeroStr t165; HERO_NODEBUG HeroArrayHeader * t166; HERO_NODEBUG int64_t t167; HERO_NODEBUG int64_t t168; HERO_NODEBUG HeroArrayHeader * t169; HERO_NODEBUG int64_t t170; HERO_NODEBUG bool t171; HERO_NODEBUG HeroArrayHeader * t172; HERO_NODEBUG int64_t t173; HERO_NODEBUG h_diag_Diagnostic t174; HERO_NODEBUG h_diag_Diagnostic t176; HERO_NODEBUG int64_t t178; HERO_NODEBUG int64_t t179; HERO_NODEBUG int64_t t180; HERO_NODEBUG HeroArrayHeader * t181; HERO_NODEBUG int64_t t182; HERO_NODEBUG int64_t t183; HERO_NODEBUG bool t184; HERO_NODEBUG HeroArrayHeader * t185; HERO_NODEBUG h_cliboundkept_Told t186; HERO_NODEBUG HeroMapHeader * t187; HERO_NODEBUG h_cliboundkept_Told t188; HERO_NODEBUG HeroArrayHeader * t189; HERO_NODEBUG HeroArrayHeader * t190; HERO_NODEBUG int64_t t191; HERO_NODEBUG HeroArrayHeader * t192; HERO_NODEBUG int64_t t193; HERO_NODEBUG int64_t t194; HERO_NODEBUG HeroArrayHeader * t195; HERO_NODEBUG int64_t t196; HERO_NODEBUG bool t197; HERO_NODEBUG HeroArrayHeader * t198; HERO_NODEBUG int64_t t199; HERO_NODEBUG h_cliboundnames_Bound t200; HERO_NODEBUG h_0opt_36226bb0 t201; HERO_NODEBUG h_0opt_36226bb0 t202; HERO_NODEBUG int64_t t203; HERO_NODEBUG int64_t t204; HERO_NODEBUG bool t205; HERO_NODEBUG h_0opt_36226bb0 t206; HERO_NODEBUG HeroFailure t207; HERO_NODEBUG h_0opt_36226bb0 t208; HERO_NODEBUG HeroMapHeader * t209; HERO_NODEBUG int64_t t210; HERO_NODEBUG int64_t t211; HERO_NODEBUG int64_t t212; HERO_NODEBUG HeroStr t213; HERO_NODEBUG HeroStr t214; HERO_NODEBUG HeroStr t215; HERO_NODEBUG h_cliboundnames_Bound t216; HERO_NODEBUG HeroStr t217; HERO_NODEBUG HeroStr t218; HERO_NODEBUG h_0opt_f87774a t219; HERO_NODEBUG h_0opt_f87774a t220; HERO_NODEBUG h_0opt_f87774a t221; HERO_NODEBUG int64_t t222; HERO_NODEBUG int64_t t223; HERO_NODEBUG bool t224; HERO_NODEBUG bool t225; HERO_NODEBUG h_0opt_f87774a t226; HERO_NODEBUG h_0opt_f87774a t227; HERO_NODEBUG int64_t t228; HERO_NODEBUG int64_t t229; HERO_NODEBUG bool t230; HERO_NODEBUG h_0opt_f87774a t231; HERO_NODEBUG HeroFailure t232; HERO_NODEBUG h_0opt_f87774a t233; HERO_NODEBUG HeroStr t234; HERO_NODEBUG h_0opt_36226bb0 t235; HERO_NODEBUG h_0opt_36226bb0 t236; HERO_NODEBUG int64_t t237; HERO_NODEBUG int64_t t238; HERO_NODEBUG bool t239; HERO_NODEBUG h_0opt_36226bb0 t240; HERO_NODEBUG HeroFailure t241; HERO_NODEBUG h_0opt_36226bb0 t242; HERO_NODEBUG HeroMapHeader * t243; HERO_NODEBUG int64_t t244; HERO_NODEBUG HeroStr t245; HERO_NODEBUG HeroStr t246; HERO_NODEBUG HeroStr t247; HERO_NODEBUG h_cliboundnames_Bound t248; HERO_NODEBUG HeroStr t249; HERO_NODEBUG HeroStr t250; HERO_NODEBUG h_0opt_f87774a t251; HERO_NODEBUG h_0opt_f87774a t252; HERO_NODEBUG int64_t t253; HERO_NODEBUG int64_t t254; HERO_NODEBUG bool t255; HERO_NODEBUG h_0opt_f87774a t256; HERO_NODEBUG HeroStr t257; HERO_NODEBUG h_0opt_f87774a t258; HERO_NODEBUG h_0opt_f87774a t259; HERO_NODEBUG int64_t t260; HERO_NODEBUG int64_t t261; HERO_NODEBUG bool t262; HERO_NODEBUG h_0opt_f87774a t263; HERO_NODEBUG HeroFailure t264; HERO_NODEBUG h_0opt_f87774a t265; HERO_NODEBUG HeroStr t266; HERO_NODEBUG HeroStr t267; HERO_NODEBUG bool t268; HERO_NODEBUG bool t269; HERO_NODEBUG h_cliboundnames_Bound t271; HERO_NODEBUG int64_t t273; HERO_NODEBUG int64_t t274; HERO_NODEBUG int64_t t275; HERO_NODEBUG h_clitoolchain_Toolchain t276; HERO_NODEBUG h_clicompiling_Probe t277; HERO_NODEBUG HeroArrayHeader * t278; HERO_NODEBUG HeroArrayHeader * t279; HERO_NODEBUG HeroMapHeader * t280; HERO_NODEBUG h_0opt_36226bb0 t281; HERO_NODEBUG h_0opt_36226bb0 t282; HERO_NODEBUG int64_t t283; HERO_NODEBUG int64_t t284; HERO_NODEBUG bool t285; HERO_NODEBUG h_0opt_36226bb0 t286; HERO_NODEBUG HeroFailure t287; HERO_NODEBUG h_0opt_36226bb0 t288; HERO_NODEBUG HeroMapHeader * t289; HERO_NODEBUG int64_t t290; HERO_NODEBUG HeroArrayHeader * t291; HERO_NODEBUG h_cliboundkept_Told t292; HERO_NODEBUG h_cliboundkept_Told t293; HERO_NODEBUG HeroArrayHeader * t294; HERO_NODEBUG HeroArrayHeader * t295; HERO_NODEBUG HeroArrayHeader * t296; HERO_NODEBUG HeroStr t297; HERO_NODEBUG HeroArrayHeader * t298; HERO_NODEBUG HeroArrayHeader * t299; HERO_NODEBUG HeroArrayHeader * t300; HERO_NODEBUG HeroArrayHeader * t301; HERO_NODEBUG HeroArrayHeader * t302; HERO_NODEBUG HeroArrayHeader * t303; HERO_NODEBUG HeroArrayHeader * t304; HERO_NODEBUG HeroMapHeader * t305; HERO_NODEBUG HeroMapHeader * t306; HERO_NODEBUG HeroArrayHeader * t307; HERO_NODEBUG HeroStr t308; HERO_NODEBUG HeroStr t309; HERO_NODEBUG h_0opt_36226bb0 t310; HERO_NODEBUG h_0opt_36226bb0 t311; HERO_NODEBUG h_0opt_36226bb0 t312; HERO_NODEBUG HeroArrayHeader * t313; HERO_NODEBUG HeroArrayHeader * t314; HERO_NODEBUG HeroArrayHeader * t315; HERO_NODEBUG HeroArrayHeader * t316; HERO_NODEBUG HeroArrayHeader * t317; HERO_NODEBUG h_cliboundkept_Told t318; HERO_NODEBUG h_cliboundnames_Bound t319; HERO_NODEBUG h_0opt_36226bb0 t320; HERO_NODEBUG h_0opt_36226bb0 t321; HERO_NODEBUG HeroArrayHeader * t322; HERO_NODEBUG HeroArrayHeader * t323; HERO_NODEBUG HeroStr t324; HERO_NODEBUG h_diag_Diagnostic t325; HERO_NODEBUG HeroStr t326; HERO_NODEBUG HeroStr t327; HERO_NODEBUG HeroArrayHeader * t328; HERO_NODEBUG HeroArrayHeader * t329; HERO_NODEBUG h_diag_Diagnostic t330; HERO_NODEBUG HeroArrayHeader * t331; HERO_NODEBUG HeroArrayHeader * t332; HERO_NODEBUG HeroArrayHeader * t333; HERO_NODEBUG h_cliboundkept_Told t334; HERO_NODEBUG h_cliboundkept_Told t335; HERO_NODEBUG h_cliboundnames_Bound t336; HERO_NODEBUG h_0opt_36226bb0 t337; HERO_NODEBUG h_0opt_36226bb0 t338; HERO_NODEBUG HeroStr t339; HERO_NODEBUG HeroStr t340; HERO_NODEBUG HeroStr t341; HERO_NODEBUG h_0opt_f87774a t342; HERO_NODEBUG h_0opt_f87774a t343; HERO_NODEBUG h_0opt_f87774a t344; HERO_NODEBUG h_0opt_f87774a t345; HERO_NODEBUG h_0opt_36226bb0 t346; HERO_NODEBUG HeroStr t347; HERO_NODEBUG HeroStr t348; HERO_NODEBUG HeroStr t349; HERO_NODEBUG h_0opt_f87774a t350; HERO_NODEBUG h_0opt_f87774a t351; HERO_NODEBUG HeroStr t352; HERO_NODEBUG h_0opt_f87774a t353; HERO_NODEBUG HeroStr t354; HERO_NODEBUG h_cliboundkept_Told t355; HERO_ENTRY_STOP; goto bb0;
-#line 96 "selfhost/cli/bound_macro.hero"
+#line 98 "selfhost/cli/bound_macro.hero"
 bb0:
     t1 = h5_bound;
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     t2 = INT64_C(0);
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     t3 = h_cliboundask_questions(t1, t2);
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     t294 = h46_own46;
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     h46_own46 = t3;
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t294);
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     t295 = h6_lines;
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t3);
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     h6_lines = t3;
-#line 97 "selfhost/cli/bound_macro.hero"
+#line 99 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t295);
     t4 = INT64_C(1);
-#line 98 "selfhost/cli/bound_macro.hero"
+#line 100 "selfhost/cli/bound_macro.hero"
     h7_place = t4;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t5 = h4_headers;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t296 = h8_xs0;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t5);
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     h8_xs0 = t5;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t296);
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t6 = INT64_C(0);
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     h9_i0 = t6;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
 bb1:
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t7 = h9_i0;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t8 = h8_xs0;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len);
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t10 = t7 < t9;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     if (t10) goto bb2; else goto bb4;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
 bb2:
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t11 = h8_xs0;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t12 = h9_i0;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? ((void)hero_array_at(t11, t12), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]);
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t297 = h10_header;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t13);
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     h10_header = t13;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t297);
     t14 = h6_lines;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     t15 = h10_header;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     t16 = hero_array_new(&hero_desc_str, 1);
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&t16, &t15);
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     t298 = h47_own47;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     h47_own47 = t16;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t298);
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     t17 = h_emitctext_includes(t16);
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     t299 = h48_own48;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     h48_own48 = t17;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t299);
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     t18 = h_clistrings_with_all(t14, t17);
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     t300 = h49_own49;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     h49_own49 = t18;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t300);
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     t301 = h6_lines;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t18);
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     h6_lines = t18;
-#line 101 "selfhost/cli/bound_macro.hero"
+#line 103 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t301);
     t19 = h6_lines;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     t20 = h5_bound;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     t21 = h7_place;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     t22 = h_cliboundask_questions(t20, t21);
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     t302 = h50_own50;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     h50_own50 = t22;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t302);
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     t23 = h_clistrings_with_all(t19, t22);
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     t303 = h51_own51;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     h51_own51 = t23;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t303);
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     t304 = h6_lines;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t23);
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     h6_lines = t23;
-#line 102 "selfhost/cli/bound_macro.hero"
+#line 104 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t304);
     t24 = h7_place;
-#line 103 "selfhost/cli/bound_macro.hero"
+#line 105 "selfhost/cli/bound_macro.hero"
     t25 = INT64_C(1);
-#line 103 "selfhost/cli/bound_macro.hero"
+#line 105 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow();
-#line 103 "selfhost/cli/bound_macro.hero"
+#line 105 "selfhost/cli/bound_macro.hero"
     h7_place = t26;
-#line 103 "selfhost/cli/bound_macro.hero"
+#line 105 "selfhost/cli/bound_macro.hero"
     goto bb3;
-#line 103 "selfhost/cli/bound_macro.hero"
+#line 105 "selfhost/cli/bound_macro.hero"
 bb3:
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t27 = h9_i0;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     t28 = INT64_C(1);
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     h9_i0 = t29;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 100 "selfhost/cli/bound_macro.hero"
+#line 102 "selfhost/cli/bound_macro.hero"
 bb4:
-#line 105 "selfhost/cli/bound_macro.hero"
-    t30 = h2_s;
-#line 105 "selfhost/cli/bound_macro.hero"
-    t31 = h3_decls;
-#line 105 "selfhost/cli/bound_macro.hero"
-    t32 = h_emitmacroguard_bound_names(t30, t31);
-#line 105 "selfhost/cli/bound_macro.hero"
-    t305 = h52_own52;
-#line 105 "selfhost/cli/bound_macro.hero"
-    h52_own52 = t32;
-#line 105 "selfhost/cli/bound_macro.hero"
-    hero_map_decref(t305);
-#line 105 "selfhost/cli/bound_macro.hero"
-    t306 = h11_pushed;
-#line 105 "selfhost/cli/bound_macro.hero"
-    hero_map_incref(t32);
-#line 105 "selfhost/cli/bound_macro.hero"
-    h11_pushed = t32;
-#line 105 "selfhost/cli/bound_macro.hero"
-    hero_map_decref(t306);
 #line 107 "selfhost/cli/bound_macro.hero"
+    t30 = h2_s;
+#line 107 "selfhost/cli/bound_macro.hero"
+    t31 = h3_decls;
+#line 107 "selfhost/cli/bound_macro.hero"
+    t32 = h_emitmacroguard_bound_names(t30, t31);
+#line 107 "selfhost/cli/bound_macro.hero"
+    t305 = h52_own52;
+#line 107 "selfhost/cli/bound_macro.hero"
+    h52_own52 = t32;
+#line 107 "selfhost/cli/bound_macro.hero"
+    hero_map_decref(t305);
+#line 107 "selfhost/cli/bound_macro.hero"
+    t306 = h11_pushed;
+#line 107 "selfhost/cli/bound_macro.hero"
+    hero_map_incref(t32);
+#line 107 "selfhost/cli/bound_macro.hero"
+    h11_pushed = t32;
+#line 107 "selfhost/cli/bound_macro.hero"
+    hero_map_decref(t306);
+#line 109 "selfhost/cli/bound_macro.hero"
     t33 = h6_lines;
     t34 = h11_pushed;
     t35 = h5_bound;
-#line 109 "selfhost/cli/bound_macro.hero"
+#line 111 "selfhost/cli/bound_macro.hero"
     t36 = h4_headers;
-#line 109 "selfhost/cli/bound_macro.hero"
+#line 111 "selfhost/cli/bound_macro.hero"
     t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len);
-#line 109 "selfhost/cli/bound_macro.hero"
+#line 111 "selfhost/cli/bound_macro.hero"
     t38 = INT64_C(1);
-#line 109 "selfhost/cli/bound_macro.hero"
+#line 111 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t37, t38, &t39)) hero_panic_overflow();
-#line 109 "selfhost/cli/bound_macro.hero"
+#line 111 "selfhost/cli/bound_macro.hero"
     t40 = h_cliboundask_questions(t35, t39);
-#line 109 "selfhost/cli/bound_macro.hero"
+#line 111 "selfhost/cli/bound_macro.hero"
     t307 = h53_own53;
-#line 109 "selfhost/cli/bound_macro.hero"
+#line 111 "selfhost/cli/bound_macro.hero"
     h53_own53 = t40;
-#line 109 "selfhost/cli/bound_macro.hero"
+#line 111 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t307);
-#line 106 "selfhost/cli/bound_macro.hero"
+#line 108 "selfhost/cli/bound_macro.hero"
     t41 = h_cliboundask_closed_opening(t33, t34, t40);
-#line 106 "selfhost/cli/bound_macro.hero"
+#line 108 "selfhost/cli/bound_macro.hero"
     t308 = h54_own54;
-#line 106 "selfhost/cli/bound_macro.hero"
+#line 108 "selfhost/cli/bound_macro.hero"
     h54_own54 = t41;
-#line 106 "selfhost/cli/bound_macro.hero"
+#line 108 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t308);
-#line 106 "selfhost/cli/bound_macro.hero"
+#line 108 "selfhost/cli/bound_macro.hero"
     t309 = h12_text;
-#line 106 "selfhost/cli/bound_macro.hero"
+#line 108 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t41);
-#line 106 "selfhost/cli/bound_macro.hero"
+#line 108 "selfhost/cli/bound_macro.hero"
     h12_text = t41;
-#line 106 "selfhost/cli/bound_macro.hero"
+#line 108 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t309);
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     t42 = h0_t;
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     t43 = h1_probe;
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     t44 = h12_text;
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     t45 = h_cliboundask_kept_answers(t42, t43, t44);
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     t310 = h55_own55;
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     h55_own55 = t45;
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_release(&t310);
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     t311 = h13_said;
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_retain(&t45);
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     h13_said = t45;
-#line 111 "selfhost/cli/bound_macro.hero"
+#line 113 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_release(&t311);
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     t46 = h13_said;
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     t312 = h14_f0;
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_retain(&t46);
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     h14_f0 = t46;
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_release(&t312);
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     t47 = h14_f0;
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     t48 = t47.tag;
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     t49 = INT64_C(1);
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     t50 = t48 == t49;
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
     if (t50) goto bb6; else goto bb7;
-#line 113 "selfhost/cli/bound_macro.hero"
+#line 115 "selfhost/cli/bound_macro.hero"
 bb5:
-#line 115 "selfhost/cli/bound_macro.hero"
+#line 117 "selfhost/cli/bound_macro.hero"
     t52 = hero_array_new(&h_diag_Diagnostic_desc, 1);
-#line 115 "selfhost/cli/bound_macro.hero"
+#line 117 "selfhost/cli/bound_macro.hero"
     t313 = h56_own56;
-#line 115 "selfhost/cli/bound_macro.hero"
+#line 117 "selfhost/cli/bound_macro.hero"
     h56_own56 = t52;
-#line 115 "selfhost/cli/bound_macro.hero"
+#line 117 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t313);
-#line 115 "selfhost/cli/bound_macro.hero"
+#line 117 "selfhost/cli/bound_macro.hero"
     t314 = h15_out;
-#line 115 "selfhost/cli/bound_macro.hero"
+#line 117 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t52);
-#line 115 "selfhost/cli/bound_macro.hero"
+#line 117 "selfhost/cli/bound_macro.hero"
     h15_out = t52;
-#line 115 "selfhost/cli/bound_macro.hero"
+#line 117 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t314);
     t53 = hero_array_new(&h_cliboundnames_Bound_desc, 1);
-#line 116 "selfhost/cli/bound_macro.hero"
+#line 118 "selfhost/cli/bound_macro.hero"
     t315 = h57_own57;
-#line 116 "selfhost/cli/bound_macro.hero"
+#line 118 "selfhost/cli/bound_macro.hero"
     h57_own57 = t53;
-#line 116 "selfhost/cli/bound_macro.hero"
+#line 118 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t315);
-#line 116 "selfhost/cli/bound_macro.hero"
+#line 118 "selfhost/cli/bound_macro.hero"
     t316 = h16_doubted;
-#line 116 "selfhost/cli/bound_macro.hero"
+#line 118 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t53);
-#line 116 "selfhost/cli/bound_macro.hero"
+#line 118 "selfhost/cli/bound_macro.hero"
     h16_doubted = t53;
-#line 116 "selfhost/cli/bound_macro.hero"
+#line 118 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t316);
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t54 = h5_bound;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t317 = h17_xs1;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t54);
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     h17_xs1 = t54;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t317);
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t55 = INT64_C(0);
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     h18_i1 = t55;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     goto bb8;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
 bb6:
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
     t51 = h_cliboundkept_nothing();
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
     t318 = h58_own58;
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
     h58_own58 = t51;
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
     h_cliboundkept_Told_release(&t318);
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
     h45_ret0 = t51;
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
     goto bb57;
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
 bb7:
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
     goto bb5;
-#line 114 "selfhost/cli/bound_macro.hero"
+#line 116 "selfhost/cli/bound_macro.hero"
 bb8:
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t56 = h18_i1;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t57 = h17_xs1;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t58 = ((void)(t57 == NULL ? ((void)hero_array_len(t57), hero_unreachable()) : (void)0), t57->len);
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t59 = t56 < t58;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     if (t59) goto bb9; else goto bb11;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
 bb9:
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t60 = h17_xs1;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t61 = h18_i1;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t62 = ((void)((t60 == NULL || t61 < 0 || t61 >= t60->len) ? ((void)hero_array_at(t60, t61), hero_unreachable()) : (void)0), (void)(t60->elem->size != sizeof(h_cliboundnames_Bound) ? hero_unreachable() : (void)0), ((h_cliboundnames_Bound const *)(const void *)(t60 + 1))[t61]);
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t319 = h19_b;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     h_cliboundnames_Bound_retain(&t62);
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     h19_b = t62;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     h_cliboundnames_Bound_release(&t319);
     t63 = h13_said;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t320 = h20_f1;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_retain(&t63);
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     h20_f1 = t63;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_release(&t320);
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t64 = h20_f1;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t65 = t64.tag;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t66 = INT64_C(0);
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t67 = t65 == t66;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     if (t67) goto bb12; else goto bb13;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
 bb10:
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t147 = h18_i1;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     t148 = INT64_C(1);
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t147, t148, &t149)) hero_panic_overflow();
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     h18_i1 = t149;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
     goto bb8;
-#line 118 "selfhost/cli/bound_macro.hero"
+#line 120 "selfhost/cli/bound_macro.hero"
 bb11:
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t150 = h0_t;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t151 = h1_probe;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t152 = h2_s;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t153 = h3_decls;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t154 = h4_headers;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t155 = h13_said;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t321 = h26_f2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_retain(&t155);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h26_f2 = t155;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_release(&t321);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t156 = h26_f2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t157 = t156.tag;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t158 = INT64_C(0);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t159 = t157 == t158;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     if (t159) goto bb26; else goto bb27;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
 bb12:
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t70 = h20_f1;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t71 = t70.as.ok;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t72 = h19_b;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t73 = h4_headers;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t74 = ((void)(t73 == NULL ? ((void)hero_array_len(t73), hero_unreachable()) : (void)0), t73->len);
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t75 = h_cliboundmacro_places(t71, t72, t74);
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t322 = h59_own59;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     h59_own59 = t75;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t322);
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t323 = h21_steps;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t75);
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     h21_steps = t75;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t323);
-#line 121 "selfhost/cli/bound_macro.hero"
+#line 123 "selfhost/cli/bound_macro.hero"
     t76 = h21_steps;
-#line 121 "selfhost/cli/bound_macro.hero"
+#line 123 "selfhost/cli/bound_macro.hero"
     t77 = ((void)(t76 == NULL ? ((void)hero_array_len(t76), hero_unreachable()) : (void)0), t76->len);
-#line 121 "selfhost/cli/bound_macro.hero"
+#line 123 "selfhost/cli/bound_macro.hero"
     t78 = INT64_C(0);
-#line 121 "selfhost/cli/bound_macro.hero"
+#line 123 "selfhost/cli/bound_macro.hero"
     t79 = t77 == t78;
-#line 121 "selfhost/cli/bound_macro.hero"
+#line 123 "selfhost/cli/bound_macro.hero"
     if (t79) goto bb15; else goto bb16;
-#line 121 "selfhost/cli/bound_macro.hero"
+#line 123 "selfhost/cli/bound_macro.hero"
 bb13:
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t68 = h20_f1;
-#line 119 "selfhost/cli/bound_macro.hero"
+#line 121 "selfhost/cli/bound_macro.hero"
     t69 = t68.as.err;
 #line 1047371 "main.c"
     hero_panic_must(t69);
     hero_unreachable();
 bb14:
-#line 123 "selfhost/cli/bound_macro.hero"
+#line 125 "selfhost/cli/bound_macro.hero"
     t80 = h21_steps;
-#line 123 "selfhost/cli/bound_macro.hero"
+#line 125 "selfhost/cli/bound_macro.hero"
     t81 = h19_b;
-#line 123 "selfhost/cli/bound_macro.hero"
+#line 125 "selfhost/cli/bound_macro.hero"
     t82 = t81.f_place;
-#line 123 "selfhost/cli/bound_macro.hero"
+#line 125 "selfhost/cli/bound_macro.hero"
     t83 = ((void)((t80 == NULL || t82 < 0 || t82 >= t80->len) ? ((void)hero_array_at(t80, t82), hero_unreachable()) : (void)0), (void)(t80->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t80 + 1))[t82]);
-#line 123 "selfhost/cli/bound_macro.hero"
+#line 125 "selfhost/cli/bound_macro.hero"
     t324 = h22_own;
-#line 123 "selfhost/cli/bound_macro.hero"
+#line 125 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t83);
-#line 123 "selfhost/cli/bound_macro.hero"
+#line 125 "selfhost/cli/bound_macro.hero"
     h22_own = t83;
-#line 123 "selfhost/cli/bound_macro.hero"
+#line 125 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t324);
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     t84 = h21_steps;
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     t85 = h4_headers;
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     t86 = ((void)(t85 == NULL ? ((void)hero_array_len(t85), hero_unreachable()) : (void)0), t85->len);
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     t87 = ((void)((t84 == NULL || t86 < 0 || t86 >= t84->len) ? ((void)hero_array_at(t84, t86), hero_unreachable()) : (void)0), (void)(t84->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t84 + 1))[t86]);
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     t88 = h22_own;
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     t89 = !hero_str_eq(t87, t88);
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     if (t89) goto bb18; else goto bb19;
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
 bb15:
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     goto bb10;
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
 bb16:
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     goto bb14;
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
 bb17:
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
     goto bb10;
-#line 125 "selfhost/cli/bound_macro.hero"
+#line 127 "selfhost/cli/bound_macro.hero"
 bb18:
     t90 = h21_steps;
-#line 126 "selfhost/cli/bound_macro.hero"
+#line 128 "selfhost/cli/bound_macro.hero"
     t91 = h19_b;
-#line 126 "selfhost/cli/bound_macro.hero"
+#line 128 "selfhost/cli/bound_macro.hero"
     t92 = t91.f_place;
-#line 126 "selfhost/cli/bound_macro.hero"
+#line 128 "selfhost/cli/bound_macro.hero"
     t93 = INT64_C(1);
-#line 126 "selfhost/cli/bound_macro.hero"
+#line 128 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t92, t93, &t94)) hero_panic_overflow();
-#line 126 "selfhost/cli/bound_macro.hero"
+#line 128 "selfhost/cli/bound_macro.hero"
     t95 = h4_headers;
-#line 126 "selfhost/cli/bound_macro.hero"
+#line 128 "selfhost/cli/bound_macro.hero"
     t96 = ((void)(t95 == NULL ? ((void)hero_array_len(t95), hero_unreachable()) : (void)0), t95->len);
-#line 126 "selfhost/cli/bound_macro.hero"
+#line 128 "selfhost/cli/bound_macro.hero"
     t97 = h_cliboundmacro_changed(t90, t94, t96);
-#line 126 "selfhost/cli/bound_macro.hero"
+#line 128 "selfhost/cli/bound_macro.hero"
     h23_later = t97;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t99 = h0_t;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t100 = h1_probe;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t101 = h2_s;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t102 = h3_decls;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t103 = h12_text;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t104 = h19_b;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t105 = h4_headers;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t106 = h23_later;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t107 = INT64_C(1);
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t106, t107, &t108)) hero_panic_overflow();
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t109 = ((void)((t105 == NULL || t108 < 0 || t108 >= t105->len) ? ((void)hero_array_at(t105, t108), hero_unreachable()) : (void)0), (void)(t105->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t105 + 1))[t108]);
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t110 = h23_later;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t111 = h22_own;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t112 = h21_steps;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t113 = h23_later;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t114 = ((void)((t112 == NULL || t113 < 0 || t113 >= t112->len) ? ((void)hero_array_at(t112, t113), hero_unreachable()) : (void)0), (void)(t112->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t112 + 1))[t113]);
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t115 = h_cliboundtold_after(t99, t100, t101, t102, t103, t104, t109, t110, t111, t114);
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     t325 = h60_own60;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     h60_own60 = t115;
-#line 128 "selfhost/cli/bound_macro.hero"
+#line 130 "selfhost/cli/bound_macro.hero"
     h_diag_Diagnostic_release(&t325);
-#line 127 "selfhost/cli/bound_macro.hero"
+#line 129 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h15_out, &t115);
-#line 127 "selfhost/cli/bound_macro.hero"
+#line 129 "selfhost/cli/bound_macro.hero"
     goto bb17;
-#line 127 "selfhost/cli/bound_macro.hero"
+#line 129 "selfhost/cli/bound_macro.hero"
 bb19:
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t117 = h21_steps;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t118 = h19_b;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t119 = t118.f_place;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t120 = INT64_C(1);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t119, t120, &t121)) hero_panic_overflow();
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t122 = ((void)((t117 == NULL || t121 < 0 || t121 >= t117->len) ? ((void)hero_array_at(t117, t121), hero_unreachable()) : (void)0), (void)(t117->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t117 + 1))[t121]);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t123 = h22_own;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t124 = hero_str_eq(t122, t123);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     h25_b1 = t124;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     if (t124) goto bb20; else goto bb21;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
 bb20:
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t125 = h22_own;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t126 = h19_b;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t127 = t126.f_name;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t128 = h19_b;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t129 = t128.f_arity;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t130 = h_cliboundsaid_asked(t127, t129);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t326 = h61_own61;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     h61_own61 = t130;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t326);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t131 = h_cliboundsaid_folded(t130);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t327 = h62_own62;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     h62_own62 = t131;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t327);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t132 = !hero_str_eq(t125, t131);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     h25_b1 = t132;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     goto bb21;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
 bb21:
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t133 = h25_b1;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     h24_b0 = t133;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     if (t133) goto bb22; else goto bb23;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
 bb22:
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t134 = h21_steps;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t135 = INT64_C(1);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t136 = h19_b;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t137 = t136.f_place;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t138 = INT64_C(1);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t137, t138, &t139)) hero_panic_overflow();
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t140 = h_cliboundmacro_changed(t134, t135, t139);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t141 = INT64_C(0);
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t142 = t140 > t141;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     h24_b0 = t142;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     goto bb23;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
 bb23:
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     t143 = h24_b0;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
     if (t143) goto bb24; else goto bb25;
-#line 130 "selfhost/cli/bound_macro.hero"
+#line 132 "selfhost/cli/bound_macro.hero"
 bb24:
     t145 = h19_b;
-#line 131 "selfhost/cli/bound_macro.hero"
+#line 133 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h16_doubted, &t145);
-#line 131 "selfhost/cli/bound_macro.hero"
+#line 133 "selfhost/cli/bound_macro.hero"
     goto bb17;
-#line 131 "selfhost/cli/bound_macro.hero"
+#line 133 "selfhost/cli/bound_macro.hero"
 bb25:
-#line 131 "selfhost/cli/bound_macro.hero"
+#line 133 "selfhost/cli/bound_macro.hero"
     goto bb17;
-#line 131 "selfhost/cli/bound_macro.hero"
+#line 133 "selfhost/cli/bound_macro.hero"
 bb26:
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t162 = h26_f2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t163 = t162.as.ok;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t164 = h16_doubted;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t165 = h12_text;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t166 = h_cliboundmacro_earlier(t150, t151, t152, t153, t154, t163, t164, t165);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t328 = h63_own63;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h63_own63 = t166;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t328);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t329 = h27_xs2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t166);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h27_xs2 = t166;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t329);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t167 = INT64_C(0);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h28_i2 = t167;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     goto bb28;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
 bb27:
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t160 = h26_f2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t161 = t160.as.err;
 #line 1047623 "main.c"
     hero_panic_must(t161);
     hero_unreachable();
 bb28:
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t168 = h28_i2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t169 = h27_xs2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t170 = ((void)(t169 == NULL ? ((void)hero_array_len(t169), hero_unreachable()) : (void)0), t169->len);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t171 = t168 < t170;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     if (t171) goto bb29; else goto bb31;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
 bb29:
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t172 = h27_xs2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t173 = h28_i2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t174 = ((void)((t172 == NULL || t173 < 0 || t173 >= t172->len) ? ((void)hero_array_at(t172, t173), hero_unreachable()) : (void)0), (void)(t172->elem->size != sizeof(h_diag_Diagnostic) ? hero_unreachable() : (void)0), ((h_diag_Diagnostic const *)(const void *)(t172 + 1))[t173]);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t330 = h29_d;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h_diag_Diagnostic_retain(&t174);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h29_d = t174;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h_diag_Diagnostic_release(&t330);
     t176 = h29_d;
-#line 134 "selfhost/cli/bound_macro.hero"
+#line 136 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h15_out, &t176);
-#line 134 "selfhost/cli/bound_macro.hero"
+#line 136 "selfhost/cli/bound_macro.hero"
     goto bb30;
-#line 134 "selfhost/cli/bound_macro.hero"
+#line 136 "selfhost/cli/bound_macro.hero"
 bb30:
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t178 = h28_i2;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     t179 = INT64_C(1);
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t178, t179, &t180)) hero_panic_overflow();
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     h28_i2 = t180;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
     goto bb28;
-#line 133 "selfhost/cli/bound_macro.hero"
+#line 135 "selfhost/cli/bound_macro.hero"
 bb31:
-#line 136 "selfhost/cli/bound_macro.hero"
+#line 138 "selfhost/cli/bound_macro.hero"
     t181 = h15_out;
-#line 136 "selfhost/cli/bound_macro.hero"
+#line 138 "selfhost/cli/bound_macro.hero"
     t182 = ((void)(t181 == NULL ? ((void)hero_array_len(t181), hero_unreachable()) : (void)0), t181->len);
-#line 136 "selfhost/cli/bound_macro.hero"
+#line 138 "selfhost/cli/bound_macro.hero"
     t183 = INT64_C(0);
-#line 136 "selfhost/cli/bound_macro.hero"
+#line 138 "selfhost/cli/bound_macro.hero"
     t184 = t182 > t183;
-#line 136 "selfhost/cli/bound_macro.hero"
+#line 138 "selfhost/cli/bound_macro.hero"
     if (t184) goto bb33; else goto bb34;
-#line 136 "selfhost/cli/bound_macro.hero"
+#line 138 "selfhost/cli/bound_macro.hero"
 bb32:
-#line 141 "selfhost/cli/bound_macro.hero"
+#line 143 "selfhost/cli/bound_macro.hero"
     t189 = hero_array_new(&h_cliboundnames_Bound_desc, 1);
-#line 141 "selfhost/cli/bound_macro.hero"
+#line 143 "selfhost/cli/bound_macro.hero"
     t331 = h64_own64;
-#line 141 "selfhost/cli/bound_macro.hero"
+#line 143 "selfhost/cli/bound_macro.hero"
     h64_own64 = t189;
-#line 141 "selfhost/cli/bound_macro.hero"
+#line 143 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t331);
-#line 141 "selfhost/cli/bound_macro.hero"
+#line 143 "selfhost/cli/bound_macro.hero"
     t332 = h30_moved;
-#line 141 "selfhost/cli/bound_macro.hero"
+#line 143 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t189);
-#line 141 "selfhost/cli/bound_macro.hero"
+#line 143 "selfhost/cli/bound_macro.hero"
     h30_moved = t189;
-#line 141 "selfhost/cli/bound_macro.hero"
+#line 143 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t332);
     t190 = h4_headers;
-#line 142 "selfhost/cli/bound_macro.hero"
+#line 144 "selfhost/cli/bound_macro.hero"
     t191 = ((void)(t190 == NULL ? ((void)hero_array_len(t190), hero_unreachable()) : (void)0), t190->len);
-#line 142 "selfhost/cli/bound_macro.hero"
+#line 144 "selfhost/cli/bound_macro.hero"
     h31_last = t191;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t192 = h5_bound;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t333 = h32_xs3;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t192);
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     h32_xs3 = t192;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t333);
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t193 = INT64_C(0);
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     h33_i3 = t193;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     goto bb35;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
 bb33:
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     t185 = h15_out;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     t186 = h_cliboundkept_nothing();
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     t334 = h65_own65;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     h65_own65 = t186;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     h_cliboundkept_Told_release(&t334);
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     t187 = t186.f_kept;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t185);
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     hero_map_incref(t187);
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     t188 = (h_cliboundkept_Told){.f_diagnostics = t185, .f_kept = t187};
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     t335 = h66_own66;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     h66_own66 = t188;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     h_cliboundkept_Told_release(&t335);
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     h45_ret0 = t188;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     goto bb57;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
 bb34:
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
     goto bb32;
-#line 137 "selfhost/cli/bound_macro.hero"
+#line 139 "selfhost/cli/bound_macro.hero"
 bb35:
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t194 = h33_i3;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t195 = h32_xs3;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t196 = ((void)(t195 == NULL ? ((void)hero_array_len(t195), hero_unreachable()) : (void)0), t195->len);
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t197 = t194 < t196;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     if (t197) goto bb36; else goto bb38;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
 bb36:
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t198 = h32_xs3;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t199 = h33_i3;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t200 = ((void)((t198 == NULL || t199 < 0 || t199 >= t198->len) ? ((void)hero_array_at(t198, t199), hero_unreachable()) : (void)0), (void)(t198->elem->size != sizeof(h_cliboundnames_Bound) ? hero_unreachable() : (void)0), ((h_cliboundnames_Bound const *)(const void *)(t198 + 1))[t199]);
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t336 = h34_b;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     h_cliboundnames_Bound_retain(&t200);
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     h34_b = t200;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     h_cliboundnames_Bound_release(&t336);
     t201 = h13_said;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t337 = h35_f3;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_retain(&t201);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h35_f3 = t201;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_release(&t337);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t202 = h35_f3;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t203 = t202.tag;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t204 = INT64_C(0);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t205 = t203 == t204;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     if (t205) goto bb39; else goto bb40;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
 bb37:
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t273 = h33_i3;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     t274 = INT64_C(1);
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t273, t274, &t275)) hero_panic_overflow();
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     h33_i3 = t275;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
     goto bb35;
-#line 144 "selfhost/cli/bound_macro.hero"
+#line 146 "selfhost/cli/bound_macro.hero"
 bb38:
-#line 151 "selfhost/cli/bound_macro.hero"
+#line 153 "selfhost/cli/bound_macro.hero"
     t276 = h0_t;
     t277 = h1_probe;
     t278 = h4_headers;
     t279 = h6_lines;
     t280 = h11_pushed;
     t281 = h13_said;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t338 = h44_f9;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_retain(&t281);
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     h44_f9 = t281;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_release(&t338);
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t282 = h44_f9;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t283 = t282.tag;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t284 = INT64_C(0);
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t285 = t283 == t284;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     if (t285) goto bb55; else goto bb56;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
 bb39:
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t208 = h35_f3;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t209 = t208.as.ok;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t210 = h31_last;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t211 = INT64_C(1);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t210, t211, &t212)) hero_panic_overflow();
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t213 = hero_int_to_str(t212);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t339 = h67_own67;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h67_own67 = t213;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t339);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t214 = HERO_STR_LIT(hero_str_20);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t215 = hero_str_concat(t213, t214);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t340 = h68_own68;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h68_own68 = t215;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t340);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t216 = h34_b;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t217 = t216.f_name;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t218 = hero_str_concat(t215, t217);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t341 = h69_own69;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h69_own69 = t218;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t341);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     {
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
       HERO_NODEBUG const void *found = hero_map_find(t209, &t218);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
       if (found == NULL) {
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
         t219 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
       } else {
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
         t219 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
         (&hero_desc_str)->copy(&t219.as.ok, found);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
       }
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     }
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t342 = h70_own70;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h70_own70 = t219;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t342);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t343 = h36_then;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t219);
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h36_then = t219;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t343);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t220 = h36_then;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t344 = h38_f4;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t220);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h38_f4 = t220;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t344);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t221 = h38_f4;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t222 = t221.tag;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t223 = INT64_C(1);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t224 = t222 == t223;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t225 = !t224;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h37_b2 = t225;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     if (t225) goto bb42; else goto bb43;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb40:
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t206 = h35_f3;
-#line 145 "selfhost/cli/bound_macro.hero"
+#line 147 "selfhost/cli/bound_macro.hero"
     t207 = t206.as.err;
 #line 1047945 "main.c"
     hero_panic_must(t207);
@@ -1047947,263 +1047947,263 @@ bb40:
 bb41:
     goto bb37;
 bb42:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t226 = h36_then;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t345 = h39_f5;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t226);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h39_f5 = t226;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t345);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t227 = h39_f5;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t228 = t227.tag;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t229 = INT64_C(0);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t230 = t228 == t229;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     if (t230) goto bb44; else goto bb45;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb43:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t269 = h37_b2;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     if (t269) goto bb53; else goto bb54;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb44:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t233 = h39_f5;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t234 = t233.as.ok;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t235 = h13_said;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t346 = h40_f6;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_retain(&t235);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h40_f6 = t235;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_36226bb0_release(&t346);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t236 = h40_f6;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t237 = t236.tag;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t238 = INT64_C(0);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t239 = t237 == t238;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     if (t239) goto bb46; else goto bb47;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb45:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t231 = h39_f5;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t232 = t231.as.err;
 #line 1048009 "main.c"
     hero_panic_must(t232);
     hero_unreachable();
 bb46:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t242 = h40_f6;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t243 = t242.as.ok;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t244 = h31_last;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t245 = hero_int_to_str(t244);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t347 = h71_own71;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h71_own71 = t245;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t347);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t246 = HERO_STR_LIT(hero_str_20);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t247 = hero_str_concat(t245, t246);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t348 = h72_own72;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h72_own72 = t247;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t348);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t248 = h34_b;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t249 = t248.f_name;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t250 = hero_str_concat(t247, t249);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t349 = h73_own73;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h73_own73 = t250;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t349);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     {
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
       HERO_NODEBUG const void *found = hero_map_find(t243, &t250);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
       if (found == NULL) {
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
         t251 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
       } else {
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
         t251 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
         (&hero_desc_str)->copy(&t251.as.ok, found);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
       }
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     }
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t350 = h74_own74;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h74_own74 = t251;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t350);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t351 = h41_f7;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t251);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h41_f7 = t251;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t351);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t252 = h41_f7;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t253 = t252.tag;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t254 = INT64_C(0);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t255 = t253 == t254;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     if (t255) goto bb48; else goto bb49;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb47:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t240 = h40_f6;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t241 = t240.as.err;
 #line 1048097 "main.c"
     hero_panic_must(t241);
     hero_unreachable();
 bb48:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t256 = h41_f7;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t257 = t256.as.ok;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t352 = h42_r0;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t257);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h42_r0 = t257;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t352);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     goto bb50;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb49:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t258 = h36_then;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t353 = h43_f8;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t258);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h43_f8 = t258;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t353);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t259 = h43_f8;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t260 = t259.tag;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t261 = INT64_C(0);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t262 = t260 == t261;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     if (t262) goto bb51; else goto bb52;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb50:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t267 = h42_r0;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t268 = !hero_str_eq(t234, t267);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h37_b2 = t268;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     goto bb43;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb51:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t265 = h43_f8;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t266 = t265.as.ok;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t354 = h42_r0;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t266);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     h42_r0 = t266;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t354);
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     goto bb50;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
 bb52:
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t263 = h43_f8;
-#line 147 "selfhost/cli/bound_macro.hero"
+#line 149 "selfhost/cli/bound_macro.hero"
     t264 = t263.as.err;
 #line 1048169 "main.c"
     hero_panic_must(t264);
     hero_unreachable();
 bb53:
-#line 148 "selfhost/cli/bound_macro.hero"
+#line 150 "selfhost/cli/bound_macro.hero"
     t271 = h34_b;
-#line 148 "selfhost/cli/bound_macro.hero"
+#line 150 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h30_moved, &t271);
-#line 148 "selfhost/cli/bound_macro.hero"
+#line 150 "selfhost/cli/bound_macro.hero"
     goto bb41;
-#line 148 "selfhost/cli/bound_macro.hero"
+#line 150 "selfhost/cli/bound_macro.hero"
 bb54:
-#line 148 "selfhost/cli/bound_macro.hero"
+#line 150 "selfhost/cli/bound_macro.hero"
     goto bb41;
-#line 148 "selfhost/cli/bound_macro.hero"
+#line 150 "selfhost/cli/bound_macro.hero"
 bb55:
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t288 = h44_f9;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t289 = t288.as.ok;
     t290 = h31_last;
     t291 = h30_moved;
-#line 150 "selfhost/cli/bound_macro.hero"
+#line 152 "selfhost/cli/bound_macro.hero"
     t292 = h_cliboundkept_judged(t276, t277, t278, t279, t280, t289, t290, t291);
-#line 150 "selfhost/cli/bound_macro.hero"
+#line 152 "selfhost/cli/bound_macro.hero"
     t355 = h75_own75;
-#line 150 "selfhost/cli/bound_macro.hero"
+#line 152 "selfhost/cli/bound_macro.hero"
     h75_own75 = t292;
-#line 150 "selfhost/cli/bound_macro.hero"
+#line 152 "selfhost/cli/bound_macro.hero"
     h_cliboundkept_Told_release(&t355);
-#line 150 "selfhost/cli/bound_macro.hero"
+#line 152 "selfhost/cli/bound_macro.hero"
     h45_ret0 = t292;
-#line 150 "selfhost/cli/bound_macro.hero"
+#line 152 "selfhost/cli/bound_macro.hero"
     goto bb57;
-#line 150 "selfhost/cli/bound_macro.hero"
+#line 152 "selfhost/cli/bound_macro.hero"
 bb56:
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t286 = h44_f9;
-#line 156 "selfhost/cli/bound_macro.hero"
+#line 158 "selfhost/cli/bound_macro.hero"
     t287 = t286.as.err;
 #line 1048209 "main.c"
     hero_panic_must(t287);
@@ -1048273,207 +1048273,207 @@ bb57:
     return t293;
 }
 
-#line 162 "selfhost/cli/bound_macro.hero"
+#line 164 "selfhost/cli/bound_macro.hero"
 HeroArrayHeader * h_cliboundmacro_places(HeroMapHeader * h0_said, h_cliboundnames_Bound h1_b, int64_t h2_count) {
-#line 162 "selfhost/cli/bound_macro.hero"
+#line 164 "selfhost/cli/bound_macro.hero"
     HeroArrayHeader * h3_out = {0}; int64_t h4_place; h_0opt_f87774a h5_one = {0}; HERO_NODEBUG h_0opt_f87774a h6_f0 = {0}; HeroArrayHeader * h7_none = {0}; HERO_NODEBUG h_0opt_f87774a h8_f1 = {0}; HERO_NODEBUG HeroArrayHeader * h9_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_cliboundnames_Bound t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG h_0opt_f87774a t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG HeroFailure t29; HERO_NODEBUG h_0opt_f87774a t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG h_0opt_f87774a t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG h_0opt_f87774a t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG HeroArrayHeader * t48; HERO_ENTRY_STOP; goto bb0;
-#line 162 "selfhost/cli/bound_macro.hero"
+#line 164 "selfhost/cli/bound_macro.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
-#line 163 "selfhost/cli/bound_macro.hero"
+#line 165 "selfhost/cli/bound_macro.hero"
     t38 = h10_own10;
-#line 163 "selfhost/cli/bound_macro.hero"
+#line 165 "selfhost/cli/bound_macro.hero"
     h10_own10 = t1;
-#line 163 "selfhost/cli/bound_macro.hero"
+#line 165 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t38);
-#line 163 "selfhost/cli/bound_macro.hero"
+#line 165 "selfhost/cli/bound_macro.hero"
     t39 = h3_out;
-#line 163 "selfhost/cli/bound_macro.hero"
+#line 165 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t1);
-#line 163 "selfhost/cli/bound_macro.hero"
+#line 165 "selfhost/cli/bound_macro.hero"
     h3_out = t1;
-#line 163 "selfhost/cli/bound_macro.hero"
+#line 165 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t39);
     t2 = INT64_C(0);
-#line 164 "selfhost/cli/bound_macro.hero"
+#line 166 "selfhost/cli/bound_macro.hero"
     h4_place = t2;
-#line 164 "selfhost/cli/bound_macro.hero"
+#line 166 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 164 "selfhost/cli/bound_macro.hero"
+#line 166 "selfhost/cli/bound_macro.hero"
 bb1:
-#line 166 "selfhost/cli/bound_macro.hero"
+#line 168 "selfhost/cli/bound_macro.hero"
     t3 = h4_place;
-#line 166 "selfhost/cli/bound_macro.hero"
+#line 168 "selfhost/cli/bound_macro.hero"
     t4 = h2_count;
-#line 166 "selfhost/cli/bound_macro.hero"
+#line 168 "selfhost/cli/bound_macro.hero"
     t5 = t3 <= t4;
-#line 166 "selfhost/cli/bound_macro.hero"
+#line 168 "selfhost/cli/bound_macro.hero"
     if (t5) goto bb2; else goto bb3;
-#line 166 "selfhost/cli/bound_macro.hero"
+#line 168 "selfhost/cli/bound_macro.hero"
 bb2:
     t6 = h0_said;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t7 = h4_place;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t8 = hero_int_to_str(t7);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t40 = h11_own11;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     h11_own11 = t8;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t40);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t9 = HERO_STR_LIT(hero_str_20);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t10 = hero_str_concat(t8, t9);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t41 = h12_own12;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     h12_own12 = t10;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t41);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t11 = h1_b;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t12 = t11.f_name;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t13 = hero_str_concat(t10, t12);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t42 = h13_own13;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     h13_own13 = t13;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t42);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     {
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
       HERO_NODEBUG const void *found = hero_map_find(t6, &t13);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
       if (found == NULL) {
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
         t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
       } else {
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
         t14 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
         (&hero_desc_str)->copy(&t14.as.ok, found);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
       }
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     }
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t43 = h14_own14;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     h14_own14 = t14;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t43);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     t44 = h5_one;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t14);
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     h5_one = t14;
-#line 167 "selfhost/cli/bound_macro.hero"
+#line 169 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t44);
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     t15 = h5_one;
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     t45 = h6_f0;
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t15);
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     h6_f0 = t15;
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t45);
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     t16 = h6_f0;
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     t17 = t16.tag;
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     t18 = INT64_C(1);
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     t19 = t17 == t18;
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
     if (t19) goto bb5; else goto bb6;
-#line 169 "selfhost/cli/bound_macro.hero"
+#line 171 "selfhost/cli/bound_macro.hero"
 bb3:
-#line 175 "selfhost/cli/bound_macro.hero"
+#line 177 "selfhost/cli/bound_macro.hero"
     t36 = h3_out;
-#line 175 "selfhost/cli/bound_macro.hero"
+#line 177 "selfhost/cli/bound_macro.hero"
     h9_ret0 = t36;
-#line 175 "selfhost/cli/bound_macro.hero"
+#line 177 "selfhost/cli/bound_macro.hero"
     goto bb9;
-#line 175 "selfhost/cli/bound_macro.hero"
+#line 177 "selfhost/cli/bound_macro.hero"
 bb4:
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t23 = h5_one;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t46 = h8_f1;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t23);
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     h8_f1 = t23;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t46);
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t24 = h8_f1;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t25 = t24.tag;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t26 = INT64_C(0);
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t27 = t25 == t26;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     if (t27) goto bb7; else goto bb8;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
 bb5:
-#line 170 "selfhost/cli/bound_macro.hero"
+#line 172 "selfhost/cli/bound_macro.hero"
     t20 = hero_array_new(&hero_desc_str, 1);
-#line 170 "selfhost/cli/bound_macro.hero"
+#line 172 "selfhost/cli/bound_macro.hero"
     t47 = h15_own15;
-#line 170 "selfhost/cli/bound_macro.hero"
+#line 172 "selfhost/cli/bound_macro.hero"
     h15_own15 = t20;
-#line 170 "selfhost/cli/bound_macro.hero"
+#line 172 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t47);
-#line 170 "selfhost/cli/bound_macro.hero"
+#line 172 "selfhost/cli/bound_macro.hero"
     t48 = h7_none;
-#line 170 "selfhost/cli/bound_macro.hero"
+#line 172 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t20);
-#line 170 "selfhost/cli/bound_macro.hero"
+#line 172 "selfhost/cli/bound_macro.hero"
     h7_none = t20;
-#line 170 "selfhost/cli/bound_macro.hero"
+#line 172 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t48);
     t21 = h7_none;
-#line 171 "selfhost/cli/bound_macro.hero"
+#line 173 "selfhost/cli/bound_macro.hero"
     h9_ret0 = t21;
-#line 171 "selfhost/cli/bound_macro.hero"
+#line 173 "selfhost/cli/bound_macro.hero"
     goto bb9;
-#line 171 "selfhost/cli/bound_macro.hero"
+#line 173 "selfhost/cli/bound_macro.hero"
 bb6:
-#line 171 "selfhost/cli/bound_macro.hero"
+#line 173 "selfhost/cli/bound_macro.hero"
     goto bb4;
-#line 171 "selfhost/cli/bound_macro.hero"
+#line 173 "selfhost/cli/bound_macro.hero"
 bb7:
     t30 = h8_f1;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t31 = t30.as.ok;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h3_out, &t31);
     t33 = h4_place;
-#line 173 "selfhost/cli/bound_macro.hero"
+#line 175 "selfhost/cli/bound_macro.hero"
     t34 = INT64_C(1);
-#line 173 "selfhost/cli/bound_macro.hero"
+#line 175 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t33, t34, &t35)) hero_panic_overflow();
-#line 173 "selfhost/cli/bound_macro.hero"
+#line 175 "selfhost/cli/bound_macro.hero"
     h4_place = t35;
-#line 173 "selfhost/cli/bound_macro.hero"
+#line 175 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 173 "selfhost/cli/bound_macro.hero"
+#line 175 "selfhost/cli/bound_macro.hero"
 bb8:
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t28 = h8_f1;
-#line 172 "selfhost/cli/bound_macro.hero"
+#line 174 "selfhost/cli/bound_macro.hero"
     t29 = t28.as.err;
 #line 1048479 "main.c"
     hero_panic_must(t29);
@@ -1048495,195 +1048495,195 @@ bb9:
     return t37;
 }
 
-#line 179 "selfhost/cli/bound_macro.hero"
+#line 181 "selfhost/cli/bound_macro.hero"
 int64_t h_cliboundmacro_changed(HeroArrayHeader * h0_steps, int64_t h1_from, int64_t h2_to) {
-#line 179 "selfhost/cli/bound_macro.hero"
+#line 181 "selfhost/cli/bound_macro.hero"
     int64_t h3_place; HERO_NODEBUG bool h4_b0; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_ENTRY_STOP; goto bb0;
-#line 179 "selfhost/cli/bound_macro.hero"
+#line 181 "selfhost/cli/bound_macro.hero"
 bb0:
     t1 = h1_from;
-#line 180 "selfhost/cli/bound_macro.hero"
+#line 182 "selfhost/cli/bound_macro.hero"
     h3_place = t1;
-#line 180 "selfhost/cli/bound_macro.hero"
+#line 182 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 180 "selfhost/cli/bound_macro.hero"
+#line 182 "selfhost/cli/bound_macro.hero"
 bb1:
-#line 182 "selfhost/cli/bound_macro.hero"
+#line 184 "selfhost/cli/bound_macro.hero"
     t2 = h3_place;
-#line 182 "selfhost/cli/bound_macro.hero"
+#line 184 "selfhost/cli/bound_macro.hero"
     t3 = h2_to;
-#line 182 "selfhost/cli/bound_macro.hero"
+#line 184 "selfhost/cli/bound_macro.hero"
     t4 = t2 <= t3;
-#line 182 "selfhost/cli/bound_macro.hero"
+#line 184 "selfhost/cli/bound_macro.hero"
     if (t4) goto bb2; else goto bb3;
-#line 182 "selfhost/cli/bound_macro.hero"
+#line 184 "selfhost/cli/bound_macro.hero"
 bb2:
     t5 = h3_place;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t6 = INT64_C(1);
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t7 = t5 >= t6;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     h4_b0 = t7;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     if (t7) goto bb5; else goto bb6;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
 bb3:
-#line 187 "selfhost/cli/bound_macro.hero"
+#line 189 "selfhost/cli/bound_macro.hero"
     t22 = INT64_C(0);
-#line 187 "selfhost/cli/bound_macro.hero"
+#line 189 "selfhost/cli/bound_macro.hero"
     h5_ret0 = t22;
-#line 187 "selfhost/cli/bound_macro.hero"
+#line 189 "selfhost/cli/bound_macro.hero"
     goto bb9;
-#line 187 "selfhost/cli/bound_macro.hero"
+#line 189 "selfhost/cli/bound_macro.hero"
 bb4:
-#line 185 "selfhost/cli/bound_macro.hero"
+#line 187 "selfhost/cli/bound_macro.hero"
     t19 = h3_place;
-#line 185 "selfhost/cli/bound_macro.hero"
+#line 187 "selfhost/cli/bound_macro.hero"
     t20 = INT64_C(1);
-#line 185 "selfhost/cli/bound_macro.hero"
+#line 187 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow();
-#line 185 "selfhost/cli/bound_macro.hero"
+#line 187 "selfhost/cli/bound_macro.hero"
     h3_place = t21;
-#line 185 "selfhost/cli/bound_macro.hero"
+#line 187 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 185 "selfhost/cli/bound_macro.hero"
+#line 187 "selfhost/cli/bound_macro.hero"
 bb5:
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t8 = h0_steps;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t9 = h3_place;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t11 = h0_steps;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t12 = h3_place;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t13 = INT64_C(1);
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t15 = ((void)((t11 == NULL || t14 < 0 || t14 >= t11->len) ? ((void)hero_array_at(t11, t14), hero_unreachable()) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t14]);
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t16 = !hero_str_eq(t10, t15);
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     h4_b0 = t16;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     goto bb6;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
 bb6:
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     t17 = h4_b0;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
     if (t17) goto bb7; else goto bb8;
-#line 183 "selfhost/cli/bound_macro.hero"
+#line 185 "selfhost/cli/bound_macro.hero"
 bb7:
     t18 = h3_place;
-#line 184 "selfhost/cli/bound_macro.hero"
+#line 186 "selfhost/cli/bound_macro.hero"
     h5_ret0 = t18;
-#line 184 "selfhost/cli/bound_macro.hero"
+#line 186 "selfhost/cli/bound_macro.hero"
     goto bb9;
-#line 184 "selfhost/cli/bound_macro.hero"
+#line 186 "selfhost/cli/bound_macro.hero"
 bb8:
-#line 184 "selfhost/cli/bound_macro.hero"
+#line 186 "selfhost/cli/bound_macro.hero"
     goto bb4;
-#line 184 "selfhost/cli/bound_macro.hero"
+#line 186 "selfhost/cli/bound_macro.hero"
 bb9:
 #line 1048594 "main.c"
     t23 = h5_ret0;
     return t23;
 }
 
-#line 196 "selfhost/cli/bound_macro.hero"
+#line 198 "selfhost/cli/bound_macro.hero"
 HeroArrayHeader * h_cliboundmacro_earlier(h_clitoolchain_Toolchain h0_t, h_clicompiling_Probe h1_probe, h_source_Source h2_s, HeroArrayHeader * h3_decls, HeroArrayHeader * h4_headers, HeroMapHeader * h5_said, HeroArrayHeader * h6_doubted, HeroStr h7_text) {
-#line 196 "selfhost/cli/bound_macro.hero"
+#line 198 "selfhost/cli/bound_macro.hero"
     HeroArrayHeader * h8_out = {0}; int64_t h9_place; HeroArrayHeader * h10_asked = {0}; HeroMapHeader * h11_left_out = {0}; HERO_NODEBUG HeroArrayHeader * h12_xs0 = {0}; HERO_NODEBUG int64_t h13_i0; h_cliboundnames_Bound h14_b = {0}; HeroArrayHeader * h15_steps = {0}; int64_t h16_k; HeroArrayHeader * h17_lines = {0}; int64_t h18_k; HERO_NODEBUG h_0opt_473cb9ae h19_f0 = {0}; h_0opt_62cf212e h20_alone = {0}; HERO_NODEBUG bool h21_b0; HERO_NODEBUG h_0opt_62cf212e h22_f1 = {0}; HERO_NODEBUG HeroArrayHeader * h23_xs1 = {0}; HERO_NODEBUG int64_t h24_i1; h_cliboundnames_Bound h25_b = {0}; HeroArrayHeader * h26_steps = {0}; HERO_NODEBUG h_0opt_62cf212e h27_f2 = {0}; HERO_NODEBUG h_0opt_f87774a h28_f3 = {0}; HERO_NODEBUG HeroStr h29_r0 = {0}; HeroStr h30_read = {0}; HERO_NODEBUG bool h31_b1; HERO_NODEBUG bool h32_b2; HERO_NODEBUG h_0opt_62cf212e h33_f4 = {0}; HERO_NODEBUG h_0opt_473cb9ae h34_f5 = {0}; int64_t h35_by; HERO_NODEBUG HeroArrayHeader * h36_own36 = {0}; HERO_NODEBUG HeroArrayHeader * h37_own37 = {0}; HERO_NODEBUG HeroMapHeader * h38_own38 = {0}; HERO_NODEBUG HeroArrayHeader * h39_own39 = {0}; HERO_NODEBUG HeroArrayHeader * h40_own40 = {0}; HERO_NODEBUG h_0opt_473cb9ae h41_own41 = {0}; HERO_NODEBUG HeroStr h42_own42 = {0}; HERO_NODEBUG HeroArrayHeader * h43_own43 = {0}; HERO_NODEBUG HeroArrayHeader * h44_own44 = {0}; HERO_NODEBUG HeroArrayHeader * h45_own45 = {0}; HERO_NODEBUG HeroArrayHeader * h46_own46 = {0}; HERO_NODEBUG HeroArrayHeader * h47_own47 = {0}; HERO_NODEBUG HeroStr h48_own48 = {0}; HERO_NODEBUG h_0opt_62cf212e h49_own49 = {0}; HERO_NODEBUG HeroArrayHeader * h50_own50 = {0}; HERO_NODEBUG HeroArrayHeader * h51_own51 = {0}; HERO_NODEBUG HeroArrayHeader * h52_own52 = {0}; HERO_NODEBUG HeroArrayHeader * h53_own53 = {0}; HERO_NODEBUG HeroStr h54_own54 = {0}; HERO_NODEBUG HeroStr h55_own55 = {0}; HERO_NODEBUG HeroStr h56_own56 = {0}; HERO_NODEBUG h_0opt_f87774a h57_own57 = {0}; HERO_NODEBUG h_0opt_473cb9ae h58_own58 = {0}; HERO_NODEBUG h_diag_Diagnostic h59_own59 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroMapHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_cliboundnames_Bound t17; HERO_NODEBUG h_cliboundnames_Bound t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_cliboundnames_Bound t23; HERO_NODEBUG HeroMapHeader * t25; HERO_NODEBUG h_cliboundnames_Bound t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG bool t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG bool t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG bool t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG HeroMapHeader * t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG h_0opt_473cb9ae t62; HERO_NODEBUG h_0opt_473cb9ae t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG bool t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG HeroArrayHeader * t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG HeroArrayHeader * t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG h_clitoolchain_Toolchain t96; HERO_NODEBUG h_clicompiling_Probe t97; HERO_NODEBUG HeroArrayHeader * t98; HERO_NODEBUG HeroStr t99; HERO_NODEBUG h_0opt_62cf212e t100; HERO_NODEBUG h_0opt_62cf212e t101; HERO_NODEBUG h_0opt_62cf212e t102; HERO_NODEBUG int64_t t103; HERO_NODEBUG int64_t t104; HERO_NODEBUG bool t105; HERO_NODEBUG bool t106; HERO_NODEBUG h_clitoolchain_Toolchain t107; HERO_NODEBUG h_clicompiling_Probe t108; HERO_NODEBUG HeroArrayHeader * t109; HERO_NODEBUG int64_t t110; HERO_NODEBUG bool t111; HERO_NODEBUG bool t112; HERO_NODEBUG HeroArrayHeader * t113; HERO_NODEBUG int64_t t114; HERO_NODEBUG int64_t t115; HERO_NODEBUG HeroArrayHeader * t116; HERO_NODEBUG int64_t t117; HERO_NODEBUG bool t118; HERO_NODEBUG HeroArrayHeader * t119; HERO_NODEBUG int64_t t120; HERO_NODEBUG h_cliboundnames_Bound t121; HERO_NODEBUG HeroMapHeader * t122; HERO_NODEBUG h_cliboundnames_Bound t123; HERO_NODEBUG HeroArrayHeader * t124; HERO_NODEBUG int64_t t125; HERO_NODEBUG HeroArrayHeader * t126; HERO_NODEBUG h_0opt_62cf212e t127; HERO_NODEBUG h_0opt_62cf212e t128; HERO_NODEBUG int64_t t129; HERO_NODEBUG int64_t t130; HERO_NODEBUG bool t131; HERO_NODEBUG h_0opt_62cf212e t132; HERO_NODEBUG HeroFailure t133; HERO_NODEBUG h_0opt_62cf212e t134; HERO_NODEBUG h_cliboundask_Alone t135; HERO_NODEBUG HeroMapHeader * t136; HERO_NODEBUG int64_t t137; HERO_NODEBUG HeroStr t138; HERO_NODEBUG HeroStr t139; HERO_NODEBUG HeroStr t140; HERO_NODEBUG h_cliboundnames_Bound t141; HERO_NODEBUG HeroStr t142; HERO_NODEBUG HeroStr t143; HERO_NODEBUG h_0opt_f87774a t144; HERO_NODEBUG h_0opt_f87774a t145; HERO_NODEBUG int64_t t146; HERO_NODEBUG int64_t t147; HERO_NODEBUG bool t148; HERO_NODEBUG h_0opt_f87774a t149; HERO_NODEBUG HeroStr t150; HERO_NODEBUG HeroStr t151; HERO_NODEBUG HeroStr t152; HERO_NODEBUG HeroStr t153; HERO_NODEBUG HeroStr t154; HERO_NODEBUG bool t155; HERO_NODEBUG HeroStr t156; HERO_NODEBUG HeroArrayHeader * t157; HERO_NODEBUG int64_t t158; HERO_NODEBUG HeroStr t159; HERO_NODEBUG bool t160; HERO_NODEBUG bool t161; HERO_NODEBUG h_0opt_62cf212e t162; HERO_NODEBUG h_0opt_62cf212e t163; HERO_NODEBUG int64_t t164; HERO_NODEBUG int64_t t165; HERO_NODEBUG bool t166; HERO_NODEBUG h_0opt_62cf212e t167; HERO_NODEBUG HeroFailure t168; HERO_NODEBUG h_0opt_62cf212e t169; HERO_NODEBUG h_cliboundask_Alone t170; HERO_NODEBUG HeroMapHeader * t171; HERO_NODEBUG h_cliboundnames_Bound t172; HERO_NODEBUG HeroStr t173; HERO_NODEBUG h_0opt_473cb9ae t174; HERO_NODEBUG h_0opt_473cb9ae t175; HERO_NODEBUG int64_t t176; HERO_NODEBUG int64_t t177; HERO_NODEBUG bool t178; HERO_NODEBUG bool t179; HERO_NODEBUG bool t180; HERO_NODEBUG HeroArrayHeader * t181; HERO_NODEBUG int64_t t182; HERO_NODEBUG int64_t t183; HERO_NODEBUG h_clitoolchain_Toolchain t185; HERO_NODEBUG h_clicompiling_Probe t186; HERO_NODEBUG h_source_Source t187; HERO_NODEBUG HeroArrayHeader * t188; HERO_NODEBUG HeroStr t189; HERO_NODEBUG h_cliboundnames_Bound t190; HERO_NODEBUG HeroArrayHeader * t191; HERO_NODEBUG int64_t t192; HERO_NODEBUG int64_t t193; HERO_NODEBUG int64_t t194; HERO_NODEBUG HeroStr t195; HERO_NODEBUG int64_t t196; HERO_NODEBUG HeroStr t197; HERO_NODEBUG HeroArrayHeader * t198; HERO_NODEBUG int64_t t199; HERO_NODEBUG HeroStr t200; HERO_NODEBUG h_diag_Diagnostic t201; HERO_NODEBUG int64_t t203; HERO_NODEBUG int64_t t204; HERO_NODEBUG int64_t t205; HERO_NODEBUG int64_t t206; HERO_NODEBUG int64_t t207; HERO_NODEBUG int64_t t208; HERO_NODEBUG HeroArrayHeader * t209; HERO_NODEBUG HeroArrayHeader * t210; HERO_NODEBUG HeroArrayHeader * t211; HERO_NODEBUG HeroArrayHeader * t212; HERO_NODEBUG HeroArrayHeader * t213; HERO_NODEBUG HeroMapHeader * t214; HERO_NODEBUG HeroMapHeader * t215; HERO_NODEBUG HeroArrayHeader * t216; HERO_NODEBUG h_cliboundnames_Bound t217; HERO_NODEBUG HeroArrayHeader * t218; HERO_NODEBUG HeroArrayHeader * t219; HERO_NODEBUG HeroArrayHeader * t220; HERO_NODEBUG HeroArrayHeader * t221; HERO_NODEBUG h_0opt_473cb9ae t222; HERO_NODEBUG h_0opt_473cb9ae t223; HERO_NODEBUG HeroStr t224; HERO_NODEBUG HeroArrayHeader * t225; HERO_NODEBUG HeroArrayHeader * t226; HERO_NODEBUG HeroArrayHeader * t227; HERO_NODEBUG HeroArrayHeader * t228; HERO_NODEBUG HeroArrayHeader * t229; HERO_NODEBUG HeroArrayHeader * t230; HERO_NODEBUG HeroArrayHeader * t231; HERO_NODEBUG HeroStr t232; HERO_NODEBUG h_0opt_62cf212e t233; HERO_NODEBUG h_0opt_62cf212e t234; HERO_NODEBUG h_0opt_62cf212e t235; HERO_NODEBUG HeroArrayHeader * t236; HERO_NODEBUG HeroArrayHeader * t237; HERO_NODEBUG HeroArrayHeader * t238; HERO_NODEBUG HeroArrayHeader * t239; HERO_NODEBUG HeroArrayHeader * t240; HERO_NODEBUG h_cliboundnames_Bound t241; HERO_NODEBUG HeroArrayHeader * t242; HERO_NODEBUG HeroArrayHeader * t243; HERO_NODEBUG h_0opt_62cf212e t244; HERO_NODEBUG HeroStr t245; HERO_NODEBUG HeroStr t246; HERO_NODEBUG HeroStr t247; HERO_NODEBUG h_0opt_f87774a t248; HERO_NODEBUG h_0opt_f87774a t249; HERO_NODEBUG HeroStr t250; HERO_NODEBUG HeroStr t251; HERO_NODEBUG HeroStr t252; HERO_NODEBUG h_0opt_62cf212e t253; HERO_NODEBUG h_0opt_473cb9ae t254; HERO_NODEBUG h_0opt_473cb9ae t255; HERO_NODEBUG h_diag_Diagnostic t256; HERO_ENTRY_STOP; goto bb0;
-#line 196 "selfhost/cli/bound_macro.hero"
+#line 198 "selfhost/cli/bound_macro.hero"
 bb0:
     t1 = hero_array_new(&h_diag_Diagnostic_desc, 1);
-#line 197 "selfhost/cli/bound_macro.hero"
+#line 199 "selfhost/cli/bound_macro.hero"
     t210 = h36_own36;
-#line 197 "selfhost/cli/bound_macro.hero"
+#line 199 "selfhost/cli/bound_macro.hero"
     h36_own36 = t1;
-#line 197 "selfhost/cli/bound_macro.hero"
+#line 199 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t210);
-#line 197 "selfhost/cli/bound_macro.hero"
+#line 199 "selfhost/cli/bound_macro.hero"
     t211 = h8_out;
-#line 197 "selfhost/cli/bound_macro.hero"
+#line 199 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t1);
-#line 197 "selfhost/cli/bound_macro.hero"
+#line 199 "selfhost/cli/bound_macro.hero"
     h8_out = t1;
-#line 197 "selfhost/cli/bound_macro.hero"
+#line 199 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t211);
     t2 = INT64_C(1);
-#line 198 "selfhost/cli/bound_macro.hero"
+#line 200 "selfhost/cli/bound_macro.hero"
     h9_place = t2;
-#line 198 "selfhost/cli/bound_macro.hero"
+#line 200 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 198 "selfhost/cli/bound_macro.hero"
+#line 200 "selfhost/cli/bound_macro.hero"
 bb1:
-#line 200 "selfhost/cli/bound_macro.hero"
+#line 202 "selfhost/cli/bound_macro.hero"
     t3 = h9_place;
-#line 200 "selfhost/cli/bound_macro.hero"
+#line 202 "selfhost/cli/bound_macro.hero"
     t4 = h4_headers;
-#line 200 "selfhost/cli/bound_macro.hero"
+#line 202 "selfhost/cli/bound_macro.hero"
     t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len);
-#line 200 "selfhost/cli/bound_macro.hero"
+#line 202 "selfhost/cli/bound_macro.hero"
     t6 = t3 <= t5;
-#line 200 "selfhost/cli/bound_macro.hero"
+#line 202 "selfhost/cli/bound_macro.hero"
     if (t6) goto bb2; else goto bb3;
-#line 200 "selfhost/cli/bound_macro.hero"
+#line 202 "selfhost/cli/bound_macro.hero"
 bb2:
     t7 = hero_array_new(&h_cliboundnames_Bound_desc, 1);
-#line 201 "selfhost/cli/bound_macro.hero"
+#line 203 "selfhost/cli/bound_macro.hero"
     t212 = h37_own37;
-#line 201 "selfhost/cli/bound_macro.hero"
+#line 203 "selfhost/cli/bound_macro.hero"
     h37_own37 = t7;
-#line 201 "selfhost/cli/bound_macro.hero"
+#line 203 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t212);
-#line 201 "selfhost/cli/bound_macro.hero"
+#line 203 "selfhost/cli/bound_macro.hero"
     t213 = h10_asked;
-#line 201 "selfhost/cli/bound_macro.hero"
+#line 203 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t7);
-#line 201 "selfhost/cli/bound_macro.hero"
+#line 203 "selfhost/cli/bound_macro.hero"
     h10_asked = t7;
-#line 201 "selfhost/cli/bound_macro.hero"
+#line 203 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t213);
     t8 = hero_map_new(&hero_desc_int, &hero_desc_bool, 0);
-#line 202 "selfhost/cli/bound_macro.hero"
+#line 204 "selfhost/cli/bound_macro.hero"
     t214 = h38_own38;
-#line 202 "selfhost/cli/bound_macro.hero"
+#line 204 "selfhost/cli/bound_macro.hero"
     h38_own38 = t8;
-#line 202 "selfhost/cli/bound_macro.hero"
+#line 204 "selfhost/cli/bound_macro.hero"
     hero_map_decref(t214);
-#line 202 "selfhost/cli/bound_macro.hero"
+#line 204 "selfhost/cli/bound_macro.hero"
     t215 = h11_left_out;
-#line 202 "selfhost/cli/bound_macro.hero"
+#line 204 "selfhost/cli/bound_macro.hero"
     hero_map_incref(t8);
-#line 202 "selfhost/cli/bound_macro.hero"
+#line 204 "selfhost/cli/bound_macro.hero"
     h11_left_out = t8;
-#line 202 "selfhost/cli/bound_macro.hero"
+#line 204 "selfhost/cli/bound_macro.hero"
     hero_map_decref(t215);
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t9 = h6_doubted;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t216 = h12_xs0;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t9);
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     h12_xs0 = t9;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t216);
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t10 = INT64_C(0);
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     h13_i0 = t10;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     goto bb4;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
 bb3:
-#line 241 "selfhost/cli/bound_macro.hero"
+#line 243 "selfhost/cli/bound_macro.hero"
     t209 = h8_out;
 #line 1048689 "main.c"
     hero_array_incref(t209);
@@ -1048732,998 +1048732,998 @@ bb3:
     h_diag_Diagnostic_release(hero_slot_escape(&h59_own59));
     return t209;
 bb4:
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t11 = h13_i0;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t12 = h12_xs0;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t13 = ((void)(t12 == NULL ? ((void)hero_array_len(t12), hero_unreachable()) : (void)0), t12->len);
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t14 = t11 < t13;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     if (t14) goto bb5; else goto bb7;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
 bb5:
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t15 = h12_xs0;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t16 = h13_i0;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t17 = ((void)((t15 == NULL || t16 < 0 || t16 >= t15->len) ? ((void)hero_array_at(t15, t16), hero_unreachable()) : (void)0), (void)(t15->elem->size != sizeof(h_cliboundnames_Bound) ? hero_unreachable() : (void)0), ((h_cliboundnames_Bound const *)(const void *)(t15 + 1))[t16]);
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t217 = h14_b;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     h_cliboundnames_Bound_retain(&t17);
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     h14_b = t17;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     h_cliboundnames_Bound_release(&t217);
     t18 = h14_b;
-#line 205 "selfhost/cli/bound_macro.hero"
+#line 207 "selfhost/cli/bound_macro.hero"
     t19 = t18.f_place;
-#line 205 "selfhost/cli/bound_macro.hero"
+#line 207 "selfhost/cli/bound_macro.hero"
     t20 = h9_place;
-#line 205 "selfhost/cli/bound_macro.hero"
+#line 207 "selfhost/cli/bound_macro.hero"
     t21 = t19 == t20;
-#line 205 "selfhost/cli/bound_macro.hero"
+#line 207 "selfhost/cli/bound_macro.hero"
     if (t21) goto bb9; else goto bb10;
-#line 205 "selfhost/cli/bound_macro.hero"
+#line 207 "selfhost/cli/bound_macro.hero"
 bb6:
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t48 = h13_i0;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     t49 = INT64_C(1);
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t48, t49, &t50)) hero_panic_overflow();
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     h13_i0 = t50;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
     goto bb4;
-#line 204 "selfhost/cli/bound_macro.hero"
+#line 206 "selfhost/cli/bound_macro.hero"
 bb7:
-#line 215 "selfhost/cli/bound_macro.hero"
+#line 217 "selfhost/cli/bound_macro.hero"
     t51 = h10_asked;
-#line 215 "selfhost/cli/bound_macro.hero"
+#line 217 "selfhost/cli/bound_macro.hero"
     t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len);
-#line 215 "selfhost/cli/bound_macro.hero"
+#line 217 "selfhost/cli/bound_macro.hero"
     t53 = INT64_C(0);
-#line 215 "selfhost/cli/bound_macro.hero"
+#line 217 "selfhost/cli/bound_macro.hero"
     t54 = t52 > t53;
-#line 215 "selfhost/cli/bound_macro.hero"
+#line 217 "selfhost/cli/bound_macro.hero"
     if (t54) goto bb18; else goto bb19;
-#line 215 "selfhost/cli/bound_macro.hero"
+#line 217 "selfhost/cli/bound_macro.hero"
 bb8:
-#line 215 "selfhost/cli/bound_macro.hero"
+#line 217 "selfhost/cli/bound_macro.hero"
     goto bb6;
-#line 215 "selfhost/cli/bound_macro.hero"
+#line 217 "selfhost/cli/bound_macro.hero"
 bb9:
-#line 206 "selfhost/cli/bound_macro.hero"
+#line 208 "selfhost/cli/bound_macro.hero"
     t23 = h14_b;
-#line 206 "selfhost/cli/bound_macro.hero"
+#line 208 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h10_asked, &t23);
     t25 = h5_said;
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     t26 = h14_b;
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     t27 = h4_headers;
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len);
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     t29 = h_cliboundmacro_places(t25, t26, t28);
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     t218 = h39_own39;
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     h39_own39 = t29;
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t218);
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     t219 = h15_steps;
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t29);
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     h15_steps = t29;
-#line 207 "selfhost/cli/bound_macro.hero"
+#line 209 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t219);
     t30 = INT64_C(1);
-#line 208 "selfhost/cli/bound_macro.hero"
+#line 210 "selfhost/cli/bound_macro.hero"
     h16_k = t30;
-#line 208 "selfhost/cli/bound_macro.hero"
+#line 210 "selfhost/cli/bound_macro.hero"
     goto bb11;
-#line 208 "selfhost/cli/bound_macro.hero"
+#line 210 "selfhost/cli/bound_macro.hero"
 bb10:
-#line 208 "selfhost/cli/bound_macro.hero"
+#line 210 "selfhost/cli/bound_macro.hero"
     goto bb8;
-#line 208 "selfhost/cli/bound_macro.hero"
+#line 210 "selfhost/cli/bound_macro.hero"
 bb11:
-#line 210 "selfhost/cli/bound_macro.hero"
+#line 212 "selfhost/cli/bound_macro.hero"
     t31 = h16_k;
-#line 210 "selfhost/cli/bound_macro.hero"
+#line 212 "selfhost/cli/bound_macro.hero"
     t32 = h9_place;
-#line 210 "selfhost/cli/bound_macro.hero"
+#line 212 "selfhost/cli/bound_macro.hero"
     t33 = t31 < t32;
-#line 210 "selfhost/cli/bound_macro.hero"
+#line 212 "selfhost/cli/bound_macro.hero"
     if (t33) goto bb12; else goto bb13;
-#line 210 "selfhost/cli/bound_macro.hero"
+#line 212 "selfhost/cli/bound_macro.hero"
 bb12:
     t34 = h15_steps;
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     t35 = h16_k;
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     t36 = ((void)((t34 == NULL || t35 < 0 || t35 >= t34->len) ? ((void)hero_array_at(t34, t35), hero_unreachable()) : (void)0), (void)(t34->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t34 + 1))[t35]);
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     t37 = h15_steps;
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     t38 = h16_k;
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     t39 = INT64_C(1);
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t38, t39, &t40)) hero_panic_overflow();
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     t41 = ((void)((t37 == NULL || t40 < 0 || t40 >= t37->len) ? ((void)hero_array_at(t37, t40), hero_unreachable()) : (void)0), (void)(t37->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t37 + 1))[t40]);
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     t42 = !hero_str_eq(t36, t41);
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     if (t42) goto bb15; else goto bb16;
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
 bb13:
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
     goto bb8;
-#line 211 "selfhost/cli/bound_macro.hero"
+#line 213 "selfhost/cli/bound_macro.hero"
 bb14:
-#line 213 "selfhost/cli/bound_macro.hero"
+#line 215 "selfhost/cli/bound_macro.hero"
     t45 = h16_k;
-#line 213 "selfhost/cli/bound_macro.hero"
+#line 215 "selfhost/cli/bound_macro.hero"
     t46 = INT64_C(1);
-#line 213 "selfhost/cli/bound_macro.hero"
+#line 215 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t45, t46, &t47)) hero_panic_overflow();
-#line 213 "selfhost/cli/bound_macro.hero"
+#line 215 "selfhost/cli/bound_macro.hero"
     h16_k = t47;
-#line 213 "selfhost/cli/bound_macro.hero"
+#line 215 "selfhost/cli/bound_macro.hero"
     goto bb11;
-#line 213 "selfhost/cli/bound_macro.hero"
+#line 215 "selfhost/cli/bound_macro.hero"
 bb15:
-#line 212 "selfhost/cli/bound_macro.hero"
+#line 214 "selfhost/cli/bound_macro.hero"
     t43 = h16_k;
-#line 212 "selfhost/cli/bound_macro.hero"
+#line 214 "selfhost/cli/bound_macro.hero"
     t44 = true;
-#line 212 "selfhost/cli/bound_macro.hero"
+#line 214 "selfhost/cli/bound_macro.hero"
     hero_map_set(&(h11_left_out), &t43, &t44);
-#line 212 "selfhost/cli/bound_macro.hero"
+#line 214 "selfhost/cli/bound_macro.hero"
     goto bb14;
-#line 212 "selfhost/cli/bound_macro.hero"
+#line 214 "selfhost/cli/bound_macro.hero"
 bb16:
-#line 212 "selfhost/cli/bound_macro.hero"
+#line 214 "selfhost/cli/bound_macro.hero"
     goto bb14;
-#line 212 "selfhost/cli/bound_macro.hero"
+#line 214 "selfhost/cli/bound_macro.hero"
 bb17:
-#line 239 "selfhost/cli/bound_macro.hero"
+#line 241 "selfhost/cli/bound_macro.hero"
     t206 = h9_place;
-#line 239 "selfhost/cli/bound_macro.hero"
+#line 241 "selfhost/cli/bound_macro.hero"
     t207 = INT64_C(1);
-#line 239 "selfhost/cli/bound_macro.hero"
+#line 241 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t206, t207, &t208)) hero_panic_overflow();
-#line 239 "selfhost/cli/bound_macro.hero"
+#line 241 "selfhost/cli/bound_macro.hero"
     h9_place = t208;
-#line 239 "selfhost/cli/bound_macro.hero"
+#line 241 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 239 "selfhost/cli/bound_macro.hero"
+#line 241 "selfhost/cli/bound_macro.hero"
 bb18:
-#line 216 "selfhost/cli/bound_macro.hero"
+#line 218 "selfhost/cli/bound_macro.hero"
     t55 = hero_array_new(&hero_desc_str, 1);
-#line 216 "selfhost/cli/bound_macro.hero"
+#line 218 "selfhost/cli/bound_macro.hero"
     t220 = h40_own40;
-#line 216 "selfhost/cli/bound_macro.hero"
+#line 218 "selfhost/cli/bound_macro.hero"
     h40_own40 = t55;
-#line 216 "selfhost/cli/bound_macro.hero"
+#line 218 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t220);
-#line 216 "selfhost/cli/bound_macro.hero"
+#line 218 "selfhost/cli/bound_macro.hero"
     t221 = h17_lines;
-#line 216 "selfhost/cli/bound_macro.hero"
+#line 218 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t55);
-#line 216 "selfhost/cli/bound_macro.hero"
+#line 218 "selfhost/cli/bound_macro.hero"
     h17_lines = t55;
-#line 216 "selfhost/cli/bound_macro.hero"
+#line 218 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t221);
     t56 = INT64_C(1);
-#line 217 "selfhost/cli/bound_macro.hero"
+#line 219 "selfhost/cli/bound_macro.hero"
     h18_k = t56;
-#line 217 "selfhost/cli/bound_macro.hero"
+#line 219 "selfhost/cli/bound_macro.hero"
     goto bb20;
-#line 217 "selfhost/cli/bound_macro.hero"
+#line 219 "selfhost/cli/bound_macro.hero"
 bb19:
-#line 217 "selfhost/cli/bound_macro.hero"
+#line 219 "selfhost/cli/bound_macro.hero"
     goto bb17;
-#line 217 "selfhost/cli/bound_macro.hero"
+#line 219 "selfhost/cli/bound_macro.hero"
 bb20:
-#line 219 "selfhost/cli/bound_macro.hero"
+#line 221 "selfhost/cli/bound_macro.hero"
     t57 = h18_k;
-#line 219 "selfhost/cli/bound_macro.hero"
+#line 221 "selfhost/cli/bound_macro.hero"
     t58 = h9_place;
-#line 219 "selfhost/cli/bound_macro.hero"
+#line 221 "selfhost/cli/bound_macro.hero"
     t59 = t57 < t58;
-#line 219 "selfhost/cli/bound_macro.hero"
+#line 221 "selfhost/cli/bound_macro.hero"
     if (t59) goto bb21; else goto bb22;
-#line 219 "selfhost/cli/bound_macro.hero"
+#line 221 "selfhost/cli/bound_macro.hero"
 bb21:
     t60 = h11_left_out;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     t61 = h18_k;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     {
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
       HERO_NODEBUG const void *found = hero_map_find(t60, &t61);
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
       if (found == NULL) {
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
         t62 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
       } else {
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
         t62 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
         (&hero_desc_bool)->copy(&t62.as.ok, found);
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
       }
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     }
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     t222 = h41_own41;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     h41_own41 = t62;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_release(&t222);
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     t223 = h19_f0;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_retain(&t62);
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     h19_f0 = t62;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_release(&t223);
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     t63 = h19_f0;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     t64 = t63.tag;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     t65 = INT64_C(1);
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     t66 = t64 == t65;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
     if (t66) goto bb24; else goto bb25;
-#line 220 "selfhost/cli/bound_macro.hero"
+#line 222 "selfhost/cli/bound_macro.hero"
 bb22:
-#line 224 "selfhost/cli/bound_macro.hero"
+#line 226 "selfhost/cli/bound_macro.hero"
     t80 = h_cliboundsaid_MARK();
-#line 224 "selfhost/cli/bound_macro.hero"
+#line 226 "selfhost/cli/bound_macro.hero"
     t224 = h42_own42;
-#line 224 "selfhost/cli/bound_macro.hero"
+#line 226 "selfhost/cli/bound_macro.hero"
     h42_own42 = t80;
-#line 224 "selfhost/cli/bound_macro.hero"
+#line 226 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t224);
-#line 224 "selfhost/cli/bound_macro.hero"
+#line 226 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h17_lines, &t80);
     t82 = h17_lines;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t83 = h4_headers;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t84 = h9_place;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t85 = INT64_C(1);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t84, t85, &t86)) hero_panic_overflow();
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t87 = ((void)((t83 == NULL || t86 < 0 || t86 >= t83->len) ? ((void)hero_array_at(t83, t86), hero_unreachable()) : (void)0), (void)(t83->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t83 + 1))[t86]);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t88 = hero_array_new(&hero_desc_str, 1);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&t88, &t87);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t225 = h43_own43;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     h43_own43 = t88;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t225);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t89 = h_emitctext_includes(t88);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t226 = h44_own44;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     h44_own44 = t89;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t226);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t90 = h_clistrings_with_all(t82, t89);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t227 = h45_own45;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     h45_own45 = t90;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t227);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     t228 = h17_lines;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t90);
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     h17_lines = t90;
-#line 225 "selfhost/cli/bound_macro.hero"
+#line 227 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t228);
     t91 = h17_lines;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     t92 = h10_asked;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     t93 = h9_place;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     t94 = h_cliboundask_questions(t92, t93);
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     t229 = h46_own46;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     h46_own46 = t94;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t229);
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     t95 = h_clistrings_with_all(t91, t94);
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     t230 = h47_own47;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     h47_own47 = t95;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t230);
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     t231 = h17_lines;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t95);
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     h17_lines = t95;
-#line 226 "selfhost/cli/bound_macro.hero"
+#line 228 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t231);
     t96 = h0_t;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     t97 = h1_probe;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     t98 = h17_lines;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     t99 = h_cliboundask_opening(t98);
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     t232 = h48_own48;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     h48_own48 = t99;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t232);
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     t100 = h_cliboundask_alone_answers(t96, t97, t99);
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     t233 = h49_own49;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     h49_own49 = t100;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_release(&t233);
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     t234 = h20_alone;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_retain(&t100);
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     h20_alone = t100;
-#line 227 "selfhost/cli/bound_macro.hero"
+#line 229 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_release(&t234);
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t101 = h20_alone;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t235 = h22_f1;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_retain(&t101);
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     h22_f1 = t101;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_release(&t235);
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t102 = h22_f1;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t103 = t102.tag;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t104 = INT64_C(1);
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t105 = t103 == t104;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t106 = !t105;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     h21_b0 = t106;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     if (t106) goto bb27; else goto bb28;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
 bb23:
-#line 222 "selfhost/cli/bound_macro.hero"
+#line 224 "selfhost/cli/bound_macro.hero"
     t76 = h18_k;
-#line 222 "selfhost/cli/bound_macro.hero"
+#line 224 "selfhost/cli/bound_macro.hero"
     t77 = INT64_C(1);
-#line 222 "selfhost/cli/bound_macro.hero"
+#line 224 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t76, t77, &t78)) hero_panic_overflow();
-#line 222 "selfhost/cli/bound_macro.hero"
+#line 224 "selfhost/cli/bound_macro.hero"
     h18_k = t78;
-#line 222 "selfhost/cli/bound_macro.hero"
+#line 224 "selfhost/cli/bound_macro.hero"
     goto bb20;
-#line 222 "selfhost/cli/bound_macro.hero"
+#line 224 "selfhost/cli/bound_macro.hero"
 bb24:
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t67 = h17_lines;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t68 = h4_headers;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t69 = h18_k;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t70 = INT64_C(1);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t69, t70, &t71)) hero_panic_overflow();
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t72 = ((void)((t68 == NULL || t71 < 0 || t71 >= t68->len) ? ((void)hero_array_at(t68, t71), hero_unreachable()) : (void)0), (void)(t68->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t68 + 1))[t71]);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t73 = hero_array_new(&hero_desc_str, 1);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&t73, &t72);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t236 = h50_own50;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     h50_own50 = t73;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t236);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t74 = h_emitctext_includes(t73);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t237 = h51_own51;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     h51_own51 = t74;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t237);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t75 = h_clistrings_with_all(t67, t74);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t238 = h52_own52;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     h52_own52 = t75;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t238);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     t239 = h17_lines;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t75);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     h17_lines = t75;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t239);
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     goto bb23;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
 bb25:
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     goto bb23;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
 bb26:
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
     goto bb17;
-#line 221 "selfhost/cli/bound_macro.hero"
+#line 223 "selfhost/cli/bound_macro.hero"
 bb27:
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t107 = h0_t;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t108 = h1_probe;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t109 = h4_headers;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t110 = h9_place;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t111 = h_cliboundmacro_compiles_up_to(t107, t108, t109, t110);
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     h21_b0 = t111;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     goto bb28;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
 bb28:
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     t112 = h21_b0;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
     if (t112) goto bb29; else goto bb30;
-#line 229 "selfhost/cli/bound_macro.hero"
+#line 231 "selfhost/cli/bound_macro.hero"
 bb29:
     t113 = h10_asked;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t240 = h23_xs1;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t113);
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     h23_xs1 = t113;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t240);
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t114 = INT64_C(0);
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     h24_i1 = t114;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     goto bb31;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
 bb30:
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     goto bb26;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
 bb31:
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t115 = h24_i1;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t116 = h23_xs1;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t117 = ((void)(t116 == NULL ? ((void)hero_array_len(t116), hero_unreachable()) : (void)0), t116->len);
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t118 = t115 < t117;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     if (t118) goto bb32; else goto bb34;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
 bb32:
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t119 = h23_xs1;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t120 = h24_i1;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t121 = ((void)((t119 == NULL || t120 < 0 || t120 >= t119->len) ? ((void)hero_array_at(t119, t120), hero_unreachable()) : (void)0), (void)(t119->elem->size != sizeof(h_cliboundnames_Bound) ? hero_unreachable() : (void)0), ((h_cliboundnames_Bound const *)(const void *)(t119 + 1))[t120]);
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t241 = h25_b;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     h_cliboundnames_Bound_retain(&t121);
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     h25_b = t121;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     h_cliboundnames_Bound_release(&t241);
     t122 = h5_said;
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     t123 = h25_b;
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     t124 = h4_headers;
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     t125 = ((void)(t124 == NULL ? ((void)hero_array_len(t124), hero_unreachable()) : (void)0), t124->len);
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     t126 = h_cliboundmacro_places(t122, t123, t125);
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     t242 = h53_own53;
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     h53_own53 = t126;
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t242);
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     t243 = h26_steps;
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     hero_array_incref(t126);
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     h26_steps = t126;
-#line 231 "selfhost/cli/bound_macro.hero"
+#line 233 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t243);
     t127 = h20_alone;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t244 = h27_f2;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_retain(&t127);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h27_f2 = t127;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_release(&t244);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t128 = h27_f2;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t129 = t128.tag;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t130 = INT64_C(0);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t131 = t129 == t130;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     if (t131) goto bb35; else goto bb36;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
 bb33:
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t203 = h24_i1;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     t204 = INT64_C(1);
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     if (__builtin_add_overflow(t203, t204, &t205)) hero_panic_overflow();
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     h24_i1 = t205;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     goto bb31;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
 bb34:
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
     goto bb26;
-#line 230 "selfhost/cli/bound_macro.hero"
+#line 232 "selfhost/cli/bound_macro.hero"
 bb35:
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t134 = h27_f2;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t135 = t134.as.ok;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t136 = t135.f_meanings;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t137 = h9_place;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t138 = hero_int_to_str(t137);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t245 = h54_own54;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h54_own54 = t138;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t245);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t139 = HERO_STR_LIT(hero_str_20);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t140 = hero_str_concat(t138, t139);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t246 = h55_own55;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h55_own55 = t140;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t246);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t141 = h25_b;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t142 = t141.f_name;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t143 = hero_str_concat(t140, t142);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t247 = h56_own56;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h56_own56 = t143;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t247);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     {
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
       HERO_NODEBUG const void *found = hero_map_find(t136, &t143);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
       if (found == NULL) {
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
         t144 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
       } else {
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
         t144 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
         (&hero_desc_str)->copy(&t144.as.ok, found);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
       }
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     }
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t248 = h57_own57;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h57_own57 = t144;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t248);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t249 = h28_f3;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_retain(&t144);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h28_f3 = t144;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h_0opt_f87774a_release(&t249);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t145 = h28_f3;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t146 = t145.tag;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t147 = INT64_C(0);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t148 = t146 == t147;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     if (t148) goto bb37; else goto bb38;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
 bb36:
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t132 = h27_f2;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t133 = t132.as.err;
 #line 1049420 "main.c"
     hero_panic_must(t133);
     hero_unreachable();
 bb37:
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t149 = h28_f3;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t150 = t149.as.ok;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t250 = h29_r0;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t150);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h29_r0 = t150;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t250);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     goto bb39;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
 bb38:
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t151 = HERO_STR_LIT(hero_str_0);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t251 = h29_r0;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t151);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h29_r0 = t151;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t251);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     goto bb39;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
 bb39:
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t152 = h29_r0;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     t252 = h30_read;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_incref(t152);
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     h30_read = t152;
-#line 232 "selfhost/cli/bound_macro.hero"
+#line 234 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t252);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t153 = h30_read;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t154 = HERO_STR_LIT(hero_str_0);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t155 = !hero_str_eq(t153, t154);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h32_b2 = t155;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     if (t155) goto bb41; else goto bb42;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
 bb40:
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     goto bb33;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
 bb41:
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t156 = h30_read;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t157 = h26_steps;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t158 = h9_place;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t159 = ((void)((t157 == NULL || t158 < 0 || t158 >= t157->len) ? ((void)hero_array_at(t157, t158), hero_unreachable()) : (void)0), (void)(t157->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t157 + 1))[t158]);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t160 = !hero_str_eq(t156, t159);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h32_b2 = t160;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     goto bb42;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
 bb42:
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t161 = h32_b2;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h31_b1 = t161;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     if (t161) goto bb43; else goto bb44;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
 bb43:
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t162 = h20_alone;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t253 = h33_f4;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_retain(&t162);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h33_f4 = t162;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h_0opt_62cf212e_release(&t253);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t163 = h33_f4;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t164 = t163.tag;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t165 = INT64_C(0);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t166 = t164 == t165;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     if (t166) goto bb45; else goto bb46;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
 bb44:
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t180 = h31_b1;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     if (t180) goto bb47; else goto bb48;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
 bb45:
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t169 = h33_f4;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t170 = t169.as.ok;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t171 = t170.f_named;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t172 = h25_b;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t173 = t172.f_name;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     {
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
       HERO_NODEBUG const void *found = hero_map_find(t171, &t173);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
       if (found == NULL) {
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
         t174 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
       } else {
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
         t174 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
         (&hero_desc_bool)->copy(&t174.as.ok, found);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
       }
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     }
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t254 = h58_own58;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h58_own58 = t174;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_release(&t254);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t255 = h34_f5;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_retain(&t174);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h34_f5 = t174;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h_0opt_473cb9ae_release(&t255);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t175 = h34_f5;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t176 = t175.tag;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t177 = INT64_C(1);
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t178 = t176 == t177;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t179 = !t178;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     h31_b1 = t179;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     goto bb44;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
 bb46:
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t167 = h33_f4;
-#line 234 "selfhost/cli/bound_macro.hero"
+#line 236 "selfhost/cli/bound_macro.hero"
     t168 = t167.as.err;
 #line 1049594 "main.c"
     hero_panic_must(t168);
     hero_unreachable();
 bb47:
-#line 235 "selfhost/cli/bound_macro.hero"
+#line 237 "selfhost/cli/bound_macro.hero"
     t181 = h26_steps;
-#line 235 "selfhost/cli/bound_macro.hero"
+#line 237 "selfhost/cli/bound_macro.hero"
     t182 = h9_place;
-#line 235 "selfhost/cli/bound_macro.hero"
+#line 237 "selfhost/cli/bound_macro.hero"
     t183 = h_cliboundmacro_changed_last(t181, t182);
-#line 235 "selfhost/cli/bound_macro.hero"
+#line 237 "selfhost/cli/bound_macro.hero"
     h35_by = t183;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t185 = h0_t;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t186 = h1_probe;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t187 = h2_s;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t188 = h3_decls;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t189 = h7_text;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t190 = h25_b;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t191 = h4_headers;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t192 = h35_by;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t193 = INT64_C(1);
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t192, t193, &t194)) hero_panic_overflow();
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t195 = ((void)((t191 == NULL || t194 < 0 || t194 >= t191->len) ? ((void)hero_array_at(t191, t194), hero_unreachable()) : (void)0), (void)(t191->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t191 + 1))[t194]);
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t196 = h35_by;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t197 = h30_read;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t198 = h26_steps;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t199 = h9_place;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t200 = ((void)((t198 == NULL || t199 < 0 || t199 >= t198->len) ? ((void)hero_array_at(t198, t199), hero_unreachable()) : (void)0), (void)(t198->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t198 + 1))[t199]);
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t201 = h_cliboundtold_before_told(t185, t186, t187, t188, t189, t190, t195, t196, t197, t200);
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     t256 = h59_own59;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     h59_own59 = t201;
-#line 237 "selfhost/cli/bound_macro.hero"
+#line 239 "selfhost/cli/bound_macro.hero"
     h_diag_Diagnostic_release(&t256);
-#line 236 "selfhost/cli/bound_macro.hero"
+#line 238 "selfhost/cli/bound_macro.hero"
     hero_array_push_owned(&h8_out, &t201);
-#line 236 "selfhost/cli/bound_macro.hero"
+#line 238 "selfhost/cli/bound_macro.hero"
     goto bb40;
-#line 236 "selfhost/cli/bound_macro.hero"
+#line 238 "selfhost/cli/bound_macro.hero"
 bb48:
-#line 236 "selfhost/cli/bound_macro.hero"
+#line 238 "selfhost/cli/bound_macro.hero"
     goto bb40;
 #line 1049654 "main.c"
 }
 
-#line 245 "selfhost/cli/bound_macro.hero"
-bool h_cliboundmacro_compiles_up_to(h_clitoolchain_Toolchain h0_t, h_clicompiling_Probe h1_probe, HeroArrayHeader * h2_headers, int64_t h3_place) {
-#line 245 "selfhost/cli/bound_macro.hero"
-    h_cliordertrial_Ran h4_ran = {0}; HERO_NODEBUG bool h5_b0; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_cliordertrial_Ran h8_own8 = {0}; HERO_NODEBUG h_clitoolchain_Toolchain t1; HERO_NODEBUG h_clicompiling_Probe t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_cliordertrial_Ran t10; HERO_NODEBUG h_cliordertrial_Ran t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_cliordertrial_Ran t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_cliordertrial_Ran t18; HERO_NODEBUG h_cliordertrial_Ran t19; HERO_ENTRY_STOP; goto bb0;
-#line 245 "selfhost/cli/bound_macro.hero"
-bb0:
 #line 247 "selfhost/cli/bound_macro.hero"
+bool h_cliboundmacro_compiles_up_to(h_clitoolchain_Toolchain h0_t, h_clicompiling_Probe h1_probe, HeroArrayHeader * h2_headers, int64_t h3_place) {
+#line 247 "selfhost/cli/bound_macro.hero"
+    h_cliordertrial_Ran h4_ran = {0}; HERO_NODEBUG bool h5_b0; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_cliordertrial_Ran h8_own8 = {0}; HERO_NODEBUG h_clitoolchain_Toolchain t1; HERO_NODEBUG h_clicompiling_Probe t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_cliordertrial_Ran t10; HERO_NODEBUG h_cliordertrial_Ran t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_cliordertrial_Ran t13; HERO_NODEBUG bool t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_cliordertrial_Ran t18; HERO_NODEBUG h_cliordertrial_Ran t19; HERO_ENTRY_STOP; goto bb0;
+#line 247 "selfhost/cli/bound_macro.hero"
+bb0:
+#line 249 "selfhost/cli/bound_macro.hero"
     t1 = h0_t;
     t2 = h1_probe;
-#line 248 "selfhost/cli/bound_macro.hero"
+#line 250 "selfhost/cli/bound_macro.hero"
     t3 = t2.f_words;
     t4 = h2_headers;
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     t5 = INT64_C(0);
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     t6 = h3_place;
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     t7 = hero_array_slice(t4, t5, t6);
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     t16 = h6_own6;
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     h6_own6 = t7;
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     hero_array_decref(t16);
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     t8 = HERO_STR_LIT(hero_str_0);
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     t9 = h_cliordertrial_opening(t7, t8);
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     t17 = h7_own7;
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     h7_own7 = t9;
-#line 249 "selfhost/cli/bound_macro.hero"
+#line 251 "selfhost/cli/bound_macro.hero"
     hero_str_decref(t17);
-#line 246 "selfhost/cli/bound_macro.hero"
+#line 248 "selfhost/cli/bound_macro.hero"
     t10 = h_cliordertrial_compiled(t1, t3, t9);
-#line 246 "selfhost/cli/bound_macro.hero"
+#line 248 "selfhost/cli/bound_macro.hero"
     t18 = h8_own8;
-#line 246 "selfhost/cli/bound_macro.hero"
+#line 248 "selfhost/cli/bound_macro.hero"
     h8_own8 = t10;
-#line 246 "selfhost/cli/bound_macro.hero"
+#line 248 "selfhost/cli/bound_macro.hero"
     h_cliordertrial_Ran_release(&t18);
-#line 246 "selfhost/cli/bound_macro.hero"
+#line 248 "selfhost/cli/bound_macro.hero"
     t19 = h4_ran;
-#line 246 "selfhost/cli/bound_macro.hero"
+#line 248 "selfhost/cli/bound_macro.hero"
     h_cliordertrial_Ran_retain(&t10);
-#line 246 "selfhost/cli/bound_macro.hero"
+#line 248 "selfhost/cli/bound_macro.hero"
     h4_ran = t10;
-#line 246 "selfhost/cli/bound_macro.hero"
+#line 248 "selfhost/cli/bound_macro.hero"
     h_cliordertrial_Ran_release(&t19);
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     t11 = h4_ran;
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     t12 = t11.f_asked;
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     h5_b0 = t12;
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     if (t12) goto bb1; else goto bb2;
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
 bb1:
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     t13 = h4_ran;
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     t14 = t13.f_compiles;
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     h5_b0 = t14;
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     goto bb2;
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
 bb2:
-#line 251 "selfhost/cli/bound_macro.hero"
+#line 253 "selfhost/cli/bound_macro.hero"
     t15 = h5_b0;
 #line 1049729 "main.c"
     h_cliordertrial_Ran_release(hero_slot_escape(&h4_ran));
@@ -1049733,85 +1049733,85 @@ bb2:
     return t15;
 }
 
-#line 254 "selfhost/cli/bound_macro.hero"
+#line 256 "selfhost/cli/bound_macro.hero"
 int64_t h_cliboundmacro_changed_last(HeroArrayHeader * h0_steps, int64_t h1_before) {
-#line 254 "selfhost/cli/bound_macro.hero"
+#line 256 "selfhost/cli/bound_macro.hero"
     int64_t h2_place; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_ENTRY_STOP; goto bb0;
-#line 254 "selfhost/cli/bound_macro.hero"
+#line 256 "selfhost/cli/bound_macro.hero"
 bb0:
     t1 = h1_before;
-#line 255 "selfhost/cli/bound_macro.hero"
+#line 257 "selfhost/cli/bound_macro.hero"
     t2 = INT64_C(1);
-#line 255 "selfhost/cli/bound_macro.hero"
+#line 257 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t1, t2, &t3)) hero_panic_overflow();
-#line 255 "selfhost/cli/bound_macro.hero"
+#line 257 "selfhost/cli/bound_macro.hero"
     h2_place = t3;
-#line 255 "selfhost/cli/bound_macro.hero"
+#line 257 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 255 "selfhost/cli/bound_macro.hero"
+#line 257 "selfhost/cli/bound_macro.hero"
 bb1:
-#line 257 "selfhost/cli/bound_macro.hero"
+#line 259 "selfhost/cli/bound_macro.hero"
     t4 = h2_place;
-#line 257 "selfhost/cli/bound_macro.hero"
+#line 259 "selfhost/cli/bound_macro.hero"
     t5 = INT64_C(1);
-#line 257 "selfhost/cli/bound_macro.hero"
+#line 259 "selfhost/cli/bound_macro.hero"
     t6 = t4 >= t5;
-#line 257 "selfhost/cli/bound_macro.hero"
+#line 259 "selfhost/cli/bound_macro.hero"
     if (t6) goto bb2; else goto bb3;
-#line 257 "selfhost/cli/bound_macro.hero"
+#line 259 "selfhost/cli/bound_macro.hero"
 bb2:
     t7 = h0_steps;
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     t8 = h2_place;
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     t9 = ((void)((t7 == NULL || t8 < 0 || t8 >= t7->len) ? ((void)hero_array_at(t7, t8), hero_unreachable()) : (void)0), (void)(t7->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t7 + 1))[t8]);
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     t10 = h0_steps;
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     t11 = h2_place;
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     t12 = INT64_C(1);
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t11, t12, &t13)) hero_panic_overflow();
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     t14 = ((void)((t10 == NULL || t13 < 0 || t13 >= t10->len) ? ((void)hero_array_at(t10, t13), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t13]);
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     t15 = !hero_str_eq(t9, t14);
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
     if (t15) goto bb5; else goto bb6;
-#line 258 "selfhost/cli/bound_macro.hero"
+#line 260 "selfhost/cli/bound_macro.hero"
 bb3:
-#line 262 "selfhost/cli/bound_macro.hero"
+#line 264 "selfhost/cli/bound_macro.hero"
     t20 = INT64_C(1);
-#line 262 "selfhost/cli/bound_macro.hero"
+#line 264 "selfhost/cli/bound_macro.hero"
     h3_ret0 = t20;
-#line 262 "selfhost/cli/bound_macro.hero"
+#line 264 "selfhost/cli/bound_macro.hero"
     goto bb7;
-#line 262 "selfhost/cli/bound_macro.hero"
+#line 264 "selfhost/cli/bound_macro.hero"
 bb4:
-#line 260 "selfhost/cli/bound_macro.hero"
+#line 262 "selfhost/cli/bound_macro.hero"
     t17 = h2_place;
-#line 260 "selfhost/cli/bound_macro.hero"
+#line 262 "selfhost/cli/bound_macro.hero"
     t18 = INT64_C(1);
-#line 260 "selfhost/cli/bound_macro.hero"
+#line 262 "selfhost/cli/bound_macro.hero"
     if (__builtin_sub_overflow(t17, t18, &t19)) hero_panic_overflow();
-#line 260 "selfhost/cli/bound_macro.hero"
+#line 262 "selfhost/cli/bound_macro.hero"
     h2_place = t19;
-#line 260 "selfhost/cli/bound_macro.hero"
+#line 262 "selfhost/cli/bound_macro.hero"
     goto bb1;
-#line 260 "selfhost/cli/bound_macro.hero"
+#line 262 "selfhost/cli/bound_macro.hero"
 bb5:
-#line 259 "selfhost/cli/bound_macro.hero"
+#line 261 "selfhost/cli/bound_macro.hero"
     t16 = h2_place;
-#line 259 "selfhost/cli/bound_macro.hero"
+#line 261 "selfhost/cli/bound_macro.hero"
     h3_ret0 = t16;
-#line 259 "selfhost/cli/bound_macro.hero"
+#line 261 "selfhost/cli/bound_macro.hero"
     goto bb7;
-#line 259 "selfhost/cli/bound_macro.hero"
+#line 261 "selfhost/cli/bound_macro.hero"
 bb6:
-#line 259 "selfhost/cli/bound_macro.hero"
+#line 261 "selfhost/cli/bound_macro.hero"
     goto bb4;
-#line 259 "selfhost/cli/bound_macro.hero"
+#line 261 "selfhost/cli/bound_macro.hero"
 bb7:
 #line 1049817 "main.c"
     t21 = h3_ret0;
@@ -1069449,39 +1069449,39 @@ bb8:
     h12_rows = t81;
 #line 77 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t156);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t82 = h11_answered;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t83 = hero_map_keys(t82);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t157 = h41_own41;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     h41_own41 = t83;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t157);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t84 = hero_array_sort(t83);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t158 = h42_own42;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     h42_own42 = t84;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t158);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t159 = h13_xs0;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     hero_array_incref(t84);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     h13_xs0 = t84;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t159);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t85 = INT64_C(0);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     h14_i0 = t85;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     goto bb10;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
 bb9:
 #line 75 "selfhost/cli/bound_ask.hero"
     t74 = h9_f3;
@@ -1069503,179 +1069503,179 @@ bb9:
     goto bb16;
 #line 75 "selfhost/cli/bound_ask.hero"
 bb10:
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t86 = h14_i0;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t87 = h13_xs0;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t88 = ((void)(t87 == NULL ? ((void)hero_array_len(t87), hero_unreachable()) : (void)0), t87->len);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t89 = t86 < t88;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     if (t89) goto bb11; else goto bb13;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
 bb11:
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t90 = h13_xs0;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t91 = h14_i0;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t92 = ((void)((t90 == NULL || t91 < 0 || t91 >= t90->len) ? ((void)hero_array_at(t90, t91), hero_unreachable()) : (void)0), (void)(t90->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t90 + 1))[t91]);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t161 = h15_key_of;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     hero_str_incref(t92);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     h15_key_of = t92;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t161);
     t94 = h15_key_of;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t95 = HERO_STR_LIT(hero_str_9);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t96 = hero_str_concat(t94, t95);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t162 = h44_own44;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     h44_own44 = t96;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t162);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t97 = h11_answered;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t98 = h15_key_of;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     {
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
       HERO_NODEBUG const void *found = hero_map_find(t97, &t98);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
       if (found == NULL) {
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
         t99 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
       } else {
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
         t99 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
         (&hero_desc_str)->copy(&t99.as.ok, found);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
       }
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     }
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t163 = h45_own45;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     h45_own45 = t99;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_release(&t163);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t164 = h16_f4;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_retain(&t99);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     h16_f4 = t99;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_release(&t164);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t100 = h16_f4;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t101 = t100.tag;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t102 = INT64_C(0);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t103 = t101 == t102;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     if (t103) goto bb14; else goto bb15;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
 bb12:
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t110 = h14_i0;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     t111 = INT64_C(1);
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     if (__builtin_add_overflow(t110, t111, &t112)) hero_panic_overflow();
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     h14_i0 = t112;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
     goto bb10;
-#line 79 "selfhost/cli/bound_ask.hero"
+#line 81 "selfhost/cli/bound_ask.hero"
 bb13:
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t113 = h5_path;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t114 = h12_rows;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t115 = HERO_STR_LIT(hero_str_a);
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t116 = hero_str_join(t114, t115);
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t165 = h46_own46;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     h46_own46 = t116;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t165);
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t117 = h_clikept_write(t113, t116);
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t166 = h47_own47;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     h47_own47 = t117;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_release(&t166);
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t167 = h17_f5;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_retain(&t117);
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     h17_f5 = t117;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_release(&t167);
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t118 = h17_f5;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t119 = t118.tag;
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t120 = INT64_C(1);
-#line 82 "selfhost/cli/bound_ask.hero"
+#line 84 "selfhost/cli/bound_ask.hero"
     t121 = t119 == t120;
     t122 = h11_answered;
-#line 83 "selfhost/cli/bound_ask.hero"
+#line 85 "selfhost/cli/bound_ask.hero"
     hero_map_incref(t122);
-#line 83 "selfhost/cli/bound_ask.hero"
+#line 85 "selfhost/cli/bound_ask.hero"
     t123 = (h_0opt_36226bb0){.tag = INT64_C(0), .as.ok = t122};
-#line 83 "selfhost/cli/bound_ask.hero"
+#line 85 "selfhost/cli/bound_ask.hero"
     t168 = h48_own48;
-#line 83 "selfhost/cli/bound_ask.hero"
+#line 85 "selfhost/cli/bound_ask.hero"
     h48_own48 = t123;
-#line 83 "selfhost/cli/bound_ask.hero"
+#line 85 "selfhost/cli/bound_ask.hero"
     h_0opt_36226bb0_release(&t168);
-#line 83 "selfhost/cli/bound_ask.hero"
+#line 85 "selfhost/cli/bound_ask.hero"
     h18_ret0 = t123;
-#line 83 "selfhost/cli/bound_ask.hero"
+#line 85 "selfhost/cli/bound_ask.hero"
     goto bb16;
-#line 83 "selfhost/cli/bound_ask.hero"
+#line 85 "selfhost/cli/bound_ask.hero"
 bb14:
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t106 = h16_f4;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t107 = t106.as.ok;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t108 = hero_str_concat(t96, t107);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t169 = h49_own49;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     h49_own49 = t108;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t169);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     hero_array_push_owned(&h12_rows, &t108);
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     goto bb12;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
 bb15:
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t104 = h16_f4;
-#line 80 "selfhost/cli/bound_ask.hero"
+#line 82 "selfhost/cli/bound_ask.hero"
     t105 = t104.as.err;
 #line 1069681 "main.c"
     hero_panic_must(t105);
@@ -1069731,137 +1069731,137 @@ bb16:
     return t124;
 }
 
-#line 85 "selfhost/cli/bound_ask.hero"
+#line 87 "selfhost/cli/bound_ask.hero"
 HeroMapHeader * h_cliboundask_unkept(HeroStr h0_text) {
-#line 85 "selfhost/cli/bound_ask.hero"
+#line 87 "selfhost/cli/bound_ask.hero"
     HeroMapHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HeroStr h4_row = {0}; h_0opt_e201354 h5_tab = {0}; HERO_NODEBUG h_0opt_e201354 h6_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h7_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h8_f2 = {0}; HERO_NODEBUG HeroMapHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG h_0opt_e201354 h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG HeroFailure t30; HERO_NODEBUG h_0opt_e201354 t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG HeroFailure t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG HeroMapHeader * t53; HERO_NODEBUG HeroMapHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG HeroStr t64; HERO_ENTRY_STOP; goto bb0;
-#line 85 "selfhost/cli/bound_ask.hero"
+#line 87 "selfhost/cli/bound_ask.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0);
-#line 86 "selfhost/cli/bound_ask.hero"
+#line 88 "selfhost/cli/bound_ask.hero"
     t53 = h9_own9;
-#line 86 "selfhost/cli/bound_ask.hero"
+#line 88 "selfhost/cli/bound_ask.hero"
     h9_own9 = t1;
-#line 86 "selfhost/cli/bound_ask.hero"
+#line 88 "selfhost/cli/bound_ask.hero"
     hero_map_decref(t53);
-#line 86 "selfhost/cli/bound_ask.hero"
+#line 88 "selfhost/cli/bound_ask.hero"
     t54 = h1_out;
-#line 86 "selfhost/cli/bound_ask.hero"
+#line 88 "selfhost/cli/bound_ask.hero"
     hero_map_incref(t1);
-#line 86 "selfhost/cli/bound_ask.hero"
+#line 88 "selfhost/cli/bound_ask.hero"
     h1_out = t1;
-#line 86 "selfhost/cli/bound_ask.hero"
+#line 88 "selfhost/cli/bound_ask.hero"
     hero_map_decref(t54);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t2 = h0_text;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t3 = h_cliboundsaid_rows(t2);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t55 = h10_own10;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     h10_own10 = t3;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t55);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t56 = h2_xs0;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     hero_array_incref(t3);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     h2_xs0 = t3;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t56);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t4 = INT64_C(0);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     h3_i0 = t4;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     goto bb1;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
 bb1:
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t5 = h3_i0;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t6 = h2_xs0;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t8 = t5 < t7;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     if (t8) goto bb2; else goto bb4;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
 bb2:
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t9 = h2_xs0;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t10 = h3_i0;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t57 = h4_row;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     hero_str_incref(t11);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     h4_row = t11;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t57);
     t12 = h4_row;
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     t13 = HERO_STR_LIT(hero_str_9);
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     t14 = INT64_C(0);
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     t15 = h_cliboundsaid_index_of(t12, t13, t14);
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     t58 = h11_own11;
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     h11_own11 = t15;
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_release(&t58);
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     t59 = h5_tab;
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_retain(&t15);
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     h5_tab = t15;
-#line 89 "selfhost/cli/bound_ask.hero"
+#line 91 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_release(&t59);
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     t16 = h5_tab;
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     t60 = h6_f0;
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_retain(&t16);
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     h6_f0 = t16;
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_release(&t60);
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     t17 = h6_f0;
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     t18 = t17.tag;
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     t19 = INT64_C(1);
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     t20 = t18 == t19;
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     t21 = !t20;
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
     if (t21) goto bb6; else goto bb7;
-#line 91 "selfhost/cli/bound_ask.hero"
+#line 93 "selfhost/cli/bound_ask.hero"
 bb3:
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t49 = h3_i0;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     t50 = INT64_C(1);
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     if (__builtin_add_overflow(t49, t50, &t51)) hero_panic_overflow();
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     h3_i0 = t51;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
     goto bb1;
-#line 88 "selfhost/cli/bound_ask.hero"
+#line 90 "selfhost/cli/bound_ask.hero"
 bb4:
-#line 94 "selfhost/cli/bound_ask.hero"
+#line 96 "selfhost/cli/bound_ask.hero"
     t52 = h1_out;
 #line 1069867 "main.c"
     hero_map_incref(t52);
@@ -1069881,484 +1069881,484 @@ bb4:
 bb5:
     goto bb3;
 bb6:
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t22 = h4_row;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t23 = INT64_C(0);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t24 = h5_tab;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t61 = h7_f1;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_retain(&t24);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     h7_f1 = t24;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_release(&t61);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t25 = h7_f1;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t26 = t25.tag;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t27 = INT64_C(0);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t28 = t26 == t27;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     if (t28) goto bb8; else goto bb9;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
 bb7:
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     goto bb5;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
 bb8:
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t31 = h7_f1;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t32 = t31.as.ok;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t33 = hero_str_slice(t22, t23, t32);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t62 = h12_own12;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     h12_own12 = t33;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t62);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t34 = h4_row;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t35 = h5_tab;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t63 = h8_f2;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_retain(&t35);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     h8_f2 = t35;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     h_0opt_e201354_release(&t63);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t36 = h8_f2;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t37 = t36.tag;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t38 = INT64_C(0);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t39 = t37 == t38;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     if (t39) goto bb10; else goto bb11;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
 bb9:
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t29 = h7_f1;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t30 = t29.as.err;
 #line 1069955 "main.c"
     hero_panic_must(t30);
     hero_unreachable();
 bb10:
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t42 = h8_f2;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t43 = t42.as.ok;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t44 = INT64_C(1);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow();
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t46 = h4_row;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t47 = hero_str_len(t46);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t48 = hero_str_slice(t34, t45, t47);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t64 = h13_own13;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     h13_own13 = t48;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t64);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     hero_str_incref(t48);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     hero_map_set(&(h1_out), &t33, &t48);
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     goto bb5;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
 bb11:
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t40 = h8_f2;
-#line 92 "selfhost/cli/bound_ask.hero"
+#line 94 "selfhost/cli/bound_ask.hero"
     t41 = t40.as.err;
 #line 1069991 "main.c"
     hero_panic_must(t41);
     hero_unreachable();
 }
 
-#line 99 "selfhost/cli/bound_ask.hero"
+#line 101 "selfhost/cli/bound_ask.hero"
 h_0opt_f87774a h_cliboundask_preprocessed(h_clitoolchain_Toolchain h0_t, h_clicompiling_Probe h1_probe, HeroStr h2_text, HeroArrayHeader * h3_mode) {
-#line 99 "selfhost/cli/bound_ask.hero"
+#line 101 "selfhost/cli/bound_ask.hero"
     HeroStr h4_dir = {0}; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}; HeroStr h6_path = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_f1 = {0}; HeroStr h8_out = {0}; HeroArrayHeader * h9_line = {0}; h_cliprocess_Ran h10_ran; h_0opt_f87774a h11_said = {0}; HERO_NODEBUG bool h12_b0; HERO_NODEBUG h_0opt_f87774a h13_ret0 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_a8ea2 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG h_0opt_a8ea2 h20_own20 = {0}; HERO_NODEBUG h_0opt_f87774a h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG HeroArrayHeader * h24_own24 = {0}; HERO_NODEBUG HeroArrayHeader * h25_own25 = {0}; HERO_NODEBUG HeroArrayHeader * h26_own26 = {0}; HERO_NODEBUG HeroArrayHeader * h27_own27 = {0}; HERO_NODEBUG HeroArrayHeader * h28_own28 = {0}; HERO_NODEBUG HeroStr h29_own29 = {0}; HERO_NODEBUG h_0opt_f87774a h30_own30 = {0}; HERO_NODEBUG h_0opt_f87774a h31_own31 = {0}; HERO_NODEBUG h_0opt_f87774a h32_own32 = {0}; HERO_NODEBUG h_clitoolchain_Toolchain t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_a8ea2 t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_a8ea2 t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG bool t26; HERO_NODEBUG h_0opt_a8ea2 t27; HERO_NODEBUG h_0opt_a8ea2 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_a8ea2 t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG h_0opt_f87774a t34; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG h_clicompiling_Probe t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_cliprocess_Ran t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG h_0opt_f87774a t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG h_cliprocess_Ran t60; HERO_NODEBUG bool t61; HERO_NODEBUG bool t62; HERO_NODEBUG h_cliprocess_Ran t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG bool t66; HERO_NODEBUG bool t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG h_0opt_f87774a t71; HERO_NODEBUG h_0opt_f87774a t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_a8ea2 t75; HERO_NODEBUG h_0opt_a8ea2 t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroStr t80; HERO_NODEBUG HeroStr t81; HERO_NODEBUG h_0opt_a8ea2 t82; HERO_NODEBUG h_0opt_a8ea2 t83; HERO_NODEBUG h_0opt_f87774a t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroArrayHeader * t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG HeroArrayHeader * t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG h_0opt_f87774a t95; HERO_NODEBUG h_0opt_f87774a t96; HERO_NODEBUG h_0opt_f87774a t97; HERO_NODEBUG h_0opt_f87774a t98; HERO_ENTRY_STOP; goto bb0;
-#line 99 "selfhost/cli/bound_ask.hero"
+#line 101 "selfhost/cli/bound_ask.hero"
 bb0:
     t1 = h0_t;
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     t2 = t1.f_build;
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     t3 = HERO_STR_LIT(hero_str_4d589107);
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     t4 = hero_str_concat(t2, t3);
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     t73 = h14_own14;
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     h14_own14 = t4;
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t73);
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     t74 = h4_dir;
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     hero_str_incref(t4);
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     h4_dir = t4;
-#line 100 "selfhost/cli/bound_ask.hero"
+#line 102 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t74);
     t5 = h4_dir;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t6 = h_cliprocess_mkdir_all(t5);
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t75 = h15_own15;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     h15_own15 = t6;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_release(&t75);
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t76 = h5_f0;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_retain(&t6);
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     h5_f0 = t6;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_release(&t76);
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t7 = h5_f0;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t8 = t7.tag;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t9 = INT64_C(0);
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t10 = t8 == t9;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     if (t10) goto bb1; else goto bb2;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
 bb1:
     t16 = h4_dir;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t17 = HERO_STR_LIT(hero_str_14523711);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t18 = hero_str_concat(t16, t17);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t77 = h16_own16;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     h16_own16 = t18;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t77);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t19 = h2_text;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t20 = h_clidigest_digest(t19);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t78 = h17_own17;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     h17_own17 = t20;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t78);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t21 = hero_str_concat(t18, t20);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t79 = h18_own18;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     h18_own18 = t21;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t79);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t22 = HERO_STR_LIT(hero_str_17ed);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t23 = hero_str_concat(t21, t22);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t80 = h19_own19;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     h19_own19 = t23;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t80);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     t81 = h6_path;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     hero_str_incref(t23);
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     h6_path = t23;
-#line 102 "selfhost/cli/bound_ask.hero"
+#line 104 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t81);
     t24 = h6_path;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t25 = h2_text;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t26 = true;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t27 = h_clipublish_write_whole(t24, t25, t26);
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t82 = h20_own20;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     h20_own20 = t27;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_release(&t82);
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t83 = h7_f1;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_retain(&t27);
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     h7_f1 = t27;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     h_0opt_a8ea2_release(&t83);
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t28 = h7_f1;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t29 = t28.tag;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t30 = INT64_C(0);
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t31 = t29 == t30;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     if (t31) goto bb3; else goto bb4;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
 bb2:
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t11 = h5_f0;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t12 = t11.as.err;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     hero_failure_retain(&t12);
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t13 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t12};
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     t84 = h21_own21;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     h21_own21 = t13;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_release(&t84);
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     h13_ret0 = t13;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
     goto bb10;
-#line 101 "selfhost/cli/bound_ask.hero"
+#line 103 "selfhost/cli/bound_ask.hero"
 bb3:
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     t37 = h4_dir;
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     t38 = HERO_STR_LIT(hero_str_21e4971a);
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     t39 = hero_str_concat(t37, t38);
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     t85 = h22_own22;
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     h22_own22 = t39;
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t85);
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     t40 = h_clipublish_private_name(t39);
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     t86 = h23_own23;
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     h23_own23 = t40;
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t86);
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     t87 = h8_out;
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     hero_str_incref(t40);
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     h8_out = t40;
-#line 104 "selfhost/cli/bound_ask.hero"
+#line 106 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t87);
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t41 = HERO_STR_LIT(hero_str_585fddde);
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t42 = hero_array_new(&hero_desc_str, 1);
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     hero_array_push_owned(&t42, &t41);
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t88 = h24_own24;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     h24_own24 = t42;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t88);
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t43 = h3_mode;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t44 = h_clistrings_with_all(t42, t43);
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t89 = h25_own25;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     h25_own25 = t44;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t89);
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t45 = h1_probe;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t46 = t45.f_words;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t47 = h_clistrings_with_all(t44, t46);
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     t90 = h26_own26;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     h26_own26 = t47;
-#line 106 "selfhost/cli/bound_ask.hero"
+#line 108 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t90);
     t48 = h4_dir;
-#line 105 "selfhost/cli/bound_ask.hero"
+#line 107 "selfhost/cli/bound_ask.hero"
     t49 = h_cliresponsefile_carried(t47, t48);
-#line 105 "selfhost/cli/bound_ask.hero"
+#line 107 "selfhost/cli/bound_ask.hero"
     t91 = h27_own27;
-#line 105 "selfhost/cli/bound_ask.hero"
+#line 107 "selfhost/cli/bound_ask.hero"
     h27_own27 = t49;
-#line 105 "selfhost/cli/bound_ask.hero"
+#line 107 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t91);
-#line 105 "selfhost/cli/bound_ask.hero"
+#line 107 "selfhost/cli/bound_ask.hero"
     t92 = h9_line;
-#line 105 "selfhost/cli/bound_ask.hero"
+#line 107 "selfhost/cli/bound_ask.hero"
     hero_array_incref(t49);
-#line 105 "selfhost/cli/bound_ask.hero"
+#line 107 "selfhost/cli/bound_ask.hero"
     h9_line = t49;
-#line 105 "selfhost/cli/bound_ask.hero"
+#line 107 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t92);
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t50 = HERO_STR_LIT(hero_str_585fddde);
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t51 = h9_line;
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t52 = h6_path;
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t53 = hero_array_push(t51, &t52);
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t93 = h28_own28;
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     h28_own28 = t53;
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     hero_array_decref(t93);
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t54 = h8_out;
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t55 = h_cliprocess_discard();
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t94 = h29_own29;
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     h29_own29 = t55;
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     hero_str_decref(t94);
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     t56 = h_cliprocess_run(t50, t53, t54, t55);
-#line 109 "selfhost/cli/bound_ask.hero"
+#line 111 "selfhost/cli/bound_ask.hero"
     h10_ran = t56;
     t57 = h8_out;
-#line 110 "selfhost/cli/bound_ask.hero"
+#line 112 "selfhost/cli/bound_ask.hero"
     t58 = h_clireadback_words(t57);
-#line 110 "selfhost/cli/bound_ask.hero"
+#line 112 "selfhost/cli/bound_ask.hero"
     t95 = h30_own30;
-#line 110 "selfhost/cli/bound_ask.hero"
+#line 112 "selfhost/cli/bound_ask.hero"
     h30_own30 = t58;
-#line 110 "selfhost/cli/bound_ask.hero"
+#line 112 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_release(&t95);
-#line 110 "selfhost/cli/bound_ask.hero"
+#line 112 "selfhost/cli/bound_ask.hero"
     t96 = h11_said;
-#line 110 "selfhost/cli/bound_ask.hero"
+#line 112 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_retain(&t58);
-#line 110 "selfhost/cli/bound_ask.hero"
+#line 112 "selfhost/cli/bound_ask.hero"
     h11_said = t58;
-#line 110 "selfhost/cli/bound_ask.hero"
+#line 112 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_release(&t96);
     t59 = h8_out;
-#line 111 "selfhost/cli/bound_ask.hero"
+#line 113 "selfhost/cli/bound_ask.hero"
     h_clipublish_discard(t59);
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     t60 = h10_ran;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     t61 = t60.f_started;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     t62 = !t61;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     h12_b0 = t62;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     if (t62) goto bb7; else goto bb6;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
 bb4:
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t32 = h7_f1;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t33 = t32.as.err;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     hero_failure_retain(&t33);
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t34 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = t33};
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     t97 = h31_own31;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     h31_own31 = t34;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_release(&t97);
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     h13_ret0 = t34;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
     goto bb10;
-#line 103 "selfhost/cli/bound_ask.hero"
+#line 105 "selfhost/cli/bound_ask.hero"
 bb5:
-#line 115 "selfhost/cli/bound_ask.hero"
+#line 117 "selfhost/cli/bound_ask.hero"
     t71 = h11_said;
-#line 115 "selfhost/cli/bound_ask.hero"
+#line 117 "selfhost/cli/bound_ask.hero"
     h13_ret0 = t71;
-#line 115 "selfhost/cli/bound_ask.hero"
+#line 117 "selfhost/cli/bound_ask.hero"
     goto bb10;
-#line 115 "selfhost/cli/bound_ask.hero"
+#line 117 "selfhost/cli/bound_ask.hero"
 bb6:
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     t63 = h10_ran;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     t64 = t63.f_code;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     t65 = INT64_C(0);
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     t66 = t64 != t65;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     h12_b0 = t66;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     goto bb7;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
 bb7:
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     t67 = h12_b0;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
     if (t67) goto bb8; else goto bb9;
-#line 113 "selfhost/cli/bound_ask.hero"
+#line 115 "selfhost/cli/bound_ask.hero"
 bb8:
     t68 = HERO_STR_LIT(hero_str_6b967c2a);
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     t69 = HERO_STR_LIT(hero_str_36928c5a);
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     hero_str_incref(t68);
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     hero_str_incref(t69);
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     t70 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t68, .msg = t69}};
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     t98 = h32_own32;
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     h32_own32 = t70;
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     h_0opt_f87774a_release(&t98);
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     h13_ret0 = t70;
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     goto bb10;
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
 bb9:
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
     goto bb5;
-#line 114 "selfhost/cli/bound_ask.hero"
+#line 116 "selfhost/cli/bound_ask.hero"
 bb10:
 #line 1070364 "main.c"
     t72 = h13_ret0;
@@ -1074190,31 +1074190,31 @@ bb40:
     h40_wider = t176;
 #line 109 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t357);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t177 = h20_kept;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t178 = hero_map_keys(t177);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t358 = h88_own88;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     h88_own88 = t178;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t358);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t359 = h41_xs4;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t178);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     h41_xs4 = t178;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t359);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t179 = INT64_C(0);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     h42_i4 = t179;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     goto bb43;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
 bb41:
 #line 105 "selfhost/cli/bound_kept.hero"
     t173 = h19_out;
@@ -1074242,598 +1074242,598 @@ bb42:
     goto bb40;
 #line 105 "selfhost/cli/bound_kept.hero"
 bb43:
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t180 = h42_i4;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t181 = h41_xs4;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t182 = ((void)(t181 == NULL ? ((void)hero_array_len(t181), hero_unreachable()) : (void)0), t181->len);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t183 = t180 < t182;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     if (t183) goto bb44; else goto bb46;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
 bb44:
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t184 = h41_xs4;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t185 = h42_i4;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t186 = ((void)((t184 == NULL || t185 < 0 || t185 >= t184->len) ? ((void)hero_array_at(t184, t185), hero_unreachable()) : (void)0), (void)(t184->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t184 + 1))[t185]);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t361 = h43_name;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t186);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     h43_name = t186;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t361);
     t187 = h43_name;
-#line 112 "selfhost/cli/bound_kept.hero"
+#line 114 "selfhost/cli/bound_kept.hero"
     t188 = true;
-#line 112 "selfhost/cli/bound_kept.hero"
+#line 114 "selfhost/cli/bound_kept.hero"
     hero_map_set(&(h40_wider), &t187, &t188);
-#line 112 "selfhost/cli/bound_kept.hero"
+#line 114 "selfhost/cli/bound_kept.hero"
     goto bb45;
-#line 112 "selfhost/cli/bound_kept.hero"
+#line 114 "selfhost/cli/bound_kept.hero"
 bb45:
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t189 = h42_i4;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     t190 = INT64_C(1);
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t189, t190, &t191)) hero_panic_overflow();
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     h42_i4 = t191;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
     goto bb43;
-#line 111 "selfhost/cli/bound_kept.hero"
+#line 113 "selfhost/cli/bound_kept.hero"
 bb46:
-#line 115 "selfhost/cli/bound_kept.hero"
+#line 117 "selfhost/cli/bound_kept.hero"
     t192 = h0_t;
     t193 = h1_probe;
     t194 = h3_lines;
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     t195 = h40_wider;
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     t196 = h21_keeping;
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     t197 = h6_count;
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     t198 = INT64_C(1);
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t197, t198, &t199)) hero_panic_overflow();
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     t200 = h_cliboundask_questions(t196, t199);
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     t362 = h90_own90;
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     h90_own90 = t200;
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t362);
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     t201 = h_cliboundask_closed_opening(t194, t195, t200);
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     t363 = h91_own91;
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     h91_own91 = t201;
-#line 117 "selfhost/cli/bound_kept.hero"
+#line 119 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t363);
-#line 114 "selfhost/cli/bound_kept.hero"
+#line 116 "selfhost/cli/bound_kept.hero"
     t202 = h_cliboundask_alone_answers(t192, t193, t201);
-#line 114 "selfhost/cli/bound_kept.hero"
+#line 116 "selfhost/cli/bound_kept.hero"
     t364 = h92_own92;
-#line 114 "selfhost/cli/bound_kept.hero"
+#line 116 "selfhost/cli/bound_kept.hero"
     h92_own92 = t202;
-#line 114 "selfhost/cli/bound_kept.hero"
+#line 116 "selfhost/cli/bound_kept.hero"
     h_0opt_62cf212e_release(&t364);
-#line 114 "selfhost/cli/bound_kept.hero"
+#line 116 "selfhost/cli/bound_kept.hero"
     t365 = h44_again;
-#line 114 "selfhost/cli/bound_kept.hero"
+#line 116 "selfhost/cli/bound_kept.hero"
     h_0opt_62cf212e_retain(&t202);
-#line 114 "selfhost/cli/bound_kept.hero"
+#line 116 "selfhost/cli/bound_kept.hero"
     h44_again = t202;
-#line 114 "selfhost/cli/bound_kept.hero"
+#line 116 "selfhost/cli/bound_kept.hero"
     h_0opt_62cf212e_release(&t365);
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t203 = h21_keeping;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t366 = h45_xs5;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t203);
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     h45_xs5 = t203;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t366);
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t204 = INT64_C(0);
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     h46_i5 = t204;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     goto bb47;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
 bb47:
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t205 = h46_i5;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t206 = h45_xs5;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t207 = ((void)(t206 == NULL ? ((void)hero_array_len(t206), hero_unreachable()) : (void)0), t206->len);
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t208 = t205 < t207;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     if (t208) goto bb48; else goto bb50;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
 bb48:
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t209 = h45_xs5;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t210 = h46_i5;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t211 = ((void)((t209 == NULL || t210 < 0 || t210 >= t209->len) ? ((void)hero_array_at(t209, t210), hero_unreachable()) : (void)0), (void)(t209->elem->size != sizeof(h_cliboundnames_Bound) ? hero_unreachable() : (void)0), ((h_cliboundnames_Bound const *)(const void *)(t209 + 1))[t210]);
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t367 = h47_b;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     h_cliboundnames_Bound_retain(&t211);
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     h47_b = t211;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     h_cliboundnames_Bound_release(&t367);
     t212 = h44_again;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t368 = h49_f5;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_62cf212e_retain(&t212);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h49_f5 = t212;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_62cf212e_release(&t368);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t213 = h49_f5;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t214 = t213.tag;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t215 = INT64_C(1);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t216 = t214 == t215;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h48_b2 = t216;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     if (t216) goto bb53; else goto bb52;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb49:
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t284 = h46_i5;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     t285 = INT64_C(1);
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t284, t285, &t286)) hero_panic_overflow();
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     h46_i5 = t286;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
     goto bb47;
-#line 120 "selfhost/cli/bound_kept.hero"
+#line 122 "selfhost/cli/bound_kept.hero"
 bb50:
-#line 126 "selfhost/cli/bound_kept.hero"
+#line 128 "selfhost/cli/bound_kept.hero"
     t287 = h19_out;
-#line 126 "selfhost/cli/bound_kept.hero"
+#line 128 "selfhost/cli/bound_kept.hero"
     t288 = ((void)(t287 == NULL ? ((void)hero_array_len(t287), hero_unreachable()) : (void)0), t287->len);
-#line 126 "selfhost/cli/bound_kept.hero"
+#line 128 "selfhost/cli/bound_kept.hero"
     t289 = INT64_C(0);
-#line 126 "selfhost/cli/bound_kept.hero"
+#line 128 "selfhost/cli/bound_kept.hero"
     t290 = t288 > t289;
-#line 126 "selfhost/cli/bound_kept.hero"
+#line 128 "selfhost/cli/bound_kept.hero"
     if (t290) goto bb65; else goto bb66;
-#line 126 "selfhost/cli/bound_kept.hero"
+#line 128 "selfhost/cli/bound_kept.hero"
 bb51:
-#line 126 "selfhost/cli/bound_kept.hero"
+#line 128 "selfhost/cli/bound_kept.hero"
     goto bb49;
-#line 126 "selfhost/cli/bound_kept.hero"
+#line 128 "selfhost/cli/bound_kept.hero"
 bb52:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t217 = h44_again;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t369 = h50_f6;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_62cf212e_retain(&t217);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h50_f6 = t217;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_62cf212e_release(&t369);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t218 = h50_f6;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t219 = t218.tag;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t220 = INT64_C(0);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t221 = t219 == t220;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     if (t221) goto bb54; else goto bb55;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb53:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t263 = h48_b2;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     if (t263) goto bb62; else goto bb63;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb54:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t224 = h50_f6;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t225 = t224.as.ok;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t226 = t225.f_meanings;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t227 = h6_count;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t228 = INT64_C(1);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t227, t228, &t229)) hero_panic_overflow();
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t230 = hero_int_to_str(t229);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t370 = h93_own93;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h93_own93 = t230;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t370);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t231 = HERO_STR_LIT(hero_str_20);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t232 = hero_str_concat(t230, t231);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t371 = h94_own94;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h94_own94 = t232;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t371);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t233 = h47_b;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t234 = t233.f_name;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t235 = hero_str_concat(t232, t234);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t372 = h95_own95;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h95_own95 = t235;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t372);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     {
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t226, &t235);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
         t236 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
       } else {
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
         t236 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
         (&hero_desc_str)->copy(&t236.as.ok, found);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
       }
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     }
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t373 = h96_own96;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h96_own96 = t236;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t373);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t374 = h51_f7;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_retain(&t236);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h51_f7 = t236;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t374);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t237 = h51_f7;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t238 = t237.tag;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t239 = INT64_C(0);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t240 = t238 == t239;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     if (t240) goto bb56; else goto bb57;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb55:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t222 = h50_f6;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t223 = t222.as.err;
 #line 1074552 "main.c"
     hero_panic_must(t223);
     hero_unreachable();
 bb56:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t241 = h51_f7;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t242 = t241.as.ok;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t375 = h52_r0;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t242);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h52_r0 = t242;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t375);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     goto bb58;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb57:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t243 = HERO_STR_LIT(hero_str_0);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t376 = h52_r0;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t243);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h52_r0 = t243;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t376);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     goto bb58;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb58:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t244 = h52_r0;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t245 = h5_said;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t246 = h6_count;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t247 = hero_int_to_str(t246);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t377 = h97_own97;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h97_own97 = t247;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t377);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t248 = HERO_STR_LIT(hero_str_20);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t249 = hero_str_concat(t247, t248);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t378 = h98_own98;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h98_own98 = t249;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t378);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t250 = h47_b;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t251 = t250.f_name;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t252 = hero_str_concat(t249, t251);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t379 = h99_own99;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h99_own99 = t252;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t379);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     {
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t245, &t252);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
         t253 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
       } else {
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
         t253 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
         (&hero_desc_str)->copy(&t253.as.ok, found);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
       }
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     }
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t380 = h100_own100;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h100_own100 = t253;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t380);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t381 = h53_f8;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_retain(&t253);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h53_f8 = t253;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t381);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t254 = h53_f8;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t255 = t254.tag;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t256 = INT64_C(0);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t257 = t255 == t256;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     if (t257) goto bb59; else goto bb60;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb59:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t258 = h53_f8;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t259 = t258.as.ok;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t382 = h54_r1;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t259);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h54_r1 = t259;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t382);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     goto bb61;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb60:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t260 = HERO_STR_LIT(hero_str_0);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t383 = h54_r1;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t260);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h54_r1 = t260;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t383);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     goto bb61;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb61:
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t261 = h54_r1;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     t262 = !hero_str_eq(t244, t261);
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     h48_b2 = t262;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
     goto bb53;
-#line 121 "selfhost/cli/bound_kept.hero"
+#line 123 "selfhost/cli/bound_kept.hero"
 bb62:
     t264 = h18_table;
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     t265 = h47_b;
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     t266 = t265.f_name;
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     t267 = h_cliboundkept_reached(t264, t266);
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     t384 = h101_own101;
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     h101_own101 = t267;
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t384);
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     t385 = h55_parents;
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     hero_map_incref(t267);
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     h55_parents = t267;
-#line 122 "selfhost/cli/bound_kept.hero"
+#line 124 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t385);
     t268 = h55_parents;
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     t269 = h18_table;
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     t270 = h16_was;
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     t271 = h4_bound;
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     t272 = h_cliboundkept_restored_of(t268, t269, t270, t271);
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     t386 = h102_own102;
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     h102_own102 = t272;
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t386);
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     t273 = INT64_C(0);
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     t274 = ((void)((t272 == NULL || t273 < 0 || t273 >= t272->len) ? ((void)hero_array_at(t272, t273), hero_unreachable()) : (void)0), (void)(t272->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t272 + 1))[t273]);
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     t387 = h56_first;
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t274);
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     h56_first = t274;
-#line 123 "selfhost/cli/bound_kept.hero"
+#line 125 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t387);
     t276 = h47_b;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     t277 = h55_parents;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     t278 = h18_table;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     t279 = h56_first;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     t280 = h5_said;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     t281 = h6_count;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     t282 = h_cliboundkept_told(t276, t277, t278, t279, t280, t281);
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     t388 = h103_own103;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     h103_own103 = t282;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     h_diag_Diagnostic_release(&t388);
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&h19_out, &t282);
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     goto bb51;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
 bb63:
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
     goto bb51;
-#line 124 "selfhost/cli/bound_kept.hero"
+#line 126 "selfhost/cli/bound_kept.hero"
 bb64:
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     t295 = h19_out;
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     t296 = h20_kept;
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t295);
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     hero_map_incref(t296);
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     t297 = (h_cliboundkept_Told){.f_diagnostics = t295, .f_kept = t296};
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     t389 = h104_own104;
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     h104_own104 = t297;
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     h_cliboundkept_Told_release(&t389);
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     h57_ret0 = t297;
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
     goto bb67;
-#line 128 "selfhost/cli/bound_kept.hero"
+#line 130 "selfhost/cli/bound_kept.hero"
 bb65:
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     t291 = h19_out;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     t292 = h_cliboundkept_nothing();
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     t390 = h105_own105;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     h105_own105 = t292;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     h_cliboundkept_Told_release(&t390);
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     t293 = t292.f_kept;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t291);
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     hero_map_incref(t293);
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     t294 = (h_cliboundkept_Told){.f_diagnostics = t291, .f_kept = t293};
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     t391 = h106_own106;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     h106_own106 = t294;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     h_cliboundkept_Told_release(&t391);
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     h57_ret0 = t294;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     goto bb67;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
 bb66:
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
     goto bb64;
-#line 127 "selfhost/cli/bound_kept.hero"
+#line 129 "selfhost/cli/bound_kept.hero"
 bb67:
 #line 1074839 "main.c"
     t298 = h57_ret0;
@@ -1074930,143 +1074930,143 @@ bb67:
     return t298;
 }
 
-#line 132 "selfhost/cli/bound_kept.hero"
+#line 134 "selfhost/cli/bound_kept.hero"
 HeroMapHeader * h_cliboundkept_reached(HeroMapHeader * h0_table, HeroStr h1_from) {
-#line 132 "selfhost/cli/bound_kept.hero"
+#line 134 "selfhost/cli/bound_kept.hero"
     HeroMapHeader * h2_parents = {0}; HeroArrayHeader * h3_queue = {0}; int64_t h4_at; HeroStr h5_name = {0}; h_0opt_6c77117d h6_define = {0}; HERO_NODEBUG h_0opt_6c77117d h7_f0 = {0}; HeroMapHeader * h8_words = {0}; HERO_NODEBUG h_0opt_6c77117d h9_f1 = {0}; HERO_NODEBUG HeroArrayHeader * h10_xs0 = {0}; HERO_NODEBUG int64_t h11_i0; HeroStr h12_word = {0}; HERO_NODEBUG bool h13_b0; HERO_NODEBUG bool h14_b1; HERO_NODEBUG bool h15_b2; HERO_NODEBUG h_0opt_6c77117d h16_f2 = {0}; HERO_NODEBUG h_0opt_473cb9ae h17_f3 = {0}; HERO_NODEBUG h_0opt_f87774a h18_f4 = {0}; HERO_NODEBUG h_0opt_6c77117d h19_f5 = {0}; HERO_NODEBUG HeroMapHeader * h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG h_0opt_6c77117d h22_own22 = {0}; HERO_NODEBUG HeroMapHeader * h23_own23 = {0}; HERO_NODEBUG HeroArrayHeader * h24_own24 = {0}; HERO_NODEBUG HeroArrayHeader * h25_own25 = {0}; HERO_NODEBUG h_0opt_473cb9ae h26_own26 = {0}; HERO_NODEBUG h_0opt_f87774a h27_own27 = {0}; HERO_NODEBUG h_0opt_6c77117d h28_own28 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroMapHeader * t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_6c77117d t17; HERO_NODEBUG h_0opt_6c77117d t18; HERO_NODEBUG h_0opt_6c77117d t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroMapHeader * t23; HERO_NODEBUG h_0opt_6c77117d t24; HERO_NODEBUG h_0opt_6c77117d t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_0opt_6c77117d t29; HERO_NODEBUG HeroFailure t30; HERO_NODEBUG h_0opt_6c77117d t31; HERO_NODEBUG h_cliboundsaid_Define t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroMapHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG bool t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_0opt_6c77117d t45; HERO_NODEBUG h_0opt_6c77117d t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG bool t49; HERO_NODEBUG h_0opt_6c77117d t50; HERO_NODEBUG HeroFailure t51; HERO_NODEBUG h_0opt_6c77117d t52; HERO_NODEBUG h_cliboundsaid_Define t53; HERO_NODEBUG HeroMapHeader * t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG h_0opt_473cb9ae t56; HERO_NODEBUG h_0opt_473cb9ae t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG bool t63; HERO_NODEBUG bool t64; HERO_NODEBUG HeroMapHeader * t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG h_0opt_f87774a t67; HERO_NODEBUG h_0opt_f87774a t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG bool t71; HERO_NODEBUG bool t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_6c77117d t75; HERO_NODEBUG h_0opt_6c77117d t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG bool t79; HERO_NODEBUG bool t80; HERO_NODEBUG bool t81; HERO_NODEBUG HeroStr t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t85; HERO_NODEBUG int64_t t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG HeroMapHeader * t90; HERO_NODEBUG HeroMapHeader * t91; HERO_NODEBUG HeroMapHeader * t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG HeroArrayHeader * t94; HERO_NODEBUG HeroStr t95; HERO_NODEBUG h_0opt_6c77117d t96; HERO_NODEBUG h_0opt_6c77117d t97; HERO_NODEBUG h_0opt_6c77117d t98; HERO_NODEBUG HeroMapHeader * t99; HERO_NODEBUG HeroMapHeader * t100; HERO_NODEBUG h_0opt_6c77117d t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG HeroArrayHeader * t104; HERO_NODEBUG HeroStr t105; HERO_NODEBUG h_0opt_6c77117d t106; HERO_NODEBUG h_0opt_473cb9ae t107; HERO_NODEBUG h_0opt_473cb9ae t108; HERO_NODEBUG h_0opt_f87774a t109; HERO_NODEBUG h_0opt_f87774a t110; HERO_NODEBUG h_0opt_6c77117d t111; HERO_NODEBUG h_0opt_6c77117d t112; HERO_ENTRY_STOP; goto bb0;
-#line 132 "selfhost/cli/bound_kept.hero"
+#line 134 "selfhost/cli/bound_kept.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_str, 0);
-#line 133 "selfhost/cli/bound_kept.hero"
+#line 135 "selfhost/cli/bound_kept.hero"
     t91 = h20_own20;
-#line 133 "selfhost/cli/bound_kept.hero"
+#line 135 "selfhost/cli/bound_kept.hero"
     h20_own20 = t1;
-#line 133 "selfhost/cli/bound_kept.hero"
+#line 135 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t91);
-#line 133 "selfhost/cli/bound_kept.hero"
+#line 135 "selfhost/cli/bound_kept.hero"
     t92 = h2_parents;
-#line 133 "selfhost/cli/bound_kept.hero"
+#line 135 "selfhost/cli/bound_kept.hero"
     hero_map_incref(t1);
-#line 133 "selfhost/cli/bound_kept.hero"
+#line 135 "selfhost/cli/bound_kept.hero"
     h2_parents = t1;
-#line 133 "selfhost/cli/bound_kept.hero"
+#line 135 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t92);
     t2 = h1_from;
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     t3 = hero_array_new(&hero_desc_str, 1);
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&t3, &t2);
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     t93 = h21_own21;
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     h21_own21 = t3;
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t93);
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     t94 = h3_queue;
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t3);
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     h3_queue = t3;
-#line 134 "selfhost/cli/bound_kept.hero"
+#line 136 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t94);
     t4 = INT64_C(0);
-#line 135 "selfhost/cli/bound_kept.hero"
+#line 137 "selfhost/cli/bound_kept.hero"
     h4_at = t4;
-#line 135 "selfhost/cli/bound_kept.hero"
+#line 137 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 135 "selfhost/cli/bound_kept.hero"
+#line 137 "selfhost/cli/bound_kept.hero"
 bb1:
-#line 137 "selfhost/cli/bound_kept.hero"
+#line 139 "selfhost/cli/bound_kept.hero"
     t5 = h4_at;
-#line 137 "selfhost/cli/bound_kept.hero"
+#line 139 "selfhost/cli/bound_kept.hero"
     t6 = h3_queue;
-#line 137 "selfhost/cli/bound_kept.hero"
+#line 139 "selfhost/cli/bound_kept.hero"
     t7 = ((void)(t6 == NULL ? ((void)hero_array_len(t6), hero_unreachable()) : (void)0), t6->len);
-#line 137 "selfhost/cli/bound_kept.hero"
+#line 139 "selfhost/cli/bound_kept.hero"
     t8 = t5 < t7;
-#line 137 "selfhost/cli/bound_kept.hero"
+#line 139 "selfhost/cli/bound_kept.hero"
     if (t8) goto bb2; else goto bb3;
-#line 137 "selfhost/cli/bound_kept.hero"
+#line 139 "selfhost/cli/bound_kept.hero"
 bb2:
     t9 = h3_queue;
-#line 138 "selfhost/cli/bound_kept.hero"
+#line 140 "selfhost/cli/bound_kept.hero"
     t10 = h4_at;
-#line 138 "selfhost/cli/bound_kept.hero"
+#line 140 "selfhost/cli/bound_kept.hero"
     t11 = ((void)((t9 == NULL || t10 < 0 || t10 >= t9->len) ? ((void)hero_array_at(t9, t10), hero_unreachable()) : (void)0), (void)(t9->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t9 + 1))[t10]);
-#line 138 "selfhost/cli/bound_kept.hero"
+#line 140 "selfhost/cli/bound_kept.hero"
     t95 = h5_name;
-#line 138 "selfhost/cli/bound_kept.hero"
+#line 140 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t11);
-#line 138 "selfhost/cli/bound_kept.hero"
+#line 140 "selfhost/cli/bound_kept.hero"
     h5_name = t11;
-#line 138 "selfhost/cli/bound_kept.hero"
+#line 140 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t95);
     t12 = h4_at;
-#line 139 "selfhost/cli/bound_kept.hero"
+#line 141 "selfhost/cli/bound_kept.hero"
     t13 = INT64_C(1);
-#line 139 "selfhost/cli/bound_kept.hero"
+#line 141 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow();
-#line 139 "selfhost/cli/bound_kept.hero"
+#line 141 "selfhost/cli/bound_kept.hero"
     h4_at = t14;
     t15 = h0_table;
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     t16 = h5_name;
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     {
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t15, &t16);
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
         t17 = (h_0opt_6c77117d){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
       } else {
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
         t17 = (h_0opt_6c77117d){.tag = INT64_C(0)};
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
         (&h_cliboundsaid_Define_desc)->copy(&t17.as.ok, found);
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
       }
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     }
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     t96 = h22_own22;
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     h22_own22 = t17;
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t96);
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     t97 = h6_define;
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_retain(&t17);
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     h6_define = t17;
-#line 140 "selfhost/cli/bound_kept.hero"
+#line 142 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t97);
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     t18 = h6_define;
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     t98 = h7_f0;
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_retain(&t18);
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     h7_f0 = t18;
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t98);
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     t19 = h7_f0;
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     t20 = t19.tag;
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     t21 = INT64_C(1);
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     t22 = t20 == t21;
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
     if (t22) goto bb5; else goto bb6;
-#line 142 "selfhost/cli/bound_kept.hero"
+#line 144 "selfhost/cli/bound_kept.hero"
 bb3:
-#line 152 "selfhost/cli/bound_kept.hero"
+#line 156 "selfhost/cli/bound_kept.hero"
     t90 = h2_parents;
 #line 1075072 "main.c"
     hero_map_incref(t90);
@@ -1075094,683 +1075094,683 @@ bb3:
     h_0opt_6c77117d_release(hero_slot_escape(&h28_own28));
     return t90;
 bb4:
-#line 144 "selfhost/cli/bound_kept.hero"
+#line 146 "selfhost/cli/bound_kept.hero"
     t23 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
-#line 144 "selfhost/cli/bound_kept.hero"
+#line 146 "selfhost/cli/bound_kept.hero"
     t99 = h23_own23;
-#line 144 "selfhost/cli/bound_kept.hero"
+#line 146 "selfhost/cli/bound_kept.hero"
     h23_own23 = t23;
-#line 144 "selfhost/cli/bound_kept.hero"
+#line 146 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t99);
-#line 144 "selfhost/cli/bound_kept.hero"
+#line 146 "selfhost/cli/bound_kept.hero"
     t100 = h8_words;
-#line 144 "selfhost/cli/bound_kept.hero"
+#line 146 "selfhost/cli/bound_kept.hero"
     hero_map_incref(t23);
-#line 144 "selfhost/cli/bound_kept.hero"
+#line 146 "selfhost/cli/bound_kept.hero"
     h8_words = t23;
-#line 144 "selfhost/cli/bound_kept.hero"
+#line 146 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t100);
     t24 = h6_define;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t101 = h9_f1;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_retain(&t24);
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     h9_f1 = t24;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t101);
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t25 = h9_f1;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t26 = t25.tag;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t27 = INT64_C(0);
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t28 = t26 == t27;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     if (t28) goto bb7; else goto bb8;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
 bb5:
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
 bb6:
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     goto bb4;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
 bb7:
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t31 = h9_f1;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t32 = t31.as.ok;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t33 = t32.f_body;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     h_cliboundsaid_words_of(&h8_words, t33);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t34 = h8_words;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t35 = hero_map_keys(t34);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t102 = h24_own24;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     h24_own24 = t35;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t102);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t36 = hero_array_sort(t35);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t103 = h25_own25;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     h25_own25 = t36;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t103);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t104 = h10_xs0;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t36);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     h10_xs0 = t36;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t104);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t37 = INT64_C(0);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     h11_i0 = t37;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     goto bb9;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
 bb8:
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t29 = h9_f1;
-#line 145 "selfhost/cli/bound_kept.hero"
+#line 147 "selfhost/cli/bound_kept.hero"
     t30 = t29.as.err;
 #line 1075189 "main.c"
     hero_panic_must(t30);
     hero_unreachable();
 bb9:
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t38 = h11_i0;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t39 = h10_xs0;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t40 = ((void)(t39 == NULL ? ((void)hero_array_len(t39), hero_unreachable()) : (void)0), t39->len);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t41 = t38 < t40;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     if (t41) goto bb10; else goto bb12;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
 bb10:
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t42 = h10_xs0;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t43 = h11_i0;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t44 = ((void)((t42 == NULL || t43 < 0 || t43 >= t42->len) ? ((void)hero_array_at(t42, t43), hero_unreachable()) : (void)0), (void)(t42->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t42 + 1))[t43]);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t105 = h12_word;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t44);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     h12_word = t44;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t105);
     t45 = h6_define;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t106 = h16_f2;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_retain(&t45);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h16_f2 = t45;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t106);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t46 = h16_f2;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t47 = t46.tag;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t48 = INT64_C(0);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t49 = t47 == t48;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     if (t49) goto bb14; else goto bb15;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
 bb11:
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t87 = h11_i0;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     t88 = INT64_C(1);
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t87, t88, &t89)) hero_panic_overflow();
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     h11_i0 = t89;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     goto bb9;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
 bb12:
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
 bb13:
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
     goto bb11;
-#line 147 "selfhost/cli/bound_kept.hero"
+#line 151 "selfhost/cli/bound_kept.hero"
 bb14:
     t52 = h16_f2;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t53 = t52.as.ok;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t54 = t53.f_params;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t55 = h12_word;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t54, &t55);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         t56 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       } else {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         t56 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         (&hero_desc_bool)->copy(&t56.as.ok, found);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       }
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     }
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t107 = h26_own26;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h26_own26 = t56;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_release(&t107);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t108 = h17_f3;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_retain(&t56);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h17_f3 = t56;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_release(&t108);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t57 = h17_f3;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t58 = t57.tag;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t59 = INT64_C(1);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t60 = t58 == t59;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h15_b2 = t60;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     if (t60) goto bb16; else goto bb17;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
 bb15:
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t50 = h16_f2;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t51 = t50.as.err;
 #line 1075317 "main.c"
     hero_panic_must(t51);
     hero_unreachable();
 bb16:
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t61 = h12_word;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t62 = h1_from;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t63 = !hero_str_eq(t61, t62);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h15_b2 = t63;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     goto bb17;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
 bb17:
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t64 = h15_b2;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h14_b1 = t64;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     if (t64) goto bb18; else goto bb19;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
 bb18:
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t65 = h2_parents;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t66 = h12_word;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t65, &t66);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         t67 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       } else {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         t67 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         (&hero_desc_str)->copy(&t67.as.ok, found);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       }
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     }
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t109 = h27_own27;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h27_own27 = t67;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t109);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t110 = h18_f4;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_retain(&t67);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h18_f4 = t67;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t110);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t68 = h18_f4;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t69 = t68.tag;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t70 = INT64_C(1);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t71 = t69 == t70;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h14_b1 = t71;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     goto bb19;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
 bb19:
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t72 = h14_b1;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h13_b0 = t72;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     if (t72) goto bb20; else goto bb21;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
 bb20:
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t73 = h0_table;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t74 = h12_word;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t73, &t74);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         t75 = (h_0opt_6c77117d){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       } else {
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         t75 = (h_0opt_6c77117d){.tag = INT64_C(0)};
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
         (&h_cliboundsaid_Define_desc)->copy(&t75.as.ok, found);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
       }
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     }
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t111 = h28_own28;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h28_own28 = t75;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t111);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t112 = h19_f5;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_retain(&t75);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h19_f5 = t75;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t112);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t76 = h19_f5;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t77 = t76.tag;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t78 = INT64_C(1);
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t79 = t77 == t78;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t80 = !t79;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     h13_b0 = t80;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     goto bb21;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
 bb21:
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     t81 = h13_b0;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
     if (t81) goto bb22; else goto bb23;
-#line 148 "selfhost/cli/bound_kept.hero"
+#line 152 "selfhost/cli/bound_kept.hero"
 bb22:
     t82 = h12_word;
-#line 149 "selfhost/cli/bound_kept.hero"
+#line 153 "selfhost/cli/bound_kept.hero"
     t83 = h5_name;
-#line 149 "selfhost/cli/bound_kept.hero"
+#line 153 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t83);
-#line 149 "selfhost/cli/bound_kept.hero"
+#line 153 "selfhost/cli/bound_kept.hero"
     hero_map_set(&(h2_parents), &t82, &t83);
     t85 = h12_word;
-#line 150 "selfhost/cli/bound_kept.hero"
+#line 154 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&h3_queue, &t85);
-#line 150 "selfhost/cli/bound_kept.hero"
+#line 154 "selfhost/cli/bound_kept.hero"
     goto bb13;
-#line 150 "selfhost/cli/bound_kept.hero"
+#line 154 "selfhost/cli/bound_kept.hero"
 bb23:
-#line 150 "selfhost/cli/bound_kept.hero"
+#line 154 "selfhost/cli/bound_kept.hero"
     goto bb13;
 #line 1075473 "main.c"
 }
 
-#line 158 "selfhost/cli/bound_kept.hero"
+#line 162 "selfhost/cli/bound_kept.hero"
 HeroArrayHeader * h_cliboundkept_restored_of(HeroMapHeader * h0_parents, HeroMapHeader * h1_table, HeroMapHeader * h2_was, HeroMapHeader * h3_bound) {
-#line 158 "selfhost/cli/bound_kept.hero"
+#line 162 "selfhost/cli/bound_kept.hero"
     HeroMapHeader * h4_guarded = {0}; HERO_NODEBUG HeroArrayHeader * h5_xs0 = {0}; HERO_NODEBUG int64_t h6_i0; HeroStr h7_name = {0}; HERO_NODEBUG HeroArrayHeader * h8_xs1 = {0}; HERO_NODEBUG int64_t h9_i1; HeroStr h10_name = {0}; HeroArrayHeader * h11_out = {0}; HERO_NODEBUG HeroArrayHeader * h12_xs2 = {0}; HERO_NODEBUG int64_t h13_i2; HeroStr h14_name = {0}; HERO_NODEBUG bool h15_b0; HERO_NODEBUG bool h16_b1; HERO_NODEBUG h_0opt_473cb9ae h17_f0 = {0}; HERO_NODEBUG bool h18_r0; HERO_NODEBUG h_0opt_473cb9ae h19_f1 = {0}; HERO_NODEBUG h_0opt_6c77117d h20_f2 = {0}; HERO_NODEBUG h_0opt_6c77117d h21_f3 = {0}; HERO_NODEBUG h_cliboundsaid_Define h22_r1 = {0}; HERO_NODEBUG HeroMapHeader * h23_own23 = {0}; HERO_NODEBUG HeroArrayHeader * h24_own24 = {0}; HERO_NODEBUG HeroArrayHeader * h25_own25 = {0}; HERO_NODEBUG HeroArrayHeader * h26_own26 = {0}; HERO_NODEBUG HeroArrayHeader * h27_own27 = {0}; HERO_NODEBUG HeroArrayHeader * h28_own28 = {0}; HERO_NODEBUG h_0opt_473cb9ae h29_own29 = {0}; HERO_NODEBUG h_0opt_473cb9ae h30_own30 = {0}; HERO_NODEBUG h_0opt_6c77117d h31_own31 = {0}; HERO_NODEBUG h_0opt_6c77117d h32_own32 = {0}; HERO_NODEBUG HeroMapHeader * h33_own33 = {0}; HERO_NODEBUG h_cliboundsaid_Define h34_own34 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG bool t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroMapHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroMapHeader * t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_473cb9ae t44; HERO_NODEBUG h_0opt_473cb9ae t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_0opt_473cb9ae t49; HERO_NODEBUG bool t50; HERO_NODEBUG bool t51; HERO_NODEBUG bool t52; HERO_NODEBUG HeroMapHeader * t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_0opt_473cb9ae t55; HERO_NODEBUG h_0opt_473cb9ae t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG bool t59; HERO_NODEBUG bool t60; HERO_NODEBUG HeroMapHeader * t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_0opt_6c77117d t63; HERO_NODEBUG h_0opt_6c77117d t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG bool t67; HERO_NODEBUG h_0opt_6c77117d t68; HERO_NODEBUG HeroFailure t69; HERO_NODEBUG h_0opt_6c77117d t70; HERO_NODEBUG h_cliboundsaid_Define t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroMapHeader * t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_6c77117d t75; HERO_NODEBUG h_0opt_6c77117d t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG bool t79; HERO_NODEBUG h_0opt_6c77117d t80; HERO_NODEBUG h_cliboundsaid_Define t81; HERO_NODEBUG HeroMapHeader * t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG HeroStr t84; HERO_NODEBUG h_cliboundsaid_Define t85; HERO_NODEBUG h_cliboundsaid_Define t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG bool t88; HERO_NODEBUG bool t89; HERO_NODEBUG HeroStr t91; HERO_NODEBUG int64_t t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG HeroArrayHeader * t96; HERO_NODEBUG HeroMapHeader * t97; HERO_NODEBUG HeroMapHeader * t98; HERO_NODEBUG HeroArrayHeader * t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG HeroStr t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG HeroArrayHeader * t105; HERO_NODEBUG HeroArrayHeader * t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG HeroArrayHeader * t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG h_0opt_473cb9ae t111; HERO_NODEBUG h_0opt_473cb9ae t112; HERO_NODEBUG h_0opt_473cb9ae t113; HERO_NODEBUG h_0opt_473cb9ae t114; HERO_NODEBUG h_0opt_6c77117d t115; HERO_NODEBUG h_0opt_6c77117d t116; HERO_NODEBUG h_0opt_6c77117d t117; HERO_NODEBUG h_0opt_6c77117d t118; HERO_NODEBUG h_cliboundsaid_Define t119; HERO_NODEBUG HeroMapHeader * t120; HERO_NODEBUG h_cliboundsaid_Define t121; HERO_NODEBUG h_cliboundsaid_Define t122; HERO_ENTRY_STOP; goto bb0;
-#line 158 "selfhost/cli/bound_kept.hero"
+#line 162 "selfhost/cli/bound_kept.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
-#line 159 "selfhost/cli/bound_kept.hero"
+#line 163 "selfhost/cli/bound_kept.hero"
     t97 = h23_own23;
-#line 159 "selfhost/cli/bound_kept.hero"
+#line 163 "selfhost/cli/bound_kept.hero"
     h23_own23 = t1;
-#line 159 "selfhost/cli/bound_kept.hero"
+#line 163 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t97);
-#line 159 "selfhost/cli/bound_kept.hero"
+#line 163 "selfhost/cli/bound_kept.hero"
     t98 = h4_guarded;
-#line 159 "selfhost/cli/bound_kept.hero"
+#line 163 "selfhost/cli/bound_kept.hero"
     hero_map_incref(t1);
-#line 159 "selfhost/cli/bound_kept.hero"
+#line 163 "selfhost/cli/bound_kept.hero"
     h4_guarded = t1;
-#line 159 "selfhost/cli/bound_kept.hero"
+#line 163 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t98);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t2 = h_emitguardednames_names();
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t99 = h24_own24;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     h24_own24 = t2;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t99);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t100 = h5_xs0;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t2);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     h5_xs0 = t2;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t100);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t3 = INT64_C(0);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     h6_i0 = t3;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
 bb1:
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t4 = h6_i0;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t5 = h5_xs0;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t7 = t4 < t6;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     if (t7) goto bb2; else goto bb4;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
 bb2:
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t8 = h5_xs0;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t9 = h6_i0;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? ((void)hero_array_at(t8, t9), hero_unreachable()) : (void)0), (void)(t8->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t8 + 1))[t9]);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t101 = h7_name;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t10);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     h7_name = t10;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t101);
     t11 = h7_name;
-#line 162 "selfhost/cli/bound_kept.hero"
+#line 166 "selfhost/cli/bound_kept.hero"
     t12 = true;
-#line 162 "selfhost/cli/bound_kept.hero"
+#line 166 "selfhost/cli/bound_kept.hero"
     hero_map_set(&(h4_guarded), &t11, &t12);
-#line 162 "selfhost/cli/bound_kept.hero"
+#line 166 "selfhost/cli/bound_kept.hero"
     goto bb3;
-#line 162 "selfhost/cli/bound_kept.hero"
+#line 166 "selfhost/cli/bound_kept.hero"
 bb3:
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t13 = h6_i0;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     t14 = INT64_C(1);
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow();
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     h6_i0 = t15;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 161 "selfhost/cli/bound_kept.hero"
+#line 165 "selfhost/cli/bound_kept.hero"
 bb4:
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t16 = h_emitmacroguard_STANDARD_USED();
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t102 = h25_own25;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     h25_own25 = t16;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t102);
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t103 = h8_xs1;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t16);
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     h8_xs1 = t16;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t103);
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t17 = INT64_C(0);
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     h9_i1 = t17;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     goto bb5;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
 bb5:
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t18 = h9_i1;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t19 = h8_xs1;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t20 = ((void)(t19 == NULL ? ((void)hero_array_len(t19), hero_unreachable()) : (void)0), t19->len);
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t21 = t18 < t20;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     if (t21) goto bb6; else goto bb8;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
 bb6:
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t22 = h8_xs1;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t23 = h9_i1;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t24 = ((void)((t22 == NULL || t23 < 0 || t23 >= t22->len) ? ((void)hero_array_at(t22, t23), hero_unreachable()) : (void)0), (void)(t22->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t22 + 1))[t23]);
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t104 = h10_name;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t24);
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     h10_name = t24;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t104);
     t25 = h10_name;
-#line 165 "selfhost/cli/bound_kept.hero"
+#line 169 "selfhost/cli/bound_kept.hero"
     t26 = false;
-#line 165 "selfhost/cli/bound_kept.hero"
+#line 169 "selfhost/cli/bound_kept.hero"
     hero_map_set(&(h4_guarded), &t25, &t26);
-#line 165 "selfhost/cli/bound_kept.hero"
+#line 169 "selfhost/cli/bound_kept.hero"
     goto bb7;
-#line 165 "selfhost/cli/bound_kept.hero"
+#line 169 "selfhost/cli/bound_kept.hero"
 bb7:
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t27 = h9_i1;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     t28 = INT64_C(1);
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     h9_i1 = t29;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
     goto bb5;
-#line 164 "selfhost/cli/bound_kept.hero"
+#line 168 "selfhost/cli/bound_kept.hero"
 bb8:
-#line 167 "selfhost/cli/bound_kept.hero"
+#line 171 "selfhost/cli/bound_kept.hero"
     t30 = hero_array_new(&hero_desc_str, 1);
-#line 167 "selfhost/cli/bound_kept.hero"
+#line 171 "selfhost/cli/bound_kept.hero"
     t105 = h26_own26;
-#line 167 "selfhost/cli/bound_kept.hero"
+#line 171 "selfhost/cli/bound_kept.hero"
     h26_own26 = t30;
-#line 167 "selfhost/cli/bound_kept.hero"
+#line 171 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t105);
-#line 167 "selfhost/cli/bound_kept.hero"
+#line 171 "selfhost/cli/bound_kept.hero"
     t106 = h11_out;
-#line 167 "selfhost/cli/bound_kept.hero"
+#line 171 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t30);
-#line 167 "selfhost/cli/bound_kept.hero"
+#line 171 "selfhost/cli/bound_kept.hero"
     h11_out = t30;
-#line 167 "selfhost/cli/bound_kept.hero"
+#line 171 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t106);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t31 = h0_parents;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t32 = hero_map_keys(t31);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t107 = h27_own27;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     h27_own27 = t32;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t107);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t33 = hero_array_sort(t32);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t108 = h28_own28;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     h28_own28 = t33;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t108);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t109 = h12_xs2;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t33);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     h12_xs2 = t33;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t109);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t34 = INT64_C(0);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     h13_i2 = t34;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     goto bb9;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
 bb9:
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t35 = h13_i2;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t36 = h12_xs2;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t38 = t35 < t37;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     if (t38) goto bb10; else goto bb12;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
 bb10:
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t39 = h12_xs2;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t40 = h13_i2;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? ((void)hero_array_at(t39, t40), hero_unreachable()) : (void)0), (void)(t39->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t39 + 1))[t40]);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     t110 = h14_name;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t41);
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     h14_name = t41;
-#line 169 "selfhost/cli/bound_kept.hero"
+#line 173 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t110);
     t42 = h4_guarded;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t43 = h14_name;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t42, &t43);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         t44 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       } else {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         t44 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         (&hero_desc_bool)->copy(&t44.as.ok, found);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       }
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     }
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t111 = h29_own29;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h29_own29 = t44;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_release(&t111);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t112 = h17_f0;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_retain(&t44);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h17_f0 = t44;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_release(&t112);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t45 = h17_f0;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t46 = t45.tag;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t47 = INT64_C(0);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t48 = t46 == t47;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     if (t48) goto bb14; else goto bb15;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb11:
-#line 169 "selfhost/cli/bound_kept.hero"
-    t93 = h13_i2;
-#line 169 "selfhost/cli/bound_kept.hero"
-    t94 = INT64_C(1);
-#line 169 "selfhost/cli/bound_kept.hero"
-    if (__builtin_add_overflow(t93, t94, &t95)) hero_panic_overflow();
-#line 169 "selfhost/cli/bound_kept.hero"
-    h13_i2 = t95;
-#line 169 "selfhost/cli/bound_kept.hero"
-    goto bb9;
-#line 169 "selfhost/cli/bound_kept.hero"
-bb12:
 #line 173 "selfhost/cli/bound_kept.hero"
+    t93 = h13_i2;
+#line 173 "selfhost/cli/bound_kept.hero"
+    t94 = INT64_C(1);
+#line 173 "selfhost/cli/bound_kept.hero"
+    if (__builtin_add_overflow(t93, t94, &t95)) hero_panic_overflow();
+#line 173 "selfhost/cli/bound_kept.hero"
+    h13_i2 = t95;
+#line 173 "selfhost/cli/bound_kept.hero"
+    goto bb9;
+#line 173 "selfhost/cli/bound_kept.hero"
+bb12:
+#line 177 "selfhost/cli/bound_kept.hero"
     t96 = h11_out;
 #line 1075776 "main.c"
     hero_array_incref(t96);
@@ -1075803,1007 +1075803,1007 @@ bb12:
 bb13:
     goto bb11;
 bb14:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t49 = h17_f0;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t50 = t49.as.ok;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h18_r0 = t50;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     goto bb16;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb15:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t51 = false;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h18_r0 = t51;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     goto bb16;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb16:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t52 = h18_r0;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h16_b1 = t52;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     if (t52) goto bb17; else goto bb18;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb17:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t53 = h3_bound;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t54 = h14_name;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t53, &t54);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         t55 = (h_0opt_473cb9ae){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       } else {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         t55 = (h_0opt_473cb9ae){.tag = INT64_C(0)};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         (&hero_desc_bool)->copy(&t55.as.ok, found);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       }
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     }
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t113 = h30_own30;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h30_own30 = t55;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_release(&t113);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t114 = h19_f1;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_retain(&t55);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h19_f1 = t55;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_473cb9ae_release(&t114);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t56 = h19_f1;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t57 = t56.tag;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t58 = INT64_C(1);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t59 = t57 == t58;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h16_b1 = t59;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     goto bb18;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb18:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t60 = h16_b1;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h15_b0 = t60;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     if (t60) goto bb19; else goto bb20;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb19:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t61 = h1_table;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t62 = h14_name;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t61, &t62);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         t63 = (h_0opt_6c77117d){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       } else {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         t63 = (h_0opt_6c77117d){.tag = INT64_C(0)};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         (&h_cliboundsaid_Define_desc)->copy(&t63.as.ok, found);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       }
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     }
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t115 = h31_own31;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h31_own31 = t63;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t115);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t116 = h20_f2;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_retain(&t63);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h20_f2 = t63;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t116);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t64 = h20_f2;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t65 = t64.tag;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t66 = INT64_C(0);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t67 = t65 == t66;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     if (t67) goto bb21; else goto bb22;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb20:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t89 = h15_b0;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     if (t89) goto bb26; else goto bb27;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb21:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t70 = h20_f2;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t71 = t70.as.ok;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t72 = t71.f_line;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t73 = h2_was;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t74 = h14_name;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t73, &t74);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         t75 = (h_0opt_6c77117d){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       } else {
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         t75 = (h_0opt_6c77117d){.tag = INT64_C(0)};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
         (&h_cliboundsaid_Define_desc)->copy(&t75.as.ok, found);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
       }
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     }
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t117 = h32_own32;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h32_own32 = t75;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t117);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t118 = h21_f3;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_retain(&t75);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h21_f3 = t75;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t118);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t76 = h21_f3;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t77 = t76.tag;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t78 = INT64_C(0);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t79 = t77 == t78;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     if (t79) goto bb23; else goto bb24;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb22:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t68 = h20_f2;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t69 = t68.as.err;
 #line 1076003 "main.c"
     hero_panic_must(t69);
     hero_unreachable();
 bb23:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t80 = h21_f3;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t81 = t80.as.ok;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t119 = h22_r1;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_cliboundsaid_Define_retain(&t81);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h22_r1 = t81;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_cliboundsaid_Define_release(&t119);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     goto bb25;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb24:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t82 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t120 = h33_own33;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h33_own33 = t82;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t120);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t83 = HERO_STR_LIT(hero_str_0);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t84 = HERO_STR_LIT(hero_str_0);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     hero_map_incref(t82);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t83);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t84);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t85 = (h_cliboundsaid_Define){.f_params = t82, .f_body = t83, .f_line = t84};
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t121 = h34_own34;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h34_own34 = t85;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_cliboundsaid_Define_release(&t121);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t122 = h22_r1;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_cliboundsaid_Define_retain(&t85);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h22_r1 = t85;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h_cliboundsaid_Define_release(&t122);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     goto bb25;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb25:
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t86 = h22_r1;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t87 = t86.f_line;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     t88 = !hero_str_eq(t72, t87);
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     h15_b0 = t88;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
     goto bb20;
-#line 170 "selfhost/cli/bound_kept.hero"
+#line 174 "selfhost/cli/bound_kept.hero"
 bb26:
     t91 = h14_name;
-#line 171 "selfhost/cli/bound_kept.hero"
+#line 175 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&h11_out, &t91);
-#line 171 "selfhost/cli/bound_kept.hero"
+#line 175 "selfhost/cli/bound_kept.hero"
     goto bb13;
-#line 171 "selfhost/cli/bound_kept.hero"
+#line 175 "selfhost/cli/bound_kept.hero"
 bb27:
-#line 171 "selfhost/cli/bound_kept.hero"
+#line 175 "selfhost/cli/bound_kept.hero"
     goto bb13;
 #line 1076082 "main.c"
 }
 
-#line 176 "selfhost/cli/bound_kept.hero"
+#line 180 "selfhost/cli/bound_kept.hero"
 h_diag_Diagnostic h_cliboundkept_told(h_cliboundnames_Bound h0_b, HeroMapHeader * h1_parents, HeroMapHeader * h2_table, HeroStr h3_to, HeroMapHeader * h4_said, int64_t h5_count) {
-#line 176 "selfhost/cli/bound_kept.hero"
+#line 180 "selfhost/cli/bound_kept.hero"
     HeroArrayHeader * h6_path = {0}; HERO_NODEBUG h_0opt_f87774a h7_f0 = {0}; HERO_NODEBUG HeroStr h8_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h9_f1 = {0}; HERO_NODEBUG h_0opt_6c77117d h10_f2 = {0}; HeroArrayHeader * h11_steps = {0}; int64_t h12_at; HERO_NODEBUG h_0opt_6c77117d h13_f3 = {0}; HERO_NODEBUG h_0opt_f87774a h14_f4 = {0}; HERO_NODEBUG HeroStr h15_r1 = {0}; HERO_NODEBUG h_0opt_f87774a h16_f5 = {0}; HERO_NODEBUG HeroStr h17_r2 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG h_0opt_f87774a h19_own19 = {0}; HERO_NODEBUG h_0opt_f87774a h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG h_0opt_6c77117d h23_own23 = {0}; HERO_NODEBUG HeroStr h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG HeroStr h26_own26 = {0}; HERO_NODEBUG HeroArrayHeader * h27_own27 = {0}; HERO_NODEBUG HeroStr h28_own28 = {0}; HERO_NODEBUG HeroStr h29_own29 = {0}; HERO_NODEBUG h_0opt_6c77117d h30_own30 = {0}; HERO_NODEBUG HeroStr h31_own31 = {0}; HERO_NODEBUG HeroStr h32_own32 = {0}; HERO_NODEBUG HeroStr h33_own33 = {0}; HERO_NODEBUG h_0opt_f87774a h34_own34 = {0}; HERO_NODEBUG HeroStr h35_own35 = {0}; HERO_NODEBUG HeroStr h36_own36 = {0}; HERO_NODEBUG HeroStr h37_own37 = {0}; HERO_NODEBUG HeroStr h38_own38 = {0}; HERO_NODEBUG HeroStr h39_own39 = {0}; HERO_NODEBUG HeroStr h40_own40 = {0}; HERO_NODEBUG h_0opt_f87774a h41_own41 = {0}; HERO_NODEBUG h_diag_Diagnostic h42_own42 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroMapHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_cliboundnames_Bound t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_cliboundnames_Bound t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroMapHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_0opt_f87774a t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG h_0opt_f87774a t36; HERO_NODEBUG HeroFailure t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t41; HERO_NODEBUG h_cliboundnames_Bound t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroMapHeader * t47; HERO_NODEBUG h_cliboundnames_Bound t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_0opt_6c77117d t50; HERO_NODEBUG h_0opt_6c77117d t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG bool t54; HERO_NODEBUG h_0opt_6c77117d t55; HERO_NODEBUG HeroFailure t56; HERO_NODEBUG h_0opt_6c77117d t57; HERO_NODEBUG h_cliboundsaid_Define t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG HeroArrayHeader * t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG bool t71; HERO_NODEBUG HeroStr t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG HeroStr t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroStr t79; HERO_NODEBUG HeroMapHeader * t80; HERO_NODEBUG HeroArrayHeader * t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG h_0opt_6c77117d t84; HERO_NODEBUG h_0opt_6c77117d t85; HERO_NODEBUG int64_t t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG bool t88; HERO_NODEBUG h_0opt_6c77117d t89; HERO_NODEBUG HeroFailure t90; HERO_NODEBUG h_0opt_6c77117d t91; HERO_NODEBUG h_cliboundsaid_Define t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG HeroStr t94; HERO_NODEBUG HeroStr t95; HERO_NODEBUG HeroStr t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG int64_t t99; HERO_NODEBUG int64_t t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG h_cliboundnames_Bound t102; HERO_NODEBUG HeroStr t103; HERO_NODEBUG HeroArrayHeader * t104; HERO_NODEBUG HeroMapHeader * t105; HERO_NODEBUG int64_t t106; HERO_NODEBUG HeroStr t107; HERO_NODEBUG HeroStr t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG h_cliboundnames_Bound t110; HERO_NODEBUG HeroStr t111; HERO_NODEBUG HeroStr t112; HERO_NODEBUG h_0opt_f87774a t113; HERO_NODEBUG h_0opt_f87774a t114; HERO_NODEBUG int64_t t115; HERO_NODEBUG int64_t t116; HERO_NODEBUG bool t117; HERO_NODEBUG h_0opt_f87774a t118; HERO_NODEBUG HeroStr t119; HERO_NODEBUG HeroStr t120; HERO_NODEBUG HeroStr t121; HERO_NODEBUG HeroMapHeader * t122; HERO_NODEBUG int64_t t123; HERO_NODEBUG int64_t t124; HERO_NODEBUG int64_t t125; HERO_NODEBUG HeroStr t126; HERO_NODEBUG HeroStr t127; HERO_NODEBUG HeroStr t128; HERO_NODEBUG h_cliboundnames_Bound t129; HERO_NODEBUG HeroStr t130; HERO_NODEBUG HeroStr t131; HERO_NODEBUG h_0opt_f87774a t132; HERO_NODEBUG h_0opt_f87774a t133; HERO_NODEBUG int64_t t134; HERO_NODEBUG int64_t t135; HERO_NODEBUG bool t136; HERO_NODEBUG h_0opt_f87774a t137; HERO_NODEBUG HeroStr t138; HERO_NODEBUG HeroStr t139; HERO_NODEBUG HeroStr t140; HERO_NODEBUG h_diag_Diagnostic t141; HERO_NODEBUG HeroArrayHeader * t142; HERO_NODEBUG HeroArrayHeader * t143; HERO_NODEBUG h_0opt_f87774a t144; HERO_NODEBUG h_0opt_f87774a t145; HERO_NODEBUG h_0opt_f87774a t146; HERO_NODEBUG h_0opt_f87774a t147; HERO_NODEBUG HeroStr t148; HERO_NODEBUG HeroStr t149; HERO_NODEBUG h_0opt_6c77117d t150; HERO_NODEBUG h_0opt_6c77117d t151; HERO_NODEBUG HeroStr t152; HERO_NODEBUG HeroStr t153; HERO_NODEBUG HeroStr t154; HERO_NODEBUG HeroStr t155; HERO_NODEBUG HeroStr t156; HERO_NODEBUG HeroArrayHeader * t157; HERO_NODEBUG HeroArrayHeader * t158; HERO_NODEBUG HeroStr t159; HERO_NODEBUG HeroStr t160; HERO_NODEBUG h_0opt_6c77117d t161; HERO_NODEBUG h_0opt_6c77117d t162; HERO_NODEBUG HeroStr t163; HERO_NODEBUG HeroStr t164; HERO_NODEBUG HeroStr t165; HERO_NODEBUG h_0opt_f87774a t166; HERO_NODEBUG h_0opt_f87774a t167; HERO_NODEBUG HeroStr t168; HERO_NODEBUG HeroStr t169; HERO_NODEBUG HeroStr t170; HERO_NODEBUG HeroStr t171; HERO_NODEBUG HeroStr t172; HERO_NODEBUG HeroStr t173; HERO_NODEBUG HeroStr t174; HERO_NODEBUG HeroStr t175; HERO_NODEBUG h_0opt_f87774a t176; HERO_NODEBUG h_0opt_f87774a t177; HERO_NODEBUG HeroStr t178; HERO_NODEBUG HeroStr t179; HERO_NODEBUG h_diag_Diagnostic t180; HERO_ENTRY_STOP; goto bb0;
-#line 176 "selfhost/cli/bound_kept.hero"
+#line 180 "selfhost/cli/bound_kept.hero"
 bb0:
     t1 = h3_to;
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     t2 = hero_array_new(&hero_desc_str, 1);
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&t2, &t1);
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     t142 = h18_own18;
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     h18_own18 = t2;
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t142);
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     t143 = h6_path;
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t2);
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     h6_path = t2;
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t143);
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 177 "selfhost/cli/bound_kept.hero"
+#line 181 "selfhost/cli/bound_kept.hero"
 bb1:
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t3 = h1_parents;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t4 = h6_path;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t5 = h6_path;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t7 = INT64_C(1);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     if (__builtin_sub_overflow(t6, t7, &t8)) hero_panic_overflow();
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t9 = ((void)((t4 == NULL || t8 < 0 || t8 >= t4->len) ? ((void)hero_array_at(t4, t8), hero_unreachable()) : (void)0), (void)(t4->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t4 + 1))[t8]);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     {
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t3, &t9);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
         t10 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
       } else {
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
         t10 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
         (&hero_desc_str)->copy(&t10.as.ok, found);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
       }
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     }
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t144 = h19_own19;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     h19_own19 = t10;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t144);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t145 = h7_f0;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_retain(&t10);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     h7_f0 = t10;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t145);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t11 = h7_f0;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t12 = t11.tag;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t13 = INT64_C(0);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t14 = t12 == t13;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     if (t14) goto bb4; else goto bb5;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
 bb2:
     t24 = h1_parents;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t25 = h6_path;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t26 = h6_path;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t27 = ((void)(t26 == NULL ? ((void)hero_array_len(t26), hero_unreachable()) : (void)0), t26->len);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t28 = INT64_C(1);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     if (__builtin_sub_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t30 = ((void)((t25 == NULL || t29 < 0 || t29 >= t25->len) ? ((void)hero_array_at(t25, t29), hero_unreachable()) : (void)0), (void)(t25->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t25 + 1))[t29]);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     {
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t24, &t30);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
         t31 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
       } else {
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
         t31 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
         (&hero_desc_str)->copy(&t31.as.ok, found);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
       }
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     }
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t146 = h20_own20;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     h20_own20 = t31;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t146);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t147 = h9_f1;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_retain(&t31);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     h9_f1 = t31;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t147);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t32 = h9_f1;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t33 = t32.tag;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t34 = INT64_C(0);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t35 = t33 == t34;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     if (t35) goto bb7; else goto bb8;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
 bb3:
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t41 = HERO_STR_LIT(hero_str_60);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t42 = h0_b;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t43 = t42.f_name;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t44 = hero_str_concat(t41, t43);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t148 = h21_own21;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h21_own21 = t44;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t148);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t45 = HERO_STR_LIT(hero_str_11831e5f);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t46 = hero_str_concat(t44, t45);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t149 = h22_own22;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h22_own22 = t46;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t149);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t47 = h2_table;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t48 = h0_b;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t49 = t48.f_name;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     {
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t47, &t49);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
         t50 = (h_0opt_6c77117d){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
       } else {
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
         t50 = (h_0opt_6c77117d){.tag = INT64_C(0)};
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
         (&h_cliboundsaid_Define_desc)->copy(&t50.as.ok, found);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
       }
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     }
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t150 = h23_own23;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h23_own23 = t50;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t150);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t151 = h10_f2;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_retain(&t50);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h10_f2 = t50;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h_0opt_6c77117d_release(&t151);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t51 = h10_f2;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t52 = t51.tag;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t53 = INT64_C(0);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t54 = t52 == t53;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     if (t54) goto bb9; else goto bb10;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
 bb4:
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t15 = h7_f0;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t16 = t15.as.ok;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t152 = h8_r0;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t16);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     h8_r0 = t16;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t152);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     goto bb6;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
 bb5:
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t17 = h0_b;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t18 = t17.f_name;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t153 = h8_r0;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t18);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     h8_r0 = t18;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t153);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     goto bb6;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
 bb6:
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t19 = h8_r0;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t20 = h0_b;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t21 = t20.f_name;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     t22 = !hero_str_eq(t19, t21);
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
     if (t22) goto bb2; else goto bb3;
-#line 179 "selfhost/cli/bound_kept.hero"
+#line 183 "selfhost/cli/bound_kept.hero"
 bb7:
     t38 = h9_f1;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t39 = t38.as.ok;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&h6_path, &t39);
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
 bb8:
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t36 = h9_f1;
-#line 180 "selfhost/cli/bound_kept.hero"
+#line 184 "selfhost/cli/bound_kept.hero"
     t37 = t36.as.err;
 #line 1076360 "main.c"
     hero_panic_must(t37);
     hero_unreachable();
 bb9:
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t57 = h10_f2;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t58 = t57.as.ok;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t59 = t58.f_body;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t60 = h_cliboundsaid_folded(t59);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t154 = h24_own24;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h24_own24 = t60;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t154);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t61 = hero_str_concat(t46, t60);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t155 = h25_own25;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h25_own25 = t61;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t155);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t62 = HERO_STR_LIT(hero_str_60);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t63 = hero_str_concat(t61, t62);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t156 = h26_own26;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h26_own26 = t63;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t156);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t64 = hero_array_new(&hero_desc_str, 1);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&t64, &t63);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t157 = h27_own27;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h27_own27 = t64;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t157);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t158 = h11_steps;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t64);
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     h11_steps = t64;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t158);
     t65 = h6_path;
-#line 183 "selfhost/cli/bound_kept.hero"
+#line 187 "selfhost/cli/bound_kept.hero"
     t66 = ((void)(t65 == NULL ? ((void)hero_array_len(t65), hero_unreachable()) : (void)0), t65->len);
-#line 183 "selfhost/cli/bound_kept.hero"
+#line 187 "selfhost/cli/bound_kept.hero"
     t67 = INT64_C(1);
-#line 183 "selfhost/cli/bound_kept.hero"
+#line 187 "selfhost/cli/bound_kept.hero"
     if (__builtin_sub_overflow(t66, t67, &t68)) hero_panic_overflow();
-#line 183 "selfhost/cli/bound_kept.hero"
+#line 187 "selfhost/cli/bound_kept.hero"
     h12_at = t68;
-#line 183 "selfhost/cli/bound_kept.hero"
+#line 187 "selfhost/cli/bound_kept.hero"
     goto bb11;
-#line 183 "selfhost/cli/bound_kept.hero"
+#line 187 "selfhost/cli/bound_kept.hero"
 bb10:
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t55 = h10_f2;
-#line 182 "selfhost/cli/bound_kept.hero"
+#line 186 "selfhost/cli/bound_kept.hero"
     t56 = t55.as.err;
 #line 1076431 "main.c"
     hero_panic_must(t56);
     hero_unreachable();
 bb11:
-#line 185 "selfhost/cli/bound_kept.hero"
+#line 189 "selfhost/cli/bound_kept.hero"
     t69 = h12_at;
-#line 185 "selfhost/cli/bound_kept.hero"
+#line 189 "selfhost/cli/bound_kept.hero"
     t70 = INT64_C(0);
-#line 185 "selfhost/cli/bound_kept.hero"
+#line 189 "selfhost/cli/bound_kept.hero"
     t71 = t69 >= t70;
-#line 185 "selfhost/cli/bound_kept.hero"
+#line 189 "selfhost/cli/bound_kept.hero"
     if (t71) goto bb12; else goto bb13;
-#line 185 "selfhost/cli/bound_kept.hero"
+#line 189 "selfhost/cli/bound_kept.hero"
 bb12:
     t73 = HERO_STR_LIT(hero_str_60);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t74 = h6_path;
-#line 186 "selfhost/cli/bound_kept.hero"
-    t75 = h12_at;
-#line 186 "selfhost/cli/bound_kept.hero"
-    t76 = ((void)((t74 == NULL || t75 < 0 || t75 >= t74->len) ? ((void)hero_array_at(t74, t75), hero_unreachable()) : (void)0), (void)(t74->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t74 + 1))[t75]);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t77 = hero_str_concat(t73, t76);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t159 = h28_own28;
-#line 186 "selfhost/cli/bound_kept.hero"
-    h28_own28 = t77;
-#line 186 "selfhost/cli/bound_kept.hero"
-    hero_str_decref(t159);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t78 = HERO_STR_LIT(hero_str_11831e5f);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t79 = hero_str_concat(t77, t78);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t160 = h29_own29;
-#line 186 "selfhost/cli/bound_kept.hero"
-    h29_own29 = t79;
-#line 186 "selfhost/cli/bound_kept.hero"
-    hero_str_decref(t160);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t80 = h2_table;
-#line 186 "selfhost/cli/bound_kept.hero"
-    t81 = h6_path;
-#line 186 "selfhost/cli/bound_kept.hero"
-    t82 = h12_at;
-#line 186 "selfhost/cli/bound_kept.hero"
-    t83 = ((void)((t81 == NULL || t82 < 0 || t82 >= t81->len) ? ((void)hero_array_at(t81, t82), hero_unreachable()) : (void)0), (void)(t81->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t81 + 1))[t82]);
-#line 186 "selfhost/cli/bound_kept.hero"
-    {
-#line 186 "selfhost/cli/bound_kept.hero"
-      HERO_NODEBUG const void *found = hero_map_find(t80, &t83);
-#line 186 "selfhost/cli/bound_kept.hero"
-      if (found == NULL) {
-#line 186 "selfhost/cli/bound_kept.hero"
-        t84 = (h_0opt_6c77117d){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 186 "selfhost/cli/bound_kept.hero"
-      } else {
-#line 186 "selfhost/cli/bound_kept.hero"
-        t84 = (h_0opt_6c77117d){.tag = INT64_C(0)};
-#line 186 "selfhost/cli/bound_kept.hero"
-        (&h_cliboundsaid_Define_desc)->copy(&t84.as.ok, found);
-#line 186 "selfhost/cli/bound_kept.hero"
-      }
-#line 186 "selfhost/cli/bound_kept.hero"
-    }
-#line 186 "selfhost/cli/bound_kept.hero"
-    t161 = h30_own30;
-#line 186 "selfhost/cli/bound_kept.hero"
-    h30_own30 = t84;
-#line 186 "selfhost/cli/bound_kept.hero"
-    h_0opt_6c77117d_release(&t161);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t162 = h13_f3;
-#line 186 "selfhost/cli/bound_kept.hero"
-    h_0opt_6c77117d_retain(&t84);
-#line 186 "selfhost/cli/bound_kept.hero"
-    h13_f3 = t84;
-#line 186 "selfhost/cli/bound_kept.hero"
-    h_0opt_6c77117d_release(&t162);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t85 = h13_f3;
-#line 186 "selfhost/cli/bound_kept.hero"
-    t86 = t85.tag;
-#line 186 "selfhost/cli/bound_kept.hero"
-    t87 = INT64_C(0);
-#line 186 "selfhost/cli/bound_kept.hero"
-    t88 = t86 == t87;
-#line 186 "selfhost/cli/bound_kept.hero"
-    if (t88) goto bb14; else goto bb15;
-#line 186 "selfhost/cli/bound_kept.hero"
-bb13:
 #line 190 "selfhost/cli/bound_kept.hero"
+    t74 = h6_path;
+#line 190 "selfhost/cli/bound_kept.hero"
+    t75 = h12_at;
+#line 190 "selfhost/cli/bound_kept.hero"
+    t76 = ((void)((t74 == NULL || t75 < 0 || t75 >= t74->len) ? ((void)hero_array_at(t74, t75), hero_unreachable()) : (void)0), (void)(t74->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t74 + 1))[t75]);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t77 = hero_str_concat(t73, t76);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t159 = h28_own28;
+#line 190 "selfhost/cli/bound_kept.hero"
+    h28_own28 = t77;
+#line 190 "selfhost/cli/bound_kept.hero"
+    hero_str_decref(t159);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t78 = HERO_STR_LIT(hero_str_11831e5f);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t79 = hero_str_concat(t77, t78);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t160 = h29_own29;
+#line 190 "selfhost/cli/bound_kept.hero"
+    h29_own29 = t79;
+#line 190 "selfhost/cli/bound_kept.hero"
+    hero_str_decref(t160);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t80 = h2_table;
+#line 190 "selfhost/cli/bound_kept.hero"
+    t81 = h6_path;
+#line 190 "selfhost/cli/bound_kept.hero"
+    t82 = h12_at;
+#line 190 "selfhost/cli/bound_kept.hero"
+    t83 = ((void)((t81 == NULL || t82 < 0 || t82 >= t81->len) ? ((void)hero_array_at(t81, t82), hero_unreachable()) : (void)0), (void)(t81->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t81 + 1))[t82]);
+#line 190 "selfhost/cli/bound_kept.hero"
+    {
+#line 190 "selfhost/cli/bound_kept.hero"
+      HERO_NODEBUG const void *found = hero_map_find(t80, &t83);
+#line 190 "selfhost/cli/bound_kept.hero"
+      if (found == NULL) {
+#line 190 "selfhost/cli/bound_kept.hero"
+        t84 = (h_0opt_6c77117d){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
+#line 190 "selfhost/cli/bound_kept.hero"
+      } else {
+#line 190 "selfhost/cli/bound_kept.hero"
+        t84 = (h_0opt_6c77117d){.tag = INT64_C(0)};
+#line 190 "selfhost/cli/bound_kept.hero"
+        (&h_cliboundsaid_Define_desc)->copy(&t84.as.ok, found);
+#line 190 "selfhost/cli/bound_kept.hero"
+      }
+#line 190 "selfhost/cli/bound_kept.hero"
+    }
+#line 190 "selfhost/cli/bound_kept.hero"
+    t161 = h30_own30;
+#line 190 "selfhost/cli/bound_kept.hero"
+    h30_own30 = t84;
+#line 190 "selfhost/cli/bound_kept.hero"
+    h_0opt_6c77117d_release(&t161);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t162 = h13_f3;
+#line 190 "selfhost/cli/bound_kept.hero"
+    h_0opt_6c77117d_retain(&t84);
+#line 190 "selfhost/cli/bound_kept.hero"
+    h13_f3 = t84;
+#line 190 "selfhost/cli/bound_kept.hero"
+    h_0opt_6c77117d_release(&t162);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t85 = h13_f3;
+#line 190 "selfhost/cli/bound_kept.hero"
+    t86 = t85.tag;
+#line 190 "selfhost/cli/bound_kept.hero"
+    t87 = INT64_C(0);
+#line 190 "selfhost/cli/bound_kept.hero"
+    t88 = t86 == t87;
+#line 190 "selfhost/cli/bound_kept.hero"
+    if (t88) goto bb14; else goto bb15;
+#line 190 "selfhost/cli/bound_kept.hero"
+bb13:
+#line 194 "selfhost/cli/bound_kept.hero"
     t102 = h0_b;
     t103 = h3_to;
     t104 = h11_steps;
     t105 = h4_said;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t106 = h5_count;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t107 = hero_int_to_str(t106);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t163 = h31_own31;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h31_own31 = t107;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t163);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t108 = HERO_STR_LIT(hero_str_20);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t109 = hero_str_concat(t107, t108);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t164 = h32_own32;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h32_own32 = t109;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t164);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t110 = h0_b;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t111 = t110.f_name;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t112 = hero_str_concat(t109, t111);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t165 = h33_own33;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h33_own33 = t112;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t165);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     {
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t105, &t112);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
         t113 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
       } else {
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
         t113 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
         (&hero_desc_str)->copy(&t113.as.ok, found);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
       }
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     }
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t166 = h34_own34;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h34_own34 = t113;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t166);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t167 = h14_f4;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_retain(&t113);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h14_f4 = t113;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t167);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t114 = h14_f4;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t115 = t114.tag;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t116 = INT64_C(0);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t117 = t115 == t116;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     if (t117) goto bb16; else goto bb17;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
 bb14:
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t91 = h13_f3;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t92 = t91.as.ok;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t93 = t92.f_body;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t94 = h_cliboundsaid_folded(t93);
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t168 = h35_own35;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     h35_own35 = t94;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t168);
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t95 = hero_str_concat(t79, t94);
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t169 = h36_own36;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     h36_own36 = t95;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t169);
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t96 = HERO_STR_LIT(hero_str_60);
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t97 = hero_str_concat(t95, t96);
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t170 = h37_own37;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     h37_own37 = t97;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t170);
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&h11_steps, &t97);
     t99 = h12_at;
-#line 187 "selfhost/cli/bound_kept.hero"
+#line 191 "selfhost/cli/bound_kept.hero"
     t100 = INT64_C(1);
-#line 187 "selfhost/cli/bound_kept.hero"
+#line 191 "selfhost/cli/bound_kept.hero"
     if (__builtin_sub_overflow(t99, t100, &t101)) hero_panic_overflow();
-#line 187 "selfhost/cli/bound_kept.hero"
+#line 191 "selfhost/cli/bound_kept.hero"
     h12_at = t101;
-#line 187 "selfhost/cli/bound_kept.hero"
+#line 191 "selfhost/cli/bound_kept.hero"
     goto bb11;
-#line 187 "selfhost/cli/bound_kept.hero"
+#line 191 "selfhost/cli/bound_kept.hero"
 bb15:
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t89 = h13_f3;
-#line 186 "selfhost/cli/bound_kept.hero"
+#line 190 "selfhost/cli/bound_kept.hero"
     t90 = t89.as.err;
 #line 1076652 "main.c"
     hero_panic_must(t90);
     hero_unreachable();
 bb16:
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t118 = h14_f4;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t119 = t118.as.ok;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t171 = h15_r1;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t119);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h15_r1 = t119;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t171);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     goto bb18;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
 bb17:
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t120 = HERO_STR_LIT(hero_str_0);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t172 = h15_r1;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t120);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     h15_r1 = t120;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t172);
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     goto bb18;
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
 bb18:
-#line 193 "selfhost/cli/bound_kept.hero"
+#line 197 "selfhost/cli/bound_kept.hero"
     t121 = h15_r1;
     t122 = h4_said;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t123 = h5_count;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t124 = INT64_C(1);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t123, t124, &t125)) hero_panic_overflow();
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t126 = hero_int_to_str(t125);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t173 = h38_own38;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h38_own38 = t126;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t173);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t127 = HERO_STR_LIT(hero_str_20);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t128 = hero_str_concat(t126, t127);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t174 = h39_own39;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h39_own39 = t128;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t174);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t129 = h0_b;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t130 = t129.f_name;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t131 = hero_str_concat(t128, t130);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t175 = h40_own40;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h40_own40 = t131;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t175);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     {
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
       HERO_NODEBUG const void *found = hero_map_find(t122, &t131);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
       if (found == NULL) {
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
         t132 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
       } else {
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
         t132 = (h_0opt_f87774a){.tag = INT64_C(0)};
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
         (&hero_desc_str)->copy(&t132.as.ok, found);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
       }
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     }
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t176 = h41_own41;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h41_own41 = t132;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t176);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t177 = h16_f5;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_retain(&t132);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h16_f5 = t132;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h_0opt_f87774a_release(&t177);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t133 = h16_f5;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t134 = t133.tag;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t135 = INT64_C(0);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t136 = t134 == t135;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     if (t136) goto bb19; else goto bb20;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
 bb19:
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t137 = h16_f5;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t138 = t137.as.ok;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t178 = h17_r2;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t138);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h17_r2 = t138;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t178);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     goto bb21;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
 bb20:
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t139 = HERO_STR_LIT(hero_str_0);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t179 = h17_r2;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t139);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     h17_r2 = t139;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t179);
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     goto bb21;
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
 bb21:
-#line 194 "selfhost/cli/bound_kept.hero"
+#line 198 "selfhost/cli/bound_kept.hero"
     t140 = h17_r2;
-#line 189 "selfhost/cli/bound_kept.hero"
+#line 193 "selfhost/cli/bound_kept.hero"
     t141 = h_cliboundtold_reached(t102, t103, t104, t121, t140);
-#line 189 "selfhost/cli/bound_kept.hero"
+#line 193 "selfhost/cli/bound_kept.hero"
     t180 = h42_own42;
-#line 189 "selfhost/cli/bound_kept.hero"
+#line 193 "selfhost/cli/bound_kept.hero"
     h42_own42 = t141;
-#line 189 "selfhost/cli/bound_kept.hero"
+#line 193 "selfhost/cli/bound_kept.hero"
     h_diag_Diagnostic_release(&t180);
 #line 1076809 "main.c"
     h_diag_Diagnostic_retain(&t141);
@@ -1076846,104 +1076846,104 @@ bb21:
     return t141;
 }
 
-#line 241 "selfhost/cli/bound_kept.hero"
+#line 245 "selfhost/cli/bound_kept.hero"
 HeroMapHeader * h_cliboundkept_called_words(HeroStr h0_text) {
-#line 241 "selfhost/cli/bound_kept.hero"
+#line 245 "selfhost/cli/bound_kept.hero"
     HeroMapHeader * h1_out = {0}; bool h2_in_test; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_line = {0}; HERO_NODEBUG bool h6_b0; HERO_NODEBUG bool h7_b1; HERO_NODEBUG bool h8_b2; HeroStr h9_trimmed = {0}; HERO_NODEBUG bool h10_b3; bool h11_quoted; int64_t h12_at; uint8_t h13_b; HERO_NODEBUG bool h14_b4; HERO_NODEBUG bool h15_b5; int64_t h16_start; HERO_NODEBUG bool h17_b6; HERO_NODEBUG bool h18_b7; HERO_NODEBUG HeroMapHeader * h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG bool t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG bool t34; HERO_NODEBUG bool t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG bool t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG bool t41; HERO_NODEBUG bool t42; HERO_NODEBUG bool t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG uint8_t t51; HERO_NODEBUG uint8_t t52; HERO_NODEBUG uint8_t t53; HERO_NODEBUG bool t54; HERO_NODEBUG bool t55; HERO_NODEBUG bool t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG uint8_t t60; HERO_NODEBUG uint8_t t61; HERO_NODEBUG bool t62; HERO_NODEBUG bool t63; HERO_NODEBUG bool t64; HERO_NODEBUG bool t65; HERO_NODEBUG uint8_t t66; HERO_NODEBUG bool t67; HERO_NODEBUG bool t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG bool t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG uint8_t t76; HERO_NODEBUG bool t77; HERO_NODEBUG bool t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG HeroStr t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG bool t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG uint8_t t88; HERO_NODEBUG uint8_t t89; HERO_NODEBUG bool t90; HERO_NODEBUG bool t91; HERO_NODEBUG HeroStr t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG HeroStr t95; HERO_NODEBUG bool t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG int64_t t99; HERO_NODEBUG int64_t t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG HeroMapHeader * t103; HERO_NODEBUG HeroMapHeader * t104; HERO_NODEBUG HeroMapHeader * t105; HERO_NODEBUG HeroArrayHeader * t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG HeroStr t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG HeroStr t110; HERO_NODEBUG HeroStr t111; HERO_ENTRY_STOP; goto bb0;
-#line 241 "selfhost/cli/bound_kept.hero"
+#line 245 "selfhost/cli/bound_kept.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_bool, 0);
-#line 242 "selfhost/cli/bound_kept.hero"
+#line 246 "selfhost/cli/bound_kept.hero"
     t104 = h19_own19;
-#line 242 "selfhost/cli/bound_kept.hero"
+#line 246 "selfhost/cli/bound_kept.hero"
     h19_own19 = t1;
-#line 242 "selfhost/cli/bound_kept.hero"
+#line 246 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t104);
-#line 242 "selfhost/cli/bound_kept.hero"
+#line 246 "selfhost/cli/bound_kept.hero"
     t105 = h1_out;
-#line 242 "selfhost/cli/bound_kept.hero"
+#line 246 "selfhost/cli/bound_kept.hero"
     hero_map_incref(t1);
-#line 242 "selfhost/cli/bound_kept.hero"
+#line 246 "selfhost/cli/bound_kept.hero"
     h1_out = t1;
-#line 242 "selfhost/cli/bound_kept.hero"
+#line 246 "selfhost/cli/bound_kept.hero"
     hero_map_decref(t105);
     t2 = false;
-#line 243 "selfhost/cli/bound_kept.hero"
+#line 247 "selfhost/cli/bound_kept.hero"
     h2_in_test = t2;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t3 = h0_text;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t4 = h_cliboundkept_rows_of(t3);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t106 = h20_own20;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     h20_own20 = t4;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t106);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t107 = h3_xs0;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t4);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     h3_xs0 = t4;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t107);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t5 = INT64_C(0);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     h4_i0 = t5;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
 bb1:
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t6 = h4_i0;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t7 = h3_xs0;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t9 = t6 < t8;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     if (t9) goto bb2; else goto bb4;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
 bb2:
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t10 = h3_xs0;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t11 = h4_i0;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? ((void)hero_array_at(t10, t11), hero_unreachable()) : (void)0), (void)(t10->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t10 + 1))[t11]);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t108 = h5_line;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t12);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     h5_line = t12;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t108);
     t13 = h5_line;
-#line 246 "selfhost/cli/bound_kept.hero"
+#line 250 "selfhost/cli/bound_kept.hero"
     t14 = HERO_STR_LIT(hero_str_74627379);
-#line 246 "selfhost/cli/bound_kept.hero"
+#line 250 "selfhost/cli/bound_kept.hero"
     t15 = h_clistrings_starts_with(t13, t14);
-#line 246 "selfhost/cli/bound_kept.hero"
+#line 250 "selfhost/cli/bound_kept.hero"
     if (t15) goto bb6; else goto bb7;
-#line 246 "selfhost/cli/bound_kept.hero"
+#line 250 "selfhost/cli/bound_kept.hero"
 bb3:
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t100 = h4_i0;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     t101 = INT64_C(1);
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t100, t101, &t102)) hero_panic_overflow();
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     h4_i0 = t102;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 245 "selfhost/cli/bound_kept.hero"
+#line 249 "selfhost/cli/bound_kept.hero"
 bb4:
-#line 279 "selfhost/cli/bound_kept.hero"
+#line 283 "selfhost/cli/bound_kept.hero"
     t103 = h1_out;
 #line 1076949 "main.c"
     hero_map_incref(t103);
@@ -1076957,466 +1076957,466 @@ bb4:
     hero_str_release_at(&h22_own22);
     return t103;
 bb5:
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t17 = h2_in_test;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     h8_b2 = t17;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     if (t17) goto bb9; else goto bb10;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
 bb6:
-#line 247 "selfhost/cli/bound_kept.hero"
+#line 251 "selfhost/cli/bound_kept.hero"
     t16 = true;
-#line 247 "selfhost/cli/bound_kept.hero"
+#line 251 "selfhost/cli/bound_kept.hero"
     h2_in_test = t16;
-#line 247 "selfhost/cli/bound_kept.hero"
+#line 251 "selfhost/cli/bound_kept.hero"
     goto bb3;
-#line 247 "selfhost/cli/bound_kept.hero"
+#line 251 "selfhost/cli/bound_kept.hero"
 bb7:
-#line 247 "selfhost/cli/bound_kept.hero"
+#line 251 "selfhost/cli/bound_kept.hero"
     goto bb5;
-#line 247 "selfhost/cli/bound_kept.hero"
+#line 251 "selfhost/cli/bound_kept.hero"
 bb8:
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     t36 = h5_line;
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     t37 = h_clistrings_trimmed(t36);
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     t109 = h21_own21;
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     h21_own21 = t37;
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t109);
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     t110 = h9_trimmed;
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     hero_str_incref(t37);
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     h9_trimmed = t37;
-#line 252 "selfhost/cli/bound_kept.hero"
+#line 256 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t110);
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     t38 = h2_in_test;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     h10_b3 = t38;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     if (t38) goto bb19; else goto bb18;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
 bb9:
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t18 = h5_line;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t19 = hero_str_len(t18);
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t20 = INT64_C(0);
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t21 = t19 > t20;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     h8_b2 = t21;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     goto bb10;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
 bb10:
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t22 = h8_b2;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     h7_b1 = t22;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     if (t22) goto bb11; else goto bb12;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
 bb11:
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t23 = h5_line;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t24 = INT64_C(0);
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t25 = ((void)((t23.ptr == NULL || t24 < 0 || t24 >= t23.len) ? ((void)hero_str_byte(t23, t24), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t23.ptr[t24]);
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t26 = UINT64_C(32);
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t27 = t25 != t26;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     h7_b1 = t27;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     goto bb12;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
 bb12:
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t28 = h7_b1;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     h6_b0 = t28;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     if (t28) goto bb13; else goto bb14;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
 bb13:
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t29 = h5_line;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t30 = INT64_C(0);
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t31 = ((void)((t29.ptr == NULL || t30 < 0 || t30 >= t29.len) ? ((void)hero_str_byte(t29, t30), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t29.ptr[t30]);
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t32 = UINT64_C(35);
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t33 = t31 != t32;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     h6_b0 = t33;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     goto bb14;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
 bb14:
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     t34 = h6_b0;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
     if (t34) goto bb15; else goto bb16;
-#line 250 "selfhost/cli/bound_kept.hero"
+#line 254 "selfhost/cli/bound_kept.hero"
 bb15:
     t35 = false;
-#line 251 "selfhost/cli/bound_kept.hero"
+#line 255 "selfhost/cli/bound_kept.hero"
     h2_in_test = t35;
-#line 251 "selfhost/cli/bound_kept.hero"
+#line 255 "selfhost/cli/bound_kept.hero"
     goto bb8;
-#line 251 "selfhost/cli/bound_kept.hero"
+#line 255 "selfhost/cli/bound_kept.hero"
 bb16:
-#line 251 "selfhost/cli/bound_kept.hero"
+#line 255 "selfhost/cli/bound_kept.hero"
     goto bb8;
-#line 251 "selfhost/cli/bound_kept.hero"
+#line 255 "selfhost/cli/bound_kept.hero"
 bb17:
-#line 256 "selfhost/cli/bound_kept.hero"
+#line 260 "selfhost/cli/bound_kept.hero"
     t43 = false;
-#line 256 "selfhost/cli/bound_kept.hero"
+#line 260 "selfhost/cli/bound_kept.hero"
     h11_quoted = t43;
     t44 = INT64_C(0);
-#line 257 "selfhost/cli/bound_kept.hero"
+#line 261 "selfhost/cli/bound_kept.hero"
     h12_at = t44;
-#line 257 "selfhost/cli/bound_kept.hero"
+#line 261 "selfhost/cli/bound_kept.hero"
     goto bb22;
-#line 257 "selfhost/cli/bound_kept.hero"
+#line 261 "selfhost/cli/bound_kept.hero"
 bb18:
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     t39 = h9_trimmed;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     t40 = HERO_STR_LIT(hero_str_23);
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     t41 = h_clistrings_starts_with(t39, t40);
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     h10_b3 = t41;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     goto bb19;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
 bb19:
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     t42 = h10_b3;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     if (t42) goto bb20; else goto bb21;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
 bb20:
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     goto bb3;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
 bb21:
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
     goto bb17;
-#line 254 "selfhost/cli/bound_kept.hero"
+#line 258 "selfhost/cli/bound_kept.hero"
 bb22:
-#line 259 "selfhost/cli/bound_kept.hero"
+#line 263 "selfhost/cli/bound_kept.hero"
     t45 = h12_at;
-#line 259 "selfhost/cli/bound_kept.hero"
+#line 263 "selfhost/cli/bound_kept.hero"
     t46 = h5_line;
-#line 259 "selfhost/cli/bound_kept.hero"
+#line 263 "selfhost/cli/bound_kept.hero"
     t47 = hero_str_len(t46);
-#line 259 "selfhost/cli/bound_kept.hero"
+#line 263 "selfhost/cli/bound_kept.hero"
     t48 = t45 < t47;
-#line 259 "selfhost/cli/bound_kept.hero"
+#line 263 "selfhost/cli/bound_kept.hero"
     if (t48) goto bb23; else goto bb24;
-#line 259 "selfhost/cli/bound_kept.hero"
+#line 263 "selfhost/cli/bound_kept.hero"
 bb23:
     t49 = h5_line;
-#line 260 "selfhost/cli/bound_kept.hero"
+#line 264 "selfhost/cli/bound_kept.hero"
     t50 = h12_at;
-#line 260 "selfhost/cli/bound_kept.hero"
+#line 264 "selfhost/cli/bound_kept.hero"
     t51 = ((void)((t49.ptr == NULL || t50 < 0 || t50 >= t49.len) ? ((void)hero_str_byte(t49, t50), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t49.ptr[t50]);
-#line 260 "selfhost/cli/bound_kept.hero"
+#line 264 "selfhost/cli/bound_kept.hero"
     h13_b = t51;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     t52 = h13_b;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     t53 = UINT64_C(92);
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     t54 = t52 == t53;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     h14_b4 = t54;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     if (t54) goto bb26; else goto bb27;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
 bb24:
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     goto bb3;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
 bb25:
-#line 266 "selfhost/cli/bound_kept.hero"
+#line 270 "selfhost/cli/bound_kept.hero"
     t60 = h13_b;
-#line 266 "selfhost/cli/bound_kept.hero"
+#line 270 "selfhost/cli/bound_kept.hero"
     t61 = UINT64_C(34);
-#line 266 "selfhost/cli/bound_kept.hero"
+#line 270 "selfhost/cli/bound_kept.hero"
     t62 = t60 == t61;
-#line 266 "selfhost/cli/bound_kept.hero"
+#line 270 "selfhost/cli/bound_kept.hero"
     if (t62) goto bb31; else goto bb32;
-#line 266 "selfhost/cli/bound_kept.hero"
+#line 270 "selfhost/cli/bound_kept.hero"
 bb26:
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     t55 = h11_quoted;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     h14_b4 = t55;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     goto bb27;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
 bb27:
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     t56 = h14_b4;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
     if (t56) goto bb28; else goto bb29;
-#line 262 "selfhost/cli/bound_kept.hero"
+#line 266 "selfhost/cli/bound_kept.hero"
 bb28:
     t57 = h12_at;
-#line 263 "selfhost/cli/bound_kept.hero"
+#line 267 "selfhost/cli/bound_kept.hero"
     t58 = INT64_C(2);
-#line 263 "selfhost/cli/bound_kept.hero"
+#line 267 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t57, t58, &t59)) hero_panic_overflow();
-#line 263 "selfhost/cli/bound_kept.hero"
+#line 267 "selfhost/cli/bound_kept.hero"
     h12_at = t59;
-#line 263 "selfhost/cli/bound_kept.hero"
+#line 267 "selfhost/cli/bound_kept.hero"
     goto bb22;
-#line 263 "selfhost/cli/bound_kept.hero"
+#line 267 "selfhost/cli/bound_kept.hero"
 bb29:
-#line 263 "selfhost/cli/bound_kept.hero"
+#line 267 "selfhost/cli/bound_kept.hero"
     goto bb25;
-#line 263 "selfhost/cli/bound_kept.hero"
+#line 267 "selfhost/cli/bound_kept.hero"
 bb30:
-#line 277 "selfhost/cli/bound_kept.hero"
+#line 281 "selfhost/cli/bound_kept.hero"
     t97 = h12_at;
-#line 277 "selfhost/cli/bound_kept.hero"
+#line 281 "selfhost/cli/bound_kept.hero"
     t98 = INT64_C(1);
-#line 277 "selfhost/cli/bound_kept.hero"
+#line 281 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t97, t98, &t99)) hero_panic_overflow();
-#line 277 "selfhost/cli/bound_kept.hero"
+#line 281 "selfhost/cli/bound_kept.hero"
     h12_at = t99;
-#line 277 "selfhost/cli/bound_kept.hero"
+#line 281 "selfhost/cli/bound_kept.hero"
     goto bb22;
-#line 277 "selfhost/cli/bound_kept.hero"
+#line 281 "selfhost/cli/bound_kept.hero"
 bb31:
-#line 267 "selfhost/cli/bound_kept.hero"
+#line 271 "selfhost/cli/bound_kept.hero"
     t63 = h11_quoted;
-#line 267 "selfhost/cli/bound_kept.hero"
+#line 271 "selfhost/cli/bound_kept.hero"
     t64 = !t63;
-#line 267 "selfhost/cli/bound_kept.hero"
+#line 271 "selfhost/cli/bound_kept.hero"
     h11_quoted = t64;
-#line 267 "selfhost/cli/bound_kept.hero"
+#line 271 "selfhost/cli/bound_kept.hero"
     goto bb30;
-#line 267 "selfhost/cli/bound_kept.hero"
+#line 271 "selfhost/cli/bound_kept.hero"
 bb32:
     t65 = h11_quoted;
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
     h15_b5 = t65;
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
     if (t65) goto bb33; else goto bb34;
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
 bb33:
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
     t66 = h13_b;
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
     t67 = h_emitmacroguard_starts_word(t66);
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
     h15_b5 = t67;
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
     goto bb34;
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
 bb34:
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
     t68 = h15_b5;
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
     if (t68) goto bb35; else goto bb36;
-#line 268 "selfhost/cli/bound_kept.hero"
+#line 272 "selfhost/cli/bound_kept.hero"
 bb35:
     t69 = h12_at;
-#line 269 "selfhost/cli/bound_kept.hero"
+#line 273 "selfhost/cli/bound_kept.hero"
     h16_start = t69;
-#line 269 "selfhost/cli/bound_kept.hero"
+#line 273 "selfhost/cli/bound_kept.hero"
     goto bb37;
-#line 269 "selfhost/cli/bound_kept.hero"
+#line 273 "selfhost/cli/bound_kept.hero"
 bb36:
-#line 269 "selfhost/cli/bound_kept.hero"
+#line 273 "selfhost/cli/bound_kept.hero"
     goto bb30;
-#line 269 "selfhost/cli/bound_kept.hero"
+#line 273 "selfhost/cli/bound_kept.hero"
 bb37:
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t70 = h12_at;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t71 = h5_line;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t72 = hero_str_len(t71);
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t73 = t70 < t72;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     h17_b6 = t73;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     if (t73) goto bb40; else goto bb41;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
 bb38:
     t79 = h12_at;
-#line 272 "selfhost/cli/bound_kept.hero"
+#line 276 "selfhost/cli/bound_kept.hero"
     t80 = INT64_C(1);
-#line 272 "selfhost/cli/bound_kept.hero"
+#line 276 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t79, t80, &t81)) hero_panic_overflow();
-#line 272 "selfhost/cli/bound_kept.hero"
+#line 276 "selfhost/cli/bound_kept.hero"
     h12_at = t81;
-#line 272 "selfhost/cli/bound_kept.hero"
+#line 276 "selfhost/cli/bound_kept.hero"
     goto bb37;
-#line 272 "selfhost/cli/bound_kept.hero"
+#line 276 "selfhost/cli/bound_kept.hero"
 bb39:
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t82 = h12_at;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t83 = h5_line;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t84 = hero_str_len(t83);
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t85 = t82 < t84;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     h18_b7 = t85;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     if (t85) goto bb43; else goto bb44;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
 bb40:
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t74 = h5_line;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t75 = h12_at;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t76 = ((void)((t74.ptr == NULL || t75 < 0 || t75 >= t74.len) ? ((void)hero_str_byte(t74, t75), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t74.ptr[t75]);
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t77 = h_emitmacroguard_in_word(t76);
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     h17_b6 = t77;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     goto bb41;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
 bb41:
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     t78 = h17_b6;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     if (t78) goto bb38; else goto bb39;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
 bb42:
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
     goto bb22;
-#line 271 "selfhost/cli/bound_kept.hero"
+#line 275 "selfhost/cli/bound_kept.hero"
 bb43:
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t86 = h5_line;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t87 = h12_at;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t88 = ((void)((t86.ptr == NULL || t87 < 0 || t87 >= t86.len) ? ((void)hero_str_byte(t86, t87), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t86.ptr[t87]);
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t89 = UINT64_C(40);
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t90 = t88 == t89;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     h18_b7 = t90;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     goto bb44;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
 bb44:
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     t91 = h18_b7;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
     if (t91) goto bb45; else goto bb46;
-#line 274 "selfhost/cli/bound_kept.hero"
+#line 278 "selfhost/cli/bound_kept.hero"
 bb45:
     t92 = h5_line;
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     t93 = h16_start;
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     t94 = h12_at;
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     t95 = hero_str_slice(t92, t93, t94);
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     t111 = h22_own22;
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     h22_own22 = t95;
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t111);
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     t96 = true;
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     hero_map_set(&(h1_out), &t95, &t96);
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     goto bb42;
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
 bb46:
-#line 275 "selfhost/cli/bound_kept.hero"
+#line 279 "selfhost/cli/bound_kept.hero"
     goto bb42;
 #line 1077361 "main.c"
 }
 
-#line 282 "selfhost/cli/bound_kept.hero"
+#line 286 "selfhost/cli/bound_kept.hero"
 HeroArrayHeader * h_cliboundkept_rows_of(HeroStr h0_text) {
-#line 282 "selfhost/cli/bound_kept.hero"
+#line 286 "selfhost/cli/bound_kept.hero"
     HeroArrayHeader * h1_out = {0}; int64_t h2_start; int64_t h3_at; HERO_NODEBUG bool h4_b0; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroStr t33; HERO_ENTRY_STOP; goto bb0;
-#line 282 "selfhost/cli/bound_kept.hero"
+#line 286 "selfhost/cli/bound_kept.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
-#line 283 "selfhost/cli/bound_kept.hero"
+#line 287 "selfhost/cli/bound_kept.hero"
     t31 = h5_own5;
-#line 283 "selfhost/cli/bound_kept.hero"
+#line 287 "selfhost/cli/bound_kept.hero"
     h5_own5 = t1;
-#line 283 "selfhost/cli/bound_kept.hero"
+#line 287 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t31);
-#line 283 "selfhost/cli/bound_kept.hero"
+#line 287 "selfhost/cli/bound_kept.hero"
     t32 = h1_out;
-#line 283 "selfhost/cli/bound_kept.hero"
+#line 287 "selfhost/cli/bound_kept.hero"
     hero_array_incref(t1);
-#line 283 "selfhost/cli/bound_kept.hero"
+#line 287 "selfhost/cli/bound_kept.hero"
     h1_out = t1;
-#line 283 "selfhost/cli/bound_kept.hero"
+#line 287 "selfhost/cli/bound_kept.hero"
     hero_array_decref(t32);
     t2 = INT64_C(0);
-#line 284 "selfhost/cli/bound_kept.hero"
+#line 288 "selfhost/cli/bound_kept.hero"
     h2_start = t2;
     t3 = INT64_C(0);
-#line 285 "selfhost/cli/bound_kept.hero"
+#line 289 "selfhost/cli/bound_kept.hero"
     h3_at = t3;
-#line 285 "selfhost/cli/bound_kept.hero"
+#line 289 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 285 "selfhost/cli/bound_kept.hero"
+#line 289 "selfhost/cli/bound_kept.hero"
 bb1:
-#line 287 "selfhost/cli/bound_kept.hero"
+#line 291 "selfhost/cli/bound_kept.hero"
     t4 = h3_at;
-#line 287 "selfhost/cli/bound_kept.hero"
+#line 291 "selfhost/cli/bound_kept.hero"
     t5 = h0_text;
-#line 287 "selfhost/cli/bound_kept.hero"
+#line 291 "selfhost/cli/bound_kept.hero"
     t6 = hero_str_len(t5);
-#line 287 "selfhost/cli/bound_kept.hero"
+#line 291 "selfhost/cli/bound_kept.hero"
     t7 = t4 <= t6;
-#line 287 "selfhost/cli/bound_kept.hero"
+#line 291 "selfhost/cli/bound_kept.hero"
     if (t7) goto bb2; else goto bb3;
-#line 287 "selfhost/cli/bound_kept.hero"
+#line 291 "selfhost/cli/bound_kept.hero"
 bb2:
     t8 = h3_at;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t9 = h0_text;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t10 = hero_str_len(t9);
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t11 = t8 == t10;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     h4_b0 = t11;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     if (t11) goto bb6; else goto bb5;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
 bb3:
-#line 293 "selfhost/cli/bound_kept.hero"
+#line 297 "selfhost/cli/bound_kept.hero"
     t30 = h1_out;
 #line 1077422 "main.c"
     hero_array_incref(t30);
@@ -1077425,67 +1077425,67 @@ bb3:
     hero_str_release_at(&h6_own6);
     return t30;
 bb4:
-#line 291 "selfhost/cli/bound_kept.hero"
+#line 295 "selfhost/cli/bound_kept.hero"
     t27 = h3_at;
-#line 291 "selfhost/cli/bound_kept.hero"
+#line 295 "selfhost/cli/bound_kept.hero"
     t28 = INT64_C(1);
-#line 291 "selfhost/cli/bound_kept.hero"
+#line 295 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t27, t28, &t29)) hero_panic_overflow();
-#line 291 "selfhost/cli/bound_kept.hero"
+#line 295 "selfhost/cli/bound_kept.hero"
     h3_at = t29;
-#line 291 "selfhost/cli/bound_kept.hero"
+#line 295 "selfhost/cli/bound_kept.hero"
     goto bb1;
-#line 291 "selfhost/cli/bound_kept.hero"
+#line 295 "selfhost/cli/bound_kept.hero"
 bb5:
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t12 = h0_text;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t13 = h3_at;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t14 = ((void)((t12.ptr == NULL || t13 < 0 || t13 >= t12.len) ? ((void)hero_str_byte(t12, t13), hero_unreachable()) : (void)0), (int64_t)(unsigned char)t12.ptr[t13]);
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t15 = UINT64_C(10);
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t16 = t14 == t15;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     h4_b0 = t16;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     goto bb6;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
 bb6:
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     t17 = h4_b0;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
     if (t17) goto bb7; else goto bb8;
-#line 288 "selfhost/cli/bound_kept.hero"
+#line 292 "selfhost/cli/bound_kept.hero"
 bb7:
     t19 = h0_text;
-#line 289 "selfhost/cli/bound_kept.hero"
+#line 293 "selfhost/cli/bound_kept.hero"
     t20 = h2_start;
-#line 289 "selfhost/cli/bound_kept.hero"
+#line 293 "selfhost/cli/bound_kept.hero"
     t21 = h3_at;
-#line 289 "selfhost/cli/bound_kept.hero"
+#line 293 "selfhost/cli/bound_kept.hero"
     t22 = hero_str_slice(t19, t20, t21);
-#line 289 "selfhost/cli/bound_kept.hero"
+#line 293 "selfhost/cli/bound_kept.hero"
     t33 = h6_own6;
-#line 289 "selfhost/cli/bound_kept.hero"
+#line 293 "selfhost/cli/bound_kept.hero"
     h6_own6 = t22;
-#line 289 "selfhost/cli/bound_kept.hero"
+#line 293 "selfhost/cli/bound_kept.hero"
     hero_str_decref(t33);
-#line 289 "selfhost/cli/bound_kept.hero"
+#line 293 "selfhost/cli/bound_kept.hero"
     hero_array_push_owned(&h1_out, &t22);
     t24 = h3_at;
-#line 290 "selfhost/cli/bound_kept.hero"
+#line 294 "selfhost/cli/bound_kept.hero"
     t25 = INT64_C(1);
-#line 290 "selfhost/cli/bound_kept.hero"
+#line 294 "selfhost/cli/bound_kept.hero"
     if (__builtin_add_overflow(t24, t25, &t26)) hero_panic_overflow();
-#line 290 "selfhost/cli/bound_kept.hero"
+#line 294 "selfhost/cli/bound_kept.hero"
     h2_start = t26;
-#line 290 "selfhost/cli/bound_kept.hero"
+#line 294 "selfhost/cli/bound_kept.hero"
     goto bb4;
-#line 290 "selfhost/cli/bound_kept.hero"
+#line 294 "selfhost/cli/bound_kept.hero"
 bb8:
-#line 290 "selfhost/cli/bound_kept.hero"
+#line 294 "selfhost/cli/bound_kept.hero"
     goto bb4;
 #line 1077491 "main.c"
 }
