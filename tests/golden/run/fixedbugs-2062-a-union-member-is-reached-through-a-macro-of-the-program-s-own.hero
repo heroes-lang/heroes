@@ -1,0 +1,18 @@
+# fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
+#
+# The third spelling the repaired note gives: a header of the program's own
+# that includes the group's and defines `#define fd via.fd`, named by the
+# group in that header's place, so `fd` stays a field of the record and a
+# construction names it as the reader first wrote it.
+
+extern "fixedbugs-2062-macro.h"
+    record Tagged tag tagged
+        kind: i32
+        fd: i32
+        handle: ptr
+    function tg_kind(@t: Tagged lent) -> i32
+
+function main()
+    t @= Tagged(kind: 2, fd: 7)
+    print(tg_kind(@t))
+    print(t.fd)

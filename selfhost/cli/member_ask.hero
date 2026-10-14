@@ -6,10 +6,10 @@
 # C reaches `fd` in `struct tagged { int kind; union { int fd; void *handle;
 # } via; }` as `t.via.fd`, and a field `fd: i32` of `record Tagged tag
 # tagged` is refused by clang, *no member named 'fd' in 'struct tagged'*. The
-# message said the header declares no `fd`, which is false, and sent the
-# author to a spelling or another header, neither of which builds: nine of
-# panel 215's ten blind readers met it, and the tenth bound the record
-# `partial` with `kind` alone, which builds.
+# message says so, truly; its note sent the author to a spelling or another
+# header, neither of which builds. Nine of panel 215's ten blind readers
+# wrote that record from the specification; the tenth bound it `partial`
+# with `kind` alone, which builds.
 #
 # **So a refused round whose clang found no such member asks the header's
 # layout** of the records each list's units read, the record-layout dump the

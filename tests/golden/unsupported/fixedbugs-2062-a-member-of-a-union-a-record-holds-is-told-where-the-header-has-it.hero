@@ -2,16 +2,18 @@
 #
 # SYMPTOM: `fd` and `handle`, members of the union `via` that `struct tagged`
 # holds, written as the record's fields: *`...` declares no `fd` in `struct
-# tagged`*, its note sending the author to a spelling or another header,
-# neither of which builds. Nine of panel 215's ten blind readers wrote this.
+# tagged`*, true of C, its note sending the author to a spelling or another
+# header, neither of which builds. Nine of panel 215's ten blind readers
+# wrote this record from the specification.
 #
-# CAUSE: clang says *no member named 'fd' in 'struct tagged'*, which is true
-# of the type itself, and the reader took it for a member the header lacks.
+# CAUSE: the note read clang's *no member named 'fd' in 'struct tagged'* as a
+# member the header lacks.
 #
-# FIX: the refused round asks the header's layout (`cli/member_ask.hero`) and
-# the field is told inside `via`, as `via.fd`, with the record `partial` and
-# a function of the program's own, the spellings that build today
-# (`emit/ffi_nested.hero`). What the language accepts does not move.
+# FIX: the refused round asks the header's layout (`cli/member_ask.hero`); the
+# first line stays, and the notes say where `fd` is, `via.fd`, and the
+# spellings that build today: the record `partial`, a function of the
+# program's own, a macro (`emit/ffi_nested.hero`). What the language accepts
+# does not move.
 
 extern "fixedbugs-2062-records.h"
     record Tagged tag tagged

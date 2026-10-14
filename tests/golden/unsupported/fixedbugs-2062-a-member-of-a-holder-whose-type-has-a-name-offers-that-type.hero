@@ -1,10 +1,10 @@
 # fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
 #
 # SYMPTOM: `fd`, a member of `via`, whose type `union named_u` has a name:
-# *declares no `fd`*, false.
+# *declares no `fd`*, its note's two fixes unable to work.
 #
-# FIX: told inside `via`, and since its type has a name, a third route: that
-# type bound as a record of the group, `via` a field of it.
+# FIX: the note says `fd` is inside `via`, and since its type has a name, one
+# more route: that type bound as a record of the group, `via` a field of it.
 
 extern "fixedbugs-2062-records.h"
     record Holds tag holds
