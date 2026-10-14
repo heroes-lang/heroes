@@ -60,6 +60,19 @@ nobody wrote over each construction, in place of its whole write and its
 `memset`, is reported at every level, two reports each. The Windows box, which
 panel 194 named beside Linux, is unrun.
 
+**Which census structs M-core-packages constructs, measured 2026-10-14**
+for issue 1337 (`docs/measurements/044-the-census-structs-m-core-packages-constructs-are-sockaddr-and-sha256-ctx-by-one-route-in-one-binding-or-two.md`):
+over the 37 C functions that page names or leaves as routes, read from
+clang's own AST on this Mac and on glibc, the records a binding must build
+with an array longer than 8 are `sockaddr` (`net`, for certain), `SHA256_CTX`
+(`crypto/sha256`, only by OpenSSL's low-level route) and `fd_set` (`net`, only
+if it waits on `select`, which the page does not name): **one binding or
+two**. Panel 178's spec-warden made R1 turn to object if every long-array
+construction stood in two bindings or fewer; that condition holds on the
+page's plan, and what follows from it is the author's or a sitting's. For
+issue 1333 it counts **no** string field the program writes, so route T's
+first return condition is not met.
+
 **Scheduled 2026-09-18** out of panel 164, which recorded *a real five-field
 `utsname` needs 1280 literal zeros*. **This file opened 2026-09-25**, with
 panel 178, while the milestone's row stays `scheduled`: one `**OPEN**` row at a
