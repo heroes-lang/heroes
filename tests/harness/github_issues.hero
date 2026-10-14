@@ -271,13 +271,18 @@ function kind_of(issue: Listed) -> str
     return label_value(issue: issue, name: "kind")
 
 # Whether `issue` is the project's own (the module's paragraph above): no pull
-# request, written by an account GitHub calls `OWNER`, `MEMBER` or
-# `COLLABORATOR`, its body the transcription program's rendering.
+# request, and written by the project (`by_project`).
 function own(issue: Listed) -> bool
-    if issue.pull
-        return false
-    belongs = issue.association == "OWNER" || issue.association == "MEMBER" || issue.association == "COLLABORATOR"
-    return belongs && rendered(issue.body)
+    return !issue.pull && by_project(association: issue.association, body: issue.body)
+
+# Whether an issue whose author GitHub calls `association`, holding `body`, is
+# the project's writing: an account GitHub calls `OWNER`, `MEMBER` or
+# `COLLABORATOR`, and the transcription program's rendering. The one rule the
+# checks here (`own`) and the `link` word (`issue_links.targets`, defect 2063)
+# ask, each of its own record of an issue.
+function by_project(association: str, body: str) -> bool
+    belongs = association == "OWNER" || association == "MEMBER" || association == "COLLABORATOR"
+    return belongs && rendered(body)
 
 # Whether `body` opens as the transcription program renders every issue,
 # `Filed ` and a day `YYYY-MM-DD`.
