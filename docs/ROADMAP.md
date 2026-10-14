@@ -14,8 +14,8 @@ preamble and its items).
 
 | | |
 |---|---|
-| **Current milestone** | none **OPEN** since M-typed-inspection's close, 2026-10-13. Row 66, **M-buildable-structs**, stays `scheduled` (panels 178 and 194) |
-| **Next** | the sitting the author asked for at M-typed-inspection's close on who is told when clang refuses a header of the program's own, since six repairs went one shape at a time (defects 2035 to 2053, [064](records/journal/064-typed-inspection.md)); panel 213's ratification (https://github.com/heroes-lang/heroes/issues/2037); the formatter's probe M-inferred-cell's changes to `selfhost/print/` still owe (three of its six runs ended unfinished on 2026-10-11, none refused); and panel 194's landing as **M-buildable-structs**, row 66 |
+| **Current milestone** | **M-buildable-structs**, row 66, **OPEN** since 2026-10-14 by the author's instruction, in its lane (panels 178 and 194; [its page](roadmap/milestones/M-buildable-structs.md)). Panel 194's R1 with K had landed in batch 13, 2026-10-06 to 07 |
+| **Next** | the sitting the author asked for at M-typed-inspection's close on who is told when clang refuses a header of the program's own, since six repairs went one shape at a time (defects 2035 to 2053, [064](records/journal/064-typed-inspection.md)); panel 213's ratification (https://github.com/heroes-lang/heroes/issues/2037); and the formatter's probe M-inferred-cell's changes to `selfhost/print/` still owe (three of its six runs ended unfinished on 2026-10-11, none refused) |
 | **Last closed** | **M-typed-inspection**, 2026-10-13 ([064](records/journal/064-typed-inspection.md)) — a stopped program lists the author's bindings alone and shows their values in Heroes' syntax through one fixed formatter the editor loads, the names keeping the C prefix that guards them (panel 213) · before it **M-issue-files** ([063](records/journal/063-issue-files.md)) · v1 **reached** at M-selfhost-fixpoint, 2026-08-18 |
 | Milestones closed | **65** of 84 · **65** tags matching `m*`, the legacy `m0`-`m8` included |
 | The compiler | **163,392** lines of Heroes in **624** modules (`find selfhost -name '*.hero'`) · the seed **1,348,532** lines of C, regenerated at each batch's close and the fixpoint verified byte-identical |
@@ -41,8 +41,8 @@ moved runs after the push, beside the CI, as § The optimistic chain says since
 
 ## The chain
 
-One table, one row per milestone, **closed first and scheduled after**: rows 1–64
-are done, in the order they closed, row 65 is open, and rows 66–84 are what is
+One table, one row per milestone, **closed first and scheduled after**: rows 1–65
+are done, in the order they closed, row 66 is open, and rows 67–84 are what is
 next, in the order they will be taken. **This sentence said 1–37 and 38–59
 until 2026-09-10**, 1–47 and 48–71 until 2026-09-12, and 1–51 and 52–76 until
 2026-09-13, when two closed rows were found parked at 75 and 76 behind the
@@ -83,7 +83,10 @@ it: the two late closes take 63 and 64 in the order they closed, M-typed-inspect
 one number in this file that no instrument reads, so it is
 restated here and re-read at every close with § Where we are — and at every
 OPENING too, which is what moved it twice on one day, what caught it at row 59,
-and what caught it again here. `warrant` is why a milestone exists: **v1** (the self-hosting
+and what caught it again here. Then 1–64, 65 open and 66–84 until
+M-typed-inspection closed on 2026-10-13, opening no row and restating neither;
+**the OPENING of M-buildable-structs on 2026-10-14 found it**, row 66 open and
+the table still 84 long by a count over it. `warrant` is why a milestone exists: **v1** (the self-hosting
 finish line), **closure list** (design.md §1.0 — the compiler needs it), **§1.1**
 (comprehension is the objective), or **scheduled, no warrant**.
 
@@ -157,7 +160,7 @@ and why one overtook another are in `docs/roadmap/scheduling.md`.
 | 63 | **M-inferred-cell** | done 2026-10-10 | `m-inferred-cell`, deleted 2026-10-11 and placed again the same day on `08a8f8c5` | [062](records/journal/062-inferred-cell.md) | a mutable cell declared by its own symbol, `@=`, and typed by its value as a binding is; a cell nothing re-binds refused with a certain fix; the tree rewritten through the compiler's own fix. Panel 209, ratified 2026-10-10; four steps in one lane the same day |
 | 64 | **M-issue-files** | done 2026-10-12 | `m-issue-files` | [063](records/journal/063-issue-files.md) | every item this project tracks is one GitHub issue: one file each of `issues/` first, a card on each, then 2,029 issues imported in the order they were born with their own days, then GitHub alone and the folder out of the tree. Opened 2026-10-04 by author instruction, ahead of every scheduled row because the lists it replaces are where every other milestone's work is filed |
 | 65 | **M-typed-inspection** | done 2026-10-13 | `m-typed-inspection` | [064](records/journal/064-typed-inspection.md) | a stopped program shows Heroes values: the frame lists the author's bindings alone, the emitter declaring what it invented `nodebug`, and one fixed formatter, `editors/lldb/heroes_lldb.py`, which the editor loads, shows a record, a `str`, a `[T]`, a `{K: V}`, a `T?`'s live arm and a variant's case in Heroes' syntax; the names keep their C prefix, refused in the emitted C by panel 213's two vetoes and left to the author's answer on its issue 2037 · scheduled, no warrant |
-| 66 | **M-buildable-structs** | scheduled | — | — | a C struct with long arrays is built by naming the fields that matter and ending with `rest: zero`. Panel 178 counted 42 public structs on Darwin, 29 and 23 on the two Linux legs, with an array longer than 8, where the repository has none; today a five-field `utsname` needs 1280 literal zeros (panel 164) · **§1.11**, **§1.12** |
+| 66 | **M-buildable-structs** | **OPEN** | — | — | a C struct with long arrays is built by naming the fields that matter and ending with `rest: zero`. Panel 178 counted 42 public structs on Darwin with an array longer than 8, and panel 194's recount 33 and 27 on the two Linux legs, where the repository has none; a five-field `utsname` needed 1280 literal zeros until `rest: zero` landed in batch 13 (panel 164) · **§1.11**, **§1.12** |
 | 67 | **M-core-packages** | scheduled | — | — | small packages that compose, organised as Go's tree, in Heroes or over C |
 | 68 | **M-package-manager** | scheduled | — | — | `heroes add`/`heroes fetch`; bindings instead of a standard library |
 | 69 | **M-web-framework** | scheduled | — | — | composes the core packages, Go/Echo style: explicit routes, records, no magic |

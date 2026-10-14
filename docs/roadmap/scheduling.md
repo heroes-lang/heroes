@@ -398,6 +398,14 @@ nineteen scheduled rows 66–84 in the order they stood; a record citing an old
 number reads it at its date. § The chain holds 84 rows with no gap, by a count
 over the table and by `site/src/lib/chain.ts`, which refuses a gap at build time.
 
+**2026-10-14, M-buildable-structs opened at row 66, by the author's
+instruction**, meant as: *when you have finished, start the next step*, given
+once M-typed-inspection had closed on 2026-10-13. It is the first scheduled row,
+so nothing overtook anything and no row moved; § The chain holds 84 rows with no
+gap by a count over the table. Panels 178 and 194 sat on it; what their
+landing already did, on 2026-10-06 and while the row stayed `scheduled`, is
+the milestone's page.
+
 ---
 
 **What used to stand under the ROADMAP lives in `docs/roadmap/`** since

@@ -1,5 +1,28 @@
 # M-buildable-structs — the structs a program can build
 
+**Opened 2026-10-14, at row 66, by the author's instruction**, meant as: *when
+you have finished, start the next step*, given once M-typed-inspection had
+closed; in its own lane, `lane-buildable-structs`, from `fab354f7`.
+
+**What the opening found, which this page had not said**: panel 194's R1 with
+K had landed already, under this milestone's name, while its row stayed
+`scheduled`. `838d2719` (step 1, `rest: zero`, the bit in `Checked`, the
+whole-object zero `emit/zeroed.hero` writes), `a975e3d6` (step 2, the
+`ffi_field_type` note naming `i8`) and `54c5f618` (step 3, § 13's two
+sentences), all of 2026-10-06, reached the trunk through lane b13-bs's merge
+into batch 13's round (`3e2a5035`). Panel 196's spec-warden measured the two
+sentences at 9,583 real, panel 194's spec-warden's prediction (9,583 ± 3)
+scored a hit, and the round's `--refresh` priced the merged document at 9,831
+(`5c782a8f`, 2026-10-07; the ledger's row 7467). Defects 187, 397, 401 and
+549 have changed the form's own modules since (`git log` over them, read
+2026-10-14). What the milestone still owes is the open `feature` and `task` issues of its
+GitHub milestone, 1332 to 1337, the first of which is the landing that already
+happened, and the walk every tool that re-prints a program owes a new form,
+which the landing of 2026-10-06 did not finish: neither highlighter paints
+`rest: zero`, and `heroes grammar` lists fourteen contextual words and not
+these two, though the parser reads them in one position (both read
+2026-10-14).
+
 **Scheduled 2026-09-18** out of panel 164, which recorded *a real five-field
 `utsname` needs 1280 literal zeros*. **This file opened 2026-09-25**, with
 panel 178, while the milestone's row stays `scheduled`: one `**OPEN**` row at a
