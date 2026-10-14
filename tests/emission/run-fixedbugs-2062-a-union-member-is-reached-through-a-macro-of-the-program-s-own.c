@@ -173,7 +173,7 @@ void h_fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown_main(void
 #line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
 #define h0_t (*hero_lend_h0_t)
 #line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
-    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.main", "t"); HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG struct tagged t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG struct tagged t5; HERO_NODEBUG int32_t t6; HERO_ENTRY_STOP; goto bb0;
+    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062aunionmemberisreachedthroughamacrooftheprogramsown.main", "t"); HERO_NODEBUG int32_t t1, t2, t4, t6; HERO_NODEBUG struct tagged t3, t5; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-macro-of-the-program-s-own.hero"
 bb0:
     t1 = INT64_C(2);

@@ -165,7 +165,7 @@ void h_fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown_main(v
 #line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
 #define h0_t (*hero_lend_h0_t)
 #line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
-    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.main", "t"); HERO_NODEBUG int32_t t1; HERO_NODEBUG struct tagged t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_ENTRY_STOP; goto bb0;
+    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062aunionmemberisreachedthroughafunctionoftheprogramsown.main", "t"); HERO_NODEBUG int32_t t1, t3, t4, t5; HERO_NODEBUG struct tagged t2; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-2062-a-union-member-is-reached-through-a-function-of-the-program-s-own.hero"
 bb0:
     t1 = INT64_C(2);

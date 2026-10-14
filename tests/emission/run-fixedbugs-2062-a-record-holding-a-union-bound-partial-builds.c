@@ -161,7 +161,7 @@ void h_fixedbugs2062arecordholdingaunionboundpartialbuilds_main(void) {
 #line 12 "tests/golden/run/fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero"
 #define h0_t (*hero_lend_h0_t)
 #line 12 "tests/golden/run/fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero"
-    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062arecordholdingaunionboundpartialbuilds.main", "t"); HERO_NODEBUG int32_t t1; HERO_NODEBUG struct tagged t2; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0;
+    struct tagged *const hero_lend_h0_t = (struct tagged *)hero_lend_local(sizeof(struct tagged), "fixedbugs2062arecordholdingaunionboundpartialbuilds.main", "t"); HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG struct tagged t2; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-2062-a-record-holding-a-union-bound-partial-builds.hero"
 bb0:
     t1 = INT64_C(2);
