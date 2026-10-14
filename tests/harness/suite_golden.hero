@@ -188,6 +188,9 @@ function shape_emit() -> Shape
 # asked for 188.
 # **236 at batch 18's gate, 2026-10-10**: its lanes' cases took the directory
 # to 236, past 188 by more than a quarter, and the suite asked for 236.
+# **300 at the round's close in lane land-214, 2026-10-14**: the suite told
+# `FLOOR unsupported` at 298, the round's cases past 236 by more than a
+# quarter, and defect 2059's two more made 300, which it asks for.
 function shape_unsupported() -> Shape
     return Shape(
         name: "unsupported",
@@ -196,7 +199,7 @@ function shape_unsupported() -> Shape
         flags: NO_FLAGS,
         on_stderr: true,
         want_code: 1,
-        least: 236,
+        least: 300,
         watched: true,
         silent_stdout: true,
         library_skip: true
