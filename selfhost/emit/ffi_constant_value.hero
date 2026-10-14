@@ -1,0 +1,165 @@
+# What clang said of a header constant's value, told on the constant's own
+# line (defects 2071 and 2072; design.md §4.19, §4.17; CLAUDE.md §7's named
+# exception, whose first member, a constant whose header value C will not
+# build, this reaches for a number's constant as `emit/ffi_value.hero` does
+# for a record's).
+#
+# The accessor of a constant of the program's own headers returns its value
+# at the constant's line (defect 2068), and for an integer it does so inside
+# `emit/value_check.hero`'s region, where clang's warnings that the value is
+# undefined are errors. So clang's refusal of the value lands in a file this
+# compilation owns, and `emit/ffi_site.hero`'s gate, the location, lets it
+# through. Two kinds come back:
+#
+# - **a value C leaves undefined**: an error naming one of the region's
+#   warnings, *shift count >= width of type*, *division by zero is
+#   undefined*, *overflow in expression*. Told by `emit/ffi.hero` before any
+#   other reader, so `1 / 0`, which the constancy assertion also refuses, is
+#   told by why and not as *an object or a macro that expands to one*;
+# - **a value C cannot read**: *use of undeclared identifier
+#   'undeclared_thing'*, *expected ')'*, an empty value's *should return a
+#   value*. Told after every other reader, so a name the header lacks and a
+#   value of another type, which the type assertion before the accessor
+#   refuses first, are told as they were.
+
+use ast
+use source
+use diag
+use check/state
+use check/render
+use ir/containers
+use emit/ffi_lookup
+use emit/ffi_site
+use emit/ffi_value
+use emit/clang_place
+use emit/value_check
+use parse
+use resolve
+use checker
+use ir/lower
+
+# What clang says of `return;` in a function that returns a value, which is
+# what the accessor reads when the header's value is empty: told as that, not
+# by the name of a C function the author never wrote.
+constant EMPTY: str
+    "should return a value"
+
+# The diagnostic for an error clang wrote at the line of a constant whose
+# value is held, or none where the line is not that; with `undefined_only`,
+# none but for an error naming one of the region's warnings.
+function refused(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, line: str, stderr: str, undefined_only: bool) -> diag.Diagnostic?
+    at = ffi_site.location(s, line)?
+    said = ffi_lookup.trimmed(clang_place.without_return(at.rest))
+
+    if !clang_place.same_bytes(text: said, from: 0, part: ffi_value.ERROR)
+        return fail(code: "none", msg: "not an error")
+    message = said.slice(from: ffi_value.ERROR.len(), to: said.len())
+    undefined = value_check.undefined(message)
+
+    if undefined_only && !undefined
+        return fail(code: "none", msg: "not a value C leaves undefined")
+    found = ffi_site.extern_at_line(p, s, decls, file: at.file, at_line: at.line)?
+
+    if !value_check.asked(c, s, decls, found.f)
+        return fail(code: "none", msg: "not a constant whose value is held")
+    known = ffi_lookup.declaration(s, decls, name: found.name)?
+    none: [str] = []
+    declared = render.render_ty(c.types, s, decls, found.f.result, none)
+    rows = ffi_lookup.lines(text: stderr)
+    words: str @= ffi_value.without_flag(message)
+
+    if !clang_place.offset_of(text: message, needle: EMPTY).is_err()
+        words @ "it expands to nothing"
+    return ok(
+        told(name: found.name, declared: declared, known: known, words: words, undefined: undefined, spelled: ffi_value.spelled_at(rows, line: line, name: found.name), program: s.files[at.file].name)
+    )
+
+# The diagnostic: the header's value refused, the header's line that spells
+# it, and what a group's constant is.
+function told(name: str, declared: str, known: ffi_lookup.Declared, words: str, undefined: bool, spelled: ffi_value.Spelled?, program: str) -> diag.Diagnostic
+    where: str @= ""
+    file: str @= known.header
+
+    if !spelled.is_err()
+        file @ ffi_value.shown(path: spelled.must().path, header: known.header, program: program)
+        where @ " at line " + spelled.must().row.to_str()
+
+        if file != known.header
+            where @ where + " of `" + file + "`"
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_constant_type",
+        message: "`" + name + "` in `" + known.header + "` cannot be declared `" + declared + "`: clang refuses the header's value" + where + ": " + words,
+        span: known.span
+    )
+
+    if !spelled.is_err() && !spelled.must().quoted.is_err()
+        d.notes @ d.notes.push(
+            "`" + file + "` line " + spelled.must().row.to_str() + " reads `" + spelled.must().quoted.must() + "`"
+        )
+
+    if undefined
+        d.notes @ d.notes.push(
+            "C leaves this value undefined: a program reading `" + name + "` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines"
+        )
+    else
+        d.notes @ d.notes.push(
+            "C cannot read the header's value of `" + name + "` as an expression, so no program that reads it can be built. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant the header spells as one"
+        )
+    return d
+
+## Tests
+
+constant TEXT: str
+    "extern \"m.h\"\n    constant K_SHIFT: i64\n    constant K_F: f64\n\nfunction main()\n    print(K_SHIFT, K_F)\n"
+
+function read_back(stderr: str, undefined_only: bool) -> [diag.Diagnostic]
+    parsed = parse.parse(TEXT)
+    s = source.new_source(name: "t.hero", text: TEXT)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    found: [diag.Diagnostic] @= []
+
+    for line in ffi_lookup.lines(text: stderr)
+        d = refused(s, parsed.decls, low.program, c, line: line, stderr: stderr, undefined_only: undefined_only)
+
+        if !d.is_err()
+            found @ found.push(d.must())
+
+    return found
+
+# clang's words as Apple clang 21 wrote them at the accessor of `#define
+# K_SHIFT (1 << 40)`, and the Windows form of them.
+test "a value C leaves undefined is told on the constant's line, the header's line quoted (defect 2072)"
+    mac = "t.hero:2:12: error: shift count >= width of type [-Werror,-Wshift-count-overflow]\n    2 |     return K_SHIFT;\n      |            ^~~~~~~\n./m.h:20:20: note: expanded from macro 'K_SHIFT'\n   20 | #define K_SHIFT (1 << 40)\n      |                    ^  ~~\n1 error generated.\n"
+    said = read_back(mac, undefined_only: true)
+    assert said.len() == 1
+    assert said[0].code == "ffi_constant_type"
+    assert said[0].message == "`K_SHIFT` in `m.h` cannot be declared `i64`: clang refuses the header's value at line 20: shift count >= width of type"
+    assert said[0].notes[0] == "`m.h` line 20 reads `#define K_SHIFT (1 << 40)`"
+    assert strings_hold(text: said[0].notes[1], needle: "undefined")
+    windows = "t.hero:2:12: error: shift count >= width of type [-Werror,-Wshift-count-overflow]\r\n.\\m.h:20:20: note: expanded from macro 'K_SHIFT'\r\n   20 | #define K_SHIFT (1 << 40)\r\n"
+    assert read_back(windows, undefined_only: true)[0].message == said[0].message
+
+test "a value C cannot read is told in clang's words, after the other readers (defect 2071)"
+    unread = "t.hero:2:12: error: use of undeclared identifier 'undeclared_thing'\n./m.h:10:16: note: expanded from macro 'K_SHIFT'\n   10 | #define K_SHIFT (undeclared_thing + 1)\n"
+    assert read_back(unread, undefined_only: true).len() == 0
+    said = read_back(unread, undefined_only: false)
+    assert said.len() == 1
+    assert said[0].message == "`K_SHIFT` in `m.h` cannot be declared `i64`: clang refuses the header's value at line 10: use of undeclared identifier 'undeclared_thing'"
+    assert strings_hold(text: said[0].notes[1], needle: "cannot read")
+
+    # An empty value, told as that and not by the accessor's C name.
+    empty = read_back(
+        "t.hero:2:5: error: non-void function 'h_t_K_SHIFT' should return a value [-Wreturn-mismatch]\n",
+        undefined_only: false
+    )
+    assert empty[0].message == "`K_SHIFT` in `m.h` cannot be declared `i64`: clang refuses the header's value: it expands to nothing"
+
+    # A float's line, and a warning: neither is this reader's.
+    assert read_back("t.hero:3:12: error: expected expression\n", undefined_only: false).len() == 0
+    assert read_back("t.hero:2:12: warning: shift count >= width of type [-Wshift-count-overflow]\n", undefined_only: false).len() == 0
+
+function strings_hold(text: str, needle: str) -> bool
+    return !clang_place.offset_of(text: text, needle: needle).is_err()
