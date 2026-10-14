@@ -1,0 +1,6 @@
+error[ffi_unknown_name]: `fixedbugs-2073-names.h` declares `names_val` only where `stdio.h`, a header of C's own it reads itself, is read before every line of it: clang read it where its group stands and could not find it
+  at tests/golden/unsupported/fixedbugs-2073-a-name-declared-after-a-c-header-it-includes-itself-is-told-so.hero:11:5
+     |
+  11 |     function names_val() -> i32  #~ ffi_unknown_name
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: write a group naming `stdio.h` above this one, which a module's unit then reads first; a group binds at least one name, and one holding only a record stands where it is written (§ 13)

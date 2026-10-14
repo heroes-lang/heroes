@@ -1,0 +1,18 @@
+# fixedbugs, defect 2073, lane b17-ffi, 2026-10-14.
+#
+# SYMPTOM: a header that compiles once `<stdio.h>` is written before it, and
+# includes `<stdio.h>` itself below a line of its own, was told *a header of
+# C's own it uses and does not include*, false: the move the note offered
+# builds, its reason did not hold (found beside defect 2047: `insys.h`,
+# `#define off_t ...` above its `#include <stdio.h>`).
+#
+# FIX: clang's `-H` list says whether the header enters the file `<stdio.h>`
+# resolves to (`cli/header_reads.hero`), and the note says *it reads itself*
+# where it does. Here the header's own `#error` stands for the line that
+# needs `<stdio.h>` first, so the words are alike on every platform.
+
+extern "fixedbugs-2073-first.h"  #~ ffi_header_refused
+    function first_six() -> i64
+
+function main()
+    print(first_six())
