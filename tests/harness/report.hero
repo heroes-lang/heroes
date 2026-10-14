@@ -105,19 +105,38 @@ function tally(one: Report, two: Report) -> Report
         outgrown: told
     )
 
-# Prints every skip, every floor outgrown and every failure, then the count.
-# The bool is the exit verdict, and neither a skip nor a floor outgrown moves it.
+# Prints every skip, every floor outgrown and every failure, then the count
+# (`verdict_lines`). The bool is the exit verdict (`green`), and neither a skip
+# nor a floor outgrown moves it.
 function verdict(r: Report, what: str) -> bool
+    for line in verdict_lines(r: r, what: what)
+        print(line)
+
+    return green(r)
+
+# What `verdict` prints, in its order: every skip, every floor outgrown, every
+# failure, then `<what>: <count>`. **Its own tests ask this and print nothing**
+# (defect 2069): they called `verdict` on fixture reports until 2026-10-14, so
+# every run of the net's own tests printed `SKIP unsupported/x`, `FAIL check/x`,
+# `FLOOR canonical`, `FAIL layout` and four `self-test:` counts between its
+# own lines, where a fixture's skip and failures read as the run's.
+function verdict_lines(r: Report, what: str) -> [str]
+    out: [str] @= []
+
     for skip in r.skips
-        print(skip)
+        out @ out.push(skip)
 
     for floor in r.outgrown
-        print(floor)
+        out @ out.push(floor)
 
     for failure in r.failures
-        print(failure)
+        out @ out.push(failure)
 
-    print(what + ": " + counted(r))
+    out @ out.push(what + ": " + counted(r))
+    return out
+
+# Whether a report's verdict is green: no failure, whatever it skipped or told.
+function green(r: Report) -> bool
     return r.failed == 0
 
 test "a report counts, keeps its failures and prints its verdict"
@@ -128,7 +147,8 @@ test "a report counts, keeps its failures and prints its verdict"
     assert r.passed == 2
     assert r.failed == 1
     assert r.failures.len() == 1
-    assert !verdict(r, "self-test")
+    assert verdict_lines(r: r, what: "self-test") == ["FAIL check/x\n  it said nothing", "self-test: 2 passed, 1 failed"]
+    assert !green(r)
 
 test "a mismatch shows both sides and where each begins"
     shown = mismatch(what: "check/x.hero", expected: "one\n", actual: "two\n")
@@ -154,7 +174,8 @@ test "a skip is named and kept, and it is neither a pass nor a failure"
 
     # A skip alone leaves the verdict green: what makes many skips a failure
     # is the floor of whoever skips, not this record.
-    assert verdict(r, "self-test")
+    assert green(r)
+    assert verdict_lines(r: r, what: "self-test") == ["SKIP unsupported/x\n  clang does not find `gone.h` on this machine", "self-test: 1 passed, 0 failed"]
 
     # And it travels with the tally, so the harness's last lines name it.
     other: Report @= empty()
@@ -171,7 +192,8 @@ test "a floor outgrown is told and counted, and it moves no verdict"
     assert r.failed == 0
     assert r.outgrown == ["FLOOR canonical\n  files: 1200 against a floor of 900"]
     assert counted(r) == "1 passed, 0 failed, 1 floor outgrown"
-    assert verdict(r, "self-test")
+    assert green(r)
+    assert verdict_lines(r: r, what: "self-test") == ["FLOOR canonical\n  files: 1200 against a floor of 900", "self-test: 1 passed, 0 failed, 1 floor outgrown"]
 
     # The shape every reader of a count line parses is kept when none is told,
     # and a second floor is counted in the plural.
@@ -186,5 +208,7 @@ test "a floor outgrown is told and counted, and it moves no verdict"
     assert both.outgrown[1] == "FLOOR layout\n  modules: 700 against a floor of 527"
     assert counted(both) == "1 passed, 1 failed, 2 floors outgrown"
 
-    # A failure beside a floor told is still a red verdict.
-    assert !verdict(both, "self-test")
+    # A failure beside a floor told is still a red verdict, and the lines keep
+    # their order: the floors, then the failure, then the count.
+    assert !green(both)
+    assert verdict_lines(r: both, what: "self-test") == ["FLOOR canonical\n  files: 1200 against a floor of 900", "FLOOR layout\n  modules: 700 against a floor of 527", "FAIL layout\n  over its ceiling", "self-test: 1 passed, 1 failed, 2 floors outgrown"]

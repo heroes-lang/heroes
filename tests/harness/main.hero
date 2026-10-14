@@ -695,6 +695,59 @@ function skips_in(out: str) -> [str]
 
     return said
 
+# The lines of a test run of the root reaching `modules` that are none of a
+# run's own: not `ok`, not `FAIL`, not its count, and not a test's own `SKIP`,
+# which names the module it stands in (`SKIP issue_draft: ...`) with its
+# reasons indented beneath. **A test that prints a fixture's output prints
+# here** (defect 2069): report.hero's tests printed four fixture verdicts,
+# `SKIP unsupported/x` among them, into every run until 2026-10-14, where a
+# fixture's skip read as the run's.
+function strays(out: str, modules: [str]) -> [str]
+    said: [str] @= []
+    inside: bool @= false
+
+    for line in strings.lines(out)
+        if inside && strings.starts_with(text: line, prefix: "  ")
+            continue
+        inside @ false
+        words = strings.words(line)
+
+        if words.len() > 1 && words[0] == "SKIP" && strings.ends_with(text: words[1], suffix: ":") && named(modules: modules, name: strings.without_suffix(text: words[1], suffix: ":"))
+            inside @ true
+            continue
+
+        if line == "" || strings.starts_with(text: line, prefix: "ok   \"") || strings.starts_with(text: line, prefix: "FAIL \"")
+            continue
+
+        if counts(words)
+            continue
+        said @ said.push(line)
+
+    return said
+
+# Whether a line's words are the runner's count, `<n> tests, ...`, or `1 test,
+# ...` (`selfhost/cli/verbs.hero`'s `run_test`).
+function counts(words: [str]) -> bool
+    return words.len() > 1 && (words[1] == "tests," || words[1] == "test,") && !strings.to_number(words[0]).is_err()
+
+function named(modules: [str], name: str) -> bool
+    for one in modules
+        if one == name
+            return true
+
+    return false
+
+test "a run's own lines are its verdicts, its count and its tests' skips, and a fixture's are strays (defect 2069)"
+    modules = ["issue_git", "report"]
+    own = "ok   \"a\"\nSKIP issue_git: a pin\n  this clone's history is shortened\nFAIL \"b\"\n2 tests, 1 failed\n"
+    assert strays(out: own, modules: modules).len() == 0
+    printed = "ok   \"a\"\nSKIP unsupported/x\n  clang does not find `gone.h` on this machine\nself-test: 1 passed, 0 failed\nFLOOR canonical\n  files: 1200\n1 test, all passed\n"
+    assert strays(out: printed, modules: modules) == ["SKIP unsupported/x", "  clang does not find `gone.h` on this machine", "self-test: 1 passed, 0 failed", "FLOOR canonical", "  files: 1200"]
+    assert counts(["1", "test,", "all", "passed"])
+    assert counts(["164", "tests,", "2", "failed"])
+    assert !counts(["self-test:", "1", "passed,"])
+    assert strays(out: "SKIP elsewhere: x\n", modules: modules) == ["SKIP elsewhere: x"]
+
 test "a run's skips are read with their reasons, and nothing else"
     assert skips_in("ok   \"a\"\nSKIP x: y\n  because\n  and so\nok   \"b\"\n  not a reason\nSKIP z\n") == ["SKIP x: y", "  because", "  and so", "SKIP z"]
     assert skips_in("ok   \"a\"\n").len() == 0
@@ -722,17 +775,17 @@ test "the issue program's own tests run with the net's own, every block its modu
     for line in skips_in(ran.out)
         print(ISSUE_PROGRAM + ": " + line)
 
-    # The failing tests by name, then the whole verdict.
+    # The failing tests by name, then the whole verdict, then any line a test
+    # printed that is not the run's own (defect 2069).
     assert failed.join("\n") == ""
     assert ran.code == 0
+    assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "issues").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "issues").must()
     said: [str] @= []
 
     # The runner's verdict is the one line `<n> tests, ...`.
     for line in strings.lines(ran.out)
-        words = strings.words(line)
-
-        if words.len() > 1 && words[1] == "tests," && !strings.to_number(words[0]).is_err()
+        if counts(strings.words(line))
             said @ said.push(line)
 
     assert said == [held.to_str() + " tests, all passed"]
