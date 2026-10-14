@@ -115,7 +115,7 @@ bb0:
 #line 10 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
 int64_t h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_said(int64_t h0_k) {
 #line 10 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6fc4002a);
@@ -136,7 +136,7 @@ bb0:
 #line 14 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
 void h_fixedbugs413anelementpasttheendisrefusedwhenthecallismade_main(void) {
 #line 14 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t6, *t9, *t10; HERO_NODEBUG int64_t t1, t3, t4, t5, t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero"
 bb0:
     t1 = INT64_C(0);

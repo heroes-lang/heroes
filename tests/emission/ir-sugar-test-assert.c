@@ -97,7 +97,7 @@ int64_t h_sugartestassert_add(int64_t h0_a, int64_t h1_b);
 #line 6 "tests/golden/ir/sugar-test-assert.hero"
 int64_t h_sugartestassert_add(int64_t h0_a, int64_t h1_b) {
 #line 6 "tests/golden/ir/sugar-test-assert.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/ir/sugar-test-assert.hero"
 bb0:
     t1 = h0_a;

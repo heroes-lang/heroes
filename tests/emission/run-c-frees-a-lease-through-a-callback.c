@@ -163,7 +163,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 void h_cfreesaleasethroughacallback_main(void) {
 #line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
-    HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG const char * t5; HERO_NODEBUG h_0fn_2b4640ec t6; HERO_NODEBUG HeroStr t7; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1, t2, t7; HERO_NODEBUG const char *t3, *t5; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_0fn_2b4640ec t6; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/c-frees-a-lease-through-a-callback.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);

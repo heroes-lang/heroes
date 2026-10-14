@@ -97,7 +97,7 @@ void h_f64rendering_main(void);
 #line 19 "tests/golden/run/f64-rendering.hero"
 void h_f64rendering_main(void) {
 #line 19 "tests/golden/run/f64-rendering.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG double t6; HERO_NODEBUG double t7; HERO_NODEBUG double t8; HERO_NODEBUG double t9; HERO_NODEBUG double t10; HERO_NODEBUG double t11; HERO_NODEBUG double t12; HERO_NODEBUG double t13; HERO_NODEBUG double t14; HERO_NODEBUG double t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}, t16, t17; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/f64-rendering.hero"
 bb0:
     t1 = 0x1.999999999999ap-4;

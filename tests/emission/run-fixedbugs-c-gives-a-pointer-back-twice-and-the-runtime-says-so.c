@@ -157,7 +157,7 @@ void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void);
 #line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
 void h_fixedbugscgivesapointerbacktwiceandtheruntimesaysso_main(void) {
 #line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
-    void * h0_p; HERO_NODEBUG void * t1; HERO_NODEBUG void * t2; HERO_NODEBUG void * t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    void * h0_p; HERO_NODEBUG void *t1, *t2, *t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-c-gives-a-pointer-back-twice-and-the-runtime-says-so.hero"
 bb0:
     t1 = (void *)make();

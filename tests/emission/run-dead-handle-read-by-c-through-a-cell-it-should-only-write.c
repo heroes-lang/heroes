@@ -168,7 +168,7 @@ void h_deadhandlereadbycthroughacellitshouldonlywrite_main(void) {
 #line 20 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
 #define h0_cert (*hero_lend_h0_cert)
 #line 20 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
-    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycthroughacellitshouldonlywrite.main", "cert"); HERO_NODEBUG ob * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG ob * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG ob * t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    ob * *const hero_lend_h0_cert = (ob * *)hero_lend_local(sizeof(ob *), "deadhandlereadbycthroughacellitshouldonlywrite.main", "cert"); HERO_NODEBUG ob *t1, *t5, *t11; HERO_NODEBUG int64_t t2, t3, t12; HERO_NODEBUG bool t4, t9; HERO_NODEBUG HeroStr t6, t10; HERO_NODEBUG int32_t t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/dead-handle-read-by-c-through-a-cell-it-should-only-write.hero"
 bb0:
     t1 = ob_new();

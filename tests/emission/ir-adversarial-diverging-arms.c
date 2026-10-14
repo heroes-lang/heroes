@@ -108,7 +108,7 @@ int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs);
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 int64_t h_adversarialdivergingarms_walk(HeroArrayHeader * h0_xs) {
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
-    int64_t h1_seen; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_adversarialdivergingarms_Step h4_s; HERO_NODEBUG h_adversarialdivergingarms_Step h5_s0; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_adversarialdivergingarms_Step t10; HERO_NODEBUG h_adversarialdivergingarms_Step t11; HERO_NODEBUG h_adversarialdivergingarms_Step t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_seen; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t13, t14, t15, t16, t17; h_adversarialdivergingarms_Step h4_s; HERO_NODEBUG h_adversarialdivergingarms_Step h5_s0, t10, t11, t12; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/ir/adversarial-diverging-arms.hero"
 bb0:
     t1 = INT64_C(0);

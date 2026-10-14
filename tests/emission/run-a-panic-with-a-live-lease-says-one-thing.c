@@ -156,7 +156,7 @@ void h_apanicwithaliveleasesaysonething_main(void);
 #line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
 void h_apanicwithaliveleasesaysonething_main(void) {
 #line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
-    HeroStr h0_x = {0}; const char * h1_c; HeroArrayHeader * h2_a = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG const char * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_x = {0}; const char * h1_c; HeroArrayHeader * h2_a = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t8, *t9, *t14, *t15; HERO_NODEBUG HeroStr h4_own4 = {0}, t1, t2, t12, t13, t16; HERO_NODEBUG const char *t3, *t4; HERO_NODEBUG int64_t t5, t6, t7, t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/a-panic-with-a-live-lease-says-one-thing.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);

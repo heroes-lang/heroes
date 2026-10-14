@@ -173,7 +173,7 @@ void h_fixedbugs151anarmaswideasapackedunioncompared_main(void);
 #line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 void h_fixedbugs151anarmaswideasapackedunioncompared_main(void) {
 #line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG PK t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG PK t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG PK t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG PK t10; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t3, t7, t9; HERO_NODEBUG PK t2, t4, t8, t10; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-151-an-arm-as-wide-as-a-packed-union-compared.hero"
 bb0:
     t1 = UINT64_C(1);

@@ -98,7 +98,7 @@ void h_fixedbugs580aconstantwhoseorderingmeetsananabortswhereitisread_main(void)
 #line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-ordering-meets-a-nan-aborts-where-it-is-read.hero"
 int64_t h_fixedbugs580aconstantwhoseorderingmeetsananabortswhereitisread_V(void) {
 #line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-ordering-meets-a-nan-aborts-where-it-is-read.hero"
-    double h0_n; HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    double h0_n; HERO_NODEBUG int64_t h1_r0, t7, t8, t9; HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-ordering-meets-a-nan-aborts-where-it-is-read.hero"
 bb0:
     t1 = 0x0p+0;
@@ -145,7 +145,7 @@ bb3:
 #line 14 "tests/golden/run/fixedbugs-580-a-constant-whose-ordering-meets-a-nan-aborts-where-it-is-read.hero"
 void h_fixedbugs580aconstantwhoseorderingmeetsananabortswhereitisread_main(void) {
 #line 14 "tests/golden/run/fixedbugs-580-a-constant-whose-ordering-meets-a-nan-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-580-a-constant-whose-ordering-meets-a-nan-aborts-where-it-is-read.hero"
 bb0:
     t1 = INT64_C(1);

@@ -163,7 +163,7 @@ void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void);
 #line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
 void h_fixedbugsareleasethemarkdidnotnameisstoppedbeforec_main(void) {
 #line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
-    hh * h0_a; HERO_NODEBUG hh * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG hh * t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    hh * h0_a; HERO_NODEBUG hh *t1, *t3; HERO_NODEBUG HeroStr t2, t4; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-a-release-the-mark-did-not-name-is-stopped-before-c.hero"
 bb0:
     t1 = p_open();

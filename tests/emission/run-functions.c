@@ -100,7 +100,7 @@ int64_t h_functions_fib(int64_t h0_n);
 #line 6 "tests/golden/run/functions.hero"
 bool h_functions_is_even(int64_t h0_n) {
 #line 6 "tests/golden/run/functions.hero"
-    HERO_NODEBUG bool h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG bool h1_ret0, t3, t4, t8, t9; HERO_NODEBUG int64_t t1, t2, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/run/functions.hero"
 bb0:
     t1 = h0_n;
@@ -146,7 +146,7 @@ bb4:
 #line 11 "tests/golden/run/functions.hero"
 bool h_functions_is_odd(int64_t h0_n) {
 #line 11 "tests/golden/run/functions.hero"
-    HERO_NODEBUG bool h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG bool h1_ret0, t3, t4, t8, t9; HERO_NODEBUG int64_t t1, t2, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/functions.hero"
 bb0:
     t1 = h0_n;
@@ -192,7 +192,7 @@ bb4:
 #line 16 "tests/golden/run/functions.hero"
 void h_functions_main(void) {
 #line 16 "tests/golden/run/functions.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t3, t5, t6; HERO_NODEBUG bool t2, t4; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/functions.hero"
 bb0:
     t1 = INT64_C(10);
@@ -224,7 +224,7 @@ bb0:
 #line 21 "tests/golden/run/functions.hero"
 int64_t h_functions_fib(int64_t h0_n) {
 #line 21 "tests/golden/run/functions.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/functions.hero"
 bb0:
     t1 = h0_n;

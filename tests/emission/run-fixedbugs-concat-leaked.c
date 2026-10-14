@@ -104,7 +104,7 @@ void h_fixedbugsconcatleaked_main(void);
 #line 17 "tests/golden/run/fixedbugs-concat-leaked.hero"
 HeroStr h_fixedbugsconcatleaked_greet(HeroStr h0_name) {
 #line 17 "tests/golden/run/fixedbugs-concat-leaked.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-concat-leaked.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1b7183);
@@ -127,7 +127,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-concat-leaked.hero"
 void h_fixedbugsconcatleaked_main(void) {
 #line 20 "tests/golden/run/fixedbugs-concat-leaked.hero"
-    HeroStr h0_s = {0}; HeroStr h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_s = {0}; HeroStr h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t3, t4, t5, t6, t7, t12, t13, t14, t18, t20, t21, t22, t23, t24, t25; HERO_NODEBUG int64_t t8, t9, t10, t15, t16, t17, t19; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-concat-leaked.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_39ff1ae6);

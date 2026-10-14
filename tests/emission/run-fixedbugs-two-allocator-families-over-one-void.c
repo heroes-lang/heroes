@@ -168,7 +168,7 @@ void h_fixedbugstwoallocatorfamiliesoveronevoid_main(void);
 #line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
 void h_fixedbugstwoallocatorfamiliesoveronevoid_main(void) {
 #line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
-    void * h0_a; void * h1_h; HERO_NODEBUG void * t1; HERO_NODEBUG void * t2; HERO_NODEBUG void * t3; HERO_NODEBUG void * t4; HERO_ENTRY_STOP; goto bb0;
+    void * h0_a; void * h1_h; HERO_NODEBUG void *t1, *t2, *t3, *t4; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
 bb0:
     t1 = arena_new();

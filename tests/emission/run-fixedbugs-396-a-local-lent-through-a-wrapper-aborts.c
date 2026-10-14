@@ -195,7 +195,7 @@ void h_fixedbugs396alocallentthroughawrapperaborts_main(void) {
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 #define h1_m (*hero_lend_h1_m)
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
-    h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p; uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m"); HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs396alocallentthroughawrapperaborts_Pair t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_fixedbugs396alocallentthroughawrapperaborts_Pair t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_fixedbugs396alocallentthroughawrapperaborts_Pair t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs396alocallentthroughawrapperaborts_Pair h0_p; uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396alocallentthroughawrapperaborts.main", "m"); HERO_NODEBUG uint8_t t1, t4, t10; HERO_NODEBUG int64_t t2, t7, t13; HERO_NODEBUG h_fixedbugs396alocallentthroughawrapperaborts_Pair t3, t6, t12; HERO_NODEBUG HeroStr t5, t9, t11; HERO_NODEBUG int32_t t8; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-396-a-local-lent-through-a-wrapper-aborts.hero"
 bb0:
     t1 = UINT64_C(0);

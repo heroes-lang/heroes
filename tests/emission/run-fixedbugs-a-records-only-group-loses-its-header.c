@@ -161,7 +161,7 @@ void h_fixedbugsarecordsonlygrouplosesitsheader_main(void);
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 void h_fixedbugsarecordsonlygrouplosesitsheader_main(void) {
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
-    Color h0_red; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG Color t5; HERO_NODEBUG Color t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG Color t8; HERO_NODEBUG uint8_t t9; HERO_ENTRY_STOP; goto bb0;
+    Color h0_red; HERO_NODEBUG uint8_t t1, t2, t3, t4, t7, t9; HERO_NODEBUG Color t5, t6, t8; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-a-records-only-group-loses-its-header.hero"
 bb0:
     t1 = UINT64_C(255);

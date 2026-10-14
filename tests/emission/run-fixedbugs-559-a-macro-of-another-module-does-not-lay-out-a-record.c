@@ -188,7 +188,7 @@ int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecord_main(void) {
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
-    S h0_s; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG S t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG S t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG S t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_ENTRY_STOP; goto bb0;
+    S h0_s; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t11, t12, t16, t18, t21, t22; HERO_NODEBUG int32_t t1, t2, t7, t9, t10; HERO_NODEBUG S t3, t6, t8; HERO_NODEBUG int64_t t4, t5, t13, t14, t19, t20; HERO_NODEBUG bool t15; HERO_NODEBUG HeroFailure t17; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record.hero"
 bb0:
     t1 = INT64_C(1);
@@ -266,7 +266,7 @@ bb2:
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x) {
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 bb0:
     t1 = h0_x;

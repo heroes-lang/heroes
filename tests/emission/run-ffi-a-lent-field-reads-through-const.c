@@ -167,7 +167,7 @@ void h_ffialentfieldreadsthroughconst_main(void);
 #line 24 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 int64_t h_ffialentfieldreadsthroughconst_total(Slot h0_s) {
 #line 24 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
-    HERO_NODEBUG const void * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG const void *t3; HERO_NODEBUG int64_t t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 bb0:
     t3 = (const void *)(h0_s.nsap);
@@ -187,7 +187,7 @@ bb0:
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 void h_ffialentfieldreadsthroughconst_main(void) {
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
-    Slot h0_t; __attribute__((unused)) Slot h1_u; HERO_NODEBUG Slot t1; HERO_NODEBUG const void * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG Slot t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG Slot t9; HERO_NODEBUG void * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG void * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG const void * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG Slot t24; HERO_NODEBUG int64_t t25; HERO_ENTRY_STOP; goto bb0;
+    Slot h0_t; __attribute__((unused)) Slot h1_u; HERO_NODEBUG Slot t1, t7, t9, t24; HERO_NODEBUG const void *t4, *t21; HERO_NODEBUG int64_t t5, t6, t8, t13, t17, t18, t22, t23, t25; HERO_NODEBUG void *t12, *t16; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"
 bb0:
 #line 29 "tests/golden/run/ffi-a-lent-field-reads-through-const.hero"

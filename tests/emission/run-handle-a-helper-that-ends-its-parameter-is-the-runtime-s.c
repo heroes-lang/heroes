@@ -165,7 +165,7 @@ void h_handleahelperthatendsitsparameteristheruntimes_main(void);
 #line 15 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 void h_handleahelperthatendsitsparameteristheruntimes_finish(node * *ph0_n) {
 #line 15 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
-    HERO_NODEBUG node * t1; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG node *t1; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 bb0:
     t1 = (*ph0_n);
@@ -189,7 +189,7 @@ bb0:
 #line 18 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 void h_handleahelperthatendsitsparameteristheruntimes_main(void) {
 #line 18 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
-    node * h0_a; node * h1_b; HERO_NODEBUG int64_t t1; HERO_NODEBUG node * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG node * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG node * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG node * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG node * t10; HERO_ENTRY_STOP; goto bb0;
+    node * h0_a; node * h1_b; HERO_NODEBUG int64_t t1, t3, t7; HERO_NODEBUG node *t2, *t4, *t6, *t8, *t10; HERO_NODEBUG HeroStr t5, t9; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/handle-a-helper-that-ends-its-parameter-is-the-runtime-s.hero"
 bb0:
     t1 = INT64_C(1);

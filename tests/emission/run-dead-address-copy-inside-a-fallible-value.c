@@ -203,7 +203,7 @@ h_0opt_77d4f5ff h_deadaddresscopyinsideafalliblevalue_opened(void) {
 #line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
-    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinsideafalliblevalue.opened", "db"); HERO_NODEBUG h_0opt_77d4f5ff h1_ret0 = {0}; HERO_NODEBUG h_0opt_77d4f5ff h2_own2 = {0}; HERO_NODEBUG h_0opt_77d4f5ff h3_own3 = {0}; HERO_NODEBUG cdb * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_77d4f5ff t9; HERO_NODEBUG cdb * t10; HERO_NODEBUG h_deadaddresscopyinsideafalliblevalue_Db t11; HERO_NODEBUG h_0opt_77d4f5ff t12; HERO_NODEBUG h_0opt_77d4f5ff t13; HERO_NODEBUG h_0opt_77d4f5ff t14; HERO_NODEBUG h_0opt_77d4f5ff t15; HERO_ENTRY_STOP; goto bb0;
+    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinsideafalliblevalue.opened", "db"); HERO_NODEBUG h_0opt_77d4f5ff h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG cdb *t1, *t10; HERO_NODEBUG HeroStr t2, t7, t8; HERO_NODEBUG const char *t3; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_deadaddresscopyinsideafalliblevalue_Db t11; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb0:
     t1 = ((void *)0);
@@ -284,7 +284,7 @@ bb4:
 #line 23 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 int64_t h_deadaddresscopyinsideafalliblevalue_closed(h_deadaddresscopyinsideafalliblevalue_Db *ph0_db) {
 #line 23 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
-    HERO_NODEBUG h_deadaddresscopyinsideafalliblevalue_Db t1; HERO_NODEBUG cdb * t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_deadaddresscopyinsideafalliblevalue_Db t1; HERO_NODEBUG cdb *t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb0:
     t1 = (*ph0_db);
@@ -310,7 +310,7 @@ bb0:
 #line 26 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 void h_deadaddresscopyinsideafalliblevalue_main(void) {
 #line 26 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
-    h_0opt_77d4f5ff h0_result = {0}; HERO_NODEBUG h_0opt_77d4f5ff h1_f0 = {0}; __attribute__((unused)) h_deadaddresscopyinsideafalliblevalue_Db h2_db; HERO_NODEBUG h_0opt_77d4f5ff h3_f1 = {0}; HERO_NODEBUG h_0opt_77d4f5ff h4_own4 = {0}; HERO_NODEBUG h_0opt_77d4f5ff t1; HERO_NODEBUG h_0opt_77d4f5ff t2; HERO_NODEBUG h_0opt_77d4f5ff t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_77d4f5ff t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_77d4f5ff t9; HERO_NODEBUG h_deadaddresscopyinsideafalliblevalue_Db t10; HERO_NODEBUG h_0opt_77d4f5ff t12; HERO_NODEBUG h_0opt_77d4f5ff t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_0opt_77d4f5ff t17; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG h_0opt_77d4f5ff t19; HERO_NODEBUG h_deadaddresscopyinsideafalliblevalue_Db t20; HERO_NODEBUG cdb * t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG h_0opt_77d4f5ff t23; HERO_NODEBUG h_0opt_77d4f5ff t24; HERO_NODEBUG h_0opt_77d4f5ff t25; HERO_NODEBUG h_0opt_77d4f5ff t26; HERO_ENTRY_STOP; goto bb0;
+    h_0opt_77d4f5ff h0_result = {0}; HERO_NODEBUG h_0opt_77d4f5ff h1_f0 = {0}, h3_f1 = {0}, h4_own4 = {0}, t1, t2, t3, t7, t9, t12, t13, t17, t19, t23, t24, t25, t26; __attribute__((unused)) h_deadaddresscopyinsideafalliblevalue_Db h2_db; HERO_NODEBUG int64_t t4, t5, t14, t15; HERO_NODEBUG bool t6, t16; HERO_NODEBUG HeroFailure t8, t18; HERO_NODEBUG h_deadaddresscopyinsideafalliblevalue_Db t10, t20; HERO_NODEBUG cdb *t21; HERO_NODEBUG int32_t t22; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/dead-address-copy-inside-a-fallible-value.hero"
 bb0:
     t1 = h_deadaddresscopyinsideafalliblevalue_opened();

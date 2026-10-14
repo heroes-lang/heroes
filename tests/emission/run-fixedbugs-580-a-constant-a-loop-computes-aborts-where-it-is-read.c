@@ -98,7 +98,7 @@ void h_fixedbugs580aconstantaloopcomputesabortswhereitisread_main(void);
 #line 9 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
 uint8_t h_fixedbugs580aconstantaloopcomputesabortswhereitisread_V(void) {
 #line 9 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
-    uint8_t h0_v; int64_t h1_i; HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG uint8_t t12; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_v; int64_t h1_i; HERO_NODEBUG uint8_t t1, t6, t7, t8, t12; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-580-a-constant-a-loop-computes-aborts-where-it-is-read.hero"
 bb0:
     t1 = UINT64_C(0);

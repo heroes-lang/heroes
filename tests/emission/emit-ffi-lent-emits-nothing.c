@@ -156,7 +156,7 @@ void h_ffilentemitsnothing_main(void);
 #line 14 "tests/golden/emit/ffi-lent-emits-nothing.hero"
 void h_ffilentemitsnothing_main(void) {
 #line 14 "tests/golden/emit/ffi-lent-emits-nothing.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG uint64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG uint64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/emit/ffi-lent-emits-nothing.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_2f372e9c);

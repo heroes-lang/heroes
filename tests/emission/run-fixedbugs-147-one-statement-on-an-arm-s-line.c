@@ -148,7 +148,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 #line 28 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_twice(int64_t h0_k) {
 #line 28 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = h0_k;
@@ -164,7 +164,7 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_noisy(int64_t h0_k) {
 #line 31 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 31 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = h0_k;
@@ -181,7 +181,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_mutations(h_fixedbugs147onestatementonanarmsline_Color h0_c) {
 #line 35 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    int64_t h1_n; h_fixedbugs147onestatementonanarmsline_Box h2_b; HeroArrayHeader * h3_ys = {0}; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h4_s0; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Box t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t7; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Box t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_n; h_fixedbugs147onestatementonanarmsline_Box h2_b; HeroArrayHeader * h3_ys = {0}; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h4_s0, t7, t8; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t6, *t18, *t22, *t23; HERO_NODEBUG int64_t t1, t2, t4, t5, t9, t10, t11, t12, t13, t14, t16, t17, t19, t20, t21; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Box t3, t15; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = INT64_C(0);
@@ -286,7 +286,7 @@ bb4:
 #line 47 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_loops(h_fixedbugs147onestatementonanarmsline_Color h0_c) {
 #line 47 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    int64_t h1_n; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h2_s0; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t2; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_n; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h2_s0, t2, t3; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t13, *t16, *t19, *t33, *t34; HERO_NODEBUG int64_t h4_i0, t1, t4, t5, t6, t8, t9, t10, t11, t12, t14, t15, t17, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t31, t32; int64_t h5_x; HERO_NODEBUG bool t7, t18, t30; HERO_ENTRY_STOP; goto bb0;
 #line 47 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = INT64_C(0);
@@ -456,7 +456,7 @@ bb14:
 #line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_jumps(int64_t h0_n) {
 #line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_i; HERO_NODEBUG int64_t h5_s0; HERO_NODEBUG int64_t h6_s1; HERO_NODEBUG int64_t h7_s2; HERO_NODEBUG int64_t h8_ret0; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG bool t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h9_own9 = {0}, *t4, *t7, *t10, *t52, *t53; HERO_NODEBUG int64_t h3_i0, h5_s0, h6_s1, h7_s2, h8_ret0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t14, t15, t16, t17, t19, t20, t22, t23, t25, t26, t27, t29, t30, t31, t32, t35, t36, t37, t39, t41, t42, t43, t44, t45, t46, t48, t49, t50, t51; int64_t h4_i; HERO_NODEBUG bool t9, t18, t21, t24, t33, t38, t47; HERO_NODEBUG HeroStr t28; HERO_ENTRY_STOP; goto bb0;
 #line 60 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = INT64_C(0);
@@ -692,7 +692,7 @@ bb23:
 #line 80 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_discards(h_fixedbugs147onestatementonanarmsline_Color h0_c) {
 #line 80 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    int64_t h1_k; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h2_s0; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h3_s1; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t2; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t9; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_k; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h2_s0, h3_s1, t2, t3, t9, t10; HERO_NODEBUG int64_t t1, t4, t5, t7, t11, t12, t14, t15, t16; HERO_ENTRY_STOP; goto bb0;
 #line 80 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = INT64_C(0);
@@ -789,7 +789,7 @@ bb7:
 #line 94 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_measured(h_fixedbugs147onestatementonanarmsline_Shape h0_s) {
 #line 94 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    int64_t h1_total; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape h2_s0; h_fixedbugs147onestatementonanarmsline_Shape_c_line h3_l; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape t2; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape t6; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape_c_line t7; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape_c_line t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_total; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape h2_s0, t2, t3, t6; h_fixedbugs147onestatementonanarmsline_Shape_c_line h3_l; HERO_NODEBUG int64_t t1, t4, t9, t10; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape_c_line t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 94 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = INT64_C(0);
@@ -844,7 +844,7 @@ bb3:
 #line 103 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_nested(h_fixedbugs147onestatementonanarmsline_Color h0_c, int64_t h1_n) {
 #line 103 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    int64_t h2_m; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h3_s0; HERO_NODEBUG int64_t h4_s1; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t2; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_m; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h3_s0, t2, t3; HERO_NODEBUG int64_t h4_s1, t1, t4, t5, t6, t7, t10, t11, t12; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0;
 #line 103 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = INT64_C(0);
@@ -922,7 +922,7 @@ bb7:
 #line 114 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 int64_t h_fixedbugs147onestatementonanarmsline_early(h_fixedbugs147onestatementonanarmsline_Color h0_c) {
 #line 114 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t1; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_ret0, t3, t4, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 114 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = h0_c;
@@ -973,7 +973,7 @@ bb4:
 #line 121 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 void h_fixedbugs147onestatementonanarmsline_main(void) {
 #line 121 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
-    HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t44; HERO_NODEBUG int64_t t45; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Color t1, t4, t7, t9, t12, t15, t19, t22, t30, t34, t38, t41, t44; HERO_NODEBUG int64_t t2, t5, t8, t10, t13, t16, t17, t18, t20, t23, t25, t27, t29, t31, t32, t35, t36, t39, t40, t42, t45; HERO_NODEBUG HeroStr t3, t6, t11, t14, t21, t26, t33, t37, t43; HERO_NODEBUG h_fixedbugs147onestatementonanarmsline_Shape t24, t28; HERO_ENTRY_STOP; goto bb0;
 #line 121 "tests/golden/run/fixedbugs-147-one-statement-on-an-arm-s-line.hero"
 bb0:
     t1 = (h_fixedbugs147onestatementonanarmsline_Color){.tag = h_fixedbugs147onestatementonanarmsline_Color_tag_red};
@@ -1131,7 +1131,7 @@ bb0:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

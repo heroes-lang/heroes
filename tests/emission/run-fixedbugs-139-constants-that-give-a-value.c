@@ -100,7 +100,7 @@ void h_fixedbugs139constantsthatgiveavalue_main(void);
 #line 7 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_MATCH(void) {
 #line 7 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
-    HERO_NODEBUG int64_t h0_s0; HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h0_s0, h1_r0, t1, t2, t3, t5, t6, t7; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb0:
     t1 = INT64_C(1);
@@ -144,7 +144,7 @@ bb4:
 #line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_BY_IF(void) {
 #line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
-    HERO_NODEBUG int64_t h0_r0; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h0_r0, t2, t3, t4; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb0:
     t1 = true;
@@ -177,7 +177,7 @@ bb3:
 #line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 int64_t h_fixedbugs139constantsthatgiveavalue_AFTER_A_MATCH(void) {
 #line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
-    HERO_NODEBUG int64_t h0_s0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h0_s0, t1, t2, t3, t7; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb0:
     t1 = INT64_C(3);
@@ -214,7 +214,7 @@ bb4:
 #line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 void h_fixedbugs139constantsthatgiveavalue_main(void) {
 #line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/fixedbugs-139-constants-that-give-a-value.hero"
 bb0:
     t1 = h_fixedbugs139constantsthatgiveavalue_BY_MATCH();

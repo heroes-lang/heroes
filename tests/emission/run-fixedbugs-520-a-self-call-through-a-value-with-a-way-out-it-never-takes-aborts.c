@@ -99,7 +99,7 @@ void h_fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts_main(void
 #line 9 "tests/golden/run/fixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts.hero"
 int64_t h_fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts_go(int64_t h0_n) {
 #line 9 "tests/golden/run/fixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts.hero"
-    h_0fn_48ac9712 h1_f; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_0fn_48ac9712 t5; HERO_NODEBUG h_0fn_48ac9712 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    h_0fn_48ac9712 h1_f; HERO_NODEBUG int64_t h2_ret0, t1, t2, t4, t7, t8, t9; HERO_NODEBUG bool t3; HERO_NODEBUG h_0fn_48ac9712 t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -146,7 +146,7 @@ bb4:
 #line 15 "tests/golden/run/fixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts.hero"
 void h_fixedbugs520aselfcallthroughavaluewithawayoutitnevertakesaborts_main(void) {
 #line 15 "tests/golden/run/fixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-520-a-self-call-through-a-value-with-a-way-out-it-never-takes-aborts.hero"
 bb0:
     t1 = INT64_C(1);

@@ -133,15 +133,16 @@ void h_fixedbugs394aliteralsargumentsgrowinplace_main(void);
 HERO_ARRAY_STATIC(hero_constant_h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES_33, int64_t, &hero_desc_int, 32, INT64_C(2), INT64_C(3), INT64_C(5), INT64_C(7), INT64_C(11), INT64_C(13), INT64_C(17), INT64_C(19), INT64_C(23), INT64_C(29), INT64_C(31), INT64_C(37), INT64_C(41), INT64_C(43), INT64_C(47), INT64_C(53), INT64_C(59), INT64_C(61), INT64_C(67), INT64_C(71), INT64_C(73), INT64_C(79), INT64_C(83), INT64_C(89), INT64_C(97), INT64_C(101), INT64_C(103), INT64_C(107), INT64_C(109), INT64_C(113), INT64_C(127), INT64_C(131));
 #line 23 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 HeroArrayHeader * h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES(void) {
-#line 137 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 23 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
     return HERO_ARRAY_LIT(hero_constant_h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES_33);
+#line 139 "fixedbugs394aliteralsargumentsgrowinplace.c"
 }
 #else
 
 #line 23 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 HeroArrayHeader * h_fixedbugs394aliteralsargumentsgrowinplace_PRIMES(void) {
 #line 23 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t33, *t34; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 bb0:
 #line 25 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
@@ -249,7 +250,7 @@ bb0:
     h0_own0 = t33;
 #line 24 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
     hero_array_decref(t34);
-#line 253 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 254 "fixedbugs394aliteralsargumentsgrowinplace.c"
     hero_array_incref(t33);
     hero_array_release_at(&h0_own0);
     return t33;
@@ -259,7 +260,7 @@ bb0:
 #line 59 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 HeroMapHeader * h_fixedbugs394aliteralsargumentsgrowinplace_AGES(void) {
 #line 59 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
-    HERO_NODEBUG HeroMapHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG HeroMapHeader * t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroMapHeader *h0_own0 = {0}, *t13, *t14; HERO_NODEBUG HeroStr t1, t3, t5, t7, t9, t11; HERO_NODEBUG int64_t t2, t4, t6, t8, t10, t12; HERO_ENTRY_STOP; goto bb0;
 #line 59 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6bb5e50a);
@@ -305,7 +306,7 @@ bb0:
     h0_own0 = t13;
 #line 60 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
     hero_map_decref(t14);
-#line 309 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 310 "fixedbugs394aliteralsargumentsgrowinplace.c"
     hero_map_incref(t13);
     hero_map_release_at(&h0_own0);
     return t13;
@@ -314,7 +315,7 @@ bb0:
 #line 62 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 void h_fixedbugs394aliteralsargumentsgrowinplace_main(void) {
 #line 62 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
-    h_fixedbugs394aliteralsargumentsgrowinplace_Wide h0_w; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroMapHeader * h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_fixedbugs394aliteralsargumentsgrowinplace_Wide t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroMapHeader * t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_fixedbugs394aliteralsargumentsgrowinplace_Wide t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_fixedbugs394aliteralsargumentsgrowinplace_Wide t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroMapHeader * t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs394aliteralsargumentsgrowinplace_Wide h0_w; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h6_own6 = {0}, t17, t18, t22, t34, t35; HERO_NODEBUG int64_t h2_r0, t1, t2, t3, t4, t5, t6, t7, t8, t11, t13, t14, t19, t20, t23, t24, t25, t27, t29, t30; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *t10, *t12, *t31, *t32; HERO_NODEBUG HeroMapHeader *h5_own5 = {0}, *t15, *t33; HERO_NODEBUG h_fixedbugs394aliteralsargumentsgrowinplace_Wide t9, t26, t28; HERO_NODEBUG HeroStr t16; HERO_NODEBUG bool t21; HERO_ENTRY_STOP; goto bb0;
 #line 62 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
 bb0:
     t1 = INT64_C(1);
@@ -451,7 +452,7 @@ bb3:
     hero_print_int(t30);
 #line 64 "tests/golden/ir/fixedbugs-394-a-literal-s-arguments-grow-in-place.hero"
     hero_print_end();
-#line 455 "fixedbugs394aliteralsargumentsgrowinplace.c"
+#line 456 "fixedbugs394aliteralsargumentsgrowinplace.c"
     h_0opt_e201354_release(hero_slot_escape(&h1_f0));
     hero_array_release_at(&h3_own3);
     hero_array_release_at(&h4_own4);

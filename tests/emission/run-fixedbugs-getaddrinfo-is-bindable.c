@@ -162,7 +162,7 @@ void h_fixedbugsgetaddrinfoisbindable_main(void) {
 #line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 #define h0_res (*hero_lend_h0_res)
 #line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
-    struct addrinfo * *const hero_lend_h0_res = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsgetaddrinfoisbindable.main", "res"); int32_t h1_rc; HERO_NODEBUG struct addrinfo * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG void * t4; HERO_NODEBUG void * t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG struct addrinfo * t8; HERO_ENTRY_STOP; goto bb0;
+    struct addrinfo * *const hero_lend_h0_res = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsgetaddrinfoisbindable.main", "res"); int32_t h1_rc; HERO_NODEBUG struct addrinfo *t1, *t8; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG void *t4, *t5; HERO_NODEBUG int32_t t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-getaddrinfo-is-bindable.hero"
 bb0:
     t1 = ((void *)0);

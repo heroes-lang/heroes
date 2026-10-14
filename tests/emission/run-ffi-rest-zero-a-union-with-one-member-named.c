@@ -245,7 +245,7 @@ void h_ffirestzeroaunionwithonemembernamed_main(void) {
 #line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 #define h1_n (*hero_lend_h1_n)
 #line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
-    SA *const hero_lend_h0_w = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "w"); SA *const hero_lend_h1_n = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "n"); HERO_NODEBUG SA t1; HERO_NODEBUG SA t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG SA t5; HERO_NODEBUG double t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG SA t9; HERO_NODEBUG SA t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG SA t13; HERO_NODEBUG int8_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG UD t17; HERO_NODEBUG double t18; HERO_ENTRY_STOP; goto bb0;
+    SA *const hero_lend_h0_w = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "w"); SA *const hero_lend_h1_n = (SA *)hero_lend_local(sizeof(SA), "ffirestzeroaunionwithonemembernamed.main", "n"); HERO_NODEBUG SA t1, t2, t5, t9, t10, t13; HERO_NODEBUG int32_t t3, t11; HERO_NODEBUG HeroStr t4, t7, t12, t15; HERO_NODEBUG double t6, t18; HERO_NODEBUG int64_t t8, t16; HERO_NODEBUG int8_t t14; HERO_NODEBUG UD t17; HERO_ENTRY_STOP; goto bb0;
 #line 31 "tests/golden/run/ffi-rest-zero-a-union-with-one-member-named.hero"
 bb0:
     (void)dirty();

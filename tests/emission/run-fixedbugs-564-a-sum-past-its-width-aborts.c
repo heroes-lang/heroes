@@ -98,7 +98,7 @@ HERO_TU_LOCAL uint8_t h_fixedbugs564asumpastitswidthaborts_first_3c17(uint8_t h0
 #line 12 "tests/golden/run/fixedbugs-564-a-sum-past-its-width-aborts.hero"
 void h_fixedbugs564asumpastitswidthaborts_main(void) {
 #line 12 "tests/golden/run/fixedbugs-564-a-sum-past-its-width-aborts.hero"
-    uint8_t h0_y; HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_y; HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-564-a-sum-past-its-width-aborts.hero"
 bb0:
     t1 = INT64_C(1);

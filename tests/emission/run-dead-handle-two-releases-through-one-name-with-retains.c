@@ -166,7 +166,7 @@ void h_deadhandletworeleasesthroughonenamewithretains_main(void);
 #line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 void h_deadhandletworeleasesthroughonenamewithretains_main(void) {
 #line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
-    ob * h0_cert; HERO_NODEBUG ob * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG ob * t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG ob * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG ob * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG ob * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG ob * t14; HERO_NODEBUG HeroStr t15; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_cert; HERO_NODEBUG ob *t1, *t3, *t8, *t10, *t12, *t14; HERO_NODEBUG HeroStr t2, t7, t11, t15; HERO_NODEBUG int32_t t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t9, t13; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/dead-handle-two-releases-through-one-name-with-retains.hero"
 bb0:
     t1 = ob_new();

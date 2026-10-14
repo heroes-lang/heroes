@@ -224,7 +224,7 @@ int64_t h_main_SQLITE_ROW(void) {
 #line 76 "examples/sqlite/main.hero"
 int64_t h_main_run(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 76 "examples/sqlite/main.hero"
-    HERO_NODEBUG sqlite3 * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG void * t4; HERO_NODEBUG void * t5; HERO_NODEBUG void * t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG sqlite3 *t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG void *t4, *t5, *t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
 #line 76 "examples/sqlite/main.hero"
 bb0:
     t1 = h0_db;
@@ -254,7 +254,7 @@ int64_t h_main_first_int(sqlite3 * h0_db, HeroStr h1_sql) {
 #line 80 "examples/sqlite/main.hero"
 #define h3_tail (*hero_lend_h3_tail)
 #line 80 "examples/sqlite/main.hero"
-    sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "main.first_int", "statement"); const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "main.first_int", "tail"); int64_t h4_rc; int64_t h5_value; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG sqlite3_stmt * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG sqlite3 * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG sqlite3_stmt * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG sqlite3_stmt * t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG sqlite3_stmt * t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_ENTRY_STOP; goto bb0;
+    sqlite3_stmt * *const hero_lend_h2_statement = (sqlite3_stmt * *)hero_lend_local(sizeof(sqlite3_stmt *), "main.first_int", "statement"); const char * *const hero_lend_h3_tail = (const char * *)hero_lend_local(sizeof(const char *), "main.first_int", "tail"); int64_t h4_rc; int64_t h5_value; HERO_NODEBUG int64_t h6_ret0, t7, t8, t9, t11, t12, t13, t14, t15, t16, t18, t19, t23, t26, t27; HERO_NODEBUG sqlite3_stmt *t1, *t17, *t21, *t24; HERO_NODEBUG const char *t2, *t5; HERO_NODEBUG sqlite3 *t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int32_t t6, t22; HERO_NODEBUG bool t10, t20; HERO_ENTRY_STOP; goto bb0;
 #line 80 "examples/sqlite/main.hero"
 bb0:
     t1 = ((void *)0);
@@ -382,7 +382,7 @@ void h_main_main(void) {
 #line 100 "examples/sqlite/main.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 100 "examples/sqlite/main.hero"
-    sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "main.main", "db"); HERO_NODEBUG sqlite3 * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG sqlite3 * t8; HERO_NODEBUG sqlite3 * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG sqlite3 * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t16; HERO_NODEBUG sqlite3 * t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG sqlite3 * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG sqlite3 * t24; HERO_ENTRY_STOP; goto bb0;
+    sqlite3 * *const hero_lend_h0_db = (sqlite3 * *)hero_lend_local(sizeof(sqlite3 *), "main.main", "db"); HERO_NODEBUG sqlite3 *t1, *t8, *t10, *t13, *t17, *t21, *t24; HERO_NODEBUG HeroStr t2, t7, t11, t14, t16, t18, t20, t22; HERO_NODEBUG const char *t3; HERO_NODEBUG int64_t t4, t5, t19, t23; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 100 "examples/sqlite/main.hero"
 bb0:
     t1 = ((void *)0);

@@ -164,7 +164,7 @@ void h_handlealiveafteranendinonearm_main(void);
 #line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
 void h_handlealiveafteranendinonearm_main(void) {
 #line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
-    node * h0_n; HERO_NODEBUG int64_t t1; HERO_NODEBUG node * t2; HERO_NODEBUG node * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG node * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG node * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG node * t12; HERO_ENTRY_STOP; goto bb0;
+    node * h0_n; HERO_NODEBUG int64_t t1, t4, t5, t11; HERO_NODEBUG node *t2, *t3, *t7, *t10, *t12; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/handle-alive-after-an-end-in-one-arm.hero"
 bb0:
     t1 = INT64_C(7);

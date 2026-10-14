@@ -97,7 +97,7 @@ void h_fixedbugs567au64divisionattwotothe63byitsmaximumprints_main(void);
 #line 14 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
 void h_fixedbugs567au64divisionattwotothe63byitsmaximumprints_main(void) {
 #line 14 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
-    uint64_t h0_k; uint64_t h1_m; HERO_NODEBUG uint64_t t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG uint64_t t5; HERO_NODEBUG uint64_t t6; HERO_NODEBUG uint64_t t7; HERO_NODEBUG uint64_t t8; HERO_ENTRY_STOP; goto bb0;
+    uint64_t h0_k; uint64_t h1_m; HERO_NODEBUG uint64_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-567-a-u64-division-at-two-to-the-63-by-its-maximum-prints.hero"
 bb0:
     t1 = UINT64_C(9223372036854775808);

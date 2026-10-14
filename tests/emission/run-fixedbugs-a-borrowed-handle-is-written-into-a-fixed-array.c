@@ -174,7 +174,7 @@ HeroArrayHeader * h_library_args(void);
 #line 22 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
 void h_fixedbugsaborrowedhandleiswrittenintoafixedarray_main(void) {
 #line 22 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
-    struct four h0_f; int64_t h1_k; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG ob * t3; HERO_NODEBUG ob * t4; HERO_NODEBUG struct four t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG ob * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG ob * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG ob * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG struct four t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG struct four t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG ob * t27; HERO_NODEBUG ob * t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_ENTRY_STOP; goto bb0;
+    struct four h0_f; int64_t h1_k; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t13, *t30; HERO_NODEBUG ob *t1, *t2, *t3, *t4, *t9, *t12, *t19, *t27, *t28; HERO_NODEBUG struct four t6, t21, t24; HERO_NODEBUG int64_t t7, t8, t10, t11, t14, t15, t16, t17, t18, t22, t26; HERO_NODEBUG HeroStr t20, t23; HERO_NODEBUG bool t29; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-a-borrowed-handle-is-written-into-a-fixed-array.hero"
 bb0:
     t1 = ((void *)0);
@@ -273,7 +273,7 @@ bb0:
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);

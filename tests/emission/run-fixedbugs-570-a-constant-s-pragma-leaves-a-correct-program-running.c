@@ -189,7 +189,7 @@ int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(vo
 #line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 void h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_main(void) {
 #line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    __attribute__((unused)) Slot h0_t; HERO_NODEBUG Slot t1; HERO_NODEBUG void * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG void * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0;
+    __attribute__((unused)) Slot h0_t; HERO_NODEBUG Slot t1; HERO_NODEBUG void *t4, *t8; HERO_NODEBUG int64_t t5, t9, t10; HERO_NODEBUG int32_t t11, t12, t13; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 bb0:
     t1 = slot_make();

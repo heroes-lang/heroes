@@ -158,7 +158,7 @@ void h_fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups_main
 #line 17 "tests/golden/run/fixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups.hero"
 void h_fixedbugs2056aboundmacroneverrewritesthemathheaderreadafterthegroups_main(void) {
 #line 17 "tests/golden/run/fixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups.hero"
-    HERO_NODEBUG float t1; HERO_NODEBUG float t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG float t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups.hero"
 bb0:
     t1 = 0x1p+2;

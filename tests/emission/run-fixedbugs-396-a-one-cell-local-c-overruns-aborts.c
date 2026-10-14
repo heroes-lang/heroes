@@ -159,7 +159,7 @@ void h_fixedbugs396aonecelllocalcoverrunsaborts_main(void) {
 #line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
 #define h0_m (*hero_lend_h0_m)
 #line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
-    uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m"); HERO_NODEBUG uint8_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG uint8_t t5; HERO_ENTRY_STOP; goto bb0;
+    uint8_t *const hero_lend_h0_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396aonecelllocalcoverrunsaborts.main", "m"); HERO_NODEBUG uint8_t t1, t5; HERO_NODEBUG HeroStr t2, t4; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-396-a-one-cell-local-c-overruns-aborts.hero"
 bb0:
     t1 = UINT64_C(0);

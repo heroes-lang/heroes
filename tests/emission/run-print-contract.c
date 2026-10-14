@@ -97,7 +97,7 @@ void h_printcontract_main(void);
 #line 6 "tests/golden/run/print-contract.hero"
 void h_printcontract_main(void) {
 #line 6 "tests/golden/run/print-contract.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t6; HERO_NODEBUG bool t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/run/print-contract.hero"
 bb0:
     t1 = INT64_C(1);

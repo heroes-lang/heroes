@@ -164,7 +164,7 @@ void h_handlealiveafteraloopthatendsonbreak_main(void);
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 void h_handlealiveafteraloopthatendsonbreak_main(void) {
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
-    node * h0_n; bool h1_ended; int64_t h2_k; HERO_NODEBUG int64_t t1; HERO_NODEBUG node * t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG node * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG node * t12; HERO_NODEBUG bool t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG node * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG node * t24; HERO_ENTRY_STOP; goto bb0;
+    node * h0_n; bool h1_ended; int64_t h2_k; HERO_NODEBUG int64_t t1, t4, t5, t6, t9, t10, t14, t15, t16, t20, t23; HERO_NODEBUG node *t2, *t8, *t12, *t22, *t24; HERO_NODEBUG bool t3, t7, t11, t13, t17, t18; HERO_NODEBUG HeroStr t19, t21; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/handle-alive-after-a-loop-that-ends-on-break.hero"
 bb0:
     t1 = INT64_C(3);

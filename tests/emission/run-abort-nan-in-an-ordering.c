@@ -97,7 +97,7 @@ void h_abortnaninanordering_main(void);
 #line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
 void h_abortnaninanordering_main(void) {
 #line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
-    double h0_zero; double h1_n; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG double t6; HERO_NODEBUG bool t7; HERO_NODEBUG double t8; HERO_NODEBUG double t9; HERO_NODEBUG bool t10; HERO_NODEBUG double t11; HERO_NODEBUG double t12; HERO_NODEBUG bool t13; HERO_NODEBUG double t14; HERO_NODEBUG double t15; HERO_NODEBUG bool t16; HERO_ENTRY_STOP; goto bb0;
+    double h0_zero; double h1_n; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t8, t9, t11, t12, t14, t15; HERO_NODEBUG bool t7, t10, t13, t16; HERO_ENTRY_STOP; goto bb0;
 #line 43 "tests/golden/run/abort-nan-in-an-ordering.hero"
 bb0:
     t1 = 0x0p+0;

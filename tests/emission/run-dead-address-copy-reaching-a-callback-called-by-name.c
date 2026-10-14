@@ -191,7 +191,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 int64_t h_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
 #line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    hero_thread_guard("deadaddresscopyreachingacallbackcalledbyname.seen"); HERO_NODEBUG node * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("deadaddresscopyreachingacallbackcalledbyname.seen"); HERO_NODEBUG node *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 bb0:
     t1 = h0_n;
@@ -213,7 +213,7 @@ int64_t h_0cb_deadaddresscopyreachingacallbackcalledbyname_seen(node * h0_n) {
 #line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 void h_deadaddresscopyreachingacallbackcalledbyname_main(void) {
 #line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
-    node * h0_mine; HeroArrayHeader * h1_keep = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG node * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG node * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0fn_b062dd1 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
+    node * h0_mine; HeroArrayHeader * h1_keep = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t6, *t13, *t14; HERO_NODEBUG node *t1, *t2, *t4, *t8; HERO_NODEBUG HeroStr t5, t10; HERO_NODEBUG int64_t t7, t9, t12; HERO_NODEBUG h_0fn_b062dd1 t11; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/dead-address-copy-reaching-a-callback-called-by-name.hero"
 bb0:
     t1 = node_new();

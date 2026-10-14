@@ -100,7 +100,7 @@ void h_library_exit(int64_t h0_code);
 #line 9 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacalleesexitbuildssilently_work(int64_t h0_n) {
 #line 9 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 bb0:
     t1 = h0_n;
@@ -140,7 +140,7 @@ bb3:
 #line 14 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyacalleesexitbuildssilently_turn(int64_t h0_n) {
 #line 14 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-callee-s-exit-builds-silently.hero"
 bb0:
     t1 = h0_n;

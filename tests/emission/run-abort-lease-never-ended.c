@@ -156,7 +156,7 @@ void h_abortleaseneverended_main(void);
 #line 11 "tests/golden/run/abort-lease-never-ended.hero"
 void h_abortleaseneverended_main(void) {
 #line 11 "tests/golden/run/abort-lease-never-ended.hero"
-    const char * h0_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG const char * t3; HERO_NODEBUG uint64_t t4; HERO_ENTRY_STOP; goto bb0;
+    const char * h0_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2, *t3; HERO_NODEBUG uint64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/abort-lease-never-ended.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_642cda73);

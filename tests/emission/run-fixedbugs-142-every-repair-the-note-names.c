@@ -117,7 +117,7 @@ void h_library_exit(int64_t h0_code);
 #line 12 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_sign(int64_t h0_n) {
 #line 12 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -157,7 +157,7 @@ bb4:
 #line 18 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_sign_both(int64_t h0_n) {
 #line 18 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -192,7 +192,7 @@ bb4:
 #line 26 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_first_at_least(HeroArrayHeader * h0_xs, int64_t h1_least) {
 #line 26 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t1, *t4, *t7, *t19; HERO_NODEBUG int64_t h3_i0, h5_ret0, t2, t3, t5, t8, t9, t10, t11, t13, t14, t15, t16, t17, t18; int64_t h4_x; HERO_NODEBUG bool t6, t12; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_xs;
@@ -286,7 +286,7 @@ bb8:
 #line 33 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_count_down(int64_t h0_n) {
 #line 33 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    int64_t h1_i; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_i; HERO_NODEBUG int64_t h2_ret0, t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -355,7 +355,7 @@ bb7:
 #line 43 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_until_found(int64_t h0_n) {
 #line 43 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    int64_t h1_i; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_i; HERO_NODEBUG int64_t h2_ret0, t1, t3, t4, t5, t6, t8, t9, t10, t11, t12, t13; HERO_NODEBUG bool t2, t7; HERO_ENTRY_STOP; goto bb0;
 #line 43 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = INT64_C(0);
@@ -424,7 +424,7 @@ bb7:
 #line 54 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_double(int64_t h0_n) {
 #line 54 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 54 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -440,7 +440,7 @@ bb0:
 #line 59 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_checked(int64_t h0_n) {
 #line 59 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6, t7; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 59 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_n;
@@ -485,7 +485,7 @@ bb4:
 #line 71 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 int64_t h_fixedbugs142everyrepairthenotenames_shade(h_fixedbugs142everyrepairthenotenames_Color h0_c) {
 #line 71 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color t1; HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_ret0, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 71 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = h0_c;
@@ -529,7 +529,7 @@ bb4:
 #line 76 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 void h_fixedbugs142everyrepairthenotenames_main(void) {
 #line 76 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *t12, *t16, *t31, *t32; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t13, t14, t15, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t30; HERO_NODEBUG h_fixedbugs142everyrepairthenotenames_Color t29; HERO_ENTRY_STOP; goto bb0;
 #line 76 "tests/golden/run/fixedbugs-142-every-repair-the-note-names.hero"
 bb0:
     t1 = INT64_C(5);

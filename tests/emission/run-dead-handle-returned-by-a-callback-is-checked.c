@@ -171,7 +171,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 18 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 node * h_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
 #line 18 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
-    hero_thread_guard("deadhandlereturnedbyacallbackischecked.give"); node * h1_m; HERO_NODEBUG node * t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG node * t5; HERO_NODEBUG node * t6; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("deadhandlereturnedbyacallbackischecked.give"); node * h1_m; HERO_NODEBUG node *t1, *t5, *t6; HERO_NODEBUG int32_t t2, t3; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/dead-handle-returned-by-a-callback-is-checked.hero"
 bb0:
     t1 = node_new();

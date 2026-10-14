@@ -158,7 +158,7 @@ void h_fixedbugs361aboundnametheguardholdskeepsitsheadersmacro_main(void);
 #line 16 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
 void h_fixedbugs361aboundnametheguardholdskeepsitsheadersmacro_main(void) {
 #line 16 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-361-a-bound-name-the-guard-holds-keeps-its-header-s-macro.hero"
 bb0:
     t1 = 0x1p+2;

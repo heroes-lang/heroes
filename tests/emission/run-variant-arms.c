@@ -126,7 +126,7 @@ void h_variantarms_main(void);
 #line 29 "tests/golden/run/variant-arms.hero"
 h_variantarms_Sign h_variantarms_classify(int64_t h0_n) {
 #line 29 "tests/golden/run/variant-arms.hero"
-    HERO_NODEBUG h_variantarms_Sign h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG h_variantarms_Sign t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_variantarms_Sign t8; HERO_NODEBUG h_variantarms_Sign t9; HERO_NODEBUG h_variantarms_Sign t10; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_variantarms_Sign h1_ret0, t4, t8, t9, t10; HERO_NODEBUG int64_t t1, t2, t5, t6; HERO_NODEBUG bool t3, t7; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/variant-arms.hero"
 bb0:
     t1 = h0_n;
@@ -182,7 +182,7 @@ bb6:
 #line 36 "tests/golden/run/variant-arms.hero"
 HeroStr h_variantarms_word(h_variantarms_Sign h0_s) {
 #line 36 "tests/golden/run/variant-arms.hero"
-    HERO_NODEBUG h_variantarms_Sign h1_s0; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG h_variantarms_Sign t1; HERO_NODEBUG h_variantarms_Sign t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_variantarms_Sign h1_s0, t1, t2; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t5, t6, t7, t8; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/variant-arms.hero"
 bb0:
     t1 = h0_s;
@@ -245,7 +245,7 @@ bb3:
 #line 41 "tests/golden/run/variant-arms.hero"
 HeroStr h_variantarms_verdict(h_variantarms_Sign h0_a) {
 #line 41 "tests/golden/run/variant-arms.hero"
-    HERO_NODEBUG h_variantarms_Sign h1_s0; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroStr h3_m = {0}; HERO_NODEBUG h_variantarms_Sign t1; HERO_NODEBUG h_variantarms_Sign t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_variantarms_Sign h1_s0, t1, t2; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t5, t6, t7, t8, t9, t10; HeroStr h3_m = {0}; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 41 "tests/golden/run/variant-arms.hero"
 bb0:
     t1 = h0_a;
@@ -319,7 +319,7 @@ bb3:
 #line 48 "tests/golden/run/variant-arms.hero"
 void h_variantarms_main(void) {
 #line 48 "tests/golden/run/variant-arms.hero"
-    h_variantarms_Sign h0_s; HERO_NODEBUG h_variantarms_Sign h1_s0; h_variantarms_P h2_x; h_variantarms_P h3_y; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_variantarms_Sign t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_variantarms_Sign t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_variantarms_Sign t8; HERO_NODEBUG h_variantarms_Sign t9; HERO_NODEBUG h_variantarms_Sign t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_variantarms_Sign t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_variantarms_Sign t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG double t20; HERO_NODEBUG h_variantarms_P t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG double t23; HERO_NODEBUG h_variantarms_P t24; HERO_NODEBUG h_variantarms_P t25; HERO_NODEBUG h_variantarms_P t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_variantarms_P t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG double t30; HERO_NODEBUG h_variantarms_P t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_variantarms_P t33; HERO_NODEBUG double t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_ENTRY_STOP; goto bb0;
+    h_variantarms_Sign h0_s; HERO_NODEBUG h_variantarms_Sign h1_s0, t2, t5, t8, t9, t10, t15, t17; h_variantarms_P h2_x; h_variantarms_P h3_y; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t3, t6, t12, t13, t14, t16, t18, t35, t36, t37, t38; HERO_NODEBUG int64_t t1, t4, t7, t11, t19, t22, t29; HERO_NODEBUG double t20, t23, t30, t34; HERO_NODEBUG h_variantarms_P t21, t24, t25, t26, t28, t31, t33; HERO_NODEBUG bool t27, t32; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/variant-arms.hero"
 bb0:
     t1 = INT64_C(-5);

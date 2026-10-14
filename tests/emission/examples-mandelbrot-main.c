@@ -171,7 +171,7 @@ bb0:
 #line 34 "examples/mandelbrot/main.hero"
 int64_t h_main_escapes_at(int64_t h0_cx, int64_t h1_cy) {
 #line 34 "examples/mandelbrot/main.hero"
-    int64_t h2_zx; int64_t h3_zy; int64_t h4_n; int64_t h5_xx; int64_t h6_yy; int64_t h7_nx; HERO_NODEBUG int64_t h8_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_zx; int64_t h3_zy; int64_t h4_n; int64_t h5_xx; int64_t h6_yy; int64_t h7_nx; HERO_NODEBUG int64_t h8_ret0, t1, t2, t3, t4, t5, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44; HERO_NODEBUG bool t6, t23; HERO_ENTRY_STOP; goto bb0;
 #line 34 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -322,7 +322,7 @@ bb7:
 #line 53 "examples/mandelbrot/main.hero"
 int64_t h_main_row_total(int64_t h0_row) {
 #line 53 "examples/mandelbrot/main.hero"
-    int64_t h1_total; int64_t h2_cy; int64_t h3_col; int64_t h4_cx; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_total; int64_t h2_cy; int64_t h3_col; int64_t h4_cx; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34; HERO_NODEBUG bool t14; HERO_ENTRY_STOP; goto bb0;
 #line 53 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -427,7 +427,7 @@ bb3:
 #line 66 "examples/mandelbrot/main.hero"
 int64_t h_main_band(int64_t h0_index) {
 #line 66 "examples/mandelbrot/main.hero"
-    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_row; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_row; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t12, t13, t14, t15, t16, t17, t18, t19; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 66 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -497,7 +497,7 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 #line 76 "examples/mandelbrot/main.hero"
 int64_t h_main_together(void) {
 #line 76 "examples/mandelbrot/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t17, *t20, *t23, *t34, *t35, *t36; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t5, t6, t10, t11, t13, t14, t15, t16, t18, t19, t21, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33; int64_t h5_h; HERO_NODEBUG bool t7, t22; HERO_NODEBUG h_0fn_48ac9712 t9; HERO_ENTRY_STOP; goto bb0;
 #line 76 "examples/mandelbrot/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -637,7 +637,7 @@ bb7:
 #line 91 "examples/mandelbrot/main.hero"
 int64_t h_main_alone(void) {
 #line 91 "examples/mandelbrot/main.hero"
-    int64_t h0_total; int64_t h1_row; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_total; int64_t h1_row; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 91 "examples/mandelbrot/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -690,7 +690,7 @@ bb3:
 #line 101 "examples/mandelbrot/main.hero"
 void h_main_main(void) {
 #line 101 "examples/mandelbrot/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG int64_t t2, t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 101 "examples/mandelbrot/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_45927d37);

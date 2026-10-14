@@ -220,7 +220,7 @@ h_0opt_5553b083 h_deadaddresscopyinagrowingarray_opened(void) {
 #line 16 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 16 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinagrowingarray.opened", "db"); HERO_NODEBUG h_0opt_5553b083 h1_ret0 = {0}; HERO_NODEBUG h_0opt_5553b083 h2_own2 = {0}; HERO_NODEBUG h_0opt_5553b083 h3_own3 = {0}; HERO_NODEBUG cdb * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_5553b083 t9; HERO_NODEBUG cdb * t10; HERO_NODEBUG h_deadaddresscopyinagrowingarray_Db t11; HERO_NODEBUG h_0opt_5553b083 t12; HERO_NODEBUG h_0opt_5553b083 t13; HERO_NODEBUG h_0opt_5553b083 t14; HERO_NODEBUG h_0opt_5553b083 t15; HERO_ENTRY_STOP; goto bb0;
+    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinagrowingarray.opened", "db"); HERO_NODEBUG h_0opt_5553b083 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG cdb *t1, *t10; HERO_NODEBUG HeroStr t2, t7, t8; HERO_NODEBUG const char *t3; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_deadaddresscopyinagrowingarray_Db t11; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 bb0:
     t1 = ((void *)0);
@@ -301,7 +301,7 @@ bb4:
 #line 23 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 int64_t h_deadaddresscopyinagrowingarray_closed(h_deadaddresscopyinagrowingarray_Db *ph0_db) {
 #line 23 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-    HERO_NODEBUG h_deadaddresscopyinagrowingarray_Db t1; HERO_NODEBUG cdb * t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_deadaddresscopyinagrowingarray_Db t1; HERO_NODEBUG cdb *t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 bb0:
     t1 = (*ph0_db);
@@ -327,7 +327,7 @@ bb0:
 #line 26 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 void h_deadaddresscopyinagrowingarray_main(void) {
 #line 26 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
-    HERO_NODEBUG h_0opt_5553b083 h0_f0 = {0}; h_deadaddresscopyinagrowingarray_Db h1_db; HeroArrayHeader * h2_handles = {0}; HERO_NODEBUG h_0opt_5553b083 h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_5553b083 t1; HERO_NODEBUG h_0opt_5553b083 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_5553b083 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_0opt_5553b083 t8; HERO_NODEBUG h_deadaddresscopyinagrowingarray_Db t9; HERO_NODEBUG h_deadaddresscopyinagrowingarray_Db t10; HERO_NODEBUG cdb * t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG cdb * t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG h_0opt_5553b083 t18; HERO_NODEBUG h_0opt_5553b083 t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_5553b083 h0_f0 = {0}, h3_own3 = {0}, t1, t2, t6, t8, t18, t19; h_deadaddresscopyinagrowingarray_Db h1_db; HeroArrayHeader * h2_handles = {0}; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t12, *t14, *t20, *t21; HERO_NODEBUG int64_t t3, t4, t15; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_deadaddresscopyinagrowingarray_Db t9, t10; HERO_NODEBUG cdb *t11, *t16; HERO_NODEBUG int32_t t17; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/dead-address-copy-in-a-growing-array.hero"
 bb0:
     t1 = h_deadaddresscopyinagrowingarray_opened();

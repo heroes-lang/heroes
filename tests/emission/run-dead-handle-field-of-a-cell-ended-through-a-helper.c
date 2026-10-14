@@ -203,7 +203,7 @@ h_0opt_2436b697 h_deadhandlefieldofacellendedthroughahelper_opened(void) {
 #line 20 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 20 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadhandlefieldofacellendedthroughahelper.opened", "db"); HERO_NODEBUG h_0opt_2436b697 h1_ret0 = {0}; HERO_NODEBUG h_0opt_2436b697 h2_own2 = {0}; HERO_NODEBUG h_0opt_2436b697 h3_own3 = {0}; HERO_NODEBUG cdb * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_2436b697 t9; HERO_NODEBUG cdb * t10; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t11; HERO_NODEBUG h_0opt_2436b697 t12; HERO_NODEBUG h_0opt_2436b697 t13; HERO_NODEBUG h_0opt_2436b697 t14; HERO_NODEBUG h_0opt_2436b697 t15; HERO_ENTRY_STOP; goto bb0;
+    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadhandlefieldofacellendedthroughahelper.opened", "db"); HERO_NODEBUG h_0opt_2436b697 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG cdb *t1, *t10; HERO_NODEBUG HeroStr t2, t7, t8; HERO_NODEBUG const char *t3; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t11; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 bb0:
     t1 = ((void *)0);
@@ -284,7 +284,7 @@ bb4:
 #line 27 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 int64_t h_deadhandlefieldofacellendedthroughahelper_closed(h_deadhandlefieldofacellendedthroughahelper_Db *ph0_db) {
 #line 27 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-    HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t1; HERO_NODEBUG cdb * t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t1; HERO_NODEBUG cdb *t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 bb0:
     t1 = (*ph0_db);
@@ -310,7 +310,7 @@ bb0:
 #line 30 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 void h_deadhandlefieldofacellendedthroughahelper_main(void) {
 #line 30 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
-    HERO_NODEBUG h_0opt_2436b697 h0_f0 = {0}; h_deadhandlefieldofacellendedthroughahelper_Db h1_db; HERO_NODEBUG h_0opt_2436b697 h2_own2 = {0}; HERO_NODEBUG h_0opt_2436b697 t1; HERO_NODEBUG h_0opt_2436b697 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_2436b697 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_0opt_2436b697 t8; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t9; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t11; HERO_NODEBUG cdb * t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG h_0opt_2436b697 t14; HERO_NODEBUG h_0opt_2436b697 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_2436b697 h0_f0 = {0}, h2_own2 = {0}, t1, t2, t6, t8, t14, t15; h_deadhandlefieldofacellendedthroughahelper_Db h1_db; HERO_NODEBUG int64_t t3, t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_deadhandlefieldofacellendedthroughahelper_Db t9, t11; HERO_NODEBUG cdb *t12; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/dead-handle-field-of-a-cell-ended-through-a-helper.hero"
 bb0:
     t1 = h_deadhandlefieldofacellendedthroughahelper_opened();

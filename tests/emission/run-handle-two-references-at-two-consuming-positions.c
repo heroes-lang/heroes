@@ -168,7 +168,7 @@ void h_handletworeferencesattwoconsumingpositions_main(void);
 #line 21 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 void h_handletworeferencesattwoconsumingpositions_main(void) {
 #line 21 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
-    ob * h0_a; ob * h1_b; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG ob * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG ob * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG ob * t7; HERO_NODEBUG ob * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_a; ob * h1_b; HERO_NODEBUG ob *t1, *t2, *t3, *t5, *t7, *t8; HERO_NODEBUG HeroStr t4, t9; HERO_NODEBUG int64_t t6, t10; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/handle-two-references-at-two-consuming-positions.hero"
 bb0:
     t1 = ob_new();

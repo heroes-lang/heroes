@@ -248,7 +248,7 @@ HERO_TU_LOCAL int64_t h_fixedbugs2030one_count_3357de90(HeroArrayHeader * h0_xs)
 #line 20 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
 h_0opt_2b8e1d5b h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_mine(void) {
 #line 20 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
-    HERO_NODEBUG h_0opt_2b8e1d5b h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_2b8e1d5b t3; HERO_NODEBUG h_0opt_2b8e1d5b t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_2b8e1d5b h0_own0 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_78);
@@ -291,7 +291,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
 void h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_main(void) {
 #line 26 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
-    h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held h0_mine_held = {0}; h_fixedbugs2030one_Held h1_theirs; HeroMapHeader * h2_m1 = {0}; HeroMapHeader * h3_m2 = {0}; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held h4_own4 = {0}; HERO_NODEBUG h_0opt_7090cf3b h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_2b8e1d5b h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroMapHeader * h12_own12 = {0}; HERO_NODEBUG HeroMapHeader * h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG h_fixedbugs2030bheld_Held h19_own19 = {0}; HERO_NODEBUG h_fixedbugs2030bheld_Held h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugs2030one_Held t4; HERO_NODEBUG h_0opt_7090cf3b t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_2b8e1d5b t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_fixedbugs2030one_Held t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t13; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_fixedbugs2030one_Held t20; HERO_NODEBUG HeroMapHeader * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t25; HERO_NODEBUG HeroMapHeader * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroMapHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_fixedbugs2030one_Held t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG h_0fn_59f8344b t43; HERO_NODEBUG h_fixedbugs2030one_Held t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG h_0fn_7fa27005 t46; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG h_fixedbugs2030aheld_Held t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG h_fixedbugs2030bheld_Held t53; HERO_NODEBUG h_fixedbugs2030bheld_Held t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t58; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held t59; HERO_NODEBUG h_0opt_7090cf3b t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG h_0opt_2b8e1d5b t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroArrayHeader * t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG HeroMapHeader * t67; HERO_NODEBUG HeroMapHeader * t68; HERO_NODEBUG HeroMapHeader * t69; HERO_NODEBUG HeroMapHeader * t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG h_fixedbugs2030bheld_Held t76; HERO_NODEBUG h_fixedbugs2030bheld_Held t77; HERO_NODEBUG HeroArrayHeader * t78; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held h0_mine_held = {0}; h_fixedbugs2030one_Held h1_theirs; HeroMapHeader * h2_m1 = {0}; HeroMapHeader * h3_m2 = {0}; HERO_NODEBUG h_fixedbugs2030agenericattwomodulestypesofonenameistwoinstances_Held h4_own4 = {0}, t2, t13, t14, t23, t25, t36, t47, t58, t59; HERO_NODEBUG h_0opt_7090cf3b h5_own5 = {0}, t5, t60; HERO_NODEBUG HeroStr h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, t1, t6, t8, t9, t19, t22, t24, t38, t39, t61, t63, t64; HERO_NODEBUG h_0opt_2b8e1d5b h7_own7 = {0}, t7, t62; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *h11_own11 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h21_own21 = {0}, *t11, *t15, *t32, *t34, *t37, *t40, *t51, *t55, *t65, *t66, *t71, *t72, *t73, *t74, *t75, *t78; HERO_NODEBUG HeroMapHeader *h12_own12 = {0}, *h13_own13 = {0}, *t18, *t21, *t26, *t28, *t67, *t68, *t69, *t70; HERO_NODEBUG h_fixedbugs2030bheld_Held h19_own19 = {0}, h20_own20 = {0}, t53, t54, t76, t77; HERO_NODEBUG int64_t t3, t12, t16, t17, t27, t29, t30, t33, t35, t41, t42, t45, t48, t49, t52, t56, t57; HERO_NODEBUG h_fixedbugs2030one_Held t4, t10, t20, t31, t44; HERO_NODEBUG h_0fn_59f8344b t43; HERO_NODEBUG h_0fn_7fa27005 t46; HERO_NODEBUG h_fixedbugs2030aheld_Held t50; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-2030-a-generic-at-two-modules-types-of-one-name-is-two-instances.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1e9d68);
@@ -615,7 +615,7 @@ bb0:
 #line 24 "tests/golden/run/fixedbugs2030/one.hero"
 h_0opt_7090cf3b h_fixedbugs2030one_made(void) {
 #line 24 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG h_0opt_7090cf3b h0_own0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2030one_Held t2; HERO_NODEBUG h_0opt_7090cf3b t3; HERO_NODEBUG h_0opt_7090cf3b t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_7090cf3b h0_own0 = {0}, t3, t4; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2030one_Held t2; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = INT64_C(1);
@@ -666,7 +666,7 @@ bb0:
 #line 6 "tests/golden/run/fixedbugs2030/b/held.hero"
 h_fixedbugs2030bheld_Held h_fixedbugs2030bheld_made(void) {
 #line 6 "tests/golden/run/fixedbugs2030/b/held.hero"
-    HERO_NODEBUG h_fixedbugs2030bheld_Held h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_fixedbugs2030bheld_Held t2; HERO_NODEBUG h_fixedbugs2030bheld_Held t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs2030bheld_Held h0_own0 = {0}, t2, t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/run/fixedbugs2030/b/held.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_78);
@@ -691,7 +691,7 @@ bb0:
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs2030one_failure_21bceee4(h_0opt_7090cf3b h0_result) {
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG h_0opt_7090cf3b h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG h_0opt_7090cf3b t1; HERO_NODEBUG h_0opt_7090cf3b t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_7090cf3b t5; HERO_NODEBUG HeroFailure t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_7090cf3b t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG HeroStr t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_7090cf3b h1_s0 = {0}, t1, t2, t5, t10; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t8, t9, t11, t13; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t7, t12; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_result;
@@ -776,7 +776,7 @@ bb3:
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugs2030one_failure_19775961(h_0opt_2b8e1d5b h0_result) {
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG h_0opt_2b8e1d5b h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG h_0opt_2b8e1d5b t1; HERO_NODEBUG h_0opt_2b8e1d5b t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_2b8e1d5b t5; HERO_NODEBUG HeroFailure t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_2b8e1d5b t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG HeroStr t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_2b8e1d5b h1_s0 = {0}, t1, t2, t5, t10; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t8, t9, t11, t13; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t7, t12; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_result;
@@ -861,7 +861,7 @@ bb3:
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_count_21bceee4(HeroArrayHeader * h0_xs) {
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_xs;
@@ -877,7 +877,7 @@ bb0:
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_count_19775961(HeroArrayHeader * h0_xs) {
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_xs;
@@ -893,7 +893,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_keys_of_21bceee4(HeroMapHeader * h0_m) {
 #line 15 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_m;
@@ -909,7 +909,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_keys_of_19775961(HeroMapHeader * h0_m) {
 #line 15 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_m;
@@ -925,7 +925,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_both_640d6c44(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) {
 #line 18 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1, *t3; HERO_NODEBUG int64_t t2, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_a;
@@ -947,7 +947,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_both_35fdaaac(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) {
 #line 18 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1, *t3; HERO_NODEBUG int64_t t2, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_a;
@@ -1005,7 +1005,7 @@ bb0:
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_count_2427d01b(HeroArrayHeader * h0_xs) {
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_xs;
@@ -1021,7 +1021,7 @@ bb0:
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs2030one_count_3357de90(HeroArrayHeader * h0_xs) {
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs2030/one.hero"
 bb0:
     t1 = h0_xs;

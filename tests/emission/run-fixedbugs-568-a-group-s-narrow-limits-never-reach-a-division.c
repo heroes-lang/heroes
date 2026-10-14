@@ -152,7 +152,7 @@ void h_fixedbugs568agroupsnarrowlimitsneverreachadivision_main(void);
 #line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
 void h_fixedbugs568agroupsnarrowlimitsneverreachadivision_main(void) {
 #line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
-    int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; int32_t h6_x; HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int8_t t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int16_t t6; HERO_NODEBUG int16_t t7; HERO_NODEBUG int16_t t8; HERO_NODEBUG int16_t t9; HERO_NODEBUG int16_t t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG int32_t t18; HERO_NODEBUG int32_t t19; HERO_NODEBUG int32_t t20; HERO_ENTRY_STOP; goto bb0;
+    int8_t h0_a; int8_t h1_b; int16_t h2_c; int16_t h3_d; int32_t h4_e; int32_t h5_f; int32_t h6_x; HERO_NODEBUG int8_t t1, t2, t3, t4, t5; HERO_NODEBUG int16_t t6, t7, t8, t9, t10; HERO_NODEBUG int32_t t11, t12, t13, t14, t15, t16, t17, t18, t19, t20; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-568-a-group-s-narrow-limits-never-reach-a-division.hero"
 bb0:
     t1 = INT64_C(0);

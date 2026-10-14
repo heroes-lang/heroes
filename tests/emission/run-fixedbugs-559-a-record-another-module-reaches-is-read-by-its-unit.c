@@ -216,7 +216,7 @@ Pt h_fixedbugs559points_make(int32_t h0_v);
 #line 14 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
 void h_fixedbugs559arecordanothermodulereachesisreadbyitsunit_main(void) {
 #line 14 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
-    Pt h0_p; h_fixedbugs559holder_Holder h1_h; HeroArrayHeader * h2_xs = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG Pt t2; HERO_NODEBUG Pt t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG Pt t5; HERO_NODEBUG h_fixedbugs559holder_Holder t6; HERO_NODEBUG Pt t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG Pt t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_fixedbugs559holder_Holder t13; HERO_NODEBUG Pt t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG Pt t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG Pt t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_ENTRY_STOP; goto bb0;
+    Pt h0_p; h_fixedbugs559holder_Holder h1_h; HeroArrayHeader * h2_xs = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t10, *t11, *t17, *t21, *t22; HERO_NODEBUG int32_t t1, t8, t15; HERO_NODEBUG Pt t2, t3, t5, t7, t9, t14, t16, t19; HERO_NODEBUG int64_t t4, t12, t18; HERO_NODEBUG h_fixedbugs559holder_Holder t6, t13; HERO_NODEBUG bool t20; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-559-a-record-another-module-reaches-is-read-by-its-unit.hero"
 bb0:
     t1 = INT64_C(3);
@@ -299,7 +299,7 @@ bb0:
 #line 13 "tests/golden/run/fixedbugs559/holder.hero"
 int64_t h_fixedbugs559holder_get(Pt h0_p) {
 #line 13 "tests/golden/run/fixedbugs559/holder.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG Pt t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG Pt t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t6, t7, t11, t13, t16, t17; HERO_NODEBUG Pt t1, t3; HERO_NODEBUG int32_t t2, t4, t5; HERO_NODEBUG int64_t t8, t9, t14, t15; HERO_NODEBUG bool t10; HERO_NODEBUG HeroFailure t12; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs559/holder.hero"
 bb0:
     t1 = h0_p;

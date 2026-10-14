@@ -158,7 +158,7 @@ int32_t h_fixedbugs643other_magnitude(int32_t h0_x);
 #line 17 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
 void h_fixedbugs643aninlinebuiltintwomodulesbindisnodefinition_main(void) {
 #line 17 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-643-an-inline-builtin-two-modules-bind-is-no-definition.hero"
 bb0:
     t1 = INT64_C(-3);
@@ -183,7 +183,7 @@ bb0:
 #line 7 "tests/golden/run/fixedbugs643/other.hero"
 int32_t h_fixedbugs643other_magnitude(int32_t h0_x) {
 #line 7 "tests/golden/run/fixedbugs643/other.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs643/other.hero"
 bb0:
     t1 = h0_x;

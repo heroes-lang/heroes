@@ -176,7 +176,7 @@ void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void);
 #line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 void h_fixedbugs185arecordarrayfieldonthelastlinekeepsitsline_main(void) {
 #line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
-    Holder h0_h; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG Cell t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG Cell t5; HERO_NODEBUG Holder t7; HERO_NODEBUG Holder t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG Cell t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG Holder t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG Cell t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG int32_t t18; HERO_NODEBUG Holder t19; HERO_NODEBUG int32_t t20; HERO_ENTRY_STOP; goto bb0;
+    Holder h0_h; HERO_NODEBUG int32_t t1, t2, t4, t12, t17, t18, t20; HERO_NODEBUG Cell t3, t5, t11, t16; HERO_NODEBUG Holder t7, t8, t13, t19; HERO_NODEBUG int64_t t10, t15; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/run/fixedbugs-185-a-record-array-field-on-the-last-line-keeps-its-line.hero"
 bb0:
     t1 = INT64_C(2);

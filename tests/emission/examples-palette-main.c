@@ -244,7 +244,7 @@ bb0:
 #line 82 "examples/palette/main.hero"
 h_main_Colour h_main_unpack(int64_t h0_packed) {
 #line 82 "examples/palette/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_main_Colour t21; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20; HERO_NODEBUG h_main_Colour t21; HERO_ENTRY_STOP; goto bb0;
 #line 82 "examples/palette/main.hero"
 bb0:
 #line 84 "examples/palette/main.hero"
@@ -302,7 +302,7 @@ bb0:
 #line 90 "examples/palette/main.hero"
 int64_t h_main_pack(h_main_Colour h0_c) {
 #line 90 "examples/palette/main.hero"
-    HERO_NODEBUG h_main_Colour t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_main_Colour t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_main_Colour t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_main_Colour t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Colour t1, t5, t10, t15; HERO_NODEBUG int64_t t2, t3, t4, t6, t7, t8, t9, t11, t12, t13, t14, t16, t17, t18, t19; HERO_ENTRY_STOP; goto bb0;
 #line 90 "examples/palette/main.hero"
 bb0:
     t1 = h0_c;
@@ -358,7 +358,7 @@ bb0:
 #line 96 "examples/palette/main.hero"
 int64_t h_main_swap_red_and_blue(int64_t h0_packed) {
 #line 96 "examples/palette/main.hero"
-    h_main_Colour h1_c; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_main_Colour t2; HERO_NODEBUG h_main_Colour t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_main_Colour t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_main_Colour t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_main_Colour t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_main_Colour t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    h_main_Colour h1_c; HERO_NODEBUG int64_t t1, t4, t6, t8, t10, t12; HERO_NODEBUG h_main_Colour t2, t3, t5, t7, t9, t11; HERO_ENTRY_STOP; goto bb0;
 #line 96 "examples/palette/main.hero"
 bb0:
     t1 = h0_packed;
@@ -393,7 +393,7 @@ bb0:
 #line 102 "examples/palette/main.hero"
 bool h_main_readable(int64_t h0_mode) {
 #line 102 "examples/palette/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG bool t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 102 "examples/palette/main.hero"
 bb0:
     t1 = h0_mode;
@@ -415,7 +415,7 @@ bb0:
 #line 105 "examples/palette/main.hero"
 HeroStr h_main_hex_of(int64_t h0_value) {
 #line 105 "examples/palette/main.hero"
-    HeroStr h1_digits = {0}; HeroStr h2_out = {0}; int64_t h3_i; int64_t h4_nibble; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h1_digits = {0}; HeroStr h2_out = {0}; int64_t h3_i; int64_t h4_nibble; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t1, t2, t14, t15, t20, t21, t25, t26, t27, t28, t29, t30; HERO_NODEBUG int64_t t3, t4, t5, t7, t8, t9, t10, t11, t12, t13, t16, t17, t18, t19, t22, t23, t24; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 105 "examples/palette/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
@@ -530,7 +530,7 @@ bb3:
 #line 117 "examples/palette/main.hero"
 void h_main_main(void) {
 #line 117 "examples/palette/main.hero"
-    h_main_Colour h0_red; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_main_Colour t14; HERO_NODEBUG h_main_Colour t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_main_Colour t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_main_Colour t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_main_Colour t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG h_main_Colour t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG bool t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG bool t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_ENTRY_STOP; goto bb0;
+    h_main_Colour h0_red; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t28, t31, t48, t49; HERO_NODEBUG int64_t t1, t2, t4, t5, t7, t8, t10, t11, t13, t16, t18, t20, t22, t24, t25, t27, t29, t30, t32, t33, t35, t37, t38, t39, t40, t41, t43, t44, t45, t46; HERO_NODEBUG bool t3, t6, t9, t12, t26, t34, t36, t42, t47; HERO_NODEBUG h_main_Colour t14, t15, t17, t19, t21, t23; HERO_ENTRY_STOP; goto bb0;
 #line 117 "examples/palette/main.hero"
 bb0:
 #line 119 "examples/palette/main.hero"

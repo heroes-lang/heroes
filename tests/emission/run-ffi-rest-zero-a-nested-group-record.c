@@ -196,7 +196,7 @@ bb0:
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 struct outer h_ffirestzeroanestedgrouprecord_built(void) {
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG SA t3; HERO_NODEBUG struct outer t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG SA t3; HERO_NODEBUG struct outer t4; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 bb0:
     t1 = INT64_C(2);
@@ -228,7 +228,7 @@ void h_ffirestzeroanestedgrouprecord_main(void) {
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
-    struct outer *const hero_lend_h0_a = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "a"); struct outer *const hero_lend_h1_b = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "b"); HERO_NODEBUG struct outer t1; HERO_NODEBUG struct outer t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG struct outer t5; HERO_NODEBUG SA t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG struct outer t10; HERO_NODEBUG struct outer t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG struct outer t14; HERO_NODEBUG SA t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_ENTRY_STOP; goto bb0;
+    struct outer *const hero_lend_h0_a = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "a"); struct outer *const hero_lend_h1_b = (struct outer *)hero_lend_local(sizeof(struct outer), "ffirestzeroanestedgrouprecord.main", "b"); HERO_NODEBUG struct outer t1, t2, t5, t10, t11, t14; HERO_NODEBUG int32_t t3, t7, t12, t16; HERO_NODEBUG HeroStr t4, t8, t13, t17; HERO_NODEBUG SA t6, t15; HERO_NODEBUG int64_t t9, t18; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
 bb0:
     (void)dirty();

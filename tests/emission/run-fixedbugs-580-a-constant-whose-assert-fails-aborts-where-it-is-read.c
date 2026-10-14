@@ -100,7 +100,7 @@ void h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_main(void);
 #line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
 int64_t h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_V(void) {
 #line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t5; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5e45c63d);
@@ -127,7 +127,7 @@ bb2:
 #line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
 void h_fixedbugs580aconstantwhoseassertfailsabortswhereitisread_main(void) {
 #line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-580-a-constant-whose-assert-fails-aborts-where-it-is-read.hero"
 bb0:
     t1 = INT64_C(1);

@@ -172,7 +172,7 @@ void h_fixedbugs584sprintfwithfortificationoffbuildssilent_main(void);
 #line 20 "tests/golden/run/fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero"
 void h_fixedbugs584sprintfwithfortificationoffbuildssilent_main(void) {
 #line 20 "tests/golden/run/fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero"
-    HERO_NODEBUG h_0opt_fbbb698 h0_f0 = {0}; void * h1_p; int32_t h2_k; HERO_NODEBUG h_0opt_fbbb698 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0opt_fbbb698 t2; HERO_NODEBUG h_0opt_fbbb698 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_fbbb698 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_fbbb698 t9; HERO_NODEBUG uint64_t t10; HERO_NODEBUG void * t11; HERO_NODEBUG void * t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG const char * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG void * t18; HERO_NODEBUG h_0opt_fbbb698 t19; HERO_NODEBUG h_0opt_fbbb698 t20; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_fbbb698 h0_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t9, t19, t20; void * h1_p; int32_t h2_k; HERO_NODEBUG int64_t t1, t4, t5, t15; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG uint64_t t10; HERO_NODEBUG void *t11, *t12, *t18; HERO_NODEBUG HeroStr t13; HERO_NODEBUG const char *t14; HERO_NODEBUG int32_t t16, t17; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-584-sprintf-with-fortification-off-builds-silent.hero"
 bb0:
     t1 = INT64_C(64);

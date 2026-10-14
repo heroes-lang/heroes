@@ -102,7 +102,7 @@ void h_adversarialstrcopyout_main(void);
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
 void h_adversarialstrcopyout_extend(HeroStr *ph0_s, int64_t h1_times) {
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
-    int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_i; HERO_NODEBUG HeroStr h3_own3 = {0}, t5, t6, t7, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t8, t9, t10, t11, t12; HERO_NODEBUG bool t4, t13; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/adversarial-str-copy-out.hero"
 bb0:
     t1 = INT64_C(0);
@@ -182,7 +182,7 @@ bb7:
 #line 23 "tests/golden/run/adversarial-str-copy-out.hero"
 void h_adversarialstrcopyout_main(void) {
 #line 23 "tests/golden/run/adversarial-str-copy-out.hero"
-    HeroStr h0_a = {0}; HeroStr h1_b = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_a = {0}; HeroStr h1_b = {0}; HERO_NODEBUG HeroStr t1, t3, t4, t6, t8, t9, t11, t12; HERO_NODEBUG int64_t t2, t5, t7, t10; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/adversarial-str-copy-out.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1b6fd0);

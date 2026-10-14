@@ -173,7 +173,7 @@ int64_t h_fixedbugs577agroupsconstantinastepabortswhereitisread_INT64_MAX(void) 
 #line 11 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
 int64_t h_fixedbugs577agroupsconstantinastepabortswhereitisread_N(void) {
 #line 11 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
 bb0:
     t1 = h_fixedbugs577agroupsconstantinastepabortswhereitisread_INT64_MAX();
@@ -189,7 +189,7 @@ bb0:
 #line 14 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
 void h_fixedbugs577agroupsconstantinastepabortswhereitisread_main(void) {
 #line 14 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-577-a-group-s-constant-in-a-step-aborts-where-it-is-read.hero"
 bb0:
     t1 = INT64_C(1);

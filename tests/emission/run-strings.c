@@ -103,7 +103,7 @@ void h_strings_main(void);
 #line 5 "tests/golden/run/strings.hero"
 void h_strings_main(void) {
 #line 5 "tests/golden/run/strings.hero"
-    HeroStr h0_greeting = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG bool t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_greeting = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t10, t13, t16, t17, t18, t20, t21, t24, t26, t27, t28, t29, t30, t31, t32; HERO_NODEBUG int64_t t9, t11, t14, t15, t23; HERO_NODEBUG uint8_t t12; HERO_NODEBUG bool t19, t22, t25; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/run/strings.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_2f372e9c);

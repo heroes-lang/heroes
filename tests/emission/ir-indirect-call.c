@@ -100,7 +100,7 @@ void h_indirectcall_main(void);
 #line 6 "tests/golden/ir/indirect-call.hero"
 int64_t h_indirectcall_double(int64_t h0_n) {
 #line 6 "tests/golden/ir/indirect-call.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/ir/indirect-call.hero"
 bb0:
     t1 = h0_n;
@@ -116,7 +116,7 @@ bb0:
 #line 9 "tests/golden/ir/indirect-call.hero"
 int64_t h_indirectcall_apply_twice(int64_t h0_n, h_0fn_48ac9712 h1_f) {
 #line 9 "tests/golden/ir/indirect-call.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/ir/indirect-call.hero"
 bb0:
     t1 = h1_f;
@@ -136,7 +136,7 @@ bb0:
 #line 12 "tests/golden/ir/indirect-call.hero"
 void h_indirectcall_main(void) {
 #line 12 "tests/golden/ir/indirect-call.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/ir/indirect-call.hero"
 bb0:
     t1 = INT64_C(3);

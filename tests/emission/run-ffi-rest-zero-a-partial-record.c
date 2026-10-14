@@ -183,7 +183,7 @@ void h_ffirestzeroapartialrecord_main(void) {
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 #define h0_s (*hero_lend_h0_s)
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
-    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); HERO_NODEBUG SP t1; HERO_NODEBUG SP t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    SP *const hero_lend_h0_s = (SP *)hero_lend_local(sizeof(SP), "ffirestzeroapartialrecord.main", "s"); HERO_NODEBUG SP t1, t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/ffi-rest-zero-a-partial-record.hero"
 bb0:
     (void)dirty();

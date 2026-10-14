@@ -97,7 +97,7 @@ void h_fixedbugs389anegativeindexabortsintheruntimeswords_main(void);
 #line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
 void h_fixedbugs389anegativeindexabortsintheruntimeswords_main(void) {
 #line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
-    HeroArrayHeader * h0_xs = {0}; int64_t h1_at; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; int64_t h1_at; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t4, *t8, *t11, *t14, *t15; HERO_NODEBUG int64_t t1, t2, t3, t5, t6, t7, t9, t10, t12, t13; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/run/fixedbugs-389-a-negative-index-aborts-in-the-runtime-s-words.hero"
 bb0:
     t1 = INT64_C(10);

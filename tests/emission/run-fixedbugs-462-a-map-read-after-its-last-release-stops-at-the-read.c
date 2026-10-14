@@ -156,7 +156,7 @@ void h_fixedbugs462amapreadafteritslastreleasestopsattheread_main(void);
 #line 17 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
 void h_fixedbugs462amapreadafteritslastreleasestopsattheread_main(void) {
 #line 17 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-462-a-map-read-after-its-last-release-stops-at-the-read.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_4242160);

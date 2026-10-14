@@ -169,7 +169,7 @@ void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void);
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 void h_limitastalecopyfaultingincnamesthecopytheprogramkept_main(void) {
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
-    outer * h0_a; outer * h1_kept; outer * h2_b; HERO_NODEBUG outer * t1; HERO_NODEBUG outer * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG outer * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG outer * t6; HERO_NODEBUG outer * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG outer * t9; HERO_NODEBUG outer * t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG outer * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG outer * t15; HERO_ENTRY_STOP; goto bb0;
+    outer * h0_a; outer * h1_kept; outer * h2_b; HERO_NODEBUG outer *t1, *t2, *t4, *t6, *t7, *t9, *t10, *t13, *t15; HERO_NODEBUG HeroStr t3, t8, t12; HERO_NODEBUG int64_t t5, t14; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/limit-a-stale-copy-faulting-in-c-names-the-copy-the-program-kept.hero"
 bb0:
     t1 = make();

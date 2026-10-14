@@ -98,7 +98,7 @@ void h_mutableparameter_main(void);
 #line 10 "tests/golden/run/mutable-parameter.hero"
 void h_mutableparameter_count_down(int64_t *ph0_n, int64_t *ph1_seen) {
 #line 10 "tests/golden/run/mutable-parameter.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8, t9, t10, t11; HERO_NODEBUG bool t3, t12; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/mutable-parameter.hero"
 bb0:
 #line 10 "tests/golden/run/mutable-parameter.hero"
@@ -162,7 +162,7 @@ bb7:
 #line 18 "tests/golden/run/mutable-parameter.hero"
 void h_mutableparameter_main(void) {
 #line 18 "tests/golden/run/mutable-parameter.hero"
-    int64_t h0_n; int64_t h1_seen; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_n; int64_t h1_seen; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/mutable-parameter.hero"
 bb0:
     t1 = INT64_C(10);

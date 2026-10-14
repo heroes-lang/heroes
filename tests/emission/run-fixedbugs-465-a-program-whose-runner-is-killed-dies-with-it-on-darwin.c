@@ -266,7 +266,7 @@ HeroStr h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_itself(void)
 #line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 #define h1_marks (*hero_lend_h1_marks)
 #line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb0:
     t1 = INT64_C(0);
@@ -301,7 +301,7 @@ int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_again(HeroAr
 #line 53 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 #define h6_status (*hero_lend_h6_status)
 #line 53 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HeroStr h2_program = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_word = {0}; int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.again", "status"); int64_t h7_code; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG const char * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG const char * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG const char * t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG const char * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroStr t31; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h2_program = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t3, *t6, *t9, *t30; HERO_NODEBUG int64_t h4_i0, t4, t5, t7, t10, t13, t14, t15, t16, t17, t26, t27; HeroStr h5_word = {0}; int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin.again", "status"); int64_t h7_code; HERO_NODEBUG HeroStr h8_own8 = {0}, t1, t2, t11, t12, t18, t20, t22, t24, t28, t29, t31; HERO_NODEBUG bool t8; HERO_NODEBUG const char *t19, *t21, *t23, *t25; HERO_ENTRY_STOP; goto bb0;
 #line 53 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb0:
     t1 = h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_itself();
@@ -429,7 +429,7 @@ bb4:
 #line 68 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_beats(HeroStr h0_dir) {
 #line 68 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 68 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb0:
     t1 = h0_dir;
@@ -453,7 +453,7 @@ bb0:
 #line 74 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_second(HeroStr h0_dir) {
 #line 74 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t3, *t6; HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 74 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_241dd27);
@@ -483,7 +483,7 @@ bb0:
 #line 79 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_third(HeroStr h0_dir) {
 #line 79 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}; int64_t h2_born; int64_t h3_n; int64_t h4_k; HERO_NODEBUG h_0opt_a8ea2 h5_f1 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_a8ea2 h11_own11 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_a8ea2 t5; HERO_NODEBUG h_0opt_a8ea2 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG void * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG void * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_a8ea2 t41; HERO_NODEBUG h_0opt_a8ea2 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG h_0opt_a8ea2 t50; HERO_NODEBUG h_0opt_a8ea2 t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_0opt_a8ea2 t55; HERO_NODEBUG h_0opt_a8ea2 t56; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h5_f1 = {0}, h7_own7 = {0}, h11_own11 = {0}, t5, t6, t41, t42, t50, t51, t55, t56; int64_t h2_born; int64_t h3_n; int64_t h4_k; HERO_NODEBUG HeroStr h6_own6 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t1, t2, t3, t4, t34, t35, t36, t38, t39, t40, t49, t52, t53, t54; HERO_NODEBUG int64_t t7, t8, t14, t15, t16, t18, t19, t20, t21, t23, t24, t25, t26, t27, t28, t29, t31, t32, t33, t37, t43, t44, t46, t47, t48; HERO_NODEBUG bool t9, t22, t30, t45; HERO_NODEBUG int32_t t10, t11; HERO_NODEBUG void *t13, *t17; HERO_ENTRY_STOP; goto bb0;
 #line 79 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb0:
     t1 = h0_dir;
@@ -710,7 +710,7 @@ bb13:
 #line 98 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 int64_t h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_spin(void) {
 #line 98 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    int64_t h0_n; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_n; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t7, t9, t10; HERO_NODEBUG bool t2, t8; HERO_ENTRY_STOP; goto bb0;
 #line 98 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb0:
     t1 = INT64_C(0);
@@ -769,7 +769,7 @@ bb6:
 #line 109 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_first(void) {
 #line 109 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HeroStr h0_dir = {0}; int64_t h1_code; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; int64_t h3_before; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int32_t t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG HeroFailure t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG bool t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG const char * t51; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG HeroStr t62; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_dir = {0}; int64_t h1_code; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h8_own8 = {0}, t19, t20, t24, t26, t58, t59; int64_t h3_before; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h9_own9 = {0}, h11_own11 = {0}, t1, t3, t4, t5, t6, t7, t10, t11, t15, t30, t31, t32, t37, t38, t42, t43, t44, t48, t49, t50, t53, t54, t55, t56, t60, t62; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h10_own10 = {0}, *t12, *t39, *t57, *t61; HERO_NODEBUG int64_t t2, t13, t14, t16, t17, t21, t22, t27, t28, t33, t34, t35, t40, t45, t46; HERO_NODEBUG const char *t8, *t51; HERO_NODEBUG int32_t t18; HERO_NODEBUG bool t23, t29, t36, t47; HERO_NODEBUG HeroFailure t25; HERO_ENTRY_STOP; goto bb0;
 #line 109 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_72d850e8);
@@ -1011,7 +1011,7 @@ bb8:
 #line 127 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 void h_fixedbugs465aprogramwhoserunneriskilleddieswithitondarwin_main(void) {
 #line 127 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
-    HeroArrayHeader * h0_words = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_words = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t6, *t11, *t14, *t19, *t23, *t24; HERO_NODEBUG int64_t t3, t4, t7, t12, t15, t20, t22; HERO_NODEBUG bool t5, t10, t18; HERO_NODEBUG HeroStr t8, t9, t13, t16, t17, t21; HERO_ENTRY_STOP; goto bb0;
 #line 127 "tests/golden/run/fixedbugs-465-a-program-whose-runner-is-killed-dies-with-it-on-darwin.hero"
 bb0:
     t1 = h_library_args();
@@ -1126,7 +1126,7 @@ int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 186 "<heroes library>"
-    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_a8ea2 t18; HERO_NODEBUG h_0opt_a8ea2 t19; HERO_NODEBUG h_0opt_a8ea2 t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0;
 #line 186 "<heroes library>"
 bb0:
     t1 = h0_path;
@@ -1244,7 +1244,7 @@ bb7:
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);

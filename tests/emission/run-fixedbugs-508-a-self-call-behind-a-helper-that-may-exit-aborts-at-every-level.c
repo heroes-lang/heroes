@@ -100,7 +100,7 @@ void h_library_exit(int64_t h0_code);
 #line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 int64_t h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_helper(int64_t h0_n) {
 #line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 bb0:
     t1 = h0_n;
@@ -140,7 +140,7 @@ bb3:
 #line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 int64_t h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_climbs(int64_t h0_n) {
 #line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 bb0:
     t1 = h0_n;
@@ -156,7 +156,7 @@ bb0:
 #line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 void h_fixedbugs508aselfcallbehindahelperthatmayexitabortsateverylevel_main(void) {
 #line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-508-a-self-call-behind-a-helper-that-may-exit-aborts-at-every-level.hero"
 bb0:
     t1 = INT64_C(1);

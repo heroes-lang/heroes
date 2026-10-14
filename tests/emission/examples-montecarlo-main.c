@@ -156,7 +156,7 @@ bb0:
 #line 36 "examples/montecarlo/main.hero"
 int64_t h_main_next_of(int64_t h0_x) {
 #line 36 "examples/montecarlo/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 36 "examples/montecarlo/main.hero"
 bb0:
     t1 = INT64_C(16807);
@@ -180,7 +180,7 @@ bb0:
 #line 41 "examples/montecarlo/main.hero"
 int64_t h_main_inside_for(int64_t h0_seed) {
 #line 41 "examples/montecarlo/main.hero"
-    hero_thread_guard("main.inside_for"); int64_t h1_hits; int64_t h2_x; int64_t h3_n; int64_t h4_a; int64_t h5_b; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("main.inside_for"); int64_t h1_hits; int64_t h2_x; int64_t h3_n; int64_t h4_a; int64_t h5_b; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t32, t33, t34, t35, t36, t37, t38; HERO_NODEBUG bool t10, t31; HERO_ENTRY_STOP; goto bb0;
 #line 41 "examples/montecarlo/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -315,7 +315,7 @@ int64_t h_0cb_main_inside_for(int64_t h0_seed) {
 #line 58 "examples/montecarlo/main.hero"
 double h_main_estimate(void) {
 #line 58 "examples/montecarlo/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_hits; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG double t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG double t38; HERO_NODEBUG double t39; HERO_NODEBUG HeroArrayHeader * t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_hits; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t15, *t18, *t21, *t40, *t41, *t42; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t8, t9, t11, t12, t13, t14, t16, t17, t19, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t35, t36, t37; int64_t h5_h; HERO_NODEBUG bool t5, t20; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG double t34, t38, t39; HERO_ENTRY_STOP; goto bb0;
 #line 58 "examples/montecarlo/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -463,7 +463,7 @@ bb7:
 #line 73 "examples/montecarlo/main.hero"
 void h_main_main(void) {
 #line 73 "examples/montecarlo/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG double t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t5, t7; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_NODEBUG double t8; HERO_ENTRY_STOP; goto bb0;
 #line 73 "examples/montecarlo/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5a3c82c4);

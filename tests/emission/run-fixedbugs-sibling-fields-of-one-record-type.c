@@ -185,7 +185,7 @@ void h_fixedbugssiblingfieldsofonerecordtype_main(void);
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 void h_fixedbugssiblingfieldsofonerecordtype_main(void) {
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
-    Pair h0_p; HERO_NODEBUG int64_t t1; HERO_NODEBUG Pair t2; HERO_NODEBUG Pair t3; HERO_NODEBUG Inner t4; HERO_NODEBUG Slot * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG Pair t7; HERO_NODEBUG Inner t8; HERO_NODEBUG Slot * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG Pair t11; HERO_NODEBUG Inner t12; HERO_NODEBUG Slot * t13; HERO_NODEBUG Pair t14; HERO_NODEBUG Inner t15; HERO_NODEBUG Slot * t16; HERO_NODEBUG HeroStr t17; HERO_ENTRY_STOP; goto bb0;
+    Pair h0_p; HERO_NODEBUG int64_t t1, t6, t10; HERO_NODEBUG Pair t2, t3, t7, t11, t14; HERO_NODEBUG Inner t4, t8, t12, t15; HERO_NODEBUG Slot *t5, *t9, *t13, *t16; HERO_NODEBUG HeroStr t17; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-sibling-fields-of-one-record-type.hero"
 bb0:
     t1 = INT64_C(7);

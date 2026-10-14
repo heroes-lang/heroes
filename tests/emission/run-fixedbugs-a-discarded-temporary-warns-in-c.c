@@ -116,7 +116,7 @@ void h_fixedbugsadiscardedtemporarywarnsinc_main(void);
 #line 35 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 h_0opt_e201354 h_fixedbugsadiscardedtemporarywarnsinc_risky(int64_t h0_n) {
 #line 35 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t10, t11, t12, t13; HERO_NODEBUG int64_t t1, t2, t7, t8, t9; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb0:
     t1 = h0_n;
@@ -185,7 +185,7 @@ bb4:
 #line 40 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 h_0opt_a8ea2 h_fixedbugsadiscardedtemporarywarnsinc_unit_risky(int64_t h0_n) {
 #line 40 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-    HERO_NODEBUG h_0opt_a8ea2 h1_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h2_own2 = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_a8ea2 t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG h_0opt_a8ea2 t8; HERO_NODEBUG h_0opt_a8ea2 t9; HERO_NODEBUG h_0opt_a8ea2 t10; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_a8ea2 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t7, t8, t9, t10; HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 40 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb0:
     t1 = h0_n;
@@ -248,7 +248,7 @@ bb4:
 #line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 void h_fixedbugsadiscardedtemporarywarnsinc_main(void) {
 #line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f1 = {0}; HeroStr h2_a = {0}; HeroStr h3_b = {0}; HeroArrayHeader * h4_xs = {0}; HeroArrayHeader * h5_ys = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG __attribute__((unused)) bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_a8ea2 t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG __attribute__((unused)) bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG __attribute__((unused)) bool t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG __attribute__((unused)) bool t30; HERO_NODEBUG double t31; HERO_NODEBUG double t32; HERO_NODEBUG __attribute__((unused)) bool t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG bool t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_a8ea2 t40; HERO_NODEBUG h_0opt_a8ea2 t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h6_own6 = {0}, t4, t5, t38, t39; HERO_NODEBUG h_0opt_a8ea2 h1_f1 = {0}, h7_own7 = {0}, t12, t13, t40, t41; HeroStr h2_a = {0}; HeroStr h3_b = {0}; HeroArrayHeader * h4_xs = {0}; HeroArrayHeader * h5_ys = {0}; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h9_own9 = {0}, *t24, *t27, *t28, *t29, *t44, *t45, *t46, *t47; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t9, t10, t11, t14, t15, t22, t23, t25, t26, t37; HERO_NODEBUG __attribute__((unused)) bool t8, t16, t21, t30, t33; HERO_NODEBUG HeroStr t17, t18, t19, t20, t34, t35, t42, t43; HERO_NODEBUG double t31, t32; HERO_NODEBUG bool t36; HERO_ENTRY_STOP; goto bb0;
 #line 45 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"
 bb0:
 #line 48 "tests/golden/run/fixedbugs-a-discarded-temporary-warns-in-c.hero"

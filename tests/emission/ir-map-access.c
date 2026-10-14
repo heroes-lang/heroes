@@ -113,7 +113,7 @@ int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs);
 #line 5 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_score_of(HeroMapHeader * h0_scores, HeroStr h1_name) {
 #line 5 "tests/golden/ir/map-access.hero"
-    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_own4 = {0}, t3, t4, t8, t12, t13; HERO_NODEBUG int64_t h3_r0, t5, t6, t9, t10, t11; HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/ir/map-access.hero"
 bb0:
     t1 = h0_scores;
@@ -192,7 +192,7 @@ bb3:
 #line 8 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_first_of(HeroArrayHeader * h0_xs) {
 #line 8 "tests/golden/ir/map-access.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/ir/map-access.hero"
 bb0:
     t1 = h0_xs;
@@ -208,7 +208,7 @@ bb0:
 #line 11 "tests/golden/ir/map-access.hero"
 int64_t h_mapaccess_both(HeroMapHeader * h0_scores, HeroArrayHeader * h1_xs) {
 #line 11 "tests/golden/ir/map-access.hero"
-    HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroMapHeader *t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3, t5, t6; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/ir/map-access.hero"
 bb0:
     t1 = h0_scores;

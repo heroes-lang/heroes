@@ -156,7 +156,7 @@ void h_fixedbugs163aplaincharpointeeboundasi8_main(void) {
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 #define h0_v (*hero_lend_h0_v)
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
-    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v"); HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_ENTRY_STOP; goto bb0;
+    int8_t *const hero_lend_h0_v = (int8_t *)hero_lend_local(sizeof(int8_t), "fixedbugs163aplaincharpointeeboundasi8.main", "v"); HERO_NODEBUG int8_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-163-a-plain-char-pointee-bound-as-i8.hero"
 bb0:
     t1 = INT64_C(0);

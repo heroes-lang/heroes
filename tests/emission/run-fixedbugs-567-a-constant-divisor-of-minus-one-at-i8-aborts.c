@@ -97,7 +97,7 @@ void h_fixedbugs567aconstantdivisorofminusoneati8aborts_main(void);
 #line 11 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
 void h_fixedbugs567aconstantdivisorofminusoneati8aborts_main(void) {
 #line 11 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
-    int8_t h0_x; HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int8_t t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int8_t t6; HERO_NODEBUG int8_t t7; HERO_NODEBUG int8_t t8; HERO_NODEBUG int8_t t9; HERO_NODEBUG int8_t t10; HERO_ENTRY_STOP; goto bb0;
+    int8_t h0_x; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-567-a-constant-divisor-of-minus-one-at-i8-aborts.hero"
 bb0:
     t1 = INT64_C(-127);

@@ -253,7 +253,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_OBJ
 #line 14 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
 void h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_main(void) {
 #line 14 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
-    HERO_NODEBUG struct pt t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG struct pt t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG struct pt t5; HERO_NODEBUG int32_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG struct pt t1, t3, t5; HERO_NODEBUG int32_t t2, t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-an-expression-still-builds.hero"
 bb0:
     t1 = h_fixedbugs094aconstanttheheaderspellsasanexpressionstillbuilds_PT_LIT();

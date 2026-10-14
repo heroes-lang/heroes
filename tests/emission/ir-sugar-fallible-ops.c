@@ -109,7 +109,7 @@ int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v);
 #line 4 "tests/golden/ir/sugar-fallible-ops.hero"
 int64_t h_sugarfallibleops_widen(h_0opt_e201354 h0_v) {
 #line 4 "tests/golden/ir/sugar-fallible-ops.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_f1 = {0}; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG h_0opt_e201354 h4_f2 = {0}; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG h_0opt_e201354 t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG HeroFailure t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, t1, t2, t6, t7, t11, t15, t16, t20, t22, t25, t26, t27; HERO_NODEBUG int64_t h3_r0, h5_ret0, t3, t4, t8, t9, t12, t13, t14, t17, t18, t23, t24; HERO_NODEBUG bool t5, t10, t19; HERO_NODEBUG HeroFailure t21; HERO_ENTRY_STOP; goto bb0;
 #line 4 "tests/golden/ir/sugar-fallible-ops.hero"
 bb0:
     t1 = h0_v;

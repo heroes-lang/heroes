@@ -97,7 +97,7 @@ void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void);
 #line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
 void h_fixedbugs389areadofanemptyarrayabortsintheruntimeswords_main(void) {
 #line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
-    HeroArrayHeader * h0_empty = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_empty = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t7, *t8; HERO_NODEBUG int64_t t3, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/run/fixedbugs-389-a-read-of-an-empty-array-aborts-in-the-runtime-s-words.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

@@ -181,7 +181,7 @@ void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void);
 #line 18 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 void h_fixedbugs151armsamacroreachesaswideastheirnamedunionscompared_main(void) {
 #line 18 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG ADDR t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG ADDR t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG ADDR t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG ADDR t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG ADDR t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG int32_t t18; HERO_NODEBUG ACT t19; HERO_NODEBUG int32_t t20; HERO_NODEBUG ACT t21; HERO_NODEBUG bool t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG ACT t25; HERO_NODEBUG int32_t t26; HERO_NODEBUG ACT t27; HERO_NODEBUG bool t28; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t3, t7, t9, t13, t17; HERO_NODEBUG ADDR t2, t4, t8, t10, t14; HERO_NODEBUG bool t5, t11, t22, t28; HERO_NODEBUG HeroStr t6, t12, t23; HERO_NODEBUG int64_t t16; HERO_NODEBUG int32_t t18, t20, t24, t26; HERO_NODEBUG ACT t19, t21, t25, t27; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"
 bb0:
 #line 20 "tests/golden/run/fixedbugs-151-arms-a-macro-reaches-as-wide-as-their-named-unions-compared.hero"

@@ -119,7 +119,7 @@ h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs
 #line 7 "tests/golden/ir/sugar-try.hero"
 h_0opt_e201354 h_sugartry_first_of(HeroArrayHeader * h0_xs) {
 #line 7 "tests/golden/ir/sugar-try.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t7, t11, t12, t13, t14; HERO_NODEBUG HeroArrayHeader *t1, *t8; HERO_NODEBUG int64_t t2, t3, t9, t10; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/ir/sugar-try.hero"
 bb0:
     t1 = h0_xs;
@@ -190,7 +190,7 @@ bb4:
 #line 12 "tests/golden/ir/sugar-try.hero"
 h_0opt_e201354 h_sugartry_step(h_sugartry_Reader *ph0_r, HeroArrayHeader * h1_xs) {
 #line 12 "tests/golden/ir/sugar-try.hero"
-    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; int64_t h3_v; HERO_NODEBUG h_0opt_e201354 h4_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_sugartry_Reader t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t2, t3, t7, t9, t10, t17, t18, t19, t20, t21, t22; int64_t h3_v; HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t4, t5, t11, t13, t14, t15, t16; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_sugartry_Reader t12; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/ir/sugar-try.hero"
 bb0:
     t1 = h1_xs;

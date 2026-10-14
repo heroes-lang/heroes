@@ -154,7 +154,7 @@ void h_fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes_main(void);
 #line 11 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
 void h_fixedbugs590afpevalmethodinaheaderthegroupsheaderincludes_main(void) {
 #line 11 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-590-a-fp-eval-method-in-a-header-the-group-s-header-includes.hero"
 bb0:
     t1 = INT64_C(-7);

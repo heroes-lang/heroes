@@ -177,7 +177,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 #line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 void h_abortafixedarrayelementwrittenpastitslength_main(void) {
 #line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
-    struct nums h0_n; HERO_NODEBUG HeroArrayHeader * h1_xs0 = {0}; HERO_NODEBUG int64_t h2_i0; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t6; HERO_NODEBUG struct nums t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG struct nums t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG struct nums t32; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_ENTRY_STOP; goto bb0;
+    struct nums h0_n; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h4_own4 = {0}, *t10, *t13, *t16, *t36, *t37; HERO_NODEBUG int64_t h2_i0, t1, t2, t3, t4, t6, t8, t9, t11, t12, t14, t17, t18, t21, t23, t24, t25, t26, t27, t28, t29, t30, t34, t35; int64_t h3_i; HERO_NODEBUG struct nums t7, t20, t32; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t19, t22, t31; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/abort-a-fixed-array-element-written-past-its-length.hero"
 bb0:
     t1 = INT64_C(0);
@@ -308,7 +308,7 @@ bb4:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

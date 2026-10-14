@@ -128,7 +128,7 @@ void h_fixedbugssynthesisednamesareunspellable_main(void);
 #line 22 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 int64_t h_fixedbugssynthesisednamesareunspellable_bump(int64_t h0_n) {
 #line 22 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 bb0:
     t1 = h0_n;
@@ -144,7 +144,7 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 int64_t h_fixedbugssynthesisednamesareunspellable_call(h_0fn_48ac9712 h0_f) {
 #line 25 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 bb0:
     t1 = h0_f;
@@ -160,7 +160,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 h_0opt_e201354 h_fixedbugssynthesisednamesareunspellable_half(int64_t h0_n) {
 #line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 bb0:
     t1 = h0_n;
@@ -241,7 +241,7 @@ bb4:
 #line 33 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 void h_fixedbugssynthesisednamesareunspellable_main(void) {
 #line 33 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}; HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugssynthesisednamesareunspellable_opt0 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugssynthesisednamesareunspellable_fn0 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h2_own2 = {0}, t10, t11, t15, t19, t20; HERO_NODEBUG int64_t h1_r0, t1, t3, t4, t6, t8, t9, t12, t13, t16, t17, t18; HERO_NODEBUG h_fixedbugssynthesisednamesareunspellable_opt0 t2; HERO_NODEBUG h_fixedbugssynthesisednamesareunspellable_fn0 t5; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG bool t14; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-synthesised-names-are-unspellable.hero"
 bb0:
     t1 = INT64_C(7);

@@ -163,7 +163,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c);
 #line 52 "examples/sdl/main.hero"
 void h_main_main(void) {
 #line 52 "examples/sdl/main.hero"
-    HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}; HERO_NODEBUG HeroStr h1_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG h_0opt_f87774a t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int32_t t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG h_0opt_f87774a t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h0_f0 = {0}, h2_own2 = {0}, t3, t4, t8, t19, t20; HERO_NODEBUG HeroStr h1_r0 = {0}, t1, t9, t10, t11, t15, t21, t22; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t5, t6, t12, t13; HERO_NODEBUG bool t7, t14, t18; HERO_NODEBUG int32_t t16, t17; HERO_ENTRY_STOP; goto bb0;
 #line 52 "examples/sdl/main.hero"
 bb0:
 #line 56 "examples/sdl/main.hero"
@@ -274,7 +274,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c) {
 #line 153 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 153 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG h_0opt_f87774a h7_own7 = {0}; HERO_NODEBUG const char * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_0opt_f87774a t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG h_0opt_f87774a t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG h_0opt_f87774a t23; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 153 "<heroes library>"
 bb0:
     t1 = h0_c;

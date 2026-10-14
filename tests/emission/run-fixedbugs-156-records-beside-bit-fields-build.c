@@ -190,7 +190,7 @@ void h_fixedbugs156recordsbesidebitfieldsbuild_main(void);
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 void h_fixedbugs156recordsbesidebitfieldsbuild_main(void) {
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
-    BF h0_built; UNNAMED h1_u; HERO_NODEBUG BF t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG BF t4; HERO_NODEBUG BF t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG UNNAMED t9; HERO_NODEBUG UNNAMED t10; HERO_NODEBUG UNNAMED t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG UNNAMED t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG ZEROW t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG int32_t t18; HERO_ENTRY_STOP; goto bb0;
+    BF h0_built; UNNAMED h1_u; HERO_NODEBUG BF t1, t4, t5; HERO_NODEBUG int32_t t2, t3, t6, t7, t8, t15, t17, t18; HERO_NODEBUG UNNAMED t9, t10, t11, t14; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG ZEROW t16; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-156-records-beside-bit-fields-build.hero"
 bb0:
     t1 = make_bf();

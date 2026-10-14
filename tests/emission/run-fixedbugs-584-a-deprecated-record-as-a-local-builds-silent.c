@@ -148,7 +148,7 @@ void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void);
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
 void h_fixedbugs584adeprecatedrecordasalocalbuildssilent_main(void) {
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
-    struct old_pair h0_p; HERO_NODEBUG int64_t t1; HERO_NODEBUG struct old_pair t2; HERO_NODEBUG struct old_pair t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    struct old_pair h0_p; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG struct old_pair t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-as-a-local-builds-silent.hero"
 bb0:
     t1 = INT64_C(5);

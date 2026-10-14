@@ -215,7 +215,7 @@ void h_ffirestzeroarecordoflongarrays_main(void) {
 #line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
-    struct big *const hero_lend_h0_a = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "a"); struct big *const hero_lend_h1_b = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "b"); HERO_NODEBUG struct big t1; HERO_NODEBUG struct big t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG struct big t6; HERO_NODEBUG struct big t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
+    struct big *const hero_lend_h0_a = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "a"); struct big *const hero_lend_h1_b = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "b"); HERO_NODEBUG struct big t1, t2, t6, t7; HERO_NODEBUG int32_t t3, t8; HERO_NODEBUG HeroStr t4, t9; HERO_NODEBUG int64_t t5, t10; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
 bb0:
     (void)dirty();

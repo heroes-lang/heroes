@@ -125,7 +125,7 @@ int64_t h_fixedbugs573alistingleftstandingistoldastheprograms_HERO_DIR_FILES(voi
 #line 16 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
 void h_fixedbugs573alistingleftstandingistoldastheprograms_main(void) {
 #line 16 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
-    HeroStr h0_dir = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_a8ea2 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_a8ea2 t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG const char * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG const char * t26; HERO_NODEBUG HeroStr t28; HERO_NODEBUG const char * t29; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG h_0opt_a8ea2 t35; HERO_NODEBUG h_0opt_a8ea2 t36; HERO_NODEBUG HeroStr t37; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_dir = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h5_own5 = {0}, t12, t13, t35, t36; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h6_own6 = {0}, t1, t3, t4, t5, t8, t9, t10, t11, t17, t18, t23, t24, t25, t28, t31, t32, t33, t34, t37; HERO_NODEBUG int64_t t2, t14, t15, t20, t21, t22; HERO_NODEBUG const char *t6, *t19, *t26, *t29; HERO_NODEBUG bool t16; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-573-a-listing-left-standing-is-told-as-the-program-s.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_72fae086);
@@ -276,7 +276,7 @@ int64_t h_library_HERO_OS_BAD_NAME(void) {
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 186 "<heroes library>"
-    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_a8ea2 t18; HERO_NODEBUG h_0opt_a8ea2 t19; HERO_NODEBUG h_0opt_a8ea2 t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0;
 #line 186 "<heroes library>"
 bb0:
     t1 = h0_path;
