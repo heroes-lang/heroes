@@ -1,0 +1,28 @@
+# Defect 2050, 2026-10-13. Every hidden temporary and slot of a prologue was
+# a declaration of its own under its own mark, `HERO_NODEBUG int64_t t1;
+# HERO_NODEBUG int64_t t2;`, 359,403 marks in the seed, which passed GitHub's
+# recommended 50 MB. Now the hidden ones of one C spelling share one
+# declaration and one mark, where the first of them stood: `HERO_NODEBUG
+# int64_t t1, t2;`, a pointer's `*` on each declarator (`HeroArrayHeader *t1,
+# *t3`), a slot's `= {0}` on its own, and the temporaries nobody reads in a
+# declaration of their own under `__attribute__((unused))`. The author's
+# `kept`, `longest` and `word` stay declarations of their own, unmarked,
+# beside hidden names of the same spellings.
+
+function keep(words: [str], limit: i64) -> [str]
+    kept: [str] @= []
+    longest: str @= ""
+
+    for word in words
+        if word.len() <= limit
+            kept @ kept.push(word)
+
+        if word.len() > longest.len()
+            longest @ word
+
+    _ = kept == words
+    return kept.push(longest)
+
+function main()
+    got = keep(words: ["ziggy", "mars", "spiders"], limit: 5)
+    print(got.len())

@@ -102,7 +102,7 @@ void h_strings_main(void);
 #line 7 "tests/golden/emit/strings.hero"
 HeroStr h_strings_greet(HeroStr h0_name, bool h1_formal) {
 #line 7 "tests/golden/emit/strings.hero"
-    HeroStr h2_prefix = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h2_prefix = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t3, t4, t5, t6, t7, t8, t9; HERO_NODEBUG bool t2; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/emit/strings.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1b7183);
@@ -160,7 +160,7 @@ bb3:
 #line 14 "tests/golden/emit/strings.hero"
 void h_strings_main(void) {
 #line 14 "tests/golden/emit/strings.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t3, t4; HERO_NODEBUG bool t2; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/emit/strings.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_39ff1ae6);
