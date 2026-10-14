@@ -166,6 +166,37 @@ function reachable(f: containers.Function) -> [bool]
 
 ## Tests
 
+# The names a prologue's statement declares, in order: the last word before
+# each `,` or `;`, what follows an `=` left out.
+function declared_names(line: str) -> [str]
+    out: [str] @= []
+    last: str @= ""
+    from: i64 @= 0 - 1
+    skipping: bool @= false
+    at: i64 @= 0
+
+    while at < line.len()
+        b = line[at]
+        letter = b >= 48 && b <= 57 || b >= 65 && b <= 90 || b >= 97 && b <= 122 || b == 95
+
+        if letter && !skipping
+            if from < 0
+                from @ at
+        else
+            if from >= 0
+                last @ line.slice(from: from, to: at)
+                from @ 0 - 1
+
+            if b == 61
+                skipping @ true
+
+            if b == 44 || b == 59
+                out @ out.push(last)
+                skipping @ false
+        at @ at + 1
+
+    return out
+
 test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     text = "function add(a: i64, b: i64) -> i64\n    return a + b\n\nfunction main()\n    print(add(a: 1, b: 2))\n"
     parsed = parse.parse(text)
@@ -196,7 +227,7 @@ test "a whole function prints: signature, prologue, goto bb0, blocks, close"
     # temporaries kept from the debugger (panel 213's R1).
     assert strings.holds(
         text: got,
-        needle: "{\n#line 1 \"t.hero\"\n    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;\n"
+        needle: "{\n#line 1 \"t.hero\"\n    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;\n"
     )
     assert strings.holds(text: got, needle: "bb0:")
     assert strings.holds(text: got, needle: "    if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow();")
@@ -293,27 +324,21 @@ test "the prologue hides every temporary and every slot the lowering invented, a
     hidden: [str] @= []
     temporaries: i64 @= 0
 
+    # A marked declaration hides every name it declares, one spelling's
+    # temporaries and invented slots sharing it (defect 2050); an unmarked one
+    # declares one binding the author wrote.
     for line in got.lines
-        # The name the line declares: the word before its `;`, or before its
-        # ` = {0};` where a refcounted slot is zeroed.
-        end: i64 @= line.len() - 1
+        named = declared_names(line)
 
-        if strings.ends_with(text: line, suffix: " = {0};")
-            end @ line.len() - 7
-        start: i64 @= end
-
-        while start > 0 && line[start - 1] != ' '
-            start @ start - 1
-
-        named = line.slice(from: start, to: end)
-
-        if strings.starts_with(text: named, prefix: "t")
-            assert strings.starts_with(text: line, prefix: nodebug.MARK)
-            temporaries @ temporaries + 1
-        else if strings.starts_with(text: line, prefix: nodebug.MARK)
-            hidden @ hidden.push(named)
+        if strings.starts_with(text: line, prefix: nodebug.MARK)
+            for one in named
+                if strings.starts_with(text: one, prefix: "t")
+                    temporaries @ temporaries + 1
+                else
+                    hidden @ hidden.push(one)
         else
-            shown @ shown.push(named)
+            assert named.len() == 1
+            shown @ shown.push(named[0])
 
     # `width`, the one binding; `name` and `loud` are the signature's.
     assert shown.len() == 1
@@ -327,6 +352,10 @@ test "the prologue hides every temporary and every slot the lowering invented, a
             invented @ invented.push(mangle.slot(index: index, name: slot.name))
         index @ index + 1
 
-    assert hidden == invented
+    assert hidden.len() == invented.len()
+
+    for one in invented
+        assert strings.holds(text: " " + hidden.join(" ") + " ", needle: " " + one + " ")
+
     assert strings.holds(text: hidden.join(" "), needle: "own")
     assert strings.holds(text: hidden.join(" "), needle: "ret0")

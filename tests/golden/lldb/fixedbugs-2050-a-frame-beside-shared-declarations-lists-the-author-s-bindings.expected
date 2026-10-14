@@ -1,0 +1,14 @@
+> breakpoint set --file fixedbugs-2050-a-frame-beside-shared-declarations-lists-the-author-s-bindings.hero --line 24
+!resolved: fixedbugs-2050-a-frame-beside-shared-declarations-lists-the-author-s-bindings.hero:24
+> run
+!stop: breakpoint at fixedbugs-2050-a-frame-beside-shared-declarations-lists-the-author-s-bindings.hero:24
+> frame variable
+!variables: 5
+!shows: (int64_t) h1_limit = 5
+!shows: (HeroStr) h3_longest = (ptr = "spiders", len = 7)
+!shows: (HeroStr) h6_word = (ptr = "spiders", len = 7)
+> up
+!at: fixedbugs-2050-a-frame-beside-shared-declarations-lists-the-author-s-bindings.hero:27
+> frame variable
+!variables: 1
+> continue

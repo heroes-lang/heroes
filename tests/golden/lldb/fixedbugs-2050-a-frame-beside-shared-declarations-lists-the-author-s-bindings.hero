@@ -1,0 +1,28 @@
+# Defect 2050, 2026-10-13. A prologue declared each hidden temporary and slot
+# under its own `HERO_NODEBUG` mark, 359,403 marks of 13 bytes in the seed;
+# now the hidden ones of one C spelling share one declaration and one mark,
+# and the attribute, written before the type, hides every name the
+# declaration holds. `keep` puts the author's `[str]` and `str` bindings beside
+# hidden names of the same spellings, pointers among them, slots zeroed with
+# `{0}` and a result nobody reads (`__attribute__((unused))`), and its frame
+# lists the two parameters and the three bindings, five, and nothing the
+# lowering invented; `main` lists `got` alone. The bindings stay declarations
+# of their own, unmarked, so no mark can reach one.
+
+function keep(words: [str], limit: i64) -> [str]
+    kept: [str] @= []
+    longest: str @= ""
+
+    for word in words
+        if word.len() <= limit
+            kept @ kept.push(word)
+
+        if word.len() > longest.len()
+            longest @ word
+
+    _ = kept == words
+    return kept.push(longest)
+
+function main()
+    got = keep(words: ["ziggy", "mars", "spiders"], limit: 5)
+    print(got.len())

@@ -54,8 +54,11 @@
 # pending): the author's parameters and bindings, and nothing the lowering
 # invented. A temporary, a `synthetic_slot` (an `$own` slot, a loop's index,
 # a match's scrutinee) and the `return_slot` are declared under
-# `nodebug.MARK` (`emit/nodebug.hero` says what the word is and why a hidden
-# declaration cannot show a wrong value). The decision is the slot's kind,
+# `nodebug.MARK`, those of one C spelling in one declaration under one mark
+# (`emit/nodebug.hero` says what the word is, why a hidden declaration cannot
+# show a wrong value, and why a shared one hides each name it declares, defect
+# 2050); a binding the author wrote stays a declaration of its own, unmarked.
+# The decision is the slot's kind,
 # asked here, where the IR still holds it: the `$` an invented slot's name
 # begins with does not survive the mangler (`$own3` is `h3_own3`), so nothing
 # reading the C or the binary afterwards could tell the two apart. The
@@ -87,8 +90,14 @@ function hidden(kind: containers.SlotKind) -> str
         .param_slot | .local_slot      => ""
         .synthetic_slot | .return_slot => nodebug.MARK
 
+# Whether the lowering invented the slot, which the debugger is not shown.
+function invented(kind: containers.SlotKind) -> bool
+    return hidden(kind) != ""
+
 function written(c: state.Checked, names: ctype.Names, f: containers.Function, live: [bool], read: {i64: bool}, owner: str, copies_bytes: bool) -> Prologue
-    lines: [str] @= []
+    # The hidden declarations of one spelling share one declaration and one
+    # mark (`emit/nodebug.hero` says why that hides each of them).
+    lines: nodebug.Declarations @= nodebug.none()
     defines: [str] @= []
 
     # What every declaration below asks of the function, read once
@@ -125,7 +134,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
             declared = lend_local.declared(c, names, f, at: index, owner: owner)
 
             if declared != ""
-                lines @ lines.push(hidden(slot.kind) + declared)
+                nodebug.whole(@lines, text: hidden(slot.kind) + declared)
                 defines @ defines.push(lend_local.defined(f, at: index))
             index @ index + 1
             continue
@@ -163,10 +172,14 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
 
             if !slots_read[index]
                 deliberate @ "__attribute__((unused)) "
-            lines @ lines.push(hidden(slot.kind) + deliberate + spelled.must() + " " + name + initialiser + ";")
+
+            if invented(slot.kind)
+                nodebug.hidden(@lines, words: deliberate, spelling: spelled.must(), declared: name + initialiser)
+            else
+                nodebug.whole(@lines, text: deliberate + spelled.must() + " " + name + initialiser + ";")
 
             if by_bytes
-                lines @ lines.push("__builtin_memset(&" + name + ", 0, sizeof " + name + ");")
+                nodebug.whole(@lines, text: "__builtin_memset(&" + name + ", 0, sizeof " + name + ");")
         index @ index + 1
 
     value_at: i64 @= 0
@@ -233,7 +246,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                     spelling @ "const " + spelled.must()
 
                 # Every temporary is the lowering's, so every one is hidden.
-                lines @ lines.push(nodebug.MARK + deliberate + spelling + " " + mangle.value(value_at) + ";")
+                nodebug.hidden(@lines, words: deliberate, spelling: spelling, declared: mangle.value(value_at))
         value_at @ value_at + 1
 
-    return Prologue(lines: lines, defines: defines)
+    return Prologue(lines: nodebug.statements(lines), defines: defines)
