@@ -1,6 +1,6 @@
 # fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
 #
-# The spelling the repaired message's second note drafts: the union's member
+# The second spelling the repaired note gives, the function it drafts: the union's member
 # reached through a function of the program's own in a header that includes
 # the group's, the group naming that header in its place.
 

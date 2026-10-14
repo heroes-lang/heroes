@@ -1,10 +1,10 @@
 # fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
 #
 # SYMPTOM: `x`, a member of the struct `pos` that `struct nested` holds, as
-# a field: *declares no `x`*, false.
+# a field: *declares no `x`*, its note's two fixes unable to work.
 #
-# FIX: told inside `pos`, as `pos.x`, a struct where the first case's is a
-# union.
+# FIX: the note says `x` is inside `pos`, as `pos.x`, a struct where the
+# first case's is a union, and what builds.
 
 extern "fixedbugs-2062-records.h"
     record Nested tag nested

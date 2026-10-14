@@ -1,15 +1,19 @@
-error[ffi_unknown_field]: `fixedbugs-2062-records.h` declares `fd` in `struct tagged` only inside `via`, a union `struct tagged` holds, as `via.fd`: clang read the header, and a field of a group's `record` is a member of the type itself
-  at tests/golden/unsupported/fixedbugs-2062-a-member-of-a-union-a-record-holds-is-told-where-the-header-has-it.hero:19:9
+error[ffi_unknown_field]: `fixedbugs-2062-records.h` declares no `fd` in `struct tagged`: clang read the header, and that type has no such field
+  at tests/golden/unsupported/fixedbugs-2062-a-member-of-a-union-a-record-holds-is-told-where-the-header-has-it.hero:21:9
      |
-  19 |         fd: i32  #~ ffi_unknown_field
+  21 |         fd: i32  #~ ffi_unknown_field
      |         ^^
-  note: a group's `record` names the members the header gives its type itself (§4.19, § 13): bind `Tagged` `partial`, naming only those, `kind`, which builds today
-  note: reach `via.fd` through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, `static inline int tagged_fd(const struct tagged *t) { return t->via.fd; }`, which this group then names in `fixedbugs-2062-records.h`'s place
+  note: `fd` is a member of the union `via` inside `struct tagged`, which C reaches as `via.fd`: a group's `record` names the members the header gives its type itself (§4.19, § 13)
+  note: what builds today: bind `Tagged` `partial`, naming only `kind`, and end a construction of it with `rest: zero`, which leaves `via` to C
+  note: or reach `via.fd` through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, `static inline int tagged_fd(const struct tagged *t) { return t->via.fd; }`, which this group then names in `fixedbugs-2062-records.h`'s place
+  note: or reach it by a macro, as C's own headers reach `s6_addr`: a header of the program's own that includes `fixedbugs-2062-records.h` and defines `#define fd via.fd`, which this group then names in `fixedbugs-2062-records.h`'s place, so `fd` stays a field; the macro renames every `fd` read after it
 
-error[ffi_unknown_field]: `fixedbugs-2062-records.h` declares `handle` in `struct tagged` only inside `via`, a union `struct tagged` holds, as `via.handle`: clang read the header, and a field of a group's `record` is a member of the type itself
-  at tests/golden/unsupported/fixedbugs-2062-a-member-of-a-union-a-record-holds-is-told-where-the-header-has-it.hero:20:9
+error[ffi_unknown_field]: `fixedbugs-2062-records.h` declares no `handle` in `struct tagged`: clang read the header, and that type has no such field
+  at tests/golden/unsupported/fixedbugs-2062-a-member-of-a-union-a-record-holds-is-told-where-the-header-has-it.hero:22:9
      |
-  20 |         handle: ptr  #~ ffi_unknown_field
+  22 |         handle: ptr  #~ ffi_unknown_field
      |         ^^^^^^
-  note: a group's `record` names the members the header gives its type itself (§4.19, § 13): bind `Tagged` `partial`, naming only those, `kind`, which builds today
-  note: reach `via.handle` through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, `static inline void * tagged_handle(const struct tagged *t) { return t->via.handle; }`, which this group then names in `fixedbugs-2062-records.h`'s place
+  note: `handle` is a member of the union `via` inside `struct tagged`, which C reaches as `via.handle`: a group's `record` names the members the header gives its type itself (§4.19, § 13)
+  note: what builds today: bind `Tagged` `partial`, naming only `kind`, and end a construction of it with `rest: zero`, which leaves `via` to C
+  note: or reach `via.handle` through a function of the program's own in a header that includes `fixedbugs-2062-records.h`, `static inline void * tagged_handle(const struct tagged *t) { return t->via.handle; }`, which this group then names in `fixedbugs-2062-records.h`'s place
+  note: or reach it by a macro, as C's own headers reach `s6_addr`: a header of the program's own that includes `fixedbugs-2062-records.h` and defines `#define handle via.handle`, which this group then names in `fixedbugs-2062-records.h`'s place, so `handle` stays a field; the macro renames every `handle` read after it

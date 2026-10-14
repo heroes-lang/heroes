@@ -1,10 +1,10 @@
 # fixedbugs, defect 2062, lane b17-ffi, 2026-10-14.
 #
 # SYMPTOM: `fd`, in the union `u` inside the struct `inner`, as a field:
-# *declares no `fd`*, false.
+# *declares no `fd`*, its note's two fixes unable to work.
 #
-# FIX: told by its whole path, `inner.u.fd`, and the function drafted reads
-# it so.
+# FIX: the note names its whole path, `inner.u.fd`, and the function and the
+# macro it drafts read it so.
 
 extern "fixedbugs-2062-records.h"
     record Deep tag deep
