@@ -50,8 +50,8 @@
 # - Nothing else is initialised, for the value's reason: a Heroes
 #   binding is always initialised, and clang checks the rest.
 #
-# WHAT A DEBUGGER IS SHOWN (panel 213's R1, provisional, author ratification
-# pending): the author's parameters and bindings, and nothing the lowering
+# WHAT A DEBUGGER IS SHOWN (panel 213's R1, ratified by the author on
+# 2026-10-14): the author's parameters and bindings, and nothing the lowering
 # invented. A temporary, a `synthetic_slot` (an `$own` slot, a loop's index,
 # a match's scrutinee) and the `return_slot` are declared under
 # `nodebug.MARK`, those of one C spelling in one declaration under one mark

@@ -6,8 +6,8 @@ summaries and synthetic children for the C types the Heroes runtime and
 emitter make, so a frame that showed `h2_p = (f_x = 3, f_y = 4)` and
 `h4_names = 0x00000001005f98a0` shows `Point(x: 3, y: 4)` and
 `["ada", "grace"]`. It is a component the debugger loads, not a capability
-of `heroes`: panel 213's resolution (routes G and J, provisional, author
-ratification pending) rules that CLAUDE.md § 10's *never a script* governs how
+of `heroes`: panel 213's resolution (routes G and J, ratified by the author on
+2026-10-14) rules that CLAUDE.md § 10's *never a script* governs how
 a capability of the one command is reached, and this file is reached through
 lldb's prompt or the editor. `editors/vscode/extension.js` loads it with
 nothing typed, through lldb-dap's `initCommands`; a terminal lldb user types
