@@ -74,6 +74,8 @@ use cli/declared_after
 use cli/own_names
 use cli/builtin_name
 use emit/ffi_build
+use emit/header_region
+use cli/flags
 use parse
 use resolve
 use checker
@@ -219,10 +221,9 @@ function told(s: source.Source, rows: [str], first: clang_first.First, steps: [c
                 diag.Fix(title: "rename `" + named + "` in `" + refused_file + "`, a name the Heroes runtime declares first in every unit", replacement: source.span_text(s, group.span), span: group.span, certainty: .guess)
             )
 
-    if !clang_place.offset_of(text: first.message, needle: AS_ERROR).is_err()
-        d.notes @ d.notes.push(
-            "clang's `-Werror` says the warning is one this compiler makes an error in a header's own code too, wherever the header was found: a header's code is passed over for `-Wall`'s warnings and sign conversions alone, never for a missing return, an uninitialised read, a format reading an argument it was not given or one of another type, a value narrowed to 32 bits or a pointer of another type"
-        )
+    for note in header_region.werror_notes(message: first.message, build_words: flags.flags())
+        d.notes @ d.notes.push(note)
+
     d.notes @ d.notes.push(REPAIR)
     return d
 
@@ -655,3 +656,11 @@ test "a note in a file another group's header includes is told through that head
     assert two[0].message == one[0].message
     assert two[0].notes == one[0].notes
     assert source.span_text(s, one[0].span) == "\"a.h\""
+
+# Every word a header's code is held to has its words in the `-Werror` note,
+# the build's own `-Werror=` words among them: a word added to `cli/flags.hero`
+# with none fails here, and the note cannot lose a kind in silence again
+# (defect 2054).
+test "every kind a header's code is never passed over for is named in its -Werror note"
+    for word in header_region.never_words(flags.flags())
+        assert header_region.never_for(word) != ""
