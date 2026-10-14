@@ -1,0 +1,25 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14: what the repair leaves.
+#
+# `LIMIT` and `EXTRA`, bound from `fixedbugs-2056-second.h`, are macros of a
+# file it includes, read once already through `fixedbugs-2056-first.h`'s
+# group, so they stand before its own group's header and that header leaves
+# them as they were: the shape of an earlier group's macro read in place of
+# the header's own. Asked again with the first group left out, the header
+# makes them the same, `EXTRA` only because the switch's group is kept,
+# so both are the header's own, `7` and `9`, and nothing is refused.
+
+extern "fixedbugs-2056-switch.h"
+    constant WANT_EXTRA: i32
+
+extern "fixedbugs-2056-first.h"
+    function aye() -> i32
+
+extern "fixedbugs-2056-second.h"
+    constant LIMIT: i64
+    constant EXTRA: i64
+    function bee() -> i32
+
+function main()
+    print(LIMIT)
+    print(EXTRA)
+    print(aye() + bee() + WANT_EXTRA)

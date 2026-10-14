@@ -46,7 +46,10 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wattribute-warning"
+#pragma push_macro("a")
+#undef a
 #include "heroes_standard.h"
+#pragma pop_macro("a")
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -60,7 +63,7 @@ _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compile
 
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
 _Static_assert(__builtin_classify_type(((struct old_pair *)0)->a) == 1 && sizeof(((struct old_pair *)0)->a) == sizeof(int64_t) && (_Generic(((struct old_pair *)0)->a, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field OldPair a");
-#line 64 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
+#line 67 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -126,7 +129,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 130 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
+#line 133 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordinasignaturebuildssilent_OldPair_eq(const struct old_pair *a, const struct old_pair *b);
@@ -154,7 +157,7 @@ bb0:
     t2 = t1.a;
 #line 19 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
     return t2;
-#line 158 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
+#line 161 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
 }
 
 #line 21 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
@@ -174,7 +177,7 @@ bb0:
     hero_print_end();
 #line 22 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
     return;
-#line 178 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
+#line 181 "fixedbugs584adeprecatedrecordinasignaturebuildssilent.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs584adeprecatedrecordinasignaturebuildssilent_OldPair_eq(const struct old_pair *a, const struct old_pair *b) {
     if (!(a->a == b->a)) return false;

@@ -46,7 +46,10 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wattribute-warning"
+#pragma push_macro("void")
+#undef void
 #include "heroes_standard.h"
+#pragma pop_macro("void")
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -98,7 +101,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 102 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+#line 105 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -144,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+#line 151 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugstwoallocatorfamiliesoveronevoid_Arena_eq(void * const *a, void * const *b);
@@ -207,7 +210,7 @@ bb0:
     }
 #line 46 "tests/golden/run/fixedbugs-two-allocator-families-over-one-void.hero"
     return;
-#line 211 "fixedbugstwoallocatorfamiliesoveronevoid.c"
+#line 214 "fixedbugstwoallocatorfamiliesoveronevoid.c"
 }
 HERO_TU_LOCAL bool h_fixedbugstwoallocatorfamiliesoveronevoid_Arena_eq(void * const *a, void * const *b) {
     return hero_handle_eq(*a, *b);

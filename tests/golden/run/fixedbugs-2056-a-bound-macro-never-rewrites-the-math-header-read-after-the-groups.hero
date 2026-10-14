@@ -1,0 +1,18 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14.
+#
+# SYMPTOM: `sqrt` bound from a header that makes it a macro of its own
+# `float my_sqrt(float)`: the guard pushed `sqrt` again before its close, so
+# the macro stood when the unit read `<math.h>` after the groups
+# (`heroes_standard.h`), which declared `my_sqrt` as `double` and was
+# refused, *internal error: compiling the generated C failed* at exit 2.
+#
+# FIX: each name the guard keeps for a group is saved and undefined around
+# `heroes_standard.h` and given back after it (`emit/macro_guard.read_after`):
+# `<math.h>` reads its own `sqrt`, and the program's `sqrt` is the header's,
+# `5.0` whatever it is handed.
+
+extern "fixedbugs-2056-a-bound-macro-never-rewrites-the-math-header-read-after-the-groups.h"
+    function sqrt(x: f32) -> f32
+
+function main()
+    print(sqrt(4.0))

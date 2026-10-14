@@ -1,0 +1,18 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14.
+#
+# SYMPTOM: `foo`, a name no list of the guard holds, bound from
+# `fixedbugs-2056-foo.h`, which returns 1, and `#define foo bar` in a later
+# group's header: `foo()` called `bar` and printed `2` at exit 0.
+#
+# FIX: every name a group binds is asked, whatever the guard keeps, and
+# refused at the name.
+
+extern "fixedbugs-2056-foo.h"
+    function foo() -> i32  #~ ffi_macro_name
+
+extern "fixedbugs-2056-bar.h"
+    function eight() -> i32
+
+function main()
+    print(foo())
+    print(eight())

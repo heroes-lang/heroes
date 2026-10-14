@@ -1,0 +1,8 @@
+error[ffi_macro_name]: `LIMIT`, which this group binds from `fixedbugs-2056-limit.h`, is changed by `fixedbugs-2056-limit-again.h`, a header read after it: this program's C would read `LIMIT` as `fixedbugs-2056-limit-again.h` leaves it, not as `fixedbugs-2056-limit.h` makes it
+  at tests/golden/unsupported/fixedbugs-2056-a-later-group-s-header-defines-a-bound-constant-again.hero:11:14
+     |
+  11 |     constant LIMIT: i64  #~ ffi_macro_name
+     |              ^^^^^
+  note: `fixedbugs-2056-limit-again.h` line 4 reads `#define LIMIT 50`
+  note: where this program's C writes `(LIMIT);`, clang reads `(10);` after `fixedbugs-2056-limit.h`, and `(50);` after `fixedbugs-2056-limit-again.h`
+  note: a header of your own that includes `fixedbugs-2056-limit-again.h` and then writes `#undef LIMIT` and `#define LIMIT 10` again, named instead of `fixedbugs-2056-limit-again.h` by the group at line 14, leaves `LIMIT` to `fixedbugs-2056-limit.h`

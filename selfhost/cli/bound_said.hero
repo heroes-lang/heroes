@@ -1,0 +1,350 @@
+# What clang's preprocessor makes of each name a program binds, at each place
+# a unit reads its groups' headers (design.md §4.19; defect 2056,
+# 2026-10-14): the questions `cli/bound_macro.hero` asks, and the reading of
+# the answers. A question is one line under `#line 1 "hero-meaning"`, a
+# string literal naming its place and its name, the name written as the
+# unit's own C writes it, and a closing literal:
+#
+#     "hero-meaning 2 fabs" (fabs); fabs(0); "hero-meaning-end"
+#
+# Its answer is what clang prints between the two literals, its line markers
+# left out and its blanks folded: `(my_fabs); my_fabs(0);` after a header
+# writing `#define fabs my_fabs`. A string literal is never a macro's name,
+# so no header rewrites the two that frame it; a `_Pragma` the expansion
+# runs prints a `#pragma` line inside the frame, which is kept, being part of
+# what the name means there. Every question stands at line 1 of one file
+# name, so a macro reading `__LINE__` or `__FILE__` reads the same at every
+# place. Read by bytes, and only the lines that open with a quote or a `#`:
+# the text is every header's, megabytes for some.
+
+use bytes
+use emit/c_text
+use emit/clang_place
+
+constant FILE: str
+    "hero-meaning"
+
+constant OPEN: str
+    "\"hero-meaning "
+
+constant CLOSE: str
+    "\"hero-meaning-end\""
+
+# The line a question for one header read alone stands after: what clang
+# prints between it and the first question is that header's own text.
+constant MARK: str
+    "\"hero-meaning-header\";"
+
+# The last `#define`, `#undef` or `pop_macro` naming a name in one header's
+# stretch, where it stands: the file as clang names it, the line, the
+# directive.
+record Directive
+    file: str
+    line: i64
+    text: str
+
+# Every such directive of a `-dD` text, keyed `<place> <name>`, the place
+# the header whose stretch it lies in (the first header 1); and the file each
+# stretch entered first, its header as clang found it.
+record Directives
+    found: {str: Directive}
+    entered: {str: str}
+
+# The question for `name` at `place`: its line directive and its line; a
+# name the unit's C calls asked as a call too, with `arity` arguments.
+function question(place: i64, name: str, arity: i64) -> [str]
+    return [
+        c_text.line_directive(at: 1, file: FILE)
+        OPEN + place.to_str() + " " + name + "\" " + asked(name, arity: arity) + " " + CLOSE
+    ]
+
+# What the unit's own C writes of the name: in parentheses, which a
+# function-like macro leaves alone, and, for a name it calls, a call.
+function asked(name: str, arity: i64) -> str
+    text = "(" + name + ");"
+
+    if arity < 0
+        return text
+    zeros: [str] @= []
+    k: i64 @= 0
+
+    while k < arity
+        zeros @ zeros.push("0")
+        k @ k + 1
+
+    return text + " " + name + "(" + zeros.join(", ") + ");"
+
+# Each question's answer in `said`, keyed `<place> <name>`.
+function answers(said: str) -> {str: str}
+    out: {str: str} @= {}
+    key: str @= ""
+    parts: [str] @= []
+    open: bool @= false
+
+    for line in rows(said)
+        rest: str @= line
+
+        if !open
+            if !bytes.bytes_at(text: line, at: 0, needle: OPEN)
+                continue
+            close = index_of(text: line, needle: "\"", from: OPEN.len())
+
+            if close.is_err()
+                continue
+            key @ line.slice(from: OPEN.len(), to: close.must())
+            rest @ line.slice(from: close.must() + 1, to: line.len())
+            parts @ []
+            open @ true
+        else if marker(line)
+            continue
+        end = index_of(text: rest, needle: CLOSE, from: 0)
+
+        if end.is_err()
+            parts @ parts.push(rest)
+        else
+            parts @ parts.push(rest.slice(from: 0, to: end.must()))
+            out[key] @ folded(parts.join(" "))
+            open @ false
+
+    return out
+
+# The identifiers clang printed after the mark and before the first question:
+# every name the header asked about alone gives a meaning of its own, a
+# declaration or a definition, whatever its type.
+function named_after_mark(said: str) -> {str: bool}
+    out: {str: bool} @= {}
+    reading: bool @= false
+
+    for line in rows(said)
+        if bytes.bytes_at(text: line, at: 0, needle: OPEN)
+            return out
+
+        if !reading
+            reading @ bytes.bytes_at(text: line, at: 0, needle: MARK)
+        else if line.len() > 0 && line[0] != 35
+            words_of(@out, text: line)
+
+    return out
+
+# Every directive naming one of `names` in a `-dD` text, the last in each
+# header's stretch: the stretch after the questions at a place is the next
+# header's.
+function directives(said: str, names: {str: bool}) -> Directives
+    found: {str: Directive} @= {}
+    entered: {str: str} @= {}
+    file: str @= ""
+    row: i64 @= 0
+    stretch: i64 @= 0
+
+    for line in rows(said)
+        if marker(line)
+            row @ marker_row(line)
+            file @ marker_file(line)
+
+            if entering(line) && file != FILE && entered[stretch.to_str()].is_err()
+                entered[stretch.to_str()] @ file
+            continue
+
+        if bytes.bytes_at(text: line, at: 0, needle: OPEN)
+            stretch @ place_of(line) + 1
+        else
+            name = directive_name(line)
+
+            if !names[name].is_err()
+                found[stretch.to_str() + " " + name] @ Directive(file: file, line: row, text: line)
+        row @ row + 1
+
+    return Directives(found: found, entered: entered)
+
+# The name a directive line names: `#define N`, `#define N(`, `#undef N`, and
+# `#pragma pop_macro("N")`, which gives one back; else nothing.
+function directive_name(line: str) -> str
+    for opening in ["#define ", "#undef ", "#pragma pop_macro(\""]
+        if bytes.bytes_at(text: line, at: 0, needle: opening)
+            end: i64 @= opening.len()
+
+            while end < line.len() && ident(line[end])
+                end @ end + 1
+
+            return line.slice(from: opening.len(), to: end)
+
+    return ""
+
+# The place a question line names, -1 where it names none.
+function place_of(line: str) -> i64
+    end: i64 @= OPEN.len()
+    value: i64 @= 0
+
+    while end < line.len() && bytes.is_digit(line[end])
+        value @ value * 10 + (line[end] - 48).to_i64().must()
+        end @ end + 1
+
+    if end == OPEN.len()
+        return -1
+    return value
+
+# Whether a line is clang's line marker, `# <row> "<file>" <flags>`.
+function marker(line: str) -> bool
+    return line.len() > 2 && line[0] == 35 && line[1] == 32 && bytes.is_digit(line[2])
+
+function marker_row(line: str) -> i64
+    value: i64 @= 0
+    at: i64 @= 2
+
+    while at < line.len() && bytes.is_digit(line[at])
+        value @ value * 10 + (line[at] - 48).to_i64().must()
+        at @ at + 1
+
+    return value
+
+# The file a marker names, between its quotes, each `\\` clang wrote for a
+# backslash of a Windows path read as one.
+function marker_file(line: str) -> str
+    from = index_of(text: line, needle: "\"", from: 0)
+
+    if from.is_err()
+        return ""
+    out: [str] @= []
+    at: i64 @= from.must() + 1
+    start: i64 @= at
+
+    while at < line.len() && line[at] != 34
+        if line[at] == 92 && at + 1 < line.len()
+            out @ out.push(line.slice(from: start, to: at))
+            at @ at + 1
+            start @ at
+        at @ at + 1
+
+    out @ out.push(line.slice(from: start, to: at))
+    return out.join("")
+
+# Whether a marker enters a file, its first flag 1.
+function entering(line: str) -> bool
+    close = clang_place.without_return(line)
+    return bytes.bytes_at(text: close, at: close.len() - 2, needle: " 1") || bytes.bytes_at(text: close, at: close.len() - 4, needle: " 1 3")
+
+# The lines of `said`, a carriage return ending one left off.
+function rows(said: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= said.len()
+        if at == said.len() || said[at] == 10
+            end: i64 @= at
+
+            if end > start && said[end - 1] == 13
+                end @ end - 1
+            out @ out.push(said.slice(from: start, to: end))
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# Blanks folded to one space and none at either end.
+function folded(text: str) -> str
+    out: [str] @= []
+    start: i64 @= -1
+    at: i64 @= 0
+
+    while at <= text.len()
+        if at == text.len() || text[at] == 32 || text[at] == 9 || text[at] == 10 || text[at] == 13
+            if start >= 0
+                out @ out.push(text.slice(from: start, to: at))
+                start @ -1
+        else if start < 0
+            start @ at
+        at @ at + 1
+
+    return out.join(" ")
+
+# Every identifier of a line of C into `out`, its string and character
+# literals passed over.
+function words_of(@out: {str: bool}, text: str)
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b == 34 || b == 39
+            at @ at + 1
+
+            while at < text.len() && text[at] != b
+                if text[at] == 92
+                    at @ at + 1
+                at @ at + 1
+
+            at @ at + 1
+        else if ident(b) && !bytes.is_digit(b)
+            start = at
+
+            while at < text.len() && ident(text[at])
+                at @ at + 1
+
+            out[text.slice(from: start, to: at)] @ true
+        else if bytes.is_digit(b)
+            while at < text.len() && ident(text[at])
+                at @ at + 1
+        else
+            at @ at + 1
+
+function ident(b: u8) -> bool
+    return b == 95 || bytes.is_alnum(b)
+
+# The first offset of `needle` in `text` from `from`, by its bytes.
+function index_of(text: str, needle: str, from: i64) -> i64?
+    at: i64 @= from
+
+    while at + needle.len() <= text.len()
+        if bytes.bytes_at(text: text, at: at, needle: needle)
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: "absent", msg: "the needle never occurs")
+
+## Tests
+
+# The question is written as the unit's C writes the name, framed by two
+# literals at line 1 of the one file name.
+test "a question frames the name as the unit writes it"
+    assert question(place: 2, name: "fabs", arity: 1) == ["#line 1 \"hero-meaning\"", "\"hero-meaning 2 fabs\" (fabs); fabs(0); \"hero-meaning-end\""]
+    assert question(place: 0, name: "LIMIT", arity: -1)[1] == "\"hero-meaning 0 LIMIT\" (LIMIT); \"hero-meaning-end\""
+    assert asked("twice", arity: 2) == "(twice); twice(0, 0);"
+
+# An answer is the text between the frame, markers left out, a pragma line
+# kept and blanks folded, across lines and a carriage return.
+test "an answer is what clang printed inside the frame"
+    said = "# 1 \"./shadow.h\" 1\nint my_fabs;\n# 1 \"hero-meaning\"\n\"hero-meaning 1 fabs\" (my_fabs);   my_fabs(0); \"hero-meaning-end\"\r\n# 1 \"hero-meaning\"\n\"hero-meaning 1 my_abs\" (\n# 1 \"hero-meaning\"\n#pragma clang diagnostic ignored \"-Wsign-conversion\"\n# 1 \"hero-meaning\"\n   my_abs); \"hero-meaning-end\"\n"
+    got = answers(said)
+    assert got["1 fabs"].must() == "(my_fabs); my_fabs(0);"
+    assert got["1 my_abs"].must() == "( #pragma clang diagnostic ignored \"-Wsign-conversion\" my_abs);"
+    assert got.len() == 2
+
+# The names a header read alone prints after the mark, its literals passed
+# over, and nothing after the first question.
+test "the names after the mark are the header's own"
+    said = "int before;\n\"hero-meaning-header\";\n# 1 \"./math.h\" 1\nextern double fabs(double x);\nconst char *s = \"sqrt\";\n# 1 \"hero-meaning\"\n\"hero-meaning 1 fabs\" (fabs); \"hero-meaning-end\"\nint after;\n"
+    got = named_after_mark(said)
+    assert !got["fabs"].is_err()
+    assert !got["double"].is_err()
+    assert got["sqrt"].is_err()
+    assert got["before"].is_err()
+    assert got["after"].is_err()
+
+# A directive lies in the stretch of the header after the last question,
+# its row counted from the marker above it, and the last of a stretch wins.
+test "a directive is the last one naming the name in its header's stretch"
+    said = "# 1 \"hero-meaning\"\n\"hero-meaning 0 fabs\" (fabs); \"hero-meaning-end\"\n# 1 \"./shadow.h\" 1\nstatic double my_fabs(double);\n#define fabs other\n#undef fabs\n#define fabs my_fabs\n# 3 \"hero-meaning\" 2\n# 1 \"hero-meaning\"\n\"hero-meaning 1 fabs\" (my_fabs); \"hero-meaning-end\"\n# 1 \"C:\\\\w\\\\b.h\" 1\n#pragma pop_macro(\"fabs\")\n"
+    names: {str: bool} @= {}
+    names["fabs"] @ true
+    got = directives(said, names: names)
+    one = got.found["1 fabs"].must()
+    assert one.file == "./shadow.h"
+    assert one.line == 4
+    assert one.text == "#define fabs my_fabs"
+    assert got.found["2 fabs"].must().file == "C:\\w\\b.h"
+    assert got.entered["1"].must() == "./shadow.h"
+    assert got.found["0 fabs"].is_err()
+    assert directive_name("#define fabs(x) my_fabs(x)") == "fabs"
+    assert directive_name("int fabs;") == ""
+    assert folded("  a \t b\n c  ") == "a b c"

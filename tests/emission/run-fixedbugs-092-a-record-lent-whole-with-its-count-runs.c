@@ -46,7 +46,10 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wattribute-warning"
+#pragma push_macro("a")
+#undef a
 #include "heroes_standard.h"
+#pragma pop_macro("a")
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -70,7 +73,7 @@ _Static_assert(__builtin_classify_type(((struct outer *)0)->z) == 1 && sizeof(((
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->fd) == 1 && sizeof(((struct pfd *)0)->fd) == sizeof(int32_t) && (_Generic(((struct pfd *)0)->fd, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd fd");
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->events) == 1 && sizeof(((struct pfd *)0)->events) == sizeof(int16_t) && (_Generic(((struct pfd *)0)->events, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd events");
 _Static_assert(__builtin_classify_type(((struct pfd *)0)->revents) == 1 && sizeof(((struct pfd *)0)->revents) == sizeof(int16_t) && (_Generic(((struct pfd *)0)->revents, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Pfd revents");
-#line 74 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 77 "fixedbugs092arecordlentwholewithitscountruns.c"
 
 #line 14 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct pad *)0) != 13, "heroes-ffi-union Pad c d");
@@ -78,7 +81,7 @@ _Static_assert(__builtin_classify_type(*(struct pad *)0) != 13, "heroes-ffi-unio
 _Static_assert(__builtin_classify_type(*(struct outer *)0) != 13, "heroes-ffi-union Outer inner z");
 #line 20 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
 _Static_assert(__builtin_classify_type(*(struct pfd *)0) != 13, "heroes-ffi-union Pfd fd events revents");
-#line 82 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 85 "fixedbugs092arecordlentwholewithitscountruns.c"
 _Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
 _Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
@@ -175,7 +178,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 179 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 182 "fixedbugs092arecordlentwholewithitscountruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_fixedbugs092arecordlentwholewithitscountruns_One_eq(const struct one *a, const struct one *b);
@@ -207,7 +210,7 @@ bb0:
     t1 = h0_k;
 #line 34 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return t1;
-#line 211 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 214 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 
 #line 36 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
@@ -424,7 +427,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_o);
 #line 56 "tests/golden/run/fixedbugs-092-a-record-lent-whole-with-its-count-runs.hero"
     return;
-#line 428 "fixedbugs092arecordlentwholewithitscountruns.c"
+#line 431 "fixedbugs092arecordlentwholewithitscountruns.c"
 }
 #undef h0_o
 #undef h1_p

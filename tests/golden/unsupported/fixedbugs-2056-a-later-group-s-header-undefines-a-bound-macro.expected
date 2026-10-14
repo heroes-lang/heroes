@@ -1,0 +1,8 @@
+error[ffi_macro_name]: `versioned`, which this group binds from `fixedbugs-2056-versioned.h`, is changed by `fixedbugs-2056-unversioned.h`, a header read after it: this program's C would read `versioned` as `fixedbugs-2056-unversioned.h` leaves it, not as `fixedbugs-2056-versioned.h` makes it
+  at tests/golden/unsupported/fixedbugs-2056-a-later-group-s-header-undefines-a-bound-macro.hero:10:14
+     |
+  10 |     function versioned() -> i32  #~ ffi_macro_name
+     |              ^^^^^^^^^
+  note: `fixedbugs-2056-unversioned.h` line 2 reads `#undef versioned`
+  note: where this program's C writes `(versioned); versioned();`, clang reads `(versioned_two); versioned_two();` after `fixedbugs-2056-versioned.h`, and `(versioned); versioned();` after `fixedbugs-2056-unversioned.h`
+  note: a header of your own that includes `fixedbugs-2056-unversioned.h` and then writes `#undef versioned` and `#define versioned versioned_two` again, named instead of `fixedbugs-2056-unversioned.h` by the group at line 12, leaves `versioned` to `fixedbugs-2056-versioned.h`

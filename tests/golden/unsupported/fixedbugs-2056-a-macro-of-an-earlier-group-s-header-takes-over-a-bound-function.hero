@@ -1,0 +1,22 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14 (panel 214's critic).
+#
+# SYMPTOM: the group naming `fixedbugs-2056-shadow.h` defines `#define fabs
+# my_fabs`, and the group below binds `fabs` from `<math.h>`: `<math.h>`
+# read its own declaration through the macro, the guard pushed `fabs` again
+# before its close, and the program built at exit 0 and printed `1000.0` for
+# `fabs(-3.0)`, the function the binding names never called.
+#
+# FIX: each name a group binds is asked of clang after each header the unit
+# reads (`cli/bound_macro.hero`); a macro read before its group's header,
+# which that header read alone does not make so, is refused at the name,
+# `ffi_macro_name`, naming both headers and the directive.
+
+extern "fixedbugs-2056-shadow.h"
+    function seven() -> i32
+
+extern "math.h" link "m"
+    function fabs(x: f64) -> f64  #~ ffi_macro_name
+
+function main()
+    print(seven())
+    print(fabs(-3.0))

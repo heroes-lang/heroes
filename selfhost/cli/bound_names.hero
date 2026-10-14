@@ -1,0 +1,136 @@
+# The names a program's groups bind, as a unit's C writes them, each with the
+# group whose header it is asked of (design.md §4.19; defect 2056,
+# 2026-10-14): `cli/bound_macro.hero` asks clang what each means after each
+# header. A function's own name and each releaser a mark names, a constant's,
+# a record's, its tag and its fields; never a parameter's name or a type,
+# which are the unit's own words, as `emit/macro_guard.bound_names` keeps
+# them.
+
+use ast
+use token
+use source
+use emit/externs as emit_externs
+use emit/macro_guard
+use parse
+
+# A name the unit's C writes from a group: the header that group names, its
+# place among the unit's groups' headers (the first 1), the span it is told
+# at, and its arguments where the unit calls it, else -1.
+record Bound
+    name: str
+    header: str
+    place: i64
+    span: token.Span
+    arity: i64
+
+# The headers of a list the groups name, in its order: the compiler's own
+# come first in every unit and bind nothing of the program's.
+function groups_of(headers: [str]) -> [str]
+    out: [str] @= []
+
+    for header in headers
+        if !emit_externs.is_own(header)
+            out @ out.push(header)
+
+    return out
+
+# Every name the unit's C writes from a group whose header is in `headers`,
+# each once and of the first group that binds it, in declaration order: a
+# function's own and each releaser a mark names, a constant's, a record's,
+# its tag and its fields.
+function bound_of(s: source.Source, decls: [ast.Decl], headers: [str]) -> [Bound]
+    out: [Bound] @= []
+    seen: {str: bool} @= {}
+
+    for decl in decls
+        found = macro_guard.header_of(decl)
+
+        if found.is_err()
+            continue
+        header = emit_externs.unquoted(s, span: found.must())
+        place = place_of(headers, header: header)
+
+        if place == 0
+            continue
+
+        match decl.kind
+            .function_decl fd =>
+                out @ with_name(
+                    out,
+                    @seen,
+                    s,
+                    span: decl.name,
+                    header: header,
+                    place: place,
+                    arity: fd.value.params.len()
+                )
+
+                for mark in [fd.value.owned_result, fd.value.acquires_result, fd.value.retains_result]
+                    if !mark.is_err()
+                        out @ with_words(out, @seen, s, span: mark.must(), header: header, place: place)
+
+                for param in fd.value.params
+                    for mark in [param.owned, param.acquires, param.transfers, param.retains]
+                        if !mark.is_err()
+                            out @ with_words(out, @seen, s, span: mark.must(), header: header, place: place)
+            .constant_decl =>
+                out @ with_name(out, @seen, s, span: decl.name, header: header, place: place, arity: -1)
+            .record_decl rec =>
+                out @ with_name(out, @seen, s, span: decl.name, header: header, place: place, arity: -1)
+
+                if !rec.tag.is_err()
+                    out @ with_name(out, @seen, s, span: rec.tag.must(), header: header, place: place, arity: -1)
+
+                for field in rec.fields
+                    out @ with_name(out, @seen, s, span: field.name, header: header, place: place, arity: -1)
+            .variant_decl | .test_decl => continue
+
+    return out
+
+# The header's place among the groups' headers, the first 1, or 0.
+function place_of(headers: [str], header: str) -> i64
+    place: i64 @= 1
+
+    for one in headers
+        if one == header
+            return place
+        place @ place + 1
+
+    return 0
+
+function with_name(out: [Bound], @seen: {str: bool}, s: source.Source, span: token.Span, header: str, place: i64, arity: i64) -> [Bound]
+    name = source.span_text(s, span)
+
+    if !seen[name].is_err()
+        return out
+    seen[name] @ true
+    return out.push(Bound(name: name, header: header, place: place, span: span, arity: arity))
+
+# ORDER: by name, as `sort` orders a `str`; each releaser a mark's span names,
+# called with one argument.
+function with_words(out: [Bound], @seen: {str: bool}, s: source.Source, span: token.Span, header: str, place: i64) -> [Bound]
+    words: {str: bool} @= {}
+    macro_guard.words_into(@words, text: source.span_text(s, span))
+    grown: [Bound] @= out
+
+    for word in sort(keys(words))
+        if seen[word].is_err()
+            seen[word] @ true
+            grown @ grown.push(Bound(name: word, header: header, place: place, span: span, arity: 1))
+
+    return grown
+
+## Tests
+
+# Each name once, of the first group binding it, at its header's place, the
+# compiler's own headers' groups left out.
+test "a name is asked of the first group that binds it, at its header's place"
+    text = "extern \"a.h\"\n    function twice(x: i64) -> i64\n    constant LIMIT: i64\n\nextern \"b.h\"\n    record Pair tag pair\n        left: i64\n        LIMIT: i64\n    function make() -> cstr owned b_free\n\nfunction main()\n    print(twice(x: LIMIT))\n"
+    s = source.new_source(name: "t.hero", text: text)
+    got = bound_of(s, parse.parse_source(s).decls, headers: groups_of(["heroes_unit.h", "hero_os.h", "a.h", "b.h"]))
+    names: [str] @= []
+
+    for b in got
+        names @ names.push(b.name + "/" + b.header + "/" + b.place.to_str() + "/" + b.arity.to_str())
+
+    assert names == ["twice/a.h/1/1", "LIMIT/a.h/1/-1", "Pair/b.h/2/-1", "pair/b.h/2/-1", "left/b.h/2/-1", "make/b.h/2/0", "b_free/b.h/2/1"]

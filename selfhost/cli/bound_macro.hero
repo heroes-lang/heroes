@@ -1,0 +1,218 @@
+# A name a group binds whose meaning another group's header gives it, a macro
+# read before the binding group's header or after it, asked of clang before
+# any unit compiles and refused (design.md §4.19, §4.17; defect 2056,
+# 2026-10-14, found by panel 214's completeness critic).
+#
+# **A group names its header, and what it binds is that header's** (§ 13). A
+# unit reads its groups' headers in one stretch, so a macro one of them
+# defines rewrites the name in every header after it and in the unit's own C:
+# `#define fabs my_fabs` in `shadow.h`, its `my_fabs` returning 1000.0, beside
+# a group binding `fabs` from `<math.h>`, built at exit 0 and printed
+# `1000.0` for `fabs(-3.0)` in either order of the two groups, the guard's
+# push again keeping the macro (`emit/macro_guard.hero`). The function the
+# binding names was never called, and nothing said so.
+#
+# **So each name is asked where each header leaves it** (`cli/bound_said`):
+# after the compiler's own headers, then after each group's header in the
+# unit's order, written as the unit's C writes it.
+#
+# - **Changed after its group's header**, by a later header's macro, or by
+#   its `#undef` of the group's own: told, naming the later header and the
+#   directive. Giving the name back what its group made of it was weighed and
+#   refused: a macro of the later header the program binds may expand to that
+#   very name, and would then change in its turn.
+# - **A macro before its group's header that the header leaves as it was**:
+#   the header is asked again with every earlier group that changed the name
+#   left out, a library's switch another group defines kept. Where it then
+#   reads the name the same, or never names it, the meaning is the header's
+#   (a file two groups' headers include, read once at the first); else told,
+#   the earlier header's macro read in place of the header's own, which the
+#   header's own declaration is read through too.
+#
+# A name several groups bind is asked of the first, which every later one
+# reads after. The answers are kept as the pragma question's are, under
+# everything they depend on: a warm build asks clang nothing. The directive a
+# refusal names is read on the failure path alone, from a `-dD` run.
+
+use ast
+use source
+use diag
+use emit/c_text
+use cli/toolchain
+use cli/compiling
+use cli/probing
+use cli/bound_names
+use cli/bound_said
+use cli/bound_ask
+use cli/bound_told
+use cli/strings
+
+# The refusals of every list's names, each name told once.
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    seen: {str: bool} @= {}
+
+    for one in probings
+        headers = bound_names.groups_of(one.headers)
+        bound = bound_names.bound_of(s, decls, headers: headers)
+
+        if bound.len() == 0
+            continue
+        probe = probe_of(t, one: one)
+
+        if probe.read.is_err()
+            continue
+
+        for d in judged(t, probe: probe, s, decls, headers: headers, bound: bound)
+            name = source.span_text(s, d.span)
+
+            if seen[name].is_err()
+                seen[name] @ true
+                out @ out.push(d)
+
+    return out
+
+# The list's probe, or, where its groups ask nothing else of their headers,
+# a constant or a record with no field alone, one of its own.
+function probe_of(t: toolchain.Toolchain, one: probing.Probing) -> compiling.Probe
+    if !one.probe.is_err()
+        return one.probe.must()
+    return compiling.probe(t.build, under: one.under, headers: one.headers)
+
+# What each name means at each place, and the refusals it comes to.
+function judged(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], headers: [str], bound: [bound_names.Bound]) -> [diag.Diagnostic]
+    none: [diag.Diagnostic] = []
+    lines: [str] @= bound_ask.questions(bound, place: 0)
+    place: i64 @= 1
+
+    for header in headers
+        lines @ strings.with_all(list: lines, more: c_text.includes([header]))
+        lines @ strings.with_all(list: lines, more: bound_ask.questions(bound, place: place))
+        place @ place + 1
+
+    text = bound_ask.opening(lines)
+    said = bound_ask.kept_answers(t, probe: probe, text: text)
+
+    if said.is_err()
+        return none
+    out: [diag.Diagnostic] @= []
+    doubted: [bound_names.Bound] @= []
+
+    for b in bound
+        steps = places(said.must(), b: b, count: headers.len())
+
+        if steps.len() == 0
+            continue
+        own = steps[b.place]
+
+        if steps[headers.len()] != own
+            later = changed(steps, from: b.place + 1, to: headers.len())
+            out @ out.push(
+                bound_told.after(t, probe: probe, s, decls, text: text, b: b, by: headers[later - 1], place: later, before: own, then: steps[later])
+            )
+        else if steps[b.place - 1] == own && own != bound_said.folded(bound_said.asked(b.name, arity: b.arity)) && changed(steps, from: 1, to: b.place - 1) > 0
+            doubted @ doubted.push(b)
+
+    for d in earlier(t, probe: probe, s, decls, headers: headers, said: said.must(), doubted: doubted, text: text)
+        out @ out.push(d)
+
+    return out
+
+# A name's answers at places 0 to `count`, or none where one is missing.
+function places(said: {str: str}, b: bound_names.Bound, count: i64) -> [str]
+    out: [str] @= []
+    place: i64 @= 0
+
+    while place <= count
+        one = said[place.to_str() + " " + b.name]
+
+        if one.is_err()
+            none: [str] = []
+            return none
+        out @ out.push(one.must())
+        place @ place + 1
+
+    return out
+
+# The first place from `from` to `to` whose answer differs from the one
+# before it, 0 where none does.
+function changed(steps: [str], from: i64, to: i64) -> i64
+    place: i64 @= from
+
+    while place <= to
+        if place >= 1 && steps[place] != steps[place - 1]
+            return place
+        place @ place + 1
+
+    return 0
+
+# The names a doubted header leaves as an earlier group's macro made them,
+# asked again of that header with every earlier group that changed one of
+# them left out: told where it reads one otherwise and names it itself.
+function earlier(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], headers: [str], said: {str: str}, doubted: [bound_names.Bound], text: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    place: i64 @= 1
+
+    while place <= headers.len()
+        asked: [bound_names.Bound] @= []
+        left_out: {i64: bool} @= {}
+
+        for b in doubted
+            if b.place == place
+                asked @ asked.push(b)
+                steps = places(said, b: b, count: headers.len())
+                k: i64 @= 1
+
+                while k < place
+                    if steps[k] != steps[k - 1]
+                        left_out[k] @ true
+                    k @ k + 1
+
+        if asked.len() > 0
+            lines: [str] @= []
+            k: i64 @= 1
+
+            while k < place
+                if left_out[k].is_err()
+                    lines @ strings.with_all(list: lines, more: c_text.includes([headers[k - 1]]))
+                k @ k + 1
+
+            lines @ lines.push(bound_said.MARK)
+            lines @ strings.with_all(list: lines, more: c_text.includes([headers[place - 1]]))
+            lines @ strings.with_all(list: lines, more: bound_ask.questions(asked, place: place))
+            alone = bound_ask.alone_answers(t, probe: probe, text: bound_ask.opening(lines))
+
+            if !alone.is_err()
+                for b in asked
+                    steps = places(said, b: b, count: headers.len())
+                    read = alone.must().meanings[place.to_str() + " " + b.name].default("")
+
+                    if read != "" && read != steps[place] && !alone.must().named[b.name].is_err()
+                        by = changed_last(steps, before: place)
+                        out @ out.push(
+                            bound_told.before_told(t, probe: probe, s, decls, text: text, b: b, by: headers[by - 1], place: by, own: read, then: steps[place])
+                        )
+        place @ place + 1
+
+    return out
+
+# The last place before `before` whose answer differs from the one before it.
+function changed_last(steps: [str], before: i64) -> i64
+    place: i64 @= before - 1
+
+    while place >= 1
+        if steps[place] != steps[place - 1]
+            return place
+        place @ place - 1
+
+    return 1
+
+## Tests
+
+# A step is a place whose answer differs from the one before it.
+test "the place a name changed at is the first answer unlike the one before"
+    steps = ["(f);", "(f);", "(g);", "(g);"]
+    assert changed(steps, from: 1, to: 3) == 2
+    assert changed(steps, from: 3, to: 3) == 0
+    assert changed_last(steps, before: 3) == 2
+    assert changed_last(["(f);", "(f);"], before: 1) == 1

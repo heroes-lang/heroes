@@ -1,0 +1,20 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14.
+#
+# SYMPTOM: `#define fabs(x) my_fabs(x)` in an earlier group's header, `fabs`
+# bound from `<math.h>`: refused, but told as *`math.h` defines `fabs` as a
+# macro, not a function*, a header that declares it as a function, the
+# macro being another group's.
+#
+# FIX: told by the question of each bound name (`cli/bound_macro.hero`)
+# before any unit compiles: the macro of `fixedbugs-2056-function-like.h`,
+# which a call of `fabs` expands.
+
+extern "fixedbugs-2056-function-like.h"
+    function seven() -> i32
+
+extern "math.h" link "m"
+    function fabs(x: f64) -> f64  #~ ffi_macro_name
+
+function main()
+    print(seven())
+    print(fabs(-3.0))

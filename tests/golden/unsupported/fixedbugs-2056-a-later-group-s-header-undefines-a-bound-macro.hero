@@ -1,0 +1,17 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14.
+#
+# SYMPTOM: `versioned`, which its header makes a macro of `versioned_two`,
+# returning 2, undefined by a later group's header: the unit called the
+# first version and printed `1` at exit 0.
+#
+# FIX: an `#undef` is a change like a definition, refused at the name.
+
+extern "fixedbugs-2056-versioned.h"
+    function versioned() -> i32  #~ ffi_macro_name
+
+extern "fixedbugs-2056-unversioned.h"
+    function nine() -> i32
+
+function main()
+    print(versioned())
+    print(nine())

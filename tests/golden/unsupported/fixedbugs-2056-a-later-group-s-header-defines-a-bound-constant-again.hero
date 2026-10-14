@@ -1,0 +1,19 @@
+# fixedbugs, defect 2056, lane land-214, 2026-10-14.
+#
+# SYMPTOM: `LIMIT`, 10 in `fixedbugs-2056-limit.h`, whose group binds it,
+# defined again as 50 by a later group's header after an `#undef`, so clang
+# said nothing: the program printed `50` at exit 0.
+#
+# FIX: refused at the constant, the repair naming the definition its own
+# header writes to give back after the `#undef`.
+
+extern "fixedbugs-2056-limit.h"
+    constant LIMIT: i64  #~ ffi_macro_name
+    function aye() -> i32
+
+extern "fixedbugs-2056-limit-again.h"
+    function bee() -> i32
+
+function main()
+    print(LIMIT)
+    print(aye() + bee())

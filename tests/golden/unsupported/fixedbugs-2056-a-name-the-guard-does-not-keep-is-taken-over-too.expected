@@ -1,0 +1,8 @@
+error[ffi_macro_name]: `foo`, which this group binds from `fixedbugs-2056-foo.h`, is changed by `fixedbugs-2056-bar.h`, a header read after it: this program's C would read `foo` as `fixedbugs-2056-bar.h` leaves it, not as `fixedbugs-2056-foo.h` makes it
+  at tests/golden/unsupported/fixedbugs-2056-a-name-the-guard-does-not-keep-is-taken-over-too.hero:11:14
+     |
+  11 |     function foo() -> i32  #~ ffi_macro_name
+     |              ^^^
+  note: `fixedbugs-2056-bar.h` line 4 reads `#define foo bar`
+  note: where this program's C writes `(foo); foo();`, clang reads `(foo); foo();` after `fixedbugs-2056-foo.h`, and `(bar); bar();` after `fixedbugs-2056-bar.h`
+  note: a header of your own that includes `fixedbugs-2056-bar.h` and then writes `#undef foo`, named instead of `fixedbugs-2056-bar.h` by the group at line 13, leaves `foo` to `fixedbugs-2056-foo.h`

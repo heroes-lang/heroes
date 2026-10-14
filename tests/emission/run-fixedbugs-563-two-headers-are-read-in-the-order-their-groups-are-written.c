@@ -47,7 +47,10 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wattribute-warning"
+#pragma push_macro("cap")
+#undef cap
 #include "heroes_standard.h"
+#pragma pop_macro("cap")
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -96,7 +99,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 100 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
+#line 103 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -142,7 +145,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 146 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
+#line 149 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
@@ -178,7 +181,7 @@ bb0:
     hero_print_end();
 #line 18 "tests/golden/run/fixedbugs-563-two-headers-are-read-in-the-order-their-groups-are-written.hero"
     return;
-#line 182 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
+#line 185 "fixedbugs563twoheadersarereadintheordertheirgroupsarewritten.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

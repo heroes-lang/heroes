@@ -46,7 +46,10 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wattribute-warning"
+#pragma push_macro("void")
+#undef void
 #include "heroes_standard.h"
+#pragma pop_macro("void")
 
 _Static_assert(HERO_RUNTIME_ABI == 30, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -98,7 +101,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_455ecde8, "both given back");
 
-#line 102 "ffioutcellonahandletheheaderwritesback.c"
+#line 105 "ffioutcellonahandletheheaderwritesback.c"
 typedef struct h_0opt_f87774a {
     int64_t tag;
     union {
@@ -144,7 +147,7 @@ __attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
 #line 124 "<heroes library>"
 __attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 148 "ffioutcellonahandletheheaderwritesback.c"
+#line 151 "ffioutcellonahandletheheaderwritesback.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL bool h_ffioutcellonahandletheheaderwritesback_Mem_eq(void * const *a, void * const *b);
@@ -230,7 +233,7 @@ bb0:
     hero_lend_local_give(hero_lend_h0_a);
 #line 19 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
     return;
-#line 234 "ffioutcellonahandletheheaderwritesback.c"
+#line 237 "ffioutcellonahandletheheaderwritesback.c"
 }
 #undef h0_a
 #undef h1_b

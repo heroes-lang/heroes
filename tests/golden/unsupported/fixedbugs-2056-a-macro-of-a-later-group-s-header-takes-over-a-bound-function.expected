@@ -1,0 +1,8 @@
+error[ffi_macro_name]: `fabs`, which this group binds from `math.h`, is changed by `fixedbugs-2056-shadow.h`, a header read after it: this program's C would read `fabs` as `fixedbugs-2056-shadow.h` leaves it, not as `math.h` makes it
+  at tests/golden/unsupported/fixedbugs-2056-a-macro-of-a-later-group-s-header-takes-over-a-bound-function.hero:12:14
+     |
+  12 |     function fabs(x: f64) -> f64  #~ ffi_macro_name
+     |              ^^^^
+  note: `fixedbugs-2056-shadow.h` line 6 reads `#define fabs my_fabs`
+  note: where this program's C writes `(fabs); fabs(0);`, clang reads `(fabs); fabs(0);` after `math.h`, and `(my_fabs); my_fabs(0);` after `fixedbugs-2056-shadow.h`
+  note: a header of your own that includes `fixedbugs-2056-shadow.h` and then writes `#undef fabs`, named instead of `fixedbugs-2056-shadow.h` by the group at line 14, leaves `fabs` to `math.h`
