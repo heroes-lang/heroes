@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `e_std.h`, the header this group names, does not compile: its line 1 declares `sqrt`, which `<math.h>`, a header of C's own, declares too, after the groups' headers, and clang refuses the two: conflicting types for 'sqrt'
+  at build/rep/e_std.hero:1:8
+    |
+  1 | extern "e_std.h"
+    |        ^^^^^^^^^
+  note: `e_std.h` line 1 reads `static inline int sqrt(int x) { return x; }`
+  note: the C library's `sqrt`, which `<math.h>` declares, is the library's in a unit that includes that header (C11 7.1.3), and this program's C includes it after its groups' headers
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `sqrt` in `e_std.h`, a name of C's own library, which `<math.h>` declares

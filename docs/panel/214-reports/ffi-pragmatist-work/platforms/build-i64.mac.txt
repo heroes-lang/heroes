@@ -1,0 +1,8 @@
+error[ffi_header_refused]: `i64.h`, the header this group names, does not compile: clang refuses it at line 1: typedef redefinition with different types ('long' vs 'long long')
+  at build/rep/i64.hero:1:8
+    |
+  1 | extern "i64.h"
+    |        ^^^^^^^
+  note: `i64.h` line 1 reads `typedef long int64_t;`
+  note: clang adds, at C's own `int64_t`, which every unit of this program declares as `<stdint.h>` does, before any group's header: previous definition is here
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

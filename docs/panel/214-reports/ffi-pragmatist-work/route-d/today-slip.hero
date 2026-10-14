@@ -1,0 +1,9 @@
+extern "raylib.h" package "raylib"
+    record Vector2
+        x: f64
+        y: f32
+    function GetSplinePointLinear(startPos: Vector2, endPos: Vector2, t: f32) -> Vector2
+
+function main()
+    mid = GetSplinePointLinear(startPos: Vector2(x: 0.0, y: 0.0), endPos: Vector2(x: 10.0, y: 20.0), t: 0.5)
+    print(mid.x, " ", mid.y)
