@@ -72,6 +72,17 @@ first:
   no agreement to sign. The commit that merges names you, and so does the
   record, which says whose idea a thing was.
 
+## Programs a model wrote
+
+This compiler is written by an AI assistant under the rules in `CLAUDE.md`, and
+the language is designed for the mistakes models make, so a program a model
+wrote is welcome here as a reproducer: an issue that shows the compiler
+accepting a wrong program, refusing a right one, or telling a mistake badly is
+exactly what this project wants to hear about. One condition: the person who
+files it has run the command and pasted its real output, the compiler's
+version included. A report nobody ran is a guess, and this repository writes a
+claim down only after the command that settles it has run.
+
 ## What does not open
 
 - A change to the language without its sitting, however small the diff.

@@ -33,6 +33,13 @@ that the wrong program does not compile, and the diagnostic arrives with the
 repair already written. The bet is stated as a cost formula and measured rather
 than asserted; where the measurement is missing, this file says so.
 
+**Who writes it.** The author decides, reads every sitting and makes every
+outward act; the compiler, its tests and most of these records are written by
+an AI assistant, Claude, under the rules in [`CLAUDE.md`](CLAUDE.md), which it
+reads at the start of every session. A language designed around the mistakes
+models make is built here by one, and that is part of the experiment, said on
+its first page rather than left for a reader to find.
+
 ## Why this exists
 
 **A book came first.** *Heroes of code* is a history of programming languages,
@@ -134,7 +141,7 @@ working is a calculator, spread over four modules, with its own tests.
 | working today | not yet |
 |---|---|
 | lexer, parser, formatter, resolver, bidirectional type checker | a second backend, the proof that the IR is not C in disguise |
-| three-address IR with basic blocks, ownership pass, C11 emission, one `.c` per module behind a build cache | an LSP server, the program an editor asks for errors as you type; the VS Code extension in `editors/vscode/` highlights `.hero` files and draws their icon, and runs no code |
+| three-address IR with basic blocks, ownership pass, C11 emission, one `.c` per module behind a build cache | an LSP server, the program an editor asks for errors as you type; the VS Code extension in `editors/vscode/` highlights `.hero` files, runs `check`, `build`, `run` and `test` as tasks, and debugs a program through lldb with Heroes' own value formatters |
 | value semantics with copy-on-write, refcounted `str`/`[T]`/`{K: V}` | the rewrite rate, the thesis's third instrument, below |
 | generics by monomorphisation, function values, `T?`, `test`/`assert` | an installer of any kind: a tap, a manifest, a flake, an image |
 | packages: `use` paths, and where a program's files live | a compatibility promise, which is why the version stays below `1.0.0` |
@@ -153,6 +160,7 @@ written in C, which is what it emits when it compiles itself, so there is no
 chicken and egg and no Rust:
 
 ```sh
+git clone --depth 1 https://github.com/heroes-lang/heroes && cd heroes   # the tree alone; drop --depth 1 for the history
 clang -I runtime seed/heroes.c runtime/runtime.c -o heroes   # seconds
 ./heroes doctor                                             # what this machine has
 ./heroes run examples/gallery/00-first.hero
