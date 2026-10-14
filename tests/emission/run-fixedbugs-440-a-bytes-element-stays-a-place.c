@@ -170,7 +170,7 @@ void h_fixedbugs440abyteselementstaysaplace_main(void);
 #line 15 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 void h_fixedbugs440abyteselementstaysaplace_f(uint8_t *ph0_n) {
 #line 15 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 bb0:
     t1 = (*ph0_n);
@@ -188,7 +188,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 void h_fixedbugs440abyteselementstaysaplace_add(int64_t h0_k, uint8_t *ph1_n) {
 #line 18 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 bb0:
     t1 = (*ph1_n);
@@ -211,7 +211,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 void h_fixedbugs440abyteselementstaysaplace_shout(HeroStr *ph0_s) {
 #line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 bb0:
     t1 = (*ph0_s);
@@ -241,7 +241,7 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 void h_fixedbugs440abyteselementstaysaplace_main(void) {
 #line 25 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
-    HeroArrayHeader * h0_bs = {0}; int64_t h1_k; h_fixedbugs440abyteselementstaysaplace_Packet h2_p = {0}; HeroStr h3_s = {0}; HeroArrayHeader * h4_xs = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_fixedbugs440abyteselementstaysaplace_Packet h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG h_fixedbugs440abyteselementstaysaplace_Packet t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG h_fixedbugs440abyteselementstaysaplace_Packet t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG uint8_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG h_fixedbugs440abyteselementstaysaplace_Packet t38; HERO_NODEBUG h_fixedbugs440abyteselementstaysaplace_Packet t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_bs = {0}; int64_t h1_k; h_fixedbugs440abyteselementstaysaplace_Packet h2_p = {0}; HeroStr h3_s = {0}; HeroArrayHeader * h4_xs = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *h8_own8 = {0}, *t3, *t10, *t15, *t17, *t21, *t26, *t32, *t35, *t36, *t37, *t41, *t42; HERO_NODEBUG h_fixedbugs440abyteselementstaysaplace_Packet h7_own7 = {0}, t11, t25, t38, t39; HERO_NODEBUG uint8_t t1, t2, t9, t19, t23, t28; HERO_NODEBUG int64_t t4, t5, t6, t7, t8, t12, t16, t18, t22, t27, t33; HERO_NODEBUG HeroStr t13, t14, t20, t24, t29, t30, t31, t34, t40; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-440-a-bytes-element-stays-a-place.hero"
 bb0:
     t1 = UINT64_C(97);

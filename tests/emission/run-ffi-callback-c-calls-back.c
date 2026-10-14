@@ -187,7 +187,7 @@ void h_0cb_fficallbackccallsback_bye(void) {
 #line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
 void h_fficallbackccallsback_main(void) {
 #line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_294870dd t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t6; HERO_NODEBUG h_0fn_294870dd t2; HERO_NODEBUG int32_t t3, t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/ffi-callback-c-calls-back.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);

@@ -169,7 +169,7 @@ void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void);
 #line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
 void h_fixedbugsatransferintoavaluethatendsitwronglyisstoppedbeforec_main(void) {
 #line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
-    st * h0_s; wr * h1_w; HERO_NODEBUG st * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG st * t3; HERO_NODEBUG wr * t4; HERO_NODEBUG wr * t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
+    st * h0_s; wr * h1_w; HERO_NODEBUG st *t1, *t3; HERO_NODEBUG HeroStr t2, t6; HERO_NODEBUG wr *t4, *t5; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-a-transfer-into-a-value-that-ends-it-wrongly-is-stopped-before-c.hero"
 bb0:
     t1 = st_popen();

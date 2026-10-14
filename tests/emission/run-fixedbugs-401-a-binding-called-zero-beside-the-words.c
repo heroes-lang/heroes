@@ -177,7 +177,7 @@ void h_fixedbugs401abindingcalledzerobesidethewords_main(void);
 #line 16 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_beside(void) {
 #line 16 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    int32_t h0_zero; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG struct pair t4; HERO_ENTRY_STOP; goto bb0;
+    int32_t h0_zero; HERO_NODEBUG int32_t t1, t2, t3; HERO_NODEBUG struct pair t4; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 bb0:
     t1 = INT64_C(7);
@@ -203,7 +203,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 struct pair h_fixedbugs401abindingcalledzerobesidethewords_named(int32_t h0_zero) {
 #line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG struct pair t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG struct pair t3; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 bb0:
     t1 = INT64_C(1);
@@ -225,7 +225,7 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 void h_fixedbugs401abindingcalledzerobesidethewords_main(void) {
 #line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
-    struct pair h0_p; struct pair h1_q; HERO_NODEBUG struct pair t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG struct pair t3; HERO_NODEBUG struct pair t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG struct pair t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG struct pair t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG struct pair t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG struct pair t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG struct pair t19; HERO_NODEBUG int32_t t20; HERO_ENTRY_STOP; goto bb0;
+    struct pair h0_p; struct pair h1_q; HERO_NODEBUG struct pair t1, t3, t4, t7, t10, t13, t16, t19; HERO_NODEBUG int32_t t2, t5, t8, t11, t14, t17, t20; HERO_NODEBUG HeroStr t6, t9, t12, t15, t18; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-401-a-binding-called-zero-beside-the-words.hero"
 bb0:
     (void)dirty();

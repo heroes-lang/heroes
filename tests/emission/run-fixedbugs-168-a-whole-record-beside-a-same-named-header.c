@@ -166,7 +166,7 @@ void h_fixedbugs168awholerecordbesideasamenamedheader_main(void);
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 void h_fixedbugs168awholerecordbesideasamenamedheader_main(void) {
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
-    E h0_p; E h1_q; HERO_NODEBUG int32_t t1; HERO_NODEBUG E t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG E t4; HERO_NODEBUG E t5; HERO_NODEBUG E t6; HERO_NODEBUG bool t7; HERO_NODEBUG E t8; HERO_NODEBUG int32_t t9; HERO_ENTRY_STOP; goto bb0;
+    E h0_p; E h1_q; HERO_NODEBUG int32_t t1, t3, t9; HERO_NODEBUG E t2, t4, t5, t6, t8; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-168-a-whole-record-beside-a-same-named-header.hero"
 bb0:
     t1 = INT64_C(1);

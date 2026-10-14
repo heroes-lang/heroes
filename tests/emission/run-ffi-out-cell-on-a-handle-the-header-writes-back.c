@@ -170,7 +170,7 @@ void h_ffioutcellonahandletheheaderwritesback_main(void) {
 #line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
-    void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a"); void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b"); HERO_NODEBUG void * t1; HERO_NODEBUG void * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG void * t6; HERO_NODEBUG void * t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    void * *const hero_lend_h0_a = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "a"); void * *const hero_lend_h1_b = (void * *)hero_lend_local(sizeof(void *), "ffioutcellonahandletheheaderwritesback.main", "b"); HERO_NODEBUG void *t1, *t2, *t6, *t7; HERO_NODEBUG int32_t t3, t4, t5; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/ffi-out-cell-on-a-handle-the-header-writes-back.hero"
 bb0:
     t1 = ((void *)0);

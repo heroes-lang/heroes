@@ -163,7 +163,7 @@ void h_handleendonlyonsuccesskeepstheconnectionowed_main(void);
 #line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
 void h_handleendonlyonsuccesskeepstheconnectionowed_main(void) {
 #line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
-    db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db * t1; HERO_NODEBUG db * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG db * t4; HERO_NODEBUG db * t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int32_t t10; HERO_ENTRY_STOP; goto bb0;
+    db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db *t1, *t2, *t4, *t5; HERO_NODEBUG int32_t t3, t6, t8, t10; HERO_NODEBUG HeroStr t7, t9; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/handle-end-only-on-success-keeps-the-connection-owed.hero"
 bb0:
     t1 = db_open();

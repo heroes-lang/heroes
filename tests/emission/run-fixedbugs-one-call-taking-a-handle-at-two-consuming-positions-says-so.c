@@ -169,7 +169,7 @@ void h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_main(void);
 #line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
 void h_fixedbugsonecalltakingahandleattwoconsumingpositionssaysso_main(void) {
 #line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
-    ssl * h0_s; bio * h1_b; HERO_NODEBUG ssl * t1; HERO_NODEBUG bio * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG ssl * t4; HERO_NODEBUG bio * t5; HERO_NODEBUG bio * t6; HERO_NODEBUG ssl * t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    ssl * h0_s; bio * h1_b; HERO_NODEBUG ssl *t1, *t4, *t7; HERO_NODEBUG bio *t2, *t5, *t6; HERO_NODEBUG HeroStr t3, t8; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-one-call-taking-a-handle-at-two-consuming-positions-says-so.hero"
 bb0:
     t1 = ssl_new();

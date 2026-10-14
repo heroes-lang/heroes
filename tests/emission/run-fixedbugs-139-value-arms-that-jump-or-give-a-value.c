@@ -118,7 +118,7 @@ void h_fixedbugs139valuearmsthatjumporgiveavalue_main(void);
 #line 15 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) {
 #line 15 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0; HERO_NODEBUG int64_t h2_r0; int64_t h3_x; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, h4_ret0, t3, t4, t5, t6, t7, t8; int64_t h3_x; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = h0_c;
@@ -175,7 +175,7 @@ bb4:
 #line 22 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) {
 #line 22 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0; HERO_NODEBUG int64_t h2_r0; int64_t h3_x; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, h4_ret0, t3, t4, t5, t6, t7, t8; int64_t h3_x; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = h0_c;
@@ -233,7 +233,7 @@ bb4:
 #line 29 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_returned(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) {
 #line 29 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = h0_c;
@@ -280,7 +280,7 @@ bb3:
 #line 34 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_nested(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c, h_fixedbugs139valuearmsthatjumporgiveavalue_Color h1_d) {
 #line 34 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h2_s0; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h4_s1; HERO_NODEBUG int64_t h5_r1; int64_t h6_x; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t4; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h2_s0, h4_s1, t1, t2, t4, t5; HERO_NODEBUG int64_t h3_r0, h5_r1, t3, t6, t7, t8, t9, t10, t11, t12; int64_t h6_x; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = h0_c;
@@ -367,7 +367,7 @@ bb6:
 #line 43 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_first_nonzero(HeroArrayHeader * h0_xs) {
 #line 43 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    int64_t h1_found; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG int64_t h5_s0; HERO_NODEBUG int64_t h6_r0; int64_t h7_y; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_found; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t24; HERO_NODEBUG int64_t h3_i0, h5_s0, h6_r0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23; int64_t h4_x; int64_t h7_y; HERO_NODEBUG bool t7, t14; HERO_ENTRY_STOP; goto bb0;
 #line 43 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = INT64_C(0);
@@ -477,7 +477,7 @@ bb8:
 #line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_bound_if(bool h0_b) {
 #line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG int64_t h1_r0; int64_t h2_x; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_r0, h3_ret0, t2, t3, t4, t5, t6; int64_t h2_x; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0;
 #line 56 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = h0_b;
@@ -521,7 +521,7 @@ bb4:
 #line 63 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed_if(bool h0_b) {
 #line 63 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG int64_t h1_r0; int64_t h2_x; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_r0, h3_ret0, t2, t3, t4, t5, t6; int64_t h2_x; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0;
 #line 63 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = h0_b;
@@ -565,7 +565,7 @@ bb4:
 #line 70 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_before_value(bool h0_b) {
 #line 70 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG int64_t h2_s0; int64_t h3_x; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_r0, h2_s0, t2, t3, t4, t6, t7, t8, t9, t10, t11; int64_t h3_x; HERO_NODEBUG bool t1, t5; HERO_ENTRY_STOP; goto bb0;
 #line 70 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = h0_b;
@@ -639,7 +639,7 @@ bb7:
 #line 81 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_typed_statements_before_values(bool h0_b) {
 #line 81 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_s1; int64_t h4_x; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_r0, h2_s0, h3_s1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t13, t14, t15, t16, t17; int64_t h4_x; HERO_NODEBUG bool t1, t5, t12; HERO_ENTRY_STOP; goto bb0;
 #line 81 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = h0_b;
@@ -749,7 +749,7 @@ bb11:
 #line 96 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 int64_t h_fixedbugs139valuearmsthatjumporgiveavalue_statement_arms(h_fixedbugs139valuearmsthatjumporgiveavalue_Color h0_c) {
 #line 96 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    int64_t h1_n; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h2_s0; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t2; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_n; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color h2_s0, t2, t3; HERO_NODEBUG int64_t t1, t4, t5, t6, t8, t9, t10, t11, t12; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 96 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = INT64_C(0);
@@ -822,7 +822,7 @@ bb6:
 #line 106 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 void h_fixedbugs139valuearmsthatjumporgiveavalue_main(void) {
 #line 106 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t11; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t14; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG bool t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG bool t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t21, *t43; HERO_NODEBUG h_fixedbugs139valuearmsthatjumporgiveavalue_Color t1, t3, t5, t7, t9, t11, t12, t14, t15, t39, t41; HERO_NODEBUG int64_t t2, t4, t6, t8, t10, t13, t16, t17, t18, t19, t20, t22, t24, t26, t28, t30, t32, t34, t36, t38, t40, t42; HERO_NODEBUG bool t23, t25, t27, t29, t31, t33, t35, t37; HERO_ENTRY_STOP; goto bb0;
 #line 106 "tests/golden/run/fixedbugs-139-value-arms-that-jump-or-give-a-value.hero"
 bb0:
     t1 = (h_fixedbugs139valuearmsthatjumporgiveavalue_Color){.tag = h_fixedbugs139valuearmsthatjumporgiveavalue_Color_tag_red};

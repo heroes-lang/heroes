@@ -189,7 +189,7 @@ void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void);
 #line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_inc(int64_t *ph0_x) {
 #line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 bb0:
     t1 = (*ph0_x);
@@ -207,7 +207,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_widen(struct cell *ph0_c) {
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    HERO_NODEBUG struct cell t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG struct cell t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 bb0:
     t1 = (*ph0_c);
@@ -227,7 +227,7 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 void h_fixedbugsanatargumentthroughafixedarrayelementiswrittenback_main(void) {
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
-    struct holder h0_h; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG struct cell t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG struct cell t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG struct cell t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG struct holder t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG struct holder t21; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG struct holder t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG struct holder t31; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG struct holder t36; HERO_NODEBUG int64_t t38; HERO_NODEBUG struct cell t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG struct holder t42; HERO_NODEBUG int64_t t44; HERO_NODEBUG struct cell t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG struct holder t48; HERO_NODEBUG int64_t t50; HERO_NODEBUG struct cell t51; HERO_NODEBUG int64_t t52; HERO_ENTRY_STOP; goto bb0;
+    struct holder h0_h; HERO_NODEBUG int64_t t1, t2, t4, t5, t7, t8, t11, t12, t13, t14, t17, t18, t19, t20, t23, t24, t28, t29, t33, t34, t38, t40, t44, t46, t50, t52; HERO_NODEBUG struct cell t3, t6, t9, t39, t45, t51; HERO_NODEBUG struct holder t16, t21, t26, t31, t36, t42, t48; HERO_NODEBUG HeroStr t25, t30, t35, t41, t47; HERO_ENTRY_STOP; goto bb0;
 #line 31 "tests/golden/run/fixedbugs-an-at-argument-through-a-fixed-array-element-is-written-back.hero"
 bb0:
     t1 = INT64_C(1);

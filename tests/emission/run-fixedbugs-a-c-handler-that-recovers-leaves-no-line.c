@@ -156,7 +156,7 @@ void h_fixedbugsachandlerthatrecoversleavesnoline_main(void);
 #line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
 void h_fixedbugsachandlerthatrecoversleavesnoline_main(void) {
 #line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
-    HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t6, t10, t11; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_NODEBUG int32_t t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-a-c-handler-that-recovers-leaves-no-line.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3205);

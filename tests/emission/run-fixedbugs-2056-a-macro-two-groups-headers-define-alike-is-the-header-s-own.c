@@ -218,7 +218,7 @@ int64_t h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_EXTRA(vo
 #line 22 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
 void h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_main(void) {
 #line 22 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG int32_t t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-2056-a-macro-two-groups-headers-define-alike-is-the-header-s-own.hero"
 bb0:
     t1 = h_fixedbugs2056amacrotwogroupsheadersdefinealikeistheheadersown_LIMIT();

@@ -110,7 +110,7 @@ bb0:
 #line 9 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
 void h_fixedbugs577aconstantreadinafunctionsstepabortswhereitruns_main(void) {
 #line 9 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
-    uint8_t h0_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG uint8_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-577-a-constant-read-in-a-function-s-step-aborts-where-it-runs.hero"
 bb0:
     t1 = INT64_C(1);

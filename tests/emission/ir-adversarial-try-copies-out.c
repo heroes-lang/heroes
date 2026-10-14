@@ -119,7 +119,7 @@ h_0opt_e201354 h_adversarialtrycopiesout_advance_over(h_adversarialtrycopiesout_
 #line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
 h_0opt_e201354 h_adversarialtrycopiesout_parsed(HeroStr h0_s) {
 #line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t7, t10, t11, t12, t13; HERO_NODEBUG HeroStr t1, t5, t6, t8; HERO_NODEBUG int64_t t2, t3, t9; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/ir/adversarial-try-copies-out.hero"
 bb0:
     t1 = h0_s;
@@ -188,7 +188,7 @@ bb4:
 #line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
 h_0opt_e201354 h_adversarialtrycopiesout_advance_over(h_adversarialtrycopiesout_Reader *ph0_r, HeroStr h1_s) {
 #line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
-    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; int64_t h3_n; HERO_NODEBUG h_0opt_e201354 h4_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_adversarialtrycopiesout_Reader t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t2, t3, t7, t9, t10, t16, t22, t23, t24, t25, t26, t27, t28; int64_t h3_n; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t4, t5, t11, t12, t13, t15, t18, t19, t20, t21; HERO_NODEBUG bool t6, t14; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_adversarialtrycopiesout_Reader t17; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/ir/adversarial-try-copies-out.hero"
 bb0:
     t1 = h1_s;

@@ -156,7 +156,7 @@ void h_fixedbugscwritesoverastringsheader_main(void);
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 void h_fixedbugscwritesoverastringsheader_main(void) {
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
-    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t3, t4, t6, t7, t8; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-c-writes-over-a-strings-header.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3205);

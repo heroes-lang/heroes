@@ -97,7 +97,7 @@ void h_fixedbugs567ani8remainderatitssmallestbyminusoneaborts_main(void);
 #line 12 "tests/golden/run/fixedbugs-567-an-i8-remainder-at-its-smallest-by-minus-one-aborts.hero"
 void h_fixedbugs567ani8remainderatitssmallestbyminusoneaborts_main(void) {
 #line 12 "tests/golden/run/fixedbugs-567-an-i8-remainder-at-its-smallest-by-minus-one-aborts.hero"
-    int8_t h0_x; int8_t h1_y; HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int8_t t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int8_t t6; HERO_NODEBUG int8_t t7; HERO_NODEBUG int8_t t8; HERO_ENTRY_STOP; goto bb0;
+    int8_t h0_x; int8_t h1_y; HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-567-an-i8-remainder-at-its-smallest-by-minus-one-aborts.hero"
 bb0:
     t1 = INT64_C(-128);

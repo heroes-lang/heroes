@@ -155,7 +155,7 @@ void h_fixedbugs171apointerwithnoparameterscalledwhilenull_main(void);
 #line 10 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
 void h_fixedbugs171apointerwithnoparameterscalledwhilenull_main(void) {
 #line 10 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-171-a-pointer-with-no-parameters-called-while-null.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);

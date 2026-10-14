@@ -104,7 +104,7 @@ HeroStr h_afunctiontypethatnamesitsownway_pair(HeroStr h0_code, int64_t h1_at);
 #line 24 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 HeroStr h_afunctiontypethatnamesitsownway_relay(h_0fn_573f54ce h0_f) {
 #line 24 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_0fn_573f54ce t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t4, t5; HERO_NODEBUG h_0fn_573f54ce t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 bb0:
     t1 = h0_f;
@@ -129,7 +129,7 @@ bb0:
 #line 27 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 void h_afunctiontypethatnamesitsownway_main(void) {
 #line 27 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG h_0fn_1fb9aa18 t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}, t2, t3; HERO_NODEBUG h_0fn_1fb9aa18 t1; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 bb0:
     t1 = h_afunctiontypethatnamesitsownway_pair;
@@ -153,7 +153,7 @@ bb0:
 #line 30 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 HeroStr h_afunctiontypethatnamesitsownway_pair(HeroStr h0_code, int64_t h1_at) {
 #line 30 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
-    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t1, t2, t3, t5, t6, t7, t8, t9; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/a-function-type-that-names-its-own-way.hero"
 bb0:
     t1 = h0_code;

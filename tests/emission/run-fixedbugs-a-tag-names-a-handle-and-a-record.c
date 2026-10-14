@@ -176,7 +176,7 @@ void h_fixedbugsatagnamesahandleandarecord_main(void) {
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 #define h1_r (*hero_lend_h1_r)
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
-    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h"); struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r"); int32_t h2_rc; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG struct addrinfo t3; HERO_NODEBUG struct addrinfo * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG void * t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG struct addrinfo * t10; HERO_ENTRY_STOP; goto bb0;
+    struct addrinfo *const hero_lend_h0_h = (struct addrinfo *)hero_lend_local(sizeof(struct addrinfo), "fixedbugsatagnamesahandleandarecord.main", "h"); struct addrinfo * *const hero_lend_h1_r = (struct addrinfo * *)hero_lend_local(sizeof(struct addrinfo *), "fixedbugsatagnamesahandleandarecord.main", "r"); int32_t h2_rc; HERO_NODEBUG int32_t t1, t2, t8, t9; HERO_NODEBUG struct addrinfo t3, *t4, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char *t6; HERO_NODEBUG void *t7; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-a-tag-names-a-handle-and-a-record.hero"
 bb0:
     t1 = INT64_C(0);

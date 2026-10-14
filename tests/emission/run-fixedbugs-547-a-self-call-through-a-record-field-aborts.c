@@ -105,7 +105,7 @@ void h_fixedbugs547aselfcallthrougharecordfieldaborts_main(void);
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
 int64_t h_fixedbugs547aselfcallthrougharecordfieldaborts_step(int64_t h0_n) {
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    h_fixedbugs547aselfcallthrougharecordfieldaborts_Box h1_b; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t2; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t3; HERO_NODEBUG h_0fn_48ac9712 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs547aselfcallthrougharecordfieldaborts_Box h1_b; HERO_NODEBUG h_0fn_48ac9712 t1, t4; HERO_NODEBUG h_fixedbugs547aselfcallthrougharecordfieldaborts_Box t2, t3; HERO_NODEBUG int64_t t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
 bb0:
     t1 = h_fixedbugs547aselfcallthrougharecordfieldaborts_step;
@@ -128,7 +128,7 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
 void h_fixedbugs547aselfcallthrougharecordfieldaborts_main(void) {
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-547-a-self-call-through-a-record-field-aborts.hero"
 bb0:
     t1 = INT64_C(1);

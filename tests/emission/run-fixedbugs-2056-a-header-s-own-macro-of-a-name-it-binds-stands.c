@@ -166,7 +166,7 @@ void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void);
 #line 16 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
 void h_fixedbugs2056aheadersownmacroofanameitbindsstands_main(void) {
 #line 16 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-2056-a-header-s-own-macro-of-a-name-it-binds-stands.hero"
 bb0:
     t1 = 0x1.8p+1;

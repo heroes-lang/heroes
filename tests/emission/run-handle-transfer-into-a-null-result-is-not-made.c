@@ -166,7 +166,7 @@ void h_handletransferintoanullresultisnotmade_main(void);
 #line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
 void h_handletransferintoanullresultisnotmade_main(void) {
 #line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
-    mem * h0_p; mem * h1_q; mem * h2_r; mem * h3_t; HERO_NODEBUG int64_t t1; HERO_NODEBUG mem * t2; HERO_NODEBUG mem * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG mem * t5; HERO_NODEBUG mem * t6; HERO_NODEBUG mem * t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG mem * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG mem * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG mem * t14; HERO_NODEBUG mem * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG mem * t17; HERO_NODEBUG mem * t18; HERO_NODEBUG mem * t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG mem * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG mem * t24; HERO_ENTRY_STOP; goto bb0;
+    mem * h0_p; mem * h1_q; mem * h2_r; mem * h3_t; HERO_NODEBUG int64_t t1, t4, t11, t13, t16, t23; HERO_NODEBUG mem *t2, *t3, *t5, *t6, *t7, *t10, *t12, *t14, *t15, *t17, *t18, *t19, *t22, *t24; HERO_NODEBUG bool t8, t20; HERO_NODEBUG HeroStr t9, t21; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/handle-transfer-into-a-null-result-is-not-made.hero"
 bb0:
     t1 = INT64_C(8);

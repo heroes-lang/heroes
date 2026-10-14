@@ -106,7 +106,7 @@ void h_sugarnamedargs_main(void);
 #line 9 "tests/golden/ir/sugar-named-args.hero"
 h_sugarnamedargs_Point h_sugarnamedargs_moved(h_sugarnamedargs_Point h0_p, int64_t h1_by) {
 #line 9 "tests/golden/ir/sugar-named-args.hero"
-    HERO_NODEBUG h_sugarnamedargs_Point t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_sugarnamedargs_Point t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_sugarnamedargs_Point t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_sugarnamedargs_Point t1, t5, t7; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/ir/sugar-named-args.hero"
 bb0:
     t1 = h0_p;
@@ -130,7 +130,7 @@ bb0:
 #line 12 "tests/golden/ir/sugar-named-args.hero"
 int64_t h_sugarnamedargs_copy_between(int64_t h0_from, int64_t h1_to) {
 #line 12 "tests/golden/ir/sugar-named-args.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/ir/sugar-named-args.hero"
 bb0:
     t1 = h1_to;
@@ -146,7 +146,7 @@ bb0:
 #line 15 "tests/golden/ir/sugar-named-args.hero"
 void h_sugarnamedargs_main(void) {
 #line 15 "tests/golden/ir/sugar-named-args.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/ir/sugar-named-args.hero"
 bb0:
     t1 = INT64_C(1);

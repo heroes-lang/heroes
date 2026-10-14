@@ -164,7 +164,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
 void h_fixedbugsacfunctioncrossesasacallback_main(void) {
 #line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
-    void * h0_b; HERO_NODEBUG void * t1; HERO_NODEBUG void * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0fn_406f9b0 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    void * h0_b; HERO_NODEBUG void *t1, *t2; HERO_NODEBUG int64_t t3, t5, t6; HERO_NODEBUG h_0fn_406f9b0 t4; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/fixedbugs-a-c-function-crosses-as-a-callback.hero"
 bb0:
     t1 = (void *)blob_make();

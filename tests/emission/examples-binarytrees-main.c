@@ -174,7 +174,7 @@ bb0:
 #line 74 "examples/binarytrees/main.hero"
 h_main_Tree h_main_grown(int64_t h0_depth) {
 #line 74 "examples/binarytrees/main.hero"
-    HERO_NODEBUG h_main_Tree h1_ret0 = {0}; HERO_NODEBUG h_main_Tree h2_own2 = {0}; HERO_NODEBUG h_main_Tree h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_main_Tree h5_own5 = {0}; HERO_NODEBUG h_main_Tree h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG h_main_Tree t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_main_Tree t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_main_Tree t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG h_main_Tree t14; HERO_NODEBUG h_main_Tree t15; HERO_NODEBUG h_main_Tree t16; HERO_NODEBUG h_main_Tree t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG h_main_Tree t19; HERO_NODEBUG h_main_Tree t20; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Tree h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h5_own5 = {0}, h6_own6 = {0}, t4, t8, t12, t14, t15, t16, t17, t19, t20; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t13, *t18; HERO_NODEBUG int64_t t1, t2, t5, t6, t7, t9, t10, t11; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 74 "examples/binarytrees/main.hero"
 bb0:
     t1 = h0_depth;
@@ -274,7 +274,7 @@ bb4:
 #line 84 "examples/binarytrees/main.hero"
 int64_t h_main_checked(h_main_Tree h0_t) {
 #line 84 "examples/binarytrees/main.hero"
-    HERO_NODEBUG h_main_Tree h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_Tree t1; HERO_NODEBUG h_main_Tree t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_main_Tree t5; HERO_NODEBUG h_main_Tree_c_branch t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_main_Tree_c_branch t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_main_Tree t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_main_Tree_c_branch t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_main_Tree t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_main_Tree t21; HERO_NODEBUG h_main_Tree_c_branch t22; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t11, t17, t21; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t10, t12, t13, t16, t18, t19, t20; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_Tree_c_branch t6, t8, t14, t22; HERO_NODEBUG HeroArrayHeader *t9, *t15; HERO_ENTRY_STOP; goto bb0;
 #line 84 "examples/binarytrees/main.hero"
 bb0:
     t1 = h0_t;
@@ -365,7 +365,7 @@ bb3:
 #line 91 "examples/binarytrees/main.hero"
 int64_t h_main_depth_of(h_main_Tree h0_t) {
 #line 91 "examples/binarytrees/main.hero"
-    HERO_NODEBUG h_main_Tree h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_Tree t1; HERO_NODEBUG h_main_Tree t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_main_Tree t5; HERO_NODEBUG h_main_Tree_c_branch t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_main_Tree_c_branch t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_main_Tree t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_main_Tree t15; HERO_NODEBUG h_main_Tree_c_branch t16; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t11, t15; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t10, t12, t13, t14; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG h_main_Tree_c_branch t6, t8, t16; HERO_NODEBUG HeroArrayHeader *t9; HERO_ENTRY_STOP; goto bb0;
 #line 91 "examples/binarytrees/main.hero"
 bb0:
     t1 = h0_t;
@@ -444,7 +444,7 @@ bb3:
 #line 101 "examples/binarytrees/main.hero"
 bool h_main_balanced(h_main_Tree h0_t) {
 #line 101 "examples/binarytrees/main.hero"
-    HERO_NODEBUG h_main_Tree h1_s0 = {0}; HERO_NODEBUG bool h2_r0; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG bool h4_b0; HERO_NODEBUG bool h5_b1; HERO_NODEBUG h_main_Tree t1; HERO_NODEBUG h_main_Tree t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_main_Tree t5; HERO_NODEBUG h_main_Tree_c_branch t6; HERO_NODEBUG h_main_Tree_c_branch t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_main_Tree t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_main_Tree_c_branch t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_main_Tree t15; HERO_NODEBUG bool t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_main_Tree_c_branch t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_main_Tree t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG h_main_Tree_c_branch t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_main_Tree t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG bool t29; HERO_NODEBUG bool t30; HERO_NODEBUG h_main_Tree t31; HERO_NODEBUG h_main_Tree_c_branch t32; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Tree h1_s0 = {0}, t1, t2, t5, t10, t15, t21, t26, t31; HERO_NODEBUG bool h2_r0, h4_b0, h5_b1, t4, t11, t16, t17, t28, t29, t30; h_main_Tree_c_branch h3_b = {0}; HERO_NODEBUG int64_t t3, t9, t14, t20, t22, t25, t27; HERO_NODEBUG h_main_Tree_c_branch t6, t7, t12, t18, t23, t32; HERO_NODEBUG HeroArrayHeader *t8, *t13, *t19, *t24; HERO_ENTRY_STOP; goto bb0;
 #line 101 "examples/binarytrees/main.hero"
 bb0:
     t1 = h0_t;
@@ -579,7 +579,7 @@ bb7:
 #line 109 "examples/binarytrees/main.hero"
 void h_main_main(void) {
 #line 109 "examples/binarytrees/main.hero"
-    h_main_Tree h0_long_lived = {0}; int64_t h1_depth; int64_t h2_iterations; int64_t h3_total; int64_t h4_i; HERO_NODEBUG h_main_Tree h5_own5 = {0}; HERO_NODEBUG h_main_Tree h6_own6 = {0}; HERO_NODEBUG h_main_Tree h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_main_Tree t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_main_Tree t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_main_Tree t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG h_main_Tree t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG h_main_Tree t50; HERO_NODEBUG h_main_Tree t51; HERO_NODEBUG h_main_Tree t52; HERO_NODEBUG h_main_Tree t53; HERO_ENTRY_STOP; goto bb0;
+    h_main_Tree h0_long_lived = {0}; int64_t h1_depth; int64_t h2_iterations; int64_t h3_total; int64_t h4_i; HERO_NODEBUG h_main_Tree h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t9, t12, t31, t48, t50, t51, t52, t53; HERO_NODEBUG HeroStr t1, t5, t38, t40, t45, t47; HERO_NODEBUG int64_t t2, t3, t4, t6, t7, t8, t10, t11, t13, t14, t15, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t29, t30, t32, t33, t34, t35, t36, t37, t39, t41, t42, t43, t44, t46, t49; HERO_NODEBUG bool t16, t28; HERO_ENTRY_STOP; goto bb0;
 #line 109 "examples/binarytrees/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5dcdeee1);

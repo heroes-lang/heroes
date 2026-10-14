@@ -165,7 +165,7 @@ void h_ffiborrowsowesnothing_main(void);
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
 void h_ffiborrowsowesnothing_main(void) {
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
-    Slot * h0_mine; Slot * h1_theirs; HERO_NODEBUG int64_t t1; HERO_NODEBUG Slot * t2; HERO_NODEBUG Slot * t3; HERO_NODEBUG Slot * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG Slot * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG Slot * t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
+    Slot * h0_mine; Slot * h1_theirs; HERO_NODEBUG int64_t t1, t5, t7, t8; HERO_NODEBUG Slot *t2, *t3, *t4, *t6, *t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/ffi-borrows-owes-nothing.hero"
 bb0:
     t1 = INT64_C(3);

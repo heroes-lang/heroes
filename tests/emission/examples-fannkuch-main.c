@@ -138,7 +138,7 @@ HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers);
 #line 73 "examples/fannkuch/main.hero"
 int64_t h_main_flips(HeroArrayHeader * h0_order) {
 #line 73 "examples/fannkuch/main.hero"
-    HeroArrayHeader * h1_work = {0}; int64_t h2_done; int64_t h3_low; int64_t h4_high; int64_t h5_held; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_work = {0}; int64_t h2_done; int64_t h3_low; int64_t h4_high; int64_t h5_held; HERO_NODEBUG HeroArrayHeader *t1, *t3, *t9, *t15, *t19, *t34; HERO_NODEBUG int64_t t2, t4, t5, t6, t8, t10, t11, t12, t13, t16, t17, t18, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33; HERO_NODEBUG bool t7, t14; HERO_ENTRY_STOP; goto bb0;
 #line 73 "examples/fannkuch/main.hero"
 bb0:
     t1 = h0_order;
@@ -256,7 +256,7 @@ bb6:
 #line 94 "examples/fannkuch/main.hero"
 h_main_Walk h_main_start(int64_t h0_n) {
 #line 94 "examples/fannkuch/main.hero"
-    HeroArrayHeader * h1_order = {0}; HeroArrayHeader * h2_left = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_main_Walk h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_main_Walk t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG h_main_Walk t25; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_order = {0}; HeroArrayHeader * h2_left = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h5_own5 = {0}, *t1, *t2, *t16, *t17, *t21, *t22, *t23, *t24; HERO_NODEBUG h_main_Walk h6_own6 = {0}, t20, t25; HERO_NODEBUG int64_t t3, t4, t5, t8, t11, t13, t14, t15, t18; HERO_NODEBUG bool t6, t19; HERO_ENTRY_STOP; goto bb0;
 #line 94 "examples/fannkuch/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -356,7 +356,7 @@ bb3:
 #line 109 "examples/fannkuch/main.hero"
 void h_main_reset(h_main_Walk *ph0_w) {
 #line 109 "examples/fannkuch/main.hero"
-    HERO_NODEBUG h_main_Walk t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG h_main_Walk t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_main_Walk t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_main_Walk t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_main_Walk t1, t5, t9, t11; HERO_NODEBUG int64_t t2, t3, t6, t7, t8, t10, t12, t13, t14; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 109 "examples/fannkuch/main.hero"
 bb0:
 #line 109 "examples/fannkuch/main.hero"
@@ -408,7 +408,7 @@ bb3:
 #line 118 "examples/fannkuch/main.hero"
 void h_main_advance(h_main_Walk *ph0_w) {
 #line 118 "examples/fannkuch/main.hero"
-    int64_t h1_head; int64_t h2_i; HERO_NODEBUG bool t1; HERO_NODEBUG h_main_Walk t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_main_Walk t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_main_Walk t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_main_Walk t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_main_Walk t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_main_Walk t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG h_main_Walk t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_main_Walk t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG h_main_Walk t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG h_main_Walk t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG h_main_Walk t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG bool t46; HERO_NODEBUG h_main_Walk t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_head; int64_t h2_i; HERO_NODEBUG bool t1, t7, t8, t17, t46; HERO_NODEBUG h_main_Walk t2, t4, t9, t15, t19, t28, t31, t33, t35, t40, t42, t47; HERO_NODEBUG int64_t t3, t6, t11, t12, t13, t14, t16, t18, t21, t22, t23, t24, t25, t26, t27, t29, t30, t32, t36, t37, t38, t39, t43, t44, t45, t48, t49, t50; HERO_NODEBUG HeroArrayHeader *t5, *t10, *t20, *t34, *t41; HERO_ENTRY_STOP; goto bb0;
 #line 118 "examples/fannkuch/main.hero"
 bb0:
 #line 118 "examples/fannkuch/main.hero"
@@ -581,7 +581,7 @@ bb13:
 #line 140 "examples/fannkuch/main.hero"
 h_main_Fannkuch h_main_fannkuch(int64_t h0_n) {
 #line 140 "examples/fannkuch/main.hero"
-    h_main_Walk h1_w = {0}; int64_t h2_checksum; int64_t h3_max_flips; int64_t h4_visited; int64_t h5_count; HERO_NODEBUG h_main_Walk h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_main_Walk t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_main_Walk t6; HERO_NODEBUG bool t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_main_Walk t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_main_Fannkuch t33; HERO_NODEBUG h_main_Walk t34; HERO_NODEBUG h_main_Walk t35; HERO_ENTRY_STOP; goto bb0;
+    h_main_Walk h1_w = {0}; int64_t h2_checksum; int64_t h3_max_flips; int64_t h4_visited; int64_t h5_count; HERO_NODEBUG h_main_Walk h6_own6 = {0}, t2, t6, t9, t34, t35; HERO_NODEBUG int64_t t1, t3, t4, t5, t11, t12, t13, t15, t16, t17, t18, t19, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32; HERO_NODEBUG bool t7, t8, t14, t20; HERO_NODEBUG HeroArrayHeader *t10; HERO_NODEBUG h_main_Fannkuch t33; HERO_ENTRY_STOP; goto bb0;
 #line 140 "examples/fannkuch/main.hero"
 bb0:
     t1 = h0_n;
@@ -726,7 +726,7 @@ bb9:
 #line 163 "examples/fannkuch/main.hero"
 int64_t h_main_factorial(int64_t h0_n) {
 #line 163 "examples/fannkuch/main.hero"
-    int64_t h1_out; int64_t h2_i; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_out; int64_t h2_i; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 163 "examples/fannkuch/main.hero"
 bb0:
     t1 = INT64_C(1);
@@ -777,7 +777,7 @@ bb3:
 #line 175 "examples/fannkuch/main.hero"
 void h_main_main(void) {
 #line 175 "examples/fannkuch/main.hero"
-    int64_t h0_n; h_main_Fannkuch h1_said; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_main_Fannkuch t3; HERO_NODEBUG h_main_Fannkuch t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_main_Fannkuch t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_n; h_main_Fannkuch h1_said; HERO_NODEBUG int64_t t1, t2, t5, t7, t10; HERO_NODEBUG h_main_Fannkuch t3, t4, t9; HERO_NODEBUG HeroStr t6, t8; HERO_ENTRY_STOP; goto bb0;
 #line 175 "examples/fannkuch/main.hero"
 bb0:
     t1 = INT64_C(7);
@@ -822,7 +822,7 @@ bb0:
 #line 267 "examples/fannkuch/main.hero"
 HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_numbers) {
 #line 267 "examples/fannkuch/main.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_one; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t10, t12, t15, t16, t17; int64_t h4_one; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 267 "examples/fannkuch/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);

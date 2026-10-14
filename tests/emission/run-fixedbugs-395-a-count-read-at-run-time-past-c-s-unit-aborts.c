@@ -169,7 +169,7 @@ void h_fixedbugs395acountreadatruntimepastcsunitaborts_main(void);
 #line 13 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 uint64_t h_fixedbugs395acountreadatruntimepastcsunitaborts_at_run_time(uint64_t h0_k) {
 #line 13 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    HERO_NODEBUG uint64_t t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG uint64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 bb0:
     t1 = h0_k;
@@ -185,7 +185,7 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 void h_fixedbugs395acountreadatruntimepastcsunitaborts_main(void) {
 #line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
-    struct held h0_h; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG int64_t t18; HERO_NODEBUG struct held t19; HERO_NODEBUG struct held t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG void * t24; HERO_NODEBUG uint64_t t25; HERO_NODEBUG uint64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG struct held t28; HERO_NODEBUG int64_t t29; HERO_ENTRY_STOP; goto bb0;
+    struct held h0_h; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16; HERO_NODEBUG int64_t t18, t21, t27, t29; HERO_NODEBUG struct held t19, t20, t28; HERO_NODEBUG void *t24; HERO_NODEBUG uint64_t t25, t26; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-395-a-count-read-at-run-time-past-c-s-unit-aborts.hero"
 bb0:
     t1 = UINT64_C(0);

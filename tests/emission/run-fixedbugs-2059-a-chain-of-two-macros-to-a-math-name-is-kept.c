@@ -158,7 +158,7 @@ void h_fixedbugs2059achainoftwomacrostoamathnameiskept_main(void);
 #line 12 "tests/golden/run/fixedbugs-2059-a-chain-of-two-macros-to-a-math-name-is-kept.hero"
 void h_fixedbugs2059achainoftwomacrostoamathnameiskept_main(void) {
 #line 12 "tests/golden/run/fixedbugs-2059-a-chain-of-two-macros-to-a-math-name-is-kept.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-2059-a-chain-of-two-macros-to-a-math-name-is-kept.hero"
 bb0:
     t1 = 0x1.8p+1;

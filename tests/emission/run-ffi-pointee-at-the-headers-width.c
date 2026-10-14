@@ -166,7 +166,7 @@ void h_ffipointeeattheheaderswidth_main(void) {
 #line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 #define h2_t (*hero_lend_h2_t)
 #line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e"); double h1_m; int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t"); HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffipointeeattheheaderswidth.main", "e"); double h1_m; int64_t *const hero_lend_h2_t = (int64_t *)hero_lend_local(sizeof(int64_t), "ffipointeeattheheaderswidth.main", "t"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3, t4; HERO_NODEBUG int64_t t6, t8, t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/ffi-pointee-at-the-headers-width.hero"
 bb0:
     t1 = INT64_C(0);

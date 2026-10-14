@@ -179,7 +179,7 @@ int64_t h_fixedbugs559wide_doubled(int64_t h0_x);
 #line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 void h_fixedbugs559amacroofanothermoduledoesnotlayoutarecordintheotherorder_main(void) {
 #line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
-    S h0_s; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG S t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG S t6; HERO_NODEBUG int32_t t7; HERO_ENTRY_STOP; goto bb0;
+    S h0_s; HERO_NODEBUG int32_t t1, t2, t7; HERO_NODEBUG S t3, t6; HERO_NODEBUG int64_t t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-559-a-macro-of-another-module-does-not-lay-out-a-record-in-the-other-order.hero"
 bb0:
     t1 = INT64_C(1);
@@ -211,7 +211,7 @@ bb0:
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 int64_t h_fixedbugs559wide_doubled(int64_t h0_x) {
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs559/wide.hero"
 bb0:
     t1 = h0_x;

@@ -221,7 +221,7 @@ struct pt h_fixedbugs094designatedinitialisersleavetherestzero_PT_TWICE(void) {
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 void h_fixedbugs094designatedinitialisersleavetherestzero_main(void) {
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
-    struct pt h0_p; struct pt h1_t; HERO_NODEBUG struct pt t1; HERO_NODEBUG struct pt t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG struct pt t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG struct pt t6; HERO_NODEBUG struct pt t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG struct pt t9; HERO_NODEBUG int32_t t10; HERO_ENTRY_STOP; goto bb0;
+    struct pt h0_p; struct pt h1_t; HERO_NODEBUG struct pt t1, t2, t4, t6, t7, t9; HERO_NODEBUG int32_t t3, t5, t8, t10; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-094-designated-initialisers-leave-the-rest-zero.hero"
 bb0:
     t1 = h_fixedbugs094designatedinitialisersleavetherestzero_PT_Y();

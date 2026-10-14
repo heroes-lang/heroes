@@ -99,7 +99,7 @@ void h_fixedbugs520acyclewithawayoutitnevertakesaborts_main(void);
 #line 9 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 int64_t h_fixedbugs520acyclewithawayoutitnevertakesaborts_ping(int64_t h0_n) {
 #line 9 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6, t7; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -141,7 +141,7 @@ bb4:
 #line 14 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 int64_t h_fixedbugs520acyclewithawayoutitnevertakesaborts_pong(int64_t h0_n) {
 #line 14 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -155,7 +155,7 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 void h_fixedbugs520acyclewithawayoutitnevertakesaborts_main(void) {
 #line 17 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-520-a-cycle-with-a-way-out-it-never-takes-aborts.hero"
 bb0:
     t1 = INT64_C(1);

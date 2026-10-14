@@ -204,7 +204,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 struct pair h_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
 #line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
-    hero_thread_guard("deadhandleinacallbackresultrecordnamesitsfield.give"); struct pair h1_p; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG struct pair t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG struct pair t16; HERO_NODEBUG node * t17; HERO_NODEBUG struct pair t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("deadhandleinacallbackresultrecordnamesitsfield.give"); struct pair h1_p; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t6, t7, t11, t13, t19, t20; HERO_NODEBUG node *t1, *t2, *t17; HERO_NODEBUG struct pair t3, t16, t18; HERO_NODEBUG int64_t t4, t8, t9, t14; HERO_NODEBUG int32_t t5; HERO_NODEBUG bool t10, t15; HERO_NODEBUG HeroFailure t12; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/dead-handle-in-a-callback-result-record-names-its-field.hero"
 bb0:
     t1 = node_new();

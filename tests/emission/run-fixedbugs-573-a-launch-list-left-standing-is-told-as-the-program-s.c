@@ -113,7 +113,7 @@ void h_fixedbugs573alaunchlistleftstandingistoldastheprograms_main(void) {
 #line 19 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
 #define h1_marks (*hero_lend_h1_marks)
 #line 19 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs573alaunchlistleftstandingistoldastheprograms.main", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs573alaunchlistleftstandingistoldastheprograms.main", "marks"); HeroStr h2_program = {0}; int64_t h3_code; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG const char * t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG const char * t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG const char * t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG const char * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs573alaunchlistleftstandingistoldastheprograms.main", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs573alaunchlistleftstandingistoldastheprograms.main", "marks"); HeroStr h2_program = {0}; int64_t h3_code; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t20; HERO_NODEBUG HeroStr h5_own5 = {0}, t7, t8, t9, t10, t12, t14, t16, t21, t22; HERO_NODEBUG int64_t t2, t3, t5, t6, t18, t19; HERO_NODEBUG bool t4; HERO_NODEBUG const char *t11, *t13, *t15, *t17; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-573-a-launch-list-left-standing-is-told-as-the-program-s.hero"
 bb0:
     t1 = h_library_args();
@@ -218,7 +218,7 @@ bb4:
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);

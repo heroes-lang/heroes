@@ -181,7 +181,7 @@ int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void) {
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
-    int64_t h0_big; HERO_NODEBUG int32_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG void * t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_big; HERO_NODEBUG int32_t t1, t5, t8, t9; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG void *t4; HERO_NODEBUG int64_t t6, t7; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 bb0:
     (void)hero_errno_clear();

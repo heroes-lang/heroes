@@ -169,7 +169,7 @@ void h_fixedbugs396sha256finalpastsixteenaborts_main(void) {
 #line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 #define h0_c (*hero_lend_h0_c)
 #line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
-    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalpastsixteenaborts.main", "c"); HeroArrayHeader * h1_md = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG uint32_t t1; HERO_NODEBUG struct SHA256state_st t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG const char * t7; HERO_NODEBUG uint64_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_ENTRY_STOP; goto bb0;
+    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalpastsixteenaborts.main", "c"); HeroArrayHeader * h1_md = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t12, *t14, *t15; HERO_NODEBUG uint32_t t1; HERO_NODEBUG struct SHA256state_st t2; HERO_NODEBUG int32_t t4, t9, t10; HERO_NODEBUG HeroStr t5, t6, t11; HERO_NODEBUG const char *t7; HERO_NODEBUG uint64_t t8; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-396-sha256-final-past-sixteen-aborts.hero"
 bb0:
     t1 = UINT64_C(0);

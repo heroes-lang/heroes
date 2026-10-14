@@ -100,7 +100,7 @@ int64_t h_adversarialforevaluatesonce_total(void);
 #line 7 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 HeroArrayHeader * h_adversarialforevaluatesonce_numbers(void) {
 #line 7 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t5, *t6; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_4808f94f);
@@ -136,7 +136,7 @@ bb0:
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 int64_t h_adversarialforevaluatesonce_total(void) {
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
-    int64_t h0_sum; HERO_NODEBUG HeroArrayHeader * h1_xs0 = {0}; HERO_NODEBUG int64_t h2_i0; int64_t h3_n; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_sum; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h4_own4 = {0}, *t2, *t5, *t8, *t18, *t19; HERO_NODEBUG int64_t h2_i0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t14, t15, t16, t17; int64_t h3_n; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/ir/adversarial-for-evaluates-once.hero"
 bb0:
     t1 = INT64_C(0);

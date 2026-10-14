@@ -161,7 +161,7 @@ void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void);
 #line 67 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 void h_fixedbugsarealdeallocatorgiventhesamehandletwice_main(void) {
 #line 67 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
-    blk * h0_a; blk * h1_twice; HERO_NODEBUG int64_t t1; HERO_NODEBUG blk * t2; HERO_NODEBUG blk * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG blk * t5; HERO_NODEBUG blk * t6; HERO_NODEBUG blk * t7; HERO_ENTRY_STOP; goto bb0;
+    blk * h0_a; blk * h1_twice; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG blk *t2, *t3, *t5, *t6, *t7; HERO_ENTRY_STOP; goto bb0;
 #line 67 "tests/golden/run/fixedbugs-a-real-deallocator-given-the-same-handle-twice.hero"
 bb0:
     t1 = INT64_C(7);

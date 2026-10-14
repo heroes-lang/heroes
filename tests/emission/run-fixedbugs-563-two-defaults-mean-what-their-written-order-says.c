@@ -154,7 +154,7 @@ void h_fixedbugs563twodefaultsmeanwhattheirwrittenordersays_main(void);
 #line 15 "tests/golden/run/fixedbugs-563-two-defaults-mean-what-their-written-order-says.hero"
 void h_fixedbugs563twodefaultsmeanwhattheirwrittenordersays_main(void) {
 #line 15 "tests/golden/run/fixedbugs-563-two-defaults-mean-what-their-written-order-says.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-563-two-defaults-mean-what-their-written-order-says.hero"
 bb0:
     t1 = pk();

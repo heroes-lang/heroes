@@ -180,7 +180,7 @@ void h_ffiaconstructionnamesonearmofeachunion_main(void);
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 void h_ffiaconstructionnamesonearmofeachunion_main(void) {
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
-    SA h0_s; SA h1_t; SA h2_a; SA h3_b; HERO_NODEBUG bool h4_b0; HERO_NODEBUG bool h5_b1; HERO_NODEBUG SA t1; HERO_NODEBUG SA t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG float t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG SA t7; HERO_NODEBUG SA t8; HERO_NODEBUG float t9; HERO_NODEBUG SA t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG SA t12; HERO_NODEBUG SA t13; HERO_NODEBUG SA t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG SA t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG SA t19; HERO_NODEBUG int32_t t20; HERO_NODEBUG SA t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG bool t24; HERO_NODEBUG SA t25; HERO_NODEBUG int32_t t26; HERO_NODEBUG SA t27; HERO_NODEBUG int32_t t28; HERO_NODEBUG bool t29; HERO_NODEBUG bool t30; HERO_ENTRY_STOP; goto bb0;
+    SA h0_s; SA h1_t; SA h2_a; SA h3_b; HERO_NODEBUG bool h4_b0, h5_b1, t18, t23, t24, t29, t30; HERO_NODEBUG SA t1, t2, t7, t8, t10, t12, t13, t14, t16, t19, t21, t25, t27; HERO_NODEBUG int32_t t3, t4, t6, t11, t15, t17, t20, t22, t26, t28; HERO_NODEBUG float t5, t9; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/ffi-a-construction-names-one-arm-of-each-union.hero"
 bb0:
     t1 = make_sa();

@@ -160,7 +160,7 @@ void h_deadaddresscopymadebeforetheendreachesc_main(void);
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
 void h_deadaddresscopymadebeforetheendreachesc_main(void) {
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
-    node * h0_a; node * h1_keep; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG node * t3; HERO_NODEBUG node * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    node * h0_a; node * h1_keep; HERO_NODEBUG node *t1, *t2, *t3, *t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/dead-address-copy-made-before-the-end-reaches-c.hero"
 bb0:
     t1 = node_new();

@@ -163,7 +163,7 @@ void h_ffiacquiresandconsumes_main(void);
 #line 17 "tests/golden/run/ffi-acquires-and-consumes.hero"
 void h_ffiacquiresandconsumes_main(void) {
 #line 17 "tests/golden/run/ffi-acquires-and-consumes.hero"
-    Slot * h0_a; Slot * h1_b; HERO_NODEBUG int64_t t1; HERO_NODEBUG Slot * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG Slot * t4; HERO_NODEBUG Slot * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG Slot * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG Slot * t10; HERO_NODEBUG Slot * t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
+    Slot * h0_a; Slot * h1_b; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG Slot *t2, *t4, *t5, *t7, *t10, *t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/ffi-acquires-and-consumes.hero"
 bb0:
     t1 = INT64_C(7);

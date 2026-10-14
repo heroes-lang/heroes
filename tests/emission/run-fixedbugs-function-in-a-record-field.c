@@ -131,7 +131,7 @@ void h_fixedbugsfunctioninarecordfield_main(void);
 #line 29 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 int64_t h_fixedbugsfunctioninarecordfield_double(int64_t h0_n) {
 #line 29 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 bb0:
     t1 = h0_n;
@@ -147,7 +147,7 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 int64_t h_fixedbugsfunctioninarecordfield_negate(int64_t h0_n) {
 #line 32 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 bb0:
     t1 = h0_n;
@@ -161,7 +161,7 @@ bb0:
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 void h_fixedbugsfunctioninarecordfield_main(void) {
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
-    h_fixedbugsfunctioninarecordfield_Holder h0_h = {0}; h_fixedbugsfunctioninarecordfield_Holder h1_k = {0}; h_fixedbugsfunctioninarecordfield_Step h2_s; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step h3_s0; h_fixedbugsfunctioninarecordfield_Step_c_apply h4_a; h_0fn_48ac9712 h5_call; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder h6_own6 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t3; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t4; HERO_NODEBUG h_0fn_48ac9712 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t10; HERO_NODEBUG h_0fn_48ac9712 t11; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t12; HERO_NODEBUG h_0fn_48ac9712 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t16; HERO_NODEBUG h_0fn_48ac9712 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0fn_48ac9712 t20; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step t21; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step t22; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step t25; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step_c_apply t26; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step_c_apply t27; HERO_NODEBUG h_0fn_48ac9712 t28; HERO_NODEBUG h_0fn_48ac9712 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t33; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t34; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder t35; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugsfunctioninarecordfield_Holder h0_h = {0}; h_fixedbugsfunctioninarecordfield_Holder h1_k = {0}; h_fixedbugsfunctioninarecordfield_Step h2_s; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step h3_s0, t21, t22, t23, t25; h_fixedbugsfunctioninarecordfield_Step_c_apply h4_a; h_0fn_48ac9712 h5_call; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Holder h6_own6 = {0}, t3, t4, t8, t10, t12, t16, t33, t34, t35; HERO_NODEBUG h_0fn_48ac9712 t1, t5, t11, t13, t17, t20, t28, t29; HERO_NODEBUG HeroStr t2, t9; HERO_NODEBUG int64_t t6, t7, t14, t15, t18, t19, t24, t30, t31, t32; HERO_NODEBUG h_fixedbugsfunctioninarecordfield_Step_c_apply t26, t27; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/run/fixedbugs-function-in-a-record-field.hero"
 bb0:
     t1 = h_fixedbugsfunctioninarecordfield_double;

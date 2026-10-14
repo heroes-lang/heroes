@@ -168,7 +168,7 @@ void h_fixedbugstwomarksononecallaretwoobligations_main(void) {
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
-    Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a"); Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b"); HERO_NODEBUG Slot * t1; HERO_NODEBUG Conn * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG Slot * t4; HERO_NODEBUG Conn * t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
+    Slot * *const hero_lend_h0_a = (Slot * *)hero_lend_local(sizeof(Slot *), "fixedbugstwomarksononecallaretwoobligations.main", "a"); Conn * *const hero_lend_h1_b = (Conn * *)hero_lend_local(sizeof(Conn *), "fixedbugstwomarksononecallaretwoobligations.main", "b"); HERO_NODEBUG Slot *t1, *t4; HERO_NODEBUG Conn *t2, *t5; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-two-marks-on-one-call-are-two-obligations.hero"
 bb0:
     t1 = ((void *)0);

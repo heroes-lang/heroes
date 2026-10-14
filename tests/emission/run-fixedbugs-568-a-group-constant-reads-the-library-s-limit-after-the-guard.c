@@ -214,7 +214,7 @@ int64_t h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LOW(
 #line 15 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 void h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_main(void) {
 #line 15 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2, t3; HERO_NODEBUG bool t4, t7; HERO_NODEBUG int64_t t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-568-a-group-constant-reads-the-library-s-limit-after-the-guard.hero"
 bb0:
     t1 = h_fixedbugs568agroupconstantreadsthelibraryslimitaftertheguard_CASE_LIMIT();

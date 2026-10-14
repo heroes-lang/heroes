@@ -97,7 +97,7 @@ void h_abortsortnan_main(void);
 #line 14 "tests/golden/run/abort-sort-nan.hero"
 void h_abortsortnan_main(void) {
 #line 14 "tests/golden/run/abort-sort-nan.hero"
-    double h0_zero; double h1_n; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG double t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG double t10; HERO_NODEBUG double t11; HERO_NODEBUG double t12; HERO_NODEBUG double t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG double t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_ENTRY_STOP; goto bb0;
+    double h0_zero; double h1_n; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *t7, *t8, *t14, *t15, *t18, *t19, *t20, *t21; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t10, t11, t12, t13, t17; HERO_NODEBUG int64_t t9, t16; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/abort-sort-nan.hero"
 bb0:
     t1 = 0x0p+0;

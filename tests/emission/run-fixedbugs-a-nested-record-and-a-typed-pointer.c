@@ -203,7 +203,7 @@ void h_fixedbugsanestedrecordandatypedpointer_main(void);
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 void h_fixedbugsanestedrecordandatypedpointer_main(void) {
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
-    Camera2D h0_c; Vector2 h1_p; Font h2_empty; HERO_NODEBUG float t1; HERO_NODEBUG float t2; HERO_NODEBUG Vector2 t3; HERO_NODEBUG float t4; HERO_NODEBUG float t5; HERO_NODEBUG Vector2 t6; HERO_NODEBUG float t7; HERO_NODEBUG float t8; HERO_NODEBUG Camera2D t9; HERO_NODEBUG float t10; HERO_NODEBUG float t11; HERO_NODEBUG Vector2 t12; HERO_NODEBUG Camera2D t13; HERO_NODEBUG Vector2 t14; HERO_NODEBUG Vector2 t15; HERO_NODEBUG float t16; HERO_NODEBUG Vector2 t17; HERO_NODEBUG float t18; HERO_NODEBUG int32_t t19; HERO_NODEBUG int32_t t20; HERO_NODEBUG int32_t t21; HERO_NODEBUG uint32_t t22; HERO_NODEBUG int32_t t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG int32_t t25; HERO_NODEBUG int32_t t26; HERO_NODEBUG Texture t27; HERO_NODEBUG void * t28; HERO_NODEBUG void * t29; HERO_NODEBUG Font t30; HERO_NODEBUG Font t31; HERO_NODEBUG bool t32; HERO_ENTRY_STOP; goto bb0;
+    Camera2D h0_c; Vector2 h1_p; Font h2_empty; HERO_NODEBUG float t1, t2, t4, t5, t7, t8, t10, t11, t16, t18; HERO_NODEBUG Vector2 t3, t6, t12, t14, t15, t17; HERO_NODEBUG Camera2D t9, t13; HERO_NODEBUG int32_t t19, t20, t21, t23, t24, t25, t26; HERO_NODEBUG uint32_t t22; HERO_NODEBUG Texture t27; HERO_NODEBUG void *t28, *t29; HERO_NODEBUG Font t30, t31; HERO_NODEBUG bool t32; HERO_ENTRY_STOP; goto bb0;
 #line 59 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"
 bb0:
 #line 63 "tests/golden/run/fixedbugs-a-nested-record-and-a-typed-pointer.hero"

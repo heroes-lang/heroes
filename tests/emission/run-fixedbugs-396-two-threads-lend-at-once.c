@@ -195,7 +195,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 14 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 uint8_t h_fixedbugs396twothreadslendatonce_expected(int64_t h0_seed, int64_t h1_at) {
 #line 14 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-    HERO_NODEBUG h_0opt_1ec004 h2_f0 = {0}; HERO_NODEBUG h_0opt_1ec004 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_1ec004 t12; HERO_NODEBUG h_0opt_1ec004 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_0opt_1ec004 t17; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG h_0opt_1ec004 t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG h_0opt_1ec004 t21; HERO_NODEBUG h_0opt_1ec004 t22; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_1ec004 h2_f0 = {0}, h3_own3 = {0}, t12, t13, t17, t19, t21, t22; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t14, t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG uint8_t t20; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 bb0:
     t1 = h0_seed;
@@ -280,7 +280,7 @@ bb2:
 #line 17 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 int64_t h_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
 #line 17 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-    hero_thread_guard("fixedbugs396twothreadslendatonce.worker"); int64_t h1_wrong; int64_t h2_round; HeroArrayHeader * h3_md = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_f0 = {0}; int64_t h5_at; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_0opt_fbbb698 h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_0opt_fbbb698 t8; HERO_NODEBUG h_0opt_fbbb698 t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_0opt_fbbb698 t13; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG h_0opt_fbbb698 t15; HERO_NODEBUG uint64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG h_0opt_fbbb698 t40; HERO_NODEBUG h_0opt_fbbb698 t41; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("fixedbugs396twothreadslendatonce.worker"); int64_t h1_wrong; int64_t h2_round; HeroArrayHeader * h3_md = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_f0 = {0}, h7_own7 = {0}, t8, t9, t13, t15, t40, t41; int64_t h5_at; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t6, *t21, *t38, *t39; HERO_NODEBUG int64_t t1, t2, t3, t4, t7, t10, t11, t17, t18, t19, t22, t24, t25, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37; HERO_NODEBUG bool t5, t12, t20, t27; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG uint64_t t16; HERO_NODEBUG uint8_t t23, t26; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 bb0:
     t1 = INT64_C(0);
@@ -473,7 +473,7 @@ int64_t h_0cb_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
 #line 35 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 void h_fixedbugs396twothreadslendatonce_main(void) {
 #line 35 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-    int64_t h0_a; int64_t h1_b; int64_t h2_here; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0fn_48ac9712 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_a; int64_t h1_b; int64_t h2_here; HERO_NODEBUG h_0fn_48ac9712 t1, t4; HERO_NODEBUG int64_t t2, t3, t5, t6, t7, t8, t9, t10, t12, t13, t15; HERO_NODEBUG HeroStr t11, t14; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 bb0:
     t1 = h_fixedbugs396twothreadslendatonce_worker;

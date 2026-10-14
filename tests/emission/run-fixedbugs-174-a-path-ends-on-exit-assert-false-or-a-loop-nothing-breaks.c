@@ -128,7 +128,7 @@ void h_library_exit(int64_t h0_code);
 #line 19 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_checked(int64_t h0_n) {
 #line 19 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -164,7 +164,7 @@ bb3:
 #line 24 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_by_position(int64_t h0_n) {
 #line 24 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -200,7 +200,7 @@ bb3:
 #line 32 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_asserted(int64_t h0_n) {
 #line 32 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG bool t3, t6; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -242,7 +242,7 @@ bb5:
 #line 40 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_until_found(int64_t h0_n) {
 #line 40 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    int64_t h1_i; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_i; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t8, t9, t10, t11; HERO_NODEBUG bool t2, t7; HERO_ENTRY_STOP; goto bb0;
 #line 40 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = INT64_C(0);
@@ -301,7 +301,7 @@ bb6:
 #line 48 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_inner_for_breaks(int64_t h0_n) {
 #line 48 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    int64_t h1_m; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_k; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_m; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t5, *t8, *t11, *t27, *t28; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t7, t9, t12, t13, t14, t15, t17, t18, t19, t20, t21, t23, t24, t25, t26; int64_t h4_k; HERO_NODEBUG bool t2, t10, t16, t22; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -440,7 +440,7 @@ bb13:
 #line 60 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_inner_while_breaks(int64_t h0_n) {
 #line 60 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    int64_t h1_m; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_m; HERO_NODEBUG int64_t t1, t4, t5, t7, t8, t9, t10; HERO_NODEBUG bool t2, t3, t6; HERO_ENTRY_STOP; goto bb0;
 #line 60 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -509,7 +509,7 @@ bb9:
 #line 71 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_continues(int64_t h0_n) {
 #line 71 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    int64_t h1_m; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_m; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t7, t9; HERO_NODEBUG bool t2, t8; HERO_ENTRY_STOP; goto bb0;
 #line 71 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -564,7 +564,7 @@ bb6:
 #line 82 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_every_branch_ends(int64_t h0_n) {
 #line 82 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t8; HERO_NODEBUG bool t3, t7, t10; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
 #line 82 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -623,7 +623,7 @@ bb7:
 #line 90 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_an_arm_exits(h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color h0_c) {
 #line 90 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color h1_s0; HERO_NODEBUG h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color t1; HERO_NODEBUG h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color h1_s0, t1, t2; HERO_NODEBUG int64_t t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 90 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_c;
@@ -667,7 +667,7 @@ bb3:
 #line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_defensive(int64_t h0_n) {
 #line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6, t7; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 96 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -712,7 +712,7 @@ bb4:
 #line 102 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_assert(int64_t h0_n) {
 #line 102 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t7, t8; HERO_NODEBUG bool t3, t6; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
 #line 102 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_n;
@@ -763,7 +763,7 @@ bb6:
 #line 108 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_loop(int64_t h0_n) {
 #line 108 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    int64_t h1_i; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_i; HERO_NODEBUG int64_t h2_ret0, t1, t3, t4, t6, t7, t8, t9, t10, t11, t12; HERO_NODEBUG bool t2, t5; HERO_ENTRY_STOP; goto bb0;
 #line 108 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = INT64_C(0);
@@ -833,7 +833,7 @@ bb7:
 #line 121 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_leaving_if(int64_t h0_k) {
 #line 121 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t h1_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 121 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_k;
@@ -868,7 +868,7 @@ bb4:
 #line 130 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 int64_t h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_after_a_leaving_match(int64_t h0_k) {
 #line 130 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_ret0, t1, t2, t3, t5, t6, t7; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 130 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = h0_k;
@@ -909,7 +909,7 @@ bb5:
 #line 140 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 void h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_finish(void) {
 #line 140 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 140 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_d839a22);
@@ -935,7 +935,7 @@ bb0:
 #line 145 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 void h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_main(void) {
 #line 145 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28; HERO_NODEBUG h_fixedbugs174apathendsonexitassertfalseoraloopnothingbreaks_Color t17; HERO_ENTRY_STOP; goto bb0;
 #line 145 "tests/golden/run/fixedbugs-174-a-path-ends-on-exit-assert-false-or-a-loop-nothing-breaks.hero"
 bb0:
     t1 = INT64_C(7);

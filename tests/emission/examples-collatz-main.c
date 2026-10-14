@@ -143,7 +143,7 @@ bb0:
 #line 29 "examples/collatz/main.hero"
 int64_t h_main_steps(int64_t h0_n) {
 #line 29 "examples/collatz/main.hero"
-    int64_t h1_count; int64_t h2_v; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_count; int64_t h2_v; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG bool t5, t10; HERO_ENTRY_STOP; goto bb0;
 #line 29 "examples/collatz/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -237,7 +237,7 @@ bb6:
 #line 43 "examples/collatz/main.hero"
 int64_t h_main_longest_in(int64_t h0_index) {
 #line 43 "examples/collatz/main.hero"
-    hero_thread_guard("main.longest_in"); int64_t h1_best; int64_t h2_n; int64_t h3_s; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("main.longest_in"); int64_t h1_best; int64_t h2_n; int64_t h3_s; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t14, t15, t16, t17, t19, t20, t21, t22, t23; HERO_NODEBUG bool t13, t18; HERO_ENTRY_STOP; goto bb0;
 #line 43 "examples/collatz/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -330,7 +330,7 @@ int64_t h_0cb_main_longest_in(int64_t h0_index) {
 #line 56 "examples/collatz/main.hero"
 int64_t h_main_longest_at_once(void) {
 #line 56 "examples/collatz/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_best; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; int64_t h6_found; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG bool t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_best; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h7_own7 = {0}, *t1, *t15, *t18, *t21, *t34, *t35, *t36; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t8, t9, t11, t12, t13, t14, t16, t17, t19, t22, t23, t24, t25, t26, t27, t29, t30, t31, t32, t33; int64_t h5_h; int64_t h6_found; HERO_NODEBUG bool t5, t20, t28; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_ENTRY_STOP; goto bb0;
 #line 56 "examples/collatz/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -478,7 +478,7 @@ bb10:
 #line 75 "examples/collatz/main.hero"
 int64_t h_main_longest_alone(void) {
 #line 75 "examples/collatz/main.hero"
-    int64_t h0_best; int64_t h1_n; int64_t h2_s; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_best; int64_t h1_n; int64_t h2_s; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t8, t9, t10, t11, t13, t14, t15, t16, t17; HERO_NODEBUG bool t7, t12; HERO_ENTRY_STOP; goto bb0;
 #line 75 "examples/collatz/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -554,7 +554,7 @@ bb6:
 #line 88 "examples/collatz/main.hero"
 void h_main_main(void) {
 #line 88 "examples/collatz/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t5; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 88 "examples/collatz/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_58d299d3);

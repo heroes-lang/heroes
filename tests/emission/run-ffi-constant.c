@@ -222,7 +222,7 @@ int64_t h_fficonstant_SEEK_END(void) {
 #line 52 "tests/golden/run/ffi-constant.hero"
 void h_fficonstant_main(void) {
 #line 52 "tests/golden/run/ffi-constant.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_NODEBUG int64_t t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 52 "tests/golden/run/ffi-constant.hero"
 bb0:
 #line 54 "tests/golden/run/ffi-constant.hero"

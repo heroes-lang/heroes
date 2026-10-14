@@ -167,7 +167,7 @@ void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void);
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 void h_fixedbugs150aunionreadthroughtwomembersbuildssilently_main(void) {
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
-    W h0_w; HERO_NODEBUG W t1; HERO_NODEBUG W t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG W t4; HERO_NODEBUG uint32_t t5; HERO_ENTRY_STOP; goto bb0;
+    W h0_w; HERO_NODEBUG W t1, t2, t4; HERO_NODEBUG int32_t t3; HERO_NODEBUG uint32_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-150-a-union-read-through-two-members-builds-silently.hero"
 bb0:
     t1 = make_w();

@@ -144,7 +144,7 @@ bb0:
 #line 29 "examples/dotproduct/main.hero"
 int64_t h_main_left(int64_t h0_at) {
 #line 29 "examples/dotproduct/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 29 "examples/dotproduct/main.hero"
 bb0:
     t1 = h0_at;
@@ -168,7 +168,7 @@ bb0:
 #line 32 "examples/dotproduct/main.hero"
 int64_t h_main_right(int64_t h0_at) {
 #line 32 "examples/dotproduct/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 32 "examples/dotproduct/main.hero"
 bb0:
     t1 = INT64_C(53);
@@ -192,7 +192,7 @@ bb0:
 #line 35 "examples/dotproduct/main.hero"
 int64_t h_main_band(int64_t h0_index) {
 #line 35 "examples/dotproduct/main.hero"
-    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_at; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("main.band"); int64_t h1_total; int64_t h2_at; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 35 "examples/dotproduct/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -268,7 +268,7 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 #line 45 "examples/dotproduct/main.hero"
 int64_t h_main_together(void) {
 #line 45 "examples/dotproduct/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t15, *t18, *t21, *t32, *t33, *t34; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t8, t9, t11, t12, t13, t14, t16, t17, t19, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31; int64_t h5_h; HERO_NODEBUG bool t5, t20; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_ENTRY_STOP; goto bb0;
 #line 45 "examples/dotproduct/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -400,7 +400,7 @@ bb7:
 #line 60 "examples/dotproduct/main.hero"
 int64_t h_main_alone(void) {
 #line 60 "examples/dotproduct/main.hero"
-    int64_t h0_total; int64_t h1_at; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_total; int64_t h1_at; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 60 "examples/dotproduct/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -463,7 +463,7 @@ bb3:
 #line 70 "examples/dotproduct/main.hero"
 void h_main_main(void) {
 #line 70 "examples/dotproduct/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t5; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 70 "examples/dotproduct/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3b5e78d0);

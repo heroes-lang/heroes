@@ -173,7 +173,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 17 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 int64_t h_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
 #line 17 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
-    hero_thread_guard("deadaddresscallbackhandbackclearsthemark.seen"); HERO_NODEBUG node * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("deadaddresscallbackhandbackclearsthemark.seen"); HERO_NODEBUG node *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 bb0:
     t1 = h0_n;
@@ -195,7 +195,7 @@ int64_t h_0cb_deadaddresscallbackhandbackclearsthemark_seen(node * h0_n) {
 #line 20 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 void h_deadaddresscallbackhandbackclearsthemark_main(void) {
 #line 20 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
-    node * h0_mine; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_0fn_41481456 t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    node * h0_mine; HERO_NODEBUG node *t1, *t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_0fn_41481456 t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/dead-address-callback-hand-back-clears-the-mark.hero"
 bb0:
     t1 = node_new();

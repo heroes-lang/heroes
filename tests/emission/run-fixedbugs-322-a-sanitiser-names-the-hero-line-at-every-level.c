@@ -156,7 +156,7 @@ void h_fixedbugs322asanitisernamestheherolineateverylevel_main(void);
 #line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
 void h_fixedbugs322asanitisernamestheherolineateverylevel_main(void) {
 #line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-322-a-sanitiser-names-the-hero-line-at-every-level.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_68eb8936);

@@ -113,7 +113,7 @@ void h_mustaborts_main(void);
 #line 18 "tests/golden/run/must-aborts.hero"
 h_0opt_e201354 h_mustaborts_half(int64_t h0_n) {
 #line 18 "tests/golden/run/must-aborts.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t8, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/must-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -194,7 +194,7 @@ bb4:
 #line 23 "tests/golden/run/must-aborts.hero"
 void h_mustaborts_main(void) {
 #line 23 "tests/golden/run/must-aborts.hero"
-    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h1_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h0_f0 = {0}, h1_f1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t2, t3, t7, t9, t12, t13, t17, t19, t21, t22, t23, t24; HERO_NODEBUG int64_t t1, t4, t5, t10, t11, t14, t15, t20; HERO_NODEBUG bool t6, t16; HERO_NODEBUG HeroFailure t8, t18; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/must-aborts.hero"
 bb0:
     t1 = INT64_C(8);

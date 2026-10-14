@@ -167,7 +167,7 @@ void h_fixedbugsareleaseafteratransferisastray_main(void);
 #line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 void h_fixedbugsareleaseafteratransferisastray_main(void) {
 #line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
-    ob * h0_a; wr * h1_w; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG wr * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG ob * t5; HERO_NODEBUG wr * t6; HERO_NODEBUG HeroStr t7; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_a; wr * h1_w; HERO_NODEBUG ob *t1, *t2, *t5; HERO_NODEBUG wr *t3, *t6; HERO_NODEBUG HeroStr t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-a-release-after-a-transfer-is-a-stray.hero"
 bb0:
     t1 = ob_new();

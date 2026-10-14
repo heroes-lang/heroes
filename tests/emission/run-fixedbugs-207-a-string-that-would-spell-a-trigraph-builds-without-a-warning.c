@@ -132,7 +132,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
 int64_t h_fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning_kind(HeroStr h0_s) {
 #line 22 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
-    HERO_NODEBUG HeroStr h1_s0 = {0}; HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_s0 = {0}, t1, t2, t3, t8; HERO_NODEBUG int64_t h2_ret0, t5, t6, t7; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
 bb0:
     t1 = h0_s;
@@ -180,7 +180,7 @@ bb5:
 #line 27 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
 void h_fixedbugs207astringthatwouldspellatrigraphbuildswithoutawarning_main(void) {
 #line 27 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
-    int64_t h0_x; HeroMapHeader * h1_m = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroMapHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroMapHeader * t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG HeroFailure t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroMapHeader * t35; HERO_NODEBUG HeroMapHeader * t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_x; HeroMapHeader * h1_m = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h8_own8 = {0}, t22, t23, t27, t29, t37, t38; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t1, t2, t4, t5, t9, t10, t11, t12, t13, t14, t15, t17, t21, t31, t32, t33, t34; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t19, *t20, *t35, *t36; HERO_NODEBUG int64_t t3, t6, t7, t8, t16, t18, t24, t25, t30; HERO_NODEBUG bool t26; HERO_NODEBUG HeroFailure t28; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/fixedbugs-207-a-string-that-would-spell-a-trigraph-builds-without-a-warning.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_34e81226);

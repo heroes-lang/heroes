@@ -163,7 +163,7 @@ void h_handlealiveafteranendthenarebinding_main(void);
 #line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 void h_handlealiveafteranendthenarebinding_main(void) {
 #line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
-    node * h0_n; HERO_NODEBUG int64_t t1; HERO_NODEBUG node * t2; HERO_NODEBUG node * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG node * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG node * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG node * t9; HERO_ENTRY_STOP; goto bb0;
+    node * h0_n; HERO_NODEBUG int64_t t1, t4, t8; HERO_NODEBUG node *t2, *t3, *t5, *t7, *t9; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/handle-alive-after-an-end-then-a-rebinding.hero"
 bb0:
     t1 = INT64_C(1);

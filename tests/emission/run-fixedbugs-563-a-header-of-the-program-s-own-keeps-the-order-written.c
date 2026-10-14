@@ -160,7 +160,7 @@ void h_fixedbugs563aheaderoftheprogramsownkeepstheorderwritten_main(void);
 #line 15 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
 void h_fixedbugs563aheaderoftheprogramsownkeepstheorderwritten_main(void) {
 #line 15 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG int32_t t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-563-a-header-of-the-program-s-own-keeps-the-order-written.hero"
 bb0:
     t1 = INT64_C(6);

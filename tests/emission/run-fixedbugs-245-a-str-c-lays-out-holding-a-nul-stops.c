@@ -160,7 +160,7 @@ void h_fixedbugs245astrclaysoutholdinganulstops_main(void);
 #line 13 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
 void h_fixedbugs245astrclaysoutholdinganulstops_main(void) {
 #line 13 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
-    HeroStr h0_laid = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG const char * t8; HERO_NODEBUG uint64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_laid = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t5, t6, t7, t10, t11; HERO_NODEBUG int64_t t4; HERO_NODEBUG const char *t8; HERO_NODEBUG uint64_t t9; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-245-a-str-c-lays-out-holding-a-nul-stops.hero"
 bb0:
     t1 = laid_out_by_c();

@@ -185,7 +185,7 @@ void h_fixedbugstheunacquiredsiblingleaksloudly_main(void);
 #line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
 void h_fixedbugstheunacquiredsiblingleaksloudly_main(void) {
 #line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
-    Pair h0_p; HERO_NODEBUG int64_t t1; HERO_NODEBUG Pair t2; HERO_NODEBUG Pair t3; HERO_NODEBUG Inner t4; HERO_NODEBUG Slot * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG Pair t7; HERO_NODEBUG Inner t8; HERO_NODEBUG Slot * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG Pair t12; HERO_NODEBUG Inner t13; HERO_NODEBUG Slot * t14; HERO_NODEBUG HeroStr t15; HERO_ENTRY_STOP; goto bb0;
+    Pair h0_p; HERO_NODEBUG int64_t t1, t6, t10, t11; HERO_NODEBUG Pair t2, t3, t7, t12; HERO_NODEBUG Inner t4, t8, t13; HERO_NODEBUG Slot *t5, *t9, *t14; HERO_NODEBUG HeroStr t15; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-the-unacquired-sibling-leaks-loudly.hero"
 bb0:
     t1 = INT64_C(7);

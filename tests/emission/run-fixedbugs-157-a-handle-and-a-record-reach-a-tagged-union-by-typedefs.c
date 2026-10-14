@@ -168,7 +168,7 @@ void h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_main(void);
 #line 16 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
 void h_fixedbugs157ahandleandarecordreachataggedunionbytypedefs_main(void) {
 #line 16 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
-    HERO_NODEBUG UH_t * t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG utag t3; HERO_NODEBUG int32_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG UH_t *t1; HERO_NODEBUG int32_t t2, t4; HERO_NODEBUG utag t3; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-157-a-handle-and-a-record-reach-a-tagged-union-by-typedefs.hero"
 bb0:
     t1 = new_u();

@@ -166,7 +166,7 @@ void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void);
 #line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
 void h_fixedbugs157aunionnamedbyitstagreachedbythenotesroutes_main(void) {
 #line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
-    HERO_NODEBUG UI t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG void * t3; HERO_NODEBUG int32_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG UI t1; HERO_NODEBUG int32_t t2, t4; HERO_NODEBUG void *t3; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-157-a-union-named-by-its-tag-reached-by-the-note-s-routes.hero"
 bb0:
     t1 = make_u();

@@ -98,7 +98,7 @@ void h_neverreboundthroughanatargument_main(void);
 #line 5 "tests/golden/run/never-rebound-through-an-at-argument.hero"
 void h_neverreboundthroughanatargument_bump(int64_t *ph0_n) {
 #line 5 "tests/golden/run/never-rebound-through-an-at-argument.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/run/never-rebound-through-an-at-argument.hero"
 bb0:
     t1 = (*ph0_n);
@@ -116,7 +116,7 @@ bb0:
 #line 8 "tests/golden/run/never-rebound-through-an-at-argument.hero"
 void h_neverreboundthroughanatargument_main(void) {
 #line 8 "tests/golden/run/never-rebound-through-an-at-argument.hero"
-    int64_t h0_v; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_v; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/run/never-rebound-through-an-at-argument.hero"
 bb0:
     t1 = INT64_C(5);

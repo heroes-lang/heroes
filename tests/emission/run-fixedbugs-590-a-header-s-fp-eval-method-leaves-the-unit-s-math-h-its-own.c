@@ -156,7 +156,7 @@ void h_fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown_main(void);
 #line 16 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero"
 void h_fixedbugs590aheadersfpevalmethodleavestheunitsmathhitsown_main(void) {
 #line 16 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero"
-    float h0_big; float h1_one; float h2_three; HERO_NODEBUG float t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG double t4; HERO_NODEBUG float t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG double t8; HERO_NODEBUG float t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG float t13; HERO_NODEBUG float t14; HERO_NODEBUG float t15; HERO_NODEBUG float t16; HERO_NODEBUG float t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG float t19; HERO_NODEBUG float t20; HERO_NODEBUG float t21; HERO_ENTRY_STOP; goto bb0;
+    float h0_big; float h1_one; float h2_three; HERO_NODEBUG float t1, t5, t9, t13, t14, t15, t16, t17, t19, t20, t21; HERO_NODEBUG int64_t t2, t3, t6, t7, t10, t11; HERO_NODEBUG double t4, t8; HERO_NODEBUG HeroStr t12, t18; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-leaves-the-unit-s-math-h-its-own.hero"
 bb0:
     t1 = 0x1p+24;

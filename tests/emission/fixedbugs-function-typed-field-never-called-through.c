@@ -167,7 +167,7 @@ void h_functiontypedfieldnevercalledthrough_main(void);
 #line 54 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 int64_t h_functiontypedfieldnevercalledthrough_twice(int64_t h0_v) {
 #line 54 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 54 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 bb0:
     t1 = h0_v;
@@ -183,7 +183,7 @@ bb0:
 #line 57 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 HeroStr h_functiontypedfieldnevercalledthrough_shout(HeroStr h0_a) {
 #line 57 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 57 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 bb0:
     t1 = h0_a;
@@ -206,7 +206,7 @@ bb0:
 #line 60 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 void h_functiontypedfieldnevercalledthrough_main(void) {
 #line 60 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
-    __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Direct h0_direct; h_functiontypedfieldnevercalledthrough_Outer h1_outer = {0}; h_functiontypedfieldnevercalledthrough_Held h2_held = {0}; __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Either h3_either; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held h6_own6 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t2; HERO_NODEBUG h_0fn_48ac9712 t3; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t6; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t10; HERO_NODEBUG h_0fn_6f1dc5d7 t11; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Either t12; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t18; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t21; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held t22; HERO_ENTRY_STOP; goto bb0;
+    __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Direct h0_direct; h_functiontypedfieldnevercalledthrough_Outer h1_outer = {0}; h_functiontypedfieldnevercalledthrough_Held h2_held = {0}; __attribute__((unused)) h_functiontypedfieldnevercalledthrough_Either h3_either; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Outer h4_own4 = {0}, t6, t18, t19; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t9, *t20; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Held h6_own6 = {0}, t10, t21, t22; HERO_NODEBUG h_0fn_48ac9712 t1, t3, t7; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Direct t2, t4, t8; HERO_NODEBUG HeroStr t5, t17; HERO_NODEBUG h_0fn_6f1dc5d7 t11; HERO_NODEBUG h_functiontypedfieldnevercalledthrough_Either t12; HERO_ENTRY_STOP; goto bb0;
 #line 60 "tests/golden/fixedbugs/function-typed-field-never-called-through.hero"
 bb0:
     t1 = h_functiontypedfieldnevercalledthrough_twice;

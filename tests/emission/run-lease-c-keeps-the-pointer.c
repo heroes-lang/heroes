@@ -158,7 +158,7 @@ void h_leaseckeepsthepointer_main(void);
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 void h_leaseckeepsthepointer_main(void) {
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
-    int64_t h0_at; const char * h1_label; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG const char * t11; HERO_NODEBUG const char * t12; HERO_NODEBUG uint64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_at; const char * h1_label; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t5, t7, t8, t9, t10, t17, t18, t19; HERO_NODEBUG int64_t t1, t2, t3, t6, t14, t15, t16; HERO_NODEBUG bool t4; HERO_NODEBUG const char *t11, *t12; HERO_NODEBUG uint64_t t13; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/lease-c-keeps-the-pointer.hero"
 bb0:
     t1 = INT64_C(0);

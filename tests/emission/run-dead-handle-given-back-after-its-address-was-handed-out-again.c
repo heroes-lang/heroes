@@ -164,7 +164,7 @@ void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void);
 #line 20 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 void h_deadhandlegivenbackafteritsaddresswashandedoutagain_closed(node * *ph0_n) {
 #line 20 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
-    HERO_NODEBUG node * t1; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG node *t1; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 bb0:
     t1 = (*ph0_n);
@@ -188,7 +188,7 @@ bb0:
 #line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 void h_deadhandlegivenbackafteritsaddresswashandedoutagain_main(void) {
 #line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
-    node * h0_a; node * h1_b; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG node * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG node * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG node * t8; HERO_ENTRY_STOP; goto bb0;
+    node * h0_a; node * h1_b; HERO_NODEBUG node *t1, *t2, *t4, *t6, *t8; HERO_NODEBUG HeroStr t3, t7; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/dead-handle-given-back-after-its-address-was-handed-out-again.hero"
 bb0:
     t1 = node_new();

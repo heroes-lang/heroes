@@ -229,7 +229,7 @@ struct pt h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_ZERO(void) {
 #line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 void h_fixedbugs094anemptybracelistandazerobuildazerorecord_main(void) {
 #line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
-    struct pt h0_e; struct pt h1_z; HERO_NODEBUG struct pt t1; HERO_NODEBUG struct pt t2; HERO_NODEBUG struct pt t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG struct pt t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG struct pt t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG struct pt t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG struct pt t13; HERO_NODEBUG struct pt t14; HERO_NODEBUG bool t15; HERO_ENTRY_STOP; goto bb0;
+    struct pt h0_e; struct pt h1_z; HERO_NODEBUG struct pt t1, t2, t3, t5, t8, t10, t13, t14; HERO_NODEBUG int32_t t4, t6, t7, t9, t11, t12; HERO_NODEBUG bool t15; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-094-an-empty-brace-list-and-a-zero-build-a-zero-record.hero"
 bb0:
     t1 = h_fixedbugs094anemptybracelistandazerobuildazerorecord_PT_EMPTY();

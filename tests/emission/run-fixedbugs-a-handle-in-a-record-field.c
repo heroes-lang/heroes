@@ -170,7 +170,7 @@ void h_fixedbugsahandleinarecordfield_main(void);
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 void h_fixedbugsahandleinarecordfield_main(void) {
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
-    Slot h0_s; HERO_NODEBUG int64_t t1; HERO_NODEBUG Slot t2; HERO_NODEBUG Slot t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG Slot t5; HERO_NODEBUG Thing * t6; HERO_NODEBUG Thing * t7; HERO_NODEBUG bool t8; HERO_NODEBUG Slot t9; HERO_NODEBUG double t10; HERO_ENTRY_STOP; goto bb0;
+    Slot h0_s; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG Slot t2, t3, t5, t9; HERO_NODEBUG Thing *t6, *t7; HERO_NODEBUG bool t8; HERO_NODEBUG double t10; HERO_ENTRY_STOP; goto bb0;
 #line 50 "tests/golden/run/fixedbugs-a-handle-in-a-record-field.hero"
 bb0:
     t1 = INT64_C(7);

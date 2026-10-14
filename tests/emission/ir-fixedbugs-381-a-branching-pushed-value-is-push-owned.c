@@ -128,7 +128,7 @@ void h_fixedbugs381abranchingpushedvalueispushowned_main(void);
 #line 10 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 h_0opt_e201354 h_fixedbugs381abranchingpushedvalueispushowned_half(int64_t h0_n) {
 #line 10 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb0:
     t1 = h0_n;
@@ -209,7 +209,7 @@ bb4:
 #line 15 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 int64_t h_fixedbugs381abranchingpushedvalueispushowned_bump(HeroArrayHeader * *ph0_xs) {
 #line 15 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb0:
     t2 = INT64_C(100);
@@ -226,7 +226,7 @@ bb0:
 #line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 h_0opt_2270cbe7 h_fixedbugs381abranchingpushedvalueispushowned_grown(int64_t h0_n) {
 #line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HERO_NODEBUG int64_t h4_r0; HERO_NODEBUG h_0opt_e201354 h5_f2 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h11_own11 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_2270cbe7 t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG h_0opt_2270cbe7 t40; HERO_NODEBUG h_0opt_2270cbe7 t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG h_0opt_e201354 t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG h_0opt_e201354 t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG h_0opt_e201354 t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG h_0opt_2270cbe7 t50; HERO_NODEBUG h_0opt_2270cbe7 t51; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t4, t5, t9, t11, t16, t17, t21, t28, t29, t33, t36, t44, t45, t46, t47, t48, t49; HERO_NODEBUG int64_t h4_r0, t3, t6, t7, t12, t15, t18, t19, t22, t23, t24, t27, t30, t31, t37; HERO_NODEBUG h_0opt_2270cbe7 h6_ret0 = {0}, h11_own11 = {0}, h12_own12 = {0}, t35, t40, t41, t50, t51; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t39, *t42, *t43; HERO_NODEBUG bool t8, t20, t32; HERO_NODEBUG HeroFailure t10, t34; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -429,7 +429,7 @@ bb8:
 #line 26 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_flags(int64_t h0_n) {
 #line 26 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG bool h2_b0; HERO_NODEBUG bool h3_b1; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG bool h2_b0, h3_b1, t5, t8, t9, t14, t17, t18; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t20, *t21, *t22; HERO_NODEBUG int64_t t3, t4, t6, t7, t12, t13, t15, t16; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_bool, 1);
@@ -512,7 +512,7 @@ bb4:
 #line 32 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 HeroArrayHeader * h_fixedbugs381abranchingpushedvalueispushowned_kept_classic(void) {
 #line 32 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_kept = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HeroArrayHeader * h1_kept = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h5_own5 = {0}, t6, t7, t11, t13, t25, t26; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *h6_own6 = {0}, *t2, *t3, *t4, *t17, *t18, *t20, *t21, *t22, *t23, *t24, *t27, *t28; HERO_NODEBUG int64_t t1, t5, t8, t9, t14, t15, t16, t19; HERO_NODEBUG bool t10; HERO_NODEBUG HeroFailure t12; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb0:
     t1 = INT64_C(1);
@@ -637,7 +637,7 @@ bb2:
 #line 39 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 void h_fixedbugs381abranchingpushedvalueispushowned_main(void) {
 #line 39 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
-    HERO_NODEBUG h_0opt_2270cbe7 h0_f0 = {0}; HERO_NODEBUG h_0opt_2270cbe7 h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0opt_2270cbe7 t2; HERO_NODEBUG h_0opt_2270cbe7 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_2270cbe7 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_2270cbe7 t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_2270cbe7 t17; HERO_NODEBUG h_0opt_2270cbe7 t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_2270cbe7 h0_f0 = {0}, h1_own1 = {0}, t2, t3, t7, t9, t17, t18; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t10, *t13, *t15, *t19, *t20; HERO_NODEBUG int64_t t1, t4, t5, t11, t12, t14, t16; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/ir/fixedbugs-381-a-branching-pushed-value-is-push-owned.hero"
 bb0:
     t1 = INT64_C(2);

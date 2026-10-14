@@ -167,7 +167,7 @@ void h_handlealivethroughareferencereleasedtwice_main(void);
 #line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 void h_handlealivethroughareferencereleasedtwice_main(void) {
 #line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
-    x509 * h0_cert; int32_t h1_rc; HERO_NODEBUG x509 * t1; HERO_NODEBUG x509 * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG x509 * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG x509 * t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG x509 * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG x509 * t13; HERO_NODEBUG HeroStr t14; HERO_ENTRY_STOP; goto bb0;
+    x509 * h0_cert; int32_t h1_rc; HERO_NODEBUG x509 *t1, *t2, *t7, *t9, *t11, *t13; HERO_NODEBUG int32_t t3, t5; HERO_NODEBUG HeroStr t4, t6, t10, t14; HERO_NODEBUG int64_t t8, t12; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/handle-alive-through-a-reference-released-twice.hero"
 bb0:
     t1 = cert_new();

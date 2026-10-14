@@ -198,7 +198,7 @@ int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 void h_ffialentfieldcountedbyaconstant_main(void) {
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    Sl h0_s; int64_t h1_k; __attribute__((unused)) Both h2_b; HERO_NODEBUG Sl t1; HERO_NODEBUG void * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG void * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG void * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG void * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG void * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG void * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG Sl t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG Both t36; HERO_NODEBUG const void * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_ENTRY_STOP; goto bb0;
+    Sl h0_s; int64_t h1_k; __attribute__((unused)) Both h2_b; HERO_NODEBUG Sl t1, t34; HERO_NODEBUG void *t4, *t9, *t14, *t22, *t27, *t31; HERO_NODEBUG int64_t t5, t6, t10, t11, t15, t16, t17, t18, t19, t23, t24, t28, t32, t33, t35, t40, t41; HERO_NODEBUG Both t36; HERO_NODEBUG const void *t39; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 bb0:
     t1 = sl_make();

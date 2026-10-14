@@ -101,7 +101,7 @@ void h_library_exit(int64_t h0_code);
 #line 12 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 int64_t h_fixedbugs507acalleethatexitsononepathbuildssilently_next(int64_t h0_n) {
 #line 12 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 bb0:
     t1 = h0_n;
@@ -117,7 +117,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 void h_fixedbugs507acalleethatexitsononepathbuildssilently_stop_after(int64_t h0_n) {
 #line 15 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 bb0:
     t1 = h0_n;
@@ -150,7 +150,7 @@ bb3:
 #line 19 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 int64_t h_fixedbugs507acalleethatexitsononepathbuildssilently_serve(int64_t h0_n) {
 #line 19 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 bb0:
     t1 = h0_n;
@@ -174,7 +174,7 @@ bb0:
 #line 24 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 void h_fixedbugs507acalleethatexitsononepathbuildssilently_main(void) {
 #line 24 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-507-a-callee-that-exits-on-one-path-builds-silently.hero"
 bb0:
     t1 = INT64_C(1);

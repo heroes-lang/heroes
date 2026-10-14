@@ -110,7 +110,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 #line 11 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 HeroStr h_aliteralarmtakesthewidthitmatches_byte_class(uint8_t h0_b) {
 #line 11 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    HERO_NODEBUG uint8_t h1_s0; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG uint8_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t h1_s0, t1, t2, t3, t5, t6, t8, t9, t11, t12, t14, t15, t17, t18, t20, t21, t23, t24; HERO_NODEBUG HeroStr h2_r0 = {0}, t26, t27, t28, t29, t30, t31, t32, t33, t34; HERO_NODEBUG bool t4, t7, t10, t13, t16, t19, t22, t25; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb0:
     t1 = h0_b;
@@ -262,7 +262,7 @@ bb13:
 #line 18 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 int64_t h_aliteralarmtakesthewidthitmatches_narrow(int32_t h0_n) {
 #line 18 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    HERO_NODEBUG int32_t h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t h1_s0, t1, t2, t3, t5, t6; HERO_NODEBUG int64_t h2_r0, t8, t9, t10, t11; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb0:
     t1 = h0_n;
@@ -324,7 +324,7 @@ bb6:
 #line 24 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 int64_t h_aliteralarmtakesthewidthitmatches_wide(uint64_t h0_n) {
 #line 24 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    HERO_NODEBUG uint64_t h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG uint64_t t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG uint64_t t5; HERO_NODEBUG uint64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint64_t h1_s0, t1, t2, t3, t5, t6; HERO_NODEBUG int64_t h2_r0, t8, t9, t10, t11; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb0:
     t1 = h0_n;
@@ -386,7 +386,7 @@ bb6:
 #line 30 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 int64_t h_aliteralarmtakesthewidthitmatches_signed_edge(int64_t h0_n) {
 #line 30 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t8, t9, t10, t11; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb0:
     t1 = h0_n;
@@ -448,7 +448,7 @@ bb6:
 #line 36 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 int64_t h_aliteralarmtakesthewidthitmatches_small(int8_t h0_n) {
 #line 36 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    HERO_NODEBUG int8_t h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int8_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int8_t t8; HERO_NODEBUG int8_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int8_t h1_s0, t1, t2, t3, t5, t6, t8, t9; HERO_NODEBUG int64_t h2_r0, t11, t12, t13, t14, t15; HERO_NODEBUG bool t4, t7, t10; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb0:
     t1 = h0_n;
@@ -528,7 +528,7 @@ bb8:
 #line 43 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 void h_aliteralarmtakesthewidthitmatches_main(void) {
 #line 43 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
-    HeroStr h0_text = {0}; HeroArrayHeader * h1_classes = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_i; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG uint8_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG uint8_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int32_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int32_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int32_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG uint64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG uint64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG uint64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int8_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int8_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int8_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int8_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_text = {0}; HeroArrayHeader * h1_classes = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t2, *t6, *t9, *t12, *t24, *t59, *t60, *t61, *t62; HERO_NODEBUG int64_t h3_i0, t3, t5, t7, t8, t10, t13, t14, t17, t21, t22, t23, t33, t35, t37, t39, t41, t43, t44, t45, t46, t47, t48, t49, t51, t53, t55, t57; int64_t h4_i; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t1, t4, t16, t19, t25, t26, t28, t29, t31, t58, t63, t64, t65, t66; HERO_NODEBUG bool t11; HERO_NODEBUG uint8_t t18, t27, t30; HERO_NODEBUG int32_t t32, t34, t36; HERO_NODEBUG uint64_t t38, t40, t42; HERO_NODEBUG int8_t t50, t52, t54, t56; HERO_ENTRY_STOP; goto bb0;
 #line 43 "tests/golden/run/a-literal-arm-takes-the-width-it-matches.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6548112e);
@@ -779,7 +779,7 @@ bb4:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

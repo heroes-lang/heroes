@@ -163,7 +163,7 @@ void h_deadhandleataconsumingpositionafteritslifeended_main(void);
 #line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
 void h_deadhandleataconsumingpositionafteritslifeended_main(void) {
 #line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
-    Obj * h0_a; Obj * h1_b; HERO_NODEBUG Obj * t1; HERO_NODEBUG Obj * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG Obj * t6; HERO_NODEBUG Obj * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG const char * t9; HERO_NODEBUG Obj * t10; HERO_NODEBUG Obj * t12; HERO_ENTRY_STOP; goto bb0;
+    Obj * h0_a; Obj * h1_b; HERO_NODEBUG Obj *t1, *t2, *t6, *t7, *t10, *t12; HERO_NODEBUG int64_t t3, t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t8; HERO_NODEBUG const char *t9; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/dead-handle-at-a-consuming-position-after-its-life-ended.hero"
 bb0:
     t1 = obj_new();

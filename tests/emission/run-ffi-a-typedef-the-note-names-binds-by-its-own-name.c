@@ -175,7 +175,7 @@ void h_ffiatypedefthenotenamesbindsbyitsownname_main(void) {
 #line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
 #define h1_p (*hero_lend_h1_p)
 #line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
-    lock_t *const hero_lend_h0_m = (lock_t *)hero_lend_local(sizeof(lock_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "m"); pattern_t *const hero_lend_h1_p = (pattern_t *)hero_lend_local(sizeof(pattern_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "p"); HERO_NODEBUG lock_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG pattern_t t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG pattern_t t10; HERO_NODEBUG uint64_t t11; HERO_ENTRY_STOP; goto bb0;
+    lock_t *const hero_lend_h0_m = (lock_t *)hero_lend_local(sizeof(lock_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "m"); pattern_t *const hero_lend_h1_p = (pattern_t *)hero_lend_local(sizeof(pattern_t), "ffiatypedefthenotenamesbindsbyitsownname.main", "p"); HERO_NODEBUG lock_t t1; HERO_NODEBUG int32_t t2, t6; HERO_NODEBUG HeroStr t3, t7, t9; HERO_NODEBUG int64_t t4, t8; HERO_NODEBUG pattern_t t5, t10; HERO_NODEBUG uint64_t t11; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/ffi-a-typedef-the-note-names-binds-by-its-own-name.hero"
 bb0:
     t1 = (lock_t){0};

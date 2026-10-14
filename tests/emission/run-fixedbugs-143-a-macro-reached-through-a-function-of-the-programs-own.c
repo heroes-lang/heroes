@@ -154,7 +154,7 @@ void h_fixedbugs143amacroreachedthroughafunctionoftheprogramsown_main(void);
 #line 12 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
 void h_fixedbugs143amacroreachedthroughafunctionoftheprogramsown_main(void) {
 #line 12 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-143-a-macro-reached-through-a-function-of-the-programs-own.hero"
 bb0:
     t1 = INT64_C(3);

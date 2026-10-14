@@ -99,7 +99,7 @@ void h_fixedbugsarrayslicereachedclang_main(void);
 #line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
 void h_fixedbugsarrayslicereachedclang_main(void) {
 #line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_ys = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroStr t25; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_ys = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t4, *t5, *t8, *t9, *t11, *t14, *t21, *t22, *t23, *t24; HERO_NODEBUG HeroStr h4_own4 = {0}, t17, t20, t25; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t10, t12, t13, t15, t16, t18, t19; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-array-slice-reached-clang.hero"
 bb0:
     t1 = INT64_C(1);
