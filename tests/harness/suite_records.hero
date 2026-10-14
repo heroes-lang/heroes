@@ -5006,7 +5006,7 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
     planted = planted_ignores("build/harness-selftest")
 
     if planted.is_err()
-        print("SKIP the ignore rule of a dead citation\n  " + planted_failure(planted))
+        print("SKIP suite_records: the ignore rule of a dead citation\n  " + planted_failure(planted))
     else
         excused = ignored_by_git(
             scratch: "build/harness-selftest",
