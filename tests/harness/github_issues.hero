@@ -31,7 +31,28 @@
 # `repair` use, so a rate limit is waited out as there; the real transport is
 # `issue_wire.gh()`, which holds the token (`GH_TOKEN` in the CI, the login
 # here), and nothing in this module reads it.
+#
+# **The project's own issues, and a stranger's** (defect 2042): the repository
+# is public since 2026-09-08, an issue takes GitHub's next number whoever opens
+# it, and the public forms of `.github/ISSUE_TEMPLATE/` apply a `kind:` label,
+# so the listing holds whatever anybody wrote. The checks of a filing's shape
+# (`numbering`, `verdicts`, `homes`, `prior-art`) judge the project's own
+# issues alone (`own`): written by an account GitHub calls the project's,
+# `OWNER`, `MEMBER` or `COLLABORATOR`, which a stranger cannot forge, and
+# rendered by the transcription program, whose every body opens `Filed
+# YYYY-MM-DD` (`.claude/rules/records.md` § The issues, the days), which sets
+# an authorized contributor's form, written by a `COLLABORATOR`, apart from the
+# program's filing. A stranger's issue the program rewrites (`edit`) keeps its
+# author, so it is read by the name its title gives it alone
+# (`records_github.register_of`). Measured 2026-10-14 over all 2,062 issues:
+# one author, every body opening `Filed `, and GitHub calling him `MEMBER` to
+# his own login and `COLLABORATOR` to an anonymous reader. **The answer
+# depends on who asks**, a premise about the world the CI's token is not
+# measured against from here; so a listing holding issues and none of the
+# project's own is a failure (`foreign_floor`), never a pass that judged
+# nothing.
 
+use cards
 use issue_github
 use issue_pace
 use issue_wire
@@ -62,11 +83,13 @@ constant OPEN_LISTING: str
 
 # One issue as the checks read it: `labels` sorted, `milestone` its title or
 # "", `milestone_number` the number GitHub gave that milestone or 0, `closed`
-# "" while open, `reason` GitHub's `state_reason` or "".
+# "" while open, `reason` GitHub's `state_reason` or "", `association` GitHub's
+# `author_association` or "".
 record Listed
     number: i64
     title: str
     body: str
+    association: str
     open: bool
     reason: str
     labels: [str]
@@ -227,8 +250,12 @@ function listed_of(j: json_read.Json) -> Listed?
 
     if !stated.is_err()
         reason @ json_fields.text_at(of: j, name: "state_reason")?
+    association: str @= ""
+
+    if !json_fields.field(of: j, name: "author_association").is_err()
+        association @ json_fields.text_at(of: j, name: "author_association")?
     return ok(
-        Listed(number: json_fields.whole_at(of: j, name: "number")?, title: json_fields.text_at(of: j, name: "title")?, body: json_fields.text_at(of: j, name: "body")?, open: json_fields.text_at(of: j, name: "state")? == "open", reason: reason, labels: names.sort(), milestone: milestone, milestone_open: milestone_open, milestone_number: milestone_number, created: json_fields.text_at(of: j, name: "created_at")?, closed: json_fields.text_at(of: j, name: "closed_at")?, pull: !json_fields.field(of: j, name: "pull_request").is_err())
+        Listed(number: json_fields.whole_at(of: j, name: "number")?, title: json_fields.text_at(of: j, name: "title")?, body: json_fields.text_at(of: j, name: "body")?, association: association, open: json_fields.text_at(of: j, name: "state")? == "open", reason: reason, labels: names.sort(), milestone: milestone, milestone_open: milestone_open, milestone_number: milestone_number, created: json_fields.text_at(of: j, name: "created_at")?, closed: json_fields.text_at(of: j, name: "closed_at")?, pull: !json_fields.field(of: j, name: "pull_request").is_err())
     )
 
 # The value of the label `<name>:<value>` an issue carries, "" for none: its
@@ -243,6 +270,53 @@ function label_value(issue: Listed, name: str) -> str
 function kind_of(issue: Listed) -> str
     return label_value(issue: issue, name: "kind")
 
+# Whether `issue` is the project's own (the module's paragraph above): no pull
+# request, written by an account GitHub calls `OWNER`, `MEMBER` or
+# `COLLABORATOR`, its body the transcription program's rendering.
+function own(issue: Listed) -> bool
+    if issue.pull
+        return false
+    belongs = issue.association == "OWNER" || issue.association == "MEMBER" || issue.association == "COLLABORATOR"
+    return belongs && rendered(issue.body)
+
+# Whether `body` opens as the transcription program renders every issue,
+# `Filed ` and a day `YYYY-MM-DD`.
+function rendered(body: str) -> bool
+    if !strings.starts_with(text: body, prefix: "Filed ")
+        return false
+
+    # `Filed ` is ASCII, so the cut stands between characters.
+    return !cards.day_of(body.slice(from: 6, to: body.len())).is_err()
+
+# The project's own issues of `held` that carry `kind:<kind>`.
+function owned(held: Listing, kind: str) -> [Listed]
+    out: [Listed] @= []
+
+    for issue in of_kind(held: held, kind: kind)
+        if own(issue)
+            out @ out.push(issue)
+
+    return out
+
+# Why a check of a filing's shape cannot judge `held`, or "": it holds issues
+# and none of them is the project's own, so the check would pass whatever the
+# project filed. GitHub's `author_association` is relative to who asks, which
+# is how this would come about.
+function foreign_floor(held: Listing) -> str
+    read: i64 @= 0
+
+    for issue in held.issues
+        if issue.pull
+            continue
+
+        if own(issue)
+            return ""
+        read @ read + 1
+
+    if read == 0
+        return ""
+    return "GitHub listed " + read.to_str() + " issues and none of them is the project's own, written by an account GitHub calls `OWNER`, `MEMBER` or `COLLABORATOR` with a body opening `Filed YYYY-MM-DD` (`github_issues.own`), so this check would pass whatever the project filed: GitHub answers this run's token with another `author_association`, or the program's rendering moved"
+
 # The issues of `held` that are not pull requests and carry `kind:<kind>`.
 function of_kind(held: Listing, kind: str) -> [Listed]
     out: [Listed] @= []
@@ -254,7 +328,8 @@ function of_kind(held: Listing, kind: str) -> [Listed]
     return out
 
 # An issue written as GitHub lists one, for the tests of every reader of this
-# module: `state` `open` or `closed`, `milestone` "" for none, numbered 1.
+# module: `state` `open` or `closed`, `milestone` "" for none, numbered 1, its
+# author a `MEMBER`.
 function json_of(number: i64, title: str, body: str, state: str, labels: [str], milestone: str, created: str, closed: str) -> str
     return json_full(
         number: number,
@@ -264,13 +339,15 @@ function json_of(number: i64, title: str, body: str, state: str, labels: [str], 
         labels: labels,
         milestone: milestone,
         milestone_number: 1,
+        author: "MEMBER",
         created: created,
         closed: closed
     )
 
 # `json_of` with the number GitHub gave the milestone, which places a tree
-# among the milestones (`records_github.milestones_received`).
-function json_full(number: i64, title: str, body: str, state: str, labels: [str], milestone: str, milestone_number: i64, created: str, closed: str) -> str
+# among the milestones (`records_github.milestones_received`), and the
+# `author_association` GitHub gives the issue's author (`own`).
+function json_full(number: i64, title: str, body: str, state: str, labels: [str], milestone: str, milestone_number: i64, author: str, created: str, closed: str) -> str
     named: [str] @= []
 
     for label in labels
@@ -288,7 +365,7 @@ function json_full(number: i64, title: str, body: str, state: str, labels: [str]
 
     if state == "closed"
         reason @ "\"completed\""
-    return "{\"number\":" + number.to_str() + ",\"title\":\"" + title + "\",\"body\":\"" + body + "\",\"state\":\"" + state + "\",\"state_reason\":" + reason + ",\"labels\":[" + named.join(",") + "],\"milestone\":" + held + ",\"created_at\":\"" + created + "\",\"closed_at\":" + ended + ",\"comments\":0}"
+    return "{\"number\":" + number.to_str() + ",\"title\":\"" + title + "\",\"body\":\"" + body + "\",\"state\":\"" + state + "\",\"state_reason\":" + reason + ",\"author_association\":\"" + author + "\",\"labels\":[" + named.join(",") + "],\"milestone\":" + held + ",\"created_at\":\"" + created + "\",\"closed_at\":" + ended + ",\"comments\":0}"
 
 # A `Listing` read from issues written by `json_of`, for a test.
 function held_of(issues: [str]) -> Listing
@@ -333,7 +410,51 @@ test "an issue is read with its labels sorted, its milestone and its state, and 
     assert pulled.body == ""
     assert pulled.reason == ""
     assert pulled.milestone_number == 0
+    assert pulled.association == ""
+    assert i.association == "MEMBER"
     assert of_kind(held: Listing(asked: true, broken: false, why: "", issues: [i, pulled]), kind: "defect").len() == 1
+
+# An issue by an author GitHub gives `association`, with `body`.
+function written(number: i64, association: str, body: str) -> Listed
+    return held_of([json_full(number: number, title: "t", body: body, state: "open", labels: ["kind:defect"], milestone: "", milestone_number: 0, author: association, created: "2026-10-14T08:00:00Z", closed: "")]).issues[0]
+
+test "an issue is the project's own where its author is the project's and the program rendered its body (defect 2042)"
+    filed = "Filed 2026-10-14\\n\\n### What happens\\n\\nx"
+    form = "### The program\\n\\n```text\\nx = 1\\n```"
+
+    for association in ["OWNER", "MEMBER", "COLLABORATOR"]
+        assert own(written(number: 1, association: association, body: filed))
+        assert !own(written(number: 1, association: association, body: form))
+
+    for association in ["CONTRIBUTOR", "FIRST_TIME_CONTRIBUTOR", "FIRST_TIMER", "NONE", "MANNEQUIN", ""]
+        assert !own(written(number: 1, association: association, body: filed))
+
+    assert !own(written(number: 1, association: "MEMBER", body: "Filed yesterday\\n\\nx"))
+    assert !own(written(number: 1, association: "MEMBER", body: "Filed 2026-13-01"))
+    assert !own(written(number: 1, association: "MEMBER", body: ""))
+    assert rendered("Filed 2026-10-03 · closed 2026-10-04\n\nx")
+    pulled = page_of("[{\"number\":4,\"title\":\"t\",\"body\":\"Filed 2026-10-12\",\"author_association\":\"MEMBER\",\"state\":\"open\",\"labels\":[],\"milestone\":null,\"created_at\":\"2026-10-12T09:00:00Z\",\"closed_at\":null,\"pull_request\":{}}]").must()[0]
+    assert !own(pulled)
+    mixed = Listing(
+        asked: true,
+        broken: false,
+        why: "",
+        issues: [written(number: 1, association: "NONE", body: filed), written(number: 2, association: "MEMBER", body: filed)]
+    )
+    assert owned(held: mixed, kind: "defect").len() == 1
+    assert owned(held: mixed, kind: "defect")[0].number == 2
+    assert foreign_floor(mixed) == ""
+    assert foreign_floor(held_of([])) == ""
+    strangers = Listing(
+        asked: true,
+        broken: false,
+        why: "",
+        issues: [written(number: 1, association: "NONE", body: filed), pulled]
+    )
+    assert strings.contains(
+        text: foreign_floor(strangers),
+        needle: "GitHub listed 1 issues and none of them is the project's own"
+    )
 
 test "the listing is read a page at a time until a short page, kept, and read again from the disk"
     full: [str] @= []

@@ -21,6 +21,14 @@
 #   (`prior_art`), a sitting numbered above every one the tree holds excused as
 #   not yet received (defect 2039).
 #
+# **Whose issues these judge** (defect 2042): `numbering`, `verdicts`,
+# `homes` and `prior-art` hold the project's filings to their shape, so they
+# read the project's own issues alone (`github_issues.own`), and a stranger's
+# issue on the public repository, titled in its own words, its body the public
+# form's, is no offence and answers for nothing; each says so where the
+# listing holds none of the project's (`github_issues.foreign_floor`).
+# `records/tagged` reads every author's, on purpose (`standing`).
+#
 # **The names of a defect** (the fifth answer): the defects filed until
 # 2026-10-12 keep their numbers, 001 to `OLD_LAST`, each in its issue's title,
 # `Defect 235:` or `Defects 018 to 021:`, and a file of several items holds the
@@ -114,6 +122,13 @@ function body_numbers(body: str) -> [i64]
     return out
 
 # The register GitHub holds: every defect issue, pull requests aside.
+#
+# **A stranger's title names nothing but itself** (defect 2042): a defect
+# issue whose title names its own number is that defect whoever wrote it, so
+# the code may cite it; every other reading, an old number, another's, none, or
+# a body's later items, is the project's own issues' alone, since a stranger
+# writes a title in its own words and may well name the old defect it
+# reports again.
 function register_of(held: github_issues.Listing) -> Register
     old: {i64: [i64]} @= {}
     new: {i64: bool} @= {}
@@ -123,13 +138,16 @@ function register_of(held: github_issues.Listing) -> Register
 
     for issue in github_issues.of_kind(held: held, kind: "defect")
         named = title_numbers(issue.title)
+        mine = github_issues.own(issue)
 
-        if named.len() == 0 && issue.open
+        if named.len() == 0 && issue.open && mine
             unnamed @ unnamed.push(told(issue))
 
         for n in named
             if n == issue.number && n > OLD_LAST
                 new[n] @ true
+            else if !mine
+                continue
             else if n > OLD_LAST
                 misnamed @ misnamed.push(
                     told(issue) + " names defect " + n.to_str() + ", which is neither an old defect's number nor its own"
@@ -138,7 +156,7 @@ function register_of(held: github_issues.Listing) -> Register
                 old[n] @ old[n].default(none).push(issue.number)
 
         for n in body_numbers(issue.body)
-            if n <= OLD_LAST && !holds(numbers: old[n].default(none), number: issue.number)
+            if mine && n <= OLD_LAST && !holds(numbers: old[n].default(none), number: issue.number)
                 old[n] @ old[n].default(none).push(issue.number)
 
     return Register(old: old, new: new, misnamed: misnamed, unnamed: unnamed)
@@ -194,6 +212,10 @@ function numbering(@r: report.Report, held: github_issues.Listing)
         return
     register = register_of(held)
     offences: [str] @= []
+    strangers = github_issues.foreign_floor(held)
+
+    if strangers != ""
+        offences @ offences.push(strangers)
 
     if keys(register.old).len() == 0
         offences @ offences.push(
@@ -230,9 +252,10 @@ function numbering(@r: report.Report, held: github_issues.Listing)
     else
         report.keep_pass(@r)
 
-# Whether an open decision on GitHub asks for the sitting whose file's name
-# opens with `digits`: its title opens `Panel <digits>`, as the file spells
-# them or as the integer they are, and then no digit.
+# Whether an open decision of the project's own on GitHub asks for the sitting
+# whose file's name opens with `digits`: its title opens `Panel <digits>`, as
+# the file spells them or as the integer they are, and then no digit. A
+# stranger's issue so titled asks for nothing (defect 2042).
 function queued(digits: str, held: github_issues.Listing) -> bool
     bare: str @= digits
     number = strings.to_number(digits)
@@ -240,7 +263,7 @@ function queued(digits: str, held: github_issues.Listing) -> bool
     if !number.is_err()
         bare @ number.must().to_str()
 
-    for issue in github_issues.of_kind(held: held, kind: "decision")
+    for issue in github_issues.owned(held: held, kind: "decision")
         if issue.open && (names_panel(title: issue.title, digits: digits) || names_panel(title: issue.title, digits: bare))
             return true
 
@@ -266,10 +289,12 @@ function names_panel(title: str, digits: str) -> bool
 
     return at == title.len() || !cards.is_digit_byte(title[at])
 
-# Why each open feature or task GitHub holds is not owed to an open milestone:
-# it names none, one with no row in § The chain (`chain`, each milestone to
-# whether its row is open) that this tree has received, one whose row is
-# closed, or one GitHub holds closed.
+# Why each open feature or task of the project's own GitHub holds is not owed
+# to an open milestone, a stranger's wish being none of its milestones' work
+# until the program files it (defect 2042), or why the listing cannot be
+# judged (`github_issues.foreign_floor`): it names none, one with no row in
+# § The chain (`chain`, each milestone to whether its row is open) that this
+# tree has received, one whose row is closed, or one GitHub holds closed.
 #
 # **GitHub holds today's milestones, and the tree under test may be older than
 # one of them** (defect 2041, the shape defect 2039 repaired for
@@ -287,10 +312,14 @@ function names_panel(title: str, digits: str) -> bool
 # no tree ever receives is told once a later one's row reaches the tree.
 function unhomed(held: github_issues.Listing, chain: {str: bool}) -> [str]
     out: [str] @= []
+    strangers = github_issues.foreign_floor(held)
+
+    if strangers != ""
+        out @ out.push(strangers)
     received = milestones_received(held: held, chain: chain)
 
     for kind in ["feature", "task"]
-        for issue in github_issues.of_kind(held: held, kind: kind)
+        for issue in github_issues.owned(held: held, kind: kind)
             if !issue.open
                 continue
             home = issue.milestone
@@ -339,13 +368,13 @@ function rowless_offence(home: str, number: i64, received: i64) -> str
     return wrong + ", and GitHub numbered it " + number.to_str() + ", not above " + received.to_str() + ", the highest milestone whose row this tree holds, so the row is missing, renamed or merged out of order rather than not yet received"
 
 # The first instant GitHub closed, as completed, a ratification of each
-# sitting, by the sitting's number: a decision titled `Panel <digits>:`
-# (`ratifies`), the earliest where there are several, since that is the least
-# a tree holding the sitting's answer has received.
+# sitting, by the sitting's number: a decision of the project's own titled
+# `Panel <digits>:` (`ratifies`), the earliest where there are several, since
+# that is the least a tree holding the sitting's answer has received.
 function first_answers(held: github_issues.Listing) -> {i64: github_issues.Listed}
     out: {i64: github_issues.Listed} @= {}
 
-    for issue in github_issues.of_kind(held: held, kind: "decision")
+    for issue in github_issues.owned(held: held, kind: "decision")
         if issue.open || issue.reason != "completed" || !ratifies(issue.title)
             continue
         at = answered_at(issue)
@@ -461,6 +490,8 @@ function prior_art_rows(body: str) -> credit.Section
 # decision, opens with its sitting's file and the day its links were re-read,
 # and holds precedents in the two forms; a heading nearly it is told.
 # `known` is every path the tree holds, which a sitting's file is asked of.
+# **The project's own issues alone** (defect 2042): a stranger's body is the
+# stranger's words, and its `## Prior art` names what the stranger read.
 #
 # **GitHub holds today's issues, and the tree under test may be older than a
 # sitting one of them names** (defect 2039): a sitting's decision is opened
@@ -485,9 +516,13 @@ function prior_art(@r: report.Report, held: github_issues.Listing, known: {str: 
         return
     offences: [str] @= []
     received = credit.highest_sitting(known)
+    strangers = github_issues.foreign_floor(held)
+
+    if strangers != ""
+        offences @ offences.push(strangers)
 
     for issue in held.issues
-        if issue.pull
+        if !github_issues.own(issue)
             continue
         where = told(issue)
 
@@ -618,6 +653,12 @@ function open_at(issue: github_issues.Listed, at: i64) -> bool
 # milestone tag up to it, each with why: `blocking` and `systemic`, a defect
 # with no class label (which counts as `blocking`), and an `adjacent` one open
 # at `AGED_AT` tags or more, the judged among them; an `improvement` never.
+#
+# **Every author's, on purpose** (defect 2042 read it and left it): a
+# stranger's defect report open at a tag is one nobody has classed, which
+# counts as `blocking` because a tag over an unread report is what the clean
+# list refuses, and an issue opened after the tag was not open at it, so a
+# stranger cannot turn this check red between tags.
 function standing(held: github_issues.Listing, judged: Tag, tags: [Tag]) -> [str]
     out: [str] @= []
 
@@ -689,21 +730,43 @@ function padded(n: i64) -> str
 constant RECORDED: str
     "Record: https://github.com/heroes-lang/heroes/blob/1111111111111111111111111111111111111111/issues/2026-10/01/2026-10-01-0000-a.md"
 
+# An issue as the program files one: a `MEMBER`'s, its body opening `Filed`
+# and the day it was created where `body` does not open so already.
 function fixture(number: i64, title: str, kind: str, extra: [str], body: str, state: str, created: str, closed: str) -> str
     labels: [str] @= ["kind:" + kind]
 
     for one in extra
         labels @ labels.push(one)
 
+    rendered: str @= body
+
+    if !strings.starts_with(text: body, prefix: "Filed ")
+        rendered @ "Filed " + created.slice(from: 0, to: 10) + "\\n\\n" + body
     return github_issues.json_of(
         number: number,
         title: title,
-        body: body,
+        body: rendered,
         state: state,
         labels: labels,
         milestone: "",
         created: created,
         closed: closed
+    )
+
+# An issue a stranger opens from a public form: its author GitHub's `NONE`,
+# its body as written.
+function foreign(number: i64, title: str, kind: str, body: str, milestone: str) -> str
+    return github_issues.json_full(
+        number: number,
+        title: title,
+        body: body,
+        state: "open",
+        labels: ["kind:" + kind],
+        milestone: milestone,
+        milestone_number: 0,
+        author: "NONE",
+        created: "2026-10-14T08:00:00Z",
+        closed: ""
     )
 
 test "a defect's names are its title's numbers and its body's later items, and a new one is its own number"
@@ -795,11 +858,11 @@ test "an open feature or task names a milestone open in the chain and on GitHub"
     chain["M-issue-files"] @ true
     chain["M-ir-lowering"] @ false
     homed = github_issues.held_of(
-        [github_issues.json_of(number: 1, title: "t", body: "b", state: "open", labels: ["kind:task"], milestone: "M-issue-files", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 2, title: "d", body: "b", state: "open", labels: ["kind:defect"], milestone: "", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 3, title: "done", body: "b", state: "closed", labels: ["kind:feature"], milestone: "M-ir-lowering", created: "2026-10-04T12:00:00Z", closed: "2026-10-05T12:00:00Z")]
+        [github_issues.json_of(number: 1, title: "t", body: "Filed 2026-10-04\\n\\nb", state: "open", labels: ["kind:task"], milestone: "M-issue-files", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 2, title: "d", body: "Filed 2026-10-04\\n\\nb", state: "open", labels: ["kind:defect"], milestone: "", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 3, title: "done", body: "Filed 2026-10-04\\n\\nb", state: "closed", labels: ["kind:feature"], milestone: "M-ir-lowering", created: "2026-10-04T12:00:00Z", closed: "2026-10-05T12:00:00Z")]
     )
     assert unhomed(held: homed, chain: chain).len() == 0
     stray = github_issues.held_of(
-        [github_issues.json_of(number: 4, title: "a", body: "b", state: "open", labels: ["kind:task"], milestone: "", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 5, title: "b", body: "b", state: "open", labels: ["kind:feature"], milestone: "M-ir-lowering", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 6, title: "c", body: "b", state: "open", labels: ["kind:task"], milestone: "M-guide-book", created: "2026-10-04T12:00:00Z", closed: "")]
+        [github_issues.json_of(number: 4, title: "a", body: "Filed 2026-10-04\\n\\nb", state: "open", labels: ["kind:task"], milestone: "", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 5, title: "b", body: "Filed 2026-10-04\\n\\nb", state: "open", labels: ["kind:feature"], milestone: "M-ir-lowering", created: "2026-10-04T12:00:00Z", closed: ""), github_issues.json_of(number: 6, title: "c", body: "Filed 2026-10-04\\n\\nb", state: "open", labels: ["kind:task"], milestone: "M-guide-book", created: "2026-10-04T12:00:00Z", closed: "")]
     )
     said = unhomed(held: stray, chain: chain)
     assert said.len() == 3
@@ -943,7 +1006,7 @@ test "a ratification GitHub closed after every answer the tree holds is not held
         asked: true,
         broken: false,
         why: "",
-        issues: [first[213].must(), github_issues.Listed(number: dropped.number, title: dropped.title, body: dropped.body, open: false, reason: "not_planned", labels: dropped.labels, milestone: "", milestone_open: false, milestone_number: 0, created: dropped.created, closed: dropped.closed, pull: false)]
+        issues: [first[213].must(), github_issues.Listed(number: dropped.number, title: dropped.title, body: dropped.body, association: dropped.association, open: false, reason: "not_planned", labels: dropped.labels, milestone: "", milestone_open: false, milestone_number: 0, created: dropped.created, closed: dropped.closed, pull: false)]
     )
     assert keys(first_answers(planned)) == [213]
 
@@ -957,6 +1020,7 @@ function owed(number: i64, kind: str, milestone: str, numbered: i64) -> str
         labels: ["kind:" + kind],
         milestone: milestone,
         milestone_number: numbered,
+        author: "MEMBER",
         created: "2026-10-14T08:00:00Z",
         closed: ""
     )
@@ -973,6 +1037,7 @@ test "a milestone GitHub numbered above every one whose row the tree holds is no
         labels: ["kind:task"],
         milestone: "M-issue-files",
         milestone_number: 83,
+        author: "MEMBER",
         created: "2026-10-12T12:00:00Z",
         closed: "2026-10-12T21:00:00Z"
     )
@@ -1013,6 +1078,99 @@ test "a milestone GitHub numbered above every one whose row the tree holds is no
         text: stray[0],
         needle: "M-web-framework has no row in § The chain, and GitHub numbered it 85, not above 86"
     )
+
+# The public defect form's body, as GitHub writes it from the form.
+constant FORM: str
+    "### The program\\n\\n```text\\nx = 1\\n```\\n\\n### What happens\\n\\nit compiles"
+
+test "a stranger's defect names nothing but itself and is no offence of the project's numbering (defect 2042)"
+    held = github_issues.held_of(
+        [fixture(number: 1, title: "Defect 014: one", kind: "defect", extra: [], body: "b", state: "closed", created: "2026-09-05T12:00:00Z", closed: "2026-09-05T12:00:00Z"), fixture(number: 3, title: "Defect 235: x", kind: "defect", extra: [], body: "b", state: "closed", created: "2026-10-04T12:00:00Z", closed: "2026-10-05T12:00:00Z"), foreign(number: 2100, title: "A wrong program compiles", kind: "defect", body: FORM, milestone: ""), foreign(number: 2101, title: "Defect 235: it is back", kind: "defect", body: FORM + "\\n- **236 — and this**", milestone: ""), foreign(number: 2102, title: "Def" + "ect 3000: mine", kind: "defect", body: FORM, milestone: ""), foreign(number: 2103, title: "Def" + "ect 2103: named as the program would", kind: "defect", body: FORM, milestone: "")]
+    )
+    r: report.Report @= report.empty()
+    numbering(@r, held: held)
+    assert r.failed == 0
+    assert r.passed == 1
+    register = register_of(held)
+    assert register.old[235].must() == [3]
+    assert register.old[236].is_err()
+    assert keys(register.new) == [2103]
+    assert register.misnamed.len() == 0
+    assert register.unnamed.len() == 0
+
+    # The same titles from the project's own hand stay offences.
+    own = github_issues.held_of(
+        [fixture(number: 3, title: "Defect 235: x", kind: "defect", extra: [], body: "b", state: "closed", created: "2026-10-04T12:00:00Z", closed: "2026-10-05T12:00:00Z"), fixture(number: 2101, title: "Defect 235: it is back", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-14T08:00:00Z", closed: ""), fixture(number: 2100, title: "A wrong program compiles", kind: "defect", extra: [], body: "b", state: "open", created: "2026-10-14T08:00:00Z", closed: "")]
+    )
+    t: report.Report @= report.empty()
+    numbering(@t, held: own)
+    assert t.failed == 1
+    assert strings.contains(text: t.failures[0], needle: "defect 235 is named by 2 issues, 3, 2101")
+    assert strings.contains(
+        text: t.failures[0],
+        needle: "issues/2100 (A wrong program compiles) is an open defect whose title names no number"
+    )
+
+    # A listing with none of the project's own is no pass.
+    alone: report.Report @= report.empty()
+    numbering(
+        @alone,
+        held: github_issues.held_of([foreign(number: 2100, title: "Defect 014: x", kind: "defect", body: FORM, milestone: "")])
+    )
+    assert alone.failed == 1
+    assert strings.contains(
+        text: alone.failures[0],
+        needle: "GitHub listed 1 issues and none of them is the project's own"
+    )
+
+test "a stranger's prior art, wish and decision are none of the project's, and a listing of strangers alone is no pass (defect 2042)"
+    known: {str: bool} @= {}
+    known["docs/panel/196-a-sitting.md"] @ true
+    mine = fixture(
+        number: 7,
+        title: "Panel 196: ratify",
+        kind: "decision",
+        extra: [],
+        body: "x",
+        state: "open",
+        created: "2026-10-11T12:00:00Z",
+        closed: ""
+    )
+    stranger = github_issues.held_of(
+        [mine, foreign(number: 2104, title: "Use Rust's traits", kind: "decision", body: "Hello\\n\\n## Prior Art\\n\\nRust does it\\n\\n### Prior art\\n\\n- not a form", milestone: "")]
+    )
+    r: report.Report @= report.empty()
+    prior_art(@r, held: stranger, known: known)
+    assert r.failed == 0
+    alone: report.Report @= report.empty()
+    prior_art(
+        @alone,
+        held: github_issues.held_of([foreign(number: 2104, title: "x", kind: "decision", body: "y", milestone: "")]),
+        known: known
+    )
+    assert alone.failed == 1
+    assert strings.contains(text: alone.failures[0], needle: "none of them is the project's own")
+
+    # A stranger's wish names no milestone; a stranger cannot set one.
+    chain: {str: bool} @= {}
+    chain["M-typed-inspection"] @ true
+    wish = github_issues.held_of(
+        [mine, foreign(number: 2105, title: "Add closures", kind: "feature", body: "### What it delivers\\n\\nclosures", milestone: "")]
+    )
+    assert unhomed(held: wish, chain: chain).len() == 0
+    lonely = unhomed(
+        held: github_issues.held_of([foreign(number: 2105, title: "Add closures", kind: "feature", body: "x", milestone: "")]),
+        chain: chain
+    )
+    assert lonely.len() == 1
+    assert strings.contains(text: lonely[0], needle: "none of them is the project's own")
+
+    # A stranger's `Panel NNN:` asks for no sitting and answers none.
+    asking = github_issues.held_of(
+        [mine, foreign(number: 2106, title: "Panel 215: please merge my idea", kind: "decision", body: "hi", milestone: "")]
+    )
+    assert !queued(digits: "215", held: asking)
+    assert queued(digits: "196", held: asking)
 
 test "an instant is read to the second, and an imported issue's noon as its day"
     assert epoch_of("2026-10-12T10:00:00Z").must() == 1791799200
