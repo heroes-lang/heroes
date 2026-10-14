@@ -170,9 +170,11 @@ constant LEAST: i64
 # that a walk that stops reaching them, or cases deleted with them, is a red
 # and not a smaller green, as the blessed floor above does for the rest. **35
 # on 2026-10-07**, `fixedbugs/` 32 and `ir/` 3, the collected count less the
-# blessed one.
+# blessed one. **42 at the round's close in lane land-214, 2026-10-14**, the
+# count the gate read alone: a blessing run had told `FLOOR emission` at 45,
+# three new `run` cases counted before their emissions were blessed.
 constant LEAST_REFUSED: i64
-    35
+    42
 
 # One program and the bytes it was blessed to emit.
 record Program
