@@ -1,0 +1,11 @@
+leg aarch64, ldd (Debian GLIBC 2.41-12+deb13u3) 2.41
+init 0
+lock m 0
+trylock m2 16
+unlock m2 0
+lock m2 0
+unlock m 0
+unlock m2 0
+destroy m 0
+destroy m2 0
+run exit 0

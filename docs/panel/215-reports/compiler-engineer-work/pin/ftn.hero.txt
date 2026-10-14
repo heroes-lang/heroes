@@ -1,0 +1,25 @@
+# Issue 1336 (panel 178, M-buildable-structs), 2026-10-14: what
+# `ffi_unknown_tag` tells a record that names a typedef as a tag, the
+# typedef's own name with no `tag` (defect 145), is a spelling that builds
+# and runs. glibc's `pthread_mutex_t`, a typedef of an anonymous union, and
+# its `regex_t`, one of an anonymous struct, each bound `partial` by that
+# name: the program owns C's whole size, and C writes every byte of it.
+# Measured the same day on real `pthread.h`: Linux arm64 `record
+# pthread_mutex_t partial` with `__align` locks and unlocks at 0, and the
+# note no longer offers the handle that aborted there.
+
+extern "ffi-a-typedef-the-note-names-binds-by-its-own-name.h"
+    record lock_t partial pinned
+        __align: i64
+    record pattern_t partial
+        re_nsub: u64
+    function lock_init(@m: lock_t) -> i32
+    function lock_marked(@m: lock_t) -> i64
+    function pattern_init(@p: pattern_t) -> i32
+    function pattern_marked(@p: pattern_t) -> i64
+
+function main()
+    m: lock_t @= lock_t(rest: zero)
+    print(lock_init(@m), " ", lock_marked(@m))
+    p: pattern_t @= pattern_t(rest: zero)
+    print(pattern_init(@p), " ", pattern_marked(@p), " ", p.re_nsub)

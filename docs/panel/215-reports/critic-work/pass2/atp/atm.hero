@@ -1,0 +1,11 @@
+# Critic, panel 215 pass 2: a map's value lent with `@`.
+record P
+    n: i64
+
+function bump(@p: P)
+    p.n @ p.n + 1
+
+function main()
+    m: {str: P} @= {"a": P(n: 1)}
+    bump(@m["a"])
+    print(m["a"].must().n)

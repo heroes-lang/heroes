@@ -1,0 +1,21 @@
+== today run 3, load before: 5.25 8.88 21.82
+real 143.48
+user 112.94
+sys 24.35
+   load after: 5.68 7.74 19.33; bytes  109563954
+== g run 3, load before: 5.68 7.74 19.33
+real 142.52
+user 111.84
+sys 24.66
+   load after: 7.81 7.56 17.47; bytes  109563954
+== today run 4, load before: 7.81 7.56 17.47
+real 142.17
+user 111.39
+sys 24.93
+   load after: 5.60 6.76 15.59; bytes  109563954
+== g run 4, load before: 5.60 6.76 15.59
+real 136.22
+user 108.69
+sys 21.88
+   load after: 5.73 6.33 14.12; bytes  109563954
+today and route emit the same compiler C

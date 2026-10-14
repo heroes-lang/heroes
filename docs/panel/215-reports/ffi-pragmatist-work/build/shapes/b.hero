@@ -1,0 +1,21 @@
+# Task B: a C type that must not be copied, used only through its cell.
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_lock(@c: Counter) -> i32
+    function counter_unlock(@c: Counter) -> i32
+    function counter_value(@c: Counter) -> i64
+
+function bump(@c: Counter)
+    _ = counter_lock(@c)
+    c.n @ c.n + 1
+    _ = counter_unlock(@c)
+
+function main()
+    c: Counter @= Counter(rest: zero)
+    _ = counter_init(@c)
+    bump(@c)
+    bump(@c)
+    bump(@c)
+    print(counter_value(@c))

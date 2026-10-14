@@ -1,0 +1,28 @@
+# Every lend that reaches C as the place itself, and a field read: kept.
+extern "lend.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_lock(@c: Counter) -> i32
+    function counter_unlock(@c: Counter) -> i32
+    function add_to(@n: i64) -> i32
+
+record Holder
+    c: Counter
+    k: i64
+
+function twice(@c: Counter)
+    _ = counter_lock(@c)
+    _ = add_to(@c.n)
+    _ = add_to(@c.n)
+    _ = counter_unlock(@c)
+
+function main()
+    c: Counter @= Counter(n: 0, rest: zero)
+    _ = counter_init(@c)
+    twice(@c)
+    h: Holder @= Holder(c: Counter(n: 5, rest: zero), k: 1)
+    _ = counter_init(@h.c)
+    twice(@h.c)
+    v = c.n
+    print(v, " ", h.c.n, " ", h.k)

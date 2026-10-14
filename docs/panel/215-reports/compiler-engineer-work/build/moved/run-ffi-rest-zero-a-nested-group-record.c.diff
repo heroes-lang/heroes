@@ -1,0 +1,15 @@
+253a254,257
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct outer, k), sizeof(((struct outer *)0)->k), __builtin_offsetof(struct outer, inner.kind), sizeof(((struct outer *)0)->inner.kind), __builtin_offsetof(struct outer, inner.c), sizeof(((struct outer *)0)->inner.c), __builtin_offsetof(struct outer, inner.d), sizeof(((struct outer *)0)->inner.d), __builtin_offsetof(struct outer, inner.x), sizeof(((struct outer *)0)->inner.x)}; hero_pad_zero(&h0_a, sizeof(struct outer), 1, hero_pad_s0, 5);
+> #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+>     }
+> #line 27 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+285a290,291
+> #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct outer, k), sizeof(((struct outer *)0)->k), __builtin_offsetof(struct outer, inner.kind), sizeof(((struct outer *)0)->inner.kind), __builtin_offsetof(struct outer, inner.c), sizeof(((struct outer *)0)->inner.c), __builtin_offsetof(struct outer, inner.d), sizeof(((struct outer *)0)->inner.d), __builtin_offsetof(struct outer, inner.x), sizeof(((struct outer *)0)->inner.x)}; hero_pad_zero(&h1_b, sizeof(struct outer), 1, hero_pad_s0, 5);
+286a293,294
+>     }
+> #line 30 "tests/golden/run/ffi-rest-zero-a-nested-group-record.hero"
+306c314
+< #line 307 "ffirestzeroanestedgrouprecord.c"
+---
+> #line 315 "ffirestzeroanestedgrouprecord.c"

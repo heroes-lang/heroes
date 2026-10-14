@@ -1,0 +1,11 @@
+# ffi-pragmatist, panel 215, route E as a binding would write it: the padding declared as a field
+extern "cd.h"
+    record Cd tag cd
+        c: i8
+        pad: u8[7]
+        d: f64
+    function write(fd: i32, @buf: Cd counted_by n lent, n: u64) -> i64
+
+function main()
+    a: Cd @= Cd(c: 1, pad: [0, 0, 0, 0, 0, 0, 0], d: 2.0)
+    print(write(fd: 1, @a, n: 16))

@@ -1,0 +1,22 @@
+# Compiler-engineer, panel 215: a copy of a locked mutex, issue 1335.
+extern "mx.h"
+    record Box tag box partial
+        n: i64
+    function box_init(@b: Box) -> i32
+    function box_lock(@b: Box) -> i32
+    function box_trylock(@b: Box) -> i32
+    function box_unlock(@b: Box) -> i32
+    function box_destroy(@b: Box) -> i32
+
+function main()
+    m: Box @= Box(n: 0, rest: zero)
+    print("init ", box_init(@m))
+    print("lock m ", box_lock(@m))
+    m2: Box @= m
+    print("trylock m2 ", box_trylock(@m2))
+    print("unlock m2 ", box_unlock(@m2))
+    print("lock m2 ", box_lock(@m2))
+    print("unlock m ", box_unlock(@m))
+    print("unlock m2 ", box_unlock(@m2))
+    print("destroy m ", box_destroy(@m))
+    print("destroy m2 ", box_destroy(@m2))

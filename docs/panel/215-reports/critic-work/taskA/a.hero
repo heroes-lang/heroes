@@ -1,0 +1,18 @@
+# Task A: a record with a fixed text field and a union, built and handed to C.
+extern "sockpath.h"
+    record SockPath tag sock_path partial
+        family: u16
+        path: i8[108]
+    function sp_send(@p: SockPath) -> i32
+
+function make(path: str) -> SockPath?
+    p: SockPath @= SockPath(family: 1, rest: zero)
+
+    for i in range(from: 0, to: path.len())
+        p.path[i] @ path[i].to_i8()?
+
+    return ok(p)
+
+function main()
+    p: SockPath @= make(path: "/tmp/heroes.sock").must()
+    print(sp_send(@p))

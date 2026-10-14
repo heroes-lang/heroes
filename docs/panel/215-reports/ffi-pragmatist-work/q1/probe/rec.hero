@@ -1,0 +1,8 @@
+# ffi-pragmatist, panel 215: the record, and a function that passes it by value, in its own module
+extern "wire.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+
+function through(x: Cd) -> Cd
+    return x

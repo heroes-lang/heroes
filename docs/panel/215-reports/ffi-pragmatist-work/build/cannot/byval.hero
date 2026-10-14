@@ -1,0 +1,10 @@
+# A C function returning a counter by value, bound as the header declares it.
+extern "byval.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_make() -> Counter
+    function counter_lock(@c: Counter) -> i32
+
+function main()
+    c: Counter @= counter_make()
+    print(counter_lock(@c), " ", c.n)

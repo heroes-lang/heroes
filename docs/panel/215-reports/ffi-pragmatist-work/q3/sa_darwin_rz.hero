@@ -1,0 +1,25 @@
+# ffi-pragmatist, panel 215, Q3: `struct sockaddr` built WITH rest: zero, Darwin's fields
+extern "q3.h"
+    constant SOCK_STREAM: i32
+    record SockAddr tag sockaddr
+        sa_len: u8
+        sa_family: u8
+        sa_data: i8[14]
+    function socket(domain: i32, kind: i32, protocol: i32) -> i32
+    function bind(fd: i32, @addr: SockAddr lent, len: u32) -> i32
+    function getsockname(fd: i32, @addr: SockAddr lent, @len: u32) -> i32
+
+function byte(x: i8) -> i64
+    return (x.to_i64().must() + 256) % 256
+
+function main()
+    fd = socket(domain: 2, kind: SOCK_STREAM, protocol: 0)
+    a: SockAddr @= SockAddr(sa_family: 2, rest: zero)
+    a.sa_data[0] @ -72
+    a.sa_data[1] @ 111
+    a.sa_data[2] @ 127
+    a.sa_data[5] @ 1
+    print("bind ", bind(fd: fd, @a, len: 16))
+    got: SockAddr @= SockAddr(sa_family: 0, rest: zero)
+    n: u32 @= 16
+    print("getsockname ", getsockname(fd: fd, @got, @n), " port ", byte(got.sa_data[0]) * 256 + byte(got.sa_data[1]))

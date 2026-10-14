@@ -1,0 +1,16 @@
+# ./heroes measure on each draft, copy at 7e5c02048, 2026-10-14 08:41; base legacy 7519, cl100k 7655
+# base sha256 af7fc4d6a85fc786
+q1-e-field         legacy  7547 ( +28)  cl100k  7683 ( +28)  sha256 dd8bcf3c883f485f
+q1-p-long          legacy  7542 ( +23)  cl100k  7678 ( +23)  sha256 9f640f9a39a228c5
+q1-p-short         legacy  7526 (  +7)  cl100k  7662 (  +7)  sha256 70942a8c43de36c0
+q2-at-place        legacy  7510 (  -9)  cl100k  7645 ( -10)  sha256 a046db95a2a66cdc
+q2-b-mark-place    legacy  7579 ( +60)  cl100k  7715 ( +60)  sha256 2e1214551615d7b6
+q2-b-mark          legacy  7568 ( +49)  cl100k  7704 ( +49)  sha256 039cb0d867e1a1d5
+q2-c-header        legacy  7579 ( +60)  cl100k  7715 ( +60)  sha256 f02b9f9fdac9c8af
+q2-d-runtime       legacy  7535 ( +16)  cl100k  7671 ( +16)  sha256 0d67623001aeeb82
+q3-k-out           legacy  7510 (  -9)  cl100k  7646 (  -9)  sha256 ef45d6c419c1259a
+q3-r1-out          legacy  7477 ( -42)  cl100k  7613 ( -42)  sha256 2d523a993bc9ac41
+q3-r1-short-a      legacy  7513 (  -6)  cl100k  7649 (  -6)  sha256 15be3bfa9e320368
+q3-r1-short-b      legacy  7511 (  -8)  cl100k  7647 (  -8)  sha256 f3068ec8a8b857cf
+q3-r1-short-c      legacy  7512 (  -7)  cl100k  7648 (  -7)  sha256 580e8bde72ceb667
+q3-r1k-out         legacy  7468 ( -51)  cl100k  7604 ( -51)  sha256 0050060a5d421f2d

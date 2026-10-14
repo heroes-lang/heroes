@@ -1,0 +1,6 @@
+  run: 518 passed, 0 failed
+SKIP run/fixedbugs-437-a-program-whose-runner-is-killed-dies-with-it
+  this machine lacks what the case binds, so it is judged where that is: `sys/prctl.h`, which clang does not find on the include path the compiler searches
+SKIP run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux
+  this machine lacks what the case binds, so it is judged where that is: `sys/prctl.h`, which clang does not find on the include path the compiler searches
+harness: 518 passed, 0 failed

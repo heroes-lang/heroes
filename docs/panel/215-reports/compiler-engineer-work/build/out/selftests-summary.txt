@@ -1,0 +1,14 @@
+ok   "stages stop on the first noise, apply repairs, holes stay exit 0"
+clang: error: linker command failed with exit code 1 (use -v to see invocation)
+ok   "a breach is exit 1, a clean measurement is exit 0, and an unjudged path is neither"
+ok   "? branches on the tag, and the error edge is a real exit edge"
+ok   "the return slot borrows: a store into it is a plain copy, rule 4 retains at the exit, and no sweep names it"
+ok   "the return slot is named by the return sites' stores and the exit's load alone, and each other naming is refused"
+ok   "only the retain of what a way out returns is the exit's, never a release inside a line (defect 540)"
+ok   "the exit sweep reads the slot it releases, with no load before it"
+ok   "the exit sweep hands a counted slot over by its address, a unit's own type through the escape (defect 470)"
+ok   "exactly one declaration is the library's exit, and `main` is not it (defect 507)"
+ok   "the library's exit is a call of hero_exit alone (defect 507)"
+ok   "a child's two streams and its exit come back, and a program that is not there is a failure"
+1654 tests, all passed
+exit 0

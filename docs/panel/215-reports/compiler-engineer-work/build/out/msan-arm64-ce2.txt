@@ -1,0 +1,222 @@
+leg aarch64, Debian clang version 22.1.8 (1~deb13u4)
+today ctlprobe.hero: hero_pad_zero lines 0
+today ctlprobe.hero -O0: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+today ctlprobe.hero -O1: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+today ctlprobe.hero -O2: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+today ctlprobe.hero -O3: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+today ctlprobe.hero -O2 -fno-inline: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+today small.hero: hero_pad_zero lines 0
+today small.hero -O0: exit 0, 0 reports at: none; printed: @@??64
+today small.hero -O1: exit 0, 0 reports at: none; printed: @@??64
+today small.hero -O2: exit 0, 0 reports at: none; printed: @@??64
+today small.hero -O3: exit 0, 0 reports at: none; printed: @@??64
+today small.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: @@??64
+today small_rz.hero: hero_pad_zero lines 0
+today small_rz.hero -O0: exit 0, 0 reports at: none; printed: @@??64
+today small_rz.hero -O1: exit 0, 0 reports at: none; printed: @@??64
+today small_rz.hero -O2: exit 0, 0 reports at: none; printed: @@??64
+today small_rz.hero -O3: exit 0, 0 reports at: none; printed: @@??64
+today small_rz.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: @@??64
+today cret.hero: hero_pad_zero lines 0
+today cret.hero -O0: exit 0, 0 reports at: none; printed: @16
+today cret.hero -O1: exit 0, 0 reports at: none; printed: @16
+today cret.hero -O2: exit 0, 0 reports at: none; printed: @16
+today cret.hero -O3: exit 0, 0 reports at: none; printed: @16
+today cret.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: @16
+today fieldlend.hero: hero_pad_zero lines 0
+today fieldlend.hero -O0: exit 0, 0 reports at: none; printed: @@@48
+today fieldlend.hero -O1: exit 0, 0 reports at: none; printed: @@@48
+today fieldlend.hero -O2: exit 0, 0 reports at: none; printed: @@@48
+today fieldlend.hero -O3: exit 0, 0 reports at: none; printed: @@@48
+today fieldlend.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: @@@48
+today rzpad.hero: hero_pad_zero lines 0
+today rzpad.hero -O0: exit 0, 0 reports at: none; printed:  2 2 1 1
+today rzpad.hero -O1: exit 0, 0 reports at: none; printed:  2 2 1 1
+today rzpad.hero -O2: exit 0, 0 reports at: none; printed:  2 2 1 1
+today rzpad.hero -O3: exit 0, 0 reports at: none; printed:  2 2 1 1
+today rzpad.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed:  2 2 1 1
+today pc.hero: hero_pad_zero lines 0
+today pc.hero -O0: exit 0, 0 reports at: none; printed: 16 16 16 32
+today pc.hero -O1: exit 0, 0 reports at: none; printed: 16 16 16 32
+today pc.hero -O2: exit 0, 0 reports at: none; printed: 16 16 16 32
+today pc.hero -O3: exit 0, 0 reports at: none; printed: 16 16 16 32
+today pc.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 16 16 16 32
+today uni.hero: hero_pad_zero lines 0
+today uni.hero -O0: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uni.hero -O1: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uni.hero -O2: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uni.hero -O3: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uni.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 1234605616436508552
+today unimid.hero: hero_pad_zero lines 0
+today unimid.hero -O0: exit 0, 0 reports at: none; printed: 1234605616436508552
+today unimid.hero -O1: exit 0, 0 reports at: none; printed: 1234605616436508552
+today unimid.hero -O2: exit 0, 0 reports at: none; printed: 1234605616436508552
+today unimid.hero -O3: exit 0, 0 reports at: none; printed: 1234605616436508552
+today unimid.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uu.hero: hero_pad_zero lines 0
+today uu.hero -O0: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uu.hero -O1: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uu.hero -O2: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uu.hero -O3: exit 0, 0 reports at: none; printed: 1234605616436508552
+today uu.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 1234605616436508552
+today pn.hero: hero_pad_zero lines 0
+today pn.hero -O0: exit 1, 6 reports at: 1 pn.hero:70; 1 pn.hero:72; 1 pn.hero:74; 1 pn.hero:76; 1 pn.hero:78; 1 pn.hero:80;; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+today pn.hero -O1: exit 1, 5 reports at: 1 pn.hero:70; 1 pn.hero:72; 1 pn.hero:74; 1 pn.hero:78; 1 pn.hero:80;; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+today pn.hero -O2: exit 1, 5 reports at: 1 pn.hero:70; 1 pn.hero:72; 1 pn.hero:74; 1 pn.hero:78; 1 pn.hero:80;; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+today pn.hero -O3: exit 1, 5 reports at: 1 pn.hero:70; 1 pn.hero:72; 1 pn.hero:74; 1 pn.hero:78; 1 pn.hero:80;; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+today pn.hero -O2 -fno-inline: exit 1, 5 reports at: 1 pn.hero:70; 1 pn.hero:72; 1 pn.hero:74; 1 pn.hero:78; 1 pn.hero:80;; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+today el.hero: hero_pad_zero lines 0
+today el.hero -O0: exit 0, 0 reports at: none; printed: 16 2.0
+today el.hero -O1: exit 0, 0 reports at: none; printed: 16 2.0
+today el.hero -O2: exit 0, 0 reports at: none; printed: 16 2.0
+today el.hero -O3: exit 0, 0 reports at: none; printed: 16 2.0
+today el.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 16 2.0
+today ffi-rest-zero-a-nested-group-record.hero: hero_pad_zero lines 0
+today ffi-rest-zero-a-nested-group-record.hero -O0: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+today ffi-rest-zero-a-nested-group-record.hero -O1: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+today ffi-rest-zero-a-nested-group-record.hero -O2: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+today ffi-rest-zero-a-nested-group-record.hero -O3: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+today ffi-rest-zero-a-nested-group-record.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+today ffi-rest-zero-a-partial-record.hero: hero_pad_zero lines 0
+today ffi-rest-zero-a-partial-record.hero -O0: exit 0, 0 reports at: none; printed: 4 0 expected:same
+today ffi-rest-zero-a-partial-record.hero -O1: exit 0, 0 reports at: none; printed: 4 0 expected:same
+today ffi-rest-zero-a-partial-record.hero -O2: exit 0, 0 reports at: none; printed: 4 0 expected:same
+today ffi-rest-zero-a-partial-record.hero -O3: exit 0, 0 reports at: none; printed: 4 0 expected:same
+today ffi-rest-zero-a-partial-record.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 4 0 expected:same
+today ffi-rest-zero-a-record-of-long-arrays.hero: hero_pad_zero lines 0
+today ffi-rest-zero-a-record-of-long-arrays.hero -O0: exit 0, 0 reports at: none; printed: 0 0 expected:same
+today ffi-rest-zero-a-record-of-long-arrays.hero -O1: exit 0, 0 reports at: none; printed: 0 0 expected:same
+today ffi-rest-zero-a-record-of-long-arrays.hero -O2: exit 0, 0 reports at: none; printed: 0 0 expected:same
+today ffi-rest-zero-a-record-of-long-arrays.hero -O3: exit 0, 0 reports at: none; printed: 0 0 expected:same
+today ffi-rest-zero-a-record-of-long-arrays.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 0 0 expected:same
+today ffi-rest-zero-a-union-none-of-whose-members-is-named.hero: hero_pad_zero lines 0
+today ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O0: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+today ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O1: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+today ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O2: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+today ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O3: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+today ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+today ffi-rest-zero-a-union-with-one-member-named.hero: hero_pad_zero lines 0
+today ffi-rest-zero-a-union-with-one-member-named.hero -O0: exit 0, 0 reports at: none; printed: 1.5 expected:same
+today ffi-rest-zero-a-union-with-one-member-named.hero -O1: exit 0, 0 reports at: none; printed: 1.5 expected:same
+today ffi-rest-zero-a-union-with-one-member-named.hero -O2: exit 0, 0 reports at: none; printed: 1.5 expected:same
+today ffi-rest-zero-a-union-with-one-member-named.hero -O3: exit 0, 0 reports at: none; printed: 1.5 expected:same
+today ffi-rest-zero-a-union-with-one-member-named.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 1.5 expected:same
+g ctlprobe.hero: hero_pad_zero lines 0
+g ctlprobe.hero -O0: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+g ctlprobe.hero -O1: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+g ctlprobe.hero -O2: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+g ctlprobe.hero -O3: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+g ctlprobe.hero -O2 -fno-inline: exit 1, 1 reports at: 1 ctlprobe.hero:9;; printed: 48
+g small.hero: hero_pad_zero lines 6
+g small.hero -O0: exit 0, 0 reports at: none; printed: @@??64
+g small.hero -O1: exit 0, 0 reports at: none; printed: @@??64
+g small.hero -O2: exit 0, 0 reports at: none; printed: @@??64
+g small.hero -O3: exit 0, 0 reports at: none; printed: @@??64
+g small.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: @@??64
+g small_rz.hero: hero_pad_zero lines 6
+g small_rz.hero -O0: exit 0, 0 reports at: none; printed: @@??64
+g small_rz.hero -O1: exit 0, 0 reports at: none; printed: @@??64
+g small_rz.hero -O2: exit 0, 0 reports at: none; printed: @@??64
+g small_rz.hero -O3: exit 0, 0 reports at: none; printed: @@??64
+g small_rz.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: @@??64
+g cret.hero: hero_pad_zero lines 1
+g cret.hero -O0: exit 0, 0 reports at: none; printed: @16
+g cret.hero -O1: exit 0, 0 reports at: none; printed: @16
+g cret.hero -O2: exit 0, 0 reports at: none; printed: @16
+g cret.hero -O3: exit 0, 0 reports at: none; printed: @16
+g cret.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: @16
+g fieldlend.hero: hero_pad_zero lines 3
+g fieldlend.hero -O0: exit 0, 0 reports at: none; printed: @@@48
+g fieldlend.hero -O1: exit 0, 0 reports at: none; printed: @@@48
+g fieldlend.hero -O2: exit 0, 0 reports at: none; printed: @@@48
+g fieldlend.hero -O3: exit 0, 0 reports at: none; printed: @@@48
+g fieldlend.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: @@@48
+g rzpad.hero: hero_pad_zero lines 4
+g rzpad.hero -O0: exit 0, 0 reports at: none; printed:  2 2 1 1
+g rzpad.hero -O1: exit 0, 0 reports at: none; printed:  2 2 1 1
+g rzpad.hero -O2: exit 0, 0 reports at: none; printed:  2 2 1 1
+g rzpad.hero -O3: exit 0, 0 reports at: none; printed:  2 2 1 1
+g rzpad.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed:  2 2 1 1
+g pc.hero: hero_pad_zero lines 4
+g pc.hero -O0: exit 0, 0 reports at: none; printed: 16 16 16 32
+g pc.hero -O1: exit 0, 0 reports at: none; printed: 16 16 16 32
+g pc.hero -O2: exit 0, 0 reports at: none; printed: 16 16 16 32
+g pc.hero -O3: exit 0, 0 reports at: none; printed: 16 16 16 32
+g pc.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 16 16 16 32
+g uni.hero: hero_pad_zero lines 2
+g uni.hero -O0: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uni.hero -O1: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uni.hero -O2: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uni.hero -O3: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uni.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 1234605616436508552
+g unimid.hero: hero_pad_zero lines 2
+g unimid.hero -O0: exit 0, 0 reports at: none; printed: 1234605616436508552
+g unimid.hero -O1: exit 0, 0 reports at: none; printed: 1234605616436508552
+g unimid.hero -O2: exit 0, 0 reports at: none; printed: 1234605616436508552
+g unimid.hero -O3: exit 0, 0 reports at: none; printed: 1234605616436508552
+g unimid.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uu.hero: hero_pad_zero lines 4
+g uu.hero -O0: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uu.hero -O1: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uu.hero -O2: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uu.hero -O3: exit 0, 0 reports at: none; printed: 1234605616436508552
+g uu.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 1234605616436508552
+g pn.hero: hero_pad_zero lines 8
+g pn.hero -O0: exit 1, 1 reports at: 1 pn.hero:76;; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+g pn.hero -O1: exit 0, 0 reports at: none; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+g pn.hero -O2: exit 0, 0 reports at: none; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+g pn.hero -O3: exit 0, 0 reports at: none; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+g pn.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 40 32 24 16 24 24 2.0 2.0 2.0
+g el.hero: hero_pad_zero lines 1
+g el.hero -O0: exit 0, 0 reports at: none; printed: 16 2.0
+g el.hero -O1: exit 0, 0 reports at: none; printed: 16 2.0
+g el.hero -O2: exit 0, 0 reports at: none; printed: 16 2.0
+g el.hero -O3: exit 0, 0 reports at: none; printed: 16 2.0
+g el.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 16 2.0
+g ffi-rest-zero-a-nested-group-record.hero: hero_pad_zero lines 2
+g ffi-rest-zero-a-nested-group-record.hero -O0: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+g ffi-rest-zero-a-nested-group-record.hero -O1: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+g ffi-rest-zero-a-nested-group-record.hero -O2: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+g ffi-rest-zero-a-nested-group-record.hero -O3: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+g ffi-rest-zero-a-nested-group-record.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 2 3 0 expected:same
+g ffi-rest-zero-a-partial-record.hero: hero_pad_zero lines 1
+g ffi-rest-zero-a-partial-record.hero -O0: exit 0, 0 reports at: none; printed: 4 0 expected:same
+g ffi-rest-zero-a-partial-record.hero -O1: exit 0, 0 reports at: none; printed: 4 0 expected:same
+g ffi-rest-zero-a-partial-record.hero -O2: exit 0, 0 reports at: none; printed: 4 0 expected:same
+g ffi-rest-zero-a-partial-record.hero -O3: exit 0, 0 reports at: none; printed: 4 0 expected:same
+g ffi-rest-zero-a-partial-record.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 4 0 expected:same
+g ffi-rest-zero-a-record-of-long-arrays.hero: hero_pad_zero lines 2
+g ffi-rest-zero-a-record-of-long-arrays.hero -O0: exit 0, 0 reports at: none; printed: 0 0 expected:same
+g ffi-rest-zero-a-record-of-long-arrays.hero -O1: exit 0, 0 reports at: none; printed: 0 0 expected:same
+g ffi-rest-zero-a-record-of-long-arrays.hero -O2: exit 0, 0 reports at: none; printed: 0 0 expected:same
+g ffi-rest-zero-a-record-of-long-arrays.hero -O3: exit 0, 0 reports at: none; printed: 0 0 expected:same
+g ffi-rest-zero-a-record-of-long-arrays.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 0 0 expected:same
+g ffi-rest-zero-a-union-none-of-whose-members-is-named.hero: hero_pad_zero lines 5
+g ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O0: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+g ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O1: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+g ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O2: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+g ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O3: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+g ffi-rest-zero-a-union-none-of-whose-members-is-named.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 0 0 0 expected:same
+g ffi-rest-zero-a-union-with-one-member-named.hero: hero_pad_zero lines 2
+g ffi-rest-zero-a-union-with-one-member-named.hero -O0: exit 0, 0 reports at: none; printed: 1.5 expected:same
+g ffi-rest-zero-a-union-with-one-member-named.hero -O1: exit 0, 0 reports at: none; printed: 1.5 expected:same
+g ffi-rest-zero-a-union-with-one-member-named.hero -O2: exit 0, 0 reports at: none; printed: 1.5 expected:same
+g ffi-rest-zero-a-union-with-one-member-named.hero -O3: exit 0, 0 reports at: none; printed: 1.5 expected:same
+g ffi-rest-zero-a-union-with-one-member-named.hero -O2 -fno-inline: exit 0, 0 reports at: none; printed: 1.5 expected:same
+-- values, no sanitizer, heroes build -O0 (the default) and -O2, three runs each
+today dv.hero heroes build -O0: true 0 0 | true 0 0 | true 0 0
+today dv.hero heroes build -O2: true 0 0 | true 0 0 | true 0 0
+today main.hero heroes build -O0 run 1: eq true true true|memcmp 0 0 0|sha true true true|
+today main.hero heroes build -O0 run 2: eq true true true|memcmp 0 0 0|sha true true true|
+today main.hero heroes build -O0 run 3: eq true true true|memcmp 0 0 0|sha true true true|
+today main.hero heroes build -O2 run 1: eq true true true|memcmp 0 0 0|sha true true true|
+today main.hero heroes build -O2 run 2: eq true true true|memcmp 0 0 0|sha true true true|
+today main.hero heroes build -O2 run 3: eq true true true|memcmp 0 0 0|sha true true true|
+g dv.hero heroes build -O0: true 0 0 | true 0 0 | true 0 0
+g dv.hero heroes build -O2: true 0 0 | true 0 0 | true 0 0
+g main.hero heroes build -O0 run 1: eq true true true|memcmp 0 0 0|sha true true true|
+g main.hero heroes build -O0 run 2: eq true true true|memcmp 0 0 0|sha true true true|
+g main.hero heroes build -O0 run 3: eq true true true|memcmp 0 0 0|sha true true true|
+g main.hero heroes build -O2 run 1: eq true true true|memcmp 0 0 0|sha true true true|
+g main.hero heroes build -O2 run 2: eq true true true|memcmp 0 0 0|sha true true true|
+g main.hero heroes build -O2 run 3: eq true true true|memcmp 0 0 0|sha true true true|

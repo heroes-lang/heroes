@@ -1,0 +1,13 @@
+extern "sys/utsname.h"
+    record Utsname tag utsname
+        sysname: u8[256]
+        nodename: u8[256]
+        release: u8[256]
+        version: u8[256]
+        machine: u8[256]
+    function uname(@name: Utsname) -> i32
+
+function main()
+    u: Utsname @= Utsname(rest: zero)
+    assert uname(@u) == 0
+    print(u.sysname.validated_bytes().must())

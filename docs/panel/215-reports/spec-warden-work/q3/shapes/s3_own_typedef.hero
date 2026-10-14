@@ -1,0 +1,20 @@
+extern "own3.h"
+    record V3
+        fd: i32
+        handle: ptr
+    record S3 tag s3
+        kind: i32
+        via: V3
+    function dirty()
+    function s3_nz(@t: S3 lent) -> i64
+    function s3_fd(@t: S3 lent) -> i32
+
+function zeroed() -> S3
+    return S3(kind: 2, rest: zero)
+
+function main()
+    dirty()
+    a: S3 @= zeroed()
+    print(s3_fd(@a), " ", s3_nz(@a))
+    b @= S3(kind: 2, via: V3(fd: 7))
+    print(s3_fd(@b), " ", b.via.fd)

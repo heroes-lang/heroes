@@ -1,0 +1,13 @@
+error[ffi_unknown_field]: `union.h` declares no `fd` in `struct tagged`: clang read the header, and that type has no such field
+  at a2.hero:4:9
+    |
+  4 |         fd: i32
+    |         ^^
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `struct tagged` has a member `fd`
+
+error[ffi_unknown_field]: `union.h` declares no `handle` in `struct tagged`: clang read the header, and that type has no such field
+  at a2.hero:5:9
+    |
+  5 |         handle: ptr
+    |         ^^^^^^
+  note: a group's `record` IS the header's type (§4.19), so a field is named exactly as the header names it: correct the spelling, or name the header whose `struct tagged` has a member `handle`

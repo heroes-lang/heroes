@@ -1,0 +1,50 @@
+# ffi-pragmatist, panel 215: records `==` calls equal, read as bytes by write, send, memcmp and SHA-256
+use rec
+
+extern "wire.h"
+    constant AF_UNIX: i32
+    constant SOCK_STREAM: i32
+    function write(fd: i32, @buf: rec.Cd counted_by n lent, n: u64) -> i64
+    function send(fd: i32, @buf: rec.Cd counted_by n lent, n: u64, flags: i32) -> i64
+    function socketpair(domain: i32, kind: i32, protocol: i32, @sv: [i32] counted_by 2 lent) -> i32
+    function memcmp(@a: rec.Cd counted_by n lent, @b: rec.Cd counted_by n lent, n: u64) -> i32
+
+extern "openssl/sha.h" package "libcrypto"
+    constant SHA256_DIGEST_LENGTH: i64
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, @data: rec.Cd counted_by len lent, len: u64) -> i32
+    function SHA256_Final(@md: [u8] counted_by SHA256_DIGEST_LENGTH lent, @c: Sha256Ctx) -> i32
+
+record Msg
+    hdr: rec.Cd
+    n: i64
+
+function digest(@x: rec.Cd) -> [u8]
+    c: Sha256Ctx @= Sha256Ctx(rest: zero)
+    md: [u8] @= []
+    _ = SHA256_Init(@c)
+    _ = SHA256_Update(@c, @x, len: 16)
+    _ = SHA256_Final(@md, @c)
+    return md
+
+function main()
+    a: rec.Cd @= rec.Cd(c: 1, d: 2.0, rest: zero)
+    sv: [i32] @= []
+    _ = socketpair(domain: AF_UNIX, kind: SOCK_STREAM, protocol: 0, @sv)
+    # S0: a lent local, filled by a call by value across modules
+    b: rec.Cd @= rec.through(x: a)
+    # S1: an array's element, pushed from a call by value, then copied into a lent local
+    xs: [rec.Cd] @= []
+    xs @ xs.push(rec.through(x: a))
+    e: rec.Cd @= xs[0]
+    # S2: a field of a Heroes record built from a call by value
+    m = Msg(hdr: rec.through(x: a), n: 1)
+    f: rec.Cd @= m.hdr
+    print("eq ", a == b, " ", a == e, " ", a == f)
+    print("write ", write(fd: 1, @b, n: 16), " ", write(fd: 1, @e, n: 16), " ", write(fd: 1, @f, n: 16))
+    print("send ", send(fd: sv[0], @b, n: 16, flags: 0), " ", send(fd: sv[0], @e, n: 16, flags: 0), " ", send(fd: sv[0], @f, n: 16, flags: 0))
+    print("memcmp ", memcmp(a: @a, b: @b, n: 16), " ", memcmp(a: @a, b: @e, n: 16), " ", memcmp(a: @a, b: @f, n: 16))
+    da = digest(@a)
+    print("sha ", da == digest(@b), " ", da == digest(@e), " ", da == digest(@f))

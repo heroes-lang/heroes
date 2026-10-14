@@ -1,0 +1,15 @@
+# ffi-pragmatist, panel 215, Q2: a C11 mtx_t copied while locked
+extern "nc3.h"
+    record MtxBox tag mtxbox partial
+        tag: i32
+    constant thrd_busy: i32
+    function mtx_box_init(@b: MtxBox) -> i32
+    function mtx_box_lock(@b: MtxBox) -> i32
+    function mtx_box_trylock(@b: MtxBox) -> i32
+    function mtx_box_unlock(@b: MtxBox) -> i32
+
+function main()
+    m: MtxBox @= MtxBox(tag: 1, rest: zero)
+    print("init ", mtx_box_init(@m), " lock ", mtx_box_lock(@m), " (thrd_busy is ", thrd_busy, ")")
+    m2: MtxBox @= m
+    print("copy: trylock ", mtx_box_trylock(@m2), " unlock ", mtx_box_unlock(@m2), "; original: unlock ", mtx_box_unlock(@m))

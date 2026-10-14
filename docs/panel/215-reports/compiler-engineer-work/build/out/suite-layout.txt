@@ -1,0 +1,9 @@
+  layout: 5 passed, 1 failed
+FAIL layout
+  CLAUDE.md §11: *split a module before it passes ~300 lines*, because "the author must be able to open any file and read it without drowning":
+    selfhost/cli/header_types.hero: 302 lines of code, past §11's 300
+    selfhost/cli/layout.hero: 339 lines of code, past §11's 300
+    selfhost/emit/layout_text.hero: 321 lines of code, past §11's 300
+    selfhost/emit/ops.hero: 302 lines of code, past §11's 300
+  Split along a seam that names a concern, never at a line count. Where the LANGUAGE forbids the seam — a knot of mutually recursive functions, which cannot be two modules because Heroes refuses module cycles — the file stays and its module doc owes a map: the cycle, the entry points, which function calls which.
+harness: 5 passed, 1 failed

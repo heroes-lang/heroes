@@ -1,0 +1,18 @@
+extern "typeof.h"
+    record VIA
+        fd: i32
+        handle: ptr
+    record Tagged tag tagged
+        kind: i32
+        via: VIA
+    function dirty()
+    function tg_kind(@t: Tagged lent) -> i32
+    function tg_nonzero(@t: Tagged lent) -> i64
+
+function zeroed() -> Tagged
+    return Tagged(kind: 2, rest: zero)
+
+function main()
+    dirty()
+    t: Tagged @= zeroed()
+    print(tg_kind(@t), " ", tg_nonzero(@t))

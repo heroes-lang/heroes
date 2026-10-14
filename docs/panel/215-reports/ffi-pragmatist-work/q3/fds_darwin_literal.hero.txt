@@ -1,0 +1,17 @@
+# ffi-pragmatist, panel 215, Q3: Darwin's fd_set, built: literal; a pipe made readable, then select
+extern "q3.h"
+    record FdSet tag fd_set
+        fds_bits: i32[32]
+    function pipe(@fds: [i32] counted_by 2 lent) -> i32
+    function write(fd: i32, data: cstr lent, n: u64) -> i64
+    function fds_add(fd: i32, @s: FdSet)
+    function fds_has(fd: i32, @s: FdSet) -> i32
+    function select_now(nfds: i32, @r: FdSet) -> i32
+
+function main()
+    fds: [i32] @= []
+    _ = pipe(@fds)
+    _ = write(fd: fds[1], data: "x".cstr(), n: 1)
+    r: FdSet @= FdSet(fds_bits: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    fds_add(fd: fds[0], @r)
+    print("select ", select_now(nfds: fds[0] + 1, @r), " ready ", fds_has(fd: fds[0], @r))

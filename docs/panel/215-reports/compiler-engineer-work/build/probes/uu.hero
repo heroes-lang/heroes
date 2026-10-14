@@ -1,0 +1,22 @@
+# Compiler-engineer, panel 215 build: a union record naming one arm, and a
+# named union held in a struct, bound by its narrow arm.
+extern "uu.h"
+    record UN
+        c: i8
+    record V
+        fd: i32
+    record Nu tag nu
+        kind: i32
+        via: V
+    function un_set(@p: UN)
+    function un_get(@p: UN) -> f64
+    function nu_set(@p: Nu)
+    function nu_get(@p: Nu) -> i64
+
+function main()
+    u: UN @= UN(c: 0)
+    un_set(@u)
+    print(un_get(@u))
+    n: Nu @= Nu(kind: 1, via: V(fd: 0))
+    nu_set(@n)
+    print(nu_get(@n))

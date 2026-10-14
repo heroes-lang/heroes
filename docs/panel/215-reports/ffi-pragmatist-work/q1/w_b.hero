@@ -1,0 +1,10 @@
+extern "cd.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+    function write(fd: i32, @buf: Cd counted_by n lent, n: u64) -> i64
+
+function main()
+    a: Cd @= Cd(c: 1, d: 2.0)
+    n = write(fd: 1, @a, n: 16)
+    print(n)

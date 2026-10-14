@@ -1,0 +1,14 @@
+extern "cd.h"
+    record Cd tag cd
+        c: i8
+        d: f64
+extern "openssl/sha.h" package "libcrypto"
+    record Sha256Ctx tag SHA256state_st partial
+        num: u32
+    function SHA256_Init(@c: Sha256Ctx) -> i32
+    function SHA256_Update(@c: Sha256Ctx, @data: Cd counted_by len lent, len: u64) -> i32
+
+function main()
+    a: Cd @= Cd(c: 1, d: 2.0)
+    c: Sha256Ctx @= Sha256Ctx(rest: zero)
+    print(SHA256_Init(@c), " ", SHA256_Update(@c, @a, len: 16))

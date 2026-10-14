@@ -1,0 +1,463 @@
+# Report on the Programming Language Heroes
+
+Heroes is a language for the age of LLMs. This document is the whole language.
+
+A production is written in Wirth's notation: `=` defines and `.` ends, `|`
+separates alternatives, `[ ]` encloses what is optional, `{ }` what repeats zero
+or more times, `( )` groups. A quoted word stands for itself; `ident`,
+`integer`, `float`, `string`, `character` and `piece` are what the lexer builds,
+and `NEWLINE`, `INDENT` and `DEDENT` come from the indentation. NEWLINE ends a
+statement, and a statement whose last part is a block ends with that block
+instead. Inside `(` `[` `{` a NEWLINE never ends a statement. A line there keeps
+its NEWLINE when it ends with a literal, `?`, `???`, a closing bracket, or a name
+or keyword other than `function` and `fail`; that NEWLINE may stand only before a
+closing bracket or a `,`, or where a production writes it, and any other line
+goes on below, at any column, so a long expression breaks after an operator.
+Where a NEWLINE separates without a `,`, the next line may not begin with a `-`
+that does not touch its operand. Outside brackets a line ends its statement: it
+may not end where the statement cannot, and the next line may not go on with it,
+so a long expression, a condition included, breaks inside parentheses.
+
+## 1. Files and layout
+- One file is one module; the file you compile holds `function main()`, which
+  takes nothing and produces nothing.
+- `use geom` binds `geom` to `geom.hero`'s declarations, written
+  qualified: `geom.dist2(a: p, b: q)`, `p: geom.Point`. Every
+  module you name needs its own `use`. No wildcard.
+- A `use` may be a path: `use syntax/decl` binds `decl`, the last part, and
+  `use syntax/decl as sd` binds `sd` instead. A file may not bind one name twice;
+  two files may name the same module differently. Every `use` starts at the
+  directory of the file you compile.
+- `#` comments to end of line, markdown inside. A comment directly above a
+  declaration documents it; `##` is a section heading.
+- Indentation is significant and rigid: exactly 4 spaces per level; a tab is a
+  compile error. No braces, no semicolons; a condition needs no parentheses.
+- Syntax is ASCII-only; comments and strings hold UTF-8 but no raw control
+  character (a comment's tab aside), bidirectional control, U+2028 or U+2029,
+  and a string is one line.
+
+    File = { NEWLINE } { Use | Declaration } .
+    Use  = "use" ident { "/" ident } [ "as" ident ] NEWLINE .
+
+## 2. Literals
+- A literal takes the type its context asks for — `b: u8 = 255`, and `b + 1` is a
+  `u8` — otherwise `i64`.
+- One `i64` is `0x1f` `0o37` `0b11111` or `31`, with `_` between any two digits.
+  A leading zero is an error, never octal. Every base writes a value, so a literal must fit its type.
+- A character literal is an integer: `'a'`, `'0'`, `' '`.
+- Seven escapes, and no others: `\n` `\t` `\r` `\\` `\"` in a string, `\'` instead
+  of `\"` in a character literal, and in a string alone `\u{1b}`, a code in
+  lowercase hex with no leading zero, for a character it holds no other way
+  (here ESC), never 0 or a surrogate. Any other escape is a compile error.
+- An `f` before a literal's opening quote makes `{e}` write that value as
+  `to_str` does: `f"line {n}: {word}"`. Any expression may stand there, and the
+  hole ends at the `}` that closes it, nested brackets and literals skipped;
+  `{{` and `}}` write one brace, and a lone `}` is an error. A literal without
+  the `f` is an error where its braces, read with an `f`, would be a hole
+  naming something and only what is in scope there, as in `"{i + 1}"`; braces
+  meant as text are then `{{` and `}}` in an `f` literal.
+
+## 3. Types
+| Type | Meaning |
+|---|---|
+| `i8` `i16` `i32` `i64` | signed integers, of that many bits |
+| `u8` `u16` `u32` `u64` | unsigned integers |
+| `f32` `f64` | floats, of that many bits — `f32` is C's `float` |
+| `bool` | `true` / `false` |
+| `str` | immutable UTF-8 string, indexed and measured in bytes |
+| `[T]` | dynamic array, indices from 0 |
+| `{K: V}` | map |
+| `T?` | fallible: a `T`, or an error |
+| `()` | nothing: what a function with no `->` returns |
+| `ptr` `cstr` | an opaque pointer and a C string; `nullptr` is the null of both |
+| `(function(A) -> B)` | a function value, of any arity; the parentheses are mandatory |
+
+- No implicit conversions, widths included: `1 + 2.0` is an error.
+- Every value behaves as an independent copy: after `b = a`, mutating `b`
+  never changes `a`. No aliasing exists among the values this language owns.
+  A `ptr` or a `cstr` is a copied ADDRESS, wherever it sits: two copies reach
+  one foreign thing, so a function taking one without `@` may still change, or
+  free, what C holds.
+- A record or variant holds its fields **by value**, so it may contain itself only
+  through `[T]` or `{K: V}`: `children: [Node]` is a tree, `child: Node` has no size.
+
+    Type     = Prefix { "[" integer "]" } [ "?" ] .
+    Prefix   = ident [ "." ident ] | "[" Type "]" | "{" Type ":" Type "}"
+             | "(" ")" | "(" "function" TypeArgs "->" Type ")" .
+    TypeArgs = "(" [ TypeArg { "," TypeArg } ] ")" .
+    TypeArg  = Type | ident ":" Type .
+
+## 4. Top-level declarations
+Every top-level line starts with its kind.
+
+```
+constant MAX_DEPTH: i64
+    64
+
+function dist2(a: Point, b: Point) -> i64
+    dx = a.x - b.x
+    dy = a.y - b.y
+    return dx*dx + dy*dy
+
+record Point
+    x: i64
+    y: i64
+
+variant Token
+    num
+        v: i64
+    plus
+    lparen
+```
+
+Declaration order never matters but a group's (section 13); mutual recursion
+needs no forward declarations. There are no mutable globals. Constants use SCREAMING_CASE, and
+a written body computes over literals and other constants. An integer operator in it that would abort, run or not, is a compile error at least where its operands are known: a literal, an operator on known values, a `=` name or written constant holding one, or a cell since its last write with no loop or branch between that writes it.
+
+    Declaration = "constant" ident ":" Type Block
+                | "function" ident [ Generics ] Params [ "->" Type ] Block
+                | "record" ident Fields
+                | "variant" ident INDENT { Case } DEDENT
+                | "test" string Block
+                | Extern .
+    Params      = "(" [ Param { "," Param } ] ")" .
+    Param       = [ "@" ] ident ":" Type .
+    Fields      = INDENT { ident ":" Type NEWLINE } DEDENT .
+    Case        = ident NEWLINE [ Fields ] .
+
+## 5. Bindings
+```
+x = 5              # immutable binding, type inferred
+v @= 0             # mutable cell, type inferred too
+v @ v + 1          # re-binding
+```
+`=` binds once, forever. `@=` declares a mutable cell, and `@` re-binds it, or a
+field or element inside one.
+Signatures are always explicit; inference is local only.
+All bindings are initialised. An unused binding or parameter is a compile
+error, and so is a cell nothing re-binds or an `@` parameter nothing writes or ends (section 13), an `@` argument counting; a read is a use and a write is not, except through an `@` parameter.
+`_` names anything you do not use: a payload (`.num _ => 0`), a parameter, a
+value. It binds nothing, so it is never unused and may repeat. A line that
+computes a value must use it: bind it, or discard it on purpose with `_ = f(x)`,
+which a `()` line refuses: it stands alone. A `_` never drops a `T?`: not
+`_ = e`, and not a `_` parameter written one. Answer the error. Both read the
+OUTERMOST type, so a `[T?]`, a record holding one, or a type parameter that
+arrived fallible is still dropped.
+Shadowing is a compile error: a `use` binds its name for the whole file, so nothing else in the file may take it.
+
+    Block     = INDENT { Statement } DEDENT .
+    Statement = ident Binding | Simple .
+    Binding   = [ ":" Type ] ( "=" | "@=" ) Expression NEWLINE .
+    Simple    = "_" Binding | Place "@" Expression NEWLINE
+              | "return" [ Expression ] NEWLINE
+              | "break" NEWLINE | "continue" NEWLINE
+              | "assert" Expression NEWLINE
+              | While | For | Expression NEWLINE .
+    Place     = ident { "." ident | "[" Expression "]" } .
+
+## 6. Failure: `T?`
+A `T?` is a `T` or an error: `ok(v)` or `fail(code:, msg:)`, each taking its type
+from the context; `ok()` is the `()?`. Codes are stable
+snake_case strings; read `e.code` and `e.msg`. No exceptions exist.
+An abort ends the program at once, saying why; no `T?` carries one.
+
+| Operation | Meaning |
+|---|---|
+| `match` on `.ok x` / `.err e` | destructure — the general way |
+| `expr?` | propagate the error to the caller (whose return type must be fallible) |
+| `.must()` | extract or abort |
+| `.default(v)` | extract or fall back |
+| `.is_err()` | boolean test; refused where `T` is itself fallible — `match` names both levels |
+
+```
+function head(xs: [str]) -> str?
+    if xs.len() == 0
+        return fail(code: "empty", msg: "no first element")
+    return ok(xs[0])
+
+match head(names)
+    .ok n  => print(n)
+    .err e => print(e.code)
+```
+
+## 7. Operators
+```
+arithmetic   + - * / %          (both sides one numeric type — never mixed)
+             +                  (str with str: concatenation)
+comparison   == != < <= > >=    (`< <= > >=`: a number only)
+boolean      && || !            (bool only; && and || short-circuit)
+bitwise      & | ^ ~ << >>      (i64 only; shift count 0..63 or it aborts)
+```
+Precedence, strongest first: call, `.` and `::` → unary `-` `!` `~` → `* / %` → `+ -`
+→ `<<` `>>` → `&` → `^` → `|` → comparisons → `&&` → `||`.
+
+`==` is structural equality on any two values of one type, recursively; a map's
+insertion order does not affect it. A `ptr`, a `cstr` and a function value compare
+as an address and not as an identity — free one and the next allocation may reuse
+that address. `nan` equals nothing, itself included, so `x != x` asks whether it is one;
+ordering one aborts, in `< <= > >=` and in `sort`.
+Overflow aborts at every width. Integer division by zero aborts. `/` and `%` truncate
+toward zero, so `-7 / 3` is `-2` and `-7 % 3` is `-1`.
+
+    Expression = Or .
+    Or         = And { "||" And } .
+    And        = Compare { "&&" Compare } .
+    Compare    = BitOr { ( "==" | "!=" | "<" | "<=" | ">" | ">=" ) BitOr } .
+    BitOr      = BitXor { "|" BitXor } .
+    BitXor     = BitAnd { "^" BitAnd } .
+    BitAnd     = Shift { "&" Shift } .
+    Shift      = Sum { ( "<<" | ">>" ) Sum } .
+    Sum        = Product { ( "+" | "-" ) Product } .
+    Product    = Unary { ( "*" | "/" | "%" ) Unary } .
+    Unary      = ( "-" | "!" | "~" ) Unary | Postfix .
+    Postfix    = Primary { "." ident [ Args ] | "::" ident | Args
+               | "[" Expression "]" | "?" } .
+    Primary    = integer | float | string | character | Interp | ident
+               | "true" | "false" | "nullptr" | "???" | "fail"
+               | "(" Expression ")" | "[" [ Expression { Sep Expression } ] "]"
+               | "{" [ Entry { Sep Entry } ] "}" | "." ident [ Args ]
+               | If | Match .
+    Entry      = Expression ":" Expression .
+    Sep        = "," | NEWLINE .
+    Interp     = piece { Expression piece } .
+
+## 8. Control flow
+`match` is the only destructuring construct:
+```
+value = match e
+    .num n  => n.v
+    .sum s  => sum_of(s.children)
+```
+- Exhaustive or compile error. `_` as a catch-all arm is FORBIDDEN on
+  variants (allowed on `i64`/`str`, where exhaustiveness is impossible).
+- `|` joins patterns: `.plus | .times => f()`.
+- An arm's body is an indented block, or inline one statement, where a
+  declaration or an `=` may name only `_`; a block's value is its last
+  expression. A jump (`return`, `break`, `continue`) is a valid arm body: it
+  yields no value and does not constrain the `match`'s type. An arm that does
+  nothing holds `_ = 0` — `continue` is not one.
+- A statement after a jump, in its block, is a compile error. A function with
+  a `->` must `return` on every path that reaches its end, and `exit(code:)`,
+  `assert false` and a `while true` with no `break` of its own end a path.
+- A block or an arm leaves, and owes no value, once a statement in it ends a
+  path or is an `if` or a `match` every branch of which leaves; only a jump
+  refuses the statement after it.
+
+`if` and `match` are expressions and may stand as statements; there is no ternary.
+`if cond` / `else if` / `else` take only `bool` — there is no truthiness.
+Loops: `while cond` and `for x in xs`, over an array or a `range` (section 11).
+
+    While   = "while" Expression Block .
+    For     = "for" ident "in" Expression Block .
+    If      = "if" Expression Block { "else" "if" Expression Block } [ "else" Block ] .
+    Match   = "match" Expression INDENT { Arm } DEDENT .
+    Arm     = Pattern { "|" Pattern } "=>" ( Simple | Block ) .
+    Pattern = "." ident [ ident ] | "_" | [ "-" ] ( integer | string | character ) .
+
+## 9. Functions and calls
+- Record construction is a call with field names, always mandatory:
+  `Point(x: 3, y: 4)`, and a variant's case `.num(v: 7)` or `.plus`.
+- `Point::x` is the `str` `"x"`, the field's own name; a name the record does
+  not declare is a compile error. Write a field name to anything outside this
+  language with it.
+- When two parameters in a signature share a type, named arguments are
+  mandatory at the call site: `copy(from: a, to: b)`, and a function type names
+  the same two, `(function(from: str, to: str) -> ())`. The names are part of the
+  type: the other order is another type, and a call through a value names each in
+  its own position. A function that has such a pair names it as the type does.
+- `x.f(y)` is sugar for `f(x, y)` (UFCS). There are no methods, no
+  inheritance, no overloading, no default values, no user variadics, no
+  anonymous functions.
+- Mutable parameters are marked `@` in the signature and at the call site:
+  `function advance(@l: Lex)` … `advance(@l)`. Semantics: the callee works on
+  the caller's place itself. UFCS does
+  not apply when the first parameter is `@`.
+- Top-level functions are values: `xs.fold(0, add)`.
+- Generics: on functions only, no constraints, always inferred, never written
+  at the call site: `function map<A, B>(xs: [A], f: (function(A) -> B)) -> [B]`.
+  A type parameter takes its type from the arguments that have one of their
+  own, else from the type the context asks for, else from a generic call or a
+  literal among them (section 2); `ok(...)`, `[]` and a case name give none, and
+  a call that says none of these is an error. `xs.map(double)` takes both from
+  `double`'s signature.
+- Recursion too deep aborts.
+
+    Args     = "(" [ Arg { "," Arg } ] ")" .
+    Arg      = [ ident ":" ] [ "@" ] Expression .
+    Generics = "<" ident { "," ident } ">" .
+
+## 10. Strings, arrays, maps
+`s[i]` yields a `u8`; iterate characters with
+`s.chars()`, which yields single-character `str`. A container literal separates
+elements by newline across lines and by comma on one, and an empty one needs an
+annotation: `xs: [i64] = []` · `m: {str: i64} @= {}`.
+```
+m: {str: i64} @= {}
+m["a"] @ 1
+print(m["b"].default(0))
+for k in sort(keys(m))
+    print(k, m[k].must())
+```
+
+`+` on `str` copies both sides — a concatenation loop is quadratic; `join` and
+`repeat` build in one pass. `xs @ xs.push(4)` grows in place when `xs` is a plain
+name; reached through a field or an index it copies the whole array, so lend the
+array itself to an `@` parameter or hoist it into a name.
+
+`m[k]` is a `V?` with code `missing_key`; `m[k] @ v` inserts or replaces;
+`keys(m) -> [K]` gives the keys in no order.
+An out-of-bounds index or slice aborts, and so does a slice that splits a character.
+
+## 11. Built-ins
+Built-ins: `print(...)` · `len` · `push` · `slice(from:, to:)` ·
+`chars` · `keys` · `join(xs, sep)` · `repeat(s, n)` · `sort` (ascending: a number by value, a `str` by bytes, `false` before `true`; never a type parameter) ·
+`to_f32` · `to_f64` · `to_str` · `to_i8` `to_i16` `to_i32` `to_i64` `to_u8` `to_u16`
+`to_u32` `to_u64` — and, written in Heroes: `map` · `filter`, keeping what
+the function accepts · `fold` (left, its function names them `acc` then `item`) · `find` (the first it accepts, else `not_found`) ·
+`any` · `all` · `range`.
+`slice` and `range(from: a, to: b) -> [i64]` exclude `to`.
+`print` writes its values with no
+separator and exactly one trailing newline, and takes the types this language
+renders as text: a number, `str` or `bool`. A float prints a point or
+exponent (`1.0`, `1e-06`), or `inf`, `-inf`, `nan`, and reads back as the same value; a
+`bool` prints `true` or `false`.
+Convert with `to_<type>`, and the name says whether it
+can fail: `to_str`, `to_f32` and `to_f64` cannot, so they give a value; `to_i8`
+… `to_u64` give a `T?`, because the number may not fit. `to_i64` takes a float
+too, truncating toward zero. Nothing fails to fit a float: too large is `inf`,
+and `to_f32` rounds.
+Files and the process, also provided: `read_file(path: str) -> str?` (failing
+`file_not_found`, `not_text` or `read_failed`) · `write_file(path: str, text:
+str) -> ()?` (`write_failed`) · `args() -> [str]` (the arguments after the
+program name; one that is not UTF-8 aborts) · `args_checked() -> [str?]` (which
+does not) · `exit(code: i64)` (ends the program).
+
+## 12. Tests and holes
+```
+test "3-4-5 triangle"
+    assert dist2(a: Point(x: 0, y: 0), b: Point(x: 3, y: 4)) == 25
+```
+`test` blocks run only when asked for; ordinary builds ignore them. An
+`assert` failure shows the source expression, and both sides where `print`
+takes them; where a side is an aggregate it shows the expression alone.
+
+`???` is a valid expression anywhere. It is not an error: the compiler
+reports what belongs there (the expected type, what is in scope). A program
+with holes type-checks everything else but produces no binary.
+
+## 13. FFI
+Anything beyond this document — sockets, maths, JSON, databases — comes from C
+libraries. A group names its header, and `link` a library when the symbols need one; C
+reads a module's headers in the order its groups are written: one that needs
+another's names comes after it, and one defining `_GNU_SOURCE` first. clang
+checks every result type, constant and record field against that header, and a result may be
+wider than C's. A **parameter** and a **field** are declared at the header's own
+width and sign — `i32` where C says int, `i8` where it says char, `u64` where it
+says `size_t` — and one that
+disagrees is refused, except a parameter C converts exactly (`i16` against int)
+and what a `ptr` points at. A C out-parameter is an `@` parameter, and C receives
+the place itself, which it may keep only while the place does not move: a copy,
+a return and an array's growth move it. What it points at is ONE element, held
+to the same width and sign — `@n: u64` where it says `size_t *`:
+```
+extern "sqlite3.h" link "sqlite3"
+    constant SQLITE_OK: i64
+    record Db tag sqlite3
+    function sqlite3_open(path: cstr lent, @out: Db acquires sqlite3_close) -> i64
+    function sqlite3_close(db: Db consumes) -> i64
+```
+Where C writes several, `@md: [u8] counted_by N lent` hands C `N` elements, the
+array's own then zeros, and leaves the array exactly those `N`: numbers, the
+group's records, or bytes where the header says `void *`, `N` the sibling that
+tells C how many, a constant of the group or a number. C reaching past them
+aborts, or fails the call where the kernel writes, and so past a local lent with
+`@`, which C receives itself; past a field or an element it is the binding's word.
+A callback is a **parameter**, never a result; its parameters follow the same rule
+and `()` is `void`: `atexit(f: (function() -> ()))`.
+
+A group's `record` is the header's struct: all its fields, and the same name
+unless the header writes it after the word struct, which `tag` gives:
+`record FileStat tag stat partial`. A
+field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed
+array of one: `i32[4]`, never a `[T]`; build one with `[a, b, c, d]`, as many
+elements as the type says. A bit-field is none of these: leave it to `partial`.
+`record Font partial` names only some, and its size stays C's, not the field
+list's. End a construction with `rest: zero` and every field sharing no byte
+with one it names is zero, those `partial` leaves out included; only a group's
+record has it. A field is a name C reads as `s.name`: an anonymous union's or
+struct's member, or a header macro's. Where C reads `s.u.n`, `u` is the field,
+typed by the record of its union's typedef, or left to `partial`. A union's
+members share its bytes: a record names one or more of each union, reads any,
+and is built naming exactly one, or none when it ends with `rest: zero`, an
+anonymous struct's fields counting as one.
+Comparing a `partial` record, or one holding a union's field that is not an
+integer, pointer or array of them as wide as the union, and using it as a map
+key are compile errors, for it and for any value holding it. One
+with a `tag` and no fields is a **handle**, C's
+pointer to that type: `record Db tag sqlite3` is `sqlite3 *`, and `tag void` is
+`void *`: a `void *` C hands out for the program to give back is declared as one.
+`nullptr` is its null and `==` compares the address; a map key is an error. A
+parameter declared with it takes no other handle, and two records may not name
+one tag but `void`.
+A group's `constant` has no body: the header holds the value.
+
+`s.cstr()` lends a `str` to C and, like `s.lease()`, aborts on one holding a
+zero byte; outside a group nothing answers `cstr` and no record holds one. `c.validated()` copies one back as a `str?`, and a
+null one fails `null_cstr`; `f.validated_bytes()` does the same for a field of
+bytes, reading to its first zero or the whole field, and for a `[u8]` every
+byte, and either fails `not_text`.
+Nothing lends a field to `cstr`, which promises a zero the field does not;
+`f.ptr()` lends a binding's field to a `ptr` parameter declared `counted_by n`,
+naming the sibling C reads the extent from, a constant of the group or a number,
+and one past the field is refused; a group's record lent whole with `@` may say it too.
+C writes back through the lend only where the binding is a `@` name. A lend
+lives for its call and no longer: a parameter, `@` or not, is taken to keep what
+it is handed unless declared `lent`, and a lend reaches only one so declared.
+`x: cstr @= s.lease()` is a COPY of the bytes that C may read for as long as the
+program says, and `end_lease(@x)` frees it and empties the cell. A lend and a
+lease name stand only as an argument of a call, nothing else writes a lease's
+cell, and a lease nobody ends, like a handle nobody consumes, aborts when
+`main` returns, saying how many. No word says C frees what it is handed; one
+that frees a lease kills the process, naming the leases live. Bytes C owns come
+from its own allocator, with their disposer.
+`owned sqlite3_free` after a `cstr` result or a `char **` out-parameter: the
+compiler frees that string with that function, hands it over as a `str?` (the
+`@` cell is only written), and refuses your own call of it. `consumes` after a
+parameter says the call ends that value's
+life, so passing one the function borrowed is an error: mark the parameter `@`
+and the value does not survive the call. `acquires sqlite3_finalize` after a result
+or `@` out-parameter reaching a handle says the call begins that handle's life and names
+the one that ends it, which the program owes it. It may name several,
+`acquires sqlite3_close | sqlite3_close_v2`, and any one of them ends the life;
+giving the handle to a `consumes` call the mark did not name aborts before C
+runs. Giving one back ends it: handing it to C again aborts, `==` on it aborts, and so does a copy made before, unless C has since handed its address out again or a million other lives have ended. `borrows` says the call hands
+back one it keeps, and where any `extern` consumes a handle type every call handing
+one back says which it is. `transfers fclose` after a parameter hands the life into
+another value of the call that outlives it, a handle parameter the call keeps or
+the handle its result begins or joins, which ends it with that call: one of the
+names must be one the handle's own mark names, or the call aborts before C runs; a
+call with no such receiver is refused, and a transfer into a handle the call hands
+back is not made when that handle is null; once made, the program's own name for
+it has ended as if given back. `retains json_object_put` after a result
+or a parameter says the call adds a reference to a handle: on one a mark began,
+its life goes on and the mark must share a name with the one that began it; on one
+nothing began, it begins a life owed to the mark; either way the program owes one
+more release. `when 0` after a result names the result that means the call did
+what it was handed, and its `consumes`, `transfers` and `retains` count only then,
+so it needs one of them; the value is an integer within the result's type for an
+integer result, `true` or `false` for a `bool`, and a call returning nothing takes
+no clause. A value takes one of the five words, and they mark only a value
+that reaches a handle, as itself or through a field or an array element; anywhere
+else they are errors.
+A group may name a **package** instead of a library: `extern "raylib.h" package "raylib"`
+asks the system where its headers and libraries are and what else it needs.
+
+    Extern = "extern" string [ ( "link" | "package" ) string ] NEWLINE
+             INDENT { Member } DEDENT .
+    Member = "function" ident "(" [ CParam { "," CParam } ] ")"
+               [ "->" Type [ "owned" ident ] [ ( "acquires" | "retains" ) ident { "|" ident } | "borrows" ]
+                 [ "when" ( integer | "true" | "false" ) ] ] NEWLINE
+           | "constant" ident ":" Type NEWLINE
+           | "record" ident [ "tag" ident ] [ "partial" ] ( Fields | NEWLINE ) .
+    CParam = [ "@" ] ident ":" Type [ "counted_by" ( ident | integer ) ] [ "lent" ]
+             [ "owned" ident ] [ "consumes" | ( "transfers" | "acquires" | "retains" ) ident { "|" ident } | "borrows" ] .

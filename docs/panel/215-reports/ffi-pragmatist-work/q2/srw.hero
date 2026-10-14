@@ -1,0 +1,20 @@
+# ffi-pragmatist, panel 215, Q2 on Windows: an SRWLOCK copied while held
+extern "win.h"
+    record SrwBox tag srwbox partial
+        tag: i32
+    function srw_init(@b: SrwBox)
+    function srw_lock(@b: SrwBox)
+    function srw_try(@b: SrwBox) -> i32
+    function srw_unlock(@b: SrwBox)
+
+function main()
+    a: SrwBox @= SrwBox(tag: 1, rest: zero)
+    srw_init(@a)
+    srw_lock(@a)
+    b: SrwBox @= a
+    print("copy: try ", srw_try(@b))
+    srw_unlock(@b)
+    print("copy: try after its unlock ", srw_try(@b))
+    srw_unlock(@b)
+    srw_unlock(@a)
+    print("original: try after its unlock ", srw_try(@a))

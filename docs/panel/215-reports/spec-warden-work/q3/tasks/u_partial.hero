@@ -1,0 +1,9 @@
+extern "sys/utsname.h"
+    record Utsname tag utsname partial
+        sysname: i8[256]
+    function uname(@name: Utsname lent) -> i32
+
+function main()
+    u: Utsname @= Utsname(rest: zero)
+    assert uname(@u) == 0
+    print(u.sysname.validated_bytes().must())

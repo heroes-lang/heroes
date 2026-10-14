@@ -1,0 +1,13 @@
+# A glibc spinlock copied while held: type identity cannot tell it from an int.
+extern "spin.h"
+    record SBox tag sbox partial
+        n: i64
+    function sp_init(@b: SBox) -> i32
+    function sp_lock(@b: SBox) -> i32
+    function sp_try(@b: SBox) -> i32
+
+function main()
+    a: SBox @= SBox(n: 0, rest: zero)
+    print("init ", sp_init(@a), " lock ", sp_lock(@a))
+    b: SBox @= a
+    print("copy trylock ", sp_try(@b))

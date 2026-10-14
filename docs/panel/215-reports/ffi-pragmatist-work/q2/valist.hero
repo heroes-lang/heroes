@@ -1,0 +1,8 @@
+# ffi-pragmatist, panel 215, Q2: va_list bound as a record
+extern "nc2.h"
+    record VaList tag va_list partial
+        gp_offset: u32
+    function vprintf(format: cstr lent, args: VaList) -> i32
+
+function main()
+    print("unreached")

@@ -1,0 +1,14 @@
+extern "shapes.h"
+    record S6 tag s6
+        kind: i32
+        i: i32
+    function dirty()
+    function s6_nz(@t: S6 lent) -> i64
+    function s6_hi(@t: S6 lent) -> i16
+
+function main()
+    b @= S6(kind: 1, i: 196610)
+    print(s6_hi(@b))
+    dirty()
+    z @= S6(kind: 1, rest: zero)
+    print(s6_hi(@z), " ", s6_nz(@z))

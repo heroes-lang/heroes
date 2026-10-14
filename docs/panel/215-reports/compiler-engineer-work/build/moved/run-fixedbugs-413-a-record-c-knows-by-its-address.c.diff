@@ -1,0 +1,139 @@
+228a229,232
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 35 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+232c236
+< #line 233 "fixedbugs413arecordcknowsbyitsaddress.c"
+---
+> #line 237 "fixedbugs413arecordcknowsbyitsaddress.c"
+244c248
+< #line 245 "fixedbugs413arecordcknowsbyitsaddress.c"
+---
+> #line 249 "fixedbugs413arecordcknowsbyitsaddress.c"
+278a283,286
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*ph0_k), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 42 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+290c298
+< #line 291 "fixedbugs413arecordcknowsbyitsaddress.c"
+---
+> #line 299 "fixedbugs413arecordcknowsbyitsaddress.c"
+357a366,369
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)(((*ph0_ks) == NULL || t14 < 0 || t14 >= (*ph0_ks)->len) ? ((void)hero_array_at_mut((*ph0_ks), t14), hero_unreachable()) : (void)0), (void)((*ph0_ks)->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)((*ph0_ks) + 1) + t14)), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 49 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 49 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+381c393
+< #line 382 "fixedbugs413arecordcknowsbyitsaddress.c"
+---
+> #line 394 "fixedbugs413arecordcknowsbyitsaddress.c"
+402c414
+< #line 403 "fixedbugs413arecordcknowsbyitsaddress.c"
+---
+> #line 415 "fixedbugs413arecordcknowsbyitsaddress.c"
+427a440,443
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h0_k, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+433a450,453
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h0_k, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 56 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+479a500,503
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)((h1_ks == NULL || t9 < 0 || t9 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t9), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t9)), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+487a512,515
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)((h1_ks == NULL || t12 < 0 || t12 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t12), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t12)), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 58 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+535a564,567
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)((h2_ws == NULL || t21 < 0 || t21 >= h2_ws->len) ? ((void)hero_array_at_mut(h2_ws, t21), hero_unreachable()) : (void)0), (void)(h2_ws->elem->size != sizeof(struct wrap) ? hero_unreachable() : (void)0), (struct wrap *)(void *)(h2_ws + 1) + t21)).k, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+543a576,579
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)((h2_ws == NULL || t24 < 0 || t24 >= h2_ws->len) ? ((void)hero_array_at_mut(h2_ws, t24), hero_unreachable()) : (void)0), (void)(h2_ws->elem->size != sizeof(struct wrap) ? hero_unreachable() : (void)0), (struct wrap *)(void *)(h2_ws + 1) + t24)).k, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 60 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+559a596,599
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h3_p.k[((uint64_t)(t27) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t27))], sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+564a605,606
+> #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h3_p.k[((uint64_t)(t30) >= UINT64_C(2) ? (hero_panic("index out of range for a fixed array"), (int64_t)0) : (t30))], sizeof(struct keeper), 1, hero_pad_s0, 2);
+565a608,609
+>     }
+> #line 62 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+583a628,631
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h4_w.k, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+587a636,639
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h4_w.k, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 64 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+607a660,663
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h5_a, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 66 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 66 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+628a685,688
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)((h1_ks == NULL || t45 < 0 || t45 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t45), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t45)), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 67 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 67 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+648a709,712
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h6_b, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 69 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 69 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+669a734,737
+> #line 71 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h7_d, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 71 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+687a756,759
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)((h1_ks == NULL || t58 < 0 || t58 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t58), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t58)), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+695a768,771
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)((h1_ks == NULL || t61 < 0 || t61 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t61), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t61)), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+702a779,782
+> #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&(*((void)((h1_ks == NULL || t64 < 0 || t64 >= h1_ks->len) ? ((void)hero_array_at_mut(h1_ks, t64), hero_unreachable()) : (void)0), (void)(h1_ks->elem->size != sizeof(struct keeper) ? hero_unreachable() : (void)0), (struct keeper *)(void *)(h1_ks + 1) + t64)), sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 72 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+776a857,860
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h8_copy, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+782a867,870
+>     { static const size_t hero_pad_s0[] = {__builtin_offsetof(struct keeper, self), sizeof(((struct keeper *)0)->self), __builtin_offsetof(struct keeper, uses), sizeof(((struct keeper *)0)->uses)}; hero_pad_zero(&h0_k, sizeof(struct keeper), 1, hero_pad_s0, 2);
+> #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+>     }
+> #line 75 "tests/golden/run/fixedbugs-413-a-record-c-knows-by-its-address.hero"
+792c880
+< #line 793 "fixedbugs413arecordcknowsbyitsaddress.c"
+---
+> #line 881 "fixedbugs413arecordcknowsbyitsaddress.c"
+862c950
+< #line 863 "fixedbugs413arecordcknowsbyitsaddress.c"
+---
+> #line 951 "fixedbugs413arecordcknowsbyitsaddress.c"

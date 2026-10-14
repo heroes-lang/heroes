@@ -1,0 +1,63 @@
+heroes 0.4.0
+heroes 0.4.0
+Debian clang version 22.1.8 (1~deb13u4)
+shapes/mx.hero heroes: build 0 | init 0|lock m 0|trylock m2 16|unlock m2 0|lock m2 0|unlock m 0|unlock m2 0|destroy m 0|destroy m2 0|
+shapes/mx.hero heroes-c: build 1 |  1 error[ffi_lock_copied] 
+shapes/copy.hero heroes: build 0 | 3|
+shapes/copy.hero heroes-c: build 1 |  10 error[ffi_lock_copied] 
+shapes/ctor.hero heroes: build 0 | 0|
+shapes/ctor.hero heroes-c: build 1 |  2 error[ffi_lock_copied] 
+shapes/arr.hero heroes: build 0 | 02|
+shapes/arr.hero heroes-c: build 1 |  2 error[ffi_lock_copied] 
+shapes/holder.hero heroes: build 0 | 01|
+shapes/holder.hero heroes-c: build 1 |  1 error[ffi_lock_copied] 
+shapes/b.hero heroes: build 0 | 3|
+shapes/b.hero heroes-c: build 0 | 3|
+shapes/race.hero heroes: build 0 | 200000 true|
+shapes/race.hero heroes-c: build 0 | 200000 true|
+shapes/lend.hero heroes: build 0 | 2 7 1|
+shapes/lend.hero heroes-c: build 0 | 2 7 1|
+kept/r01/b.hero heroes: build 0 | 3|
+kept/r01/b.hero heroes-c: build 0 | 3|
+kept/r02/b.hero heroes: build 0 | 3|
+kept/r02/b.hero heroes-c: build 0 | 3|
+kept/r03/b.hero heroes: build 0 | 3|
+kept/r03/b.hero heroes-c: build 0 | 3|
+kept/r04/b.hero heroes: build 0 | 3|
+kept/r04/b.hero heroes-c: build 0 | 3|
+kept/r05/b.hero heroes: build 0 | 3|
+kept/r05/b.hero heroes-c: build 0 | 3|
+kept/r06/b.hero heroes: build 0 | 3|
+kept/r06/b.hero heroes-c: build 0 | 3|
+kept/r07/b.hero heroes: build 0 | 3|
+kept/r07/b.hero heroes-c: build 0 | 3|
+kept/r08/b.hero heroes: build 0 | 3|
+kept/r08/b.hero heroes-c: build 0 | 3|
+kept/r09/b.hero heroes: build 0 | 3|
+kept/r09/b.hero heroes-c: build 0 | 3|
+kept/r10/b.hero heroes: build 0 | 3|
+kept/r10/b.hero heroes-c: build 0 | 3|
+g/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero heroes: exit 0 vs .expected: same 
+g/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero heroes-c: exit 0 vs .expected: same 
+  today and route identical
+g/fixedbugs-413-a-record-c-knows-by-its-address.hero heroes: exit 0 vs .expected: same 
+g/fixedbugs-413-a-record-c-knows-by-its-address.hero heroes-c: exit 0 vs .expected: same 
+  today and route identical
+g/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero heroes: exit 0 vs .expected: same 
+g/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero heroes-c: exit 0 vs .expected: same 
+  today and route identical
+g/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero heroes: exit 134 vs .expected: DIFF 
+g/fixedbugs-413-an-element-past-the-end-is-refused-when-the-call-is-made.hero heroes-c: exit 134 vs .expected: DIFF 
+  today and route identical
+g/fixedbugs-413-libuv-keeps-every-handles-address.hero heroes: exit 1 vs .expected: DIFF       1 error[ffi_package] 
+g/fixedbugs-413-libuv-keeps-every-handles-address.hero heroes-c: exit 1 vs .expected: DIFF       1 error[ffi_package] 
+  today and route identical
+g/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero heroes: exit 0 vs .expected: same 
+g/fixedbugs-413-zlib-knows-a-stream-by-its-address.hero heroes-c: exit 0 vs .expected: same 
+  today and route identical
+ct/main.hero heroes: exit 0 vs .expected: same 
+ct/main.hero heroes-c: exit 0 vs .expected: same 
+  today and route identical
+error[ffi_lock_copied]: this copies a `Box`, whose C struct `struct box` holds a `pthread_mutex_t` at `m`, which C forbids to copy
+  at shapes/mx.hero:15:16
+     |

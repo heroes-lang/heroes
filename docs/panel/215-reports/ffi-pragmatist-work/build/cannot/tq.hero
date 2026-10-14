@@ -1,0 +1,14 @@
+# A TAILQ_HEAD copied while empty: the copy's tail pointer points into the original.
+extern "tq.h"
+    record QBox tag qbox partial
+        n: i64
+    function q_init(@b: QBox)
+    function q_push(@b: QBox, v: i64)
+    function q_first(@b: QBox) -> i64
+
+function main()
+    a: QBox @= QBox(n: 0, rest: zero)
+    q_init(@a)
+    b: QBox @= a
+    q_push(@b, v: 7)
+    print("pushed into the copy: copy first ", q_first(@b), ", original first ", q_first(@a))

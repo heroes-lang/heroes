@@ -1,0 +1,5 @@
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77)
+today heroes build -O0: true 0 7 | true 0 7 | true 0 7
+today heroes build -O2: true 0 0 | true 0 0 | true 0 0
+g heroes build -O0: true 0 0 | true 0 0 | true 0 0
+g heroes build -O2: true 0 0 | true 0 0 | true 0 0

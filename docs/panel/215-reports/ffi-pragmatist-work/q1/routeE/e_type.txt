@@ -1,0 +1,2 @@
+e_type.c:9:22: error: incompatible pointer types passing 'struct hero_cd *' to parameter of type 'const struct cd *' [-Werror,-Wincompatible-pointer-types]
+1 error generated.

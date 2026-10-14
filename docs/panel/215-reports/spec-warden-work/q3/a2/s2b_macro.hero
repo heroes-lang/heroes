@@ -1,0 +1,13 @@
+extern "macro.h"
+    record Tagged tag tagged
+        kind: i32
+        fd: i32
+        handle: ptr
+    function tg_kind(@t: Tagged lent) -> i32
+
+function main()
+    t @= Tagged(kind: 2, rest: zero)
+    print(tg_kind(@t))
+    print(t.fd)
+    u @= Tagged(kind: 3, fd: 7)
+    print(tg_kind(@u), " ", u.fd)

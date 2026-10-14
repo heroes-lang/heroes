@@ -1,0 +1,17 @@
+# ffi-pragmatist, panel 215, Q3: glibc's fd_set, built: literal; a pipe made readable, then select
+extern "q3.h"
+    record fd_set
+        __fds_bits: i64[16]
+    function pipe(@fds: [i32] counted_by 2 lent) -> i32
+    function write(fd: i32, data: cstr lent, n: u64) -> i64
+    function fds_add(fd: i32, @s: fd_set)
+    function fds_has(fd: i32, @s: fd_set) -> i32
+    function select_now(nfds: i32, @r: fd_set) -> i32
+
+function main()
+    fds: [i32] @= []
+    _ = pipe(@fds)
+    _ = write(fd: fds[1], data: "x".cstr(), n: 1)
+    r: fd_set @= fd_set(__fds_bits: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    fds_add(fd: fds[0], @r)
+    print("select ", select_now(nfds: fds[0] + 1, @r), " ready ", fds_has(fd: fds[0], @r))

@@ -1,0 +1,15 @@
+# Critic, panel 215 pass 2: a union arm narrower than the arm C writes, with
+# a declared field after the union. Prints 1234605616436508552 when nothing
+# writes over `h`.
+extern "unimid.h"
+    record M tag m
+        kind: i32
+        fd: i32
+        tail: i32
+    function set_h(@p: M)
+    function get_h(@p: M) -> i64
+
+function main()
+    v: M @= M(kind: 1, tail: 7, rest: zero)
+    set_h(@v)
+    print(get_h(@v))

@@ -1,0 +1,9 @@
+207a208,211
+> #line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+>     { static const size_t hero_pad_s0[] = {0, (__builtin_classify_type(*(struct span *)0) == 13 ? sizeof(struct span) : 0), __builtin_offsetof(struct span, lo), sizeof(((struct span *)0)->lo), __builtin_offsetof(struct span, hi), sizeof(((struct span *)0)->hi)}; hero_pad_zero(&h1_s, sizeof(struct span), 1, hero_pad_s0, 3);
+> #line 17 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
+>     }
+233c237
+< #line 234 "ffilentonanoutparameter.c"
+---
+> #line 238 "ffilentonanoutparameter.c"

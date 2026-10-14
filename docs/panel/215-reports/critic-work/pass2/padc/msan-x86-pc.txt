@@ -1,0 +1,15 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77)
+today pc.hero: hero_pad_zero lines 0
+today pc.hero -O0: exit 1, 6 reports at: 1 pc.hero:42; 1 pc.hero:45; 1 pc.hero:48; 2 pc.hero:50;; printed: 16 16 16 32
+today pc.hero -O1: exit 1, 5 reports at: 1 pc.hero:42; 1 pc.hero:45; 1 pc.hero:48; 1 pc.hero:50;; printed: 16 16 16 32
+today pc.hero -O2: exit 1, 5 reports at: 1 pc.hero:42; 1 pc.hero:45; 1 pc.hero:48; 1 pc.hero:50;; printed: 16 16 16 32
+today pc.hero -O3: exit 1, 5 reports at: 1 pc.hero:42; 1 pc.hero:45; 1 pc.hero:48; 1 pc.hero:50;; printed: 16 16 16 32
+today pc.hero -O2 -fno-inline: exit 1, 6 reports at: 1 pc.hero:42; 1 pc.hero:45; 1 pc.hero:48; 2 pc.hero:50;; printed: 16 16 16 32
+g pc.hero: hero_pad_zero lines 3
+g pc.hero -O0: exit 1, 4 reports at: 1 pc.hero:45; 2 pc.hero:50;; printed: 16 16 16 32
+g pc.hero -O1: exit 1, 3 reports at: 1 pc.hero:45; 1 pc.hero:50;; printed: 16 16 16 32
+g pc.hero -O2: exit 1, 3 reports at: 1 pc.hero:45; 1 pc.hero:50;; printed: 16 16 16 32
+g pc.hero -O3: exit 1, 3 reports at: 1 pc.hero:45; 1 pc.hero:50;; printed: 16 16 16 32
+g pc.hero -O2 -fno-inline: exit 1, 4 reports at: 1 pc.hero:45; 2 pc.hero:50;; printed: 16 16 16 32
+docker run --rm -v "$PWD":/src:ro heroes-linux bash /src/build/padc/msan_c2.s  0.02s user 0.03s system 0% cpu 4:12.95 total

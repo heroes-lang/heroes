@@ -1,0 +1,13 @@
+WARNING: The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested
+leg x86_64, Debian clang version 22.1.8 (++20260613092233+e80beda6e255-1~exp1~20260613092250.77)
+small.hero: memset lines in its C: 0
+small.hero -O0: 3 reports at: small.hero:29 
+small.hero -O1: 0 reports at: none
+small.hero -O2: 0 reports at: none
+small.hero -O3: 0 reports at: none
+small_rz.hero: memset lines in its C: 3
+small_rz.hero -O0: 3 reports at: small_rz.hero:29 
+small_rz.hero -O1: 0 reports at: none
+small_rz.hero -O2: 0 reports at: none
+small_rz.hero -O3: 0 reports at: none
+exit 0
