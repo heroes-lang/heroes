@@ -65,9 +65,11 @@ constant LLDB: str
 # Three cases on 2026-10-12, the day the suite landed: the hit, the stepping
 # and the locals; ten on 2026-10-13: the bindings alone and a lookup's block
 # (panel 213's R1), and the five `formatter-` cases that came with
-# `editors/lldb/heroes_lldb.py` (R2).
+# `editors/lldb/heroes_lldb.py` (R2); thirteen on 2026-10-14, batch 17's
+# three: a step into a literal constant (defect 2043), a frame beside shared
+# hidden declarations (defect 2050), a step into a header's constant (2068).
 constant LEAST: i64
-    10
+    13
 
 # What the skip says on Windows, where the machine can be asked and answers
 # nothing: the reason recorded on the CI's leg, and where the mapping is judged
