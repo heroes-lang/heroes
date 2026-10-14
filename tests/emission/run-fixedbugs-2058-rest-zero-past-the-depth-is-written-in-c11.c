@@ -382,7 +382,7 @@ void h_fixedbugs2058restzeropastthedepthiswritteninc11_main(void) {
 #line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
 #define h0_w (*hero_lend_h0_w)
 #line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
-    W *const hero_lend_h0_w = (W *)hero_lend_local(sizeof(W), "fixedbugs2058restzeropastthedepthiswritteninc11.main", "w"); D33 h1_d; HERO_NODEBUG int32_t t1; HERO_NODEBUG W t2; HERO_NODEBUG W t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG D33 t7; HERO_NODEBUG D33 t8; HERO_NODEBUG int32_t t9; HERO_ENTRY_STOP; goto bb0;
+    W *const hero_lend_h0_w = (W *)hero_lend_local(sizeof(W), "fixedbugs2058restzeropastthedepthiswritteninc11.main", "w"); D33 h1_d; HERO_NODEBUG int32_t t1, t4, t6, t9; HERO_NODEBUG W t2, t3; HERO_NODEBUG int64_t t5; HERO_NODEBUG D33 t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 143 "tests/golden/run/fixedbugs-2058-rest-zero-past-the-depth-is-written-in-c11.hero"
 bb0:
     t1 = INT64_C(7);

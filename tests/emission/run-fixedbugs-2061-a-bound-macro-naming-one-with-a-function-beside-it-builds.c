@@ -154,7 +154,7 @@ void h_fixedbugs2061aboundmacronamingonewithafunctionbesideitbuilds_main(void);
 #line 12 "tests/golden/run/fixedbugs-2061-a-bound-macro-naming-one-with-a-function-beside-it-builds.hero"
 void h_fixedbugs2061aboundmacronamingonewithafunctionbesideitbuilds_main(void) {
 #line 12 "tests/golden/run/fixedbugs-2061-a-bound-macro-naming-one-with-a-function-beside-it-builds.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-2061-a-bound-macro-naming-one-with-a-function-beside-it-builds.hero"
 bb0:
     t1 = 0x1.8p+1;
