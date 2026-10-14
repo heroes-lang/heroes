@@ -199,3 +199,11 @@ At the landing's batch gate:
 Pending: https://github.com/heroes-lang/heroes/issues/2057 asks for it, naming the sitting as `panel 214`.
 A yes settles R1 to R8 as written and the specification's silence the way the author answers the
 question above; it does not settle routes I or G, which stay recorded and unbuilt.
+
+**Ratified, 2026-10-14**, a reading: the author's word at 08:13, meant as *I ratify everything and
+accept all your suggestions, proceed*, given on the coordinator's list of that morning whose first item
+was this sitting, recommended for ratification with the specification left silent on the compiler's
+names. R1 to R8 stand as written. The question to the author takes the synthesis's recommendation: the
+specification stays silent, a collision with the compiler's names told as both declarations named and
+the rename a `guess`, so 2046 is answered by R3's silence and closes. What the yes does not settle is
+what the stub names: routes I and G stay recorded and unbuilt.
