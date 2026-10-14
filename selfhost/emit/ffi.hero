@@ -24,6 +24,7 @@ use emit/ctype
 use emit/ffi_lookup
 use emit/ffi_declared
 use emit/ffi_value
+use emit/ffi_constant_value
 use emit/ffi_pointee
 use emit/ffi_call
 use emit/ffi_record
@@ -99,6 +100,15 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
     # it names or leaves out (panel 186 R7, `emit/ffi_built.hero`), at the
     # construction: a span no reader below claims, so nothing is dropped.
     found @ ffi_built.at_constructions(s, decls, c, p, text: text)
+
+    # A number's constant whose value C leaves undefined (defect 2072), FIRST:
+    # its accessor's line comes after the constancy assertion's, which refuses
+    # `1 / 0` too, and *an object or a macro that expands to one* is not why.
+    for line in ffi_lookup.lines(text: text)
+        undefined = ffi_constant_value.refused(s, decls, p, c, line: line, stderr: text, undefined_only: true)
+
+        if !undefined.is_err()
+            found @ ffi_lookup.add_once(found, d: undefined.must())
 
     for line in ffi_lookup.lines(text: text)
         wrong = ffi_declared.wrong_type(s, decls, tree, line: line, results: asked.results, word_bits: word_bits)
@@ -319,6 +329,14 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
         # parameter whose unit the header leaves incomplete.
         for lent in ffi_unit.lend_refusals(s, decls, tree, answered, line: line)
             found @ ffi_lookup.add_once(found, d: lent)
+
+        # A number's constant whose value C cannot read (defect 2071,
+        # `emit/ffi_constant_value.hero`), LAST: every reader above that claims
+        # the same line, and every line before it, tells the constant first.
+        valued = ffi_constant_value.refused(s, decls, p, c, line: line, stderr: text, undefined_only: false)
+
+        if !valued.is_err()
+            found @ ffi_lookup.add_once(found, d: valued.must())
 
     return found
 

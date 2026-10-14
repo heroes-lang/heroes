@@ -1,0 +1,47 @@
+error[ffi_constant_type]: `SHIFT_PAST` in `fixedbugs-2072-values.h` cannot be declared `i64`: clang refuses the header's value at line 2: shift count >= width of type
+  at tests/golden/unsupported/fixedbugs-2072-a-value-c-leaves-undefined-is-told.hero:14:5
+     |
+  14 |     constant SHIFT_PAST: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2072-values.h` line 2 reads `#define SHIFT_PAST (1 << 40)`
+  note: C leaves this value undefined: a program reading `SHIFT_PAST` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `SHIFT_NEGATIVE` in `fixedbugs-2072-values.h` cannot be declared `i64`: clang refuses the header's value at line 3: shifting a negative signed value is undefined
+  at tests/golden/unsupported/fixedbugs-2072-a-value-c-leaves-undefined-is-told.hero:15:5
+     |
+  15 |     constant SHIFT_NEGATIVE: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2072-values.h` line 3 reads `#define SHIFT_NEGATIVE (-1 << 2)`
+  note: C leaves this value undefined: a program reading `SHIFT_NEGATIVE` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `SHIFT_BY_NEGATIVE` in `fixedbugs-2072-values.h` cannot be declared `i64`: clang refuses the header's value at line 4: shift count is negative
+  at tests/golden/unsupported/fixedbugs-2072-a-value-c-leaves-undefined-is-told.hero:16:5
+     |
+  16 |     constant SHIFT_BY_NEGATIVE: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2072-values.h` line 4 reads `#define SHIFT_BY_NEGATIVE (1 >> -1)`
+  note: C leaves this value undefined: a program reading `SHIFT_BY_NEGATIVE` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `SHIFT_INTO_SIGN` in `fixedbugs-2072-values.h` cannot be declared `i64`: clang refuses the header's value at line 5: signed shift result (0x80000000) sets the sign bit of the shift expression's type ('int') and becomes negative
+  at tests/golden/unsupported/fixedbugs-2072-a-value-c-leaves-undefined-is-told.hero:17:5
+     |
+  17 |     constant SHIFT_INTO_SIGN: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2072-values.h` line 5 reads `#define SHIFT_INTO_SIGN (1 << 31)`
+  note: C leaves this value undefined: a program reading `SHIFT_INTO_SIGN` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `DIVIDED_BY_ZERO` in `fixedbugs-2072-values.h` cannot be declared `i64`: clang refuses the header's value at line 6: division by zero is undefined
+  at tests/golden/unsupported/fixedbugs-2072-a-value-c-leaves-undefined-is-told.hero:18:5
+     |
+  18 |     constant DIVIDED_BY_ZERO: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2072-values.h` line 6 reads `#define DIVIDED_BY_ZERO (1 / 0)`
+  note: C leaves this value undefined: a program reading `DIVIDED_BY_ZERO` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines
+
+error[ffi_constant_type]: `REMAINDER_BY_ZERO` in `fixedbugs-2072-values.h` cannot be declared `u64`: clang refuses the header's value at line 7: remainder by zero is undefined
+  at tests/golden/unsupported/fixedbugs-2072-a-value-c-leaves-undefined-is-told.hero:19:5
+     |
+  19 |     constant REMAINDER_BY_ZERO: u64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2072-values.h` line 7 reads `#define REMAINDER_BY_ZERO (1 % 0)`
+  note: C leaves this value undefined: a program reading `REMAINDER_BY_ZERO` would read whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines

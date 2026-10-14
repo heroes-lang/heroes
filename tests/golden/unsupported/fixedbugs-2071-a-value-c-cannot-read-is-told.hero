@@ -1,0 +1,13 @@
+# fixedbugs, defect 2071, lane b17-emit, 2026-10-14: a header constant whose
+# value C cannot read, a name the header never declares inside it, an empty
+# value and two tokens, told on the constant's line in clang's words, the
+# header's line quoted where clang names it. `internal error: compiling the
+# generated C failed`, exit 2, before the repair.
+
+extern "fixedbugs-2071-values.h"
+    constant BAD_NAME: i64  #~ ffi_constant_type
+    constant BAD_EMPTY: i64  #~ ffi_constant_type
+    constant BAD_TWO: i64  #~ ffi_constant_type
+
+function main()
+    print(BAD_NAME, BAD_EMPTY, BAD_TWO)
