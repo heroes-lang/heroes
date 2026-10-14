@@ -50,6 +50,40 @@ record Directives
     found: {str: Directive}
     entered: {str: str}
 
+# A macro of a `-dM` table: the words of its parameters, where it takes
+# any, its body, and its whole line.
+record Define
+    params: {str: bool}
+    body: str
+    line: str
+
+# The macros of a `-dM` text by name (defect 2059): what a bound macro's
+# expansion reaches is walked through it.
+function defines(said: str) -> {str: Define}
+    out: {str: Define} @= {}
+
+    for row in rows(said)
+        if !bytes.bytes_at(text: row, at: 0, needle: "#define ")
+            continue
+        end: i64 @= 8
+
+        while end < row.len() && ident(row[end])
+            end @ end + 1
+
+        params: {str: bool} @= {}
+        rest: i64 @= end
+
+        if end < row.len() && row[end] == 40
+            close = index_of(text: row, needle: ")", from: end)
+
+            if close.is_err()
+                continue
+            words_of(@params, text: row.slice(from: end + 1, to: close.must()))
+            rest @ close.must() + 1
+        out[row.slice(from: 8, to: end)] @ Define(params: params, body: row.slice(from: rest, to: row.len()), line: row)
+
+    return out
+
 # The question for `name` at `place`: its line directive and its line; a
 # name the unit's C calls asked as a call too, with `arity` arguments.
 function question(place: i64, name: str, arity: i64) -> [str]
@@ -348,3 +382,13 @@ test "a directive is the last one naming the name in its header's stretch"
     assert directive_name("#define fabs(x) my_fabs(x)") == "fabs"
     assert directive_name("int fabs;") == ""
     assert folded("  a \t b\n c  ") == "a b c"
+
+# A `-dM` table's macros by name, a function-like one's parameters apart
+# from its body.
+test "a -dM table is read by name, parameters apart from the body"
+    got = defines("#define absval fabs\n#define twice(x, y) ((x) + (y))\n#define EMPTY\nint x;\n")
+    assert got["absval"].must().body == " fabs"
+    assert !got["twice"].must().params["y"].is_err()
+    assert got["twice"].must().body == " ((x) + (y))"
+    assert got["EMPTY"].must().body == ""
+    assert got.len() == 3

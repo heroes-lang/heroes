@@ -87,6 +87,7 @@ record Lent
     digests: {str: str}
     unread: ()?
     unread_modules: [str]
+    kept: {str: bool}
 
 # The verdict of a round whose units compiled, before its link: a pointee dump
 # that did not compile is its refusal, told as clang's words, which `#line`
@@ -149,7 +150,8 @@ function per_module(t: toolchain.Toolchain, options: compile.Options, art: compi
         s: s,
         decls: art.decls,
         struct_tags: struct_tags,
-        lend_units: lend_local.with_flows(lent.units, art.program, art.checked)
+        lend_units: lend_local.with_flows(lent.units, art.program, art.checked),
+        kept: lent.kept
     )
 
     # One build's answers about files on disk. Every TU asks whether the

@@ -230,6 +230,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             planned: planned,
             under: under,
             struct_tags: went.struct_tags,
+            kept: went.kept,
             version: version
         )
 

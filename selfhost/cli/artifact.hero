@@ -79,7 +79,7 @@ use cli/publish
 #
 # `probings` are the build's, each module's headers asked its own questions
 # (panel 202's C0, `cli/probing.hero`), their answers kept from the rounds.
-function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], planned: probing.Planned, under: compiling.Compiling, struct_tags: {str: bool}, version: str) -> ()?
+function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, @answered: [pointee_ask.Answered], planned: probing.Planned, under: compiling.Compiling, struct_tags: {str: bool}, kept: {str: bool}, version: str) -> ()?
     checked = probing.check_all(t, art.program, art.checked, s, art.decls, planned.probings, answered: @answered)
     checked.verdict?
 
@@ -121,8 +121,8 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     text: str @= art.c
     units = header_types.lend_units(answered)
 
-    if struct_tags.len() > 0 || units.len() > 0
-        text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: struct_tags, lend_units: units).c
+    if struct_tags.len() > 0 || units.len() > 0 || kept.len() > 0
+        text @ emit.emit_told(target: options.target, p: art.program, c: art.checked, s: s, decls: art.decls, version: version, text: true, struct_tags: struct_tags, lend_units: units, kept: kept).c
 
     # **The one file is written only where it means the program the units
     # build** (defect 453, panel 202's R3; `cli/one_file.hero`): where a

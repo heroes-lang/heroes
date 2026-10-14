@@ -119,3 +119,21 @@ function group_at(s: source.Source, decls: [ast.Decl], header: str) -> token.Spa
             return found
 
     return fail(code: "none", msg: "no group names this header")
+
+# A bound macro whose expansion reaches `to`, a name the unit's own C reads as
+# C's own (defect 2059): `steps` the chain of definitions, `own` what clang
+# reads at the groups' end and `then` where the unit's C stands.
+function reached(b: bound_names.Bound, to: str, steps: [str], own: str, then: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_macro_name",
+        message: "`" + b.name + "`, which this group binds from `" + b.header + "`, is a macro whose expansion reaches `" + to + "`, a name the C this compiler writes reads as C's own: this program's C would read `" + b.name + "` with `" + to + "` as C means it, not as `" + b.header + "` makes it",
+        span: b.span
+    )
+    d.notes @ d.notes.push("at the groups' end " + steps.join(", and ") + " (clang's macros)")
+    d.notes @ d.notes.push(
+        "where this program's C writes `" + bound_said.asked(b.name, arity: b.arity) + "`, clang reads `" + own + "` after the groups' headers, and `" + then + "` where that C stands"
+    )
+    d.notes @ d.notes.push(
+        "a `static inline` function in a header of your own that includes `" + b.header + "` and returns what `" + b.name + "` gives, bound in its place, reads it where the header's macros stand"
+    )
+    return d

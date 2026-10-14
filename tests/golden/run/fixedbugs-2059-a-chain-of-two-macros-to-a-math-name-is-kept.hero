@@ -1,0 +1,13 @@
+# fixedbugs, defect 2059, lane land-214, 2026-10-14.
+#
+# SYMPTOM: `absval` is `absolute`, `absolute` is `fabs`, `fabs` is `my_fabs`:
+# the guard gave `fabs` back under the chain, `3.0` at exit 0.
+#
+# FIX: the walk follows every macro the expansion reaches, however deep, and
+# keeps `fabs` (`cli/bound_kept.hero`).
+
+extern "fixedbugs-2059-chain.h"
+    function absval(x: f64) -> f64
+
+function main()
+    print(absval(-3.0))

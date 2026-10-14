@@ -1,0 +1,19 @@
+# fixedbugs, defect 2059, lane land-214, 2026-10-14.
+#
+# SYMPTOM: the guarded name a bound macro expands to, `fabs`, bound by
+# another group too, from `<math.h>`: the macro of the header read after it
+# stood for both, and `fabs(-3.0)` printed `1000.0` at exit 0.
+#
+# FIX: `fabs` cannot be both `<math.h>`'s function and the header's macro in
+# one unit, so it is no name to keep: the question of defect 2056 refuses it,
+# the later header naming its macro (`cli/bound_macro.hero`).
+
+extern "math.h" link "m"
+    function fabs(x: f64) -> f64  #~ ffi_macro_name
+
+extern "fixedbugs-2059-absval.h"
+    function absval(x: f64) -> f64
+
+function main()
+    print(absval(-3.0))
+    print(fabs(-3.0))

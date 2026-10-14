@@ -1,0 +1,15 @@
+# fixedbugs, defect 2059, lane land-214, 2026-10-14.
+#
+# SYMPTOM: `BOOL_SIZE` bound from a header where it is `sizeof(bool)` and
+# `bool` is `int`: the guard's close gave `bool` back C's `_Bool`, so the
+# program printed `1` where the header means `4`, at exit 0.
+#
+# FIX: `bool` is a name the C this compiler writes reads as C's own, so it
+# cannot keep the header's macro in the same unit: refused at the constant,
+# the chain named (`cli/bound_kept.hero`).
+
+extern "fixedbugs-2059-bool.h"
+    constant BOOL_SIZE: i64  #~ ffi_macro_name
+
+function main()
+    print(BOOL_SIZE)

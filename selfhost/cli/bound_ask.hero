@@ -40,6 +40,18 @@ function opening(lines: [str]) -> str
     out @ strings.with_all(list: out, more: macro_guard.around(lines, bound: no_names))
     return out.join("\n") + "\n"
 
+# The unit's opening around `lines` as the unit closes it (defect 2059): the
+# names `bound` holds pushed again before the guard's close and saved around
+# `heroes_standard.h`, then `end`, the questions where the unit's own C
+# stands.
+function closed_opening(lines: [str], bound: {str: bool}, end: [str]) -> str
+    out: [str] @= [macro_guard.FIRST_LINE]
+    out @ strings.with_all(list: out, more: c_text.includes(emit_externs.SEEDS))
+    out @ strings.with_all(list: out, more: macro_guard.around(lines, bound: bound))
+    out @ strings.with_all(list: out, more: macro_guard.read_after(bound))
+    out @ strings.with_all(list: out, more: end)
+    return out.join("\n") + "\n"
+
 # What a header read alone made of the names, and the names it printed.
 record Alone
     meanings: {str: str}

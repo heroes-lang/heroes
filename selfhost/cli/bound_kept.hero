@@ -1,0 +1,293 @@
+# A bound macro means what its own header makes it, the names it expands to
+# included (design.md §4.19; defect 2059, 2026-10-14, found beside defect
+# 2056 by its lane).
+#
+# **The guard gave back what a bound macro expands to.** `#define fabs
+# my_fabs` and `#define absval fabs` in one header, `absval` bound from it:
+# the guard's close gives `fabs`, a name of `<math.h>` it holds, back its
+# meaning before the groups, none, so the unit's `absval(-3.0)` called
+# `<math.h>`'s `fabs` and printed `3.0` where the header means `1000.0`, at
+# exit 0.
+#
+# **Each bound name is asked where the unit's own C stands too**
+# (`cli/bound_macro.hero`'s question, after the close and `heroes_standard.h`),
+# and where its answer there is not its answer at the groups' end, the
+# macros its expansion reaches are walked through clang's `-dM` table at the
+# groups' end, and those the close changes (a group's macro, against the
+# table before the groups) are what changed it:
+#
+# - **all of them functions of `<math.h>`: kept.** The guard holds those
+#   only for `<math.h>` read after the groups, which reads them saved and
+#   undefined now (`emit/macro_guard.read_after`), and the unit's own C
+#   writes none (`emit/macro_guard`'s test of it). So each is pushed again
+#   before the close as a bound name is (`ctype.Names.kept_macros`), the
+#   answer asked again with it so, and `absval` is `my_fabs`, as C reads the
+#   header.
+# - **one of them a name the unit's own C writes** (a word of the runtime's,
+#   `bool`, `NULL`, `main`): **refused**, the chain named. That name cannot
+#   mean both the header's macro and C's own in one unit, and the C this
+#   compiler writes needs C's: `#define bool int` beside a bound
+#   `#define BOOL_SIZE sizeof(bool)` printed `1` where the header means `4`.
+#   The ten macros the unit writes from `<stdint.h>` and `<math.h>` are not
+#   such a change: `heroes_standard.h` defines them again as C does.
+
+use diag
+use emit/c_text
+use emit/externs as emit_externs
+use emit/macro_guard
+use emit/guarded_names
+use cli/toolchain
+use cli/compiling
+use cli/bound_names
+use cli/bound_said
+use cli/bound_ask
+use cli/bound_told
+use cli/strings
+use cli/process
+
+# What the question of the names' meaning where the unit's C stands comes
+# to: its refusals, and the names the guard keeps for the unit.
+record Told
+    diagnostics: [diag.Diagnostic]
+    kept: {str: bool}
+
+function nothing() -> Told
+    none: [diag.Diagnostic] = []
+    no_names: {str: bool} = {}
+    return Told(diagnostics: none, kept: no_names)
+
+# The names of `changed`, each answering otherwise where the unit's C stands
+# than at the groups' end (`said` at places `count` and `count` + 1), told or
+# kept. `lines` are the main question's, `bound` the names the unit pushes
+# again.
+function judged(t: toolchain.Toolchain, probe: compiling.Probe, headers: [str], lines: [str], bound: {str: bool}, said: {str: str}, count: i64, changed: [bound_names.Bound]) -> Told
+    if changed.len() == 0
+        return nothing()
+    seeds: [str] @= [macro_guard.FIRST_LINE]
+    seeds @ strings.with_all(list: seeds, more: c_text.includes(emit_externs.SEEDS))
+    before = bound_ask.preprocessed(t, probe: probe, text: seeds.join("\n") + "\n", mode: ["-E", "-dM"])
+    grouped = strings.with_all(list: seeds.push(macro_guard.OPEN_LINE), more: c_text.includes(headers))
+    after = bound_ask.preprocessed(t, probe: probe, text: grouped.join("\n") + "\n", mode: ["-E", "-dM"])
+
+    if before.is_err() || after.is_err()
+        return nothing()
+    was = bound_said.defines(before.must())
+    table = bound_said.defines(after.must())
+    out: [diag.Diagnostic] @= []
+    kept: {str: bool} @= {}
+    keeping: [bound_names.Bound] @= []
+    math: {str: bool} @= {}
+
+    for name in guarded_names.math()
+        math[name] @ true
+
+    for b in changed
+        parents = reached(table, from: b.name)
+        restored = restored_of(parents: parents, table: table, was: was, bound: bound)
+
+        if restored.len() == 0
+            continue
+        refused: str @= ""
+
+        for name in restored
+            if math[name].is_err() && refused == ""
+                refused @ name
+
+        if refused != ""
+            out @ out.push(told(b: b, parents: parents, table: table, to: refused, said: said, count: count))
+        else
+            keeping @ keeping.push(b)
+
+            for name in restored
+                kept[name] @ true
+
+    if keeping.len() == 0
+        return Told(diagnostics: out, kept: kept)
+
+    # Asked again with the names kept, the unit as it will be: a name whose
+    # answer still differs is refused, never left to a wrong value.
+    wider: {str: bool} @= bound
+
+    for name in keys(kept)
+        wider[name] @ true
+
+    again = bound_ask.alone_answers(
+        t,
+        probe: probe,
+        text: bound_ask.closed_opening(lines: lines, bound: wider, end: bound_ask.questions(keeping, place: count + 1))
+    )
+
+    for b in keeping
+        if again.is_err() || again.must().meanings[(count + 1).to_str() + " " + b.name].default("") != said[count.to_str() + " " + b.name].default("")
+            parents = reached(table, from: b.name)
+            first = restored_of(parents: parents, table: table, was: was, bound: bound)[0]
+            out @ out.push(told(b: b, parents: parents, table: table, to: first, said: said, count: count))
+
+    if out.len() > 0
+        return Told(diagnostics: out, kept: nothing().kept)
+    return Told(diagnostics: out, kept: kept)
+
+# The macros `from`'s expansion reaches through `table`, each with the macro
+# whose body names it, a parameter's word passed over; in the order found.
+function reached(table: {str: bound_said.Define}, from: str) -> {str: str}
+    parents: {str: str} @= {}
+    queue: [str] @= [from]
+    at: i64 @= 0
+
+    while at < queue.len()
+        name = queue[at]
+        at @ at + 1
+        define = table[name]
+
+        if define.is_err()
+            continue
+        words: {str: bool} @= {}
+        bound_said.words_of(@words, text: define.must().body)
+
+        for word in sort(keys(words))
+            if define.must().params[word].is_err() && word != from && parents[word].is_err() && !table[word].is_err()
+                parents[word] @ name
+                queue @ queue.push(word)
+
+    return parents
+
+# ORDER: by name, as `sort` orders a `str`. The names reached the close
+# changes: held by the guard, not bound, not one of the ten the unit writes
+# from `<stdint.h>` and `<math.h>`, and defined at the groups' end otherwise
+# than before them.
+function restored_of(parents: {str: str}, table: {str: bound_said.Define}, was: {str: bound_said.Define}, bound: {str: bool}) -> [str]
+    guarded: {str: bool} @= {}
+
+    for name in guarded_names.names()
+        guarded[name] @ true
+
+    for name in macro_guard.STANDARD_USED
+        guarded[name] @ false
+
+    out: [str] @= []
+
+    for name in sort(keys(parents))
+        if guarded[name].default(false) && bound[name].is_err() && table[name].must().line != was[name].default(bound_said.Define(params: {}, body: "", line: "")).line
+            out @ out.push(name)
+
+    return out
+
+# The refusal, the chain from the bound name to `to` written out.
+function told(b: bound_names.Bound, parents: {str: str}, table: {str: bound_said.Define}, to: str, said: {str: str}, count: i64) -> diag.Diagnostic
+    path: [str] @= [to]
+
+    while parents[path[path.len() - 1]].default(b.name) != b.name
+        path @ path.push(parents[path[path.len() - 1]].must())
+
+    steps: [str] @= ["`" + b.name + "` is `" + bound_said.folded(table[b.name].must().body) + "`"]
+    at: i64 @= path.len() - 1
+
+    while at >= 0
+        steps @ steps.push("`" + path[at] + "` is `" + bound_said.folded(table[path[at]].must().body) + "`")
+        at @ at - 1
+
+    return bound_told.reached(
+        b: b,
+        to: to,
+        steps: steps,
+        own: said[count.to_str() + " " + b.name].default(""),
+        then: said[(count + 1).to_str() + " " + b.name].default("")
+    )
+
+## Tests
+
+# The premise the guard's keep rests on (defect 2059): the functions of
+# `<math.h>` it holds are names the unit's own C never writes, no emitter
+# module and no word of the runtime's headers, so one a bound macro expands
+# to may stay a group's macro for the unit. An emitter module or a runtime
+# header that comes to write one is named here, and the keep owes it a ruling.
+test "the unit's own C writes no function of <math.h> the guard holds (defect 2059)"
+    listed: {str: bool} @= {}
+
+    for name in guarded_names.names()
+        listed[name] @ true
+
+    runtime: {str: bool} @= {}
+
+    for path in ["runtime/heroes_runtime.h", "runtime/hero_os.h"]
+        for word in keys(macro_guard.used(read_file(path).must()))
+            runtime[word] @ true
+
+    written: [str] @= []
+    files = process.files_under("selfhost/emit").must().push("selfhost/emit.hero")
+
+    for name in guarded_names.math()
+        assert !listed[name].is_err()
+
+        if !runtime[name].is_err()
+            written @ written.push("runtime: " + name)
+
+    for path in files
+        if strings.ends_with(text: path, suffix: ".hero")
+            called = called_words(read_file(path).must())
+
+            for name in guarded_names.math()
+                if !called[name].is_err()
+                    written @ written.push(path + ": " + name)
+
+    assert written.join(" ") == ""
+
+    # And the one the emitter does write is not in the list: an `f64` `%`.
+    assert called_words(read_file("selfhost/emit/operator.hero").must())["fmod"].must()
+
+# Every identifier a string literal of `text`'s code writes as a call, its
+# name then `(`, its comments and its `test` blocks left out: a C call an
+# emitter module writes, never a word of a message's prose.
+function called_words(text: str) -> {str: bool}
+    out: {str: bool} @= {}
+    in_test: bool @= false
+
+    for line in rows_of(text)
+        if strings.starts_with(text: line, prefix: "test \"")
+            in_test @ true
+            continue
+
+        if in_test && line.len() > 0 && line[0] != 32 && line[0] != 35
+            in_test @ false
+        trimmed = strings.trimmed(line)
+
+        if in_test || strings.starts_with(text: trimmed, prefix: "#")
+            continue
+        quoted: bool @= false
+        at: i64 @= 0
+
+        while at < line.len()
+            b = line[at]
+
+            if b == 92 && quoted
+                at @ at + 2
+                continue
+
+            if b == 34
+                quoted @ !quoted
+            else if quoted && macro_guard.starts_word(b)
+                start = at
+
+                while at < line.len() && macro_guard.in_word(line[at])
+                    at @ at + 1
+
+                if at < line.len() && line[at] == 40
+                    out[line.slice(from: start, to: at)] @ true
+                continue
+            at @ at + 1
+
+    return out
+
+# The lines of `text`, cut at each newline by its byte.
+function rows_of(text: str) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= text.len()
+        if at == text.len() || text[at] == 10
+            out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return out
