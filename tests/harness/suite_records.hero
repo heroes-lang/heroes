@@ -3849,17 +3849,31 @@ function expectations(@r: report.Report, scratch: str)
 # opens `Panel NNN:` (`records_github.queued`). Where GitHub cannot be asked,
 # the sittings this rests on are named in a skip, and the verdict sections are
 # judged all the same.
+#
+# **And GitHub's answer may be newer than the tree** (defect 2041): a
+# ratification is written beneath its sitting's stub by one commit and its
+# decision closed by `close`, which names that commit, so every tree without
+# the commit holds a `Pending` nobody asks about any more. Measured 2026-10-14:
+# the round's tree at `a0dd1aa55` holds panel 214 `Pending`, GitHub closed its
+# decision at 07:59:37Z after `fda81bd14` wrote the answer, and this check read
+# that tree red. So the tree is placed among the author's answers by the
+# sittings it holds answered (`records_github.answers_received`), and a
+# ratification GitHub closed after the latest of them is not held against it
+# (`records_github.unasked_offence`).
 function verdicts(@r: report.Report, present: [str], held: github_issues.Listing)
     offenders: [str] @= []
     unasked: [str] @= []
+    answered: [i64] @= []
+    waiting: [str] @= []
     seen: i64 @= 0
 
     for path in present
         if !is_sitting(path)
             continue
         seen @ seen + 1
+        number = sitting_number(path)
 
-        if sitting_number(path).default(0) < VERDICT_FLOOR
+        if number.default(0) < VERDICT_FLOOR
             continue
         text = read_file(path)
 
@@ -3875,15 +3889,30 @@ function verdicts(@r: report.Report, present: [str], held: github_issues.Listing
             continue
 
         if !opens_pending(text: pieces[1]) || answered_beneath(text: pieces[1])
+            answered @ answered.push(number.must())
             continue
         digits = sitting_digits(path)
 
         if !held.asked
             unasked @ unasked.push("    " + path)
         else if digits.is_err() || !records_github.queued(digits: digits.must(), held: held)
-            offenders @ offenders.push(
-                "    " + path + ": the verdict reads `Pending` and no open decision on GitHub, titled `Panel " + digits.default("NNN") + ":`, asks for it"
-            )
+            waiting @ waiting.push(path)
+
+    # A pending sitting nobody asks about is judged once the tree is placed
+    # among the answers, which takes every sitting it holds.
+    first = records_github.first_answers(held)
+    received = records_github.answers_received(answered: answered, first: first)
+
+    for path in waiting
+        wrong = records_github.unasked_offence(
+            sitting: sitting_number(path).default(0),
+            digits: sitting_digits(path).default("NNN"),
+            first: first,
+            received: received
+        )
+
+        if wrong != ""
+            offenders @ offenders.push("    " + path + ": " + wrong)
 
     if seen == 0
         report.keep_failure(
