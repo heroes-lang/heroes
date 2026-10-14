@@ -1443,6 +1443,12 @@ suite that holds the constant, verified by grep on the day: `CONTRACT_CEILING`
 occurs in `tests/harness/suite_spec.hero` and in `selfhost/cli/measure.hero`,
 and nowhere in `suite_records.hero`.
 
+**What the vendored figure hid, moved here from the contract's preamble on
+2026-10-14** under the same repair, to pay for that day's clause in § Hard stops
+(a session's pushes asked once as the author leaves it): until panel 134 the
+`contract` check judged the vendored maximum, and the contract sat 1806 tokens
+over its ceiling while the tool reported nine to spare.
+
 
 
 
