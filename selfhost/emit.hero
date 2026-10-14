@@ -137,10 +137,13 @@ function emit_for(target: emit_decls.BuildTarget, p: containers.Program, c: stat
 # (`cli/produce.hero`, defect 037); `emit/ctype.hero` is where it is read.
 function emit_maybe(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool, struct_tags: {str: bool}) -> Emitted
     none: {str: str} = {}
-    return emit_told(target, p, c, s, decls, version, text, struct_tags, none)
+    no_kept: {str: bool} = {}
+    return emit_told(target, p, c, s, decls, version, text, struct_tags: struct_tags, lend_units: none, kept: no_kept)
 
-# The same with what a round's pointee check read of each counted parameter (panel 194's R7).
-function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool, struct_tags: {str: bool}, lend_units: {str: str}) -> Emitted
+# The same with what a round's pointee check read of each counted parameter
+# (panel 194's R7), and the names a bound macro reaches the guard keeps
+# (defect 2059).
+function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], version: str, text: bool, struct_tags: {str: bool}, lend_units: {str: str}, kept: {str: bool}) -> Emitted
     refused = gate.refuse(target: target, p: p, c: c, s: s, decls: decls)
 
     if refused.len() > 0
@@ -201,7 +204,8 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
         version: version,
         tu_local: "",
         records: every,
-        headers: emit_externs.headers(p, s, decls)
+        headers: emit_externs.headers(p, s, decls),
+        kept: kept
     )
 
     # Types before anything that can mention one: every typedef in one

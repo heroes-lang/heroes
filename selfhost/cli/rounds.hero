@@ -35,12 +35,14 @@ use diag
 
 # What the rounds came back with: the verdict, the failure already told where
 # it is the author's (`whose.of_refusal`); where the binary landed; the tags
-# they learned; and the header's answer where the last one asked it.
+# they learned; the header's answer where the last one asked it; and the
+# names a bound macro reaches the guard keeps (defect 2059).
 record Rounds
     verdict: ()?
     binary: str
     struct_tags: {str: bool}
     asked: ffi_asked.Asked?
+    kept: {str: bool}
 
 function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: assemble.Site, under: compiling.Compiling, planned: probing.Planned, @answered: [pointee_ask.Answered]) -> Rounds
     struct_tags: {str: bool} @= {}
@@ -50,8 +52,35 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
     asked: ffi_asked.Asked? @= fail(code: "none", msg: "the header was not asked")
     refused_in: [str] @= []
 
+    # A name a group binds whose meaning another group's header gives it, a
+    # macro read before or after the group's own (`cli/bound_macro.hero`,
+    # defect 2056), or the guard's close changes under a bound macro
+    # (`cli/bound_kept.hero`, defect 2059), told before any unit compiles:
+    # the author's, and no round after it. Asked once, of the build.
+    taken = bound_macro.told(t, planned.probings, s: s, decls: art.decls)
+    kept = taken.kept
+
+    if taken.diagnostics.len() > 0
+        _ = compile.stage(taken.diagnostics, s).is_err()
+        over: ()? = fail(
+            code: "diagnostics",
+            msg: "a name this program binds would mean what its header does not make it"
+        )
+        return Rounds(verdict: over, binary: "", struct_tags: struct_tags, asked: asked, kept: kept)
+
     while true
-        went = round(t, options, art, s, site, @answered, planned: planned, struct_tags: struct_tags, told: @told)
+        went = round(
+            t,
+            options,
+            art,
+            s,
+            site,
+            @answered,
+            planned: planned,
+            struct_tags: struct_tags,
+            kept: kept,
+            told: @told
+        )
         linked @ went.verdict
         binary @ went.binary
         refused_in @ went.modules
@@ -61,7 +90,7 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
 
         # A refusal already told is the author's and ends the rounds.
         if whose.failure_code(linked) == "diagnostics"
-            return Rounds(verdict: linked, binary: "", struct_tags: struct_tags, asked: asked)
+            return Rounds(verdict: linked, binary: "", struct_tags: struct_tags, asked: asked, kept: kept)
         lesson = tag_spelling.learn(
             t,
             art,
@@ -93,15 +122,15 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
             unit_headers: unit_headers(planned: planned, modules: refused_in),
             refused: "clang refused the generated C"
         )
-        return Rounds(verdict: refused, binary: "", struct_tags: struct_tags, asked: asked)
-    return Rounds(verdict: ok(), binary: binary, struct_tags: struct_tags, asked: asked)
+        return Rounds(verdict: refused, binary: "", struct_tags: struct_tags, asked: asked, kept: kept)
+    return Rounds(verdict: ok(), binary: binary, struct_tags: struct_tags, asked: asked, kept: kept)
 
 # `told` is what clang said that this build has printed, across its rounds
 # (defect 327, `cli/clang_told.hero`): the second round compiles again what
 # the first did, and replays it where it is warm. `planned` is the build's
 # (`cli/probing.hero`), the same for every round: each module's plan and the
 # probes of their headers.
-function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: assemble.Site, @answered: [pointee_ask.Answered], planned: probing.Planned, struct_tags: {str: bool}, @told: {str: bool}) -> assemble.Round
+function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Artifact, s: source.Source, site: assemble.Site, @answered: [pointee_ask.Answered], planned: probing.Planned, struct_tags: {str: bool}, kept: {str: bool}, @told: {str: bool}) -> assemble.Round
     # What the extern out-parameters point at, asked of each module's headers
     # before any unit compiles (panel 103; panel 202's C0): the width and sign
     # of a numeric `@` against the header's own type. Then the header's
@@ -110,18 +139,9 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     # A failure here is the AUTHOR's, and it rides the same mapping a clang
     # failure does — `emit/ffi.hero` reads the assertion's marker back into
     # the parameter's diagnostic.
-    # A name a group binds whose meaning another group's header gives it, a
-    # macro read before or after the group's own (`cli/bound_macro.hero`,
-    # defect 2056); then a name the compiler writes that a group's header
-    # defines as a macro holding a `_Pragma`, told before anything reads a
-    # header through it (`cli/pragma_ask.hero`, defect 570): the author's,
-    # and no round after either.
-    taken = bound_macro.told(t, planned.probings, s: s, decls: art.decls)
-
-    if taken.len() > 0
-        _ = compile.stage(taken, s).is_err()
-        over: ()? = fail(code: "diagnostics", msg: "another group's header gives a name this program binds its meaning")
-        return assemble.Round(verdict: over, refusals: [], binary: "", modules: [])
+    # A name the compiler writes that a group's header defines as a macro
+    # holding a `_Pragma`, told before anything reads a header through it
+    # (`cli/pragma_ask.hero`, defect 570): the author's, and no round after.
     pragmas = pragma_ask.told(t, planned.probings, s: s, decls: art.decls)
 
     if pragmas.len() > 0
@@ -165,7 +185,8 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
         units: counted,
         digests: probing.digests_of(planned.probings),
         unread: checked.unread,
-        unread_modules: checked.unread_modules
+        unread_modules: checked.unread_modules,
+        kept: kept
     )
 
     # `heroes test` too: one unit per module, as `build` cuts the program

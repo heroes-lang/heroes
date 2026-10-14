@@ -1,0 +1,8 @@
+error[ffi_macro_name]: `BOOL_SIZE`, which this group binds from `fixedbugs-2059-bool.h`, is a macro whose expansion reaches `bool`, a name the C this compiler writes reads as C's own: this program's C would read `BOOL_SIZE` with `bool` as C means it, not as `fixedbugs-2059-bool.h` makes it
+  at tests/golden/unsupported/fixedbugs-2059-a-bound-macro-reaching-a-name-the-unit-writes-is-refused.hero:12:14
+     |
+  12 |     constant BOOL_SIZE: i64  #~ ffi_macro_name
+     |              ^^^^^^^^^
+  note: at the groups' end `BOOL_SIZE` is `((long)sizeof(bool))`, and `bool` is `int` (clang's macros)
+  note: where this program's C writes `(BOOL_SIZE);`, clang reads `(((long)sizeof(int)));` after the groups' headers, and `(((long)sizeof(_Bool)));` where that C stands
+  note: a `static inline` function in a header of your own that includes `fixedbugs-2059-bool.h` and returns what `BOOL_SIZE` gives, bound in its place, reads it where the header's macros stand

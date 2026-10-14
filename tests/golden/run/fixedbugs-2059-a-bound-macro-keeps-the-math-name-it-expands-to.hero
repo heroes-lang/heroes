@@ -1,0 +1,19 @@
+# fixedbugs, defect 2059, lane land-214, 2026-10-14 (found beside defect 2056).
+#
+# SYMPTOM: `absval` bound from a header where it is `fabs` and `fabs` is
+# `my_fabs`, 1000.0 whatever it is handed: the guard's close gave `fabs`, a
+# name of `<math.h>` it holds, back its meaning before the groups, none, so
+# `absval(-3.0)` called `<math.h>`'s `fabs` and printed `3.0` at exit 0.
+#
+# FIX: each bound name is asked where the unit's own C stands too, and the
+# macros its expansion reaches that the close changes are walked through
+# clang's `-dM` table (`cli/bound_kept.hero`): functions of `<math.h>`, which
+# the unit's own C never writes, are kept as the header made them, pushed
+# again before the close and saved around `heroes_standard.h`. `absval` is
+# the header's `my_fabs`, as C reads it.
+
+extern "fixedbugs-2059-absval.h"
+    function absval(x: f64) -> f64
+
+function main()
+    print(absval(-3.0))

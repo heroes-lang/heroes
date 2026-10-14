@@ -1,0 +1,5 @@
+/* Defect 2059, 2026-10-14: a chain of two macros before the guarded name. */
+static inline double my_fabs(double x) { (void)x; return 1000.0; }
+#define fabs my_fabs
+#define absolute fabs
+#define absval absolute

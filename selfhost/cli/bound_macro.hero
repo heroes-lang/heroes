@@ -45,13 +45,18 @@ use cli/bound_names
 use cli/bound_said
 use cli/bound_ask
 use cli/bound_told
+use cli/bound_kept
+use emit/macro_guard
 use cli/order_trial
 use cli/strings
 
-# The refusals of every list's names, each name told once.
-function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+# The refusals of every list's names, each name told once, and the names
+# the guard keeps for the units where a bound macro expands to them (defect
+# 2059, `cli/bound_kept.hero`).
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> bound_kept.Told
     out: [diag.Diagnostic] @= []
     seen: {str: bool} @= {}
+    kept: {str: bool} @= {}
 
     for one in probings
         headers = bound_names.groups_of(one.headers)
@@ -64,14 +69,19 @@ function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Sou
         if probe.read.is_err()
             continue
 
-        for d in judged(t, probe: probe, s, decls, headers: headers, bound: bound)
+        answered = judged(t, probe: probe, s, decls, headers: headers, bound: bound)
+
+        for name in keys(answered.kept)
+            kept[name] @ true
+
+        for d in answered.diagnostics
             name = source.span_text(s, d.span)
 
             if seen[name].is_err()
                 seen[name] @ true
                 out @ out.push(d)
 
-    return out
+    return bound_kept.Told(diagnostics: out, kept: kept)
 
 # The list's probe, or, where its groups ask nothing else of their headers,
 # a constant or a record with no field alone, one of its own.
@@ -80,9 +90,10 @@ function probe_of(t: toolchain.Toolchain, one: probing.Probing) -> compiling.Pro
         return one.probe.must()
     return compiling.probe(t.build, under: one.under, headers: one.headers)
 
-# What each name means at each place, and the refusals it comes to.
-function judged(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], headers: [str], bound: [bound_names.Bound]) -> [diag.Diagnostic]
-    none: [diag.Diagnostic] = []
+# What each name means at each place, the last one where the unit's own C
+# stands, after the guard's close and `heroes_standard.h` (defect 2059), and
+# the refusals or the names kept it comes to.
+function judged(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], headers: [str], bound: [bound_names.Bound]) -> bound_kept.Told
     lines: [str] @= bound_ask.questions(bound, place: 0)
     place: i64 @= 1
 
@@ -91,11 +102,16 @@ function judged(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source
         lines @ strings.with_all(list: lines, more: bound_ask.questions(bound, place: place))
         place @ place + 1
 
-    text = bound_ask.opening(lines)
+    pushed = macro_guard.bound_names(s, decls)
+    text = bound_ask.closed_opening(
+        lines: lines,
+        bound: pushed,
+        end: bound_ask.questions(bound, place: headers.len() + 1)
+    )
     said = bound_ask.kept_answers(t, probe: probe, text: text)
 
     if said.is_err()
-        return none
+        return bound_kept.nothing()
     out: [diag.Diagnostic] @= []
     doubted: [bound_names.Bound] @= []
 
@@ -117,7 +133,30 @@ function judged(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source
     for d in earlier(t, probe: probe, s, decls, headers: headers, said: said.must(), doubted: doubted, text: text)
         out @ out.push(d)
 
-    return out
+    if out.len() > 0
+        return bound_kept.Told(diagnostics: out, kept: bound_kept.nothing().kept)
+
+    # Where the unit's own C stands, a name answering otherwise than at the
+    # groups' end was changed under it by the guard's close (defect 2059).
+    moved: [bound_names.Bound] @= []
+    last = headers.len()
+
+    for b in bound
+        then = said.must()[(last + 1).to_str() + " " + b.name]
+
+        if !then.is_err() && then.must() != said.must()[last.to_str() + " " + b.name].default(then.must())
+            moved @ moved.push(b)
+
+    return bound_kept.judged(
+        t,
+        probe: probe,
+        headers: headers,
+        lines: lines,
+        bound: pushed,
+        said: said.must(),
+        count: last,
+        changed: moved
+    )
 
 # A name's answers at places 0 to `count`, or none where one is missing.
 function places(said: {str: str}, b: bound_names.Bound, count: i64) -> [str]

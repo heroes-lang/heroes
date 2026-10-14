@@ -144,6 +144,35 @@ constant LEFT_LINES: [str]
         "isunordered math_errhandling signbit"
     ]
 
+# The functions of `<math.h>` (C11 7.12) the list holds but `fmod`, which
+# the unit's own C writes for an `f64` `%` (`emit/operator.hero`): a name the
+# unit's own C never writes, which the guard keeps for the C library's `<math.h>` read
+# after the groups (defect 568) and which `heroes_standard.h` now reads with
+# each such name a bound macro reaches saved and undefined (defect 2059,
+# `cli/bound_kept.hero`), so the guard can leave such a name as a group's
+# header made it where a bound macro expands to it. `macro_guard`'s test holds
+# every emitter module to writing none.
+constant MATH_LINES: [str]
+    [
+        "acos acosf acosh acoshf acoshl acosl asin asinf asinh asinhf asinhl"
+        "asinl atan atan2 atan2f atan2l atanf atanh atanhf atanhl atanl cbrt"
+        "cbrtf cbrtl ceil ceilf ceill copysign copysignf copysignl cos cosf"
+        "cosh coshf coshl cosl erf erfc erfcf erfcl erff erfl exp exp2 exp2f"
+        "exp2l expf expl expm1 expm1f expm1l fabs fabsf fabsl fdim fdimf fdiml"
+        "floor floorf floorl fma fmaf fmal fmax fmaxf fmaxl fmin fminf fminl"
+        "fmodf fmodl frexp frexpf frexpl hypot hypotf hypotl ilogb ilogbf"
+        "ilogbl ldexp ldexpf ldexpl lgamma lgammaf lgammal llrint llrintf"
+        "llrintl llround llroundf llroundl log log10 log10f log10l log1p log1pf"
+        "log1pl log2 log2f log2l logb logbf logbl logf logl lrint lrintf lrintl"
+        "lround lroundf lroundl modf modff modfl nan nanf nanl nearbyint"
+        "nearbyintf nearbyintl nextafter nextafterf nextafterl nexttoward"
+        "nexttowardf nexttowardl pow powf powl remainder remainderf remainderl"
+        "remquo remquof remquol rint rintf rintl round roundf roundl scalbln"
+        "scalblnf scalblnl scalbn scalbnf scalbnl sin sinf sinh sinhf sinhl"
+        "sinl sqrt sqrtf sqrtl tan tanf tanh tanhf tanhl tanl tgamma tgammaf"
+        "tgammal trunc truncf truncl"
+    ]
+
 # The names, one each.
 function names() -> [str]
     return split(NAMES)
@@ -151,6 +180,10 @@ function names() -> [str]
 # The macros left to the headers, one each.
 function left() -> [str]
     return split(LEFT_LINES)
+
+# The functions of `<math.h>` the list holds, one each.
+function math() -> [str]
+    return split(MATH_LINES)
 
 function split(lines: [str]) -> [str]
     out: [str] @= []
