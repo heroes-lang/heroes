@@ -122,7 +122,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 HeroArrayHeader * h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(void) {
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t4; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 bb0:
     t1 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice;
@@ -149,7 +149,7 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t h0_n) {
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.twice"); HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.twice"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 bb0:
     t1 = h0_n;
@@ -170,7 +170,7 @@ int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t 
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(int64_t h0_n) {
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.thrice"); HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.thrice"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 bb0:
     t1 = h0_n;
@@ -191,7 +191,7 @@ int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(int64_t
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t h0_n) {
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.worker"); int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; h_0fn_48ac9712 h4_f; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0fn_48ac9712 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.worker"); int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t2, *t5, *t8, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t15, t16, t17, t18, t19; h_0fn_48ac9712 h4_f; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t10, t12; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 bb0:
     t1 = INT64_C(0);
@@ -284,7 +284,7 @@ int64_t h_0cb_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t
 #line 30 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 void h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_main(void) {
 #line 30 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-    int64_t h0_spawned; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_spawned; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t10, *t16, *t18, *t19; HERO_NODEBUG h_0fn_48ac9712 t1, t12; HERO_NODEBUG int64_t t2, t3, t4, t5, t7, t8, t11, t13, t14, t17; HERO_NODEBUG HeroStr t6, t9, t15; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 bb0:
     t1 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker;

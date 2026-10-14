@@ -24111,7 +24111,7 @@ void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void);
 #line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
 void h_fixedbugs140variantsthrougharraysathousanddeepbuild_main(void) {
 #line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroMapHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG HeroMapHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG HeroMapHeader * t12; HERO_NODEBUG HeroMapHeader * t13; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HeroMapHeader * h1_m = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t2, *t4, *t5, *t10, *t11; HERO_NODEBUG HeroMapHeader *h3_own3 = {0}, *t7, *t8, *t12, *t13; HERO_NODEBUG int64_t t3, t9; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 5027 "tests/golden/run/fixedbugs-140-variants-through-arrays-a-thousand-deep-build.hero"
 bb0:
     t1 = hero_array_new(&h_fixedbugs140variantsthrougharraysathousanddeepbuild_R999_desc, 1);

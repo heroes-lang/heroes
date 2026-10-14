@@ -163,7 +163,7 @@ void h_deadaddressrememberedthroughamillionlaterends_main(void);
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
 void h_deadaddressrememberedthroughamillionlaterends_main(void) {
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
-    big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; HERO_NODEBUG big * t1; HERO_NODEBUG big * t2; HERO_NODEBUG big * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG big * t8; HERO_NODEBUG big * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG big * t16; HERO_NODEBUG int64_t t17; HERO_ENTRY_STOP; goto bb0;
+    big * h0_target; big * h1_keep; int64_t h2_i; big * h3_n; HERO_NODEBUG big *t1, *t2, *t3, *t8, *t9, *t16; HERO_NODEBUG int64_t t4, t5, t6, t10, t11, t12, t14, t17; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t13, t15; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/dead-address-remembered-through-a-million-later-ends.hero"
 bb0:
     t1 = big_new();

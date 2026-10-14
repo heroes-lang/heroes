@@ -97,7 +97,7 @@ void h_adversarialshortcircuit_main(void);
 #line 9 "tests/golden/run/adversarial-short-circuit.hero"
 void h_adversarialshortcircuit_main(void) {
 #line 9 "tests/golden/run/adversarial-short-circuit.hero"
-    HERO_NODEBUG bool h0_b0; int64_t h1_n; HERO_NODEBUG bool h2_b1; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG bool t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG bool h0_b0, h2_b1, t1, t6, t7, t13, t18, t19; int64_t h1_n; HERO_NODEBUG int64_t t2, t3, t4, t5, t8, t9, t10, t11, t12, t14, t15, t16, t17, t20, t21; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/adversarial-short-circuit.hero"
 bb0:
     t1 = false;

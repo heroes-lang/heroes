@@ -168,7 +168,7 @@ void h_ffilibm_main(void);
 #line 32 "tests/golden/run/ffi-libm.hero"
 void h_ffilibm_main(void) {
 #line 32 "tests/golden/run/ffi-libm.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG double t10; HERO_NODEBUG double t11; HERO_NODEBUG double t12; HERO_NODEBUG double t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2, t3, t4, t5, t10, t11, t12, t13; HERO_NODEBUG int64_t t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/run/ffi-libm.hero"
 bb0:
     t1 = 0x1p+4;

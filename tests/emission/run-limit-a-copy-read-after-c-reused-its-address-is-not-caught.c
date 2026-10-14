@@ -162,7 +162,7 @@ void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void);
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
 void h_limitacopyreadaftercreuseditsaddressisnotcaught_main(void) {
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
-    node * h0_a; node * h1_keep; node * h2_b; HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG node * t3; HERO_NODEBUG node * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG node * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG node * t8; HERO_ENTRY_STOP; goto bb0;
+    node * h0_a; node * h1_keep; node * h2_b; HERO_NODEBUG node *t1, *t2, *t3, *t4, *t6, *t8; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/limit-a-copy-read-after-c-reused-its-address-is-not-caught.hero"
 bb0:
     t1 = node_new();

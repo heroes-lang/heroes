@@ -246,7 +246,7 @@ bb0:
 #line 69 "examples/ctime/main.hero"
 int64_t h_main_year_of(struct tm h0_b) {
 #line 69 "examples/ctime/main.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG struct tm t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t3, t4, t8, t10, t14, t15; HERO_NODEBUG struct tm t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t11, t12, t13; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0;
 #line 69 "examples/ctime/main.hero"
 bb0:
     t1 = h0_b;
@@ -305,7 +305,7 @@ bb2:
 #line 73 "examples/ctime/main.hero"
 int64_t h_main_month_of(struct tm h0_b) {
 #line 73 "examples/ctime/main.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG struct tm t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t3, t4, t8, t10, t14, t15; HERO_NODEBUG struct tm t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t11, t12, t13; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0;
 #line 73 "examples/ctime/main.hero"
 bb0:
     t1 = h0_b;
@@ -364,7 +364,7 @@ bb2:
 #line 76 "examples/ctime/main.hero"
 int64_t h_main_day_of(struct tm h0_b) {
 #line 76 "examples/ctime/main.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG struct tm t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t3, t4, t8, t10, t12, t13; HERO_NODEBUG struct tm t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t11; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0;
 #line 76 "examples/ctime/main.hero"
 bb0:
     t1 = h0_b;
@@ -419,7 +419,7 @@ bb2:
 #line 79 "examples/ctime/main.hero"
 int64_t h_main_hour_of(struct tm h0_b) {
 #line 79 "examples/ctime/main.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG struct tm t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t3, t4, t8, t10, t12, t13; HERO_NODEBUG struct tm t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t11; HERO_NODEBUG bool t7; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0;
 #line 79 "examples/ctime/main.hero"
 bb0:
     t1 = h0_b;
@@ -474,7 +474,7 @@ bb2:
 #line 82 "examples/ctime/main.hero"
 h_0opt_13b8cf25 h_main_made(int64_t h0_year, int64_t h1_month, int64_t h2_day, int64_t h3_hour) {
 #line 82 "examples/ctime/main.hero"
-    HERO_NODEBUG h_0opt_e1f4933 h4_f0 = {0}; int32_t h5_y; HERO_NODEBUG h_0opt_e1f4933 h6_f1 = {0}; int32_t h7_m; HERO_NODEBUG h_0opt_e1f4933 h8_f2 = {0}; int32_t h9_d; HERO_NODEBUG h_0opt_e1f4933 h10_f3 = {0}; int32_t h11_h; HERO_NODEBUG h_0opt_13b8cf25 h12_ret0 = {0}; HERO_NODEBUG h_0opt_e1f4933 h13_own13 = {0}; HERO_NODEBUG h_0opt_e1f4933 h14_own14 = {0}; HERO_NODEBUG h_0opt_13b8cf25 h15_own15 = {0}; HERO_NODEBUG h_0opt_e1f4933 h16_own16 = {0}; HERO_NODEBUG h_0opt_13b8cf25 h17_own17 = {0}; HERO_NODEBUG h_0opt_e1f4933 h18_own18 = {0}; HERO_NODEBUG h_0opt_13b8cf25 h19_own19 = {0}; HERO_NODEBUG h_0opt_13b8cf25 h20_own20 = {0}; HERO_NODEBUG h_0opt_13b8cf25 h21_own21 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0opt_e1f4933 t4; HERO_NODEBUG h_0opt_e1f4933 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG h_0opt_e1f4933 t9; HERO_NODEBUG HeroFailure t10; HERO_NODEBUG h_0opt_13b8cf25 t11; HERO_NODEBUG h_0opt_e1f4933 t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0opt_e1f4933 t17; HERO_NODEBUG h_0opt_e1f4933 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG h_0opt_e1f4933 t22; HERO_NODEBUG HeroFailure t23; HERO_NODEBUG h_0opt_13b8cf25 t24; HERO_NODEBUG h_0opt_e1f4933 t25; HERO_NODEBUG int32_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_0opt_e1f4933 t28; HERO_NODEBUG h_0opt_e1f4933 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_e1f4933 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_13b8cf25 t35; HERO_NODEBUG h_0opt_e1f4933 t36; HERO_NODEBUG int32_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_0opt_e1f4933 t39; HERO_NODEBUG h_0opt_e1f4933 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e1f4933 t44; HERO_NODEBUG HeroFailure t45; HERO_NODEBUG h_0opt_13b8cf25 t46; HERO_NODEBUG h_0opt_e1f4933 t47; HERO_NODEBUG int32_t t48; HERO_NODEBUG int32_t t49; HERO_NODEBUG int32_t t50; HERO_NODEBUG int32_t t51; HERO_NODEBUG int32_t t52; HERO_NODEBUG struct tm t53; HERO_NODEBUG h_0opt_13b8cf25 t54; HERO_NODEBUG h_0opt_13b8cf25 t55; HERO_NODEBUG h_0opt_e1f4933 t56; HERO_NODEBUG h_0opt_e1f4933 t57; HERO_NODEBUG h_0opt_e1f4933 t58; HERO_NODEBUG h_0opt_e1f4933 t59; HERO_NODEBUG h_0opt_13b8cf25 t60; HERO_NODEBUG h_0opt_e1f4933 t61; HERO_NODEBUG h_0opt_e1f4933 t62; HERO_NODEBUG h_0opt_13b8cf25 t63; HERO_NODEBUG h_0opt_e1f4933 t64; HERO_NODEBUG h_0opt_e1f4933 t65; HERO_NODEBUG h_0opt_13b8cf25 t66; HERO_NODEBUG h_0opt_13b8cf25 t67; HERO_NODEBUG h_0opt_13b8cf25 t68; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e1f4933 h4_f0 = {0}, h6_f1 = {0}, h8_f2 = {0}, h10_f3 = {0}, h13_own13 = {0}, h14_own14 = {0}, h16_own16 = {0}, h18_own18 = {0}, t4, t5, t9, t12, t17, t18, t22, t25, t28, t29, t33, t36, t39, t40, t44, t47, t56, t57, t58, t59, t61, t62, t64, t65; int32_t h5_y; int32_t h7_m; int32_t h9_d; int32_t h11_h; HERO_NODEBUG h_0opt_13b8cf25 h12_ret0 = {0}, h15_own15 = {0}, h17_own17 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, t11, t24, t35, t46, t54, t55, t60, t63, t66, t67, t68; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t14, t15, t16, t19, t20, t27, t30, t31, t38, t41, t42; HERO_NODEBUG bool t8, t21, t32, t43; HERO_NODEBUG HeroFailure t10, t23, t34, t45; HERO_NODEBUG int32_t t13, t26, t37, t48, t49, t50, t51, t52; HERO_NODEBUG struct tm t53; HERO_ENTRY_STOP; goto bb0;
 #line 82 "examples/ctime/main.hero"
 bb0:
     t1 = h0_year;
@@ -779,7 +779,7 @@ bb9:
 #line 89 "examples/ctime/main.hero"
 HeroStr h_main_shown(struct tm h0_b) {
 #line 89 "examples/ctime/main.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG struct tm t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG struct tm t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG struct tm t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG struct tm t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t3, t4, t5, t8, t9, t10, t11, t14, t15, t16, t17, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34; HERO_NODEBUG struct tm t1, t6, t12, t18; HERO_NODEBUG int64_t t2, t7, t13, t19; HERO_ENTRY_STOP; goto bb0;
 #line 89 "examples/ctime/main.hero"
 bb0:
     t1 = h0_b;
@@ -912,7 +912,7 @@ bb0:
 #line 92 "examples/ctime/main.hero"
 HeroStr h_main_padded(int64_t h0_n) {
 #line 92 "examples/ctime/main.hero"
-    HERO_NODEBUG HeroStr h1_r0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_r0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t4, t6, t7, t9, t10, t11, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t5, t8; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 92 "examples/ctime/main.hero"
 bb0:
     t1 = h0_n;
@@ -992,7 +992,7 @@ bb3:
 #line 98 "examples/ctime/main.hero"
 void h_main_main(void) {
 #line 98 "examples/ctime/main.hero"
-    HERO_NODEBUG h_0opt_13b8cf25 h0_f0 = {0}; struct tm h1_landing; HERO_NODEBUG h_0opt_13b8cf25 h2_f1 = {0}; struct tm h3_millennium; HERO_NODEBUG h_0opt_13b8cf25 h4_f2 = {0}; HERO_NODEBUG h_0opt_13b8cf25 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_13b8cf25 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_13b8cf25 h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_0opt_13b8cf25 t5; HERO_NODEBUG h_0opt_13b8cf25 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG h_0opt_13b8cf25 t10; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG h_0opt_13b8cf25 t12; HERO_NODEBUG struct tm t13; HERO_NODEBUG struct tm t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG struct tm t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG struct tm t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG struct tm t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG struct tm t22; HERO_NODEBUG int32_t t23; HERO_NODEBUG struct tm t24; HERO_NODEBUG int32_t t25; HERO_NODEBUG struct tm t26; HERO_NODEBUG int32_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG h_0opt_13b8cf25 t32; HERO_NODEBUG h_0opt_13b8cf25 t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG bool t36; HERO_NODEBUG h_0opt_13b8cf25 t37; HERO_NODEBUG HeroFailure t38; HERO_NODEBUG h_0opt_13b8cf25 t39; HERO_NODEBUG struct tm t40; HERO_NODEBUG struct tm t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG double t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG double t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG double t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG h_0opt_13b8cf25 t56; HERO_NODEBUG h_0opt_13b8cf25 t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG bool t60; HERO_NODEBUG h_0opt_13b8cf25 t61; HERO_NODEBUG h_0opt_13b8cf25 t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG h_0opt_13b8cf25 t64; HERO_NODEBUG h_0opt_13b8cf25 t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG h_0opt_13b8cf25 t67; HERO_NODEBUG h_0opt_13b8cf25 t68; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_13b8cf25 h0_f0 = {0}, h2_f1 = {0}, h4_f2 = {0}, h5_own5 = {0}, h7_own7 = {0}, h9_own9 = {0}, t5, t6, t10, t12, t32, t33, t37, t39, t56, t57, t61, t62, t64, t65, t67, t68; struct tm h1_landing; struct tm h3_millennium; HERO_NODEBUG HeroStr h6_own6 = {0}, h8_own8 = {0}, t15, t42, t63, t66; HERO_NODEBUG int64_t t1, t2, t3, t4, t7, t8, t17, t19, t21, t28, t29, t30, t31, t34, t35, t43, t44, t46, t47, t49, t50, t52, t53, t54, t55, t58, t59; HERO_NODEBUG bool t9, t36, t60; HERO_NODEBUG HeroFailure t11, t38; HERO_NODEBUG struct tm t13, t14, t16, t18, t20, t22, t24, t26, t40, t41; HERO_NODEBUG int32_t t23, t25, t27; HERO_NODEBUG double t45, t48, t51; HERO_ENTRY_STOP; goto bb0;
 #line 98 "examples/ctime/main.hero"
 bb0:
 #line 100 "examples/ctime/main.hero"

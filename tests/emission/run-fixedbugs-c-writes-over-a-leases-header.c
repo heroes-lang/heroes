@@ -156,7 +156,7 @@ void h_fixedbugscwritesoveraleasesheader_main(void);
 #line 21 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
 void h_fixedbugscwritesoveraleasesheader_main(void) {
 #line 21 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
-    HeroStr h0_word = {0}; const char * h1_x; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG const char * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_word = {0}; const char * h1_x; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t7, t8, t9; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5, *t6; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-c-writes-over-a-leases-header.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3205);

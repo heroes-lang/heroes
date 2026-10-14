@@ -163,7 +163,7 @@ void h_deadhandlethroughahelperthecheckercannotseeinto_main(void);
 #line 15 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
 void h_deadhandlethroughahelperthecheckercannotseeinto_finish(Obj * *ph0_j) {
 #line 15 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    HERO_NODEBUG Obj * t1; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG Obj *t1; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
 bb0:
     t1 = (*ph0_j);
@@ -187,7 +187,7 @@ bb0:
 #line 18 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
 void h_deadhandlethroughahelperthecheckercannotseeinto_main(void) {
 #line 18 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
-    Obj * h0_a; Obj * h1_b; HERO_NODEBUG Obj * t1; HERO_NODEBUG Obj * t2; HERO_NODEBUG Obj * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG Obj * t6; HERO_NODEBUG Obj * t8; HERO_ENTRY_STOP; goto bb0;
+    Obj * h0_a; Obj * h1_b; HERO_NODEBUG Obj *t1, *t2, *t3, *t6, *t8; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char *t5; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/dead-handle-through-a-helper-the-checker-cannot-see-into.hero"
 bb0:
     t1 = obj_new();

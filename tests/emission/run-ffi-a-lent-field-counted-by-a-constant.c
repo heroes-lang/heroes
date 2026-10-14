@@ -180,7 +180,17 @@ void h_ffialentfieldcountedbyaconstant_main(void);
 #line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 #line 183 "ffialentfieldcountedbyaconstant.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     return SL_NAME_LEN;
+#line 193 "ffialentfieldcountedbyaconstant.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -198,7 +208,7 @@ int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 void h_ffialentfieldcountedbyaconstant_main(void) {
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-    Sl h0_s; int64_t h1_k; __attribute__((unused)) Both h2_b; HERO_NODEBUG Sl t1; HERO_NODEBUG void * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG void * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG void * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG void * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG void * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG void * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG Sl t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG Both t36; HERO_NODEBUG const void * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_ENTRY_STOP; goto bb0;
+    Sl h0_s; int64_t h1_k; __attribute__((unused)) Both h2_b; HERO_NODEBUG Sl t1, t34; HERO_NODEBUG void *t4, *t9, *t14, *t22, *t27, *t31; HERO_NODEBUG int64_t t5, t6, t10, t11, t15, t16, t17, t18, t19, t23, t24, t28, t32, t33, t35, t40, t41; HERO_NODEBUG Both t36; HERO_NODEBUG const void *t39; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 bb0:
     t1 = sl_make();
@@ -312,7 +322,7 @@ bb0:
     hero_print_end();
 #line 49 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     return;
-#line 316 "ffialentfieldcountedbyaconstant.c"
+#line 326 "ffialentfieldcountedbyaconstant.c"
 }
 HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_Sl_eq(const Sl *a, const Sl *b) {
     if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;

@@ -168,7 +168,7 @@ void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void);
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 void h_fixedbugsafreedobjectreadthroughastalecopyisnotanullhandle_main(void) {
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
-    outer * h0_a; outer * h1_kept; HERO_NODEBUG outer * t1; HERO_NODEBUG outer * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG outer * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG outer * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG outer * t8; HERO_NODEBUG outer * t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG outer * t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    outer * h0_a; outer * h1_kept; HERO_NODEBUG outer *t1, *t2, *t4, *t6, *t8, *t9, *t12; HERO_NODEBUG HeroStr t3, t7, t11; HERO_NODEBUG int64_t t5, t13; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-a-freed-object-read-through-a-stale-copy-is-not-a-null-handle.hero"
 bb0:
     t1 = make();

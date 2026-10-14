@@ -176,7 +176,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 int64_t h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
-    hero_thread_guard("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen"); HERO_NODEBUG node * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen"); HERO_NODEBUG node *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 bb0:
     t1 = h0_n;
@@ -198,7 +198,7 @@ int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(
 #line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 void h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_main(void) {
 #line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
-    node * h0_a; HERO_NODEBUG node * t1; HERO_NODEBUG h_0fn_7a996e48 t2; HERO_NODEBUG node * t3; HERO_NODEBUG node * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    node * h0_a; HERO_NODEBUG node *t1, *t3, *t4; HERO_NODEBUG h_0fn_7a996e48 t2; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/limit-a-handle-c-kept-and-hands-a-callback-after-the-release-is-not-caught.hero"
 bb0:
     t1 = node_new();

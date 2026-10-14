@@ -1,0 +1,18 @@
+> breakpoint set --file fixedbugs-2043-a-step-into-a-literal-constant.hero --line 13
+!resolved: fixedbugs-2043-a-step-into-a-literal-constant.hero:13
+> run
+!stop: breakpoint at fixedbugs-2043-a-step-into-a-literal-constant.hero:13
+> step
+!stop: step in at fixedbugs-2043-a-step-into-a-literal-constant.hero:9
+> bt
+!frame: h_fixedbugs2043astepintoaliteralconstant_DIGITS at fixedbugs-2043-a-step-into-a-literal-constant.hero:9
+!frame: h_fixedbugs2043astepintoaliteralconstant_main at fixedbugs-2043-a-step-into-a-literal-constant.hero:13
+> finish
+!stop: step out at fixedbugs-2043-a-step-into-a-literal-constant.hero:13
+> breakpoint set --file fixedbugs-2043-a-step-into-a-literal-constant.hero --line 9
+!resolved: fixedbugs-2043-a-step-into-a-literal-constant.hero:9
+> continue
+!stop: breakpoint at fixedbugs-2043-a-step-into-a-literal-constant.hero:9
+> up
+!at: fixedbugs-2043-a-step-into-a-literal-constant.hero:14
+> continue

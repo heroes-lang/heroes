@@ -181,7 +181,7 @@ void h_ffiaconstructionnamestheintegerarmandcompares_main(void);
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 void h_ffiaconstructionnamestheintegerarmandcompares_main(void) {
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
-    SA h0_m; SA h1_b; SA h2_p; SA h3_q; HERO_NODEBUG SA t1; HERO_NODEBUG SA t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG SA t7; HERO_NODEBUG SA t8; HERO_NODEBUG float t9; HERO_NODEBUG SA t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG SA t12; HERO_NODEBUG SA t13; HERO_NODEBUG SA t14; HERO_NODEBUG SA t15; HERO_NODEBUG bool t16; HERO_ENTRY_STOP; goto bb0;
+    SA h0_m; SA h1_b; SA h2_p; SA h3_q; HERO_NODEBUG SA t1, t2, t7, t8, t10, t12, t13, t14, t15; HERO_NODEBUG int32_t t3, t4, t5, t6, t11; HERO_NODEBUG float t9; HERO_NODEBUG bool t16; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/ffi-a-construction-names-the-integer-arm-and-compares.hero"
 bb0:
     t1 = make_sa();

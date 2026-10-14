@@ -97,7 +97,7 @@ void h_abortarrayslice_main(void);
 #line 5 "tests/golden/run/abort-array-slice.hero"
 void h_abortarrayslice_main(void) {
 #line 5 "tests/golden/run/abort-array-slice.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *t4, *t5, *t8, *t10, *t13, *t15, *t16, *t17, *t18; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t9, t11, t12, t14; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/run/abort-array-slice.hero"
 bb0:
     t1 = INT64_C(10);

@@ -157,7 +157,7 @@ void h_cfreesaleaseonalatercall_main(void);
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 void h_cfreesaleaseonalatercall_main(void) {
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
-    HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG const char * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1, t2, t6; HERO_NODEBUG const char *t3, *t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/c-frees-a-lease-on-a-later-call.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);

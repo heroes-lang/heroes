@@ -163,7 +163,7 @@ bb0:
 #line 21 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
 void h_fixedbugs584adeprecatedrecordinasignaturebuildssilent_main(void) {
 #line 21 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG struct old_pair t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG struct old_pair t2; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-584-a-deprecated-record-in-a-signature-builds-silent.hero"
 bb0:
     t1 = INT64_C(4);

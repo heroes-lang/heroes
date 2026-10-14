@@ -171,7 +171,7 @@ void h_fixedbugs396sha256finalintoonecellaborts_main(void) {
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
 #define h1_m (*hero_lend_h1_m)
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
-    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalintoonecellaborts.main", "c"); uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396sha256finalintoonecellaborts.main", "m"); HERO_NODEBUG uint32_t t1; HERO_NODEBUG struct SHA256state_st t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG const char * t7; HERO_NODEBUG uint64_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG uint8_t t12; HERO_ENTRY_STOP; goto bb0;
+    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalintoonecellaborts.main", "c"); uint8_t *const hero_lend_h1_m = (uint8_t *)hero_lend_local(sizeof(uint8_t), "fixedbugs396sha256finalintoonecellaborts.main", "m"); HERO_NODEBUG uint32_t t1; HERO_NODEBUG struct SHA256state_st t2; HERO_NODEBUG uint8_t t3, t12; HERO_NODEBUG int32_t t4, t9, t10; HERO_NODEBUG HeroStr t5, t6, t11; HERO_NODEBUG const char *t7; HERO_NODEBUG uint64_t t8; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-into-one-cell-aborts.hero"
 bb0:
     t1 = UINT64_C(0);

@@ -121,7 +121,7 @@ void h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_main(
 #line 13 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 h_0opt_e201354 h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_half(int64_t h0_n) {
 #line 13 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = h0_n;
@@ -202,7 +202,7 @@ bb4:
 #line 18 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_bump(HeroArrayHeader * *ph0_xs) {
 #line 18 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t2 = INT64_C(100);
@@ -234,7 +234,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_total(HeroArrayHeader * h0_xs, int64_t h1_n) {
 #line 26 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = h0_xs;
@@ -256,7 +256,7 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_sure(HeroArrayHeader * h0_xs, bool h1_b) {
 #line 29 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HERO_NODEBUG int64_t h2_ret0; HERO_NODEBUG bool t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_ret0, t3, t4, t5, t6, t7, t9, t10, t11, t12; HERO_NODEBUG bool t1; HERO_NODEBUG HeroArrayHeader *t2, *t8; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = h1_b;
@@ -308,7 +308,7 @@ bb4:
 #line 34 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_must(void) {
 #line 34 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h4_own4 = {0}, t7, t8, t12, t14, t22, t23; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t1, *t5, *t19, *t20, *t21; HERO_NODEBUG int64_t t3, t6, t9, t10, t15, t16, t17, t18; HERO_NODEBUG bool t11; HERO_NODEBUG HeroFailure t13; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -398,7 +398,7 @@ bb2:
 #line 39 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_default(void) {
 #line 39 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h5_own5 = {0}, t7, t8, t12, t22, t23; HERO_NODEBUG int64_t h2_r0, t3, t6, t9, t10, t13, t14, t15, t16, t17, t18; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *t1, *t5, *t19, *t20, *t21; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -496,7 +496,7 @@ bb3:
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 h_0opt_e201354 h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_question(void) {
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t8, t12, t14, t15, t20, t21, t25, t26, t27, t28; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *t1, *t5, *t22, *t23, *t24; HERO_NODEBUG int64_t t3, t6, t9, t10, t16, t17, t18, t19; HERO_NODEBUG bool t11; HERO_NODEBUG HeroFailure t13; HERO_ENTRY_STOP; goto bb0;
 #line 44 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -616,7 +616,7 @@ bb3:
 #line 49 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_and(void) {
 #line 49 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG bool h1_b0; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG bool h1_b0, t9, t10, t11; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t1, *t5, *t6, *t13, *t14, *t15; HERO_NODEBUG int64_t t3, t7, t8, t12; HERO_ENTRY_STOP; goto bb0;
 #line 49 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -682,7 +682,7 @@ bb2:
 #line 54 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 int64_t h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_through_or(void) {
 #line 54 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG bool h1_b0; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG bool h1_b0, t9, t10, t11; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t1, *t5, *t6, *t13, *t14, *t15; HERO_NODEBUG int64_t t3, t7, t8, t12; HERO_ENTRY_STOP; goto bb0;
 #line 54 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -748,7 +748,7 @@ bb2:
 #line 59 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 void h_fixedbugs387areadbeforeabranchandawritethroughatkeepsthevalueitread_main(void) {
 #line 59 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
-    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_f1 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG h_0opt_e201354 t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG HeroFailure t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_f1 = {0}, h5_own5 = {0}, h6_own6 = {0}, t7, t8, t12, t14, t21, t22, t26, t28, t35, t36, t37, t38; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *t1, *t5, *t32, *t33, *t34; HERO_NODEBUG int64_t t3, t6, t9, t10, t15, t16, t17, t18, t19, t20, t23, t24, t29, t30, t31; HERO_NODEBUG bool t11, t25; HERO_NODEBUG HeroFailure t13, t27; HERO_ENTRY_STOP; goto bb0;
 #line 59 "tests/golden/run/fixedbugs-387-a-read-before-a-branch-and-a-write-through-at-keeps-the-value-it-read.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

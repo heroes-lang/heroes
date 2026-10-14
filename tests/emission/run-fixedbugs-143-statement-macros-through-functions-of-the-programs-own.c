@@ -167,7 +167,7 @@ void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void);
 #line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
 void h_fixedbugs143statementmacrosthroughfunctionsoftheprogramsown_main(void) {
 #line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
-    bit_set * h0_s; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG bit_set * t3; HERO_NODEBUG bit_set * t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG bit_set * t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG bit_set * t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG bit_set * t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG bit_set * t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG bit_set * t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG bit_set * t18; HERO_ENTRY_STOP; goto bb0;
+    bit_set * h0_s; HERO_NODEBUG int32_t t1, t2, t5, t7, t9, t11, t12, t14, t15, t17; HERO_NODEBUG bit_set *t3, *t4, *t6, *t8, *t10, *t13, *t16, *t18; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-143-statement-macros-through-functions-of-the-programs-own.hero"
 bb0:
     t1 = INT64_C(256);

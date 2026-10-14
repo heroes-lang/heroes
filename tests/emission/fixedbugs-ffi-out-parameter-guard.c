@@ -163,7 +163,17 @@ void h_ffioutparameterguard_main(void);
 #line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 int64_t h_ffioutparameterguard_SQLITE_OK(void) {
 #line 166 "ffioutparameterguard.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 34 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return SQLITE_OK;
+#line 176 "ffioutparameterguard.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -187,7 +197,7 @@ void h_ffioutparameterguard_main(void) {
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 #define h2_tail (*hero_lend_h2_tail)
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
-    void * *const hero_lend_h0_db = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "db"); void * *const hero_lend_h1_stmt = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "stmt"); const char * *const hero_lend_h2_tail = (const char * *)hero_lend_local(sizeof(const char *), "ffioutparameterguard.main", "tail"); int64_t h3_rc; HERO_NODEBUG void * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG void * t8; HERO_NODEBUG const char * t9; HERO_NODEBUG void * t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG const char * t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_ENTRY_STOP; goto bb0;
+    void * *const hero_lend_h0_db = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "db"); void * *const hero_lend_h1_stmt = (void * *)hero_lend_local(sizeof(void *), "ffioutparameterguard.main", "stmt"); const char * *const hero_lend_h2_tail = (const char * *)hero_lend_local(sizeof(const char *), "ffioutparameterguard.main", "tail"); int64_t h3_rc; HERO_NODEBUG void *t1, *t8, *t10; HERO_NODEBUG HeroStr t2, t7, t11; HERO_NODEBUG const char *t3, *t9, *t12; HERO_NODEBUG int64_t t4, t5, t14, t15, t16; HERO_NODEBUG bool t6, t17; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0;
 #line 38 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
 bb0:
     t1 = ((void *)0);
@@ -266,7 +276,7 @@ bb4:
     hero_lend_local_give(hero_lend_h0_db);
 #line 42 "tests/golden/fixedbugs/ffi-out-parameter-guard.hero"
     return;
-#line 270 "ffioutparameterguard.c"
+#line 280 "ffioutparameterguard.c"
 }
 #undef h0_db
 #undef h1_stmt

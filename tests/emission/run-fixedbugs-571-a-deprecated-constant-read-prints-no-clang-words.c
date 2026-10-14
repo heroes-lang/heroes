@@ -154,7 +154,17 @@ void h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_main(void);
 #line 13 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
 int64_t h_fixedbugs571adeprecatedconstantreadprintsnoclangwords_OLD_LIMIT(void) {
 #line 157 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 13 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
     return OLD_LIMIT;
+#line 167 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -182,7 +192,7 @@ bb0:
     hero_print_end();
 #line 16 "tests/golden/run/fixedbugs-571-a-deprecated-constant-read-prints-no-clang-words.hero"
     return;
-#line 186 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
+#line 196 "fixedbugs571adeprecatedconstantreadprintsnoclangwords.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

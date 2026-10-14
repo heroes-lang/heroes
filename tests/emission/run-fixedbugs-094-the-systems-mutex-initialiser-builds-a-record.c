@@ -195,7 +195,7 @@ void h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_main(void) {
 #line 16 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
 #define h0_m (*hero_lend_h0_m)
 #line 16 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
-    hero_mutex *const hero_lend_h0_m = (hero_mutex *)hero_lend_local(sizeof(hero_mutex), "fixedbugs094thesystemsmutexinitialiserbuildsarecord.main", "m"); HERO_NODEBUG hero_mutex t1; HERO_NODEBUG hero_mutex t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_ENTRY_STOP; goto bb0;
+    hero_mutex *const hero_lend_h0_m = (hero_mutex *)hero_lend_local(sizeof(hero_mutex), "fixedbugs094thesystemsmutexinitialiserbuildsarecord.main", "m"); HERO_NODEBUG hero_mutex t1, t2; HERO_NODEBUG int32_t t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-094-the-systems-mutex-initialiser-builds-a-record.hero"
 bb0:
     t1 = h_fixedbugs094thesystemsmutexinitialiserbuildsarecord_HERO_MUTEX_INIT();

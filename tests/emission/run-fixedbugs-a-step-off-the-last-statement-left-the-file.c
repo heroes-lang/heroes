@@ -103,7 +103,7 @@ void h_fixedbugsastepoffthelaststatementleftthefile_main(void);
 #line 25 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
 int64_t h_fixedbugsastepoffthelaststatementleftthefile_twice(int64_t h0_n) {
 #line 25 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    int64_t h1_doubled; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_doubled; HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
 bb0:
     t1 = h0_n;
@@ -122,7 +122,7 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
 HeroStr h_fixedbugsastepoffthelaststatementleftthefile_shout(HeroStr h0_s) {
 #line 29 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    HeroStr h1_loud = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h1_loud = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
 bb0:
     t1 = h0_s;
@@ -155,7 +155,7 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
 void h_fixedbugsastepoffthelaststatementleftthefile_main(void) {
 #line 33 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroStr t24; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t10, *t13, *t17, *t22, *t23; HERO_NODEBUG HeroStr h2_own2 = {0}, t12, t16, t20, t21, t24; HERO_NODEBUG int64_t t3, t4, t7, t8, t11, t14, t15, t18, t19; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-a-step-off-the-last-statement-left-the-file.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

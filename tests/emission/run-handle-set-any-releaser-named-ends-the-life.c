@@ -165,7 +165,7 @@ void h_handlesetanyreleasernamedendsthelife_main(void);
 #line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
 void h_handlesetanyreleasernamedendsthelife_main(void) {
 #line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
-    hh * h0_a; hh * h1_b; HERO_NODEBUG int64_t t1; HERO_NODEBUG hh * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG hh * t4; HERO_NODEBUG hh * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG hh * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG hh * t10; HERO_NODEBUG hh * t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
+    hh * h0_a; hh * h1_b; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG hh *t2, *t4, *t5, *t7, *t10, *t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/handle-set-any-releaser-named-ends-the-life.hero"
 bb0:
     t1 = INT64_C(7);

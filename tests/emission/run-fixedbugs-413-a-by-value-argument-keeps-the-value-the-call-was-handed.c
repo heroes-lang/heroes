@@ -119,7 +119,7 @@ void h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_main(void);
 #line 28 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_rewrite(h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P *ph0_p, h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P h1_q) {
 #line 28 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(5);
@@ -138,7 +138,7 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_element(int64_t *ph0_e, HeroArrayHeader * h1_q) {
 #line 32 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t2, *t5; HERO_NODEBUG int64_t t1, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(9);
@@ -165,7 +165,7 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_field(HeroArrayHeader * *ph0_items, h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h1_q) {
 #line 36 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h2_own2 = {0}, t3, t7; HERO_NODEBUG int64_t t1, t2, t5, t6; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(0);
@@ -196,7 +196,7 @@ bb0:
 #line 40 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_set_in_record(h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B *ph0_b, HeroArrayHeader * h1_items) {
 #line 40 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t6; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 40 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(0);
@@ -225,7 +225,7 @@ bb0:
 #line 44 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_replace(h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B *ph0_b, HeroArrayHeader * h1_items) {
 #line 44 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t4, *t7, *t11, *t12; HERO_NODEBUG int64_t t1, t2, t5, t6, t8, t9, t10; HERO_ENTRY_STOP; goto bb0;
 #line 44 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(5);
@@ -272,7 +272,7 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 int64_t h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_through(HeroArrayHeader * *ph0_xs) {
 #line 48 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG HeroArrayHeader *t2; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(0);
@@ -294,7 +294,7 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 void h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_main(void) {
 #line 51 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
-    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P h0_x; HeroArrayHeader * h1_xs = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h2_f = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h3_r = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h4_z = {0}; HeroArrayHeader * h5_ws = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t78; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t81; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t84; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P h0_x; HeroArrayHeader * h1_xs = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h2_f = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h3_r = {0}; h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h4_z = {0}; HeroArrayHeader * h5_ws = {0}; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *h7_own7 = {0}, *h9_own9 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *t8, *t16, *t19, *t24, *t32, *t37, *t42, *t46, *t51, *t56, *t60, *t63, *t72, *t75, *t76, *t77, *t80, *t83, *t86, *t87; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_B h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, t25, t28, t31, t38, t41, t45, t52, t55, t59, t78, t79, t81, t82, t84, t85; HERO_NODEBUG int64_t t1, t4, t7, t10, t13, t15, t17, t20, t21, t22, t23, t26, t27, t29, t33, t34, t35, t36, t39, t40, t43, t47, t48, t49, t50, t53, t54, t57, t61, t62, t65, t68, t70, t73, t74; HERO_NODEBUG h_fixedbugs413abyvalueargumentkeepsthevaluethecallwashanded_P t2, t3, t6; HERO_NODEBUG HeroStr t5, t18, t30, t44, t58, t71; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-413-a-by-value-argument-keeps-the-value-the-call-was-handed.hero"
 bb0:
     t1 = INT64_C(1);

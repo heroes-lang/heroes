@@ -154,7 +154,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
 
     # The word a declaration the debugger is not shown carries, a local the
     # lowering or the emitter invented (`emit/nodebug.hero` says which and
-    # why; panel 213's R1, provisional): in the unit, so the runtime's header
+    # why; panel 213's R1, ratified 2026-10-14): in the unit, so the runtime's header
     # and its ABI stamp do not move, and in every unit alike.
     writer.line(@w, text: nodebug.DEFINE)
 

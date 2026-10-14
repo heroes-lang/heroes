@@ -167,7 +167,7 @@ void h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_main(void);
 #line 20 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
 void h_fixedbugs143systemmacrosthroughfunctionsoftheprogramsown_main(void) {
 #line 20 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
-    fd_set * h0_s; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG fd_set * t3; HERO_NODEBUG fd_set * t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG fd_set * t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG fd_set * t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG fd_set * t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG fd_set * t13; HERO_ENTRY_STOP; goto bb0;
+    fd_set * h0_s; HERO_NODEBUG int32_t t1, t2, t5, t7, t9, t10, t12; HERO_NODEBUG fd_set *t3, *t4, *t6, *t8, *t11, *t13; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-143-system-macros-through-functions-of-the-programs-own.hero"
 bb0:
     t1 = INT64_C(256);

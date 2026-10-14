@@ -105,7 +105,7 @@ HERO_TU_LOCAL HeroMapHeader * h_fixedbugsanemptyresultboundbyitscontext_no_map_d
 #line 17 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
 void h_fixedbugsanemptyresultboundbyitscontext_main(void) {
 #line 17 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_fs = {0}; HeroMapHeader * h2_m = {0}; HeroArrayHeader * h3_ys = {0}; HeroArrayHeader * h4_gs = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroMapHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroMapHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG double t21; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG double t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroMapHeader * t34; HERO_NODEBUG HeroMapHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HeroArrayHeader * h1_fs = {0}; HeroMapHeader * h2_m = {0}; HeroArrayHeader * h3_ys = {0}; HeroArrayHeader * h4_gs = {0}; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t2, *t4, *t7, *t10, *t15, *t19, *t23, *t27, *t30, *t31, *t32, *t33, *t36, *t37; HERO_NODEBUG HeroMapHeader *h7_own7 = {0}, *t6, *t13, *t34, *t35; HERO_NODEBUG HeroStr t1, t3, t5, t9, t12, t26; HERO_NODEBUG int64_t t8, t11, t14, t17, t24, t25, t28; HERO_NODEBUG double t21, t29; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_e2ede40);
@@ -248,7 +248,7 @@ bb0:
 #line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugsanemptyresultboundbyitscontext_empty_of_1b9a87(HeroStr h0_why) {
 #line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
 bb0:
     t1 = h0_why;
@@ -274,7 +274,7 @@ bb0:
 #line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugsanemptyresultboundbyitscontext_empty_of_1ad16c(HeroStr h0_why) {
 #line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
 bb0:
     t1 = h0_why;
@@ -300,7 +300,7 @@ bb0:
 #line 13 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
 HERO_TU_LOCAL HeroMapHeader * h_fixedbugsanemptyresultboundbyitscontext_no_map_d3eff76(HeroStr h0_why) {
 #line 13 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
-    HERO_NODEBUG HeroMapHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroMapHeader * t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroMapHeader *h1_own1 = {0}, *t2, *t3; HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-an-empty-result-bound-by-its-context.hero"
 bb0:
     t1 = h0_why;

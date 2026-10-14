@@ -118,7 +118,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 #line 9 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 h_0opt_e201354 h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_half(int64_t h0_n) {
 #line 9 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 bb0:
     t1 = h0_n;
@@ -199,7 +199,7 @@ bb4:
 #line 14 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_bump(HeroArrayHeader * *ph0_xs) {
 #line 14 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 bb0:
     t2 = INT64_C(100);
@@ -216,7 +216,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_clear(HeroArrayHeader * *ph0_xs) {
 #line 18 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t6, *t7; HERO_NODEBUG int64_t t1, t2, t3, t5; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 bb0:
     t1 = INT64_C(9);
@@ -255,7 +255,7 @@ bb0:
 #line 22 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_total(HeroArrayHeader * h0_xs, int64_t h1_n) {
 #line 22 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 bb0:
     t1 = h0_xs;
@@ -277,7 +277,7 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 int64_t h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_later(int64_t h0_n, HeroArrayHeader * h1_xs) {
 #line 25 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 bb0:
     t1 = h1_xs;
@@ -299,7 +299,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 void h_fixedbugs387awritebyastoreanestedcallorinaloopaftertheread_main(void) {
 #line 28 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
-    HeroArrayHeader * h0_a = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HeroArrayHeader * h2_b = {0}; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HeroArrayHeader * h4_c = {0}; HERO_NODEBUG h_0opt_e201354 h5_f2 = {0}; HeroArrayHeader * h6_d = {0}; int64_t h7_sum; HERO_NODEBUG HeroArrayHeader * h8_xs0 = {0}; HERO_NODEBUG int64_t h9_i0; int64_t h10_at; HERO_NODEBUG h_0opt_e201354 h11_f3 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * h23_own23 = {0}; HERO_NODEBUG h_0opt_e201354 h24_own24 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG h_0opt_e201354 t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG h_0opt_e201354 t53; HERO_NODEBUG HeroFailure t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG HeroArrayHeader * t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG bool t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG h_0opt_e201354 t81; HERO_NODEBUG h_0opt_e201354 t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG bool t85; HERO_NODEBUG h_0opt_e201354 t86; HERO_NODEBUG HeroFailure t87; HERO_NODEBUG h_0opt_e201354 t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG int64_t t91; HERO_NODEBUG int64_t t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG int64_t t97; HERO_NODEBUG HeroStr t98; HERO_NODEBUG HeroArrayHeader * t99; HERO_NODEBUG int64_t t100; HERO_NODEBUG HeroArrayHeader * t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG h_0opt_e201354 t104; HERO_NODEBUG h_0opt_e201354 t105; HERO_NODEBUG HeroArrayHeader * t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_NODEBUG HeroArrayHeader * t108; HERO_NODEBUG h_0opt_e201354 t109; HERO_NODEBUG h_0opt_e201354 t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_NODEBUG HeroArrayHeader * t112; HERO_NODEBUG HeroArrayHeader * t113; HERO_NODEBUG h_0opt_e201354 t114; HERO_NODEBUG h_0opt_e201354 t115; HERO_NODEBUG HeroArrayHeader * t116; HERO_NODEBUG HeroArrayHeader * t117; HERO_NODEBUG HeroArrayHeader * t118; HERO_NODEBUG HeroArrayHeader * t119; HERO_NODEBUG HeroArrayHeader * t120; HERO_NODEBUG h_0opt_e201354 t121; HERO_NODEBUG h_0opt_e201354 t122; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_a = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h11_f3 = {0}, h14_own14 = {0}, h17_own17 = {0}, h20_own20 = {0}, h24_own24 = {0}, t7, t8, t12, t14, t28, t29, t33, t35, t48, t49, t53, t55, t81, t82, t86, t88, t104, t105, t109, t110, t114, t115, t121, t122; HeroArrayHeader * h2_b = {0}; HeroArrayHeader * h4_c = {0}; HeroArrayHeader * h6_d = {0}; int64_t h7_sum; HERO_NODEBUG HeroArrayHeader *h8_xs0 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *t1, *t5, *t20, *t22, *t26, *t37, *t42, *t58, *t60, *t67, *t70, *t73, *t77, *t99, *t101, *t102, *t103, *t106, *t107, *t108, *t111, *t112, *t113, *t116, *t117, *t118, *t119, *t120; HERO_NODEBUG int64_t h9_i0, t3, t6, t9, t10, t15, t16, t17, t18, t21, t24, t27, t30, t31, t36, t38, t39, t40, t41, t44, t46, t47, t50, t51, t56, t57, t59, t62, t64, t65, t66, t68, t69, t71, t74, t75, t76, t78, t79, t80, t83, t84, t89, t90, t91, t92, t93, t94, t95, t96, t97, t100; int64_t h10_at; HERO_NODEBUG bool t11, t32, t52, t72, t85; HERO_NODEBUG HeroFailure t13, t34, t54, t87; HERO_NODEBUG HeroStr t19, t98; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-387-a-write-by-a-store-a-nested-call-or-in-a-loop-after-the-read.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -750,7 +750,7 @@ bb12:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

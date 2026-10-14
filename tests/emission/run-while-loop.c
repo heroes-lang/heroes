@@ -97,7 +97,7 @@ void h_whileloop_main(void);
 #line 5 "tests/golden/run/while-loop.hero"
 void h_whileloop_main(void) {
 #line 5 "tests/golden/run/while-loop.hero"
-    int64_t h0_n; int64_t h1_total; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_n; int64_t h1_total; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t18, t19; HERO_NODEBUG bool t5, t17; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/run/while-loop.hero"
 bb0:
     t1 = INT64_C(0);

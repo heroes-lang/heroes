@@ -162,7 +162,7 @@ int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanit
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 #define h0_n (*hero_lend_h0_n)
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
-    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.lend", "n"); HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.lend", "n"); HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 bb0:
     t1 = INT64_C(0);
@@ -185,7 +185,7 @@ int64_t h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanit
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 #define h0_m (*hero_lend_h0_m)
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
-    int64_t *const hero_lend_h0_m = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.later", "m"); HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h0_m = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser.later", "m"); HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 bb0:
     t1 = INT64_C(0);
@@ -211,7 +211,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 void h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_main(void) {
 #line 35 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-451-a-local-c-writes-while-a-later-lend-holds-its-region-is-seen-by-the-sanitiser.hero"
 bb0:
     t1 = h_fixedbugs451alocalcwriteswhilealaterlendholdsitsregionisseenbythesanitiser_lend();

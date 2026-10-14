@@ -105,7 +105,7 @@ void h_specthedocumentsownexample_main(void);
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
 int64_t h_specthedocumentsownexample_dist2(h_specthedocumentsownexample_Point h0_a, h_specthedocumentsownexample_Point h1_b) {
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
-    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG h_specthedocumentsownexample_Point t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_specthedocumentsownexample_Point t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_specthedocumentsownexample_Point t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_specthedocumentsownexample_Point t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG h_specthedocumentsownexample_Point t1, t3, t6, t8; HERO_NODEBUG int64_t t2, t4, t5, t7, t9, t10, t11, t12, t13, t14, t15, t16, t17; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/spec-the-documents-own-example.hero"
 bb0:
     t1 = h1_b;
@@ -151,7 +151,7 @@ bb0:
 #line 40 "tests/golden/run/spec-the-documents-own-example.hero"
 void h_specthedocumentsownexample_main(void) {
 #line 40 "tests/golden/run/spec-the-documents-own-example.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_specthedocumentsownexample_Point t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_specthedocumentsownexample_Point t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t5, t7; HERO_NODEBUG h_specthedocumentsownexample_Point t3, t6; HERO_ENTRY_STOP; goto bb0;
 #line 40 "tests/golden/run/spec-the-documents-own-example.hero"
 bb0:
     t1 = INT64_C(0);

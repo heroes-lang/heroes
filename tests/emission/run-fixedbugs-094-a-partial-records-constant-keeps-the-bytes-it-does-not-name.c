@@ -191,7 +191,7 @@ struct big h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_I
 #line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
 void h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_main(void) {
 #line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
-    struct big h0_b; HERO_NODEBUG struct big t1; HERO_NODEBUG struct big t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG struct big t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    struct big h0_b; HERO_NODEBUG struct big t1, t2, t4; HERO_NODEBUG int64_t t3, t5; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-094-a-partial-records-constant-keeps-the-bytes-it-does-not-name.hero"
 bb0:
     t1 = h_fixedbugs094apartialrecordsconstantkeepsthebytesitdoesnotname_BIG_INIT();

@@ -165,7 +165,7 @@ void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void);
 #line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
 void h_fixedbugsareferencebesideanendinonecallischeckedfirst_main(void) {
 #line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
-    ob * h0_a; HERO_NODEBUG ob * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG ob * t3; HERO_NODEBUG ob * t4; HERO_NODEBUG ob * t6; HERO_NODEBUG HeroStr t7; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_a; HERO_NODEBUG ob *t1, *t3, *t4, *t6; HERO_NODEBUG HeroStr t2, t7; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-a-reference-beside-an-end-in-one-call-is-checked-first.hero"
 bb0:
     t1 = ob_new();

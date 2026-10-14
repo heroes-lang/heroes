@@ -218,7 +218,7 @@ bb0:
 #line 23 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 HeroStr h_fixedbugs245apathholdinganulnamesnofile_zero(void) {
 #line 23 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    void * h0_handle; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG const char * t4; HERO_NODEBUG void * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG void * t7; HERO_NODEBUG void * t8; HERO_NODEBUG bool t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG void * t11; HERO_NODEBUG void * t13; HERO_NODEBUG HeroStr t15; HERO_NODEBUG h_0opt_f87774a t16; HERO_NODEBUG h_0opt_f87774a t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG HeroFailure t22; HERO_NODEBUG h_0opt_f87774a t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_f87774a t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_ENTRY_STOP; goto bb0;
+    void * h0_handle; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h4_own4 = {0}, t16, t17, t21, t23, t27, t28; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t1, t3, t6, t15, t24, t25, t26; HERO_NODEBUG const char *t2, *t4; HERO_NODEBUG void *t5, *t7, *t8, *t11, *t13; HERO_NODEBUG bool t9, t20; HERO_NODEBUG int32_t t10; HERO_NODEBUG int64_t t18, t19; HERO_NODEBUG HeroFailure t22; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 bb0:
     t1 = h_fixedbugs245apathholdinganulnamesnofile_ZERO();
@@ -322,7 +322,7 @@ bb4:
 #line 30 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 void h_fixedbugs245apathholdinganulnamesnofile_main(void) {
 #line 30 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
-    HERO_NODEBUG h_0opt_a8ea2 h0_f0 = {0}; HeroStr h1_path = {0}; HERO_NODEBUG h_0opt_f87774a h2_s0 = {0}; HeroStr h3_text = {0}; HeroFailure h4_e = {0}; HERO_NODEBUG h_0opt_a8ea2 h5_s1 = {0}; HeroFailure h6_e = {0}; HERO_NODEBUG h_0opt_f87774a h7_f1 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_a8ea2 h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_f87774a h14_own14 = {0}; HERO_NODEBUG h_0opt_a8ea2 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG h_0opt_f87774a h17_own17 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_a8ea2 t3; HERO_NODEBUG h_0opt_a8ea2 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_a8ea2 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG h_0opt_f87774a t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG h_0opt_f87774a t29; HERO_NODEBUG HeroFailure t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroFailure t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroFailure t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG h_0opt_a8ea2 t39; HERO_NODEBUG h_0opt_a8ea2 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG h_0opt_a8ea2 t43; HERO_NODEBUG HeroFailure t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroFailure t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroFailure t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_0opt_f87774a t53; HERO_NODEBUG h_0opt_f87774a t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG h_0opt_f87774a t58; HERO_NODEBUG HeroFailure t59; HERO_NODEBUG h_0opt_f87774a t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG h_0opt_a8ea2 t63; HERO_NODEBUG h_0opt_a8ea2 t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG h_0opt_f87774a t70; HERO_NODEBUG h_0opt_f87774a t71; HERO_NODEBUG h_0opt_a8ea2 t72; HERO_NODEBUG h_0opt_a8ea2 t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG HeroFailure t75; HERO_NODEBUG HeroStr t76; HERO_NODEBUG h_0opt_f87774a t77; HERO_NODEBUG h_0opt_f87774a t78; HERO_NODEBUG HeroFailure t79; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_a8ea2 h0_f0 = {0}, h5_s1 = {0}, h9_own9 = {0}, h15_own15 = {0}, t3, t4, t8, t39, t40, t43, t63, t64, t72, t73; HeroStr h1_path = {0}; HERO_NODEBUG h_0opt_f87774a h2_s0 = {0}, h7_f1 = {0}, h14_own14 = {0}, h17_own17 = {0}, t22, t23, t25, t29, t53, t54, t58, t60, t70, t71, t77, t78; HeroStr h3_text = {0}; HeroFailure h4_e = {0}; HeroFailure h6_e = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h16_own16 = {0}, t1, t2, t12, t13, t14, t15, t16, t17, t18, t20, t21, t26, t27, t28, t31, t33, t34, t36, t37, t38, t42, t45, t47, t48, t50, t51, t52, t61, t62, t65, t66, t67, t68, t69, t74, t76; HERO_NODEBUG int64_t t5, t6, t19, t24, t41, t55, t56; HERO_NODEBUG bool t7, t57; HERO_NODEBUG HeroFailure t9, t30, t32, t35, t44, t46, t49, t59, t75, t79; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-245-a-path-holding-a-nul-names-no-file.hero"
 bb0:
     t1 = h_fixedbugs245apathholdinganulnamesnofile_VICTIM();
@@ -686,26 +686,30 @@ bb10:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 690 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 692 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 696 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 699 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 702 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 706 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 708 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 713 "fixedbugs245apathholdinganulnamesnofile.c"
 }
 
 #line 167 "<heroes library>"
@@ -713,7 +717,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0;
 #line 167 "<heroes library>"
 bb0:
     t1 = INT64_C(0);
@@ -939,7 +943,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 943 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 947 "fixedbugs245apathholdinganulnamesnofile.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -961,7 +965,7 @@ bb13:
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 186 "<heroes library>"
-    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_a8ea2 t18; HERO_NODEBUG h_0opt_a8ea2 t19; HERO_NODEBUG h_0opt_a8ea2 t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0;
 #line 186 "<heroes library>"
 bb0:
     t1 = h0_path;
@@ -1066,7 +1070,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1070 "fixedbugs245apathholdinganulnamesnofile.c"
+#line 1074 "fixedbugs245apathholdinganulnamesnofile.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

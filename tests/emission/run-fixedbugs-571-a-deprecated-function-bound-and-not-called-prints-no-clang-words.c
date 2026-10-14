@@ -156,7 +156,7 @@ void h_fixedbugs571adeprecatedfunctionboundandnotcalledprintsnoclangwords_main(v
 #line 18 "tests/golden/run/fixedbugs-571-a-deprecated-function-bound-and-not-called-prints-no-clang-words.hero"
 void h_fixedbugs571adeprecatedfunctionboundandnotcalledprintsnoclangwords_main(void) {
 #line 18 "tests/golden/run/fixedbugs-571-a-deprecated-function-bound-and-not-called-prints-no-clang-words.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-571-a-deprecated-function-bound-and-not-called-prints-no-clang-words.hero"
 bb0:
     t1 = INT64_C(14);

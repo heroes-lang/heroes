@@ -124,7 +124,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_B(void) {
 #line 15 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = h_fixedbugs577aconstantwhoseeverystepfitsruns_A();
@@ -140,7 +140,7 @@ bb0:
 #line 18 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_C11(void) {
 #line 18 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = h_fixedbugs577aconstantwhoseeverystepfitsruns_B();
@@ -156,7 +156,7 @@ bb0:
 #line 21 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_C23(void) {
 #line 21 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = UINT64_C(200);
@@ -172,7 +172,7 @@ bb0:
 #line 24 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_LOOPED(void) {
 #line 24 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    uint8_t h0_v; int64_t h1_i; HERO_NODEBUG uint8_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG uint8_t t12; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_v; int64_t h1_i; HERO_NODEBUG uint8_t t1, t6, t7, t8, t12; HERO_NODEBUG int64_t t2, t3, t4, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -223,7 +223,7 @@ bb3:
 #line 34 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_UNTOUCHED(void) {
 #line 34 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    uint8_t h0_v; int64_t h1_i; HERO_NODEBUG uint8_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_v; int64_t h1_i; HERO_NODEBUG uint8_t t1, t7, t8, t9, t10; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = UINT64_C(255);
@@ -270,7 +270,7 @@ bb3:
 #line 44 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_CHOSEN(void) {
 #line 44 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    uint8_t h0_v; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_v; HERO_NODEBUG uint8_t t1, t2, t3, t5, t6, t7, t8, t9; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 44 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = UINT64_C(200);
@@ -316,7 +316,7 @@ bb3:
 #line 54 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_ARMED(void) {
 #line 54 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    uint8_t h0_v; HERO_NODEBUG uint8_t h1_s0; HERO_NODEBUG uint8_t h2_r0; uint8_t h3_w; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_v; HERO_NODEBUG uint8_t h1_s0, h2_r0, t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12; uint8_t h3_w; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 54 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = UINT64_C(200);
@@ -376,7 +376,7 @@ bb4:
 #line 65 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint16_t h_fixedbugs577aconstantwhoseeverystepfitsruns_W16(void) {
 #line 65 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG uint16_t t1; HERO_NODEBUG uint16_t t2; HERO_NODEBUG uint16_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint16_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 65 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = UINT64_C(65535);
@@ -392,7 +392,7 @@ bb0:
 #line 68 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int32_t h_fixedbugs577aconstantwhoseeverystepfitsruns_N32(void) {
 #line 68 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 68 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = INT64_C(-2147483648);
@@ -408,7 +408,7 @@ bb0:
 #line 71 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 uint8_t h_fixedbugs577aconstantwhoseeverystepfitsruns_CHAR(void) {
 #line 71 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 71 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = UINT64_C(97);
@@ -424,7 +424,7 @@ bb0:
 #line 74 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int64_t h_fixedbugs577aconstantwhoseeverystepfitsruns_MIN64(void) {
 #line 74 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 74 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = INT64_MIN;
@@ -444,7 +444,7 @@ bb0:
 #line 77 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int64_t h_fixedbugs577aconstantwhoseeverystepfitsruns_MASK(void) {
 #line 77 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 77 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = INT64_C(0);
@@ -462,7 +462,7 @@ bb0:
 #line 80 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int64_t h_fixedbugs577aconstantwhoseeverystepfitsruns_TOP(void) {
 #line 80 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 80 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = INT64_C(1);
@@ -480,7 +480,7 @@ bb0:
 #line 83 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 int64_t h_fixedbugs577aconstantwhoseeverystepfitsruns_BACK(void) {
 #line 83 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 83 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = h_fixedbugs577aconstantwhoseeverystepfitsruns_TOP();
@@ -498,7 +498,7 @@ bb0:
 #line 86 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 void h_fixedbugs577aconstantwhoseeverystepfitsruns_main(void) {
 #line 86 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
-    uint8_t h0_y; HERO_NODEBUG bool h1_b0; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint16_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG bool t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_y; HERO_NODEBUG bool h1_b0, t16, t21, t22; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t10, t15, t17, t18, t19, t20; HERO_NODEBUG uint16_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG int64_t t11, t12, t13, t14, t23, t24; HERO_ENTRY_STOP; goto bb0;
 #line 86 "tests/golden/run/fixedbugs-577-a-constant-whose-every-step-fits-runs.hero"
 bb0:
     t1 = h_fixedbugs577aconstantwhoseeverystepfitsruns_C11();

@@ -161,7 +161,7 @@ void h_aborthandlegivenbacktwice_main(void);
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
 void h_aborthandlegivenbacktwice_main(void) {
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
-    Slot * h0_a; Slot * h1_twice; HERO_NODEBUG int64_t t1; HERO_NODEBUG Slot * t2; HERO_NODEBUG Slot * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG Slot * t5; HERO_NODEBUG Slot * t6; HERO_NODEBUG Slot * t7; HERO_ENTRY_STOP; goto bb0;
+    Slot * h0_a; Slot * h1_twice; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG Slot *t2, *t3, *t5, *t6, *t7; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/run/abort-handle-given-back-twice.hero"
 bb0:
     t1 = INT64_C(7);

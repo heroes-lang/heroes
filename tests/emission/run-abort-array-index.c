@@ -97,7 +97,7 @@ void h_abortarrayindex_main(void);
 #line 4 "tests/golden/run/abort-array-index.hero"
 void h_abortarrayindex_main(void) {
 #line 4 "tests/golden/run/abort-array-index.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t5, *t8, *t11, *t12; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t9, t10; HERO_ENTRY_STOP; goto bb0;
 #line 4 "tests/golden/run/abort-array-index.hero"
 bb0:
     t1 = INT64_C(10);

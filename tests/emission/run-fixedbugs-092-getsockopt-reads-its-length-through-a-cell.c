@@ -192,7 +192,17 @@ void h_fixedbugs092getsockoptreadsitslengththroughacell_main(void);
 #line 10 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
 #line 195 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 10 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return AF_UNIX;
+#line 205 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -209,8 +219,18 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX(void) {
 
 #line 11 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
-#line 213 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 223 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 11 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return SOCK_STREAM;
+#line 233 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -227,8 +247,18 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOCK_STREAM(void) {
 
 #line 12 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
-#line 231 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 251 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 12 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return SOL_SOCKET;
+#line 261 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -245,8 +275,18 @@ int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SOL_SOCKET(void) {
 
 #line 13 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 int64_t h_fixedbugs092getsockoptreadsitslengththroughacell_SO_LINGER(void) {
-#line 249 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 279 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 13 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     return SO_LINGER;
+#line 289 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -268,7 +308,7 @@ void h_fixedbugs092getsockoptreadsitslengththroughacell_main(void) {
 #line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 #define h4_n (*hero_lend_h4_n)
 #line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
-    HERO_NODEBUG h_0opt_e1f4933 h0_f0 = {0}; HERO_NODEBUG h_0opt_e1f4933 h1_f1 = {0}; int32_t h2_fd; struct linger *const hero_lend_h3_l = (struct linger *)hero_lend_local(sizeof(struct linger), "fixedbugs092getsockoptreadsitslengththroughacell.main", "l"); uint32_t *const hero_lend_h4_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092getsockoptreadsitslengththroughacell.main", "n"); HERO_NODEBUG h_0opt_e1f4933 h5_f2 = {0}; HERO_NODEBUG h_0opt_e1f4933 h6_f3 = {0}; HERO_NODEBUG h_0opt_e1f4933 h7_own7 = {0}; HERO_NODEBUG h_0opt_e1f4933 h8_own8 = {0}; HERO_NODEBUG h_0opt_e1f4933 h9_own9 = {0}; HERO_NODEBUG h_0opt_e1f4933 h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0opt_e1f4933 t2; HERO_NODEBUG h_0opt_e1f4933 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_e1f4933 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_e1f4933 t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_0opt_e1f4933 t12; HERO_NODEBUG h_0opt_e1f4933 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_0opt_e1f4933 t17; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG h_0opt_e1f4933 t19; HERO_NODEBUG int32_t t20; HERO_NODEBUG int32_t t21; HERO_NODEBUG int32_t t22; HERO_NODEBUG int32_t t23; HERO_NODEBUG int32_t t24; HERO_NODEBUG struct linger t25; HERO_NODEBUG uint32_t t26; HERO_NODEBUG int32_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG h_0opt_e1f4933 t29; HERO_NODEBUG h_0opt_e1f4933 t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG bool t33; HERO_NODEBUG h_0opt_e1f4933 t34; HERO_NODEBUG HeroFailure t35; HERO_NODEBUG h_0opt_e1f4933 t36; HERO_NODEBUG int32_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_0opt_e1f4933 t39; HERO_NODEBUG h_0opt_e1f4933 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG bool t43; HERO_NODEBUG h_0opt_e1f4933 t44; HERO_NODEBUG HeroFailure t45; HERO_NODEBUG h_0opt_e1f4933 t46; HERO_NODEBUG int32_t t47; HERO_NODEBUG int32_t t48; HERO_NODEBUG struct linger t49; HERO_NODEBUG int32_t t50; HERO_NODEBUG uint32_t t51; HERO_NODEBUG h_0opt_e1f4933 t52; HERO_NODEBUG h_0opt_e1f4933 t53; HERO_NODEBUG h_0opt_e1f4933 t54; HERO_NODEBUG h_0opt_e1f4933 t55; HERO_NODEBUG h_0opt_e1f4933 t56; HERO_NODEBUG h_0opt_e1f4933 t57; HERO_NODEBUG h_0opt_e1f4933 t58; HERO_NODEBUG h_0opt_e1f4933 t59; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e1f4933 h0_f0 = {0}, h1_f1 = {0}, h5_f2 = {0}, h6_f3 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, t2, t3, t7, t9, t12, t13, t17, t19, t29, t30, t34, t36, t39, t40, t44, t46, t52, t53, t54, t55, t56, t57, t58, t59; int32_t h2_fd; struct linger *const hero_lend_h3_l = (struct linger *)hero_lend_local(sizeof(struct linger), "fixedbugs092getsockoptreadsitslengththroughacell.main", "l"); uint32_t *const hero_lend_h4_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092getsockoptreadsitslengththroughacell.main", "n"); HERO_NODEBUG int64_t t1, t4, t5, t11, t14, t15, t28, t31, t32, t38, t41, t42; HERO_NODEBUG bool t6, t16, t33, t43; HERO_NODEBUG HeroFailure t8, t18, t35, t45; HERO_NODEBUG int32_t t10, t20, t21, t22, t23, t24, t27, t37, t47, t48, t50; HERO_NODEBUG struct linger t25, t49; HERO_NODEBUG uint32_t t26, t51; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
 bb0:
     t1 = h_fixedbugs092getsockoptreadsitslengththroughacell_AF_UNIX();
@@ -354,7 +394,7 @@ bb2:
     t7 = h0_f0;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t8 = t7.as.err;
-#line 358 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 398 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t8);
     hero_unreachable();
 bb3:
@@ -421,7 +461,7 @@ bb4:
     t17 = h1_f1;
 #line 21 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t18 = t17.as.err;
-#line 425 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 465 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t18);
     hero_unreachable();
 bb5:
@@ -471,7 +511,7 @@ bb6:
     t34 = h5_f2;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t35 = t34.as.err;
-#line 475 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 515 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t35);
     hero_unreachable();
 bb7:
@@ -503,7 +543,7 @@ bb7:
     hero_print_int(t51);
 #line 26 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     hero_print_end();
-#line 507 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 547 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     h_0opt_e1f4933_release(hero_slot_escape(&h0_f0));
     h_0opt_e1f4933_release(hero_slot_escape(&h1_f1));
     h_0opt_e1f4933_release(hero_slot_escape(&h5_f2));
@@ -520,7 +560,7 @@ bb8:
     t44 = h6_f3;
 #line 24 "tests/golden/run/fixedbugs-092-getsockopt-reads-its-length-through-a-cell.hero"
     t45 = t44.as.err;
-#line 524 "fixedbugs092getsockoptreadsitslengththroughacell.c"
+#line 564 "fixedbugs092getsockoptreadsitslengththroughacell.c"
     hero_panic_must(t45);
     hero_unreachable();
 }

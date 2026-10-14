@@ -118,7 +118,7 @@ h_sugarvariantcase_Token h_sugarvariantcase_one(void);
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
 int64_t h_sugarvariantcase_value_of(h_sugarvariantcase_Token h0_t) {
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
-    HERO_NODEBUG h_sugarvariantcase_Token h1_s0; HERO_NODEBUG int64_t h2_r0; h_sugarvariantcase_Token_c_num h3_n; HERO_NODEBUG h_sugarvariantcase_Token t1; HERO_NODEBUG h_sugarvariantcase_Token t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_sugarvariantcase_Token t4; HERO_NODEBUG h_sugarvariantcase_Token_c_num t5; HERO_NODEBUG h_sugarvariantcase_Token_c_num t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_sugarvariantcase_Token h1_s0, t1, t2, t4; HERO_NODEBUG int64_t h2_r0, t3, t7, t8, t9; h_sugarvariantcase_Token_c_num h3_n; HERO_NODEBUG h_sugarvariantcase_Token_c_num t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/ir/sugar-variant-case.hero"
 bb0:
     t1 = h0_t;

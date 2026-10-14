@@ -100,7 +100,7 @@ void h_fixedbugs547aselfcallthroughaparameteraborts_main(void);
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 int64_t h_fixedbugs547aselfcallthroughaparameteraborts_go(int64_t h0_n, h_0fn_48ac9712 h1_f) {
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
     t1 = h1_f;
@@ -116,7 +116,7 @@ bb0:
 #line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 int64_t h_fixedbugs547aselfcallthroughaparameteraborts_step(int64_t h0_n) {
 #line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -132,7 +132,7 @@ bb0:
 #line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 void h_fixedbugs547aselfcallthroughaparameteraborts_main(void) {
 #line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-547-a-self-call-through-a-parameter-aborts.hero"
 bb0:
     t1 = INT64_C(1);

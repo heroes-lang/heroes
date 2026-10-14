@@ -4161,7 +4161,7 @@ void h_fixedbugs140externrecordsathousanddeepbuild_main(void);
 #line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 void h_fixedbugs140externrecordsathousanddeepbuild_main(void) {
 #line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t5; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 2023 "tests/golden/run/fixedbugs-140-extern-records-a-thousand-deep-build.hero"
 bb0:
     t1 = hero_array_new(&h_fixedbugs140externrecordsathousanddeepbuild_G999_desc, 1);

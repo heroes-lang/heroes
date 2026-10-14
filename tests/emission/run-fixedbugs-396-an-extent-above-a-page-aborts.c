@@ -157,7 +157,7 @@ void h_fixedbugs396anextentaboveapageaborts_main(void);
 #line 9 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
 void h_fixedbugs396anextentaboveapageaborts_main(void) {
 #line 9 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
-    HeroArrayHeader * h0_buf = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_buf = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t6, *t8, *t9; HERO_NODEBUG HeroStr t2, t5; HERO_NODEBUG uint64_t t3; HERO_NODEBUG int64_t t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-396-an-extent-above-a-page-aborts.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_u8, 1);

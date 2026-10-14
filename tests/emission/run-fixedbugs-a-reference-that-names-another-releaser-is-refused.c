@@ -165,7 +165,7 @@ void h_fixedbugsareferencethatnamesanotherreleaserisrefused_main(void);
 #line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
 void h_fixedbugsareferencethatnamesanotherreleaserisrefused_main(void) {
 #line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
-    ob * h0_a; ob * h1_b; HERO_NODEBUG ob * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG ob * t3; HERO_NODEBUG ob * t4; HERO_NODEBUG ob * t5; HERO_NODEBUG ob * t6; HERO_NODEBUG HeroStr t7; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_a; ob * h1_b; HERO_NODEBUG ob *t1, *t3, *t4, *t5, *t6; HERO_NODEBUG HeroStr t2, t7; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-a-reference-that-names-another-releaser-is-refused.hero"
 bb0:
     t1 = ob_new();

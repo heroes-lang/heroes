@@ -165,7 +165,7 @@ void h_handlesuccessvalueatthewidthoftheresult_main(void);
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
 void h_handlesuccessvalueatthewidthoftheresult_main(void) {
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
-    ob * h0_a; ob * h1_b; uint64_t h2_total; bool h3_done; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG ob * t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG ob * t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG uint64_t t8; HERO_NODEBUG uint64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t12; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_a; ob * h1_b; uint64_t h2_total; bool h3_done; HERO_NODEBUG ob *t1, *t2, *t3, *t5; HERO_NODEBUG uint64_t t4, t8, t9; HERO_NODEBUG bool t6, t10, t12; HERO_NODEBUG HeroStr t7, t11; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/handle-success-value-at-the-width-of-the-result.hero"
 bb0:
     t1 = ob_new();

@@ -119,7 +119,7 @@ bb0:
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bool h_adversarialnestedshortcircuit_decide(bool h0_a, bool h1_b, bool h2_c) {
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
-    HERO_NODEBUG bool h3_b0; HERO_NODEBUG bool h4_b1; HERO_NODEBUG HeroStr t1; HERO_NODEBUG bool t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG bool t9; HERO_NODEBUG bool t10; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG bool h3_b0, h4_b1, t2, t3, t5, t6, t7, t9, t10, t11; HERO_NODEBUG HeroStr t1, t4, t8; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/ir/adversarial-nested-shortcircuit.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_61);

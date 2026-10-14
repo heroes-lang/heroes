@@ -1,0 +1,22 @@
+error[ffi_constant_type]: `BAD_NAME` in `fixedbugs-2071-values.h` cannot be declared `i64`: clang refuses the header's value at line 2: use of undeclared identifier 'undeclared_thing'
+  at tests/golden/unsupported/fixedbugs-2071-a-value-c-cannot-read-is-told.hero:8:5
+    |
+  8 |     constant BAD_NAME: i64  #~ ffi_constant_type
+    |     ^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2071-values.h` line 2 reads `#define BAD_NAME (undeclared_thing + 1)`
+  note: C cannot read the header's value of `BAD_NAME` as an expression, so no program that reads it can be built. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant the header spells as one
+
+error[ffi_constant_type]: `BAD_EMPTY` in `fixedbugs-2071-values.h` cannot be declared `i64`: clang refuses the header's value: it expands to nothing
+  at tests/golden/unsupported/fixedbugs-2071-a-value-c-cannot-read-is-told.hero:9:5
+    |
+  9 |     constant BAD_EMPTY: i64  #~ ffi_constant_type
+    |     ^^^^^^^^^^^^^^^^^^^^^^^
+  note: C cannot read the header's value of `BAD_EMPTY` as an expression, so no program that reads it can be built. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant the header spells as one
+
+error[ffi_constant_type]: `BAD_TWO` in `fixedbugs-2071-values.h` cannot be declared `i64`: clang refuses the header's value at line 4: expected ';' after return statement
+  at tests/golden/unsupported/fixedbugs-2071-a-value-c-cannot-read-is-told.hero:10:5
+     |
+  10 |     constant BAD_TWO: i64  #~ ffi_constant_type
+     |     ^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-2071-values.h` line 4 reads `#define BAD_TWO 1 2`
+  note: C cannot read the header's value of `BAD_TWO` as an expression, so no program that reads it can be built. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant the header spells as one

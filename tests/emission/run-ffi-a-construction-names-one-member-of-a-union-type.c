@@ -168,7 +168,7 @@ void h_ffiaconstructionnamesonememberofauniontype_main(void);
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 void h_ffiaconstructionnamesonememberofauniontype_main(void) {
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
-    UT h0_u; HERO_NODEBUG float t1; HERO_NODEBUG UT t2; HERO_NODEBUG UT t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG UT t5; HERO_NODEBUG int32_t t6; HERO_ENTRY_STOP; goto bb0;
+    UT h0_u; HERO_NODEBUG float t1; HERO_NODEBUG UT t2, t3, t5; HERO_NODEBUG int32_t t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/ffi-a-construction-names-one-member-of-a-union-type.hero"
 bb0:
     t1 = 0x1.8p+0;

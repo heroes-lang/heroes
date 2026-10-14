@@ -226,7 +226,7 @@ void h_ffiacarraymember_main(void);
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 void h_ffiacarraymember_main(void) {
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
-    VrDeviceInfo h0_device; VrStereoConfig h1_config; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG float t3; HERO_NODEBUG float t4; HERO_NODEBUG float t5; HERO_NODEBUG float t6; HERO_NODEBUG float t7; HERO_NODEBUG float t8; HERO_NODEBUG float t9; HERO_NODEBUG float t10; HERO_NODEBUG float t11; HERO_NODEBUG float t13; HERO_NODEBUG float t14; HERO_NODEBUG float t15; HERO_NODEBUG float t16; HERO_NODEBUG float t17; HERO_NODEBUG VrDeviceInfo t19; HERO_NODEBUG VrDeviceInfo t20; HERO_NODEBUG int64_t t22; HERO_NODEBUG float t23; HERO_NODEBUG VrDeviceInfo t24; HERO_NODEBUG VrStereoConfig t25; HERO_NODEBUG VrStereoConfig t26; HERO_NODEBUG int64_t t28; HERO_NODEBUG float t29; HERO_NODEBUG float t30; HERO_NODEBUG bool t31; HERO_NODEBUG VrStereoConfig t32; HERO_NODEBUG int64_t t34; HERO_NODEBUG float t35; HERO_NODEBUG float t36; HERO_NODEBUG bool t37; HERO_NODEBUG VrStereoConfig t38; HERO_ENTRY_STOP; goto bb0;
+    VrDeviceInfo h0_device; VrStereoConfig h1_config; HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG float t3, t4, t5, t6, t7, t8, t9, t10, t11, t13, t14, t15, t16, t17, t23, t29, t30, t35, t36; HERO_NODEBUG VrDeviceInfo t19, t20, t24; HERO_NODEBUG int64_t t22, t28, t34; HERO_NODEBUG VrStereoConfig t25, t26, t32, t38; HERO_NODEBUG bool t31, t37; HERO_ENTRY_STOP; goto bb0;
 #line 81 "tests/golden/run/ffi-a-c-array-member.hero"
 bb0:
 #line 85 "tests/golden/run/ffi-a-c-array-member.hero"

@@ -199,19 +199,49 @@ void h_fixedbugs227theshownreadnameseverybyte_main(void);
 #line 19 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_OK(void) {
 #line 202 "fixedbugs227theshownreadnameseverybyte.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 19 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     return HERO_OS_OK;
+#line 212 "fixedbugs227theshownreadnameseverybyte.c"
+#pragma clang diagnostic pop
 }
 
 #line 20 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_FOUND(void) {
-#line 208 "fixedbugs227theshownreadnameseverybyte.c"
+#line 218 "fixedbugs227theshownreadnameseverybyte.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 20 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     return HERO_OS_NOT_FOUND;
+#line 228 "fixedbugs227theshownreadnameseverybyte.c"
+#pragma clang diagnostic pop
 }
 
 #line 21 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 int64_t h_fixedbugs227theshownreadnameseverybyte_HERO_OS_NOT_TEXT(void) {
-#line 214 "fixedbugs227theshownreadnameseverybyte.c"
+#line 234 "fixedbugs227theshownreadnameseverybyte.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 21 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     return HERO_OS_NOT_TEXT;
+#line 244 "fixedbugs227theshownreadnameseverybyte.c"
+#pragma clang diagnostic pop
 }
 
 #line 23 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
@@ -221,7 +251,7 @@ HeroStr h_fixedbugs227theshownreadnameseverybyte_NOT_TEXT(void) {
 #line 23 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7d88d4f7);
-#line 225 "fixedbugs227theshownreadnameseverybyte.c"
+#line 255 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -233,7 +263,7 @@ HeroStr h_fixedbugs227theshownreadnameseverybyte_IS_TEXT(void) {
 #line 26 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1e3ef7a5);
-#line 237 "fixedbugs227theshownreadnameseverybyte.c"
+#line 267 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -241,7 +271,7 @@ bb0:
 #line 29 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bool h_fixedbugs227theshownreadnameseverybyte_put(HeroStr h0_path, HeroArrayHeader * h1_bytes) {
 #line 29 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-    void * h2_handle; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_b; HERO_NODEBUG h_0opt_e1f4933 h6_f0 = {0}; HERO_NODEBUG bool h7_ret0; HERO_NODEBUG h_0opt_e1f4933 h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG const char * t4; HERO_NODEBUG void * t5; HERO_NODEBUG void * t6; HERO_NODEBUG void * t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0opt_e1f4933 t20; HERO_NODEBUG h_0opt_e1f4933 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_0opt_e1f4933 t25; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG h_0opt_e1f4933 t27; HERO_NODEBUG int32_t t28; HERO_NODEBUG void * t29; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG void * t34; HERO_NODEBUG bool t36; HERO_NODEBUG bool t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_0opt_e1f4933 t39; HERO_NODEBUG h_0opt_e1f4933 t40; HERO_ENTRY_STOP; goto bb0;
+    void * h2_handle; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t10, *t13, *t16, *t38; HERO_NODEBUG int64_t h4_i0, t11, t12, t14, t17, t18, t19, t22, t23, t31, t32, t33; int64_t h5_b; HERO_NODEBUG h_0opt_e1f4933 h6_f0 = {0}, h8_own8 = {0}, t20, t21, t25, t27, t39, t40; HERO_NODEBUG bool h7_ret0, t8, t9, t15, t24, t36, t37; HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG const char *t2, *t4; HERO_NODEBUG void *t5, *t6, *t7, *t29, *t34; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG int32_t t28; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb0:
     t1 = h0_path;
@@ -391,7 +421,7 @@ bb9:
     t25 = h6_f0;
 #line 36 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     t26 = t25.as.err;
-#line 395 "fixedbugs227theshownreadnameseverybyte.c"
+#line 425 "fixedbugs227theshownreadnameseverybyte.c"
     hero_panic_must(t26);
     hero_unreachable();
 bb10:
@@ -409,7 +439,7 @@ void h_fixedbugs227theshownreadnameseverybyte_said(HeroStr h0_path) {
 #line 41 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 #define h2_marks (*hero_lend_h2_marks)
 #line 41 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs227theshownreadnameseverybyte.said", "status"); int64_t *const hero_lend_h2_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs227theshownreadnameseverybyte.said", "marks"); HeroStr h3_got = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG const char * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs227theshownreadnameseverybyte.said", "status"); int64_t *const hero_lend_h2_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs227theshownreadnameseverybyte.said", "marks"); HeroStr h3_got = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t3, t5, t6, t10, t14, t18, t19, t22, t23, t24, t25, t27, t29, t30, t31, t35, t36, t37, t38, t39; HERO_NODEBUG int64_t t1, t2, t7, t8, t11, t12, t15, t16, t20, t21, t26, t28, t32, t33, t34; HERO_NODEBUG const char *t4; HERO_NODEBUG bool t9, t13, t17; HERO_ENTRY_STOP; goto bb0;
 #line 41 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb0:
     t1 = INT64_C(0);
@@ -544,7 +574,7 @@ bb0:
     hero_print_str(t35);
 #line 47 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
     hero_print_end();
-#line 548 "fixedbugs227theshownreadnameseverybyte.c"
+#line 578 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_release_at(&h3_got);
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -559,7 +589,7 @@ bb0:
 #line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 void h_fixedbugs227theshownreadnameseverybyte_main(void) {
 #line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG bool t22; HERO_NODEBUG bool t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroStr t32; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h5_own5 = {0}, t1, t13, t14, t15, t24, t25, t26, t27, t29, t30, t32; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h4_own4 = {0}, *t10, *t21, *t28, *t31; HERO_NODEBUG int64_t t2, t3, t4, t5, t6, t7, t8, t9, t16, t17, t18, t19, t20; HERO_NODEBUG bool t11, t12, t22, t23; HERO_ENTRY_STOP; goto bb0;
 #line 49 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb0:
 #line 52 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
@@ -717,7 +747,7 @@ bb6:
     goto bb4;
 #line 60 "tests/golden/run/fixedbugs-227-the-shown-read-names-every-byte.hero"
 bb7:
-#line 721 "fixedbugs227theshownreadnameseverybyte.c"
+#line 751 "fixedbugs227theshownreadnameseverybyte.c"
     hero_str_release_at(&h0_own0);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);

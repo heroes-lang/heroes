@@ -163,7 +163,7 @@ void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void);
 #line 21 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
 void h_limitacopygivenbackaftercreuseditsaddressisnotcaught_main(void) {
 #line 21 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
-    cell * h0_a; cell * h1_kept; cell * h2_b; HERO_NODEBUG cell * t1; HERO_NODEBUG cell * t2; HERO_NODEBUG cell * t3; HERO_NODEBUG cell * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG cell * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG cell * t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    cell * h0_a; cell * h1_kept; cell * h2_b; HERO_NODEBUG cell *t1, *t2, *t3, *t4, *t6, *t8; HERO_NODEBUG HeroStr t5, t9; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/limit-a-copy-given-back-after-c-reused-its-address-is-not-caught.hero"
 bb0:
     t1 = cell_open();

@@ -164,7 +164,7 @@ void h_deadhandlereadafterconsumethroughonename_main(void);
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 void h_deadhandlereadafterconsumethroughonename_main(void) {
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
-    Obj * h0_b; Obj * h1_c; HERO_NODEBUG Obj * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG Obj * t5; HERO_NODEBUG Obj * t6; HERO_NODEBUG Obj * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG const char * t9; HERO_NODEBUG Obj * t10; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
+    Obj * h0_b; Obj * h1_c; HERO_NODEBUG Obj *t1, *t5, *t6, *t7, *t10; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t8, t12; HERO_NODEBUG const char *t9; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/dead-handle-read-after-consume-through-one-name.hero"
 bb0:
     t1 = obj_new();

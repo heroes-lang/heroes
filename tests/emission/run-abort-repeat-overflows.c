@@ -101,7 +101,7 @@ void h_abortrepeatoverflows_main(void);
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
 void h_abortrepeatoverflows_main(void) {
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
-    uint64_t h0_n; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    uint64_t h0_n; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t3, t5, t7, t8; HERO_NODEBUG uint64_t t2, t4; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/abort-repeat-overflows.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);

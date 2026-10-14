@@ -111,7 +111,7 @@ HERO_TU_LOCAL int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks);
 #line 24 "tests/golden/run/abort-map-key-nan.hero"
 double h_abortmapkeynan_nan(void) {
 #line 24 "tests/golden/run/abort-map-key-nan.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/abort-map-key-nan.hero"
 bb0:
     t1 = 0x0p+0;
@@ -127,7 +127,7 @@ bb0:
 #line 35 "tests/golden/run/abort-map-key-nan.hero"
 void h_abortmapkeynan_main(void) {
 #line 35 "tests/golden/run/abort-map-key-nan.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG double t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *t3, *t6, *t8, *t9; HERO_NODEBUG double t1, t2, t5; HERO_NODEBUG int64_t t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/abort-map-key-nan.hero"
 bb0:
 #line 37 "tests/golden/run/abort-map-key-nan.hero"
@@ -181,7 +181,7 @@ bb0:
 #line 27 "tests/golden/run/abort-map-key-nan.hero"
 HERO_TU_LOCAL int64_t h_abortmapkeynan_count_1ad16c(HeroArrayHeader * h0_ks) {
 #line 27 "tests/golden/run/abort-map-key-nan.hero"
-    HeroMapHeader * h1_m = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; double h4_k; HERO_NODEBUG HeroMapHeader * h5_own5 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG double t10; HERO_NODEBUG double t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroMapHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_ENTRY_STOP; goto bb0;
+    HeroMapHeader * h1_m = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t20; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t12, t13, t14, t15, t17; double h4_k; HERO_NODEBUG HeroMapHeader *h5_own5 = {0}, *t1, *t16, *t18, *t19; HERO_NODEBUG bool t7; HERO_NODEBUG double t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/abort-map-key-nan.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_f64, &hero_desc_int, 0);

@@ -151,7 +151,7 @@ void h_aheaderfieldthatisnotconst_main(void);
 #line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 void h_aheaderfieldthatisnotconst_main(void) {
 #line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
-    struct passwd h0_empty; struct passwd h1_filled; HERO_NODEBUG const char * t1; HERO_NODEBUG const char * t2; HERO_NODEBUG struct passwd t3; HERO_NODEBUG struct passwd t4; HERO_NODEBUG const char * t5; HERO_NODEBUG const char * t6; HERO_NODEBUG bool t7; HERO_NODEBUG const char * t8; HERO_NODEBUG const char * t9; HERO_NODEBUG struct passwd t10; HERO_NODEBUG struct passwd t11; HERO_NODEBUG const char * t12; HERO_NODEBUG const char * t13; HERO_NODEBUG bool t14; HERO_ENTRY_STOP; goto bb0;
+    struct passwd h0_empty; struct passwd h1_filled; HERO_NODEBUG const char *t1, *t2, *t5, *t6, *t8, *t9, *t12, *t13; HERO_NODEBUG struct passwd t3, t4, t10, t11; HERO_NODEBUG bool t7, t14; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"
 bb0:
 #line 59 "tests/golden/fixedbugs/a-header-field-that-is-not-const.hero"

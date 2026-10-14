@@ -182,7 +182,7 @@ void h_ffiafilledrecordisaskedfor_main(void);
 #line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 struct slot h_ffiafilledrecordisaskedfor_blank(void) {
 #line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    HERO_NODEBUG int8_t t1; HERO_NODEBUG int8_t t2; HERO_NODEBUG int8_t t3; HERO_NODEBUG int8_t t4; HERO_NODEBUG int8_t t5; HERO_NODEBUG int8_t t6; HERO_NODEBUG int8_t t7; HERO_NODEBUG int8_t t8; HERO_NODEBUG struct slot t10; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int8_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_NODEBUG struct slot t10; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 bb0:
     t1 = INT64_C(0);
@@ -212,7 +212,7 @@ void h_ffiafilledrecordisaskedfor_main(void) {
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 #define h0_s (*hero_lend_h0_s)
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
-    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s"); HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG h_0opt_f87774a h4_own4 = {0}; HERO_NODEBUG struct slot t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG struct slot t12; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG h_0opt_f87774a t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG h_0opt_f87774a t19; HERO_NODEBUG HeroFailure t20; HERO_NODEBUG h_0opt_f87774a t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_f87774a t25; HERO_NODEBUG h_0opt_f87774a t26; HERO_ENTRY_STOP; goto bb0;
+    struct slot *const hero_lend_h0_s = (struct slot *)hero_lend_local(sizeof(struct slot), "ffiafilledrecordisaskedfor.main", "s"); HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_own3 = {0}, t3, t4, t8, t23, t24; HERO_NODEBUG h_0opt_f87774a h2_f1 = {0}, h4_own4 = {0}, t14, t15, t19, t21, t25, t26; HERO_NODEBUG struct slot t1, t12; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t5, t6, t16, t17; HERO_NODEBUG bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0;
 #line 45 "tests/golden/run/ffi-a-filled-record-is-asked-for.hero"
 bb0:
     t1 = h_ffiafilledrecordisaskedfor_blank();

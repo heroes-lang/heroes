@@ -99,7 +99,7 @@ void h_adversarialjoinslot_main(void);
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_pick(bool h0_c) {
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
-    HERO_NODEBUG int64_t h1_r0; int64_t h2_v; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_r0, t2, t3, t4, t5; int64_t h2_v; HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
     t1 = h0_c;
@@ -137,7 +137,7 @@ bb3:
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
 int64_t h_adversarialjoinslot_nested(bool h0_a, bool h1_b) {
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
-    HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t h3_r1; int64_t h4_v; HERO_NODEBUG bool t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_r0, h3_r1, t3, t4, t5, t6, t7, t8; int64_t h4_v; HERO_NODEBUG bool t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
     t1 = h0_a;
@@ -196,7 +196,7 @@ bb6:
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
 void h_adversarialjoinslot_main(void) {
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
-    int64_t h0_i; int64_t h1_total; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_i; int64_t h1_total; HERO_NODEBUG bool t1, t3, t5, t6, t8, t9, t11, t12, t18, t24; HERO_NODEBUG int64_t t2, t4, t7, t10, t13, t14, t15, t16, t17, t19, t20, t21, t22, t23, t25, t26, t27, t28, t29, t30; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/adversarial-join-slot.hero"
 bb0:
     t1 = true;

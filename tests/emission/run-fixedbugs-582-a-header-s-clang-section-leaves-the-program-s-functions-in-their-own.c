@@ -206,7 +206,7 @@ int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s);
 #line 13 "tests/golden/run/fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero"
 void h_fixedbugs582aheadersclangsectionleavestheprogramsfunctionsintheirown_main(void) {
 #line 13 "tests/golden/run/fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG h_fixedbugs582pair_Pair t3; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-582-a-header-s-clang-section-leaves-the-program-s-functions-in-their-own.hero"
 bb0:
     t1 = INT64_C(-42);
@@ -258,7 +258,7 @@ bb0:
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 h_fixedbugs582pair_Shape h_fixedbugs582pair_shape(int64_t h0_n) {
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG h_fixedbugs582pair_Shape t3; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_n;
@@ -274,7 +274,7 @@ bb0:
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 int64_t h_fixedbugs582pair_area(h_fixedbugs582pair_Shape h0_s) {
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
-    HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_fixedbugs582pair_Shape t1; HERO_NODEBUG h_fixedbugs582pair_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs582pair_Shape t5; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG h_fixedbugs582pair_Shape t18; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t19; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs582pair_Shape h1_s0, t1, t2, t5, t18; h_fixedbugs582pair_Shape_c_flag h2_f; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t9, t10, t14, t16, t26, t27; h_fixedbugs582pair_Shape_c_rect h4_r; HERO_NODEBUG int64_t h5_ret0, t3, t4, t11, t12, t17, t21, t23, t24, t25; HERO_NODEBUG h_fixedbugs582pair_Shape_c_flag t6, t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t13; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG h_fixedbugs582pair_Shape_c_rect t19, t20, t22; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/fixedbugs582/pair.hero"
 bb0:
     t1 = h0_s;

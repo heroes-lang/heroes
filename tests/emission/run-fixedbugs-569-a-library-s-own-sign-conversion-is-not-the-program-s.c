@@ -156,7 +156,7 @@ void h_fixedbugs569alibrarysownsignconversionisnottheprograms_main(void);
 #line 19 "tests/golden/run/fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s.hero"
 void h_fixedbugs569alibrarysownsignconversionisnottheprograms_main(void) {
 #line 19 "tests/golden/run/fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG uint32_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2, t3; HERO_NODEBUG uint32_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-569-a-library-s-own-sign-conversion-is-not-the-program-s.hero"
 bb0:
     t1 = INT64_C(21);

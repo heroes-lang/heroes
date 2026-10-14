@@ -156,7 +156,7 @@ void h_ffianullfunctionpointersaysso_main(void);
 #line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
 void h_ffianullfunctionpointersaysso_main(void) {
 #line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG void * t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG void *t2; HERO_ENTRY_STOP; goto bb0;
 #line 46 "tests/golden/fixedbugs/ffi-a-null-function-pointer-says-so.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);

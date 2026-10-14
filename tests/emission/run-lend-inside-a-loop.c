@@ -156,7 +156,7 @@ void h_lendinsidealoop_main(void);
 #line 12 "tests/golden/run/lend-inside-a-loop.hero"
 void h_lendinsidealoop_main(void) {
 #line 12 "tests/golden/run/lend-inside-a-loop.hero"
-    int64_t h0_at; uint64_t h1_total; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG uint64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG const char * t11; HERO_NODEBUG uint64_t t12; HERO_NODEBUG uint64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG uint64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_at; uint64_t h1_total; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t7, t9, t10, t18, t19; HERO_NODEBUG int64_t t1, t3, t4, t8, t14, t15, t16; HERO_NODEBUG uint64_t t2, t6, t12, t13, t17; HERO_NODEBUG bool t5; HERO_NODEBUG const char *t11; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/lend-inside-a-loop.hero"
 bb0:
     t1 = INT64_C(0);

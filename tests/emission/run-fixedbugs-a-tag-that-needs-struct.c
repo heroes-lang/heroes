@@ -169,7 +169,7 @@ void h_fixedbugsatagthatneedsstruct_main(void);
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 void h_fixedbugsatagthatneedsstruct_main(void) {
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
-    struct probe * h0_p; struct gauge * h1_g; HERO_NODEBUG int64_t t1; HERO_NODEBUG struct probe * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG struct gauge * t4; HERO_NODEBUG struct probe * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG struct gauge * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG struct probe * t10; HERO_NODEBUG struct gauge * t11; HERO_ENTRY_STOP; goto bb0;
+    struct probe * h0_p; struct gauge * h1_g; HERO_NODEBUG int64_t t1, t3, t6, t8, t9; HERO_NODEBUG struct probe *t2, *t5, *t10; HERO_NODEBUG struct gauge *t4, *t7, *t11; HERO_ENTRY_STOP; goto bb0;
 #line 38 "tests/golden/run/fixedbugs-a-tag-that-needs-struct.hero"
 bb0:
     t1 = INT64_C(7);

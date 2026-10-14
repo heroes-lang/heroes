@@ -98,7 +98,7 @@ void h_sugarufcs_main(void);
 #line 4 "tests/golden/ir/sugar-ufcs.hero"
 int64_t h_sugarufcs_double(int64_t h0_n) {
 #line 4 "tests/golden/ir/sugar-ufcs.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 4 "tests/golden/ir/sugar-ufcs.hero"
 bb0:
     t1 = h0_n;
@@ -114,7 +114,7 @@ bb0:
 #line 7 "tests/golden/ir/sugar-ufcs.hero"
 void h_sugarufcs_main(void) {
 #line 7 "tests/golden/ir/sugar-ufcs.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t3, *t6; HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/ir/sugar-ufcs.hero"
 bb0:
     t1 = INT64_C(1);

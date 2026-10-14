@@ -1,5 +1,5 @@
-# What a debugger is not shown (design.md §3.1; panel 213's R1, provisional,
-# author ratification pending): the word the emitter writes before a C local
+# What a debugger is not shown (design.md §3.1; panel 213's R1, ratified by
+# the author on 2026-10-14): the word the emitter writes before a C local
 # it invented, so that a frame stopped on an author's line lists the author's
 # parameters and bindings alone, and the line each unit defines it by.
 #
@@ -24,6 +24,25 @@
 # neither the runtime's header nor its ABI stamp moves; clang honours the
 # attribute in DWARF and in CodeView (the sitting's critic: this Mac, Linux
 # arm64's clang 22.1.8, and a Windows target's object).
+#
+# ONE MARK PER SPELLING IN A PROLOGUE (defect 2050). A prologue declares its
+# hidden temporaries and slots of one C type in one declaration, `HERO_NODEBUG
+# int64_t t1, t2, t3;`, and an attribute written before a declaration's type
+# is the whole declaration's: every declarator of it is left out of the debug
+# information, in DWARF on arm64 and x86-64 and in CodeView alike (measured
+# beside a control with the attribute taken out, which shows every name). So
+# the mechanism stays R1's, the unit's own word on every declaration that
+# holds a hidden name; what goes is the word and the type written again for
+# each name, which a declaration per temporary had made 4,672,239 of the
+# seed's 58,579,877 bytes in marks alone. The author's bindings stay a
+# declaration each, unmarked, so no mark can reach one; a spelling C binds to
+# a single declarator, a `*` before its last word, a `(` or a `[`, is written
+# alone, as before.
+#
+# WHERE A SHARED DECLARATION STANDS is where its first declarator would have:
+# a later one moves up beside it, and nothing between them can need it later,
+# since every statement of the prologue is a declaration or a zero by bytes of
+# a slot declared before it.
 
 # The word, and the space after it, written before a declaration.
 constant MARK: str
@@ -32,3 +51,118 @@ constant MARK: str
 # The line each unit's preamble defines the word by.
 constant DEFINE: str
     "#define HERO_NODEBUG __attribute__((nodebug))"
+
+# The prologue's statements in order, where the hidden declarators of one
+# spelling share one declaration: `heads` holds a statement whole, or a shared
+# declaration's mark and type; `declarators`, at the same index, what that
+# declaration declares, and nothing for a statement whole; `at`, where each
+# shared head stands.
+record Declarations
+    heads: [str]
+    declarators: [[str]]
+    at: {str: i64}
+
+# A spelling split where C splits it: the type every declarator shares, and
+# the `*`s that go to each one (`T *a, *b`).
+record Shared
+    base: str
+    stars: str
+
+function none() -> Declarations
+    return Declarations(heads: [], declarators: [], at: {})
+
+# A statement written as it is: an author's binding, a guarded local, a zero
+# by bytes.
+function whole(@d: Declarations, text: str)
+    d.heads @ d.heads.push(text)
+    d.declarators @ d.declarators.push([])
+
+# A declaration the debugger is not shown: `words`, written between the mark
+# and the type (an attribute, or nothing), the type's C spelling, and the name
+# with its initialiser.
+function hidden(@d: Declarations, words: str, spelling: str, declared: str)
+    split = shared(spelling)
+
+    if split.is_err()
+        whole(@d, text: MARK + words + spelling + " " + declared + ";")
+        return
+    head = MARK + words + split.must().base
+    found = d.at[head]
+
+    if found.is_err()
+        d.at[head] @ d.heads.len()
+        d.heads @ d.heads.push(head)
+        d.declarators @ d.declarators.push([split.must().stars + declared])
+        return
+    d.declarators[found.must()] @ d.declarators[found.must()].push(split.must().stars + declared)
+
+# The statements, a shared declaration's declarators joined after its head.
+function statements(d: Declarations) -> [str]
+    out: [str] @= []
+    index: i64 @= 0
+
+    for head in d.heads
+        if d.declarators[index].len() == 0
+            out @ out.push(head)
+        else
+            out @ out.push(head + " " + d.declarators[index].join(", ") + ";")
+        index @ index + 1
+
+    return out
+
+# The spelling's type and its trailing `*`s, or why declarators cannot share
+# it: asked of the spelling itself, every byte of what is left once the
+# trailing `*`s and spaces are taken off, since `T *const a, b` declares `b` a
+# `T`, and a `(` or a `[` binds to one declarator too.
+function shared(spelling: str) -> Shared?
+    end: i64 @= spelling.len()
+    stars: i64 @= 0
+
+    while end > 0 && (spelling[end - 1] == 42 || spelling[end - 1] == 32)
+        if spelling[end - 1] == 42
+            stars @ stars + 1
+        end @ end - 1
+
+    if end == 0
+        return fail(code: "none", msg: "no type")
+    at: i64 @= 0
+
+    while at < end
+        if spelling[at] == 42 || spelling[at] == 40 || spelling[at] == 91
+            return fail(code: "none", msg: "a spelling C binds to one declarator")
+        at @ at + 1
+
+    return ok(Shared(base: spelling.slice(from: 0, to: end), stars: "*".repeat(stars.to_u64().must())))
+
+## Tests
+
+test "hidden declarations of one spelling share one declaration and one mark, where the first stood"
+    d: Declarations @= none()
+    hidden(@d, words: "", spelling: "int64_t", declared: "t1")
+    whole(@d, text: "int64_t h0_width;")
+    hidden(@d, words: "", spelling: "HeroArrayHeader *", declared: "h1_own1 = {0}")
+    hidden(@d, words: "", spelling: "int64_t", declared: "t2")
+    hidden(@d, words: "__attribute__((unused)) ", spelling: "int64_t", declared: "t3")
+    hidden(@d, words: "", spelling: "HeroArrayHeader *", declared: "t4")
+    got = statements(d)
+    assert got.len() == 4
+    assert got[0] == "HERO_NODEBUG int64_t t1, t2;"
+    assert got[1] == "int64_t h0_width;"
+    assert got[2] == "HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4;"
+    assert got[3] == "HERO_NODEBUG __attribute__((unused)) int64_t t3;"
+
+test "a spelling C binds to one declarator is written alone, as before"
+    d: Declarations @= none()
+    hidden(@d, words: "", spelling: "int64_t *const", declared: "t1")
+    hidden(@d, words: "", spelling: "int64_t *const", declared: "t2")
+    hidden(@d, words: "", spelling: "int64_t (*)(int64_t)", declared: "t3")
+    hidden(@d, words: "", spelling: "const void *", declared: "t4")
+    hidden(@d, words: "", spelling: "const void *", declared: "t5")
+    got = statements(d)
+    assert got.len() == 4
+    assert got[0] == "HERO_NODEBUG int64_t *const t1;"
+    assert got[1] == "HERO_NODEBUG int64_t *const t2;"
+    assert got[2] == "HERO_NODEBUG int64_t (*)(int64_t) t3;"
+    assert got[3] == "HERO_NODEBUG const void *t4, *t5;"
+    assert shared("**").is_err()
+    assert shared("char **").must().stars == "**"

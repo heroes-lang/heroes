@@ -163,7 +163,7 @@ void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void);
 #line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
 void h_fixedbugsatransferthatfailedandnobodyendedisowedatexit_main(void) {
 #line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
-    node * h0_parent; node * h1_child; HERO_NODEBUG int64_t t1; HERO_NODEBUG node * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG node * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG node * t6; HERO_NODEBUG node * t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG node * t10; HERO_ENTRY_STOP; goto bb0;
+    node * h0_parent; node * h1_child; HERO_NODEBUG int64_t t1, t3; HERO_NODEBUG node *t2, *t4, *t6, *t7, *t10; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int32_t t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-a-transfer-that-failed-and-nobody-ended-is-owed-at-exit.hero"
 bb0:
     t1 = INT64_C(10);

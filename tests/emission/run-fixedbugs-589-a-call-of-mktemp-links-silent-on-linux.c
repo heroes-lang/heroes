@@ -182,7 +182,17 @@ void h_fixedbugs589acallofmktemplinkssilentonlinux_main(void);
 #line 16 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
 int32_t h_fixedbugs589acallofmktemplinkssilentonlinux_PR_GET_PDEATHSIG(void) {
 #line 185 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 16 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
     return PR_GET_PDEATHSIG;
+#line 195 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -200,7 +210,7 @@ int32_t h_fixedbugs589acallofmktemplinkssilentonlinux_PR_GET_PDEATHSIG(void) {
 #line 27 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
 void h_fixedbugs589acallofmktemplinkssilentonlinux_main(void) {
 #line 27 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
-    HERO_NODEBUG h_0opt_fbbb698 h0_f0 = {0}; void * h1_p; void * h2_named; HERO_NODEBUG h_0opt_fbbb698 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0opt_fbbb698 t2; HERO_NODEBUG h_0opt_fbbb698 t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_fbbb698 t7; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG h_0opt_fbbb698 t9; HERO_NODEBUG uint64_t t10; HERO_NODEBUG void * t11; HERO_NODEBUG void * t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG const char * t14; HERO_NODEBUG void * t16; HERO_NODEBUG void * t17; HERO_NODEBUG void * t18; HERO_NODEBUG uint64_t t19; HERO_NODEBUG void * t20; HERO_NODEBUG h_0opt_fbbb698 t21; HERO_NODEBUG h_0opt_fbbb698 t22; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_fbbb698 h0_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t9, t21, t22; void * h1_p; void * h2_named; HERO_NODEBUG int64_t t1, t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroFailure t8; HERO_NODEBUG uint64_t t10, t19; HERO_NODEBUG void *t11, *t12, *t16, *t17, *t18, *t20; HERO_NODEBUG HeroStr t13; HERO_NODEBUG const char *t14; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
 bb0:
     t1 = INT64_C(32);
@@ -270,7 +280,7 @@ bb1:
     t20 = h1_p;
 #line 32 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
     (void)free(t20);
-#line 274 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 284 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h0_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h3_own3));
     return;
@@ -279,7 +289,7 @@ bb2:
     t7 = h0_f0;
 #line 28 "tests/golden/run/fixedbugs-589-a-call-of-mktemp-links-silent-on-linux.hero"
     t8 = t7.as.err;
-#line 283 "fixedbugs589acallofmktemplinkssilentonlinux.c"
+#line 293 "fixedbugs589acallofmktemplinkssilentonlinux.c"
     hero_panic_must(t8);
     hero_unreachable();
 }

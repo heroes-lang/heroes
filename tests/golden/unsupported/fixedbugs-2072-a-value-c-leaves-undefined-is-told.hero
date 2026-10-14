@@ -1,0 +1,22 @@
+# fixedbugs, defect 2072, lane b17-emit, 2026-10-14: a header constant whose
+# value C leaves undefined, a shift past its width, of a negative value, by a
+# negative count or into the sign bit, a division or remainder by zero, told
+# on the constant's line in clang's words, the header's line quoted. Before
+# the repair the four shifts built at exit 0, `(1 << 40)` printing what the
+# machine held (6094316460 in the issue's run); the division by zero was told
+# *an object or a macro that expands to one*, which it is not; and the
+# remainder, an `int` declared `u64`, was told by its type, where now its
+# value is told first, since no type it is declared fixes it. An overflow is
+# refused the same way and not pinned here: its words carry the value, which
+# clang 21 writes with digit separators.
+
+extern "fixedbugs-2072-values.h"
+    constant SHIFT_PAST: i64  #~ ffi_constant_type
+    constant SHIFT_NEGATIVE: i64  #~ ffi_constant_type
+    constant SHIFT_BY_NEGATIVE: i64  #~ ffi_constant_type
+    constant SHIFT_INTO_SIGN: i64  #~ ffi_constant_type
+    constant DIVIDED_BY_ZERO: i64  #~ ffi_constant_type
+    constant REMAINDER_BY_ZERO: u64  #~ ffi_constant_type
+
+function main()
+    print(SHIFT_PAST, SHIFT_NEGATIVE, SHIFT_BY_NEGATIVE, SHIFT_INTO_SIGN, DIVIDED_BY_ZERO, REMAINDER_BY_ZERO)

@@ -154,7 +154,7 @@ void h_fixedbugs584afunctionitsheadermarkswiththewarningattributebuildssilent_ma
 #line 16 "tests/golden/run/fixedbugs-584-a-function-its-header-marks-with-the-warning-attribute-builds-silent.hero"
 void h_fixedbugs584afunctionitsheadermarkswiththewarningattributebuildssilent_main(void) {
 #line 16 "tests/golden/run/fixedbugs-584-a-function-its-header-marks-with-the-warning-attribute-builds-silent.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-584-a-function-its-header-marks-with-the-warning-attribute-builds-silent.hero"
 bb0:
     t1 = INT64_C(6);

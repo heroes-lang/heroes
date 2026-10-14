@@ -166,7 +166,7 @@ void h_handlealiveunderwhenafterafailedend_main(void);
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
 void h_handlealiveunderwhenafterafailedend_main(void) {
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
-    db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db * t1; HERO_NODEBUG db * t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG db * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG db * t9; HERO_NODEBUG db * t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0;
+    db * h0_d; int32_t h1_first; int32_t h2_second; HERO_NODEBUG db *t1, *t2, *t7, *t9, *t10; HERO_NODEBUG int32_t t3, t5, t11, t13; HERO_NODEBUG HeroStr t4, t6, t12; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/handle-alive-under-when-after-a-failed-end.hero"
 bb0:
     t1 = db_open();

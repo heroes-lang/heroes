@@ -172,7 +172,7 @@ void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void);
 #line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
 void h_fixedbugs151onearmofananonymousunionbuiltandread_main(void) {
 #line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
-    SA h0_s; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG SA t4; HERO_NODEBUG SA t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG SA t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG SA t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0;
+    SA h0_s; HERO_NODEBUG int32_t t1, t2, t3, t6, t7, t9, t10, t12, t13; HERO_NODEBUG SA t4, t5, t8, t11; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-151-one-arm-of-an-anonymous-union-built-and-read.hero"
 bb0:
     t1 = INT64_C(1);

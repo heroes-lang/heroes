@@ -165,7 +165,7 @@ void h_handleadiscardedreferenceisstillowed_main(void);
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 void h_handleadiscardedreferenceisstillowed_main(void) {
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
-    ob * h0_a; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG HeroStr t4; HERO_NODEBUG ob * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG ob * t7; HERO_NODEBUG ob * t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_a; HERO_NODEBUG ob *t1, *t2, *t5, *t7, *t8; HERO_NODEBUG HeroStr t4, t9; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/handle-a-discarded-reference-is-still-owed.hero"
 bb0:
     t1 = ob_new();

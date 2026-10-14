@@ -102,7 +102,7 @@ HeroStr h_coreblocks_named(int64_t h0_n);
 #line 5 "tests/golden/ir/core-blocks.hero"
 int64_t h_coreblocks_first_even_after(HeroArrayHeader * h0_xs, int64_t h1_floor) {
 #line 5 "tests/golden/ir/core-blocks.hero"
-    int64_t h2_i; int64_t h3_v; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_i; int64_t h3_v; HERO_NODEBUG int64_t h4_ret0, t1, t2, t4, t7, t8, t9, t10, t11, t12, t13, t15, t16, t17, t18, t20, t21, t22, t23, t24; HERO_NODEBUG HeroArrayHeader *t3, *t6; HERO_NODEBUG bool t5, t14, t19; HERO_ENTRY_STOP; goto bb0;
 #line 5 "tests/golden/ir/core-blocks.hero"
 bb0:
     t1 = INT64_C(0);
@@ -209,7 +209,7 @@ bb10:
 #line 21 "tests/golden/ir/core-blocks.hero"
 HeroStr h_coreblocks_named(int64_t h0_n) {
 #line 21 "tests/golden/ir/core-blocks.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5, t6; HERO_NODEBUG HeroStr h2_r0 = {0}, t8, t9, t10, t11, t12, t13, t14; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/ir/core-blocks.hero"
 bb0:
     t1 = h0_n;
