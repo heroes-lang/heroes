@@ -11,6 +11,7 @@
     { "include": "#foreign" },
     { "include": "#use" },
     { "include": "#extern" },
+    { "include": "#rest-zero" },
     { "include": "#declaration" },
     { "include": "#keyword" },
     { "include": "#builtin-type" },
@@ -96,6 +97,14 @@
         },
         { "include": "$self" }
       ]
+    },
+    "rest-zero": {
+      "comment": "`rest` and `zero` are contextual words (`selfhost/keywords.hero`'s `contextual()`), read by the parser together and in one place: a labelled argument whose label is `rest` and whose value is the bare name `zero`, ending a call's list, is the words that end a construction of a group's record (spec § 13, `selfhost/parse/rest_words.hero`). So both are painted only there: after a `(` or a `,`, or opening a line of a broken list, and before a `,`, a `)`, a comment or the line's end, which is where an argument whose value is a bare name ends. Anywhere else each is a name, `zero` a binding like any other (defect 401). A field or a parameter named `rest` whose type is called `zero` would be painted too, which a line alone cannot tell apart; no program in the repository has one.",
+      "match": "(?:(?<=[(,])|^)\\s*\\b(rest)\\s*:\\s*(zero)\\b(?=\\s*(?:[,)#]|$))",
+      "captures": {
+        "1": { "name": "keyword.other.contextual.hero" },
+        "2": { "name": "keyword.other.contextual.hero" }
+      }
     },
     "declaration": {
       "comment": "`function dist2(…)` / `record Point` — the kind opens the line, the name follows (panel 018). Since 2026-10-12 the kind is painted here, before #keyword reaches it, and the name by its kind: a function, a type, a constant. The `extern` prefix this rule allowed is gone: an `extern` line opens a group and its members are indented declarations (spec § 13).",

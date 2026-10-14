@@ -54,6 +54,7 @@ use token
 use bytes
 use cursor
 use keywords
+use foreign_words
 use foreign_at
 use word_place
 use text_outline
@@ -69,7 +70,7 @@ use lexer
 # the lexer reads one file's.
 function swap_at(c: cursor.Cursor, text: str, span: token.Span) -> str?
     if !foreign_at.is_foreign(text, span)
-        return fail(code: keywords.ERR_NOT_FOREIGN, msg: cursor.slice_of(text, span))
+        return fail(code: foreign_words.ERR_NOT_FOREIGN, msg: cursor.slice_of(text, span))
 
     if c.lexed
         return cursor.certain_swap(c, span)
@@ -158,7 +159,7 @@ function reads_as_function(c: cursor.Cursor, text: str) -> bool
         return false
     span = cursor.current_span(c)
     called = span.end < text.len() && text[span.end] == '('
-    entry = keywords.foreign_word(text: cursor.slice_of(text, span), called: called)
+    entry = foreign_words.foreign_word(text: cursor.slice_of(text, span), called: called)
 
     if entry.is_err()
         return false

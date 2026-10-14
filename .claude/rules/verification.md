@@ -105,6 +105,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `examples/**` | `canonical` `corpus` `emission` `probe` `special` `warnings` |
 | `spec/heroes-spec.md` | `spec` `special` **`grammar`** `fixes` `unseen` |
 | `selfhost/keywords.hero`, `selfhost/operators.hero`, `selfhost/grammar_expr.hero`'s `binary_op` | **`grammar`**, `spec` for `selfhost/keywords.hero`, plus everything `selfhost/**` already gets |
+| `selfhost/foreign_words.hero` (the foreign words, `declared_word`, out of `keywords.hero` since 2026-10-14) | **`spec`** (its `rejected`, `colouring` and `registry` checks read the arms), plus everything `selfhost/**` already gets |
 | `selfhost/cli/flags.hero` (the words a compile and a link take, `debug_words`, `level_words`) | **`run`** whole and **`cache` alone** (every unit's and the runtime's key moves, so every build directory goes cold once; lane land197, panel 197), **`lldb`** for `debug_words` (the debug info it reads is that word's, and its falsifier is that word taken out; 2026-10-12), plus everything `selfhost/**` already gets, and `emission` where emitted C moved |
 | `selfhost/inventory.hero`, `selfhost/escape.hero` | **`spec`** (its built-ins' and escapes' tables), plus everything `selfhost/**` already gets |
 | `selfhost/diag.hero` | **`annotations`** (every thesis rule it lists has a witness), plus everything `selfhost/**` already gets |

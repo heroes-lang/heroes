@@ -30,6 +30,7 @@ use module_text
 use cursor
 use ast
 use keywords
+use bytes
 
 ## The declaration
 
@@ -113,7 +114,7 @@ function declaration(@c: cursor.Cursor, @uses: [ast.Use], text: str)
 
         # A line end there with no terminator is the lexer's refused join
         # (panel 181, `open_line`), and the path it hands on is read whole.
-        if part.start != slash.end && !keywords.strings_has(text: text.slice(from: slash.end, to: part.start), needle: "\n")
+        if part.start != slash.end && bytes.rfind(text: text.slice(from: slash.end, to: part.start), needle: "\n").is_err()
             part_missing(@c, text, name: name, slash: slash)
             return
         _ = cursor.bump(@c)
