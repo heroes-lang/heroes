@@ -1,0 +1,24 @@
+# panel 214, lane land-214, 2026-10-14 (its R2, the completeness critic's
+# repair of the prototype).
+#
+# SYMPTOM: three groups, the second's header needing the first's typedef, as
+# section 13 lets it, the third's poisoning `int64_t`: today *internal error*
+# at exit 2, and the prototype, which compiled each header alone after the
+# compiler's own, named the second, a correct header (cgo issue 50710's
+# lesson).
+#
+# FIX: the opening is compiled with the groups' include lines added one by
+# one in their order, and the first that is refused names its last header:
+# the third (`cli/opening_told.hero`).
+
+extern "ffi-a-poisoning-header-after-one-needing-another-s-typedef-typedef.h"
+    function one() -> i32
+
+extern "ffi-a-poisoning-header-after-one-needing-another-s-typedef-using.h"
+    function two() -> i32
+
+extern "ffi-a-poisoning-header-after-one-needing-another-s-typedef-poisoning.h"  #~ ffi_header_refused
+    function three() -> i32
+
+function main()
+    print(one() + two() + three())

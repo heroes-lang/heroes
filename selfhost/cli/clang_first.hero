@@ -68,6 +68,14 @@ record Reading
     note: Attached
 
 function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> Reading?
+    return read_as(stderr: stderr, s: s, decls: decls, runtime: runtime, involved: false)
+
+# Panel 214's route O, a prototype: where the unit's opening is refused with
+# its groups' headers and compiles without them (`cli/whose.hero`), the
+# headers are what clang refused, so a file of the compiler's own after the
+# group in the stack, or a note in one, no longer makes it the compiler's:
+# the note is kept and told as the compiler's file it stands in.
+function read_as(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, involved: bool) -> Reading?
     rows = ffi_lookup.lines(text: stderr)
     first = first_error(rows)?
 
@@ -97,7 +105,7 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
     hop: i64 @= at
 
     while hop < steps.len()
-        if group_file.compilers(path: steps[hop].path, compiled: compiled, runtime: own)
+        if !involved && group_file.compilers(path: steps[hop].path, compiled: compiled, runtime: own)
             return fail(code: "none", msg: "a file of the compiler's own")
         hop @ hop + 1
 
@@ -110,7 +118,8 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
         standard: no_name,
         runtime: no_name,
         called: no_name,
-        suggested: no_name
+        suggested: no_name,
+        own: no_name
     )
     notes: [Attached] @= []
     under = attached(rows, after: first.row)
@@ -123,8 +132,13 @@ function reading(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
             explained = explaining(rows: rows, first: first, said: said, note: note, runtime: own)
 
             if explained.is_err()
-                return fail(code: "none", msg: "a note in a file of the compiler's own")
-            notes @ notes.push(explained.must())
+                if !involved
+                    return fail(code: "none", msg: "a note in a file of the compiler's own")
+                kept: Attached @= note
+                kept.own @ ok(own_file(path: note.path, compiled: compiled))
+                notes @ notes.push(kept)
+            else
+                notes @ notes.push(explained.must())
         else
             notes @ notes.push(note)
 
@@ -278,6 +292,21 @@ record Attached
     runtime: str?
     called: str?
     suggested: str?
+    own: str?
+
+# A file of the compiler's own as it is told, never by its path (issue
+# 2047): the C this compiler wrote for the program, or a file of the
+# runtime's by its name (panel 214's route O, a prototype).
+function own_file(path: str, compiled: str) -> str
+    if group_file.settled(path) == group_file.settled(compiled)
+        return "the C this compiler writes for this program"
+    p = clang_place.slashed(path)
+    cut: i64 @= p.len()
+
+    while cut > 0 && p[cut - 1] != '/'
+        cut @ cut - 1
+
+    return "the Heroes runtime's `" + p.slice(from: cut, to: p.len()) + "`"
 
 # The notes clang wrote under the error, up to the next diagnostic that is
 # not a note or clang's count of what it reported. A note's own includes
@@ -299,7 +328,7 @@ function attached(rows: [str], after: i64) -> [Attached]
             if !place.is_err()
                 at = clang_place.offset_of(text: line, needle: NOTE).must()
                 out @ out.push(
-                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index, standard: no_name, runtime: no_name, called: no_name, suggested: no_name)
+                    Attached(path: place.must().path, row: place.must().row, text: line.slice(from: at + NOTE.len(), to: line.len()), index: index, standard: no_name, runtime: no_name, called: no_name, suggested: no_name, own: no_name)
                 )
         index @ index + 1
 

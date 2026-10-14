@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `ffi-a-header-defining-main-as-an-object-is-told.h`, the header this group names, does not compile: its line 2 declares `main`, which the C this compiler writes for this program declares too, after the groups' headers, and clang refuses the two: redefinition of 'main' as different kind of symbol
+  at tests/golden/unsupported/ffi-a-header-defining-main-as-an-object-is-told.hero:9:8
+    |
+  9 | extern "ffi-a-header-defining-main-as-an-object-is-told.h"  #~ ffi_header_refused
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `ffi-a-header-defining-main-as-an-object-is-told.h` line 2 reads `int main;`
+  note: this compiler's `main` is a name the C it writes for every program declares, of the forms it keeps to itself: `h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` and `main`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `main` in `ffi-a-header-defining-main-as-an-object-is-told.h`, a name this compiler keeps to itself

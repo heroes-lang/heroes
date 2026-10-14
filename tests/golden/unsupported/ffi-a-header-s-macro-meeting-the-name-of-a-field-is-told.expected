@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `ffi-a-header-s-macro-meeting-the-name-of-a-field-is-told.h`, the header this group names, does not compile in this program's unit: its line 2 defines `f_code` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: expected member name or ';' after declaration specifiers
+  at tests/golden/unsupported/ffi-a-header-s-macro-meeting-the-name-of-a-field-is-told.hero:11:8
+     |
+  11 | extern "ffi-a-header-s-macro-meeting-the-name-of-a-field-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `ffi-a-header-s-macro-meeting-the-name-of-a-field-is-told.h` line 2 reads `#define f_code 0`
+  note: this compiler's `f_code` is the name the C it writes gives the field `code` of a record of the program's own, where it reads or builds one
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `f_code` in `ffi-a-header-s-macro-meeting-the-name-of-a-field-is-told.h`, a name this compiler keeps to itself

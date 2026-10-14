@@ -1,0 +1,16 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape tm).
+#
+# SYMPTOM: a header defining `t3`, the name of one of the temporaries the C this
+# compiler writes declares: refused there, *internal error* at exit 2.
+#
+# FIX: R3, as the case beside it (`cli/own_names.hero`, `met`).
+
+extern "ffi-a-header-s-macro-meeting-the-name-of-a-temporary-is-told.h"  #~ ffi_header_refused
+    function tm_f() -> i32
+
+function main()
+    a = tm_f() + 1
+    b = a * 2
+    c = b - 3
+    print(c)

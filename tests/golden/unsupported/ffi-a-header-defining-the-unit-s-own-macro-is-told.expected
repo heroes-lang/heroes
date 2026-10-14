@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `ffi-a-header-defining-the-unit-s-own-macro-is-told.h`, the header this group names, does not compile: its line 2 declares `HERO_TU_LOCAL`, which the C this compiler writes for this program declares too, after the groups' headers, and clang refuses the two: 'HERO_TU_LOCAL' macro redefined [-Werror,-Wmacro-redefined]
+  at tests/golden/unsupported/ffi-a-header-defining-the-unit-s-own-macro-is-told.hero:10:8
+     |
+  10 | extern "ffi-a-header-defining-the-unit-s-own-macro-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `ffi-a-header-defining-the-unit-s-own-macro-is-told.h` line 2 reads `#define HERO_TU_LOCAL static`
+  note: this compiler's `HERO_TU_LOCAL` is a name the C it writes for every program declares, of the forms it keeps to itself: `h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` and `main`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `HERO_TU_LOCAL` in `ffi-a-header-defining-the-unit-s-own-macro-is-told.h`, a name this compiler keeps to itself

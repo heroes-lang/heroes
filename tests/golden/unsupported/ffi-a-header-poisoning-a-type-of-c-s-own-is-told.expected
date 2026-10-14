@@ -1,0 +1,6 @@
+error[ffi_header_refused]: `ffi-a-header-poisoning-a-type-of-c-s-own-is-told.h`, the header this group names, does not compile in this program's unit: the unit's opening compiles without it and is refused with it, where clang refuses `<stdint.h>`, a header of C's own every unit reads after its groups' headers: attempt to use a poisoned identifier
+  at tests/golden/unsupported/ffi-a-header-poisoning-a-type-of-c-s-own-is-told.hero:11:8
+     |
+  11 | extern "ffi-a-header-poisoning-a-type-of-c-s-own-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C

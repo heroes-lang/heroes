@@ -1,0 +1,13 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape x15).
+#
+# SYMPTOM: `int main;` in a header: the C this compiler writes defines `main`, a
+# function, and clang refuses it there; told *internal error* at exit 2.
+#
+# FIX: R3, as the case beside it (`cli/own_names.hero`, `kept`).
+
+extern "ffi-a-header-defining-main-as-an-object-is-told.h"  #~ ffi_header_refused
+    function x15_f() -> i32
+
+function main()
+    print(x15_f())

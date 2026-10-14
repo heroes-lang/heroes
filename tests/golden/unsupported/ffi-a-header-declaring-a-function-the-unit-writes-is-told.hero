@@ -1,0 +1,16 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape x6).
+#
+# SYMPTOM: `static void hero_extern_refs(int);` in a header, a function the C this
+# compiler writes for every program with a group defines
+# (`emit/extern_refs.hero`), which no reader knew; told *internal error* at
+# exit 2.
+#
+# FIX: R3: a name of the forms `hero_` and its kin no group binds is the
+# header's (`cli/own_names.hero`, `kept`).
+
+extern "ffi-a-header-declaring-a-function-the-unit-writes-is-told.h"  #~ ffi_header_refused
+    function x6_f() -> i32
+
+function main()
+    print(x6_f())

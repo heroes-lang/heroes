@@ -71,6 +71,7 @@ use cli/group_file
 use cli/clang_first
 use cli/clang_excerpt
 use cli/declared_after
+use cli/own_names
 use cli/builtin_name
 use emit/ffi_build
 use parse
@@ -100,12 +101,15 @@ function refused(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str)
     read = clang_first.reading(stderr: stderr, s: s, decls: decls, runtime: runtime)
 
     # A first error in no group's header may still be a header's own, where
-    # C declares after the groups the name its line declared (defect 2049);
+    # C declares after the groups the name its line declared (defect 2049),
+    # or one the compiler keeps to itself (panel 214's R3, `cli/own_names`);
     # and one in a group's header whose notes stand at the include line of
-    # the file clang compiled, where clang declared the name itself at the
-    # header's own line (defect 2051).
+    # the file clang compiled, where clang declared the name itself (2051).
     if read.is_err()
         later: diag.Diagnostic? @= declared_after.told(stderr: stderr, s: s, decls: decls, runtime: runtime)
+
+        if later.is_err()
+            later @ own_names.told(stderr: stderr, s: s, decls: decls, runtime: runtime)
 
         if later.is_err()
             later @ builtin_name.told(stderr: stderr, s: s, decls: decls, runtime: runtime)
@@ -273,6 +277,9 @@ function sides(read: clang_first.Reading) -> Sides?
 # and so at a function of the runtime's the refused line calls, or a name of
 # the runtime's clang suggests in it (defect 2049).
 function adds(note: clang_first.Attached, directory: str) -> str
+    if !note.own.is_err()
+        return "clang adds, at " + note.own.must() + " line " + note.row.to_str() + ", which every unit of this program reads: " + note.text
+
     if !note.standard.is_err()
         return "clang adds, at C's own `" + note.standard.must() + "`, which every unit of this program declares as `<stdint.h>` does, before any group's header: " + note.text
 

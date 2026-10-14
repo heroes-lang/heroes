@@ -1,0 +1,13 @@
+# panel 214, lane land-214, 2026-10-14 (its provisional resolution; the
+# compiler-engineer's shape y18).
+#
+# SYMPTOM: a header defining a `static main`: refused at the C this compiler writes
+# for the program; told *internal error* at exit 2.
+#
+# FIX: R3, as the cases beside it (`cli/own_names.hero`, `kept`).
+
+extern "ffi-a-header-defining-a-static-main-is-told.h"  #~ ffi_header_refused
+    function y18_f() -> i32
+
+function main()
+    print(y18_f())
