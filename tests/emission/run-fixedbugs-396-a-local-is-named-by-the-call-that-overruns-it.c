@@ -160,7 +160,7 @@ void h_fixedbugs396alocalisnamedbythecallthatoverrunsit_main(void) {
 #line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 #define h0_x (*hero_lend_h0_x)
 #line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
-    int32_t *const hero_lend_h0_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocalisnamedbythecallthatoverrunsit.main", "x"); HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int32_t t5; HERO_ENTRY_STOP; goto bb0;
+    int32_t *const hero_lend_h0_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs396alocalisnamedbythecallthatoverrunsit.main", "x"); HERO_NODEBUG int32_t t1, t2, t3, t5; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-396-a-local-is-named-by-the-call-that-overruns-it.hero"
 bb0:
     t1 = INT64_C(0);

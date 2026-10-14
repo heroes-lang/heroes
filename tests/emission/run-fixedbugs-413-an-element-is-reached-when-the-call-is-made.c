@@ -102,7 +102,7 @@ void h_fixedbugs413anelementisreachedwhenthecallismade_main(void);
 #line 12 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 void h_fixedbugs413anelementisreachedwhenthecallismade_add(int64_t *ph0_n, int64_t h1_k) {
 #line 12 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 bb0:
     t1 = (*ph0_n);
@@ -120,7 +120,7 @@ bb0:
 #line 15 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 int64_t h_fixedbugs413anelementisreachedwhenthecallismade_grow(HeroArrayHeader * *ph0_xs) {
 #line 15 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 bb0:
     t1 = INT64_C(0);
@@ -140,7 +140,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 int64_t h_fixedbugs413anelementisreachedwhenthecallismade_hundred(int64_t *ph0_n) {
 #line 20 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 bb0:
     t1 = INT64_C(100);
@@ -155,7 +155,7 @@ bb0:
 #line 24 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 void h_fixedbugs413anelementisreachedwhenthecallismade_main(void) {
 #line 24 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
-    HeroArrayHeader * h0_xs = {0}; int64_t h1_n; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; int64_t h1_n; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t2, *t5, *t9, *t14, *t15; HERO_NODEBUG int64_t t1, t3, t4, t6, t7, t10, t11, t12, t13; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-413-an-element-is-reached-when-the-call-is-made.hero"
 bb0:
     t1 = INT64_C(1);

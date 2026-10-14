@@ -162,7 +162,7 @@ void h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_main(void);
 #line 12 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
 void h_fixedbugs570aheaderspragmaleavesacorrectbindingbuilding_main(void) {
 #line 12 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG struct a * t3; HERO_NODEBUG int32_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2, t4; HERO_NODEBUG struct a *t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-570-a-header-s-pragma-leaves-a-correct-binding-building.hero"
 bb0:
     t1 = INT64_C(-5);

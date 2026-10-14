@@ -132,7 +132,7 @@ void h_afieldnamecomesfromthefield_main(void);
 #line 24 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 HeroStr h_afieldnamecomesfromthefield_quoted(HeroStr h0_s) {
 #line 24 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_22);
@@ -166,7 +166,7 @@ bb0:
 #line 27 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 HeroStr h_afieldnamecomesfromthefield_pair_str(HeroStr h0_key, HeroStr h1_value) {
 #line 27 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 bb0:
     t1 = h0_key;
@@ -218,7 +218,7 @@ bb0:
 #line 30 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 HeroStr h_afieldnamecomesfromthefield_pair_num(HeroStr h0_key, int64_t h1_value) {
 #line 30 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, t1, t2, t3, t4, t6, t7, t8, t9, t10, t11; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 bb0:
     t1 = h0_key;
@@ -270,7 +270,7 @@ bb0:
 #line 33 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 HeroStr h_afieldnamecomesfromthefield_point_json(h_afieldnamecomesfromthefield_Point h0_p) {
 #line 33 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t4, t5, t8, t10, t12, t13, t14, t15, t16, t17, t18, t21, t22, t23; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t9, *t11, *t19, *t20; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t2, t6; HERO_NODEBUG int64_t t3, t7; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_78);
@@ -366,7 +366,7 @@ bb0:
 #line 37 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 HeroStr h_afieldnamecomesfromthefield_room_json(h_afieldnamecomesfromthefield_Room h0_r) {
 #line 37 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t13; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_parts = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t3, t4, t5, t8, t9, t10, t11, t12, t15, t16, t18, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t35, t36, t37; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *h9_own9 = {0}, *t17, *t19, *t20, *t32, *t33, *t34; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t2, t6, t13; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t14; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 bb0:
 #line 39 "tests/golden/run/a-field-name-comes-from-the-field.hero"
@@ -517,7 +517,7 @@ bb0:
 #line 45 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 void h_afieldnamecomesfromthefield_main(void) {
 #line 45 "tests/golden/run/a-field-name-comes-from-the-field.hero"
-    h_afieldnamecomesfromthefield_Room h0_r = {0}; HeroArrayHeader * h1_names = {0}; HERO_NODEBUG h_afieldnamecomesfromthefield_Room h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t5; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t6; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG bool t19; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t20; HERO_NODEBUG h_afieldnamecomesfromthefield_Room t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroStr t26; HERO_ENTRY_STOP; goto bb0;
+    h_afieldnamecomesfromthefield_Room h0_r = {0}; HeroArrayHeader * h1_names = {0}; HERO_NODEBUG h_afieldnamecomesfromthefield_Room h2_own2 = {0}, t6, t7, t20, t21; HERO_NODEBUG HeroStr h3_own3 = {0}, h6_own6 = {0}, t1, t8, t9, t10, t11, t15, t16, t17, t18, t22, t26; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h5_own5 = {0}, *t12, *t13, *t14, *t23, *t24, *t25; HERO_NODEBUG int64_t t2, t3, t4; HERO_NODEBUG h_afieldnamecomesfromthefield_Point t5; HERO_NODEBUG bool t19; HERO_ENTRY_STOP; goto bb0;
 #line 45 "tests/golden/run/a-field-name-comes-from-the-field.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_e092511);

@@ -171,7 +171,7 @@ void h_handleashimconsumesahandleoncefortwopositions_main(void);
 #line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
 void h_handleashimconsumesahandleoncefortwopositions_main(void) {
 #line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
-    ssl * h0_s; bio * h1_b; HERO_NODEBUG ssl * t1; HERO_NODEBUG bio * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bio * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG ssl * t6; HERO_NODEBUG bio * t7; HERO_NODEBUG ssl * t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    ssl * h0_s; bio * h1_b; HERO_NODEBUG ssl *t1, *t6, *t8; HERO_NODEBUG bio *t2, *t4, *t7; HERO_NODEBUG HeroStr t3, t9; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/handle-a-shim-consumes-a-handle-once-for-two-positions.hero"
 bb0:
     t1 = ssl_new();

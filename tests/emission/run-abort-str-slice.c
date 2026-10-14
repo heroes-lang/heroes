@@ -99,7 +99,7 @@ void h_abortstrslice_main(void);
 #line 6 "tests/golden/run/abort-str-slice.hero"
 void h_abortstrslice_main(void) {
 #line 6 "tests/golden/run/abort-str-slice.hero"
-    HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_s = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t5, t6, t9, t10, t11, t12; HERO_NODEBUG int64_t t3, t4, t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 6 "tests/golden/run/abort-str-slice.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_33edea20);

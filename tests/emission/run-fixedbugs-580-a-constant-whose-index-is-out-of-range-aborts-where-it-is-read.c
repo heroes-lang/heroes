@@ -98,7 +98,7 @@ void h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_main(void)
 #line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
 int64_t h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_V(void) {
 #line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t4, *t5, *t8, *t9; HERO_NODEBUG int64_t t1, t2, t3, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
 bb0:
     t1 = INT64_C(1);
@@ -142,7 +142,7 @@ bb0:
 #line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
 void h_fixedbugs580aconstantwhoseindexisoutofrangeabortswhereitisread_main(void) {
 #line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-580-a-constant-whose-index-is-out-of-range-aborts-where-it-is-read.hero"
 bb0:
     t1 = INT64_C(1);

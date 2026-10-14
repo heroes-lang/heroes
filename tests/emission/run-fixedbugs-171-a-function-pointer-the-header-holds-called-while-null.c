@@ -156,7 +156,7 @@ void h_fixedbugs171afunctionpointertheheaderholdscalledwhilenull_main(void);
 #line 24 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
 void h_fixedbugs171afunctionpointertheheaderholdscalledwhilenull_main(void) {
 #line 24 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int32_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-171-a-function-pointer-the-header-holds-called-while-null.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);

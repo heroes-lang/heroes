@@ -169,7 +169,7 @@ void h_handlereferencejoinsthelifeitfinds_main(void);
 #line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
 void h_handlereferencejoinsthelifeitfinds_main(void) {
 #line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
-    ob * h0_a; ob * h1_b; int32_t h2_rc; HERO_NODEBUG int64_t t1; HERO_NODEBUG ob * t2; HERO_NODEBUG ob * t3; HERO_NODEBUG ob * t4; HERO_NODEBUG ob * t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG ob * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG ob * t12; HERO_NODEBUG ob * t13; HERO_NODEBUG ob * t14; HERO_NODEBUG HeroStr t15; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_a; ob * h1_b; int32_t h2_rc; HERO_NODEBUG int64_t t1, t9; HERO_NODEBUG ob *t2, *t3, *t4, *t5, *t8, *t12, *t13, *t14; HERO_NODEBUG int32_t t6, t11; HERO_NODEBUG HeroStr t7, t10, t15; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/handle-reference-joins-the-life-it-finds.hero"
 bb0:
     t1 = INT64_C(3);

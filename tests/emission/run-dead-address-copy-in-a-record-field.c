@@ -203,7 +203,7 @@ h_0opt_1946b540 h_deadaddresscopyinarecordfield_opened(void) {
 #line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 #define h0_db (*hero_lend_h0_db)
 #line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
-    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinarecordfield.opened", "db"); HERO_NODEBUG h_0opt_1946b540 h1_ret0 = {0}; HERO_NODEBUG h_0opt_1946b540 h2_own2 = {0}; HERO_NODEBUG h_0opt_1946b540 h3_own3 = {0}; HERO_NODEBUG cdb * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_1946b540 t9; HERO_NODEBUG cdb * t10; HERO_NODEBUG h_deadaddresscopyinarecordfield_Db t11; HERO_NODEBUG h_0opt_1946b540 t12; HERO_NODEBUG h_0opt_1946b540 t13; HERO_NODEBUG h_0opt_1946b540 t14; HERO_NODEBUG h_0opt_1946b540 t15; HERO_ENTRY_STOP; goto bb0;
+    cdb * *const hero_lend_h0_db = (cdb * *)hero_lend_local(sizeof(cdb *), "deadaddresscopyinarecordfield.opened", "db"); HERO_NODEBUG h_0opt_1946b540 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG cdb *t1, *t10; HERO_NODEBUG HeroStr t2, t7, t8; HERO_NODEBUG const char *t3; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_deadaddresscopyinarecordfield_Db t11; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 bb0:
     t1 = ((void *)0);
@@ -284,7 +284,7 @@ bb4:
 #line 25 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 int64_t h_deadaddresscopyinarecordfield_closed(h_deadaddresscopyinarecordfield_Db *ph0_db) {
 #line 25 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
-    HERO_NODEBUG h_deadaddresscopyinarecordfield_Db t1; HERO_NODEBUG cdb * t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_deadaddresscopyinarecordfield_Db t1; HERO_NODEBUG cdb *t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 bb0:
     t1 = (*ph0_db);
@@ -310,7 +310,7 @@ bb0:
 #line 28 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 void h_deadaddresscopyinarecordfield_main(void) {
 #line 28 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
-    HERO_NODEBUG h_0opt_1946b540 h0_f0 = {0}; h_deadaddresscopyinarecordfield_Db h1_db; h_deadaddresscopyinarecordfield_Db h2_kept; HERO_NODEBUG h_0opt_1946b540 h3_own3 = {0}; HERO_NODEBUG h_0opt_1946b540 t1; HERO_NODEBUG h_0opt_1946b540 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_1946b540 t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_0opt_1946b540 t8; HERO_NODEBUG h_deadaddresscopyinarecordfield_Db t9; HERO_NODEBUG h_deadaddresscopyinarecordfield_Db t10; HERO_NODEBUG h_deadaddresscopyinarecordfield_Db t12; HERO_NODEBUG cdb * t13; HERO_NODEBUG int32_t t14; HERO_NODEBUG h_0opt_1946b540 t15; HERO_NODEBUG h_0opt_1946b540 t16; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_1946b540 h0_f0 = {0}, h3_own3 = {0}, t1, t2, t6, t8, t15, t16; h_deadaddresscopyinarecordfield_Db h1_db; h_deadaddresscopyinarecordfield_Db h2_kept; HERO_NODEBUG int64_t t3, t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG h_deadaddresscopyinarecordfield_Db t9, t10, t12; HERO_NODEBUG cdb *t13; HERO_NODEBUG int32_t t14; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/dead-address-copy-in-a-record-field.hero"
 bb0:
     t1 = h_deadaddresscopyinarecordfield_opened();

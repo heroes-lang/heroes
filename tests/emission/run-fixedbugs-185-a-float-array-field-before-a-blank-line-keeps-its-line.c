@@ -161,7 +161,7 @@ void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void);
 #line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 void h_fixedbugs185afloatarrayfieldbeforeablanklinekeepsitsline_main(void) {
 #line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
-    Pair h0_p; HERO_NODEBUG float t1; HERO_NODEBUG float t2; HERO_NODEBUG Pair t4; HERO_NODEBUG Pair t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG float t8; HERO_NODEBUG Pair t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG float t12; HERO_NODEBUG float t13; HERO_NODEBUG Pair t14; HERO_NODEBUG float t15; HERO_ENTRY_STOP; goto bb0;
+    Pair h0_p; HERO_NODEBUG float t1, t2, t8, t12, t13, t15; HERO_NODEBUG Pair t4, t5, t9, t14; HERO_NODEBUG int64_t t7, t11; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-185-a-float-array-field-before-a-blank-line-keeps-its-line.hero"
 bb0:
     t1 = 0x1.8p+0;

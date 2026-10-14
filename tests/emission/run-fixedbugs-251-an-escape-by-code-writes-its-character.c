@@ -130,7 +130,7 @@ bb0:
 #line 13 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 HeroStr h_fixedbugs251anescapebycodewritesitscharacter_bytes_of(HeroStr h0_s) {
 #line 13 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
-    HeroStr h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_i; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t5, *t8, *t11, *t27, *t28; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t18, t22, t23, t24; int64_t h4_i; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t3, t14, t15, t16, t17, t20, t21, t25, t26, t29, t30, t31, t32; HERO_NODEBUG bool t10; HERO_NODEBUG uint8_t t19; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_0);
@@ -265,7 +265,7 @@ bb4:
 #line 21 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 void h_fixedbugs251anescapebycodewritesitscharacter_main(void) {
 #line 21 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
-    int64_t h0_x; HERO_NODEBUG HeroStr h1_s0 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_x; HERO_NODEBUG HeroStr h1_s0 = {0}, h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t14, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42; HERO_NODEBUG int64_t t13, t15; HERO_NODEBUG bool t28; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-251-an-escape-by-code-writes-its-character.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_18f3f579);
@@ -474,7 +474,7 @@ bb4:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

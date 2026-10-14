@@ -110,7 +110,7 @@ void h_literalbases_main(void);
 #line 27 "tests/golden/run/literal-bases.hero"
 void h_literalbases_main(void) {
 #line 27 "tests/golden/run/literal-bases.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG HeroStr t41; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t3, t5, t7, t9, t11, t13, t17, t21, t23, t24, t28, t32, t36, t38, t41; HERO_NODEBUG int64_t t2, t4, t6, t8, t10, t12, t14, t15, t18, t19, t22, t25, t26, t27, t29, t30, t31, t33, t34, t35, t37, t39, t40; HERO_NODEBUG bool t16, t20; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/literal-bases.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_e0a370d);

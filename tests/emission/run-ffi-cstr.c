@@ -160,7 +160,7 @@ void h_fficstr_main(void);
 #line 15 "tests/golden/run/ffi-cstr.hero"
 HeroStr h_fficstr_shout(HeroStr h0_text) {
 #line 15 "tests/golden/run/ffi-cstr.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/ffi-cstr.hero"
 bb0:
     t1 = h0_text;
@@ -183,7 +183,7 @@ bb0:
 #line 18 "tests/golden/run/ffi-cstr.hero"
 void h_fficstr_main(void) {
 #line 18 "tests/golden/run/ffi-cstr.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}, t1, t4, t5, t8, t9; HERO_NODEBUG const char *t2, *t6; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/ffi-cstr.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_79c9889a);

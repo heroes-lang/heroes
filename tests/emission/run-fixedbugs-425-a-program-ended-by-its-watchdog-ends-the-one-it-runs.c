@@ -145,7 +145,17 @@ HeroArrayHeader * h_library_args(void);
 #line 34 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_HERO_DIR_FILES(void) {
 #line 148 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 34 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     return HERO_DIR_FILES;
+#line 158 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#pragma clang diagnostic pop
 }
 
 #line 37 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
@@ -155,7 +165,7 @@ HeroStr h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_itself(void) {
 #line 37 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 #define h1_marks (*hero_lend_h1_marks)
 #line 37 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb0:
     t1 = INT64_C(0);
@@ -175,7 +185,7 @@ bb0:
     h2_own2 = t3;
 #line 40 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     hero_str_decref(t4);
-#line 179 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 189 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -190,7 +200,7 @@ int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_again(HeroArray
 #line 44 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 #define h6_status (*hero_lend_h6_status)
 #line 44 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
-    HeroStr h2_program = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; HeroStr h5_word = {0}; int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.again", "status"); int64_t h7_code; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG const char * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG const char * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG const char * t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG const char * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroStr t31; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h2_program = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t3, *t6, *t9, *t30; HERO_NODEBUG int64_t h4_i0, t4, t5, t7, t10, t13, t14, t15, t16, t17, t26, t27; HeroStr h5_word = {0}; int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.again", "status"); int64_t h7_code; HERO_NODEBUG HeroStr h8_own8 = {0}, t1, t2, t11, t12, t18, t20, t22, t24, t28, t29, t31; HERO_NODEBUG bool t8; HERO_NODEBUG const char *t19, *t21, *t23, *t25; HERO_ENTRY_STOP; goto bb0;
 #line 44 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb0:
     t1 = h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_itself();
@@ -305,7 +315,7 @@ bb4:
     h7_code = t26;
     (void)hero_run_reset();
     t27 = h7_code;
-#line 309 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 319 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_release_at(&h2_program);
     hero_array_release_at(&h3_xs0);
     hero_str_release_at(&h5_word);
@@ -318,7 +328,7 @@ bb4:
 #line 60 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 void h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_beat(HeroStr h0_dir) {
 #line 60 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
-    int64_t h1_n; int64_t h2_k; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG bool t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG h_0opt_a8ea2 t33; HERO_NODEBUG h_0opt_a8ea2 t34; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_n; int64_t h2_k; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h7_own7 = {0}, t22, t23, t33, t34; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, t15, t16, t17, t19, t20, t21, t30, t31, t32; HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t8, t9, t10, t12, t13, t14, t18, t24, t25, t27, t28, t29; HERO_NODEBUG bool t3, t11, t26; HERO_ENTRY_STOP; goto bb0;
 #line 60 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb0:
     t1 = INT64_C(0);
@@ -362,7 +372,7 @@ bb2:
     if (t11) goto bb5; else goto bb6;
 #line 67 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb3:
-#line 366 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 376 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -461,13 +471,13 @@ bb8:
 bb9:
 #line 72 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     goto bb7;
-#line 465 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 475 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 75 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_spin(void) {
 #line 75 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
-    int64_t h0_n; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_n; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t7, t9, t10; HERO_NODEBUG bool t2, t8; HERO_ENTRY_STOP; goto bb0;
 #line 75 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb0:
     t1 = INT64_C(0);
@@ -520,13 +530,13 @@ bb5:
 bb6:
 #line 82 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     goto bb4;
-#line 524 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 534 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 87 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 int64_t h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_beats(HeroStr h0_dir) {
 #line 87 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
-    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 87 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb0:
     t1 = h0_dir;
@@ -544,13 +554,13 @@ bb0:
     t6 = h1_count;
 #line 90 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     return t6;
-#line 548 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 558 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 92 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 void h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_first(void) {
 #line 92 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
-    HeroStr h0_dir = {0}; int64_t h1_before; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG const char * t31; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_dir = {0}; int64_t h1_before; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t1, t3, t4, t5, t8, t9, t10, t14, t19, t20, t24, t28, t29, t30, t33, t34, t35; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *h5_own5 = {0}, *t11, *t21, *t36, *t37; HERO_NODEBUG int64_t t2, t12, t13, t15, t16, t17, t22, t25, t26; HERO_NODEBUG const char *t6, *t31; HERO_NODEBUG bool t18, t27; HERO_ENTRY_STOP; goto bb0;
 #line 92 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_72d744c4);
@@ -633,7 +643,7 @@ bb1:
     t31 = hero_str_lend(t30);
 #line 107 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     (void)hero_dir_remove_tree(hero_cstr_nonnull(t31));
-#line 637 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 647 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_str_release_at(&h0_dir);
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
@@ -700,13 +710,13 @@ bb6:
     hero_print_end();
 #line 106 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     goto bb4;
-#line 704 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 714 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 109 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 void h_fixedbugs425aprogramendedbyitswatchdogendstheoneitruns_main(void) {
 #line 109 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
-    HeroArrayHeader * h0_words = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG bool t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_words = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t1, *t2, *t6, *t13, *t16, *t19, *t24, *t28, *t29, *t30; HERO_NODEBUG int64_t t3, t4, t7, t14, t17, t18, t20, t25, t27; HERO_NODEBUG bool t5, t10, t23; HERO_NODEBUG HeroStr t8, t9, t11, t12, t15, t21, t22, t26; HERO_ENTRY_STOP; goto bb0;
 #line 109 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb0:
     t1 = h_library_args();
@@ -736,7 +746,7 @@ bb0:
     if (t5) goto bb2; else goto bb3;
 #line 112 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
 bb1:
-#line 740 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 750 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_array_release_at(&h0_words);
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
@@ -828,25 +838,27 @@ bb7:
     hero_print_end();
 #line 119 "tests/golden/run/fixedbugs-425-a-program-ended-by-its-watchdog-ends-the-one-it-runs.hero"
     goto bb1;
-#line 832 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 842 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 837 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 849 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 843 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 856 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
 }
 
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 186 "<heroes library>"
-    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_a8ea2 t18; HERO_NODEBUG h_0opt_a8ea2 t19; HERO_NODEBUG h_0opt_a8ea2 t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0;
 #line 186 "<heroes library>"
 bb0:
     t1 = h0_path;
@@ -951,7 +963,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 955 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 967 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -964,7 +976,7 @@ bb7:
 #line 196 "<heroes library>"
 HeroArrayHeader * h_library_args(void) {
 #line 196 "<heroes library>"
-    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; int64_t h1_i; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t13, *t14, *t15; HERO_NODEBUG HeroStr h3_own3 = {0}, t8, t16; HERO_NODEBUG int64_t t2, t3, t4, t7, t10, t11, t12; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 196 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1021,7 +1033,7 @@ bb2:
 #line 201 "<heroes library>"
 bb3:
     t13 = h0_out;
-#line 1025 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
+#line 1037 "fixedbugs425aprogramendedbyitswatchdogendstheoneitruns.c"
     hero_array_incref(t13);
     hero_array_release_at(&h0_out);
     hero_array_release_at(&h2_own2);

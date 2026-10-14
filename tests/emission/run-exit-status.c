@@ -101,7 +101,7 @@ void h_library_exit(int64_t h0_code);
 #line 18 "tests/golden/run/exit-status.hero"
 void h_exitstatus_main(void) {
 #line 18 "tests/golden/run/exit-status.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/exit-status.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);

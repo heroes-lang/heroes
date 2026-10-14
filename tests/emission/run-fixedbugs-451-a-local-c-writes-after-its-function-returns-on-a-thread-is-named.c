@@ -175,7 +175,7 @@ int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_lend(
 #line 19 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
 #define h0_n (*hero_lend_h0_n)
 #line 19 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
-    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.lend", "n"); HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h0_n = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.lend", "n"); HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
 bb0:
     t1 = INT64_C(0);
@@ -196,7 +196,7 @@ bb0:
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
 int64_t h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_worker(int64_t h0_arg) {
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
-    hero_thread_guard("fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.worker"); int64_t h1_got; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed.worker"); int64_t h1_got; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
 bb0:
     t1 = h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_lend();
@@ -219,7 +219,7 @@ int64_t h_0cb_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_w
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
 void h_fixedbugs451alocalcwritesafteritsfunctionreturnsonathreadisnamed_main(void) {
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
-    int64_t h0_t; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_t; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-451-a-local-c-writes-after-its-function-returns-on-a-thread-is-named.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_210c7913);

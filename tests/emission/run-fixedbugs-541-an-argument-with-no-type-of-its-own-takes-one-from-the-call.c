@@ -182,7 +182,7 @@ HERO_TU_LOCAL h_0fn_48ac9712 h_fixedbugs541anargumentwithnotypeofitsowntakesonef
 #line 91 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_double(int64_t h0_x) {
 #line 91 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 91 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_x;
@@ -198,7 +198,7 @@ bb0:
 #line 94 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_less(uint8_t h0_x) {
 #line 94 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 94 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_x;
@@ -214,7 +214,7 @@ bb0:
 #line 97 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_add(uint8_t h0_acc, uint8_t h1_item) {
 #line 97 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 97 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_acc;
@@ -230,7 +230,7 @@ bb0:
 #line 100 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_count(HeroArrayHeader * h0_xs) {
 #line 100 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 100 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_xs;
@@ -244,7 +244,7 @@ bb0:
 #line 103 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_times_two(uint8_t h0_x) {
 #line 103 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 103 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_x;
@@ -260,7 +260,7 @@ bb0:
 #line 106 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_value(h_0opt_e201354 h0_n) {
 #line 106 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG h_0opt_e201354 t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, t1, t2, t6, t10; HERO_NODEBUG int64_t h2_r0, t3, t4, t7, t8, t9; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 106 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_n;
@@ -312,7 +312,7 @@ bb3:
 #line 109 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HeroStr h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_shown(uint8_t h0_v) {
 #line 109 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 109 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_v;
@@ -349,7 +349,7 @@ bb0:
 #line 115 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_declared(void) {
 #line 115 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG uint8_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 115 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = UINT64_C(250);
@@ -365,7 +365,7 @@ bb0:
 #line 118 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_fourteen(void) {
 #line 118 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h0_ns = {0}; h_0opt_e201354 h1_y = {0}; uint8_t h2_b; HeroArrayHeader * h3_xs = {0}; h_0opt_e201354 h4_nested = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h6_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h7_f2 = {0}; HERO_NODEBUG int64_t h8_r0; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG h_0opt_e201354 h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG h_0opt_e201354 h18_own18 = {0}; HERO_NODEBUG h_0opt_e201354 h19_own19 = {0}; HERO_NODEBUG h_0opt_e201354 h20_own20 = {0}; HERO_NODEBUG h_0opt_e201354 h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * h23_own23 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG h_0fn_48ac9712 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG h_0fn_48ac9712 t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_0fn_6ca17148 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG h_0fn_3d242f50 t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG h_0opt_e201354 t29; HERO_NODEBUG h_0opt_e201354 t30; HERO_NODEBUG h_0opt_e201354 t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG HeroFailure t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG h_0opt_e201354 t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG bool t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG HeroFailure t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG h_0opt_e201354 t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_0opt_e201354 t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG bool t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG uint8_t t63; HERO_NODEBUG uint8_t t64; HERO_NODEBUG uint8_t t65; HERO_NODEBUG uint8_t t66; HERO_NODEBUG uint8_t t67; HERO_NODEBUG uint8_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG uint8_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG h_0opt_e201354 t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG h_0fn_48ac9712 t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG uint8_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG h_0opt_e201354 t88; HERO_NODEBUG h_0opt_e201354 t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG HeroArrayHeader * t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG h_0opt_e201354 t94; HERO_NODEBUG h_0opt_e201354 t95; HERO_NODEBUG h_0opt_e201354 t96; HERO_NODEBUG h_0opt_e201354 t97; HERO_NODEBUG h_0opt_e201354 t98; HERO_NODEBUG h_0opt_e201354 t99; HERO_NODEBUG h_0opt_e201354 t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG h_0opt_e201354 t102; HERO_NODEBUG h_0opt_e201354 t103; HERO_NODEBUG h_0opt_e201354 t104; HERO_NODEBUG h_0opt_e201354 t105; HERO_NODEBUG HeroArrayHeader * t106; HERO_NODEBUG HeroArrayHeader * t107; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_ns = {0}; h_0opt_e201354 h1_y = {0}; uint8_t h2_b; HeroArrayHeader * h3_xs = {0}; h_0opt_e201354 h4_nested = {0}; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h6_f1 = {0}, h7_f2 = {0}, h10_own10 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, t6, t26, t28, t29, t30, t31, t35, t37, t39, t41, t42, t43, t47, t49, t51, t53, t54, t55, t59, t74, t88, t89, t94, t95, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105; HERO_NODEBUG int64_t h8_r0, t1, t2, t3, t5, t8, t11, t12, t16, t18, t20, t24, t25, t27, t32, t33, t38, t40, t44, t45, t50, t56, t57, t60, t61, t62, t69, t71, t72, t73, t75, t76, t78, t79, t81, t85; HERO_NODEBUG HeroArrayHeader *h9_own9 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *t4, *t9, *t13, *t15, *t17, *t21, *t23, *t82, *t83, *t84, *t86, *t87, *t90, *t91, *t92, *t93, *t106, *t107; HERO_NODEBUG uint8_t t7, t63, t64, t65, t66, t67, t68, t70, t80; HERO_NODEBUG h_0fn_48ac9712 t10, t14, t77; HERO_NODEBUG h_0fn_6ca17148 t19; HERO_NODEBUG h_0fn_3d242f50 t22; HERO_NODEBUG bool t34, t46, t58; HERO_NODEBUG HeroFailure t36, t48; HERO_NODEBUG HeroStr t52; HERO_ENTRY_STOP; goto bb0;
 #line 118 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = INT64_C(1);
@@ -792,7 +792,7 @@ bb7:
 #line 139 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_widths(void) {
 #line 139 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    uint8_t h0_y; HeroArrayHeader * h1_us = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG h_0fn_5b2ccbb1 t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_y; HeroArrayHeader * h1_us = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t12, *t13, *t17, *t18; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t14, t16; HERO_NODEBUG h_0fn_5b2ccbb1 t15; HERO_ENTRY_STOP; goto bb0;
 #line 139 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = UINT64_C(1);
@@ -866,7 +866,7 @@ bb0:
 #line 147 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_both_orders(void) {
 #line 147 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h0_xs = {0}; h_0opt_e201354 h1_y = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG h_0opt_e201354 h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroMapHeader * h11_own11 = {0}; HERO_NODEBUG HeroMapHeader * h12_own12 = {0}; HERO_NODEBUG HeroMapHeader * h13_own13 = {0}; HERO_NODEBUG HeroMapHeader * h14_own14 = {0}; HERO_NODEBUG HeroMapHeader * h15_own15 = {0}; HERO_NODEBUG HeroMapHeader * h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG HeroArrayHeader * h19_own19 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroArrayHeader * h21_own21 = {0}; HERO_NODEBUG HeroArrayHeader * h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * h23_own23 = {0}; HERO_NODEBUG HeroArrayHeader * h24_own24 = {0}; HERO_NODEBUG HeroArrayHeader * h25_own25 = {0}; HERO_NODEBUG HeroArrayHeader * h26_own26 = {0}; HERO_NODEBUG HeroArrayHeader * h27_own27 = {0}; HERO_NODEBUG HeroArrayHeader * h28_own28 = {0}; HERO_NODEBUG HeroArrayHeader * h29_own29 = {0}; HERO_NODEBUG HeroArrayHeader * h30_own30 = {0}; HERO_NODEBUG h_0opt_e201354 h31_own31 = {0}; HERO_NODEBUG h_0opt_e201354 h32_own32 = {0}; HERO_NODEBUG HeroArrayHeader * h33_own33 = {0}; HERO_NODEBUG HeroArrayHeader * h34_own34 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroMapHeader * t17; HERO_NODEBUG HeroMapHeader * t18; HERO_NODEBUG HeroMapHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroMapHeader * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroMapHeader * t24; HERO_NODEBUG HeroMapHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG HeroArrayHeader * t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG h_0fn_48ac9712 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG h_0fn_48ac9712 t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG HeroArrayHeader * t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG h_0opt_e201354 t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG bool t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG HeroFailure t64; HERO_NODEBUG h_0opt_e201354 t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG h_0fn_48ac9712 t67; HERO_NODEBUG h_0fn_48ac9712 t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG h_0fn_48ac9712 t73; HERO_NODEBUG h_0fn_48ac9712 t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG HeroArrayHeader * t78; HERO_NODEBUG h_0opt_e201354 t79; HERO_NODEBUG h_0opt_e201354 t80; HERO_NODEBUG HeroArrayHeader * t81; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroArrayHeader * t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroMapHeader * t87; HERO_NODEBUG HeroMapHeader * t88; HERO_NODEBUG HeroMapHeader * t89; HERO_NODEBUG HeroMapHeader * t90; HERO_NODEBUG HeroMapHeader * t91; HERO_NODEBUG HeroMapHeader * t92; HERO_NODEBUG HeroArrayHeader * t93; HERO_NODEBUG HeroArrayHeader * t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG HeroArrayHeader * t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG HeroArrayHeader * t98; HERO_NODEBUG HeroArrayHeader * t99; HERO_NODEBUG HeroArrayHeader * t100; HERO_NODEBUG HeroArrayHeader * t101; HERO_NODEBUG HeroArrayHeader * t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG HeroArrayHeader * t104; HERO_NODEBUG HeroArrayHeader * t105; HERO_NODEBUG HeroArrayHeader * t106; HERO_NODEBUG h_0opt_e201354 t107; HERO_NODEBUG h_0opt_e201354 t108; HERO_NODEBUG h_0opt_e201354 t109; HERO_NODEBUG HeroArrayHeader * t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; h_0opt_e201354 h1_y = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_own4 = {0}, h31_own31 = {0}, h32_own32 = {0}, t4, t56, t57, t58, t59, t63, t65, t79, t80, t107, t108, t109; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h29_own29 = {0}, *h30_own30 = {0}, *h33_own33 = {0}, *h34_own34 = {0}, *t2, *t6, *t7, *t8, *t10, *t12, *t13, *t28, *t29, *t30, *t31, *t32, *t34, *t35, *t37, *t38, *t39, *t48, *t49, *t51, *t52, *t53, *t69, *t75, *t77, *t78, *t81, *t82, *t83, *t84, *t85, *t86, *t93, *t94, *t95, *t96, *t97, *t98, *t99, *t100, *t101, *t102, *t103, *t104, *t105, *t106, *t110, *t111; HERO_NODEBUG HeroMapHeader *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *t17, *t18, *t19, *t21, *t24, *t25, *t87, *t88, *t89, *t90, *t91, *t92; HERO_NODEBUG int64_t t1, t3, t5, t9, t11, t14, t16, t20, t23, t26, t27, t33, t36, t40, t41, t43, t45, t46, t47, t50, t54, t55, t60, t61, t66, t70, t71, t72, t76; HERO_NODEBUG HeroStr t15, t22; HERO_NODEBUG h_0fn_48ac9712 t42, t44, t67, t68, t73, t74; HERO_NODEBUG bool t62; HERO_NODEBUG HeroFailure t64; HERO_ENTRY_STOP; goto bb0;
 #line 147 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = INT64_C(1);
@@ -1357,7 +1357,7 @@ bb2:
 #line 163 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_own_before_default(void) {
 #line 163 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    uint8_t h0_b8; uint8_t h1_k8; int64_t h2_k64; uint16_t h3_k16; uint8_t h4_v8; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroMapHeader * h11_own11 = {0}; HERO_NODEBUG HeroMapHeader * h12_own12 = {0}; HERO_NODEBUG HeroMapHeader * h13_own13 = {0}; HERO_NODEBUG HeroMapHeader * h14_own14 = {0}; HERO_NODEBUG HeroMapHeader * h15_own15 = {0}; HERO_NODEBUG HeroMapHeader * h16_own16 = {0}; HERO_NODEBUG HeroMapHeader * h17_own17 = {0}; HERO_NODEBUG HeroMapHeader * h18_own18 = {0}; HERO_NODEBUG HeroMapHeader * h19_own19 = {0}; HERO_NODEBUG HeroMapHeader * h20_own20 = {0}; HERO_NODEBUG HeroMapHeader * h21_own21 = {0}; HERO_NODEBUG HeroMapHeader * h22_own22 = {0}; HERO_NODEBUG HeroMapHeader * h23_own23 = {0}; HERO_NODEBUG HeroMapHeader * h24_own24 = {0}; HERO_NODEBUG HeroMapHeader * h25_own25 = {0}; HERO_NODEBUG HeroMapHeader * h26_own26 = {0}; HERO_NODEBUG HeroMapHeader * h27_own27 = {0}; HERO_NODEBUG HeroMapHeader * h28_own28 = {0}; HERO_NODEBUG HeroMapHeader * h29_own29 = {0}; HERO_NODEBUG HeroMapHeader * h30_own30 = {0}; HERO_NODEBUG HeroMapHeader * h31_own31 = {0}; HERO_NODEBUG HeroMapHeader * h32_own32 = {0}; HERO_NODEBUG HeroArrayHeader * h33_own33 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG uint16_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG uint8_t t21; HERO_NODEBUG uint8_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroMapHeader * t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroMapHeader * t27; HERO_NODEBUG HeroMapHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG uint8_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroMapHeader * t32; HERO_NODEBUG uint8_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG HeroMapHeader * t35; HERO_NODEBUG HeroMapHeader * t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG HeroMapHeader * t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG uint8_t t42; HERO_NODEBUG HeroMapHeader * t43; HERO_NODEBUG HeroMapHeader * t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG uint8_t t47; HERO_NODEBUG HeroMapHeader * t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG uint8_t t50; HERO_NODEBUG HeroMapHeader * t51; HERO_NODEBUG HeroMapHeader * t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG uint16_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroMapHeader * t57; HERO_NODEBUG HeroMapHeader * t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG uint16_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG HeroMapHeader * t62; HERO_NODEBUG HeroMapHeader * t63; HERO_NODEBUG HeroMapHeader * t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG uint16_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG HeroMapHeader * t69; HERO_NODEBUG HeroMapHeader * t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG uint16_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG HeroMapHeader * t74; HERO_NODEBUG HeroMapHeader * t75; HERO_NODEBUG HeroMapHeader * t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG h_0fn_3aea7731 t78; HERO_NODEBUG h_0fn_3aea7731 t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG uint8_t t81; HERO_NODEBUG uint8_t t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroArrayHeader * t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroArrayHeader * t87; HERO_NODEBUG HeroArrayHeader * t88; HERO_NODEBUG HeroMapHeader * t89; HERO_NODEBUG HeroMapHeader * t90; HERO_NODEBUG HeroMapHeader * t91; HERO_NODEBUG HeroMapHeader * t92; HERO_NODEBUG HeroMapHeader * t93; HERO_NODEBUG HeroMapHeader * t94; HERO_NODEBUG HeroMapHeader * t95; HERO_NODEBUG HeroMapHeader * t96; HERO_NODEBUG HeroMapHeader * t97; HERO_NODEBUG HeroMapHeader * t98; HERO_NODEBUG HeroMapHeader * t99; HERO_NODEBUG HeroMapHeader * t100; HERO_NODEBUG HeroMapHeader * t101; HERO_NODEBUG HeroMapHeader * t102; HERO_NODEBUG HeroMapHeader * t103; HERO_NODEBUG HeroMapHeader * t104; HERO_NODEBUG HeroMapHeader * t105; HERO_NODEBUG HeroMapHeader * t106; HERO_NODEBUG HeroMapHeader * t107; HERO_NODEBUG HeroMapHeader * t108; HERO_NODEBUG HeroMapHeader * t109; HERO_NODEBUG HeroMapHeader * t110; HERO_NODEBUG HeroArrayHeader * t111; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_b8; uint8_t h1_k8; int64_t h2_k64; uint16_t h3_k16; uint8_t h4_v8; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h33_own33 = {0}, *t8, *t10, *t11, *t15, *t18, *t19, *t80, *t83, *t84, *t85, *t86, *t87, *t88, *t111; HERO_NODEBUG HeroMapHeader *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *h19_own19 = {0}, *h20_own20 = {0}, *h21_own21 = {0}, *h22_own22 = {0}, *h23_own23 = {0}, *h24_own24 = {0}, *h25_own25 = {0}, *h26_own26 = {0}, *h27_own27 = {0}, *h28_own28 = {0}, *h29_own29 = {0}, *h30_own30 = {0}, *h31_own31 = {0}, *h32_own32 = {0}, *t24, *t27, *t28, *t32, *t35, *t36, *t40, *t43, *t44, *t48, *t51, *t52, *t57, *t58, *t62, *t63, *t64, *t69, *t70, *t74, *t75, *t76, *t89, *t90, *t91, *t92, *t93, *t94, *t95, *t96, *t97, *t98, *t99, *t100, *t101, *t102, *t103, *t104, *t105, *t106, *t107, *t108, *t109, *t110; HERO_NODEBUG uint8_t t1, t2, t5, t6, t7, t9, t13, t14, t16, t17, t21, t22, t25, t30, t33, t39, t42, t47, t50, t81, t82; HERO_NODEBUG int64_t t3, t12, t20, t23, t26, t29, t31, t34, t37, t38, t41, t45, t46, t49, t53, t54, t56, t59, t61, t65, t66, t68, t71, t73, t77; HERO_NODEBUG uint16_t t4, t55, t60, t67, t72; HERO_NODEBUG h_0fn_3aea7731 t78, t79; HERO_ENTRY_STOP; goto bb0;
 #line 163 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = UINT64_C(1);
@@ -1814,7 +1814,7 @@ bb0:
 #line 179 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_calls_and_names(void) {
 #line 179 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_0fn_48ac9712 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG h_0fn_48ac9712 t17; HERO_NODEBUG h_0fn_48ac9712 t18; HERO_NODEBUG h_0fn_48ac9712 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG h_0fn_48ac9712 t22; HERO_NODEBUG h_0fn_48ac9712 t23; HERO_NODEBUG h_0fn_48ac9712 t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *h1_own1 = {0}, *h2_own2 = {0}, *h3_own3 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *t1, *t3, *t4, *t5, *t8, *t9, *t10, *t11, *t15, *t27, *t28, *t29, *t30, *t31, *t32, *t33, *t34, *t35; HERO_NODEBUG int64_t t2, t6, t7, t12, t14, t16, t20, t21, t25, t26; HERO_NODEBUG h_0fn_48ac9712 t13, t17, t18, t19, t22, t23, t24; HERO_ENTRY_STOP; goto bb0;
 #line 179 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_empty_1b9a87();
@@ -1958,7 +1958,7 @@ bb0:
 #line 186 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 void h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_receivers(void) {
 #line 186 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG HeroStr t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t1, *t12; HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t6, t13; HERO_NODEBUG HeroStr h2_own2 = {0}, t11, t14; HERO_NODEBUG int64_t t2, t5, t7; HERO_NODEBUG uint8_t t3, t4, t8, t9, t10; HERO_ENTRY_STOP; goto bb0;
 #line 186 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -2042,7 +2042,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_3c17(uint8_t h0_a, uint8_t h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG uint8_t t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -2098,7 +2098,7 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_app_1b9a87(h_0fn_48ac9712 h0_f, int64_t h1_x) {
 #line 42 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_f;
@@ -2116,7 +2116,7 @@ bb0:
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) {
 #line 36 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t13, t14, t16, t17, t18; int64_t h5_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_ENTRY_STOP; goto bb0;
 #line 36 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -2224,7 +2224,7 @@ bb0:
 #line 58 "<heroes library>"
 HERO_TU_LOCAL int64_t h_library_fold_37f8817a(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_6ca17148 h2_f) {
 #line 58 "<heroes library>"
-    int64_t h3_total; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; int64_t h6_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_6ca17148 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_ENTRY_STOP; goto bb0;
+    int64_t h3_total; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *t2, *t5, *t8, *t19; HERO_NODEBUG int64_t h5_i0, t1, t3, t4, t6, t9, t10, t12, t13, t14, t15, t16, t17, t18; int64_t h6_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_6ca17148 t11; HERO_ENTRY_STOP; goto bb0;
 #line 58 "<heroes library>"
 bb0:
     t1 = h1_start;
@@ -2319,7 +2319,7 @@ bb0:
 #line 43 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_filter_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
 #line 43 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_3d242f50 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t20, *t21, *t22, *t23; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t12, t15, t17, t18, t19; int64_t h5_x; HERO_NODEBUG bool t7, t13; HERO_NODEBUG h_0fn_3d242f50 t11; HERO_ENTRY_STOP; goto bb0;
 #line 43 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -2424,7 +2424,7 @@ bb7:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL h_0opt_e201354 h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_e201354(h_0opt_e201354 h0_a, h_0opt_e201354 h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG h_0opt_e201354 t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG h_0opt_e201354 t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -2467,7 +2467,7 @@ bb0:
 #line 39 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL h_0opt_e201354 h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_wanted_1b9a87(HeroStr h0_what) {
 #line 39 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t3, t4; HERO_NODEBUG HeroStr t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_fab1332);
@@ -2511,7 +2511,7 @@ bb0:
 #line 79 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_fallible_1b9a87(int64_t h0_x, h_0opt_e201354 h1_n) {
 #line 79 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG __attribute__((unused)) int64_t h3_r0; HERO_NODEBUG h_0opt_e201354 t1; HERO_NODEBUG h_0opt_e201354 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, t1, t2, t6, t11; HERO_NODEBUG __attribute__((unused)) int64_t h3_r0; HERO_NODEBUG int64_t t3, t4, t7, t8, t10; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 79 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h1_n;
@@ -2579,7 +2579,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_4b7fe249(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -2622,7 +2622,7 @@ bb0:
 #line 58 "<heroes library>"
 HERO_TU_LOCAL uint8_t h_library_fold_5064595f(HeroArrayHeader * h0_xs, uint8_t h1_start, h_0fn_5b2ccbb1 h2_f) {
 #line 58 "<heroes library>"
-    uint8_t h3_total; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; uint8_t h6_x; HERO_NODEBUG uint8_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG h_0fn_5b2ccbb1 t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h3_total; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *t2, *t5, *t8, *t19; HERO_NODEBUG int64_t h5_i0, t3, t4, t6, t9, t15, t16, t17; uint8_t h6_x; HERO_NODEBUG uint8_t t1, t10, t12, t13, t14, t18; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_5b2ccbb1 t11; HERO_ENTRY_STOP; goto bb0;
 #line 58 "<heroes library>"
 bb0:
     t1 = h1_start;
@@ -2702,7 +2702,7 @@ bb4:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroMapHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_7348c008(HeroMapHeader * h0_a, HeroMapHeader * h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG HeroMapHeader *t1, *t2, *t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -2745,7 +2745,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_5df176b8(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -2788,7 +2788,7 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_app_rev_1b9a87(int64_t h0_x, h_0fn_48ac9712 h1_f) {
 #line 45 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 45 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h1_f;
@@ -2806,7 +2806,7 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_mapr_37f8817a(h_0fn_48ac9712 h0_f, HeroArrayHeader * h1_xs) {
 #line 48 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t3, *t4; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h1_xs;
@@ -2831,7 +2831,7 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_apply_all_1b9a87(HeroArrayHeader * h0_fs, int64_t h1_x) {
 #line 51 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    int64_t h2_out; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; h_0fn_48ac9712 h5_f; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0fn_48ac9712 t10; HERO_NODEBUG h_0fn_48ac9712 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_out; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h4_i0, t1, t3, t4, t6, t9, t12, t13, t14, t15, t16, t17; h_0fn_48ac9712 h5_f; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h1_x;
@@ -2910,7 +2910,7 @@ bb4:
 #line 59 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_apply_rev_1b9a87(int64_t h0_x, HeroArrayHeader * h1_fs) {
 #line 59 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    int64_t h2_out; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; h_0fn_48ac9712 h5_f; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0fn_48ac9712 t10; HERO_NODEBUG h_0fn_48ac9712 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_out; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h4_i0, t1, t3, t4, t6, t9, t12, t13, t14, t15, t16, t17; h_0fn_48ac9712 h5_f; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 59 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_x;
@@ -2989,7 +2989,7 @@ bb4:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_c50563b(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -3032,7 +3032,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroMapHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_9ef1555(HeroMapHeader * h0_a, HeroMapHeader * h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG HeroMapHeader *t1, *t2, *t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -3075,7 +3075,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroMapHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_611f7680(HeroMapHeader * h0_a, HeroMapHeader * h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG HeroMapHeader *t1, *t2, *t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -3118,7 +3118,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroMapHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_240a7cde(HeroMapHeader * h0_a, HeroMapHeader * h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroMapHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroMapHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG HeroMapHeader *t1, *t2, *t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;
@@ -3175,7 +3175,7 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL uint8_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_apply_all_3c17(HeroArrayHeader * h0_fs, uint8_t h1_x) {
 #line 51 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    uint8_t h2_out; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; h_0fn_3aea7731 h5_f; HERO_NODEBUG uint8_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0fn_3aea7731 t10; HERO_NODEBUG h_0fn_3aea7731 t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG uint8_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h2_out; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t14, t15, t16; h_0fn_3aea7731 h5_f; HERO_NODEBUG uint8_t t1, t12, t13, t17; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_3aea7731 t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h1_x;
@@ -3254,7 +3254,7 @@ bb4:
 #line 35 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_empty_1b9a87(void) {
 #line 35 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t3, *t4; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -3285,7 +3285,7 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_same_4b7fe249(HeroArrayHeader * h0_x) {
 #line 32 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_x;
@@ -3299,7 +3299,7 @@ bb0:
 #line 87 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_pairs_37f8817a(h_0fn_48ac9712 h0_f, int64_t h1_x, HeroArrayHeader * h2_ys) {
 #line 87 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0;
 #line 87 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_f;
@@ -3320,7 +3320,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 HERO_TU_LOCAL h_0fn_48ac9712 h_fixedbugs541anargumentwithnotypeofitsowntakesonefromthecall_first_48ac9712(h_0fn_48ac9712 h0_a, h_0fn_48ac9712 h1_b) {
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_0fn_48ac9712 t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG h_0fn_48ac9712 t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-541-an-argument-with-no-type-of-its-own-takes-one-from-the-call.hero"
 bb0:
     t1 = h0_a;

@@ -97,7 +97,7 @@ void h_adversarialoverflowaborts_main(void);
 #line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
 void h_adversarialoverflowaborts_main(void) {
 #line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
-    int64_t h0_big; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_big; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/adversarial-overflow-aborts.hero"
 bb0:
     t1 = INT64_C(1);

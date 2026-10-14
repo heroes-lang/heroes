@@ -1,6 +1,6 @@
 # A frame stopped inside the block the emitter writes for one instruction
 # lists the author's bindings and nothing the emitter declared there (panel
-# 213's R1, provisional, author ratification pending). A map lookup's C is a
+# 213's R1, ratified by the author on 2026-10-14). A map lookup's C is a
 # block holding its own scratch local, `found`, the answer of the runtime's
 # `hero_map_find`; stopped in that call and looked at from `age_of`, `up`, the
 # frame lists `ages`, `who`, `base` and `got`, four, and no `found`. `got` is

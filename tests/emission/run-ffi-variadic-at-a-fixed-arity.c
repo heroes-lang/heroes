@@ -156,7 +156,7 @@ void h_ffivariadicatafixedarity_main(void);
 #line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
 void h_ffivariadicatafixedarity_main(void) {
 #line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t5; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/ffi-variadic-at-a-fixed-arity.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_18109220);

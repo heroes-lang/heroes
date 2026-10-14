@@ -161,7 +161,7 @@ void h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_main(void);
 #line 25 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
 void h_fixedbugsadoublereleasebeforeanyacquisitionisstoppedbeforec_main(void) {
 #line 25 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
-    gg * h0_a; gg * h1_twice; HERO_NODEBUG gg * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG gg * t3; HERO_NODEBUG gg * t4; HERO_NODEBUG gg * t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
+    gg * h0_a; gg * h1_twice; HERO_NODEBUG gg *t1, *t3, *t4, *t5; HERO_NODEBUG HeroStr t2, t6; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-a-double-release-before-any-acquisition-is-stopped-before-c.hero"
 bb0:
     t1 = g_open();

@@ -97,7 +97,7 @@ void h_fixedbugsu64tostr_main(void);
 #line 25 "tests/golden/run/fixedbugs-u64-to-str.hero"
 void h_fixedbugsu64tostr_main(void) {
 #line 25 "tests/golden/run/fixedbugs-u64-to-str.hero"
-    uint64_t h0_n; uint64_t h1_small; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG uint64_t t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG uint64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG uint64_t t5; HERO_NODEBUG uint64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    uint64_t h0_n; uint64_t h1_small; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t4, t7, t8, t9; HERO_NODEBUG uint64_t t1, t2, t3, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-u64-to-str.hero"
 bb0:
     t1 = UINT64_C(18446744073709551615);

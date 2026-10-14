@@ -165,7 +165,7 @@ void h_handlesetacallthatalsoacquirespaysitsownmark_main(void);
 #line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
 void h_handlesetacallthatalsoacquirespaysitsownmark_main(void) {
 #line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
-    hh * h0_a; hh * h1_b; HERO_NODEBUG int64_t t1; HERO_NODEBUG hh * t2; HERO_NODEBUG hh * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG hh * t5; HERO_NODEBUG hh * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG hh * t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    hh * h0_a; hh * h1_b; HERO_NODEBUG int64_t t1, t4, t7; HERO_NODEBUG hh *t2, *t3, *t5, *t6, *t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/handle-set-a-call-that-also-acquires-pays-its-own-mark.hero"
 bb0:
     t1 = INT64_C(3);

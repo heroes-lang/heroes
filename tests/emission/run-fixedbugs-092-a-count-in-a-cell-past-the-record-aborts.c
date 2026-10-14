@@ -167,7 +167,7 @@ void h_fixedbugs092acountinacellpasttherecordaborts_main(void) {
 #line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 #define h1_n (*hero_lend_h1_n)
 #line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
-    struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092acountinacellpasttherecordaborts.main", "o"); uint32_t *const hero_lend_h1_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092acountinacellpasttherecordaborts.main", "n"); HERO_NODEBUG int32_t t1; HERO_NODEBUG struct one t2; HERO_NODEBUG uint32_t t3; HERO_NODEBUG struct one t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG struct one t7; HERO_NODEBUG int32_t t8; HERO_ENTRY_STOP; goto bb0;
+    struct one *const hero_lend_h0_o = (struct one *)hero_lend_local(sizeof(struct one), "fixedbugs092acountinacellpasttherecordaborts.main", "o"); uint32_t *const hero_lend_h1_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs092acountinacellpasttherecordaborts.main", "n"); HERO_NODEBUG int32_t t1, t5, t8; HERO_NODEBUG struct one t2, t4, t7; HERO_NODEBUG uint32_t t3; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-092-a-count-in-a-cell-past-the-record-aborts.hero"
 bb0:
     t1 = INT64_C(0);

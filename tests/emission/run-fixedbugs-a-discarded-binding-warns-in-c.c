@@ -100,7 +100,7 @@ void h_fixedbugsadiscardedbindingwarnsinc_main(void);
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 int64_t h_fixedbugsadiscardedbindingwarnsinc_twice(int64_t h0_n) {
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 bb0:
     t1 = h0_n;
@@ -116,7 +116,7 @@ bb0:
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 void h_fixedbugsadiscardedbindingwarnsinc_main(void) {
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
-    __attribute__((unused)) int64_t h0_v; HeroStr h1_s = {0}; int64_t h2_kept; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
+    __attribute__((unused)) int64_t h0_v; HeroStr h1_s = {0}; int64_t h2_kept; HERO_NODEBUG int64_t t1, t5, t7, t8, t9; HERO_NODEBUG HeroStr t3, t10; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"
 bb0:
 #line 34 "tests/golden/run/fixedbugs-a-discarded-binding-warns-in-c.hero"

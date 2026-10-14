@@ -103,7 +103,7 @@ HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs578anoperatoroverliteralsatagenericpa
 #line 24 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 HeroStr h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_shown(uint8_t h0_v) {
 #line 24 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG uint8_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 bb0:
     t1 = h0_v;
@@ -124,7 +124,7 @@ bb0:
 #line 27 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 void h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_main(void) {
 #line 27 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-    uint8_t h0_b8; uint8_t h1_y; uint8_t h2_w; int8_t h3_n; uint8_t h4_g; uint8_t h5_h; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG int8_t t13; HERO_NODEBUG int8_t t14; HERO_NODEBUG int8_t t15; HERO_NODEBUG int8_t t16; HERO_NODEBUG int8_t t17; HERO_NODEBUG int8_t t18; HERO_NODEBUG uint8_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG uint8_t t21; HERO_NODEBUG uint8_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG uint8_t t27; HERO_NODEBUG uint8_t t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG uint8_t t30; HERO_NODEBUG uint8_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG uint8_t t33; HERO_NODEBUG uint8_t t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG uint8_t t36; HERO_NODEBUG uint8_t t37; HERO_NODEBUG uint8_t t38; HERO_NODEBUG uint8_t t39; HERO_NODEBUG uint8_t t40; HERO_NODEBUG uint8_t t41; HERO_NODEBUG uint8_t t42; HERO_NODEBUG uint8_t t43; HERO_NODEBUG uint8_t t44; HERO_NODEBUG uint8_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroArrayHeader * t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_ENTRY_STOP; goto bb0;
+    uint8_t h0_b8; uint8_t h1_y; uint8_t h2_w; int8_t h3_n; uint8_t h4_g; uint8_t h5_h; HERO_NODEBUG HeroStr h6_own6 = {0}, t35, t70; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *t59, *t60, *t61, *t63, *t67, *t68, *t71, *t72, *t73, *t74, *t75, *t76; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45; HERO_NODEBUG int8_t t13, t14, t15, t16, t17, t18; HERO_NODEBUG int64_t t46, t47, t48, t49, t50, t51, t52, t53, t54, t55, t56, t57, t58, t62, t64, t65, t66, t69; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 bb0:
     t1 = UINT64_C(1);
@@ -383,7 +383,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 HERO_TU_LOCAL uint8_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_3c17(uint8_t h0_a, uint8_t h1_b) {
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG uint8_t t1, t2, t6; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 bb0:
     t1 = h0_a;
@@ -439,7 +439,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_1b9a87(int64_t h0_a, int64_t h1_b) {
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t3, *t4, *t7, *t8; HERO_NODEBUG int64_t t1, t2, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 bb0:
     t1 = h0_a;
@@ -481,7 +481,7 @@ bb0:
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 HERO_TU_LOCAL HeroArrayHeader * h_fixedbugs578anoperatoroverliteralsatagenericparametertakesitstype_first_4b7fe249(HeroArrayHeader * h0_a, HeroArrayHeader * h1_b) {
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
-    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_pair = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t2, *t3, *t4, *t6, *t7, *t8; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-578-an-operator-over-literals-at-a-generic-parameter-takes-its-type.hero"
 bb0:
     t1 = h0_a;

@@ -187,7 +187,17 @@ void h_fixedbugs396sha256finalfillsitsdigest_main(void);
 #line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 #line 190 "fixedbugs396sha256finalfillsitsdigest.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 15 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return SHA256_DIGEST_LENGTH;
+#line 200 "fixedbugs396sha256finalfillsitsdigest.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -204,8 +214,18 @@ int64_t h_fixedbugs396sha256finalfillsitsdigest_SHA256_DIGEST_LENGTH(void) {
 
 #line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 int64_t h_fixedbugs396sha256finalfillsitsdigest_EVP_MAX_MD_SIZE(void) {
-#line 208 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 218 "fixedbugs396sha256finalfillsitsdigest.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 16 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     return EVP_MAX_MD_SIZE;
+#line 228 "fixedbugs396sha256finalfillsitsdigest.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -227,7 +247,7 @@ void h_fixedbugs396sha256finalfillsitsdigest_main(void) {
 #line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 #define h5_s (*hero_lend_h5_s)
 #line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
-    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalfillsitsdigest.main", "c"); HeroArrayHeader * h1_md = {0}; HeroArrayHeader * h2_kept = {0}; EVP_MD_CTX * h3_ctx; HeroArrayHeader * h4_out = {0}; uint32_t *const hero_lend_h5_s = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs396sha256finalfillsitsdigest.main", "s"); HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG uint32_t t1; HERO_NODEBUG struct SHA256state_st t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG const char * t11; HERO_NODEBUG uint64_t t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int32_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG uint8_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG EVP_MD_CTX * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG uint32_t t35; HERO_NODEBUG EVP_MD_CTX * t36; HERO_NODEBUG void * t37; HERO_NODEBUG void * t38; HERO_NODEBUG int32_t t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG EVP_MD_CTX * t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG const char * t43; HERO_NODEBUG uint64_t t44; HERO_NODEBUG int32_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG EVP_MD_CTX * t47; HERO_NODEBUG int32_t t48; HERO_NODEBUG uint32_t t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG uint8_t t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG uint8_t t60; HERO_NODEBUG EVP_MD_CTX * t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG HeroArrayHeader * t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG HeroArrayHeader * t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_ENTRY_STOP; goto bb0;
+    struct SHA256state_st *const hero_lend_h0_c = (struct SHA256state_st *)hero_lend_local(sizeof(struct SHA256state_st), "fixedbugs396sha256finalfillsitsdigest.main", "c"); HeroArrayHeader * h1_md = {0}; HeroArrayHeader * h2_kept = {0}; EVP_MD_CTX * h3_ctx; HeroArrayHeader * h4_out = {0}; uint32_t *const hero_lend_h5_s = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs396sha256finalfillsitsdigest.main", "s"); HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *h7_own7 = {0}, *t6, *t7, *t16, *t19, *t23, *t27, *t30, *t34, *t51, *t54, *t58, *t62, *t63, *t64, *t65, *t66; HERO_NODEBUG uint32_t t1, t35, t49; HERO_NODEBUG struct SHA256state_st t2; HERO_NODEBUG uint8_t t3, t4, t5, t21, t25, t32, t56, t60; HERO_NODEBUG int32_t t8, t13, t15, t39, t45, t48; HERO_NODEBUG HeroStr t9, t10, t14, t18, t22, t26, t29, t40, t42, t46, t50, t53, t57; HERO_NODEBUG const char *t11, *t43; HERO_NODEBUG uint64_t t12, t44; HERO_NODEBUG int64_t t17, t20, t24, t28, t31, t52, t55, t59; HERO_NODEBUG EVP_MD_CTX *t33, *t36, *t41, *t47, *t61; HERO_NODEBUG void *t37, *t38; HERO_ENTRY_STOP; goto bb0;
 #line 30 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -499,7 +519,7 @@ bb0:
     if (hero_handle_ended(t61, hero_life_0_0) && h3_ctx == t61) h3_ctx = hero_handle_dead();
 #line 47 "tests/golden/run/fixedbugs-396-sha256-final-fills-its-digest.hero"
     }
-#line 503 "fixedbugs396sha256finalfillsitsdigest.c"
+#line 523 "fixedbugs396sha256finalfillsitsdigest.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h4_out);

@@ -157,7 +157,7 @@ void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void);
 #line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
 void h_fixedbugsctrapswithaleaseliveoneveryarchitecture_main(void) {
 #line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
-    HeroStr h0_word = {0}; const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG const char * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_word = {0}; const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t7, t8, t9; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5, *t6; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/run/fixedbugs-c-traps-with-a-lease-live-on-every-architecture.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3205);

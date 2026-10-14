@@ -107,7 +107,7 @@ void h_fixedbugs510aconstantholdingafunctioniscalled_main(void);
 #line 10 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
 int64_t h_fixedbugs510aconstantholdingafunctioniscalled_twice(int64_t h0_n) {
 #line 10 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
 bb0:
     t1 = h0_n;
@@ -123,7 +123,7 @@ bb0:
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
 HeroStr h_fixedbugs510aconstantholdingafunctioniscalled_joined(HeroStr h0_from, HeroStr h1_to) {
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
 bb0:
     t1 = h0_from;
@@ -182,7 +182,7 @@ bb0:
 #line 25 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
 void h_fixedbugs510aconstantholdingafunctioniscalled_main(void) {
 #line 25 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_0fn_48ac9712 t4; HERO_NODEBUG h_0fn_48ac9712 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0fn_4cb9330c t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}, t10, t11, t12, t13; HERO_NODEBUG h_0fn_48ac9712 t1, t4, t5; HERO_NODEBUG int64_t t2, t3, t6, t7, t8; HERO_NODEBUG h_0fn_4cb9330c t9; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-510-a-constant-holding-a-function-is-called.hero"
 bb0:
     t1 = h_fixedbugs510aconstantholdingafunctioniscalled_DOUBLE();

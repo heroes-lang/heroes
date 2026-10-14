@@ -156,7 +156,7 @@ void h_fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent_main(void);
 #line 17 "tests/golden/run/fixedbugs-584-a-deprecated-function-bound-and-not-called-builds-silent.hero"
 void h_fixedbugs584adeprecatedfunctionboundandnotcalledbuildssilent_main(void) {
 #line 17 "tests/golden/run/fixedbugs-584-a-deprecated-function-bound-and-not-called-builds-silent.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-584-a-deprecated-function-bound-and-not-called-builds-silent.hero"
 bb0:
     t1 = INT64_C(14);

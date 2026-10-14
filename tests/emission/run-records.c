@@ -113,7 +113,7 @@ void h_records_main(void);
 #line 18 "tests/golden/run/records.hero"
 int64_t h_records_dist2(h_records_Point h0_a, h_records_Point h1_b) {
 #line 18 "tests/golden/run/records.hero"
-    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG h_records_Point t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_records_Point t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_records_Point t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_records_Point t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_dx; int64_t h3_dy; HERO_NODEBUG h_records_Point t1, t3, t6, t8; HERO_NODEBUG int64_t t2, t4, t5, t7, t9, t10, t11, t12, t13, t14, t15, t16, t17; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/records.hero"
 bb0:
     t1 = h0_a;
@@ -159,7 +159,7 @@ bb0:
 #line 23 "tests/golden/run/records.hero"
 h_records_Point h_records_moved(h_records_Point h0_p) {
 #line 23 "tests/golden/run/records.hero"
-    HERO_NODEBUG h_records_Point t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_records_Point t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_records_Point t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_records_Point t1, t5, t7; HERO_NODEBUG int64_t t2, t3, t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 23 "tests/golden/run/records.hero"
 bb0:
     t1 = h0_p;
@@ -183,7 +183,7 @@ bb0:
 #line 26 "tests/golden/run/records.hero"
 void h_records_main(void) {
 #line 26 "tests/golden/run/records.hero"
-    h_records_Point h0_p; h_records_Point h1_q; h_records_Pair h2_both; h_records_Point h3_r; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_records_Point t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_records_Point t6; HERO_NODEBUG h_records_Point t7; HERO_NODEBUG h_records_Point t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_records_Point t10; HERO_NODEBUG h_records_Point t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_records_Point t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_records_Point t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_records_Point t18; HERO_NODEBUG h_records_Point t19; HERO_NODEBUG h_records_Pair t20; HERO_NODEBUG h_records_Pair t21; HERO_NODEBUG h_records_Point t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_records_Pair t24; HERO_NODEBUG h_records_Point t25; HERO_NODEBUG h_records_Point t26; HERO_NODEBUG h_records_Pair t27; HERO_NODEBUG bool t28; HERO_NODEBUG h_records_Point t29; HERO_NODEBUG h_records_Point t30; HERO_NODEBUG h_records_Point t31; HERO_NODEBUG h_records_Point t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG h_records_Point t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG h_records_Point t36; HERO_NODEBUG h_records_Point t37; HERO_NODEBUG h_records_Pair t38; HERO_NODEBUG h_records_Point t39; HERO_NODEBUG h_records_Point t40; HERO_NODEBUG h_records_Pair t41; HERO_NODEBUG bool t42; HERO_ENTRY_STOP; goto bb0;
+    h_records_Point h0_p; h_records_Point h1_q; h_records_Pair h2_both; h_records_Point h3_r; HERO_NODEBUG int64_t t1, t2, t4, t5, t9, t14, t15, t23, t33, t35; HERO_NODEBUG h_records_Point t3, t6, t7, t8, t10, t11, t13, t16, t18, t19, t22, t25, t26, t29, t30, t31, t32, t34, t36, t37, t39, t40; HERO_NODEBUG bool t12, t17, t28, t42; HERO_NODEBUG h_records_Pair t20, t21, t24, t27, t38, t41; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/records.hero"
 bb0:
     t1 = INT64_C(0);

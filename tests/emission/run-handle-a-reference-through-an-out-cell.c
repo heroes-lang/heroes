@@ -168,7 +168,7 @@ void h_handleareferencethroughanoutcell_main(void) {
 #line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
 #define h1_b (*hero_lend_h1_b)
 #line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
-    ob * h0_a; ob * *const hero_lend_h1_b = (ob * *)hero_lend_local(sizeof(ob *), "handleareferencethroughanoutcell.main", "b"); int32_t h2_rc; HERO_NODEBUG ob * t1; HERO_NODEBUG ob * t2; HERO_NODEBUG ob * t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int32_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG ob * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG ob * t10; HERO_NODEBUG ob * t11; HERO_NODEBUG HeroStr t12; HERO_ENTRY_STOP; goto bb0;
+    ob * h0_a; ob * *const hero_lend_h1_b = (ob * *)hero_lend_local(sizeof(ob *), "handleareferencethroughanoutcell.main", "b"); int32_t h2_rc; HERO_NODEBUG ob *t1, *t2, *t3, *t8, *t10, *t11; HERO_NODEBUG int32_t t4, t6; HERO_NODEBUG HeroStr t5, t7, t12; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/handle-a-reference-through-an-out-cell.hero"
 bb0:
     t1 = ob_new();

@@ -146,7 +146,7 @@ bb0:
 #line 27 "examples/matmul/main.hero"
 int64_t h_main_left_at(int64_t h0_row, int64_t h1_col) {
 #line 27 "examples/matmul/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 27 "examples/matmul/main.hero"
 bb0:
     t1 = h0_row;
@@ -178,7 +178,7 @@ bb0:
 #line 30 "examples/matmul/main.hero"
 int64_t h_main_right_at(int64_t h0_row, int64_t h1_col) {
 #line 30 "examples/matmul/main.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 30 "examples/matmul/main.hero"
 bb0:
     t1 = h0_row;
@@ -210,7 +210,7 @@ bb0:
 #line 34 "examples/matmul/main.hero"
 HeroArrayHeader * h_main_product_row(int64_t h0_row) {
 #line 34 "examples/matmul/main.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_col; int64_t h3_total; int64_t h4_k; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_col; int64_t h3_total; int64_t h4_k; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *t1, *t29, *t30, *t31; HERO_NODEBUG int64_t t2, t3, t4, t6, t7, t8, t9, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t24, t26, t27, t28; HERO_NODEBUG bool t5, t10; HERO_ENTRY_STOP; goto bb0;
 #line 34 "examples/matmul/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -322,7 +322,7 @@ bb6:
 #line 53 "examples/matmul/main.hero"
 int64_t h_main_band(int64_t h0_index) {
 #line 53 "examples/matmul/main.hero"
-    hero_thread_guard("main.band"); HeroArrayHeader * h1_rows = {0}; int64_t h2_row; int64_t h3_total; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; HeroArrayHeader * h6_r = {0}; HERO_NODEBUG HeroArrayHeader * h7_xs1 = {0}; HERO_NODEBUG int64_t h8_i1; int64_t h9_v; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG HeroArrayHeader * t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroArrayHeader * t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG HeroArrayHeader * t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("main.band"); HeroArrayHeader * h1_rows = {0}; int64_t h2_row; int64_t h3_total; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h7_xs1 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *t1, *t20, *t26, *t29, *t32, *t34, *t35, *t38, *t41, *t54, *t55, *t56, *t57, *t58, *t59; HERO_NODEBUG int64_t h5_i0, h8_i1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t19, t22, t23, t24, t25, t27, t28, t30, t33, t36, t37, t39, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53; HeroArrayHeader * h6_r = {0}; int64_t h9_v; HERO_NODEBUG bool t17, t31, t40; HERO_ENTRY_STOP; goto bb0;
 #line 53 "examples/matmul/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_array, 1);
@@ -559,7 +559,7 @@ int64_t h_0cb_main_band(int64_t h0_index) {
 #line 69 "examples/matmul/main.hero"
 int64_t h_main_together(void) {
 #line 69 "examples/matmul/main.hero"
-    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_h; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroArrayHeader * t34; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_handles = {0}; int64_t h1_i; int64_t h2_total; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t15, *t18, *t21, *t32, *t33, *t34; HERO_NODEBUG int64_t h4_i0, t2, t3, t4, t8, t9, t11, t12, t13, t14, t16, t17, t19, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31; int64_t h5_h; HERO_NODEBUG bool t5, t20; HERO_NODEBUG h_0fn_48ac9712 t7; HERO_ENTRY_STOP; goto bb0;
 #line 69 "examples/matmul/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -691,7 +691,7 @@ bb7:
 #line 84 "examples/matmul/main.hero"
 int64_t h_main_alone(void) {
 #line 84 "examples/matmul/main.hero"
-    int64_t h0_total; int64_t h1_row; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_v; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_total; int64_t h1_row; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t7, *t10, *t13, *t26, *t27; HERO_NODEBUG int64_t h3_i0, t1, t2, t3, t4, t6, t8, t9, t11, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25; int64_t h4_v; HERO_NODEBUG bool t5, t12; HERO_ENTRY_STOP; goto bb0;
 #line 84 "examples/matmul/main.hero"
 bb0:
     t1 = INT64_C(0);
@@ -805,7 +805,7 @@ bb7:
 #line 96 "examples/matmul/main.hero"
 void h_main_main(void) {
 #line 96 "examples/matmul/main.hero"
-    HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG int64_t t2, t4, t6; HERO_ENTRY_STOP; goto bb0;
 #line 96 "examples/matmul/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_75fe0b7e);

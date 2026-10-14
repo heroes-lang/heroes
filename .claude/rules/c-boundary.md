@@ -60,7 +60,15 @@ precedent):
 - a result type the header refutes, and a record's constant whose header value
   C will not build as that record, judged by the accessor's own declaration at
   the constant's line, told `ffi_constant_type` with no new code (defect 094,
-  lane b12-ffi13, repaired at `41c5d1b4`, 2026-10-06);
+  lane b12-ffi13, repaired at `41c5d1b4`, 2026-10-06); and a number's constant
+  whose header value C cannot read or leaves undefined, judged at its
+  accessor's `return` at the constant's line, where clang's warnings that the
+  value is undefined are errors, told the same way (defects 2071 and 2072,
+  lane b17-emit, 2026-10-14). The first moved who is blamed, from `internal
+  error` at exit 2; the second moved the line between accepted and refused,
+  on robustness's rank: a shift past its width built at exit 0 and read what
+  the machine held (`selfhost/emit/value_check.hero`, which also names the
+  two undefined values it does not reach);
 - a `constant` that is not one;
 - a name the header does not have;
 - a symbol the **linker** cannot find because the group named no `link`;

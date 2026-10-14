@@ -229,7 +229,7 @@ Num h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_F(void) {
 #line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 void h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_main(void) {
 #line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
-    Num h0_n; Num h1_g; HERO_NODEBUG Num t1; HERO_NODEBUG Num t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG Num t4; HERO_NODEBUG Num t5; HERO_NODEBUG float t6; HERO_ENTRY_STOP; goto bb0;
+    Num h0_n; Num h1_g; HERO_NODEBUG Num t1, t2, t4, t5; HERO_NODEBUG int32_t t3; HERO_NODEBUG float t6; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-094-a-union-records-constant-is-built-by-one-member.hero"
 bb0:
     t1 = h_fixedbugs094aunionrecordsconstantisbuiltbyonemember_NUM_INIT();

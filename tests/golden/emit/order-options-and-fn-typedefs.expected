@@ -164,7 +164,7 @@ void h_orderoptionsandfntypedefs_main(void);
 #line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_e201354 h_orderoptionsandfntypedefs_half(int64_t h0_n) {
 #line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 14 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb0:
     t1 = h0_n;
@@ -245,7 +245,7 @@ bb4:
 #line 19 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_f87774a h_orderoptionsandfntypedefs_name_of(int64_t h0_n) {
 #line 19 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_ret0 = {0}; HERO_NODEBUG h_0opt_f87774a h2_own2 = {0}; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_f87774a t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG h_0opt_f87774a t9; HERO_NODEBUG h_0opt_f87774a t10; HERO_NODEBUG h_0opt_f87774a t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t5, t8, t9, t10, t11; HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb0:
     t1 = h0_n;
@@ -312,7 +312,7 @@ bb4:
 #line 24 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 h_0opt_de89a9a h_orderoptionsandfntypedefs_origin(bool h0_flag) {
 #line 24 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    HERO_NODEBUG h_0opt_de89a9a h1_ret0 = {0}; HERO_NODEBUG h_0opt_de89a9a h2_own2 = {0}; HERO_NODEBUG h_0opt_de89a9a h3_own3 = {0}; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_orderoptionsandfntypedefs_Point t4; HERO_NODEBUG h_0opt_de89a9a t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_de89a9a t8; HERO_NODEBUG h_0opt_de89a9a t9; HERO_NODEBUG h_0opt_de89a9a t10; HERO_NODEBUG h_0opt_de89a9a t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_de89a9a h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t5, t8, t9, t10, t11; HERO_NODEBUG bool t1; HERO_NODEBUG int64_t t2, t3; HERO_NODEBUG h_orderoptionsandfntypedefs_Point t4; HERO_NODEBUG HeroStr t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb0:
     t1 = h0_flag;
@@ -377,7 +377,7 @@ bb4:
 #line 29 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 int64_t h_orderoptionsandfntypedefs_apply(h_0fn_2e6a42a3 h0_f, int64_t h1_x, int64_t h2_y) {
 #line 29 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    HERO_NODEBUG h_0fn_2e6a42a3 t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_2e6a42a3 t1; HERO_NODEBUG int64_t t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb0:
     t1 = h0_f;
@@ -395,7 +395,7 @@ bb0:
 #line 32 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 int64_t h_orderoptionsandfntypedefs_add(int64_t h0_a, int64_t h1_b) {
 #line 32 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 32 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb0:
     t1 = h0_a;
@@ -411,7 +411,7 @@ bb0:
 #line 35 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_twice(h_0fn_294870dd h0_f) {
 #line 35 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    HERO_NODEBUG h_0fn_294870dd t1; HERO_NODEBUG h_0fn_294870dd t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_294870dd t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb0:
     t1 = h0_f;
@@ -444,7 +444,7 @@ bb0:
 #line 42 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 void h_orderoptionsandfntypedefs_main(void) {
 #line 42 "tests/golden/emit/order-options-and-fn-typedefs.hero"
-    HeroArrayHeader * h0_points = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}; HERO_NODEBUG HeroStr h4_r1 = {0}; HERO_NODEBUG h_0opt_de89a9a h5_f2 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG h_0opt_de89a9a h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_orderoptionsandfntypedefs_Point t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_orderoptionsandfntypedefs_Point t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_orderoptionsandfntypedefs_Point t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG h_0opt_f87774a t23; HERO_NODEBUG h_0opt_f87774a t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG h_0opt_f87774a t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_de89a9a t33; HERO_NODEBUG h_0opt_de89a9a t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG bool t37; HERO_NODEBUG h_0fn_2e6a42a3 t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG h_0fn_294870dd t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG h_0opt_e201354 t45; HERO_NODEBUG h_0opt_e201354 t46; HERO_NODEBUG h_0opt_f87774a t47; HERO_NODEBUG h_0opt_f87774a t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG h_0opt_de89a9a t51; HERO_NODEBUG h_0opt_de89a9a t52; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_points = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h7_own7 = {0}, t13, t14, t18, t45, t46; HERO_NODEBUG int64_t h2_r0, t1, t2, t4, t5, t9, t11, t12, t15, t16, t19, t20, t21, t22, t25, t26, t35, t36, t39, t40, t41; HERO_NODEBUG h_0opt_f87774a h3_f1 = {0}, h8_own8 = {0}, t23, t24, t28, t47, t48; HERO_NODEBUG HeroStr h4_r1 = {0}, t29, t30, t31, t49, t50; HERO_NODEBUG h_0opt_de89a9a h5_f2 = {0}, h9_own9 = {0}, t33, t34, t51, t52; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t7, *t8, *t43, *t44; HERO_NODEBUG h_orderoptionsandfntypedefs_Point t3, t6, t10; HERO_NODEBUG bool t17, t27, t32, t37; HERO_NODEBUG h_0fn_2e6a42a3 t38; HERO_NODEBUG h_0fn_294870dd t42; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/emit/order-options-and-fn-typedefs.hero"
 bb0:
     t1 = INT64_C(1);

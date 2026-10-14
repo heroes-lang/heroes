@@ -197,7 +197,7 @@ struct pt h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT(void) {
 #line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 void h_fixedbugs094aconstanttheheaderspellsasabracelist_main(void) {
 #line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
-    struct pt h0_p; HERO_NODEBUG struct pt t1; HERO_NODEBUG struct pt t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG struct pt t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG struct pt t6; HERO_NODEBUG struct pt t7; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0;
+    struct pt h0_p; HERO_NODEBUG struct pt t1, t2, t4, t6, t7; HERO_NODEBUG int32_t t3, t5; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-094-a-constant-the-header-spells-as-a-brace-list.hero"
 bb0:
     t1 = h_fixedbugs094aconstanttheheaderspellsasabracelist_PT_INIT();

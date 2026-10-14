@@ -127,7 +127,7 @@ void h_fixedbugsafieldwinsthedotoverafreefunction_main(void);
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_double_it(int64_t h0_n) {
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb0:
     t1 = h0_n;
@@ -143,7 +143,7 @@ bb0:
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 int64_t h_fixedbugsafieldwinsthedotoverafreefunction_g(h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_h, int64_t h1_n) {
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t5, t6; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t4; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb0:
     t1 = h1_n;
@@ -165,7 +165,7 @@ bb0:
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 void h_fixedbugsafieldwinsthedotoverafreefunction_main(void) {
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
-    h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_s; h_fixedbugsafieldwinsthedotoverafreefunction_Step h1_v; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step h2_s0; h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply h3_a; HERO_NODEBUG int64_t t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t3; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t4; HERO_NODEBUG h_0fn_48ac9712 t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_48ac9712 t11; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t12; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t13; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step t16; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply t17; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply t18; HERO_NODEBUG h_0fn_48ac9712 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugsafieldwinsthedotoverafreefunction_Holder h0_s; h_fixedbugsafieldwinsthedotoverafreefunction_Step h1_v; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step h2_s0, t12, t13, t14, t16; h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply h3_a; HERO_NODEBUG int64_t t1, t6, t7, t9, t10, t15, t20, t21, t22; HERO_NODEBUG h_0fn_48ac9712 t2, t5, t11, t19; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Holder t3, t4, t8; HERO_NODEBUG h_fixedbugsafieldwinsthedotoverafreefunction_Step_c_apply t17, t18; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-a-field-wins-the-dot-over-a-free-function.hero"
 bb0:
     t1 = INT64_C(7);

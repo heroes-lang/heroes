@@ -154,7 +154,17 @@ void h_fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent_mai
 #line 14 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
 int64_t h_fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent_OLD_MAC(void) {
 #line 157 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 14 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
     return OLD_MAC;
+#line 167 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -182,7 +192,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-587-a-macro-its-header-marks-with-pragma-clang-deprecated-builds-silent.hero"
     return;
-#line 186 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
+#line 196 "fixedbugs587amacroitsheadermarkswithpragmaclangdeprecatedbuildssilent.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

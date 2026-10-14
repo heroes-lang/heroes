@@ -121,7 +121,7 @@ void h_fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread_main(vo
 #line 8 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 h_0opt_e201354 h_fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread_half(int64_t h0_n) {
 #line 8 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG h_0opt_e201354 h3_own3 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t9, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5; HERO_NODEBUG HeroStr t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 bb0:
     t1 = h0_n;
@@ -202,7 +202,7 @@ bb4:
 #line 13 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 int64_t h_fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread_bump(HeroArrayHeader * *ph0_xs) {
 #line 13 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t2, t5; HERO_NODEBUG HeroArrayHeader *t4; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 bb0:
     t2 = INT64_C(100);
@@ -219,7 +219,7 @@ bb0:
 #line 17 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 int64_t h_fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread_more(HeroArrayHeader * *ph0_ws) {
 #line 17 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroArrayHeader *t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 bb0:
     t2 = HERO_STR_LIT(hero_str_77);
@@ -236,7 +236,7 @@ bb0:
 #line 21 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 HeroStr h_fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread_count(HeroArrayHeader * h0_ws, int64_t h1_n) {
 #line 21 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, t2, t3, t10, t11, t12, t13, t14; HERO_NODEBUG HeroArrayHeader *t1, *t4; HERO_NODEBUG int64_t t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 bb0:
     t1 = h0_ws;
@@ -289,7 +289,7 @@ bb0:
 #line 24 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 int64_t h_fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread_deeper(HeroArrayHeader * *ph0_g) {
 #line 24 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t3, *t5, *t7; HERO_NODEBUG int64_t t2, t6; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 bb0:
     t2 = INT64_C(1);
@@ -316,7 +316,7 @@ bb0:
 #line 28 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 int64_t h_fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread_rows(HeroArrayHeader * h0_g, int64_t h1_n) {
 #line 28 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1, *t5, *t7; HERO_NODEBUG int64_t t2, t3, t4, t6, t8, t9, t10, t11, t12, t13, t14; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 bb0:
     t1 = h0_g;
@@ -354,7 +354,7 @@ bb0:
 #line 31 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 void h_fixedbugs387areceiverandarraysofstringsandofarrayskeepwhatwasread_main(void) {
 #line 31 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
-    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HeroArrayHeader * h2_ws = {0}; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HeroArrayHeader * h4_g = {0}; HERO_NODEBUG h_0opt_e201354 h5_f2 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG h_0opt_e201354 h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG h_0opt_e201354 h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_0opt_e201354 t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG HeroFailure t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroArrayHeader * t47; HERO_NODEBUG int64_t t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG bool t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG HeroFailure t60; HERO_NODEBUG h_0opt_e201354 t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG HeroArrayHeader * t66; HERO_NODEBUG HeroArrayHeader * t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG h_0opt_e201354 t69; HERO_NODEBUG h_0opt_e201354 t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG HeroArrayHeader * t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG HeroArrayHeader * t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG h_0opt_e201354 t76; HERO_NODEBUG h_0opt_e201354 t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG HeroArrayHeader * t81; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG h_0opt_e201354 t83; HERO_NODEBUG h_0opt_e201354 t84; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_out = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, h17_own17 = {0}, t7, t8, t12, t14, t35, t36, t40, t42, t54, t55, t59, t61, t69, t70, t76, t77, t83, t84; HeroArrayHeader * h2_ws = {0}; HeroArrayHeader * h4_g = {0}; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *h7_own7 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *h16_own16 = {0}, *t1, *t5, *t18, *t19, *t22, *t26, *t29, *t33, *t47, *t50, *t52, *t66, *t67, *t68, *t71, *t72, *t73, *t74, *t75, *t79, *t80, *t81, *t82; HERO_NODEBUG HeroStr h13_own13 = {0}, t21, t25, t31, t46, t78; HERO_NODEBUG int64_t t3, t6, t9, t10, t15, t16, t17, t20, t23, t24, t27, t28, t34, t37, t38, t43, t44, t45, t49, t53, t56, t57, t62, t63, t64, t65; HERO_NODEBUG bool t11, t39, t58; HERO_NODEBUG HeroFailure t13, t41, t60; HERO_ENTRY_STOP; goto bb0;
 #line 31 "tests/golden/run/fixedbugs-387-a-receiver-and-arrays-of-strings-and-of-arrays-keep-what-was-read.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

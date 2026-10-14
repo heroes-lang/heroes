@@ -754,7 +754,7 @@ void h_fixedbugs170variants32deepbuild_main(void);
 #line 170 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
 void h_fixedbugs170variants32deepbuild_main(void) {
 #line 170 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t2, *t4, *t5, *t7, *t8; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 170 "tests/golden/run/fixedbugs-170-variants-32-deep-build.hero"
 bb0:
     t1 = hero_array_new(&h_fixedbugs170variants32deepbuild_R31_desc, 1);

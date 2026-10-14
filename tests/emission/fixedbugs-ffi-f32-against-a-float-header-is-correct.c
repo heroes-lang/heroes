@@ -170,7 +170,7 @@ void h_ffif32againstafloatheaderiscorrect_main(void);
 #line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
 void h_ffif32againstafloatheaderiscorrect_main(void) {
 #line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
-    float h0_bigger; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG float t1; HERO_NODEBUG float t2; HERO_NODEBUG float t3; HERO_NODEBUG float t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG h_0opt_e201354 t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG HeroStr t17; HERO_ENTRY_STOP; goto bb0;
+    float h0_bigger; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h2_own2 = {0}, t5, t6, t10, t12, t15, t16; HERO_NODEBUG HeroStr h3_own3 = {0}, t14, t17; HERO_NODEBUG float t1, t2, t3, t4; HERO_NODEBUG int64_t t7, t8, t13; HERO_NODEBUG bool t9; HERO_NODEBUG HeroFailure t11; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"
 bb0:
 #line 46 "tests/golden/fixedbugs/ffi-f32-against-a-float-header-is-correct.hero"

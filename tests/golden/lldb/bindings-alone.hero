@@ -1,6 +1,6 @@
 # At `-O0` a stopped frame lists the bindings the author wrote and nothing the
-# lowering invented (panel 213's R1, provisional, author ratification
-# pending). `add` holds temporaries, the `$own` slots of its strings, the
+# lowering invented (panel 213's R1, ratified by the author on 2026-10-14).
+# `add` holds temporaries, the `$own` slots of its strings, the
 # array its loop walks and the loop's index, the match's scrutinee and the
 # `$ret0` its two ways out return through, and its frame lists `n`, `label`,
 # `total`, `k`, `step` and `v`, six, and nothing else; `main` holds

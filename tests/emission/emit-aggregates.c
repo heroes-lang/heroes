@@ -144,7 +144,7 @@ void h_aggregates_main(void);
 #line 37 "tests/golden/emit/aggregates.hero"
 int64_t h_aggregates_width(h_aggregates_Shape h0_s) {
 #line 37 "tests/golden/emit/aggregates.hero"
-    HERO_NODEBUG h_aggregates_Shape h1_s0 = {0}; HERO_NODEBUG int64_t h2_r0; h_aggregates_Shape_c_line h3_l = {0}; HERO_NODEBUG h_aggregates_Shape t1; HERO_NODEBUG h_aggregates_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_aggregates_Shape t5; HERO_NODEBUG h_aggregates_Shape_c_line t6; HERO_NODEBUG h_aggregates_Shape_c_line t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_aggregates_Shape t10; HERO_NODEBUG h_aggregates_Shape_c_line t11; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_aggregates_Shape h1_s0 = {0}, t1, t2, t5, t10; HERO_NODEBUG int64_t h2_r0, t3, t4, t8, t9; h_aggregates_Shape_c_line h3_l = {0}; HERO_NODEBUG h_aggregates_Shape_c_line t6, t7, t11; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/emit/aggregates.hero"
 bb0:
     t1 = h0_s;
@@ -213,7 +213,7 @@ bb3:
 #line 42 "tests/golden/emit/aggregates.hero"
 void h_aggregates_main(void) {
 #line 42 "tests/golden/emit/aggregates.hero"
-    h_aggregates_Outer h0_o = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG h_aggregates_Inner h2_own2 = {0}; HERO_NODEBUG h_aggregates_Outer h3_own3 = {0}; HERO_NODEBUG h_aggregates_Inner h4_own4 = {0}; HERO_NODEBUG h_aggregates_Outer h5_own5 = {0}; HERO_NODEBUG h_aggregates_Shape h6_own6 = {0}; HERO_NODEBUG h_aggregates_Shape h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG h_aggregates_Inner t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG h_aggregates_Outer t6; HERO_NODEBUG h_aggregates_Outer t7; HERO_NODEBUG h_aggregates_Inner t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_aggregates_Outer t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG h_aggregates_Inner t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_aggregates_Outer t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_aggregates_Outer t16; HERO_NODEBUG h_aggregates_Inner t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG h_aggregates_Shape t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG h_aggregates_Shape t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_aggregates_Inner t24; HERO_NODEBUG h_aggregates_Outer t25; HERO_NODEBUG h_aggregates_Outer t26; HERO_NODEBUG h_aggregates_Inner t27; HERO_NODEBUG h_aggregates_Outer t28; HERO_NODEBUG h_aggregates_Shape t29; HERO_NODEBUG h_aggregates_Shape t30; HERO_ENTRY_STOP; goto bb0;
+    h_aggregates_Outer h0_o = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t2, t3, t9, t11, t23; HERO_NODEBUG h_aggregates_Inner h2_own2 = {0}, h4_own4 = {0}, t4, t8, t12, t17, t24, t27; HERO_NODEBUG h_aggregates_Outer h3_own3 = {0}, h5_own5 = {0}, t6, t7, t10, t14, t16, t25, t26, t28; HERO_NODEBUG h_aggregates_Shape h6_own6 = {0}, h7_own7 = {0}, t19, t21, t29, t30; HERO_NODEBUG int64_t t5, t13, t18, t20, t22; HERO_NODEBUG bool t15; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/emit/aggregates.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_61);

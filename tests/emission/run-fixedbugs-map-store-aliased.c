@@ -112,7 +112,7 @@ void h_fixedbugsmapstorealiased_main(void);
 #line 31 "tests/golden/run/fixedbugs-map-store-aliased.hero"
 void h_fixedbugsmapstorealiased_main(void) {
 #line 31 "tests/golden/run/fixedbugs-map-store-aliased.hero"
-    HeroMapHeader * h0_m = {0}; HeroMapHeader * h1_n = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG HeroMapHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG HeroMapHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroMapHeader * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroMapHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroMapHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroMapHeader * t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroMapHeader * t22; HERO_NODEBUG HeroMapHeader * t23; HERO_NODEBUG HeroMapHeader * t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_ENTRY_STOP; goto bb0;
+    HeroMapHeader * h0_m = {0}; HeroMapHeader * h1_n = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h5_own5 = {0}, t13, t14, t18, t25, t26; HERO_NODEBUG int64_t h3_r0, t3, t6, t8, t10, t15, t16, t19, t20, t21; HERO_NODEBUG HeroMapHeader *h4_own4 = {0}, *t1, *t4, *t7, *t9, *t11, *t22, *t23, *t24; HERO_NODEBUG HeroStr t2, t5, t12; HERO_NODEBUG bool t17; HERO_ENTRY_STOP; goto bb0;
 #line 31 "tests/golden/run/fixedbugs-map-store-aliased.hero"
 bb0:
     t1 = hero_map_new(&hero_desc_str, &hero_desc_int, 0);

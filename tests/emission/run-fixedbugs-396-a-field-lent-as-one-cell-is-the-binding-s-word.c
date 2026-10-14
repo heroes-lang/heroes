@@ -175,7 +175,7 @@ void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void);
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 void h_fixedbugs396afieldlentasonecellisthebindingsword_main(void) {
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
-    struct cell h0_b; HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG int64_t t10; HERO_NODEBUG struct cell t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG struct cell t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG struct cell t17; HERO_NODEBUG int64_t t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG struct cell t22; HERO_NODEBUG int64_t t23; HERO_ENTRY_STOP; goto bb0;
+    struct cell h0_b; HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t15, t20; HERO_NODEBUG int64_t t10, t19, t23; HERO_NODEBUG struct cell t11, t14, t17, t22; HERO_NODEBUG int32_t t12; HERO_NODEBUG HeroStr t13, t16, t21; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/fixedbugs-396-a-field-lent-as-one-cell-is-the-binding-s-word.hero"
 bb0:
     t1 = UINT64_C(0);

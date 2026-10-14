@@ -114,7 +114,7 @@ int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c)
 #line 12 "tests/golden/ir/place-paths.hero"
 void h_placepaths_set_cell(h_placepaths_Grid *ph0_g, int64_t h1_r, int64_t h2_c, int64_t h3_v) {
 #line 12 "tests/golden/ir/place-paths.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/ir/place-paths.hero"
 bb0:
     t1 = h1_r;
@@ -134,7 +134,7 @@ bb0:
 #line 15 "tests/golden/ir/place-paths.hero"
 int64_t h_placepaths_cell_of(h_placepaths_Grid h0_g, int64_t h1_r, int64_t h2_c) {
 #line 15 "tests/golden/ir/place-paths.hero"
-    HERO_NODEBUG h_placepaths_Grid t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_placepaths_Row t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_placepaths_Grid t1; HERO_NODEBUG HeroArrayHeader *t2, *t5; HERO_NODEBUG int64_t t3, t6, t7; HERO_NODEBUG h_placepaths_Row t4; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/ir/place-paths.hero"
 bb0:
     t1 = h0_g;

@@ -186,7 +186,7 @@ __attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
 #line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(int64_t h0_offset) {
 #line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.again"); sn * h1_m; HERO_NODEBUG sn * t1; HERO_NODEBUG sn * t2; HERO_NODEBUG sn * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.again"); sn * h1_m; HERO_NODEBUG sn *t1, *t2, *t3; HERO_NODEBUG int64_t t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 bb0:
     t1 = sn_new();
@@ -221,7 +221,7 @@ int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_agai
 #line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(int64_t h0_offset) {
 #line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.found"); sn * h1_r; int64_t h2_v; HERO_NODEBUG sn * t1; HERO_NODEBUG sn * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG sn * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    hero_thread_guard("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.found"); sn * h1_r; int64_t h2_v; HERO_NODEBUG sn *t1, *t2, *t4; HERO_NODEBUG int64_t t3, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 bb0:
     t1 = sn_find();
@@ -267,7 +267,7 @@ int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_foun
 #line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 void h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_main(void) {
 #line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
-    sn * h0_a; sn * h1_b; sn * h2_c; HERO_NODEBUG sn * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG sn * t3; HERO_NODEBUG h_0fn_48ac9712 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG sn * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG sn * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG sn * t10; HERO_NODEBUG sn * t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG sn * t13; HERO_NODEBUG h_0fn_48ac9712 t14; HERO_NODEBUG int64_t t15; HERO_ENTRY_STOP; goto bb0;
+    sn * h0_a; sn * h1_b; sn * h2_c; HERO_NODEBUG sn *t1, *t3, *t6, *t8, *t10, *t11, *t13; HERO_NODEBUG HeroStr t2, t7, t12; HERO_NODEBUG h_0fn_48ac9712 t4, t14; HERO_NODEBUG int64_t t5, t9, t15; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-a-callback-handed-the-address-a-release-freed-begins-a-new-life.hero"
 bb0:
     t1 = sn_new();

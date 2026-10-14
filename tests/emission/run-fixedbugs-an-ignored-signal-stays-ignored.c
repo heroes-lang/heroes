@@ -155,7 +155,7 @@ void h_fixedbugsanignoredsignalstaysignored_main(void);
 #line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
 void h_fixedbugsanignoredsignalstaysignored_main(void) {
 #line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
-    HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_word = {0}; __attribute__((unused)) const char * h1_held; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t4, t6, t8, t9; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t5; HERO_NODEBUG int32_t t7; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-an-ignored-signal-stays-ignored.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3205);

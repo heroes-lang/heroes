@@ -160,7 +160,7 @@ void h_abortnullcstrintoc_main(void);
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 void h_abortnullcstrintoc_main(void) {
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
-    const char * h0_absent; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG const char * t5; HERO_NODEBUG const char * t6; HERO_NODEBUG const char * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG const char * t9; HERO_NODEBUG const char * t10; HERO_NODEBUG const char * t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroStr t13; HERO_ENTRY_STOP; goto bb0;
+    const char * h0_absent; HERO_NODEBUG HeroStr t1, t2, t4, t8, t13; HERO_NODEBUG const char *t3, *t5, *t6, *t7, *t9, *t10, *t11; HERO_NODEBUG bool t12; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/abort-null-cstr-into-c.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d);

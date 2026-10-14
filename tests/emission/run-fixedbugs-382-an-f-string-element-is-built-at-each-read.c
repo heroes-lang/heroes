@@ -118,7 +118,7 @@ bb0:
 #line 10 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
 HeroArrayHeader * h_fixedbugs382anfstringelementisbuiltateachread_SHOUTS(void) {
 #line 10 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
-    HERO_NODEBUG HeroStr h0_own0 = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h0_own0 = {0}, h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t2, t3, t4, t5, t6, t7, t11, t13, t14, t15, t16; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t12, *t17; HERO_NODEBUG int64_t t1, t8, t9, t10; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
 bb0:
     t1 = h_fixedbugs382anfstringelementisbuiltateachread_BASE();
@@ -193,7 +193,7 @@ bb0:
 #line 13 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
 void h_fixedbugs382anfstringelementisbuiltateachread_main(void) {
 #line 13 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
-    int64_t h0_letters; int64_t h1_at; HeroArrayHeader * h2_copy = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroArrayHeader * t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_letters; int64_t h1_at; HeroArrayHeader * h2_copy = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *h4_own4 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *t7, *t19, *t22, *t25, *t29, *t32, *t33, *t35, *t36, *t37; HERO_NODEBUG HeroStr h5_own5 = {0}, t11, t18, t20, t21, t24, t27, t28, t31, t34; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t8, t9, t10, t12, t13, t14, t15, t16, t17, t23, t26, t30; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/fixedbugs-382-an-f-string-element-is-built-at-each-read.hero"
 bb0:
     t1 = INT64_C(0);

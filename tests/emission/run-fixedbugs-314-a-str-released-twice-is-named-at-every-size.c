@@ -156,7 +156,7 @@ void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void);
 #line 25 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
 void h_fixedbugs314astrreleasedtwiceisnamedateverysize_main(void) {
 #line 25 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
-    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG const char * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, t1, t3, t4, t6, t8, t9; HERO_NODEBUG uint64_t t2; HERO_NODEBUG int64_t t5; HERO_NODEBUG const char *t7; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/fixedbugs-314-a-str-released-twice-is-named-at-every-size.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3205);

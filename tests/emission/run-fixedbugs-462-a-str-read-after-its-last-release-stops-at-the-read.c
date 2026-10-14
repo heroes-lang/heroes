@@ -157,7 +157,7 @@ void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void);
 #line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
 void h_fixedbugs462astrreadafteritslastreleasestopsattheread_main(void) {
 #line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
-    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG const char * t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_word = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t3, t4, t5, t7, t9, t12, t13, t14, t15; HERO_NODEBUG uint64_t t2; HERO_NODEBUG const char *t6; HERO_NODEBUG int64_t t8, t10, t11; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/fixedbugs-462-a-str-read-after-its-last-release-stops-at-the-read.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3205);

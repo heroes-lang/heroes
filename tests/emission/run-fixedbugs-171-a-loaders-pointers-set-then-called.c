@@ -157,7 +157,7 @@ void h_fixedbugs171aloaderspointerssetthencalled_main(void);
 #line 15 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
 void h_fixedbugs171aloaderspointerssetthencalled_main(void) {
 #line 15 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int32_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t2, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-171-a-loaders-pointers-set-then-called.hero"
 bb0:
     (void)load_all();

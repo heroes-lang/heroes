@@ -99,7 +99,7 @@ void h_abortstrindex_main(void);
 #line 7 "tests/golden/run/abort-str-index.hero"
 void h_abortstrindex_main(void) {
 #line 7 "tests/golden/run/abort-str-index.hero"
-    HeroStr h0_s = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_s = {0}; HERO_NODEBUG HeroStr t1, t2, t5, t8; HERO_NODEBUG int64_t t3, t6; HERO_NODEBUG uint8_t t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 7 "tests/golden/run/abort-str-index.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1998f2);

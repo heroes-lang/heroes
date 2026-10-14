@@ -154,7 +154,17 @@ void h_fixedbugs584adeprecatedenumeratorreadbuildssilent_main(void);
 #line 14 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
 int64_t h_fixedbugs584adeprecatedenumeratorreadbuildssilent_OLD_LIMIT(void) {
 #line 157 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 14 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
     return OLD_LIMIT;
+#line 167 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -172,7 +182,7 @@ int64_t h_fixedbugs584adeprecatedenumeratorreadbuildssilent_OLD_LIMIT(void) {
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
 void h_fixedbugs584adeprecatedenumeratorreadbuildssilent_main(void) {
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
 bb0:
     t1 = h_fixedbugs584adeprecatedenumeratorreadbuildssilent_OLD_LIMIT();
@@ -186,7 +196,7 @@ bb0:
     hero_print_end();
 #line 17 "tests/golden/run/fixedbugs-584-a-deprecated-enumerator-read-builds-silent.hero"
     return;
-#line 190 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
+#line 200 "fixedbugs584adeprecatedenumeratorreadbuildssilent.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

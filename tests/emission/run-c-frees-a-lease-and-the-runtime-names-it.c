@@ -156,7 +156,7 @@ void h_cfreesaleaseandtheruntimenamesit_main(void);
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
 void h_cfreesaleaseandtheruntimenamesit_main(void) {
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
-    HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG const char * t5; HERO_NODEBUG HeroStr t6; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_x = {0}; const char * h1_c; HERO_NODEBUG HeroStr t1, t2, t6; HERO_NODEBUG const char *t3, *t5; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/c-frees-a-lease-and-the-runtime-names-it.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_35d9fe9b);

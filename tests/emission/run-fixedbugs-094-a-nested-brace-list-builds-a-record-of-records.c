@@ -234,7 +234,7 @@ struct line h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_FLAT(void)
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 void h_fixedbugs094anestedbracelistbuildsarecordofrecords_main(void) {
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
-    struct line h0_l; struct line h1_f; HERO_NODEBUG struct line t1; HERO_NODEBUG struct line t2; HERO_NODEBUG struct pt t3; HERO_NODEBUG int32_t t4; HERO_NODEBUG struct line t5; HERO_NODEBUG struct pt t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG struct line t8; HERO_NODEBUG struct pt t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG struct line t11; HERO_NODEBUG struct pt t12; HERO_NODEBUG int32_t t13; HERO_NODEBUG struct line t14; HERO_NODEBUG struct line t15; HERO_NODEBUG struct pt t16; HERO_NODEBUG int32_t t17; HERO_NODEBUG struct line t18; HERO_NODEBUG struct pt t19; HERO_NODEBUG int32_t t20; HERO_NODEBUG int32_t t21; HERO_ENTRY_STOP; goto bb0;
+    struct line h0_l; struct line h1_f; HERO_NODEBUG struct line t1, t2, t5, t8, t11, t14, t15, t18; HERO_NODEBUG struct pt t3, t6, t9, t12, t16, t19; HERO_NODEBUG int32_t t4, t7, t10, t13, t17, t20, t21; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-094-a-nested-brace-list-builds-a-record-of-records.hero"
 bb0:
     t1 = h_fixedbugs094anestedbracelistbuildsarecordofrecords_LINE_INIT();

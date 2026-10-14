@@ -247,15 +247,16 @@ int64_t h_crc_reversed_bits(int64_t h0_value, int64_t h1_width);
 HERO_ARRAY_STATIC(hero_constant_h_main_VECTORS_8, HeroStr, &hero_desc_str, 7, HERO_STR_LIT(hero_str_0), HERO_STR_LIT(hero_str_66), HERO_STR_LIT(hero_str_34a1), HERO_STR_LIT(hero_str_1aeed2), HERO_STR_LIT(hero_str_dc835d8), HERO_STR_LIT(hero_str_d738df7), HERO_STR_LIT(hero_str_6221a5e4));
 #line 32 "examples/checksum/main.hero"
 HeroArrayHeader * h_main_VECTORS(void) {
-#line 251 "main.c"
+#line 32 "examples/checksum/main.hero"
     return HERO_ARRAY_LIT(hero_constant_h_main_VECTORS_8);
+#line 253 "main.c"
 }
 #else
 
 #line 32 "examples/checksum/main.hero"
 HeroArrayHeader * h_main_VECTORS(void) {
 #line 32 "examples/checksum/main.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_own0 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_own0 = {0}, *t8, *t9; HERO_NODEBUG HeroStr t1, t2, t3, t4, t5, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 32 "examples/checksum/main.hero"
 bb0:
 #line 34 "examples/checksum/main.hero"
@@ -288,7 +289,7 @@ bb0:
     h0_own0 = t8;
 #line 33 "examples/checksum/main.hero"
     hero_array_decref(t9);
-#line 292 "main.c"
+#line 293 "main.c"
     hero_array_incref(t8);
     hero_array_release_at(&h0_own0);
     return t8;
@@ -302,7 +303,7 @@ HeroStr h_main_DIGITS(void) {
 #line 43 "examples/checksum/main.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
-#line 306 "main.c"
+#line 307 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -310,7 +311,7 @@ bb0:
 #line 54 "examples/checksum/main.hero"
 h_main_Digest h_main_digest_of(HeroStr h0_text) {
 #line 54 "examples/checksum/main.hero"
-    HERO_NODEBUG h_0opt_fbbb698 h1_f0 = {0}; HERO_NODEBUG h_0opt_fbbb698 h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG uint32_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG uint32_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_0opt_fbbb698 t7; HERO_NODEBUG h_0opt_fbbb698 t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_fbbb698 t12; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG h_0opt_fbbb698 t14; HERO_NODEBUG uint64_t t15; HERO_NODEBUG h_main_Digest t16; HERO_NODEBUG h_0opt_fbbb698 t17; HERO_NODEBUG h_0opt_fbbb698 t18; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_fbbb698 h1_f0 = {0}, h2_own2 = {0}, t7, t8, t12, t14, t17, t18; HERO_NODEBUG HeroStr t1, t3, t5; HERO_NODEBUG uint32_t t2, t4; HERO_NODEBUG int64_t t6, t9, t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroFailure t13; HERO_NODEBUG uint64_t t15; HERO_NODEBUG h_main_Digest t16; HERO_ENTRY_STOP; goto bb0;
 #line 54 "examples/checksum/main.hero"
 bb0:
 #line 56 "examples/checksum/main.hero"
@@ -365,7 +366,7 @@ bb1:
     t15 = t14.as.ok;
 #line 55 "examples/checksum/main.hero"
     t16 = (h_main_Digest){.f_checksum = t2, .f_rolling = t4, .f_length = t15};
-#line 369 "main.c"
+#line 370 "main.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h1_f0));
     h_0opt_fbbb698_release(hero_slot_escape(&h2_own2));
     return t16;
@@ -374,7 +375,7 @@ bb2:
     t12 = h1_f0;
 #line 58 "examples/checksum/main.hero"
     t13 = t12.as.err;
-#line 378 "main.c"
+#line 379 "main.c"
     hero_panic_must(t13);
     hero_unreachable();
 }
@@ -382,7 +383,7 @@ bb2:
 #line 64 "examples/checksum/main.hero"
 HeroStr h_main_hex(uint32_t h0_value) {
 #line 64 "examples/checksum/main.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; int64_t h3_v; int64_t h4_shift; int64_t h5_nibble; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG uint32_t t2; HERO_NODEBUG h_0opt_e201354 t3; HERO_NODEBUG h_0opt_e201354 t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG h_0opt_e201354 t8; HERO_NODEBUG HeroFailure t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroArrayHeader * t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h7_own7 = {0}, t3, t4, t8, t10, t39, t40; int64_t h3_v; int64_t h4_shift; int64_t h5_nibble; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t1, *t33, *t37, *t38; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t22, t27, t32, t34, t35, t36, t41, t42, t43, t44; HERO_NODEBUG uint32_t t2; HERO_NODEBUG int64_t t5, t6, t11, t12, t13, t14, t16, t17, t18, t19, t20, t23, t24, t25, t26, t29, t30, t31; HERO_NODEBUG bool t7, t15; HERO_NODEBUG HeroFailure t9; HERO_ENTRY_STOP; goto bb0;
 #line 64 "examples/checksum/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -446,7 +447,7 @@ bb2:
     t8 = h2_f0;
 #line 66 "examples/checksum/main.hero"
     t9 = t8.as.err;
-#line 450 "main.c"
+#line 451 "main.c"
     hero_panic_must(t9);
     hero_unreachable();
 bb3:
@@ -531,7 +532,7 @@ bb5:
     h11_own11 = t36;
 #line 74 "examples/checksum/main.hero"
     hero_str_decref(t44);
-#line 535 "main.c"
+#line 536 "main.c"
     hero_str_incref(t36);
     hero_array_release_at(&h1_out);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -547,7 +548,7 @@ bb5:
 #line 79 "examples/checksum/main.hero"
 HeroArrayHeader * h_main_shown(HeroArrayHeader * h0_data) {
 #line 79 "examples/checksum/main.hero"
-    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; uint8_t h4_one; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t1, *t2, *t5, *t8, *t18, *t19, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t3, t4, t6, t9, t15, t16, t17; uint8_t h4_one; HERO_NODEBUG HeroStr h6_own6 = {0}, t13, t22; HERO_NODEBUG bool t7; HERO_NODEBUG uint8_t t10, t12; HERO_ENTRY_STOP; goto bb0;
 #line 79 "examples/checksum/main.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -632,7 +633,7 @@ bb3:
 bb4:
 #line 85 "examples/checksum/main.hero"
     t18 = h1_out;
-#line 636 "main.c"
+#line 637 "main.c"
     hero_array_incref(t18);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h2_xs0);
@@ -644,7 +645,7 @@ bb4:
 #line 87 "examples/checksum/main.hero"
 void h_main_main(void) {
 #line 87 "examples/checksum/main.hero"
-    HERO_NODEBUG HeroArrayHeader * h0_xs0 = {0}; HERO_NODEBUG int64_t h1_i0; HeroStr h2_text = {0}; h_main_Digest h3_nine; HERO_NODEBUG h_0opt_4d1c207c h4_f0 = {0}; HeroArrayHeader * h5_back = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG h_0opt_4d1c207c h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_main_Digest t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_main_Digest t22; HERO_NODEBUG uint32_t t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG h_main_Digest t26; HERO_NODEBUG uint32_t t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG h_main_Digest t30; HERO_NODEBUG uint64_t t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG h_0opt_4d1c207c t34; HERO_NODEBUG h_0opt_4d1c207c t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG h_0opt_4d1c207c t39; HERO_NODEBUG HeroFailure t40; HERO_NODEBUG h_0opt_4d1c207c t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroArrayHeader * t44; HERO_NODEBUG HeroArrayHeader * t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG h_0opt_4d1c207c t55; HERO_NODEBUG h_0opt_4d1c207c t56; HERO_NODEBUG HeroArrayHeader * t57; HERO_NODEBUG HeroArrayHeader * t58; HERO_NODEBUG HeroStr t59; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h0_xs0 = {0}, *h6_own6 = {0}, *h12_own12 = {0}, *t1, *t4, *t7, *t42, *t44, *t45, *t48, *t49, *t57, *t58; HERO_NODEBUG int64_t h1_i0, t2, t3, t5, t8, t16, t17, t18, t36, t37; HeroStr h2_text = {0}; h_main_Digest h3_nine; HERO_NODEBUG h_0opt_4d1c207c h4_f0 = {0}, h11_own11 = {0}, t34, t35, t39, t41, t55, t56; HeroArrayHeader * h5_back = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h13_own13 = {0}, t9, t10, t11, t12, t13, t14, t15, t19, t21, t24, t25, t28, t29, t32, t33, t43, t46, t47, t50, t51, t52, t53, t54, t59; HERO_NODEBUG bool t6, t38; HERO_NODEBUG h_main_Digest t20, t22, t26, t30; HERO_NODEBUG uint32_t t23, t27; HERO_NODEBUG uint64_t t31; HERO_NODEBUG HeroFailure t40; HERO_ENTRY_STOP; goto bb0;
 #line 87 "examples/checksum/main.hero"
 bb0:
 #line 89 "examples/checksum/main.hero"
@@ -874,7 +875,7 @@ bb5:
     hero_print_str(t47);
 #line 102 "examples/checksum/main.hero"
     hero_print_end();
-#line 878 "main.c"
+#line 879 "main.c"
     hero_array_release_at(&h0_xs0);
     hero_str_release_at(&h2_text);
     h_0opt_4d1c207c_release(hero_slot_escape(&h4_f0));
@@ -893,7 +894,7 @@ bb6:
     t39 = h4_f0;
 #line 101 "examples/checksum/main.hero"
     t40 = t39.as.err;
-#line 897 "main.c"
+#line 898 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 }
@@ -907,13 +908,13 @@ bb0:
     t1 = INT64_C(65521);
 #line 34 "examples/checksum/adler.hero"
     return t1;
-#line 911 "main.c"
+#line 912 "main.c"
 }
 
 #line 45 "examples/checksum/adler.hero"
 h_adler_Halves h_adler_halves(HeroStr h0_text) {
 #line 45 "examples/checksum/adler.hero"
-    int64_t h1_s1; int64_t h2_s2; int64_t h3_i; uint8_t h4_byte; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}; HERO_NODEBUG h_0opt_fba6871 h6_f1 = {0}; HERO_NODEBUG h_0opt_fba6871 h7_f2 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_0opt_fba6871 h9_own9 = {0}; HERO_NODEBUG h_0opt_fba6871 h10_own10 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG HeroFailure t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG h_0opt_fba6871 t34; HERO_NODEBUG h_0opt_fba6871 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG bool t38; HERO_NODEBUG h_0opt_fba6871 t39; HERO_NODEBUG HeroFailure t40; HERO_NODEBUG h_0opt_fba6871 t41; HERO_NODEBUG uint16_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG h_0opt_fba6871 t44; HERO_NODEBUG h_0opt_fba6871 t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG bool t48; HERO_NODEBUG h_0opt_fba6871 t49; HERO_NODEBUG HeroFailure t50; HERO_NODEBUG h_0opt_fba6871 t51; HERO_NODEBUG uint16_t t52; HERO_NODEBUG h_adler_Halves t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG h_0opt_fba6871 t56; HERO_NODEBUG h_0opt_fba6871 t57; HERO_NODEBUG h_0opt_fba6871 t58; HERO_NODEBUG h_0opt_fba6871 t59; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_s1; int64_t h2_s2; int64_t h3_i; uint8_t h4_byte; HERO_NODEBUG h_0opt_e201354 h5_f0 = {0}, h8_own8 = {0}, t13, t14, t18, t20, t54, t55; HERO_NODEBUG h_0opt_fba6871 h6_f1 = {0}, h7_f2 = {0}, h9_own9 = {0}, h10_own10 = {0}, t34, t35, t39, t41, t44, t45, t49, t51, t56, t57, t58, t59; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t9, t11, t15, t16, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t36, t37, t43, t46, t47; HERO_NODEBUG HeroStr t5, t8; HERO_NODEBUG bool t7, t17, t38, t48; HERO_NODEBUG uint8_t t10, t12; HERO_NODEBUG HeroFailure t19, t40, t50; HERO_NODEBUG uint16_t t42, t52; HERO_NODEBUG h_adler_Halves t53; HERO_ENTRY_STOP; goto bb0;
 #line 45 "examples/checksum/adler.hero"
 bb0:
     t1 = INT64_C(1);
@@ -1063,7 +1064,7 @@ bb5:
     t18 = h5_f0;
 #line 52 "examples/checksum/adler.hero"
     t19 = t18.as.err;
-#line 1067 "main.c"
+#line 1068 "main.c"
     hero_panic_must(t19);
     hero_unreachable();
 bb6:
@@ -1113,7 +1114,7 @@ bb7:
     t39 = h6_f1;
 #line 56 "examples/checksum/adler.hero"
     t40 = t39.as.err;
-#line 1117 "main.c"
+#line 1118 "main.c"
     hero_panic_must(t40);
     hero_unreachable();
 bb8:
@@ -1123,7 +1124,7 @@ bb8:
     t52 = t51.as.ok;
 #line 56 "examples/checksum/adler.hero"
     t53 = (h_adler_Halves){.f_s1 = t42, .f_s2 = t52};
-#line 1127 "main.c"
+#line 1128 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h5_f0));
     h_0opt_fba6871_release(hero_slot_escape(&h6_f1));
     h_0opt_fba6871_release(hero_slot_escape(&h7_f2));
@@ -1136,7 +1137,7 @@ bb9:
     t49 = h7_f2;
 #line 56 "examples/checksum/adler.hero"
     t50 = t49.as.err;
-#line 1140 "main.c"
+#line 1141 "main.c"
     hero_panic_must(t50);
     hero_unreachable();
 }
@@ -1144,7 +1145,7 @@ bb9:
 #line 59 "examples/checksum/adler.hero"
 uint32_t h_adler_adler32(HeroStr h0_text) {
 #line 59 "examples/checksum/adler.hero"
-    h_adler_Halves h1_two; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HERO_NODEBUG h_0opt_fbaec77 h4_f2 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_fbaec77 h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_adler_Halves t2; HERO_NODEBUG h_adler_Halves t3; HERO_NODEBUG uint16_t t4; HERO_NODEBUG h_0opt_e201354 t5; HERO_NODEBUG h_0opt_e201354 t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG h_0opt_e201354 t10; HERO_NODEBUG HeroFailure t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_adler_Halves t16; HERO_NODEBUG uint16_t t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG HeroFailure t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG h_0opt_fbaec77 t28; HERO_NODEBUG h_0opt_fbaec77 t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG bool t32; HERO_NODEBUG h_0opt_fbaec77 t33; HERO_NODEBUG HeroFailure t34; HERO_NODEBUG h_0opt_fbaec77 t35; HERO_NODEBUG uint32_t t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_NODEBUG h_0opt_e201354 t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG h_0opt_fbaec77 t41; HERO_NODEBUG h_0opt_fbaec77 t42; HERO_ENTRY_STOP; goto bb0;
+    h_adler_Halves h1_two; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_own5 = {0}, h6_own6 = {0}, t5, t6, t10, t12, t18, t19, t23, t25, t37, t38, t39, t40; HERO_NODEBUG h_0opt_fbaec77 h4_f2 = {0}, h7_own7 = {0}, t28, t29, t33, t35, t41, t42; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_adler_Halves t2, t3, t16; HERO_NODEBUG uint16_t t4, t17; HERO_NODEBUG int64_t t7, t8, t13, t14, t15, t20, t21, t26, t27, t30, t31; HERO_NODEBUG bool t9, t22, t32; HERO_NODEBUG HeroFailure t11, t24, t34; HERO_NODEBUG uint32_t t36; HERO_ENTRY_STOP; goto bb0;
 #line 59 "examples/checksum/adler.hero"
 bb0:
     t1 = h0_text;
@@ -1227,7 +1228,7 @@ bb2:
     t10 = h2_f0;
 #line 61 "examples/checksum/adler.hero"
     t11 = t10.as.err;
-#line 1231 "main.c"
+#line 1232 "main.c"
     hero_panic_must(t11);
     hero_unreachable();
 bb3:
@@ -1277,7 +1278,7 @@ bb4:
     t23 = h3_f1;
 #line 61 "examples/checksum/adler.hero"
     t24 = t23.as.err;
-#line 1281 "main.c"
+#line 1282 "main.c"
     hero_panic_must(t24);
     hero_unreachable();
 bb5:
@@ -1285,7 +1286,7 @@ bb5:
     t35 = h4_f2;
 #line 61 "examples/checksum/adler.hero"
     t36 = t35.as.ok;
-#line 1289 "main.c"
+#line 1290 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_f1));
     h_0opt_fbaec77_release(hero_slot_escape(&h4_f2));
@@ -1298,7 +1299,7 @@ bb6:
     t33 = h4_f2;
 #line 61 "examples/checksum/adler.hero"
     t34 = t33.as.err;
-#line 1302 "main.c"
+#line 1303 "main.c"
     hero_panic_must(t34);
     hero_unreachable();
 }
@@ -1306,7 +1307,7 @@ bb6:
 #line 65 "examples/checksum/adler.hero"
 bool h_adler_is_prime(int64_t h0_n) {
 #line 65 "examples/checksum/adler.hero"
-    int64_t h1_d; HERO_NODEBUG bool h2_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG bool t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG bool t21; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_d; HERO_NODEBUG bool h2_ret0, t3, t4, t10, t15, t16, t20, t21; HERO_NODEBUG int64_t t1, t2, t5, t6, t7, t8, t9, t11, t12, t13, t14, t17, t18, t19; HERO_ENTRY_STOP; goto bb0;
 #line 65 "examples/checksum/adler.hero"
 bb0:
     t1 = h0_n;
@@ -1401,7 +1402,7 @@ bb9:
     goto bb7;
 #line 72 "examples/checksum/adler.hero"
 bb10:
-#line 1405 "main.c"
+#line 1406 "main.c"
     t21 = h2_ret0;
     return t21;
 }
@@ -1413,7 +1414,7 @@ HeroStr h_base64_ALPHABET(void) {
 #line 38 "examples/checksum/base64.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_45fa86fe);
-#line 1417 "main.c"
+#line 1418 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1425,7 +1426,7 @@ HeroStr h_base64_PAD(void) {
 #line 41 "examples/checksum/base64.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_3d);
-#line 1429 "main.c"
+#line 1430 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1437,7 +1438,7 @@ HeroStr h_base64_ERR_LENGTH(void) {
 #line 44 "examples/checksum/base64.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_220131e1);
-#line 1441 "main.c"
+#line 1442 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1449,7 +1450,7 @@ HeroStr h_base64_ERR_CHARACTER(void) {
 #line 47 "examples/checksum/base64.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_552a00f0);
-#line 1453 "main.c"
+#line 1454 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1461,7 +1462,7 @@ HeroStr h_base64_ERR_PADDING(void) {
 #line 50 "examples/checksum/base64.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_1b630675);
-#line 1465 "main.c"
+#line 1466 "main.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -1469,7 +1470,7 @@ bb0:
 #line 56 "examples/checksum/base64.hero"
 HeroArrayHeader * h_base64_bytes_of(HeroStr h0_text) {
 #line 56 "examples/checksum/base64.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t15, *t16, *t17; HERO_NODEBUG int64_t t2, t3, t5, t9, t12, t13, t14; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6; HERO_NODEBUG uint8_t t10; HERO_ENTRY_STOP; goto bb0;
 #line 56 "examples/checksum/base64.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_u8, 1);
@@ -1526,7 +1527,7 @@ bb2:
 bb3:
 #line 64 "examples/checksum/base64.hero"
     t15 = h1_out;
-#line 1530 "main.c"
+#line 1531 "main.c"
     hero_array_incref(t15);
     hero_array_release_at(&h1_out);
     hero_array_release_at(&h3_own3);
@@ -1536,7 +1537,7 @@ bb3:
 #line 67 "examples/checksum/base64.hero"
 HeroStr h_base64_letter(int64_t h0_value) {
 #line 67 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t6, t7, t8; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0;
 #line 67 "examples/checksum/base64.hero"
 bb0:
     t1 = h_base64_ALPHABET();
@@ -1562,7 +1563,7 @@ bb0:
     h2_own2 = t6;
 #line 68 "examples/checksum/base64.hero"
     hero_str_decref(t8);
-#line 1566 "main.c"
+#line 1567 "main.c"
     hero_str_incref(t6);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -1572,7 +1573,7 @@ bb0:
 #line 71 "examples/checksum/base64.hero"
 h_0opt_e201354 h_base64_value_of(HeroStr h0_written) {
 #line 71 "examples/checksum/base64.hero"
-    int64_t h1_i; HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_e201354 h8_own8 = {0}; HERO_NODEBUG h_0opt_e201354 h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG h_0opt_e201354 t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_0opt_e201354 t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_i; HERO_NODEBUG h_0opt_e201354 h2_ret0 = {0}, h8_own8 = {0}, h9_own9 = {0}, t14, t24, t25, t31, t32; HERO_NODEBUG HeroStr h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t5, t10, t11, t18, t19, t20, t21, t22, t23, t26, t27, t28, t29, t30; HERO_NODEBUG int64_t t1, t2, t3, t6, t7, t8, t9, t13, t15, t16, t17; HERO_NODEBUG bool t4, t12; HERO_ENTRY_STOP; goto bb0;
 #line 71 "examples/checksum/base64.hero"
 bb0:
     t1 = INT64_C(0);
@@ -1703,7 +1704,7 @@ bb6:
     goto bb4;
 #line 76 "examples/checksum/base64.hero"
 bb7:
-#line 1707 "main.c"
+#line 1708 "main.c"
     t25 = h2_ret0;
     h_0opt_e201354_retain(&t25);
     hero_str_release_at(&h3_own3);
@@ -1719,7 +1720,7 @@ bb7:
 #line 83 "examples/checksum/base64.hero"
 HeroStr h_base64_encoded(HeroStr h0_text) {
 #line 83 "examples/checksum/base64.hero"
-    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t2, *t4; HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t3, t5; HERO_ENTRY_STOP; goto bb0;
 #line 83 "examples/checksum/base64.hero"
 bb0:
     t1 = h0_text;
@@ -1739,7 +1740,7 @@ bb0:
     h2_own2 = t3;
 #line 84 "examples/checksum/base64.hero"
     hero_str_decref(t5);
-#line 1743 "main.c"
+#line 1744 "main.c"
     hero_str_incref(t3);
     hero_array_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -1749,7 +1750,7 @@ bb0:
 #line 89 "examples/checksum/base64.hero"
 HeroStr h_base64_encoded_bytes(HeroArrayHeader * h0_data) {
 #line 89 "examples/checksum/base64.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; int64_t h3_n; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}; int64_t h5_b0; int64_t h6_b1; int64_t h7_b2; int64_t h8_held; HERO_NODEBUG h_0opt_e201354 h9_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h10_f2 = {0}; int64_t h11_block; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG h_0opt_e201354 h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG HeroStr h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG h_0opt_e201354 h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG h_0opt_e201354 t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_0opt_e201354 t16; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG h_0opt_e201354 t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG HeroArrayHeader * t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG uint8_t t32; HERO_NODEBUG h_0opt_e201354 t33; HERO_NODEBUG h_0opt_e201354 t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG bool t37; HERO_NODEBUG h_0opt_e201354 t38; HERO_NODEBUG HeroFailure t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG bool t47; HERO_NODEBUG HeroArrayHeader * t48; HERO_NODEBUG int64_t t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG uint8_t t52; HERO_NODEBUG h_0opt_e201354 t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG bool t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG HeroFailure t59; HERO_NODEBUG h_0opt_e201354 t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG HeroStr t78; HERO_NODEBUG int64_t t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG HeroStr t86; HERO_NODEBUG int64_t t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG bool t90; HERO_NODEBUG int64_t t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG int64_t t95; HERO_NODEBUG int64_t t96; HERO_NODEBUG HeroStr t97; HERO_NODEBUG HeroStr t100; HERO_NODEBUG int64_t t102; HERO_NODEBUG int64_t t103; HERO_NODEBUG bool t104; HERO_NODEBUG int64_t t106; HERO_NODEBUG int64_t t107; HERO_NODEBUG int64_t t108; HERO_NODEBUG HeroStr t109; HERO_NODEBUG HeroStr t112; HERO_NODEBUG int64_t t114; HERO_NODEBUG int64_t t115; HERO_NODEBUG int64_t t116; HERO_NODEBUG HeroArrayHeader * t117; HERO_NODEBUG HeroStr t118; HERO_NODEBUG HeroStr t119; HERO_NODEBUG HeroArrayHeader * t120; HERO_NODEBUG HeroArrayHeader * t121; HERO_NODEBUG h_0opt_e201354 t122; HERO_NODEBUG h_0opt_e201354 t123; HERO_NODEBUG HeroStr t124; HERO_NODEBUG h_0opt_e201354 t125; HERO_NODEBUG h_0opt_e201354 t126; HERO_NODEBUG HeroStr t127; HERO_NODEBUG HeroStr t128; HERO_NODEBUG h_0opt_e201354 t129; HERO_NODEBUG h_0opt_e201354 t130; HERO_NODEBUG HeroStr t131; HERO_NODEBUG HeroStr t132; HERO_NODEBUG HeroStr t133; HERO_NODEBUG HeroStr t134; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_i; int64_t h3_n; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h9_f1 = {0}, h10_f2 = {0}, h13_own13 = {0}, h15_own15 = {0}, h18_own18 = {0}, t11, t12, t16, t18, t33, t34, t38, t40, t53, t54, t58, t60, t122, t123, t125, t126, t129, t130; int64_t h5_b0; int64_t h6_b1; int64_t h7_b2; int64_t h8_held; int64_t h11_block; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *t1, *t3, *t8, *t28, *t48, *t117, *t120, *t121; HERO_NODEBUG HeroStr h14_own14 = {0}, h16_own16 = {0}, h17_own17 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t78, t86, t97, t100, t109, t112, t118, t119, t124, t127, t128, t131, t132, t133, t134; HERO_NODEBUG int64_t t2, t4, t5, t6, t9, t13, t14, t19, t20, t21, t22, t23, t24, t25, t26, t29, t30, t31, t35, t36, t41, t42, t43, t44, t45, t46, t49, t50, t51, t55, t56, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t73, t74, t75, t76, t77, t81, t82, t83, t84, t85, t88, t89, t92, t93, t94, t95, t96, t102, t103, t106, t107, t108, t114, t115, t116; HERO_NODEBUG bool t7, t15, t27, t37, t47, t57, t90, t104; HERO_NODEBUG uint8_t t10, t32, t52; HERO_NODEBUG HeroFailure t17, t39, t59; HERO_ENTRY_STOP; goto bb0;
 #line 89 "examples/checksum/base64.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -1834,7 +1835,7 @@ bb3:
     h14_own14 = t119;
 #line 127 "examples/checksum/base64.hero"
     hero_str_decref(t124);
-#line 1838 "main.c"
+#line 1839 "main.c"
     hero_str_incref(t119);
     hero_array_release_at(&h1_out);
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
@@ -1886,7 +1887,7 @@ bb5:
     t16 = h4_f0;
 #line 95 "examples/checksum/base64.hero"
     t17 = t16.as.err;
-#line 1890 "main.c"
+#line 1891 "main.c"
     hero_panic_must(t17);
     hero_unreachable();
 bb6:
@@ -1963,7 +1964,7 @@ bb10:
     t38 = h9_f1;
 #line 101 "examples/checksum/base64.hero"
     t39 = t38.as.err;
-#line 1967 "main.c"
+#line 1968 "main.c"
     hero_panic_must(t39);
     hero_unreachable();
 bb11:
@@ -2102,7 +2103,7 @@ bb15:
     t58 = h10_f2;
 #line 105 "examples/checksum/base64.hero"
     t59 = t58.as.err;
-#line 2106 "main.c"
+#line 2107 "main.c"
     hero_panic_must(t59);
     hero_unreachable();
 bb16:
@@ -2200,13 +2201,13 @@ bb21:
     hero_array_push_owned(&h1_out, &t112);
 #line 124 "examples/checksum/base64.hero"
     goto bb19;
-#line 2204 "main.c"
+#line 2205 "main.c"
 }
 
 #line 131 "examples/checksum/base64.hero"
 h_0opt_e201354 h_base64_padding_of(HeroStr h0_group) {
 #line 131 "examples/checksum/base64.hero"
-    HeroStr h1_third = {0}; HeroStr h2_fourth = {0}; HERO_NODEBUG bool h3_b0; HERO_NODEBUG bool h4_b1; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG HeroStr h17_own17 = {0}; HERO_NODEBUG HeroStr h18_own18 = {0}; HERO_NODEBUG HeroStr h19_own19 = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG h_0opt_e201354 h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG h_0opt_e201354 h24_own24 = {0}; HERO_NODEBUG h_0opt_e201354 h25_own25 = {0}; HERO_NODEBUG h_0opt_e201354 h26_own26 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG bool t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG bool t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG bool t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG bool t34; HERO_NODEBUG bool t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroStr t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG h_0opt_e201354 t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG bool t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG h_0opt_e201354 t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG bool t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG h_0opt_e201354 t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG h_0opt_e201354 t54; HERO_NODEBUG h_0opt_e201354 t55; HERO_NODEBUG HeroStr t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG HeroStr t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroStr t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroStr t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroStr t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG HeroStr t67; HERO_NODEBUG h_0opt_e201354 t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG HeroStr t72; HERO_NODEBUG HeroStr t73; HERO_NODEBUG h_0opt_e201354 t74; HERO_NODEBUG HeroStr t75; HERO_NODEBUG h_0opt_e201354 t76; HERO_NODEBUG h_0opt_e201354 t77; HERO_NODEBUG h_0opt_e201354 t78; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h1_third = {0}; HeroStr h2_fourth = {0}; HERO_NODEBUG bool h3_b0, h4_b1, t14, t20, t21, t31, t34, t35, t45, t50; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}, h16_own16 = {0}, h22_own22 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, t28, t42, t47, t52, t54, t55, t68, t74, t76, t77, t78; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h23_own23 = {0}, t1, t4, t5, t8, t9, t12, t13, t15, t18, t19, t22, t23, t24, t25, t26, t27, t29, t30, t32, t33, t36, t37, t38, t39, t40, t41, t43, t44, t48, t49, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t69, t70, t71, t72, t73, t75; HERO_NODEBUG int64_t t2, t3, t6, t7, t10, t11, t16, t17, t46, t51, t53; HERO_ENTRY_STOP; goto bb0;
 #line 131 "examples/checksum/base64.hero"
 bb0:
     t1 = h0_group;
@@ -2549,7 +2550,7 @@ bb16:
     goto bb14;
 #line 151 "examples/checksum/base64.hero"
 bb17:
-#line 2553 "main.c"
+#line 2554 "main.c"
     t55 = h5_ret0;
     h_0opt_e201354_retain(&t55);
     hero_str_release_at(&h1_third);
@@ -2581,7 +2582,7 @@ bb17:
 #line 157 "examples/checksum/base64.hero"
 h_0opt_4d1c207c h_base64_decoded(HeroStr h0_text) {
 #line 157 "examples/checksum/base64.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HeroStr h3_group = {0}; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}; int64_t h5_pad; HERO_NODEBUG bool h6_b0; HERO_NODEBUG h_0opt_e201354 h7_f1 = {0}; int64_t h8_v0; HERO_NODEBUG h_0opt_e201354 h9_f2 = {0}; int64_t h10_v1; int64_t h11_v2; int64_t h12_v3; HERO_NODEBUG h_0opt_e201354 h13_f3 = {0}; HERO_NODEBUG h_0opt_e201354 h14_f4 = {0}; int64_t h15_block; HERO_NODEBUG h_0opt_1ec004 h16_f5 = {0}; HERO_NODEBUG h_0opt_1ec004 h17_f6 = {0}; HERO_NODEBUG h_0opt_1ec004 h18_f7 = {0}; HERO_NODEBUG h_0opt_4d1c207c h19_ret0 = {0}; HERO_NODEBUG HeroArrayHeader * h20_own20 = {0}; HERO_NODEBUG HeroStr h21_own21 = {0}; HERO_NODEBUG HeroStr h22_own22 = {0}; HERO_NODEBUG HeroStr h23_own23 = {0}; HERO_NODEBUG h_0opt_4d1c207c h24_own24 = {0}; HERO_NODEBUG HeroStr h25_own25 = {0}; HERO_NODEBUG h_0opt_e201354 h26_own26 = {0}; HERO_NODEBUG h_0opt_4d1c207c h27_own27 = {0}; HERO_NODEBUG h_0opt_4d1c207c h28_own28 = {0}; HERO_NODEBUG HeroStr h29_own29 = {0}; HERO_NODEBUG h_0opt_e201354 h30_own30 = {0}; HERO_NODEBUG HeroStr h31_own31 = {0}; HERO_NODEBUG HeroStr h32_own32 = {0}; HERO_NODEBUG HeroStr h33_own33 = {0}; HERO_NODEBUG h_0opt_4d1c207c h34_own34 = {0}; HERO_NODEBUG HeroStr h35_own35 = {0}; HERO_NODEBUG h_0opt_e201354 h36_own36 = {0}; HERO_NODEBUG h_0opt_4d1c207c h37_own37 = {0}; HERO_NODEBUG h_0opt_4d1c207c h38_own38 = {0}; HERO_NODEBUG HeroStr h39_own39 = {0}; HERO_NODEBUG h_0opt_e201354 h40_own40 = {0}; HERO_NODEBUG h_0opt_4d1c207c h41_own41 = {0}; HERO_NODEBUG h_0opt_1ec004 h42_own42 = {0}; HERO_NODEBUG HeroStr h43_own43 = {0}; HERO_NODEBUG h_0opt_e201354 h44_own44 = {0}; HERO_NODEBUG h_0opt_4d1c207c h45_own45 = {0}; HERO_NODEBUG h_0opt_1ec004 h46_own46 = {0}; HERO_NODEBUG h_0opt_1ec004 h47_own47 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_4d1c207c t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG h_0opt_e201354 t27; HERO_NODEBUG h_0opt_e201354 t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG bool t31; HERO_NODEBUG h_0opt_e201354 t32; HERO_NODEBUG HeroFailure t33; HERO_NODEBUG h_0opt_4d1c207c t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG bool t45; HERO_NODEBUG bool t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroStr t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG HeroStr t52; HERO_NODEBUG h_0opt_4d1c207c t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG HeroStr t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG h_0opt_e201354 t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG bool t62; HERO_NODEBUG h_0opt_e201354 t63; HERO_NODEBUG HeroFailure t64; HERO_NODEBUG h_0opt_4d1c207c t65; HERO_NODEBUG h_0opt_e201354 t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG h_0opt_e201354 t72; HERO_NODEBUG h_0opt_e201354 t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG bool t76; HERO_NODEBUG h_0opt_e201354 t77; HERO_NODEBUG HeroFailure t78; HERO_NODEBUG h_0opt_4d1c207c t79; HERO_NODEBUG h_0opt_e201354 t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG bool t86; HERO_NODEBUG HeroStr t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG int64_t t89; HERO_NODEBUG HeroStr t90; HERO_NODEBUG h_0opt_e201354 t91; HERO_NODEBUG h_0opt_e201354 t92; HERO_NODEBUG int64_t t93; HERO_NODEBUG int64_t t94; HERO_NODEBUG bool t95; HERO_NODEBUG h_0opt_e201354 t96; HERO_NODEBUG HeroFailure t97; HERO_NODEBUG h_0opt_4d1c207c t98; HERO_NODEBUG h_0opt_e201354 t99; HERO_NODEBUG int64_t t100; HERO_NODEBUG int64_t t101; HERO_NODEBUG int64_t t102; HERO_NODEBUG bool t103; HERO_NODEBUG HeroStr t104; HERO_NODEBUG int64_t t105; HERO_NODEBUG int64_t t106; HERO_NODEBUG HeroStr t107; HERO_NODEBUG h_0opt_e201354 t108; HERO_NODEBUG h_0opt_e201354 t109; HERO_NODEBUG int64_t t110; HERO_NODEBUG int64_t t111; HERO_NODEBUG bool t112; HERO_NODEBUG h_0opt_e201354 t113; HERO_NODEBUG HeroFailure t114; HERO_NODEBUG h_0opt_4d1c207c t115; HERO_NODEBUG h_0opt_e201354 t116; HERO_NODEBUG int64_t t117; HERO_NODEBUG int64_t t118; HERO_NODEBUG int64_t t119; HERO_NODEBUG int64_t t120; HERO_NODEBUG int64_t t121; HERO_NODEBUG int64_t t122; HERO_NODEBUG int64_t t123; HERO_NODEBUG int64_t t124; HERO_NODEBUG int64_t t125; HERO_NODEBUG int64_t t126; HERO_NODEBUG int64_t t127; HERO_NODEBUG int64_t t128; HERO_NODEBUG int64_t t129; HERO_NODEBUG int64_t t130; HERO_NODEBUG int64_t t132; HERO_NODEBUG int64_t t133; HERO_NODEBUG int64_t t134; HERO_NODEBUG int64_t t135; HERO_NODEBUG int64_t t136; HERO_NODEBUG h_0opt_1ec004 t137; HERO_NODEBUG h_0opt_1ec004 t138; HERO_NODEBUG int64_t t139; HERO_NODEBUG int64_t t140; HERO_NODEBUG bool t141; HERO_NODEBUG h_0opt_1ec004 t142; HERO_NODEBUG HeroFailure t143; HERO_NODEBUG h_0opt_1ec004 t144; HERO_NODEBUG uint8_t t145; HERO_NODEBUG int64_t t147; HERO_NODEBUG int64_t t148; HERO_NODEBUG bool t149; HERO_NODEBUG int64_t t151; HERO_NODEBUG int64_t t152; HERO_NODEBUG int64_t t153; HERO_NODEBUG int64_t t154; HERO_NODEBUG int64_t t155; HERO_NODEBUG h_0opt_1ec004 t156; HERO_NODEBUG h_0opt_1ec004 t157; HERO_NODEBUG int64_t t158; HERO_NODEBUG int64_t t159; HERO_NODEBUG bool t160; HERO_NODEBUG h_0opt_1ec004 t161; HERO_NODEBUG HeroFailure t162; HERO_NODEBUG h_0opt_1ec004 t163; HERO_NODEBUG uint8_t t164; HERO_NODEBUG int64_t t166; HERO_NODEBUG int64_t t167; HERO_NODEBUG bool t168; HERO_NODEBUG int64_t t170; HERO_NODEBUG int64_t t171; HERO_NODEBUG int64_t t172; HERO_NODEBUG h_0opt_1ec004 t173; HERO_NODEBUG h_0opt_1ec004 t174; HERO_NODEBUG int64_t t175; HERO_NODEBUG int64_t t176; HERO_NODEBUG bool t177; HERO_NODEBUG h_0opt_1ec004 t178; HERO_NODEBUG HeroFailure t179; HERO_NODEBUG h_0opt_1ec004 t180; HERO_NODEBUG uint8_t t181; HERO_NODEBUG int64_t t183; HERO_NODEBUG int64_t t184; HERO_NODEBUG int64_t t185; HERO_NODEBUG HeroArrayHeader * t186; HERO_NODEBUG h_0opt_4d1c207c t187; HERO_NODEBUG h_0opt_4d1c207c t188; HERO_NODEBUG HeroArrayHeader * t189; HERO_NODEBUG HeroArrayHeader * t190; HERO_NODEBUG HeroStr t191; HERO_NODEBUG HeroStr t192; HERO_NODEBUG HeroStr t193; HERO_NODEBUG h_0opt_4d1c207c t194; HERO_NODEBUG HeroStr t195; HERO_NODEBUG HeroStr t196; HERO_NODEBUG h_0opt_e201354 t197; HERO_NODEBUG h_0opt_e201354 t198; HERO_NODEBUG h_0opt_4d1c207c t199; HERO_NODEBUG h_0opt_4d1c207c t200; HERO_NODEBUG HeroStr t201; HERO_NODEBUG h_0opt_e201354 t202; HERO_NODEBUG h_0opt_e201354 t203; HERO_NODEBUG HeroStr t204; HERO_NODEBUG HeroStr t205; HERO_NODEBUG HeroStr t206; HERO_NODEBUG h_0opt_4d1c207c t207; HERO_NODEBUG HeroStr t208; HERO_NODEBUG h_0opt_e201354 t209; HERO_NODEBUG h_0opt_e201354 t210; HERO_NODEBUG h_0opt_4d1c207c t211; HERO_NODEBUG h_0opt_4d1c207c t212; HERO_NODEBUG HeroStr t213; HERO_NODEBUG h_0opt_e201354 t214; HERO_NODEBUG h_0opt_e201354 t215; HERO_NODEBUG h_0opt_4d1c207c t216; HERO_NODEBUG h_0opt_1ec004 t217; HERO_NODEBUG h_0opt_1ec004 t218; HERO_NODEBUG HeroStr t219; HERO_NODEBUG h_0opt_e201354 t220; HERO_NODEBUG h_0opt_e201354 t221; HERO_NODEBUG h_0opt_4d1c207c t222; HERO_NODEBUG h_0opt_1ec004 t223; HERO_NODEBUG h_0opt_1ec004 t224; HERO_NODEBUG h_0opt_1ec004 t225; HERO_NODEBUG h_0opt_1ec004 t226; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HeroStr h3_group = {0}; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_f1 = {0}, h9_f2 = {0}, h13_f3 = {0}, h14_f4 = {0}, h26_own26 = {0}, h30_own30 = {0}, h36_own36 = {0}, h40_own40 = {0}, h44_own44 = {0}, t27, t28, t32, t35, t58, t59, t63, t66, t72, t73, t77, t80, t91, t92, t96, t99, t108, t109, t113, t116, t197, t198, t202, t203, t209, t210, t214, t215, t220, t221; int64_t h5_pad; HERO_NODEBUG bool h6_b0, t6, t19, t31, t39, t45, t46, t62, t76, t86, t95, t103, t112, t141, t149, t160, t168, t177; int64_t h8_v0; int64_t h10_v1; int64_t h11_v2; int64_t h12_v3; int64_t h15_block; HERO_NODEBUG h_0opt_1ec004 h16_f5 = {0}, h17_f6 = {0}, h18_f7 = {0}, h42_own42 = {0}, h46_own46 = {0}, h47_own47 = {0}, t137, t138, t142, t144, t156, t157, t161, t163, t173, t174, t178, t180, t217, t218, t223, t224, t225, t226; HERO_NODEBUG h_0opt_4d1c207c h19_ret0 = {0}, h24_own24 = {0}, h27_own27 = {0}, h28_own28 = {0}, h34_own34 = {0}, h37_own37 = {0}, h38_own38 = {0}, h41_own41 = {0}, h45_own45 = {0}, t13, t34, t53, t65, t79, t98, t115, t187, t188, t194, t199, t200, t207, t211, t212, t216, t222; HERO_NODEBUG HeroArrayHeader *h20_own20 = {0}, *t14, *t186, *t189, *t190; HERO_NODEBUG HeroStr h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h25_own25 = {0}, h29_own29 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h35_own35 = {0}, h39_own39 = {0}, h43_own43 = {0}, t1, t7, t8, t9, t11, t12, t17, t20, t25, t26, t43, t47, t48, t49, t50, t51, t52, t54, t57, t68, t71, t87, t90, t104, t107, t191, t192, t193, t195, t196, t201, t204, t205, t206, t208, t213, t219; HERO_NODEBUG int64_t t2, t3, t4, t5, t10, t15, t16, t18, t21, t22, t23, t24, t29, t30, t36, t37, t38, t40, t41, t42, t44, t55, t56, t60, t61, t67, t69, t70, t74, t75, t81, t82, t83, t84, t85, t88, t89, t93, t94, t100, t101, t102, t105, t106, t110, t111, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t132, t133, t134, t135, t136, t139, t140, t147, t148, t151, t152, t153, t154, t155, t158, t159, t166, t167, t170, t171, t172, t175, t176, t183, t184, t185; HERO_NODEBUG HeroFailure t33, t64, t78, t97, t114, t143, t162, t179; HERO_NODEBUG uint8_t t145, t164, t181; HERO_ENTRY_STOP; goto bb0;
 #line 157 "examples/checksum/base64.hero"
 bb0:
     t1 = h0_text;
@@ -3286,7 +3287,7 @@ bb29:
     t142 = h16_f5;
 #line 183 "examples/checksum/base64.hero"
     t143 = t142.as.err;
-#line 3290 "main.c"
+#line 3291 "main.c"
     hero_panic_must(t143);
     hero_unreachable();
 bb30:
@@ -3366,7 +3367,7 @@ bb34:
     t161 = h17_f6;
 #line 186 "examples/checksum/base64.hero"
     t162 = t161.as.err;
-#line 3370 "main.c"
+#line 3371 "main.c"
     hero_panic_must(t162);
     hero_unreachable();
 bb35:
@@ -3442,7 +3443,7 @@ bb39:
     t178 = h18_f7;
 #line 189 "examples/checksum/base64.hero"
     t179 = t178.as.err;
-#line 3446 "main.c"
+#line 3447 "main.c"
     hero_panic_must(t179);
     hero_unreachable();
 bb40:
@@ -3492,7 +3493,7 @@ bb40:
 #line 196 "examples/checksum/base64.hero"
 HeroStr h_base64_refusal_of(h_0opt_4d1c207c h0_said) {
 #line 196 "examples/checksum/base64.hero"
-    HERO_NODEBUG h_0opt_4d1c207c h1_s0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroFailure h3_e = {0}; HERO_NODEBUG h_0opt_4d1c207c t1; HERO_NODEBUG h_0opt_4d1c207c t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG h_0opt_4d1c207c t5; HERO_NODEBUG HeroFailure t6; HERO_NODEBUG HeroFailure t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_0opt_4d1c207c t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroFailure t12; HERO_NODEBUG HeroStr t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_4d1c207c h1_s0 = {0}, t1, t2, t5, t10; HERO_NODEBUG HeroStr h2_r0 = {0}, t4, t8, t9, t11, t13; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroFailure t6, t7, t12; HERO_ENTRY_STOP; goto bb0;
 #line 196 "examples/checksum/base64.hero"
 bb0:
     t1 = h0_said;
@@ -3522,7 +3523,7 @@ bb0:
 bb1:
 #line 197 "examples/checksum/base64.hero"
     t9 = h2_r0;
-#line 3526 "main.c"
+#line 3527 "main.c"
     hero_str_incref(t9);
     h_0opt_4d1c207c_release(hero_slot_escape(&h1_s0));
     hero_str_release_at(&h2_r0);
@@ -3569,7 +3570,7 @@ bb3:
     hero_str_decref(t13);
 #line 197 "examples/checksum/base64.hero"
     goto bb1;
-#line 3573 "main.c"
+#line 3574 "main.c"
 }
 
 #line 40 "examples/checksum/crc.hero"
@@ -3581,7 +3582,7 @@ bb0:
     t1 = INT64_C(79764919);
 #line 41 "examples/checksum/crc.hero"
     return t1;
-#line 3585 "main.c"
+#line 3586 "main.c"
 }
 
 #line 44 "examples/checksum/crc.hero"
@@ -3593,7 +3594,7 @@ bb0:
     t1 = INT64_C(3988292384);
 #line 45 "examples/checksum/crc.hero"
     return t1;
-#line 3597 "main.c"
+#line 3598 "main.c"
 }
 
 #line 49 "examples/checksum/crc.hero"
@@ -3605,7 +3606,7 @@ bb0:
     t1 = INT64_C(4294967295);
 #line 50 "examples/checksum/crc.hero"
     return t1;
-#line 3609 "main.c"
+#line 3610 "main.c"
 }
 
 #line 52 "examples/checksum/crc.hero"
@@ -3617,13 +3618,13 @@ bb0:
     t1 = INT64_C(4294967295);
 #line 53 "examples/checksum/crc.hero"
     return t1;
-#line 3621 "main.c"
+#line 3622 "main.c"
 }
 
 #line 61 "examples/checksum/crc.hero"
 uint32_t h_crc_crc32(HeroStr h0_text) {
 #line 61 "examples/checksum/crc.hero"
-    int64_t h1_reg; int64_t h2_i; uint8_t h3_byte; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}; int64_t h5_bit; HERO_NODEBUG h_0opt_fbaec77 h6_f1 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG h_0opt_fbaec77 h8_own8 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_NODEBUG h_0opt_e201354 t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG bool t16; HERO_NODEBUG h_0opt_e201354 t17; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG bool t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG int64_t t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG h_0opt_fbaec77 t48; HERO_NODEBUG h_0opt_fbaec77 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG h_0opt_fbaec77 t53; HERO_NODEBUG HeroFailure t54; HERO_NODEBUG h_0opt_fbaec77 t55; HERO_NODEBUG uint32_t t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG h_0opt_e201354 t58; HERO_NODEBUG h_0opt_fbaec77 t59; HERO_NODEBUG h_0opt_fbaec77 t60; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_reg; int64_t h2_i; uint8_t h3_byte; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_own7 = {0}, t12, t13, t17, t19, t57, t58; int64_t h5_bit; HERO_NODEBUG h_0opt_fbaec77 h6_f1 = {0}, h8_own8 = {0}, t48, t49, t53, t55, t59, t60; HERO_NODEBUG int64_t t1, t2, t3, t5, t8, t10, t14, t15, t20, t21, t22, t23, t24, t26, t27, t28, t29, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t50, t51; HERO_NODEBUG HeroStr t4, t7; HERO_NODEBUG bool t6, t16, t25, t30, t52; HERO_NODEBUG uint8_t t9, t11; HERO_NODEBUG HeroFailure t18, t54; HERO_NODEBUG uint32_t t56; HERO_ENTRY_STOP; goto bb0;
 #line 61 "examples/checksum/crc.hero"
 bb0:
     t1 = h_crc_INIT();
@@ -3747,7 +3748,7 @@ bb5:
     t17 = h4_f0;
 #line 67 "examples/checksum/crc.hero"
     t18 = t17.as.err;
-#line 3751 "main.c"
+#line 3752 "main.c"
     hero_panic_must(t18);
     hero_unreachable();
 bb6:
@@ -3835,7 +3836,7 @@ bb12:
     t55 = h6_f1;
 #line 83 "examples/checksum/crc.hero"
     t56 = t55.as.ok;
-#line 3839 "main.c"
+#line 3840 "main.c"
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
     h_0opt_fbaec77_release(hero_slot_escape(&h6_f1));
     h_0opt_e201354_release(hero_slot_escape(&h7_own7));
@@ -3846,7 +3847,7 @@ bb13:
     t53 = h6_f1;
 #line 83 "examples/checksum/crc.hero"
     t54 = t53.as.err;
-#line 3850 "main.c"
+#line 3851 "main.c"
     hero_panic_must(t54);
     hero_unreachable();
 }
@@ -3854,7 +3855,7 @@ bb13:
 #line 87 "examples/checksum/crc.hero"
 int64_t h_crc_reversed_bits(int64_t h0_value, int64_t h1_width) {
 #line 87 "examples/checksum/crc.hero"
-    int64_t h2_out; int64_t h3_i; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_out; int64_t h3_i; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 87 "examples/checksum/crc.hero"
 bb0:
     t1 = INT64_C(0);
@@ -3915,7 +3916,7 @@ bb3:
     t18 = h2_out;
 #line 95 "examples/checksum/crc.hero"
     return t18;
-#line 3919 "main.c"
+#line 3920 "main.c"
 }
 HERO_TU_LOCAL bool h_main_Digest_eq(const h_main_Digest *a, const h_main_Digest *b) {
     if (!(a->f_checksum == b->f_checksum)) return false;

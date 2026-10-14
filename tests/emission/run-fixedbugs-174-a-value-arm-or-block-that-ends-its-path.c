@@ -152,7 +152,7 @@ HERO_TU_LOCAL int64_t h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87
 #line 20 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_exit_arm(int64_t h0_k) {
 #line 20 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; int64_t h3_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 20 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -202,7 +202,7 @@ bb4:
 #line 27 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_assert_false_arm(int64_t h0_k) {
 #line 27 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; int64_t h3_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4, t6; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0;
 #line 27 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -258,7 +258,7 @@ bb6:
 #line 34 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_while_true_block(int64_t h0_k) {
 #line 34 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    int64_t h1_n; HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; int64_t h4_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_n; HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t4, t7, t8, t9, t10, t11, t12, t13, t14; int64_t h4_x; HERO_NODEBUG bool t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 34 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = INT64_C(0);
@@ -332,7 +332,7 @@ bb7:
 #line 45 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_block_exit_last(int64_t h0_k) {
 #line 45 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; int64_t h3_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 45 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -387,7 +387,7 @@ bb4:
 #line 57 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_value_if_branch(int64_t h0_k) {
 #line 57 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_r0; int64_t h2_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_r0, t1, t2, t4, t5, t6, t7; int64_t h2_x; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 57 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -431,7 +431,7 @@ bb3:
 #line 65 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_checked_binding(int64_t h0_k) {
 #line 65 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; int64_t h3_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 65 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -481,7 +481,7 @@ bb4:
 #line 72 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_returned_match(int64_t h0_k) {
 #line 72 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 72 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -526,7 +526,7 @@ bb4:
 #line 77 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_returned_assert(h_fixedbugs174avaluearmorblockthatendsitspath_Color h0_c) {
 #line 77 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color t1; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, t3, t4, t7; HERO_NODEBUG HeroStr t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 77 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_c;
@@ -581,7 +581,7 @@ bb5:
 #line 82 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_a_line_after_the_end(int64_t h0_k) {
 #line 82 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; int64_t h3_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t5, t6, t7, t8, t9; int64_t h3_x; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 82 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -636,7 +636,7 @@ bb4:
 #line 91 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_every_branch_ends_then_a_line(int64_t h0_k, int64_t h1_j) {
 #line 91 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; int64_t h4_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 91 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -717,7 +717,7 @@ bb7:
 #line 104 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_else_if_chain(int64_t h0_k) {
 #line 104 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_r0; int64_t h2_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_r0, t1, t2, t6, t7, t10, t11, t12, t13, t14, t15; int64_t h2_x; HERO_NODEBUG bool t3, t5, t8, t9; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
 #line 104 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -801,7 +801,7 @@ bb10:
 #line 115 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 HeroStr h_fixedbugs174avaluearmorblockthatendsitspath_text_arm(int64_t h0_k) {
 #line 115 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG HeroStr h2_r0 = {0}; HeroStr h3_s = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5; HERO_NODEBUG HeroStr h2_r0 = {0}, t6, t7, t8, t9, t10; HeroStr h3_s = {0}; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 115 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -865,7 +865,7 @@ bb4:
 #line 123 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_counted_then_exit(int64_t h0_k) {
 #line 123 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; HeroStr h3_t = {0}; int64_t h4_x; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, t1, t2, t3, t6, t10, t11, t12, t13; HeroStr h3_t = {0}; int64_t h4_x; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t5, t7, t8, t9, t14, t15, t16; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 123 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -949,7 +949,7 @@ bb4:
 #line 139 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 int64_t h_fixedbugs174avaluearmorblockthatendsitspath_bump(int64_t *ph0_n) {
 #line 139 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t7, t8; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto bb0;
 #line 139 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = (*ph0_n);
@@ -993,7 +993,7 @@ bb3:
 #line 151 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 h_0opt_e201354 h_fixedbugs174avaluearmorblockthatendsitspath_half(int64_t h0_k) {
 #line 151 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG h_0opt_e201354 t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG bool t11; HERO_NODEBUG h_0opt_e201354 t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_e201354 h1_own1 = {0}, t9, t12; HERO_NODEBUG int64_t t1, t2, t3, t4, t6, t7, t8; HERO_NODEBUG bool t5, t11; HERO_NODEBUG HeroStr t10; HERO_ENTRY_STOP; goto bb0;
 #line 151 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -1055,7 +1055,7 @@ bb5:
 #line 156 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 HeroStr h_fixedbugs174avaluearmorblockthatendsitspath_named(int64_t h0_k) {
 #line 156 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t5; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
 #line 156 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_k;
@@ -1089,7 +1089,7 @@ bb3:
 #line 161 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 h_fixedbugs174avaluearmorblockthatendsitspath_P h_fixedbugs174avaluearmorblockthatendsitspath_located(int64_t h0_n) {
 #line 161 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    int64_t h1_i; HERO_NODEBUG int64_t t1; HERO_NODEBUG bool t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_i; HERO_NODEBUG int64_t t1, t3, t4, t5, t6, t8, t9, t11, t12, t13; HERO_NODEBUG bool t2, t7; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t10; HERO_ENTRY_STOP; goto bb0;
 #line 161 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = INT64_C(0);
@@ -1152,7 +1152,7 @@ bb6:
 #line 169 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 void h_fixedbugs174avaluearmorblockthatendsitspath_main(void) {
 #line 169 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    int64_t h0_v; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; h_fixedbugs174avaluearmorblockthatendsitspath_P h2_p; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_e201354 h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG h_0opt_e201354 t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG h_0opt_e201354 t41; HERO_NODEBUG HeroFailure t42; HERO_NODEBUG h_0opt_e201354 t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t48; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG HeroStr t51; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroArrayHeader * t55; HERO_NODEBUG h_0opt_e201354 t56; HERO_NODEBUG h_0opt_e201354 t57; HERO_NODEBUG HeroStr t58; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_v; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h5_own5 = {0}, t36, t37, t41, t43, t56, t57; h_fixedbugs174avaluearmorblockthatendsitspath_P h2_p; HERO_NODEBUG HeroStr h3_own3 = {0}, h6_own6 = {0}, t25, t46, t51, t54, t58; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t33, *t55; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t16, t17, t18, t19, t20, t21, t22, t23, t24, t26, t27, t28, t29, t30, t31, t32, t34, t35, t38, t39, t44, t45, t47, t50, t53; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_Color t15; HERO_NODEBUG bool t40; HERO_NODEBUG HeroFailure t42; HERO_NODEBUG h_fixedbugs174avaluearmorblockthatendsitspath_P t48, t49, t52; HERO_ENTRY_STOP; goto bb0;
 #line 169 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = INT64_C(5);
@@ -1396,7 +1396,7 @@ bb0:
 #line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 HERO_TU_LOCAL int64_t h_fixedbugs174avaluearmorblockthatendsitspath_first_1b9a87(HeroArrayHeader * h0_xs) {
 #line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1, *t5; HERO_NODEBUG int64_t t2, t3, t6, t7, t8; HERO_NODEBUG bool t4; HERO_ENTRY_STOP; goto bb0;
 #line 146 "tests/golden/run/fixedbugs-174-a-value-arm-or-block-that-ends-its-path.hero"
 bb0:
     t1 = h0_xs;

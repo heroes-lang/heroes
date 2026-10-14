@@ -107,7 +107,7 @@ void h_library_exit(int64_t h0_code);
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_stop_at_three(int64_t h0_n) {
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t4, t5; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 bb0:
     t1 = h0_n;
@@ -147,7 +147,7 @@ bb3:
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 void h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_turn(int64_t h0_n, h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks h1_h) {
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
-    HERO_NODEBUG h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t1; HERO_NODEBUG h_0fn_47d100e5 t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t7; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs507aloopendedbyafieldfunctionsexitbuildssilently_Hooks t1, t7; HERO_NODEBUG h_0fn_47d100e5 t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/fixedbugs-507-a-loop-ended-by-a-field-function-s-exit-builds-silently.hero"
 bb0:
     t1 = h1_h;

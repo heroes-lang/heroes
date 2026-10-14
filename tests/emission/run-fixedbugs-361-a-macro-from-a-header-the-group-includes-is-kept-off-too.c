@@ -156,7 +156,7 @@ void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void);
 #line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
 void h_fixedbugs361amacrofromaheaderthegroupincludesiskeptofftoo_main(void) {
 #line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
-    bool h0_flag; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
+    bool h0_flag; HERO_NODEBUG int64_t t1, t2, t3, t4, t5; HERO_NODEBUG bool t6, t7; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
 #line 15 "tests/golden/run/fixedbugs-361-a-macro-from-a-header-the-group-includes-is-kept-off-too.hero"
 bb0:
     t1 = INT64_C(14);

@@ -133,7 +133,7 @@ HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1
 #line 21 "tests/golden/ir/nested-match.hero"
 HeroStr h_nestedmatch_describe(h_nestedmatch_Shape h0_s, h_nestedmatch_Colour h1_c) {
 #line 21 "tests/golden/ir/nested-match.hero"
-    HERO_NODEBUG h_nestedmatch_Shape h2_s0; HERO_NODEBUG HeroStr h3_r0 = {0}; HERO_NODEBUG h_nestedmatch_Colour h4_s1; HERO_NODEBUG HeroStr h5_r1 = {0}; HERO_NODEBUG h_nestedmatch_Colour h6_s2; HERO_NODEBUG HeroStr h7_r2 = {0}; HERO_NODEBUG h_nestedmatch_Shape t1; HERO_NODEBUG h_nestedmatch_Shape t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_nestedmatch_Colour t4; HERO_NODEBUG h_nestedmatch_Colour t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG h_nestedmatch_Colour t10; HERO_NODEBUG h_nestedmatch_Colour t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_nestedmatch_Shape h2_s0, t1, t2; HERO_NODEBUG HeroStr h3_r0 = {0}, h5_r1 = {0}, h7_r2 = {0}, t7, t8, t9, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22; HERO_NODEBUG h_nestedmatch_Colour h4_s1, h6_s2, t4, t5, t10, t11; HERO_NODEBUG int64_t t3, t6, t12; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/ir/nested-match.hero"
 bb0:
     t1 = h0_s;

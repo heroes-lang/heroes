@@ -235,13 +235,33 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 #line 26 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_DIR_FILES(void) {
 #line 238 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 26 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     return HERO_DIR_FILES;
+#line 248 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#pragma clang diagnostic pop
 }
 
 #line 27 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_HERO_FS_LINK(void) {
-#line 244 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 254 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 27 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     return HERO_FS_LINK;
+#line 264 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#pragma clang diagnostic pop
 }
 
 #line 29 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
@@ -251,7 +271,7 @@ HeroStr h_fixedbugs438alinkiswrittenthroughandstaysalink_TEXT(void) {
 #line 29 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_70a25bad);
-#line 255 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 275 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -259,7 +279,7 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_target_of(HeroStr h0_path) {
 #line 33 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroArrayHeader * h1_buf = {0}; int64_t h2_got; HeroArrayHeader * h3_out = {0}; int64_t h4_i; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int8_t t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_buf = {0}; int64_t h2_got; HeroArrayHeader * h3_out = {0}; int64_t h4_i; HERO_NODEBUG HeroArrayHeader *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t6, *t12, *t19, *t20, *t21, *t22, *t23; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG uint64_t t4; HERO_NODEBUG int64_t t5, t7, t8, t9, t13, t16, t17, t18; HERO_NODEBUG bool t10; HERO_NODEBUG int8_t t14; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_i8, 1);
@@ -350,7 +370,7 @@ bb2:
 bb3:
 #line 43 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t19 = h3_out;
-#line 354 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 374 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t19);
     hero_array_release_at(&h1_buf);
     hero_array_release_at(&h3_out);
@@ -362,7 +382,7 @@ bb3:
 #line 45 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 HeroArrayHeader * h_fixedbugs438alinkiswrittenthroughandstaysalink_byte_list(HeroStr h0_text) {
 #line 45 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG h_0opt_1b9b98 h3_f0 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG h_0opt_1b9b98 h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG h_0opt_1b9b98 t11; HERO_NODEBUG h_0opt_1b9b98 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG h_0opt_1b9b98 t16; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG h_0opt_1b9b98 t18; HERO_NODEBUG int8_t t19; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG HeroArrayHeader * t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG h_0opt_1b9b98 t27; HERO_NODEBUG h_0opt_1b9b98 t28; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h1_out = {0}; int64_t h2_i; HERO_NODEBUG h_0opt_1b9b98 h3_f0 = {0}, h5_own5 = {0}, t11, t12, t16, t18, t27, t28; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t24, *t25, *t26; HERO_NODEBUG int64_t t2, t3, t5, t9, t13, t14, t21, t22, t23; HERO_NODEBUG HeroStr t4, t8; HERO_NODEBUG bool t6, t15; HERO_NODEBUG uint8_t t10; HERO_NODEBUG HeroFailure t17; HERO_NODEBUG int8_t t19; HERO_ENTRY_STOP; goto bb0;
 #line 45 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_i8, 1);
@@ -442,7 +462,7 @@ bb2:
 bb3:
 #line 53 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t24 = h1_out;
-#line 446 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 466 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_array_incref(t24);
     hero_array_release_at(&h1_out);
     h_0opt_1b9b98_release(hero_slot_escape(&h3_f0));
@@ -471,7 +491,7 @@ bb5:
     t16 = h3_f0;
 #line 50 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t17 = t16.as.err;
-#line 475 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 495 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_panic_must(t17);
     hero_unreachable();
 }
@@ -479,7 +499,7 @@ bb5:
 #line 55 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bool h_fixedbugs438alinkiswrittenthroughandstaysalink_holds(HeroStr h0_path) {
 #line 55 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG h_0opt_f87774a h3_own3 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0opt_f87774a t2; HERO_NODEBUG h_0opt_f87774a t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_f87774a t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG bool t12; HERO_NODEBUG h_0opt_f87774a t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t2, t3, t7, t13, t14; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t1, t8, t9, t10, t11, t15, t16, t17; HERO_NODEBUG int64_t t4, t5; HERO_NODEBUG bool t6, t12; HERO_ENTRY_STOP; goto bb0;
 #line 55 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = h0_path;
@@ -553,7 +573,7 @@ bb3:
     hero_str_decref(t17);
 #line 56 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     t12 = hero_str_eq(t10, t11);
-#line 557 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 577 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_r0);
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
@@ -564,7 +584,7 @@ bb3:
 #line 59 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 int64_t h_fixedbugs438alinkiswrittenthroughandstaysalink_files_in(HeroStr h0_dir) {
 #line 59 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 59 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = h0_dir;
@@ -582,13 +602,13 @@ bb0:
     t6 = h1_count;
 #line 62 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
     return t6;
-#line 586 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 606 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_a_file(HeroStr h0_dir) {
 #line 64 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroStr h1_file = {0}; HeroStr h2_link = {0}; HERO_NODEBUG bool h3_b0; HERO_NODEBUG bool h4_b1; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}; int64_t h6_before; HERO_NODEBUG h_0opt_a8ea2 h7_f1 = {0}; bool h8_written; HERO_NODEBUG bool h9_b2; HERO_NODEBUG HeroStr h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG h_0opt_a8ea2 h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG h_0opt_a8ea2 h14_own14 = {0}; HERO_NODEBUG HeroArrayHeader * h15_own15 = {0}; HERO_NODEBUG HeroArrayHeader * h16_own16 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG h_0opt_a8ea2 t9; HERO_NODEBUG h_0opt_a8ea2 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG const char * t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG bool t19; HERO_NODEBUG bool t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG const char * t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG const char * t24; HERO_NODEBUG int32_t t25; HERO_NODEBUG int32_t t26; HERO_NODEBUG bool t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG const char * t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG h_0opt_a8ea2 t36; HERO_NODEBUG h_0opt_a8ea2 t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG bool t40; HERO_NODEBUG bool t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG bool t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG bool t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG const char * t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG HeroStr t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG const char * t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG bool t58; HERO_NODEBUG HeroStr t59; HERO_NODEBUG HeroArrayHeader * t60; HERO_NODEBUG HeroStr t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG bool t63; HERO_NODEBUG bool t64; HERO_NODEBUG HeroStr t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG h_0opt_a8ea2 t72; HERO_NODEBUG h_0opt_a8ea2 t73; HERO_NODEBUG HeroStr t74; HERO_NODEBUG h_0opt_a8ea2 t75; HERO_NODEBUG h_0opt_a8ea2 t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG HeroArrayHeader * t78; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h1_file = {0}; HeroStr h2_link = {0}; HERO_NODEBUG bool h3_b0, h4_b1, h9_b2, t13, t19, t20, t27, t28, t40, t41, t43, t46, t52, t58, t63, t64; HERO_NODEBUG h_0opt_a8ea2 h5_f0 = {0}, h7_f1 = {0}, h12_own12 = {0}, h14_own14 = {0}, t9, t10, t36, t37, t72, t73, t75, t76; int64_t h6_before; bool h8_written; HERO_NODEBUG HeroStr h10_own10 = {0}, h11_own11 = {0}, h13_own13 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t14, t21, t23, t29, t30, t31, t34, t35, t42, t44, t45, t47, t48, t53, t54, t59, t61, t65, t66, t68, t69, t70, t71, t74; HERO_NODEBUG HeroArrayHeader *h15_own15 = {0}, *h16_own16 = {0}, *t60, *t62, *t77, *t78; HERO_NODEBUG int64_t t11, t12, t16, t17, t18, t33, t38, t39, t50, t51, t56, t57, t67; HERO_NODEBUG const char *t15, *t22, *t24, *t32, *t49, *t55; HERO_NODEBUG int32_t t25, t26; HERO_ENTRY_STOP; goto bb0;
 #line 64 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = h0_dir;
@@ -870,7 +890,7 @@ bb9:
     goto bb10;
 #line 73 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb10:
-#line 874 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 894 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h1_file);
     hero_str_release_at(&h2_link);
     h_0opt_a8ea2_release(hero_slot_escape(&h5_f0));
@@ -888,7 +908,7 @@ bb10:
 #line 86 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 void h_fixedbugs438alinkiswrittenthroughandstaysalink_to_nothing(HeroStr h0_dir) {
 #line 86 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroStr h1_link = {0}; HeroStr h2_named = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}; bool h4_written; HERO_NODEBUG bool h5_b0; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG h_0opt_a8ea2 h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG const char * t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_a8ea2 t18; HERO_NODEBUG h_0opt_a8ea2 t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG bool t22; HERO_NODEBUG bool t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG bool t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG const char * t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG bool t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroArrayHeader * t36; HERO_NODEBUG HeroStr t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG bool t39; HERO_NODEBUG bool t40; HERO_NODEBUG HeroStr t41; HERO_NODEBUG HeroStr t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG HeroStr t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_a8ea2 t49; HERO_NODEBUG h_0opt_a8ea2 t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h1_link = {0}; HeroStr h2_named = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h9_own9 = {0}, t18, t19, t49, t50; bool h4_written; HERO_NODEBUG bool h5_b0, t13, t22, t23, t25, t28, t34, t39, t40; HERO_NODEBUG HeroStr h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t2, t3, t4, t5, t6, t7, t9, t14, t15, t16, t17, t24, t26, t27, t29, t30, t35, t37, t41, t42, t44, t45, t46, t47, t48; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *h11_own11 = {0}, *t36, *t38, *t51, *t52; HERO_NODEBUG const char *t8, *t10, *t31; HERO_NODEBUG int32_t t11, t12; HERO_NODEBUG int64_t t20, t21, t32, t33, t43; HERO_ENTRY_STOP; goto bb0;
 #line 86 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = h0_dir;
@@ -1082,7 +1102,7 @@ bb5:
     goto bb6;
 #line 94 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb6:
-#line 1086 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1106 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h1_link);
     hero_str_release_at(&h2_named);
     h_0opt_a8ea2_release(hero_slot_escape(&h3_f0));
@@ -1098,7 +1118,7 @@ bb6:
 #line 105 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 void h_fixedbugs438alinkiswrittenthroughandstaysalink_main(void) {
 #line 105 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
-    HeroStr h0_root = {0}; HeroStr h1_one = {0}; HeroStr h2_two = {0}; HERO_NODEBUG bool h3_b0; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG const char * t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG const char * t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG bool t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG const char * t27; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h0_root = {0}; HeroStr h1_one = {0}; HeroStr h2_two = {0}; HERO_NODEBUG bool h3_b0, t15, t20, t21; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t3, t4, t5, t6, t7, t8, t9, t10, t11, t16, t22, t23, t24, t25, t26, t29, t30, t31, t32, t33, t34, t35; HERO_NODEBUG int64_t t2, t13, t14, t18, t19; HERO_NODEBUG const char *t12, *t17, *t27; HERO_ENTRY_STOP; goto bb0;
 #line 105 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_6accdeb7);
@@ -1237,7 +1257,7 @@ bb5:
     goto bb1;
 #line 111 "tests/golden/run/fixedbugs-438-a-link-is-written-through-and-stays-a-link.hero"
 bb6:
-#line 1241 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1261 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     hero_str_release_at(&h0_root);
     hero_str_release_at(&h1_one);
     hero_str_release_at(&h2_two);
@@ -1250,26 +1270,30 @@ bb6:
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) {
-#line 1254 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 109 "<heroes library>"
     return HERO_OS_OK;
+#line 1276 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) {
-#line 1260 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 110 "<heroes library>"
     return HERO_OS_NOT_FOUND;
+#line 1283 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) {
-#line 1266 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 111 "<heroes library>"
     return HERO_OS_NOT_TEXT;
+#line 1290 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) {
-#line 1272 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 112 "<heroes library>"
     return HERO_OS_BAD_NAME;
+#line 1297 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
 }
 
 #line 167 "<heroes library>"
@@ -1277,7 +1301,7 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path) {
 #line 167 "<heroes library>"
 #define h1_status (*hero_lend_h1_status)
 #line 167 "<heroes library>"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG h_0opt_f87774a h5_own5 = {0}; HERO_NODEBUG h_0opt_f87774a h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG h_0opt_f87774a h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG h_0opt_f87774a h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG h_0opt_f87774a h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG h_0opt_f87774a t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG h_0opt_f87774a t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_f87774a t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG bool t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG h_0opt_f87774a t32; HERO_NODEBUG HeroStr t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_NODEBUG h_0opt_f87774a t37; HERO_NODEBUG h_0opt_f87774a t38; HERO_NODEBUG HeroStr t39; HERO_NODEBUG HeroStr t40; HERO_NODEBUG h_0opt_f87774a t41; HERO_NODEBUG h_0opt_f87774a t42; HERO_NODEBUG HeroStr t43; HERO_NODEBUG h_0opt_f87774a t44; HERO_NODEBUG HeroStr t45; HERO_NODEBUG h_0opt_f87774a t46; HERO_NODEBUG HeroStr t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG h_0opt_f87774a t49; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0;
 #line 167 "<heroes library>"
 bb0:
     t1 = INT64_C(0);
@@ -1503,7 +1527,7 @@ bb12:
     goto bb10;
 #line 182 "<heroes library>"
 bb13:
-#line 1507 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1531 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -1525,7 +1549,7 @@ bb13:
 #line 186 "<heroes library>"
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
 #line 186 "<heroes library>"
-    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}; HERO_NODEBUG h_0opt_a8ea2 h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG h_0opt_a8ea2 h6_own6 = {0}; HERO_NODEBUG h_0opt_a8ea2 h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG h_0opt_a8ea2 t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG bool t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG h_0opt_a8ea2 t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG h_0opt_a8ea2 t18; HERO_NODEBUG h_0opt_a8ea2 t19; HERO_NODEBUG h_0opt_a8ea2 t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG h_0opt_a8ea2 t22; HERO_NODEBUG h_0opt_a8ea2 t23; HERO_ENTRY_STOP; goto bb0;
+    int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0;
 #line 186 "<heroes library>"
 bb0:
     t1 = h0_path;
@@ -1630,7 +1654,7 @@ bb6:
     goto bb4;
 #line 191 "<heroes library>"
 bb7:
-#line 1634 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
+#line 1658 "fixedbugs438alinkiswrittenthroughandstaysalink.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));

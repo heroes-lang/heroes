@@ -156,7 +156,7 @@ void h_fixedbugs590aheadersfpevalmethodextendedleavestheprogramsdoubles_main(voi
 #line 12 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-extended-leaves-the-program-s-doubles.hero"
 void h_fixedbugs590aheadersfpevalmethodextendedleavestheprogramsdoubles_main(void) {
 #line 12 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-extended-leaves-the-program-s-doubles.hero"
-    double h0_one; double h1_ten; double h2_big; double h3_tenth; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG double t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG double t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG double t9; HERO_NODEBUG double t10; HERO_NODEBUG double t11; HERO_NODEBUG double t12; HERO_NODEBUG double t13; HERO_NODEBUG double t14; HERO_NODEBUG double t15; HERO_NODEBUG double t16; HERO_NODEBUG double t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG double t19; HERO_NODEBUG double t20; HERO_NODEBUG double t21; HERO_NODEBUG double t22; HERO_NODEBUG double t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG double t25; HERO_NODEBUG double t26; HERO_NODEBUG double t27; HERO_NODEBUG double t28; HERO_NODEBUG double t29; HERO_NODEBUG double t30; HERO_NODEBUG double t31; HERO_ENTRY_STOP; goto bb0;
+    double h0_one; double h1_ten; double h2_big; double h3_tenth; HERO_NODEBUG int64_t t1, t2, t4, t5, t7, t8; HERO_NODEBUG double t3, t6, t9, t10, t11, t12, t13, t14, t15, t16, t17, t19, t20, t21, t22, t23, t25, t26, t27, t28, t29, t30, t31; HERO_NODEBUG HeroStr t18, t24; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-590-a-header-s-fp-eval-method-extended-leaves-the-program-s-doubles.hero"
 bb0:
     t1 = INT64_C(-1);

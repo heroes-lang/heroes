@@ -1,0 +1,16 @@
+# fixedbugs, defect 2072, lane b17-emit, 2026-10-14: the other side of the
+# repair. A header's value C defines builds and reads as C computes it: an
+# unsigned wrap, an unsigned shift into the top bit, a float's arithmetic cast
+# to an integer, and a conversion C leaves to the implementation.
+
+extern "fixedbugs-2072-values-c-defines-still-build.h"
+    constant WRAPPED: u64
+    constant HIGH_BIT: u32
+    constant FROM_A_FLOAT: i32
+    constant NARROWED: i16
+
+function main()
+    print(WRAPPED)
+    print(HIGH_BIT)
+    print(FROM_A_FLOAT)
+    print(NARROWED)

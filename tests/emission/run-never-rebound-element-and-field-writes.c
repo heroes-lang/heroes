@@ -104,7 +104,7 @@ void h_neverreboundelementandfieldwrites_main(void);
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
 void h_neverreboundelementandfieldwrites_main(void) {
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
-    HeroArrayHeader * h0_xs = {0}; h_neverreboundelementandfieldwrites_Pair h1_p; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; h_neverreboundelementandfieldwrites_Pair h1_p; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t3, *t10, *t16, *t17; HERO_NODEBUG int64_t t1, t2, t4, t5, t6, t7, t9, t11, t12, t14, t15; HERO_NODEBUG h_neverreboundelementandfieldwrites_Pair t8, t13; HERO_ENTRY_STOP; goto bb0;
 #line 8 "tests/golden/run/never-rebound-element-and-field-writes.hero"
 bb0:
     t1 = INT64_C(1);

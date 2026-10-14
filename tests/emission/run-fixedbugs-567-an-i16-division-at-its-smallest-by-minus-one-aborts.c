@@ -97,7 +97,7 @@ void h_fixedbugs567ani16divisionatitssmallestbyminusoneaborts_main(void);
 #line 11 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
 void h_fixedbugs567ani16divisionatitssmallestbyminusoneaborts_main(void) {
 #line 11 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
-    int16_t h0_x; int16_t h1_y; HERO_NODEBUG int16_t t1; HERO_NODEBUG int16_t t2; HERO_NODEBUG int16_t t3; HERO_NODEBUG int16_t t4; HERO_NODEBUG int16_t t5; HERO_NODEBUG int16_t t6; HERO_NODEBUG int16_t t7; HERO_NODEBUG int16_t t8; HERO_ENTRY_STOP; goto bb0;
+    int16_t h0_x; int16_t h1_y; HERO_NODEBUG int16_t t1, t2, t3, t4, t5, t6, t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-567-an-i16-division-at-its-smallest-by-minus-one-aborts.hero"
 bb0:
     t1 = INT64_C(-32768);

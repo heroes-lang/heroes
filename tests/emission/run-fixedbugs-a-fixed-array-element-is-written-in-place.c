@@ -167,7 +167,7 @@ void h_fixedbugsafixedarrayelementiswritteninplace_main(void);
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 void h_fixedbugsafixedarrayelementiswritteninplace_main(void) {
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
-    struct nums h0_n; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG struct nums t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG struct nums t10; HERO_NODEBUG int64_t t11; HERO_ENTRY_STOP; goto bb0;
+    struct nums h0_n; HERO_NODEBUG int64_t t1, t2, t3, t4, t7, t8, t11; HERO_NODEBUG struct nums t6, t10; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
 #line 26 "tests/golden/run/fixedbugs-a-fixed-array-element-is-written-in-place.hero"
 bb0:
     t1 = INT64_C(1);

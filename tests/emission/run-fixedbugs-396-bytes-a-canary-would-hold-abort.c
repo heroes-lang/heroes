@@ -157,7 +157,7 @@ void h_fixedbugs396bytesacanarywouldholdabort_main(void);
 #line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
 void h_fixedbugs396bytesacanarywouldholdabort_main(void) {
 #line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
-    HeroArrayHeader * h0_s = {0}; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int32_t t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_s = {0}; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t5, *t7, *t8; HERO_NODEBUG HeroStr t2, t4; HERO_NODEBUG int32_t t3; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
 #line 10 "tests/golden/run/fixedbugs-396-bytes-a-canary-would-hold-abort.hero"
 bb0:
     t1 = hero_array_new(&hero_desc_i8, 1);

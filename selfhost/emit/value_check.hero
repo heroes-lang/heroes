@@ -1,0 +1,133 @@
+# A header constant's VALUE held to C's own terms, where the accessor reads it
+# (defects 2071 and 2072; design.md §4.19, §1.12; spec § 13, where clang
+# checks every constant against its header). `emit/constant_accessor.hero`
+# opens this region around the accessor's `return NAME;`, which stands at the
+# constant's own line (defect 2068), and `emit/ffi_constant_value.hero` reads
+# clang's refusals there back onto the constant.
+#
+#     int64_t h_m_K(void) {
+#     #pragma clang diagnostic push
+#     #pragma clang diagnostic error "-Wshift-count-overflow"
+#     ...
+#     #line 2 "m.hero"
+#         return K;
+#     #line 90 "m.c"
+#     #pragma clang diagnostic pop
+#     }
+#
+# WHY. The constant's type assertion and its constancy one never evaluate the
+# value: `_Generic` and `sizeof` read only its type, and `__builtin_constant_p`
+# answers 1 for `(1 << 40)`, which clang folds. So a value whose evaluation C
+# leaves undefined passed both, clang warned at the accessor, and the program
+# printed whatever the machine held: `6094316460` at exit 0 for `#define K
+# (1 << 40)` (defect 2072). Each warning below is clang's own word that the
+# value is undefined, a shift past its width or by a negative count, a shift
+# of a negative value, a shift into the sign bit, an overflow, a division or
+# remainder by zero; each is an error here, and the value is told. The shift
+# into the sign bit, `1 << 31`, is off by default in clang and builds silent
+# as the lowest `int`, and UndefinedBehaviorSanitizer names it undefined (*left
+# shift of 1 by 31 places cannot be represented in type 'int'*, the `run`
+# suite's `--sanitize` leg, 2026-10-14), so it is refused with the others. A value C cannot read at all, a name the
+# header never declares inside it, an empty one, two tokens, is refused here
+# as anywhere, and at this line it is told rather than taken for the
+# compiler's own failure (defect 2071).
+#
+# WHAT IT DOES NOT CATCH, measured 2026-10-14 over 31 shapes on Apple clang 21
+# and Linux arm64's clang 22.1.8: `INT_MIN / -1` and a floating value cast out
+# of an integer's range fold with no warning at all. Only C's integer constant
+# expression rule finds them, `-Wgnu-folding-constant` an error in a
+# `_Static_assert`, and that rule also refuses values C defines, `(1, 2)` and
+# `((int)(1000.0 / 60))`: a question for a sitting, not this region's.
+# `--sanitize` traps both at run time.
+#
+# WHAT IS NOT ASKED. A floating constant, a record's, a handle's, a `str`'s, a
+# `cstr`'s and a `ptr`'s: no integer evaluation stands in their accessors. And
+# a constant of the library, which is the runtime's own, so a unit that binds
+# no constant of its own headers writes the C it wrote.
+
+use ast
+use source
+use check/table
+use check/state
+use ir/containers
+use emit/externs as emit_externs
+use emit/record_constant
+use emit/writer
+use parse
+use resolve
+use checker
+use ir/lower
+use cli/strings
+
+# clang's warnings that the value is one C leaves undefined, each an error in
+# the region; the reader tells an error naming one of them by why.
+constant UNDEFINED: [str]
+    [
+        "-Wshift-count-overflow"
+        "-Wshift-count-negative"
+        "-Wshift-negative-value"
+        "-Wshift-sign-overflow"
+        "-Winteger-overflow"
+        "-Wdivision-by-zero"
+    ]
+
+constant PUSH: str
+    "#pragma clang diagnostic push"
+
+constant POP: str
+    "#pragma clang diagnostic pop"
+
+# Whether `f`'s value is held: a constant of a header the program names,
+# declared an integer or `bool`, and not the library's.
+function asked(c: state.Checked, s: source.Source, decls: [ast.Decl], f: containers.Function) -> bool
+    if !emit_externs.is_extern_constant(decls, f) || record_constant.is_record_value(c, decls, f)
+        return false
+
+    if source.is_library(s, decls[f.decl].name.start)
+        return false
+
+    return match table.get(c.types, f.result)
+        .int_ty | .bool                                   => true
+        .float_ty | .str | .ptr | .cstr | .unit | .named  => false
+        .array | .fixed | .map | .fallible | .function_ty => false
+        .case_ty | .failure | .generic | .error           => false
+
+# The region's opening lines, on the generated file.
+function opened(@w: writer.Writer)
+    writer.at_generated(@w)
+    writer.line(@w, text: PUSH)
+
+    for one in UNDEFINED
+        writer.line(@w, text: "#pragma clang diagnostic error \"" + one + "\"")
+
+# Whether clang's message names one of the region's warnings as an error.
+function undefined(message: str) -> bool
+    for one in UNDEFINED
+        if strings.holds(text: message, needle: "[-Werror," + one + "]")
+            return true
+
+    return false
+
+## Tests
+
+test "an integer constant of the program's header is held; a float, a record and a cstr are not"
+    text = "extern \"k.h\"\n    record Pt tag pt\n        x: i32\n    constant K_INT: i64\n    constant K_FLAG: bool\n    constant K_F: f64\n    constant K_PT: Pt\n    constant K_NAME: cstr\n\nfunction main()\n    print(K_INT, K_FLAG, K_F, K_PT.x)\n    _ = K_NAME\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    names: [str] @= []
+
+    for f in low.program.functions
+        if asked(c, s, parsed.decls, f)
+            names @ names.push(source.span_text(s, parsed.decls[f.decl].name))
+
+    assert names == ["K_INT", "K_FLAG"]
+
+test "an error names the region's warning by its flag, and no other flag is one"
+    assert undefined("shift count >= width of type [-Werror,-Wshift-count-overflow]")
+    assert undefined("division by zero is undefined [-Werror,-Wdivision-by-zero]")
+    assert !undefined("incompatible pointer to integer conversion [-Werror,-Wint-conversion]")
+    assert !undefined("use of undeclared identifier 'x'")

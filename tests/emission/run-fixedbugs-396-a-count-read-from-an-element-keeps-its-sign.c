@@ -157,7 +157,7 @@ void h_fixedbugs396acountreadfromanelementkeepsitssign_main(void);
 #line 11 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
 void h_fixedbugs396acountreadfromanelementkeepsitssign_main(void) {
 #line 11 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
-    HeroArrayHeader * h0_counts = {0}; HeroArrayHeader * h1_buf = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * h3_own3 = {0}; HERO_NODEBUG int32_t t1; HERO_NODEBUG int32_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroArrayHeader * t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_counts = {0}; HeroArrayHeader * h1_buf = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *h3_own3 = {0}, *t3, *t4, *t8, *t11, *t17, *t18, *t19, *t20; HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG int64_t t5, t6, t9, t12, t14, t15; HERO_NODEBUG HeroStr t7, t10, t16; HERO_NODEBUG uint8_t t13; HERO_ENTRY_STOP; goto bb0;
 #line 11 "tests/golden/run/fixedbugs-396-a-count-read-from-an-element-keeps-its-sign.hero"
 bb0:
     t1 = INT64_C(3);

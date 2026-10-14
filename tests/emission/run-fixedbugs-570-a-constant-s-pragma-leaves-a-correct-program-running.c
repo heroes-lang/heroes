@@ -171,7 +171,17 @@ void h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_main(void);
 #line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(void) {
 #line 174 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 15 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     return QUIET_FIVE;
+#line 184 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -189,7 +199,7 @@ int32_t h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_QUIET_FIVE(vo
 #line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 void h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_main(void) {
 #line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
-    __attribute__((unused)) Slot h0_t; HERO_NODEBUG Slot t1; HERO_NODEBUG void * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG void * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG int32_t t13; HERO_ENTRY_STOP; goto bb0;
+    __attribute__((unused)) Slot h0_t; HERO_NODEBUG Slot t1; HERO_NODEBUG void *t4, *t8; HERO_NODEBUG int64_t t5, t9, t10; HERO_NODEBUG int32_t t11, t12, t13; HERO_ENTRY_STOP; goto bb0;
 #line 17 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
 bb0:
     t1 = slot_make();
@@ -228,7 +238,7 @@ bb0:
     hero_print_end();
 #line 21 "tests/golden/run/fixedbugs-570-a-constant-s-pragma-leaves-a-correct-program-running.hero"
     return;
-#line 232 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
+#line 242 "fixedbugs570aconstantspragmaleavesacorrectprogramrunning.c"
 }
 HERO_TU_LOCAL bool h_fixedbugs570aconstantspragmaleavesacorrectprogramrunning_Slot_eq(const Slot *a, const Slot *b) {
     if (!((a->nsap[0] == b->nsap[0] && a->nsap[1] == b->nsap[1] && a->nsap[2] == b->nsap[2] && a->nsap[3] == b->nsap[3] && a->nsap[4] == b->nsap[4] && a->nsap[5] == b->nsap[5] && a->nsap[6] == b->nsap[6] && a->nsap[7] == b->nsap[7]))) return false;

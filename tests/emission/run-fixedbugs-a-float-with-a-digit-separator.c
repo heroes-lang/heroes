@@ -97,7 +97,7 @@ void h_fixedbugsafloatwithadigitseparator_main(void);
 #line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
 void h_fixedbugsafloatwithadigitseparator_main(void) {
 #line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
-    double h0_left; double h1_right; double h2_both; double h3_plain; HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG double t6; HERO_NODEBUG double t7; HERO_NODEBUG double t8; HERO_NODEBUG double t9; HERO_NODEBUG double t10; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
+    double h0_left; double h1_right; double h2_both; double h3_plain; HERO_NODEBUG double t1, t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 29 "tests/golden/run/fixedbugs-a-float-with-a-digit-separator.hero"
 bb0:
     t1 = 0x1.5p+3;

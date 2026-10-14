@@ -138,7 +138,7 @@ HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingage
 #line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 void h_fixedbugsagenericcallingageneric_main(void) {
 #line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    h_fixedbugsagenericcallingageneric_P h0_p; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroStr h3_own3 = {0}; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * h5_own5 = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG HeroStr t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t14; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroArrayHeader * t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroArrayHeader * t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroArrayHeader * t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugsagenericcallingageneric_P h0_p; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *h4_own4 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t3, *t7, *t13, *t20, *t24, *t26, *t27, *t29, *t30, *t31; HERO_NODEBUG HeroStr h3_own3 = {0}, t5, t6, t8, t22, t23, t28; HERO_NODEBUG int64_t t1, t2, t4, t9, t11, t16, t17, t18, t19, t21, t25; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t10, t12, t14, t15; HERO_ENTRY_STOP; goto bb0;
 #line 48 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
 #line 50 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
@@ -281,7 +281,7 @@ bb0:
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_outer_1b9a87(HeroArrayHeader * h0_xs) {
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_xs;
@@ -297,7 +297,7 @@ bb0:
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_outer_1e58d9(HeroArrayHeader * h0_xs) {
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG HeroArrayHeader *t1; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_xs;
@@ -320,7 +320,7 @@ bb0:
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_outer_36312915(HeroArrayHeader * h0_xs) {
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t2; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_xs;
@@ -336,7 +336,7 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_both_1b9a87(HeroArrayHeader * h0_es) {
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t1, *t3, *t5, *t8; HERO_NODEBUG int64_t t2, t4, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_es;
@@ -370,7 +370,7 @@ bb0:
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_both_1e58d9(HeroArrayHeader * h0_es) {
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroArrayHeader * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t4, t8; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t3, *t5, *t9; HERO_NODEBUG int64_t t2, t6, t7; HERO_ENTRY_STOP; goto bb0;
 #line 45 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_es;
@@ -411,7 +411,7 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_middle_1b9a87(HeroArrayHeader * h0_ys) {
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_ys;
@@ -427,7 +427,7 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_middle_1e58d9(HeroArrayHeader * h0_ys) {
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG HeroArrayHeader *t1; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_ys;
@@ -450,7 +450,7 @@ bb0:
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_middle_36312915(HeroArrayHeader * h0_ys) {
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t2; HERO_ENTRY_STOP; goto bb0;
 #line 36 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_ys;
@@ -466,7 +466,7 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_tally_1b9a87(HeroArrayHeader * h0_ds) {
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_ds;
@@ -482,7 +482,7 @@ bb0:
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_tally_1e58d9(HeroArrayHeader * h0_ds) {
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
 #line 42 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_ds;
@@ -498,7 +498,7 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL int64_t h_fixedbugsagenericcallingageneric_innermost_1b9a87(HeroArrayHeader * h0_zs) {
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_zs;
@@ -516,7 +516,7 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL HeroStr h_fixedbugsagenericcallingageneric_innermost_1e58d9(HeroArrayHeader * h0_zs) {
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_zs;
@@ -534,7 +534,7 @@ bb0:
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 HERO_TU_LOCAL h_fixedbugsagenericcallingageneric_P h_fixedbugsagenericcallingageneric_innermost_36312915(HeroArrayHeader * h0_zs) {
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
-    HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_fixedbugsagenericcallingageneric_P t3; HERO_ENTRY_STOP; goto bb0;
 #line 33 "tests/golden/run/fixedbugs-a-generic-calling-a-generic.hero"
 bb0:
     t1 = h0_zs;

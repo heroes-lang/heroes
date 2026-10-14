@@ -201,7 +201,17 @@ void h_fixedbugs395acountincsownunitruns_main(void);
 #line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 uint64_t h_fixedbugs395acountincsownunitruns_HELD_INTS(void) {
 #line 204 "fixedbugs395acountincsownunitruns.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 15 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return HELD_INTS;
+#line 214 "fixedbugs395acountincsownunitruns.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -225,7 +235,7 @@ bb0:
     t1 = h0_k;
 #line 35 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return t1;
-#line 229 "fixedbugs395acountincsownunitruns.c"
+#line 239 "fixedbugs395acountincsownunitruns.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
@@ -233,7 +243,7 @@ void h_fixedbugs395acountincsownunitruns_main(void) {
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 #define h2_n (*hero_lend_h2_n)
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
-    struct held h0_h; struct ten h1_t; uint32_t *const hero_lend_h2_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs395acountincsownunitruns.main", "n"); HERO_NODEBUG uint8_t t1; HERO_NODEBUG uint8_t t2; HERO_NODEBUG uint8_t t3; HERO_NODEBUG uint8_t t4; HERO_NODEBUG uint8_t t5; HERO_NODEBUG uint8_t t6; HERO_NODEBUG uint8_t t7; HERO_NODEBUG uint8_t t8; HERO_NODEBUG uint8_t t9; HERO_NODEBUG uint8_t t10; HERO_NODEBUG uint8_t t11; HERO_NODEBUG uint8_t t12; HERO_NODEBUG uint8_t t13; HERO_NODEBUG uint8_t t14; HERO_NODEBUG uint8_t t15; HERO_NODEBUG uint8_t t16; HERO_NODEBUG int64_t t18; HERO_NODEBUG struct held t19; HERO_NODEBUG uint8_t t20; HERO_NODEBUG uint8_t t21; HERO_NODEBUG uint8_t t22; HERO_NODEBUG uint8_t t23; HERO_NODEBUG uint8_t t24; HERO_NODEBUG uint8_t t25; HERO_NODEBUG uint8_t t26; HERO_NODEBUG uint8_t t27; HERO_NODEBUG uint8_t t28; HERO_NODEBUG uint8_t t29; HERO_NODEBUG int64_t t31; HERO_NODEBUG struct ten t32; HERO_NODEBUG void * t35; HERO_NODEBUG uint64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG void * t40; HERO_NODEBUG uint64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG void * t45; HERO_NODEBUG uint64_t t46; HERO_NODEBUG uint64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG void * t51; HERO_NODEBUG uint64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG void * t56; HERO_NODEBUG uint64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG void * t61; HERO_NODEBUG uint64_t t62; HERO_NODEBUG int32_t t63; HERO_NODEBUG void * t66; HERO_NODEBUG uint64_t t67; HERO_NODEBUG uint64_t t68; HERO_NODEBUG int32_t t69; HERO_NODEBUG void * t72; HERO_NODEBUG uint64_t t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG void * t77; HERO_NODEBUG uint64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG void * t82; HERO_NODEBUG uint64_t t83; HERO_NODEBUG uint64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG void * t88; HERO_NODEBUG uint64_t t89; HERO_NODEBUG int64_t t90; HERO_NODEBUG void * t93; HERO_NODEBUG void * t96; HERO_NODEBUG uint64_t t97; HERO_NODEBUG int64_t t98; HERO_NODEBUG void * t101; HERO_NODEBUG uint64_t t102; HERO_NODEBUG int64_t t103; HERO_NODEBUG uint32_t t104; HERO_NODEBUG void * t107; HERO_NODEBUG int64_t t108; HERO_NODEBUG struct held t109; HERO_NODEBUG int64_t t110; HERO_NODEBUG struct ten t111; HERO_NODEBUG int64_t t112; HERO_ENTRY_STOP; goto bb0;
+    struct held h0_h; struct ten h1_t; uint32_t *const hero_lend_h2_n = (uint32_t *)hero_lend_local(sizeof(uint32_t), "fixedbugs395acountincsownunitruns.main", "n"); HERO_NODEBUG uint8_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29; HERO_NODEBUG int64_t t18, t31, t37, t42, t48, t53, t58, t74, t79, t85, t90, t98, t103, t108, t110, t112; HERO_NODEBUG struct held t19, t109; HERO_NODEBUG struct ten t32, t111; HERO_NODEBUG void *t35, *t40, *t45, *t51, *t56, *t61, *t66, *t72, *t77, *t82, *t88, *t93, *t96, *t101, *t107; HERO_NODEBUG uint64_t t36, t41, t46, t47, t52, t57, t62, t67, t68, t73, t78, t83, t84, t89, t97, t102; HERO_NODEBUG int32_t t63, t69; HERO_NODEBUG uint32_t t104; HERO_ENTRY_STOP; goto bb0;
 #line 37 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
 bb0:
     t1 = UINT64_C(0);
@@ -505,7 +515,7 @@ bb0:
     hero_lend_local_give(hero_lend_h2_n);
 #line 56 "tests/golden/run/fixedbugs-395-a-count-in-c-s-own-unit-runs.hero"
     return;
-#line 509 "fixedbugs395acountincsownunitruns.c"
+#line 519 "fixedbugs395acountincsownunitruns.c"
 }
 #undef h2_n
 HERO_TU_LOCAL bool h_fixedbugs395acountincsownunitruns_Held_eq(const struct held *a, const struct held *b) {

@@ -137,7 +137,7 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, 
 #line 16 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_double(int64_t h0_n) {
 #line 16 "tests/golden/run/library-higher-order.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/library-higher-order.hero"
 bb0:
     t1 = h0_n;
@@ -153,7 +153,7 @@ bb0:
 #line 19 "tests/golden/run/library-higher-order.hero"
 bool h_libraryhigherorder_odd(int64_t h0_n) {
 #line 19 "tests/golden/run/library-higher-order.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 19 "tests/golden/run/library-higher-order.hero"
 bb0:
     t1 = h0_n;
@@ -177,7 +177,7 @@ bb0:
 #line 22 "tests/golden/run/library-higher-order.hero"
 bool h_libraryhigherorder_big(int64_t h0_n) {
 #line 22 "tests/golden/run/library-higher-order.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0;
 #line 22 "tests/golden/run/library-higher-order.hero"
 bb0:
     t1 = h0_n;
@@ -193,7 +193,7 @@ bb0:
 #line 25 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_add(int64_t h0_acc, int64_t h1_item) {
 #line 25 "tests/golden/run/library-higher-order.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 25 "tests/golden/run/library-higher-order.hero"
 bb0:
     t1 = h0_acc;
@@ -209,7 +209,7 @@ bb0:
 #line 28 "tests/golden/run/library-higher-order.hero"
 HeroStr h_libraryhigherorder_label(int64_t h0_n) {
 #line 28 "tests/golden/run/library-higher-order.hero"
-    HERO_NODEBUG HeroStr h1_own1 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h1_own1 = {0}, t2, t3; HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/library-higher-order.hero"
 bb0:
     t1 = h0_n;
@@ -230,7 +230,7 @@ bb0:
 #line 35 "tests/golden/run/library-higher-order.hero"
 int64_t h_libraryhigherorder_sub(int64_t h0_acc, int64_t h1_item) {
 #line 35 "tests/golden/run/library-higher-order.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/library-higher-order.hero"
 bb0:
     t1 = h0_acc;
@@ -246,7 +246,7 @@ bb0:
 #line 38 "tests/golden/run/library-higher-order.hero"
 HeroStr h_libraryhigherorder_glue(HeroStr h0_acc, HeroStr h1_item) {
 #line 38 "tests/golden/run/library-higher-order.hero"
-    HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroStr h2_own2 = {0}, t1, t2, t3, t4; HERO_ENTRY_STOP; goto bb0;
 #line 38 "tests/golden/run/library-higher-order.hero"
 bb0:
     t1 = h0_acc;
@@ -269,7 +269,7 @@ bb0:
 #line 41 "tests/golden/run/library-higher-order.hero"
 void h_libraryhigherorder_main(void) {
 #line 41 "tests/golden/run/library-higher-order.hero"
-    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG h_0opt_e201354 h3_f1 = {0}; HERO_NODEBUG int64_t h4_r1; HeroArrayHeader * h5_empty = {0}; HERO_NODEBUG h_0opt_e201354 h6_f2 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG h_0opt_e201354 h15_own15 = {0}; HERO_NODEBUG h_0opt_e201354 h16_own16 = {0}; HERO_NODEBUG HeroArrayHeader * h17_own17 = {0}; HERO_NODEBUG HeroArrayHeader * h18_own18 = {0}; HERO_NODEBUG h_0opt_e201354 h19_own19 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG h_0fn_4a13fb08 t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG h_0fn_3d242f50 t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG h_0fn_4a13fb08 t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroArrayHeader * t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0fn_6ca17148 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG h_0fn_6ca17148 t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_NODEBUG HeroStr t28; HERO_NODEBUG HeroArrayHeader * t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG h_0fn_2248724e t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG h_0fn_3d242f50 t34; HERO_NODEBUG h_0opt_e201354 t35; HERO_NODEBUG h_0opt_e201354 t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG bool t39; HERO_NODEBUG h_0opt_e201354 t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG h_0fn_3d242f50 t47; HERO_NODEBUG h_0opt_e201354 t48; HERO_NODEBUG h_0opt_e201354 t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG int64_t t51; HERO_NODEBUG bool t52; HERO_NODEBUG h_0opt_e201354 t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG HeroArrayHeader * t59; HERO_NODEBUG h_0fn_3d242f50 t60; HERO_NODEBUG bool t61; HERO_NODEBUG HeroArrayHeader * t62; HERO_NODEBUG h_0fn_3d242f50 t63; HERO_NODEBUG bool t64; HERO_NODEBUG HeroArrayHeader * t65; HERO_NODEBUG h_0fn_3d242f50 t66; HERO_NODEBUG bool t67; HERO_NODEBUG HeroArrayHeader * t68; HERO_NODEBUG HeroArrayHeader * t69; HERO_NODEBUG h_0fn_48ac9712 t70; HERO_NODEBUG HeroArrayHeader * t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG HeroArrayHeader * t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG h_0fn_6ca17148 t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG h_0fn_3d242f50 t78; HERO_NODEBUG bool t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG h_0fn_3d242f50 t81; HERO_NODEBUG bool t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG h_0fn_3d242f50 t84; HERO_NODEBUG h_0opt_e201354 t85; HERO_NODEBUG h_0opt_e201354 t86; HERO_NODEBUG int64_t t87; HERO_NODEBUG int64_t t88; HERO_NODEBUG bool t89; HERO_NODEBUG HeroArrayHeader * t90; HERO_NODEBUG HeroArrayHeader * t91; HERO_NODEBUG HeroArrayHeader * t92; HERO_NODEBUG HeroStr t93; HERO_NODEBUG HeroArrayHeader * t94; HERO_NODEBUG HeroArrayHeader * t95; HERO_NODEBUG HeroStr t96; HERO_NODEBUG HeroArrayHeader * t97; HERO_NODEBUG HeroStr t98; HERO_NODEBUG h_0opt_e201354 t99; HERO_NODEBUG h_0opt_e201354 t100; HERO_NODEBUG h_0opt_e201354 t101; HERO_NODEBUG h_0opt_e201354 t102; HERO_NODEBUG HeroArrayHeader * t103; HERO_NODEBUG HeroArrayHeader * t104; HERO_NODEBUG HeroArrayHeader * t105; HERO_NODEBUG h_0opt_e201354 t106; HERO_NODEBUG h_0opt_e201354 t107; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_xs = {0}; HERO_NODEBUG h_0opt_e201354 h1_f0 = {0}, h3_f1 = {0}, h6_f2 = {0}, h15_own15 = {0}, h16_own16 = {0}, h19_own19 = {0}, t35, t36, t40, t48, t49, t53, t85, t86, t99, t100, t101, t102, t106, t107; HERO_NODEBUG int64_t h2_r0, h4_r1, t1, t2, t3, t4, t19, t21, t23, t25, t37, t38, t41, t42, t43, t44, t45, t50, t51, t54, t55, t56, t57, t58, t72, t74, t76, t87, t88; HeroArrayHeader * h5_empty = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *h8_own8 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h13_own13 = {0}, *h17_own17 = {0}, *h18_own18 = {0}, *t5, *t6, *t8, *t11, *t13, *t15, *t18, *t22, *t29, *t33, *t46, *t59, *t62, *t65, *t68, *t69, *t71, *t73, *t77, *t80, *t83, *t90, *t91, *t92, *t94, *t95, *t97, *t103, *t104, *t105; HERO_NODEBUG HeroStr h9_own9 = {0}, h12_own12 = {0}, h14_own14 = {0}, t9, t10, t16, t17, t26, t27, t28, t30, t32, t93, t96, t98; HERO_NODEBUG h_0fn_4a13fb08 t7, t14; HERO_NODEBUG h_0fn_3d242f50 t12, t34, t47, t60, t63, t66, t78, t81, t84; HERO_NODEBUG h_0fn_6ca17148 t20, t24, t75; HERO_NODEBUG h_0fn_2248724e t31; HERO_NODEBUG bool t39, t52, t61, t64, t67, t79, t82, t89; HERO_NODEBUG h_0fn_48ac9712 t70; HERO_ENTRY_STOP; goto bb0;
 #line 41 "tests/golden/run/library-higher-order.hero"
 bb0:
     t1 = INT64_C(1);
@@ -682,7 +682,7 @@ bb6:
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37fb3fcc(HeroArrayHeader * h0_xs, h_0fn_4a13fb08 h1_f) {
 #line 36 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_4a13fb08 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroStr t23; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t13, t16, t17, t18; int64_t h5_x; HERO_NODEBUG HeroStr h7_own7 = {0}, t14, t23; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_4a13fb08 t12; HERO_ENTRY_STOP; goto bb0;
 #line 36 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_str, 1);
@@ -782,7 +782,7 @@ bb4:
 #line 43 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_filter_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
 #line 43 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_3d242f50 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG HeroArrayHeader * t23; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t20, *t21, *t22, *t23; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t12, t15, t17, t18, t19; int64_t h5_x; HERO_NODEBUG bool t7, t13; HERO_NODEBUG h_0fn_3d242f50 t11; HERO_ENTRY_STOP; goto bb0;
 #line 43 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -887,7 +887,7 @@ bb7:
 #line 58 "<heroes library>"
 HERO_TU_LOCAL int64_t h_library_fold_37f8817a(HeroArrayHeader * h0_xs, int64_t h1_start, h_0fn_6ca17148 h2_f) {
 #line 58 "<heroes library>"
-    int64_t h3_total; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; int64_t h6_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_6ca17148 t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_ENTRY_STOP; goto bb0;
+    int64_t h3_total; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *t2, *t5, *t8, *t19; HERO_NODEBUG int64_t h5_i0, t1, t3, t4, t6, t9, t10, t12, t13, t14, t15, t16, t17, t18; int64_t h6_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_6ca17148 t11; HERO_ENTRY_STOP; goto bb0;
 #line 58 "<heroes library>"
 bb0:
     t1 = h1_start;
@@ -967,7 +967,7 @@ bb4:
 #line 58 "<heroes library>"
 HERO_TU_LOCAL HeroStr h_library_fold_f720dcd(HeroArrayHeader * h0_xs, HeroStr h1_start, h_0fn_2248724e h2_f) {
 #line 58 "<heroes library>"
-    HeroStr h3_total = {0}; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; HeroStr h6_x = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG h_0fn_2248724e t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h3_total = {0}; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *t2, *t5, *t8, *t20; HERO_NODEBUG int64_t h5_i0, t3, t4, t6, t9, t15, t16, t17; HeroStr h6_x = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}, t1, t10, t12, t13, t14, t18, t19, t21, t22, t23; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_2248724e t11; HERO_ENTRY_STOP; goto bb0;
 #line 58 "<heroes library>"
 bb0:
     t1 = h1_start;
@@ -1075,7 +1075,7 @@ bb4:
 #line 66 "<heroes library>"
 HERO_TU_LOCAL h_0opt_e201354 h_library_find_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
 #line 66 "<heroes library>"
-    HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}; HERO_NODEBUG h_0opt_e201354 h6_own6 = {0}; HERO_NODEBUG h_0opt_e201354 h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0fn_3d242f50 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG h_0opt_e201354 t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG h_0opt_e201354 t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_NODEBUG h_0opt_e201354 t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t1, *t4, *t7, *t22; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t8, t9, t11, t13, t15, t16, t17; int64_t h4_x; HERO_NODEBUG h_0opt_e201354 h5_ret0 = {0}, h6_own6 = {0}, h7_own7 = {0}, t14, t20, t21, t23, t24; HERO_NODEBUG bool t6, t12; HERO_NODEBUG h_0fn_3d242f50 t10; HERO_NODEBUG HeroStr t18, t19; HERO_ENTRY_STOP; goto bb0;
 #line 66 "<heroes library>"
 bb0:
     t1 = h0_xs;
@@ -1196,7 +1196,7 @@ bb8:
 #line 74 "<heroes library>"
 HERO_TU_LOCAL bool h_library_any_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
 #line 74 "<heroes library>"
-    HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG bool h5_ret0; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0fn_3d242f50 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG bool t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t1, *t4, *t7, *t19; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t8, t9, t11, t14, t15, t16; int64_t h4_x; HERO_NODEBUG bool h5_ret0, t6, t12, t13, t17, t18; HERO_NODEBUG h_0fn_3d242f50 t10; HERO_ENTRY_STOP; goto bb0;
 #line 74 "<heroes library>"
 bb0:
     t1 = h0_xs;
@@ -1292,7 +1292,7 @@ bb8:
 #line 82 "<heroes library>"
 HERO_TU_LOCAL bool h_library_all_1b9a87(HeroArrayHeader * h0_xs, h_0fn_3d242f50 h1_f) {
 #line 82 "<heroes library>"
-    HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_x; HERO_NODEBUG bool h5_ret0; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG bool t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_0fn_3d242f50 t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG bool t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG bool t18; HERO_NODEBUG bool t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t1, *t4, *t7, *t20; HERO_NODEBUG int64_t h3_i0, t2, t3, t5, t8, t9, t11, t15, t16, t17; int64_t h4_x; HERO_NODEBUG bool h5_ret0, t6, t12, t13, t14, t18, t19; HERO_NODEBUG h_0fn_3d242f50 t10; HERO_ENTRY_STOP; goto bb0;
 #line 82 "<heroes library>"
 bb0:
     t1 = h0_xs;
@@ -1390,7 +1390,7 @@ bb8:
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) {
 #line 36 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t13, t14, t16, t17, t18; int64_t h5_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_ENTRY_STOP; goto bb0;
 #line 36 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

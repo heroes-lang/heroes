@@ -131,7 +131,7 @@ bb0:
 #line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 void h_fixedbugs510aconstantreturningnothingiscalledalone_main(void) {
 #line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
-    HERO_NODEBUG h_0fn_54cd2b7b t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG h_0fn_54cd2b7b t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_0fn_54cd2b7b t1, t3; HERO_NODEBUG HeroStr t2, t4; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-510-a-constant-returning-nothing-is-called-alone.hero"
 bb0:
     t1 = h_fixedbugs510aconstantreturningnothingiscalledalone_SHOUT();

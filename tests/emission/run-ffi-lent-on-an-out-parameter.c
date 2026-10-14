@@ -174,7 +174,7 @@ void h_ffilentonanoutparameter_main(void) {
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 #define h1_s (*hero_lend_h1_s)
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
-    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); HERO_NODEBUG int32_t t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG struct span t8; HERO_NODEBUG struct span t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG struct span t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    int32_t *const hero_lend_h0_e = (int32_t *)hero_lend_local(sizeof(int32_t), "ffilentonanoutparameter.main", "e"); struct span *const hero_lend_h1_s = (struct span *)hero_lend_local(sizeof(struct span), "ffilentonanoutparameter.main", "s"); HERO_NODEBUG int32_t t1, t5; HERO_NODEBUG double t2, t3; HERO_NODEBUG HeroStr t4, t11; HERO_NODEBUG int64_t t6, t7, t10, t13; HERO_NODEBUG struct span t8, t9, t12; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/ffi-lent-on-an-out-parameter.hero"
 bb0:
     t1 = INT64_C(0);

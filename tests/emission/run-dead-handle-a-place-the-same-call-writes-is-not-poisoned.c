@@ -166,7 +166,7 @@ void h_deadhandleaplacethesamecallwritesisnotpoisoned_main(void) {
 #line 21 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
 #define h0_a (*hero_lend_h0_a)
 #line 21 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
-    node * *const hero_lend_h0_a = (node * *)hero_lend_local(sizeof(node *), "deadhandleaplacethesamecallwritesisnotpoisoned.main", "a"); HERO_NODEBUG node * t1; HERO_NODEBUG node * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG node * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG node * t6; HERO_ENTRY_STOP; goto bb0;
+    node * *const hero_lend_h0_a = (node * *)hero_lend_local(sizeof(node *), "deadhandleaplacethesamecallwritesisnotpoisoned.main", "a"); HERO_NODEBUG node *t1, *t2, *t4, *t6; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t5; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/dead-handle-a-place-the-same-call-writes-is-not-poisoned.hero"
 bb0:
     t1 = node_new();

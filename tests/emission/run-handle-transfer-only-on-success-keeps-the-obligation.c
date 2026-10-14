@@ -166,7 +166,7 @@ void h_handletransferonlyonsuccesskeepstheobligation_main(void);
 #line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 void h_handletransferonlyonsuccesskeepstheobligation_main(void) {
 #line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
-    node * h0_parent; node * h1_child; int32_t h2_rc; node * h3_other; HERO_NODEBUG int64_t t1; HERO_NODEBUG node * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG node * t4; HERO_NODEBUG node * t5; HERO_NODEBUG node * t6; HERO_NODEBUG int32_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG int32_t t10; HERO_NODEBUG int32_t t11; HERO_NODEBUG int32_t t12; HERO_NODEBUG bool t13; HERO_NODEBUG node * t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG node * t16; HERO_NODEBUG node * t17; HERO_NODEBUG node * t18; HERO_NODEBUG int32_t t19; HERO_NODEBUG HeroStr t21; HERO_NODEBUG node * t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG node * t24; HERO_ENTRY_STOP; goto bb0;
+    node * h0_parent; node * h1_child; int32_t h2_rc; node * h3_other; HERO_NODEBUG int64_t t1, t3, t15, t23; HERO_NODEBUG node *t2, *t4, *t5, *t6, *t14, *t16, *t17, *t18, *t22, *t24; HERO_NODEBUG int32_t t7, t8, t10, t11, t12, t19; HERO_NODEBUG HeroStr t9, t21; HERO_NODEBUG bool t13; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/run/handle-transfer-only-on-success-keeps-the-obligation.hero"
 bb0:
     t1 = INT64_C(10);

@@ -223,19 +223,49 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to);
 #line 25 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_OK(void) {
 #line 226 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 25 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     return HERO_OS_OK;
+#line 236 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#pragma clang diagnostic pop
 }
 
 #line 26 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_NOT_FOUND(void) {
-#line 232 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 242 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 26 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     return HERO_OS_NOT_FOUND;
+#line 252 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#pragma clang diagnostic pop
 }
 
 #line 27 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 int64_t h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_HERO_OS_NOT_TEXT(void) {
-#line 238 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 258 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 27 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     return HERO_OS_NOT_TEXT;
+#line 268 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#pragma clang diagnostic pop
 }
 
 #line 32 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
@@ -245,7 +275,7 @@ HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_AT(void) {
 #line 32 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_5de84570);
-#line 249 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 279 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -253,7 +283,7 @@ bb0:
 #line 35 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bool h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_put(HeroStr h0_path, HeroArrayHeader * h1_bytes) {
 #line 35 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    void * h2_handle; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_b; HERO_NODEBUG h_0opt_e1f4933 h6_f0 = {0}; HERO_NODEBUG bool h7_ret0; HERO_NODEBUG h_0opt_e1f4933 h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG const char * t4; HERO_NODEBUG void * t5; HERO_NODEBUG void * t6; HERO_NODEBUG void * t7; HERO_NODEBUG bool t8; HERO_NODEBUG bool t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG h_0opt_e1f4933 t20; HERO_NODEBUG h_0opt_e1f4933 t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG bool t24; HERO_NODEBUG h_0opt_e1f4933 t25; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG h_0opt_e1f4933 t27; HERO_NODEBUG int32_t t28; HERO_NODEBUG void * t29; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG void * t34; HERO_NODEBUG bool t36; HERO_NODEBUG bool t37; HERO_NODEBUG HeroArrayHeader * t38; HERO_NODEBUG h_0opt_e1f4933 t39; HERO_NODEBUG h_0opt_e1f4933 t40; HERO_ENTRY_STOP; goto bb0;
+    void * h2_handle; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *t10, *t13, *t16, *t38; HERO_NODEBUG int64_t h4_i0, t11, t12, t14, t17, t18, t19, t22, t23, t31, t32, t33; int64_t h5_b; HERO_NODEBUG h_0opt_e1f4933 h6_f0 = {0}, h8_own8 = {0}, t20, t21, t25, t27, t39, t40; HERO_NODEBUG bool h7_ret0, t8, t9, t15, t24, t36, t37; HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG const char *t2, *t4; HERO_NODEBUG void *t5, *t6, *t7, *t29, *t34; HERO_NODEBUG HeroFailure t26; HERO_NODEBUG int32_t t28; HERO_ENTRY_STOP; goto bb0;
 #line 35 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb0:
     t1 = h0_path;
@@ -403,7 +433,7 @@ bb9:
     t25 = h6_f0;
 #line 42 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t26 = t25.as.err;
-#line 407 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 437 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_panic_must(t26);
     hero_unreachable();
 bb10:
@@ -417,7 +447,7 @@ bb10:
 #line 50 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_digest(HeroStr h0_text) {
 #line 50 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    int64_t h1_m; int64_t h2_a; int64_t h3_b; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; int64_t h6_k; HERO_NODEBUG h_0opt_e201354 h7_f0 = {0}; int64_t h8_v; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG h_0opt_e201354 h10_own10 = {0}; HERO_NODEBUG HeroStr h11_own11 = {0}; HERO_NODEBUG HeroStr h12_own12 = {0}; HERO_NODEBUG HeroStr h13_own13 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG HeroArrayHeader * t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG uint8_t t18; HERO_NODEBUG h_0opt_e201354 t19; HERO_NODEBUG h_0opt_e201354 t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG bool t23; HERO_NODEBUG h_0opt_e201354 t24; HERO_NODEBUG HeroFailure t25; HERO_NODEBUG h_0opt_e201354 t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG HeroStr t48; HERO_NODEBUG HeroStr t49; HERO_NODEBUG HeroArrayHeader * t50; HERO_NODEBUG HeroArrayHeader * t51; HERO_NODEBUG h_0opt_e201354 t52; HERO_NODEBUG h_0opt_e201354 t53; HERO_NODEBUG HeroStr t54; HERO_NODEBUG HeroStr t55; HERO_NODEBUG HeroStr t56; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_m; int64_t h2_a; int64_t h3_b; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h9_own9 = {0}, *t7, *t10, *t13, *t50, *t51; HERO_NODEBUG int64_t h5_i0, t1, t2, t3, t4, t6, t8, t9, t11, t14, t15, t17, t21, t22, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t47; int64_t h6_k; HERO_NODEBUG h_0opt_e201354 h7_f0 = {0}, h10_own10 = {0}, t19, t20, t24, t26, t52, t53; int64_t h8_v; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, t5, t16, t46, t48, t49, t54, t55, t56; HERO_NODEBUG bool t12, t23; HERO_NODEBUG uint8_t t18; HERO_NODEBUG HeroFailure t25; HERO_ENTRY_STOP; goto bb0;
 #line 50 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb0:
     t1 = INT64_C(2147483647);
@@ -552,7 +582,7 @@ bb4:
     h13_own13 = t49;
 #line 60 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     hero_str_decref(t56);
-#line 556 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 586 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t49);
     hero_array_release_at(&h4_xs0);
     h_0opt_e201354_release(hero_slot_escape(&h7_f0));
@@ -615,7 +645,7 @@ bb6:
     t24 = h7_f0;
 #line 56 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t25 = t24.as.err;
-#line 619 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 649 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_panic_must(t25);
     hero_unreachable();
 }
@@ -623,7 +653,7 @@ bb6:
 #line 62 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_hex8(int64_t h0_number) {
 #line 62 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    HeroStr h1_ds = {0}; HeroStr h2_out = {0}; int64_t h3_value; HERO_NODEBUG HeroArrayHeader * h4_xs0 = {0}; HERO_NODEBUG int64_t h5_i0; int64_t h6_d; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG HeroArrayHeader * t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG HeroArrayHeader * t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG HeroStr t29; HERO_NODEBUG HeroStr t30; HERO_NODEBUG HeroStr t31; HERO_NODEBUG HeroArrayHeader * t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG HeroStr t34; HERO_NODEBUG HeroStr t35; HERO_NODEBUG HeroStr t36; HERO_ENTRY_STOP; goto bb0;
+    HeroStr h1_ds = {0}; HeroStr h2_out = {0}; int64_t h3_value; HERO_NODEBUG HeroArrayHeader *h4_xs0 = {0}, *h7_own7 = {0}, *t6, *t9, *t32, *t33; HERO_NODEBUG int64_t h5_i0, t3, t4, t5, t7, t8, t10, t12, t13, t14, t16, t17, t18, t19, t23, t24, t25, t26, t27, t28; int64_t h6_d; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t1, t2, t15, t20, t21, t22, t29, t30, t31, t34, t35, t36; HERO_NODEBUG bool t11; HERO_ENTRY_STOP; goto bb0;
 #line 62 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_35b2f7b2);
@@ -762,7 +792,7 @@ bb3:
 bb4:
 #line 72 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     t29 = h2_out;
-#line 766 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 796 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_incref(t29);
     hero_str_release_at(&h1_ds);
     hero_str_release_at(&h2_out);
@@ -780,7 +810,7 @@ HeroStr h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_keyed(HeroStr h0_pa
 #line 75 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 #define h2_marks (*hero_lend_h2_marks)
 #line 75 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.keyed", "status"); int64_t *const hero_lend_h2_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.keyed", "marks"); HeroStr h3_got = {0}; HERO_NODEBUG HeroStr h4_ret0 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr h9_own9 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG const char * t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG HeroStr t19; HERO_NODEBUG HeroStr t20; HERO_NODEBUG HeroStr t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.keyed", "status"); int64_t *const hero_lend_h2_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.keyed", "marks"); HeroStr h3_got = {0}; HERO_NODEBUG HeroStr h4_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t3, t5, t9, t10, t11, t12, t13, t16, t17, t18, t19, t20, t21, t22, t23, t24; HERO_NODEBUG int64_t t1, t2, t6, t7, t14, t15; HERO_NODEBUG const char *t4; HERO_NODEBUG bool t8; HERO_ENTRY_STOP; goto bb0;
 #line 75 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb0:
     t1 = INT64_C(0);
@@ -880,7 +910,7 @@ bb3:
     goto bb1;
 #line 81 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb4:
-#line 884 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 914 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     t18 = h4_ret0;
     hero_str_incref(t18);
     hero_str_release_at(&h3_got);
@@ -901,7 +931,7 @@ void h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_said(HeroStr h0_name, 
 #line 84 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 #define h2_status (*hero_lend_h2_status)
 #line 84 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.said", "status"); HeroStr h3_key = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}; HERO_NODEBUG HeroStr h5_own5 = {0}; HERO_NODEBUG HeroStr h6_own6 = {0}; HERO_NODEBUG HeroStr h7_own7 = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG bool t3; HERO_NODEBUG bool t4; HERO_NODEBUG HeroStr t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroStr t7; HERO_NODEBUG const char * t8; HERO_NODEBUG HeroStr t9; HERO_NODEBUG HeroStr t10; HERO_NODEBUG HeroStr t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG bool t17; HERO_NODEBUG HeroStr t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG bool t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG HeroStr t23; HERO_NODEBUG HeroStr t24; HERO_NODEBUG HeroStr t25; HERO_NODEBUG HeroStr t26; HERO_NODEBUG HeroStr t27; HERO_ENTRY_STOP; goto bb0;
+    int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.said", "status"); HeroStr h3_key = {0}; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, t1, t5, t7, t9, t10, t11, t12, t13, t14, t15, t16, t18, t22, t23, t24, t25, t26, t27; HERO_NODEBUG HeroArrayHeader *t2; HERO_NODEBUG bool t3, t4, t17, t21; HERO_NODEBUG int64_t t6, t19, t20; HERO_NODEBUG const char *t8; HERO_ENTRY_STOP; goto bb0;
 #line 84 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb0:
     t1 = h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_AT();
@@ -1021,7 +1051,7 @@ bb3:
     goto bb1;
 #line 86 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb4:
-#line 1025 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 1055 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_str_release_at(&h3_key);
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
@@ -1038,7 +1068,7 @@ void h_fixedbugs484afileskeymadeincisthekeyofitsshowntext_main(void) {
 #line 92 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 #define h4_status (*hero_lend_h4_status)
 #line 92 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
-    HeroArrayHeader * h0_every = {0}; HERO_NODEBUG HeroArrayHeader * h1_xs0 = {0}; HERO_NODEBUG int64_t h2_i0; int64_t h3_k; int64_t *const hero_lend_h4_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.main", "status"); HeroStr h5_missing = {0}; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * h7_own7 = {0}; HERO_NODEBUG HeroArrayHeader * h8_own8 = {0}; HERO_NODEBUG HeroArrayHeader * h9_own9 = {0}; HERO_NODEBUG HeroArrayHeader * h10_own10 = {0}; HERO_NODEBUG HeroArrayHeader * h11_own11 = {0}; HERO_NODEBUG HeroArrayHeader * h12_own12 = {0}; HERO_NODEBUG HeroArrayHeader * h13_own13 = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}; HERO_NODEBUG HeroStr t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG HeroStr t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG HeroArrayHeader * t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG HeroArrayHeader * t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroStr t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG HeroArrayHeader * t31; HERO_NODEBUG HeroStr t32; HERO_NODEBUG int64_t t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG HeroArrayHeader * t42; HERO_NODEBUG HeroArrayHeader * t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroArrayHeader * t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG int64_t t48; HERO_NODEBUG HeroArrayHeader * t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG bool t51; HERO_NODEBUG HeroArrayHeader * t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG int64_t t54; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG HeroStr t63; HERO_NODEBUG HeroArrayHeader * t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG HeroStr t66; HERO_NODEBUG const char * t67; HERO_NODEBUG HeroStr t68; HERO_NODEBUG HeroStr t69; HERO_NODEBUG HeroStr t70; HERO_NODEBUG HeroStr t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG bool t74; HERO_NODEBUG HeroArrayHeader * t75; HERO_NODEBUG HeroArrayHeader * t76; HERO_NODEBUG HeroArrayHeader * t77; HERO_NODEBUG HeroArrayHeader * t78; HERO_NODEBUG HeroArrayHeader * t79; HERO_NODEBUG HeroArrayHeader * t80; HERO_NODEBUG HeroArrayHeader * t81; HERO_NODEBUG HeroArrayHeader * t82; HERO_NODEBUG HeroArrayHeader * t83; HERO_NODEBUG HeroArrayHeader * t84; HERO_NODEBUG HeroStr t85; HERO_NODEBUG HeroStr t86; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h0_every = {0}; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h6_own6 = {0}, *h7_own7 = {0}, *h8_own8 = {0}, *h9_own9 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h12_own12 = {0}, *h13_own13 = {0}, *t2, *t11, *t16, *t21, *t31, *t42, *t43, *t46, *t49, *t52, *t64, *t75, *t76, *t77, *t78, *t79, *t80, *t81, *t82, *t83, *t84; HERO_NODEBUG int64_t h2_i0, t4, t5, t6, t7, t8, t9, t10, t13, t14, t15, t18, t19, t20, t23, t24, t25, t26, t27, t28, t29, t30, t33, t34, t35, t36, t37, t38, t39, t40, t41, t44, t45, t47, t48, t50, t53, t54, t56, t57, t58, t60, t61, t62, t65, t72, t73; int64_t h3_k; int64_t *const hero_lend_h4_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs484afileskeymadeincisthekeyofitsshowntext.main", "status"); HeroStr h5_missing = {0}; HERO_NODEBUG HeroStr h14_own14 = {0}, t1, t3, t12, t17, t22, t32, t63, t66, t68, t69, t70, t71, t85, t86; HERO_NODEBUG bool t51, t74; HERO_NODEBUG const char *t67; HERO_ENTRY_STOP; goto bb0;
 #line 92 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
 bb0:
     t1 = HERO_STR_LIT(hero_str_7ba188c6);
@@ -1369,7 +1399,7 @@ bb4:
     hero_print_bool(t74);
 #line 110 "tests/golden/run/fixedbugs-484-a-file-s-key-made-in-c-is-the-key-of-its-shown-text.hero"
     hero_print_end();
-#line 1373 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 1403 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_release_at(&h0_every);
     hero_array_release_at(&h1_xs0);
     hero_str_release_at(&h5_missing);
@@ -1390,7 +1420,7 @@ bb4:
 #line 26 "<heroes library>"
 HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to) {
 #line 26 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader * h4_own4 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG HeroArrayHeader * t12; HERO_NODEBUG HeroArrayHeader * t13; HERO_NODEBUG HeroArrayHeader * t14; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto bb0;
 #line 26 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);
@@ -1439,7 +1469,7 @@ bb2:
 #line 31 "<heroes library>"
 bb3:
     t12 = h2_out;
-#line 1443 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
+#line 1473 "fixedbugs484afileskeymadeincisthekeyofitsshowntext.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);

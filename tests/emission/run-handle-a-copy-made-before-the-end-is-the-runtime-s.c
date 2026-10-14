@@ -164,7 +164,7 @@ void h_handleacopymadebeforetheendistheruntimes_main(void);
 #line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
 void h_handleacopymadebeforetheendistheruntimes_main(void) {
 #line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
-    node * h0_a; node * h1_keep; HERO_NODEBUG int64_t t1; HERO_NODEBUG node * t2; HERO_NODEBUG node * t3; HERO_NODEBUG HeroStr t4; HERO_NODEBUG node * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG node * t7; HERO_NODEBUG node * t8; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0;
+    node * h0_a; node * h1_keep; HERO_NODEBUG int64_t t1, t6; HERO_NODEBUG node *t2, *t3, *t5, *t7, *t8; HERO_NODEBUG HeroStr t4, t9; HERO_ENTRY_STOP; goto bb0;
 #line 16 "tests/golden/run/handle-a-copy-made-before-the-end-is-the-runtime-s.hero"
 bb0:
     t1 = INT64_C(5);

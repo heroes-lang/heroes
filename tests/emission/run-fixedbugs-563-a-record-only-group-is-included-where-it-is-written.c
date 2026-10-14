@@ -164,7 +164,7 @@ void h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_main(void);
 #line 18 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
 void h_fixedbugs563arecordonlygroupisincludedwhereitiswritten_main(void) {
 #line 18 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
-    HERO_NODEBUG int32_t t1; HERO_NODEBUG Need t2; HERO_NODEBUG int32_t t3; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG Need t2; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/run/fixedbugs-563-a-record-only-group-is-included-where-it-is-written.hero"
 bb0:
     t1 = INT64_C(7);

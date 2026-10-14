@@ -143,7 +143,7 @@ void h_library_exit(int64_t h0_code);
 #line 28 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_returns(int64_t h0_k, int64_t h1_j) {
 #line 28 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG int64_t h4_s1; int64_t h5_x; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, h6_ret0, t1, t2, t3, t5, t6, t7, t9, t10, t11, t12, t13, t14; int64_t h5_x; HERO_NODEBUG bool t4, t8; HERO_ENTRY_STOP; goto bb0;
 #line 28 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -222,7 +222,7 @@ bb9:
 #line 39 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inner_if_returns(int64_t h0_k) {
 #line 39 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; int64_t h3_x; HERO_NODEBUG int64_t h4_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, h4_ret0, t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; int64_t h3_x; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 39 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -295,7 +295,7 @@ bb8:
 #line 51 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_a_statement_first(int64_t h0_k) {
 #line 51 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t h3_s1; int64_t h4_x; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, h2_r0, h3_s1, h5_ret0, t1, t2, t3, t5, t6, t7, t8, t10, t11, t12, t13, t14, t15; int64_t h4_x; HERO_NODEBUG bool t4, t9; HERO_ENTRY_STOP; goto bb0;
 #line 51 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -380,7 +380,7 @@ bb9:
 #line 64 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_outer_if(int64_t h0_k, int64_t h1_j) {
 #line 64 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t h3_s0; int64_t h4_x; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_r0, h3_s0, h5_ret0, t1, t2, t4, t5, t6, t8, t9, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t3, t7; HERO_ENTRY_STOP; goto bb0;
 #line 64 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -452,7 +452,7 @@ bb8:
 #line 75 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_inline_head(int64_t h0_k, int64_t h1_j) {
 #line 75 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG int64_t h4_s1; int64_t h5_x; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, h6_ret0, t1, t2, t3, t5, t6, t7, t9, t10, t11, t12, t13, t14; int64_t h5_x; HERO_NODEBUG bool t4, t8; HERO_ENTRY_STOP; goto bb0;
 #line 75 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -531,7 +531,7 @@ bb9:
 #line 85 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_returned_directly(int64_t h0_k, int64_t h1_j) {
 #line 85 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG int64_t h4_s1; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, h5_ret0, t1, t2, t3, t5, t6, t7, t9, t10, t11, t12, t13; HERO_NODEBUG bool t4, t8; HERO_ENTRY_STOP; goto bb0;
 #line 85 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -606,7 +606,7 @@ bb9:
 #line 94 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_two_deep(int64_t h0_k, int64_t h1_j) {
 #line 94 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG int64_t h4_s1; int64_t h5_x; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, h6_ret0, t1, t2, t3, t5, t6, t7, t9, t10, t12, t13, t14, t15, t16, t17, t18; int64_t h5_x; HERO_NODEBUG bool t4, t8, t11; HERO_ENTRY_STOP; goto bb0;
 #line 94 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -704,7 +704,7 @@ bb12:
 #line 109 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_in_a_loop(HeroArrayHeader * h0_xs) {
 #line 109 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    int64_t h1_total; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; int64_t h4_v; HERO_NODEBUG int64_t h5_s0; HERO_NODEBUG int64_t h6_r0; int64_t h7_y; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG bool t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG bool t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG HeroArrayHeader * t27; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t27; HERO_NODEBUG int64_t h3_i0, h5_s0, h6_r0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t15, t16, t18, t19, t20, t21, t22, t23, t24, t25, t26; int64_t h4_v; int64_t h7_y; HERO_NODEBUG bool t7, t14, t17; HERO_ENTRY_STOP; goto bb0;
 #line 109 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = INT64_C(0);
@@ -828,7 +828,7 @@ bb11:
 #line 126 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_value_if_arm(int64_t h0_k, int64_t h1_j) {
 #line 126 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; int64_t h4_x; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h5_ret0, t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 126 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -901,7 +901,7 @@ bb8:
 #line 137 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked(int64_t h0_k, int64_t h1_j) {
 #line 137 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG int64_t h4_s1; int64_t h5_x; HERO_NODEBUG int64_t h6_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, h6_ret0, t1, t2, t3, t5, t6, t7, t9, t10, t11, t12, t13, t14; int64_t h5_x; HERO_NODEBUG bool t4, t8; HERO_ENTRY_STOP; goto bb0;
 #line 137 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -980,7 +980,7 @@ bb9:
 #line 148 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_return_if(int64_t h0_k) {
 #line 148 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h1_r0; HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG bool t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_r0, h2_s0, h3_ret0, t1, t2, t4, t5, t6, t8, t9, t10, t11, t12; HERO_NODEBUG bool t3, t7; HERO_ENTRY_STOP; goto bb0;
 #line 148 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -1047,7 +1047,7 @@ bb8:
 #line 157 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_while_tail(int64_t h0_n) {
 #line 157 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    int64_t h1_i; int64_t h2_total; HERO_NODEBUG int64_t h3_s0; HERO_NODEBUG int64_t h4_r0; int64_t h5_step; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG bool t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG bool t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_i; int64_t h2_total; HERO_NODEBUG int64_t h3_s0, h4_r0, t1, t2, t3, t4, t6, t7, t8, t9, t10, t11, t13, t14, t16, t17, t18, t19, t20, t21; int64_t h5_step; HERO_NODEBUG bool t5, t12, t15; HERO_ENTRY_STOP; goto bb0;
 #line 157 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = INT64_C(0);
@@ -1146,7 +1146,7 @@ bb10:
 #line 177 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 HeroStr h_fixedbugs175avalueblockwhoselastiformatchleaves_word(int64_t h0_k) {
 #line 177 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG HeroStr h2_r0 = {0}; HERO_NODEBUG HeroStr h3_ret0 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG bool t11; HERO_NODEBUG HeroStr t12; HERO_NODEBUG HeroStr t13; HERO_NODEBUG HeroStr t14; HERO_NODEBUG HeroStr t15; HERO_NODEBUG HeroStr t16; HERO_NODEBUG HeroStr t17; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5, t6, t9, t10; HERO_NODEBUG HeroStr h2_r0 = {0}, h3_ret0 = {0}, t8, t12, t13, t14, t15, t16, t17, t18; HERO_NODEBUG bool t4, t7, t11; HERO_ENTRY_STOP; goto bb0;
 #line 177 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -1246,7 +1246,7 @@ bb10:
 #line 188 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h_fixedbugs175avalueblockwhoselastiformatchleaves_pair(int64_t h0_k) {
 #line 188 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h1_s0; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h2_r0; h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h3_p; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h4_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t16; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t17; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t18; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t19; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h1_s0, t1, t2, t3, t5, t6, t8, t9, t11, t12, t14, t15; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h2_r0, h4_ret0, t10, t13, t16, t17, t18, t19; h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h3_p; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 188 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -1331,7 +1331,7 @@ bb8:
 #line 200 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_shade(h_fixedbugs175avalueblockwhoselastiformatchleaves_Color h0_c) {
 #line 200 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Color h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG int64_t h3_ret0; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Color t1; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Color t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Color t5; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Color t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Color h1_s0, t1, t2, t5, t6; HERO_NODEBUG int64_t h2_r0, h3_ret0, t3, t4, t8, t9, t10, t11, t12; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 200 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_c;
@@ -1412,7 +1412,7 @@ bb8:
 #line 211 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_exits_or_returns(int64_t h0_k, int64_t h1_j) {
 #line 211 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; int64_t h4_x; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h5_ret0, t1, t2, t3, t5, t6, t8, t9, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7; HERO_ENTRY_STOP; goto bb0;
 #line 211 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -1491,7 +1491,7 @@ bb8:
 #line 222 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_every_arm_exits(int64_t h0_k, int64_t h1_j) {
 #line 222 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; HERO_NODEBUG int64_t h4_s1; int64_t h5_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h4_s1, t1, t2, t3, t5, t6, t7, t9, t10, t11, t12, t13; int64_t h5_x; HERO_NODEBUG bool t4, t8; HERO_ENTRY_STOP; goto bb0;
 #line 222 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -1572,7 +1572,7 @@ bb8:
 #line 232 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_loops_or_returns(int64_t h0_k, int64_t h1_j) {
 #line 232 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; int64_t h4_x; HERO_NODEBUG int64_t h5_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, h5_ret0, t1, t2, t3, t5, t6, t9, t10, t11, t12, t13, t14; int64_t h4_x; HERO_NODEBUG bool t4, t7, t8; HERO_ENTRY_STOP; goto bb0;
 #line 232 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -1664,7 +1664,7 @@ bb11:
 #line 244 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_checked_ends(int64_t h0_k, int64_t h1_j) {
 #line 244 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h2_s0; HERO_NODEBUG int64_t h3_r0; int64_t h4_x; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroStr t8; HERO_NODEBUG bool t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h2_s0, h3_r0, t1, t2, t3, t5, t6, t10, t11, t12, t13; int64_t h4_x; HERO_NODEBUG bool t4, t7, t9; HERO_NODEBUG HeroStr t8; HERO_ENTRY_STOP; goto bb0;
 #line 244 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -1745,7 +1745,7 @@ bb9:
 #line 255 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 int64_t h_fixedbugs175avalueblockwhoselastiformatchleaves_three_deep(int64_t h0_k, int64_t h1_j, int64_t h2_m) {
 #line 255 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    HERO_NODEBUG int64_t h3_s0; HERO_NODEBUG int64_t h4_r0; HERO_NODEBUG int64_t h5_s1; HERO_NODEBUG int64_t h6_s2; int64_t h7_x; HERO_NODEBUG int64_t h8_ret0; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG bool t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG bool t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG bool t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t h3_s0, h4_r0, h5_s1, h6_s2, h8_ret0, t1, t2, t3, t5, t6, t7, t9, t10, t11, t13, t14, t15, t16, t17, t18, t19; int64_t h7_x; HERO_NODEBUG bool t4, t8, t12; HERO_ENTRY_STOP; goto bb0;
 #line 255 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = h0_k;
@@ -1849,7 +1849,7 @@ bb13:
 #line 268 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 void h_fixedbugs175avalueblockwhoselastiformatchleaves_main(void) {
 #line 268 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
-    h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h0_p; HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroStr h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t15; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG int64_t t19; HERO_NODEBUG int64_t t20; HERO_NODEBUG int64_t t21; HERO_NODEBUG int64_t t22; HERO_NODEBUG int64_t t23; HERO_NODEBUG int64_t t24; HERO_NODEBUG int64_t t25; HERO_NODEBUG int64_t t26; HERO_NODEBUG int64_t t27; HERO_NODEBUG int64_t t28; HERO_NODEBUG int64_t t29; HERO_NODEBUG int64_t t30; HERO_NODEBUG int64_t t31; HERO_NODEBUG int64_t t32; HERO_NODEBUG HeroArrayHeader * t33; HERO_NODEBUG int64_t t34; HERO_NODEBUG int64_t t35; HERO_NODEBUG int64_t t36; HERO_NODEBUG int64_t t37; HERO_NODEBUG int64_t t38; HERO_NODEBUG int64_t t39; HERO_NODEBUG int64_t t40; HERO_NODEBUG int64_t t41; HERO_NODEBUG int64_t t42; HERO_NODEBUG int64_t t43; HERO_NODEBUG int64_t t44; HERO_NODEBUG int64_t t45; HERO_NODEBUG HeroStr t46; HERO_NODEBUG int64_t t47; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t48; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t49; HERO_NODEBUG int64_t t50; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t51; HERO_NODEBUG int64_t t52; HERO_NODEBUG int64_t t53; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Color t54; HERO_NODEBUG int64_t t55; HERO_NODEBUG int64_t t56; HERO_NODEBUG int64_t t57; HERO_NODEBUG int64_t t58; HERO_NODEBUG int64_t t59; HERO_NODEBUG int64_t t60; HERO_NODEBUG int64_t t61; HERO_NODEBUG int64_t t62; HERO_NODEBUG int64_t t63; HERO_NODEBUG int64_t t64; HERO_NODEBUG int64_t t65; HERO_NODEBUG int64_t t66; HERO_NODEBUG int64_t t67; HERO_NODEBUG int64_t t68; HERO_NODEBUG int64_t t69; HERO_NODEBUG int64_t t70; HERO_NODEBUG int64_t t71; HERO_NODEBUG int64_t t72; HERO_NODEBUG int64_t t73; HERO_NODEBUG int64_t t74; HERO_NODEBUG int64_t t75; HERO_NODEBUG int64_t t76; HERO_NODEBUG int64_t t77; HERO_NODEBUG int64_t t78; HERO_NODEBUG int64_t t79; HERO_NODEBUG int64_t t80; HERO_NODEBUG int64_t t81; HERO_NODEBUG int64_t t82; HERO_NODEBUG int64_t t83; HERO_NODEBUG int64_t t84; HERO_NODEBUG int64_t t85; HERO_NODEBUG HeroArrayHeader * t86; HERO_NODEBUG HeroStr t87; HERO_ENTRY_STOP; goto bb0;
+    h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair h0_p; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *t33, *t86; HERO_NODEBUG HeroStr h2_own2 = {0}, t46, t87; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t47, t50, t52, t53, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t82, t83, t84, t85; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Pair t48, t49, t51; HERO_NODEBUG h_fixedbugs175avalueblockwhoselastiformatchleaves_Color t54; HERO_ENTRY_STOP; goto bb0;
 #line 268 "tests/golden/run/fixedbugs-175-a-value-block-whose-last-if-or-match-leaves.hero"
 bb0:
     t1 = INT64_C(0);

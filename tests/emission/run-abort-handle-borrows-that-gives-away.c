@@ -161,7 +161,7 @@ void h_aborthandleborrowsthatgivesaway_main(void);
 #line 24 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
 void h_aborthandleborrowsthatgivesaway_main(void) {
 #line 24 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
-    Slot * h0_a; HERO_NODEBUG int64_t t1; HERO_NODEBUG Slot * t2; HERO_NODEBUG Slot * t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG Slot * t5; HERO_ENTRY_STOP; goto bb0;
+    Slot * h0_a; HERO_NODEBUG int64_t t1, t4; HERO_NODEBUG Slot *t2, *t3, *t5; HERO_ENTRY_STOP; goto bb0;
 #line 24 "tests/golden/run/abort-handle-borrows-that-gives-away.hero"
 bb0:
     t1 = INT64_C(7);

@@ -100,7 +100,7 @@ HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, 
 #line 9 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
 int64_t h_fixedbugs547aselfcallthroughmapaborts_step(int64_t h0_n) {
 #line 9 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
-    HERO_NODEBUG HeroArrayHeader * h1_own1 = {0}; HERO_NODEBUG HeroArrayHeader * h2_own2 = {0}; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG h_0fn_48ac9712 t3; HERO_NODEBUG HeroArrayHeader * t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG HeroArrayHeader * t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t2, *t4, *t7, *t8; HERO_NODEBUG int64_t t1, t5, t6; HERO_NODEBUG h_0fn_48ac9712 t3; HERO_ENTRY_STOP; goto bb0;
 #line 9 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
 bb0:
     t1 = h0_n;
@@ -137,7 +137,7 @@ bb0:
 #line 12 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
 void h_fixedbugs547aselfcallthroughmapaborts_main(void) {
 #line 12 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
-    HERO_NODEBUG int64_t t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0;
 #line 12 "tests/golden/run/fixedbugs-547-a-self-call-through-map-aborts.hero"
 bb0:
     t1 = INT64_C(1);
@@ -157,7 +157,7 @@ bb0:
 #line 36 "<heroes library>"
 HERO_TU_LOCAL HeroArrayHeader * h_library_map_37f8817a(HeroArrayHeader * h0_xs, h_0fn_48ac9712 h1_f) {
 #line 36 "<heroes library>"
-    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader * h3_xs0 = {0}; HERO_NODEBUG int64_t h4_i0; int64_t h5_x; HERO_NODEBUG HeroArrayHeader * h6_own6 = {0}; HERO_NODEBUG HeroArrayHeader * t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG HeroArrayHeader * t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG int64_t t16; HERO_NODEBUG int64_t t17; HERO_NODEBUG int64_t t18; HERO_NODEBUG HeroArrayHeader * t19; HERO_NODEBUG HeroArrayHeader * t20; HERO_NODEBUG HeroArrayHeader * t21; HERO_NODEBUG HeroArrayHeader * t22; HERO_ENTRY_STOP; goto bb0;
+    HeroArrayHeader * h2_out = {0}; HERO_NODEBUG HeroArrayHeader *h3_xs0 = {0}, *h6_own6 = {0}, *t1, *t2, *t5, *t8, *t19, *t20, *t21, *t22; HERO_NODEBUG int64_t h4_i0, t3, t4, t6, t9, t10, t13, t14, t16, t17, t18; int64_t h5_x; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t12; HERO_ENTRY_STOP; goto bb0;
 #line 36 "<heroes library>"
 bb0:
     t1 = hero_array_new(&hero_desc_int, 1);

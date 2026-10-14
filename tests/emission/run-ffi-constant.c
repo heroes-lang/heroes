@@ -167,8 +167,9 @@ void h_fficonstant_main(void);
 
 #line 45 "tests/golden/run/ffi-constant.hero"
 double h_fficonstant_M_PI(void) {
-#line 171 "fficonstant.c"
+#line 45 "tests/golden/run/ffi-constant.hero"
     return M_PI;
+#line 173 "fficonstant.c"
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -185,8 +186,18 @@ double h_fficonstant_M_PI(void) {
 
 #line 49 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_SET(void) {
-#line 189 "fficonstant.c"
+#line 190 "fficonstant.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 49 "tests/golden/run/ffi-constant.hero"
     return SEEK_SET;
+#line 200 "fficonstant.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -203,8 +214,18 @@ int64_t h_fficonstant_SEEK_SET(void) {
 
 #line 50 "tests/golden/run/ffi-constant.hero"
 int64_t h_fficonstant_SEEK_END(void) {
-#line 207 "fficonstant.c"
+#line 218 "fficonstant.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 50 "tests/golden/run/ffi-constant.hero"
     return SEEK_END;
+#line 228 "fficonstant.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -222,7 +243,7 @@ int64_t h_fficonstant_SEEK_END(void) {
 #line 52 "tests/golden/run/ffi-constant.hero"
 void h_fficonstant_main(void) {
 #line 52 "tests/golden/run/ffi-constant.hero"
-    HERO_NODEBUG double t1; HERO_NODEBUG double t2; HERO_NODEBUG double t3; HERO_NODEBUG double t4; HERO_NODEBUG double t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG double t1, t2, t3, t4, t5; HERO_NODEBUG int64_t t6, t7, t8, t9; HERO_ENTRY_STOP; goto bb0;
 #line 52 "tests/golden/run/ffi-constant.hero"
 bb0:
 #line 54 "tests/golden/run/ffi-constant.hero"
@@ -259,7 +280,7 @@ bb0:
     hero_print_end();
 #line 59 "tests/golden/run/ffi-constant.hero"
     return;
-#line 263 "fficonstant.c"
+#line 284 "fficonstant.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

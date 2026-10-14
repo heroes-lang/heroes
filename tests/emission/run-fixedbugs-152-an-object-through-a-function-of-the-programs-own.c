@@ -163,7 +163,17 @@ void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void);
 #line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
 #line 166 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#pragma clang diagnostic push
+#pragma clang diagnostic error "-Wshift-count-overflow"
+#pragma clang diagnostic error "-Wshift-count-negative"
+#pragma clang diagnostic error "-Wshift-negative-value"
+#pragma clang diagnostic error "-Wshift-sign-overflow"
+#pragma clang diagnostic error "-Winteger-overflow"
+#pragma clang diagnostic error "-Wdivision-by-zero"
+#line 19 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     return ERANGE;
+#line 176 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -181,7 +191,7 @@ int32_t h_fixedbugs152anobjectthroughafunctionoftheprogramsown_ERANGE(void) {
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 void h_fixedbugs152anobjectthroughafunctionoftheprogramsown_main(void) {
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
-    int64_t h0_big; HERO_NODEBUG int32_t t1; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char * t3; HERO_NODEBUG void * t4; HERO_NODEBUG int32_t t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG int64_t t7; HERO_NODEBUG int32_t t8; HERO_NODEBUG int32_t t9; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
+    int64_t h0_big; HERO_NODEBUG int32_t t1, t5, t8, t9; HERO_NODEBUG HeroStr t2; HERO_NODEBUG const char *t3; HERO_NODEBUG void *t4; HERO_NODEBUG int64_t t6, t7; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto bb0;
 #line 21 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
 bb0:
     (void)hero_errno_clear();
@@ -217,7 +227,7 @@ bb0:
     hero_print_end();
 #line 26 "tests/golden/run/fixedbugs-152-an-object-through-a-function-of-the-programs-own.hero"
     return;
-#line 221 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
+#line 231 "fixedbugs152anobjectthroughafunctionoftheprogramsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
     if (v->tag == INT64_C(0)) {

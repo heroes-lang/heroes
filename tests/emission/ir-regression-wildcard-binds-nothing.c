@@ -118,7 +118,7 @@ int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs);
 #line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_kind_of(h_regressionwildcardbindsnothing_Token h0_t) {
 #line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
-    HERO_NODEBUG h_regressionwildcardbindsnothing_Token h1_s0; HERO_NODEBUG int64_t h2_r0; HERO_NODEBUG h_regressionwildcardbindsnothing_Token t1; HERO_NODEBUG h_regressionwildcardbindsnothing_Token t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG int64_t t5; HERO_NODEBUG int64_t t6; HERO_ENTRY_STOP; goto bb0;
+    HERO_NODEBUG h_regressionwildcardbindsnothing_Token h1_s0, t1, t2; HERO_NODEBUG int64_t h2_r0, t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0;
 #line 13 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb0:
     t1 = h0_t;
@@ -165,7 +165,7 @@ bb3:
 #line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 int64_t h_regressionwildcardbindsnothing_count_of(HeroArrayHeader * h0_xs) {
 #line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
-    int64_t h1_n; HERO_NODEBUG HeroArrayHeader * h2_xs0 = {0}; HERO_NODEBUG int64_t h3_i0; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroArrayHeader * t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG int64_t t4; HERO_NODEBUG HeroArrayHeader * t5; HERO_NODEBUG int64_t t6; HERO_NODEBUG bool t7; HERO_NODEBUG int64_t t8; HERO_NODEBUG int64_t t9; HERO_NODEBUG int64_t t10; HERO_NODEBUG int64_t t11; HERO_NODEBUG int64_t t12; HERO_NODEBUG int64_t t13; HERO_NODEBUG int64_t t14; HERO_NODEBUG HeroArrayHeader * t15; HERO_ENTRY_STOP; goto bb0;
+    int64_t h1_n; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t15; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t8, t9, t10, t11, t12, t13, t14; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0;
 #line 18 "tests/golden/ir/regression-wildcard-binds-nothing.hero"
 bb0:
     t1 = INT64_C(0);
