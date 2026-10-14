@@ -119,6 +119,7 @@ use suite_units
 use suite_warnings
 use suite_run
 use suite_unseen
+use strings
 
 # The prefix of this run's scratch directory; the process id follows it
 # (main, below), so that no two runs alive at once share a directory.
@@ -615,6 +616,100 @@ function shown(name: str, pick: str) -> str
         return name + " (shard " + shard.must().index.to_str() + " of " + shard.must().count.to_str() + ", its floor and skip ratio left to the whole suite)"
 
     return name + " (only " + pick + ")"
+
+# **THE HARNESS'S OTHER ROOT**, the issue program `ISSUE_PROGRAM`
+# (`.claude/rules/records.md` § The issues), a program of its own beside this
+# one. `heroes test` takes one file and runs the tests of the modules that file
+# reaches, so the nineteen modules only the issue program reaches
+# (`issue_links`, `issue_write`, `issue_draft` and the rest) were tested by no
+# runner: this root's closure reached none of them, and nothing, no suite, CI
+# step or hook, ran `heroes test tests/harness/issues.hero` (defect 2064,
+# measured 2026-10-14: 162 tests, all passed, 20.46 s alone). So the net's own
+# tests run that root's tests too, on every machine and every CI leg that runs
+# these, through the one runner, and ask its count of the files.
+constant ISSUE_PROGRAM: str
+    "tests/harness/issues.hero"
+
+# Every module the root `root` reaches through its `use` lines, the root among
+# them, each a file of `dir`, in the order they are found. A `use` of any
+# other shape, or one naming no file there, is a failure rather than a module
+# left out, since a module left out is a count that agrees by accident.
+function reached(dir: str, root: str) -> [str]?
+    out: [str] @= []
+    seen: {str: bool} @= {}
+    waiting: [str] @= [root]
+
+    while waiting.len() > 0
+        name = waiting[waiting.len() - 1]
+        waiting @ waiting.slice(from: 0, to: waiting.len() - 1)
+
+        if !seen[name].is_err()
+            continue
+        seen[name] @ true
+        text = read_file(dir + "/" + name + ".hero")
+
+        if text.is_err()
+            return fail(code: "absent", msg: "`use " + name + "` names no module " + dir + "/" + name + ".hero")
+        out @ out.push(name)
+
+        for line in strings.lines(text.must())
+            if !strings.starts_with(text: line, prefix: "use ")
+                continue
+            used = strings.without_prefix(text: line, prefix: "use ")
+
+            if used.len() == 0 || strings.words(used).len() != 1 || strings.contains(text: used, needle: "/")
+                return fail(
+                    code: "shape",
+                    msg: dir + "/" + name + ".hero: `" + line + "` is not `use <module>`, which this count reads"
+                )
+            waiting @ waiting.push(used)
+
+    return ok(out)
+
+# How many `test` blocks open in the modules `root` reaches: what `heroes test`
+# runs of it.
+function blocks(dir: str, root: str) -> i64?
+    count: i64 @= 0
+
+    for name in reached(dir: dir, root: root)?
+        for line in strings.lines(read_file(dir + "/" + name + ".hero")?)
+            if strings.starts_with(text: line, prefix: "test \"")
+                count @ count + 1
+
+    return ok(count)
+
+test "the modules a root reaches are read from its use lines, and one naming no file is no module"
+    assert reached(dir: "tests/harness", root: "issues").must().len() > reached(dir: "tests/harness", root: "report").must().len()
+    assert reached(dir: "tests/harness", root: "issues").must()[0] == "issues"
+    assert !strings.contains(text: reached(dir: "tests/harness", root: "issues").must().join(" "), needle: "suite_")
+    assert reached(dir: "tests/harness", root: "no_such_module").is_err()
+    assert blocks(dir: "tests/harness", root: "issues").must() > blocks(dir: "tests/harness", root: "issue_links").must()
+
+test "the issue program's own tests run with the net's own, every block its modules hold and all passed (defect 2064)"
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", ISSUE_PROGRAM]).must()
+    failed: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if strings.starts_with(text: line, prefix: "FAIL \"")
+            failed @ failed.push(line)
+
+    # The failing tests by name, then the whole verdict.
+    assert failed.join("\n") == ""
+    assert ran.code == 0
+    held = blocks(dir: "tests/harness", root: "issues").must()
+    said: [str] @= []
+
+    # The runner's verdict is the one line `<n> tests, ...`.
+    for line in strings.lines(ran.out)
+        words = strings.words(line)
+
+        if words.len() > 1 && words[1] == "tests," && !strings.to_number(words[0]).is_err()
+            said @ said.push(line)
+
+    assert said == [held.to_str() + " tests, all passed"]
+    assert !shell.remove_tree(scratch).is_err()
 
 test "the third word binds the suites that walk cases, records narrowed to a path, and no other"
     assert takes_cases("check")

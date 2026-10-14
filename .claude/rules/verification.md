@@ -115,7 +115,7 @@ which pins a diagnostic's notes and excerpts (defect 289).
 | `CLAUDE.md`, `docs/ROADMAP.md`, `docs/measurements/010-spec-budget-ledger.md` | `records` `unseen` **`spec`** (the contract's ceiling, the headings a `§` citation names, the spec's ledger) |
 | `editors/**` | `spec` (the editor's grammar, held to the language's words) |
 | `.claude/hooks/**` | **the hooks' own tests**, `python3 -I -m unittest discover -s .claude/hooks -t .claude/hooks`, plus what `.claude/**` already gets; their temporary folders, made and removed by the tests themselves in the system's temporary directory, are the author's one exception (2026-10-09) to CLAUDE.md § Hard stops' *no file outside this repository's root*, since two tests ask how a file outside every tree is judged |
-| `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, and `canonical`, plus what `tests/**` gets |
+| `tests/harness/**` | **the net's own tests**, `heroes test tests/harness/main.hero`, which runs the issue program's own, `tests/harness/issues.hero`'s, inside it since defect 2064, and `canonical`, plus what `tests/**` gets |
 | a file `site/src/lib/claims.ts` names at its top (`selfhost/cli/table.hero`, `selfhost/cli/doctor.hero`, `selfhost/parse/decl.hero`, `tests/harness/suite_spec.hero`, `.claude/agents/`, `.github/workflows/ci.yml`, and the rest it lists), or `site/**` | **the site's build**, `npm run build` in `site/`, before the push; and `spec` for `site/README.md`, whose headings a `§` citation names |
 
 **The paths a suite names have been read from the tree since 2026-10-08, and
