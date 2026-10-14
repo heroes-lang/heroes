@@ -18,6 +18,7 @@ use cli/pointee_ask
 use cli/header_ask
 use cli/reach_ask
 use cli/member_ask
+use cli/system_paths
 use cli/probing
 use cli/header_refused
 use cli/header_alone
@@ -134,7 +135,7 @@ function of_refusal(failed: ()?, art: compile.Artifact, s: source.Source, t: too
         late = opening_told.told(art, s, t, under: words, unit_headers: unit_headers)
 
         if late.len() > 0
-            _ = compile.stage(late, s).is_err()
+            _ = compile.stage(system_paths.shown(t, under: words, told: late), s).is_err()
             return fail(code: "diagnostics", msg: "a header this program binds does not compile")
 
     # A unit clang refused carries its own path inside the message
@@ -229,7 +230,9 @@ function told_header(message: str, art: compile.Artifact, s: source.Source, t: t
     for d in refusal
         told @ told.push(header_order.refused(d, s, art.decls, t, under: under, unit_headers: unit_headers))
 
-    _ = compile.stage(told, s).is_err()
+    # A file of the C library or the toolchain named as an include names it
+    # (`cli/system_paths.hero`, defect 2047).
+    _ = compile.stage(system_paths.shown(t, under: under, told: told), s).is_err()
     return true
 
 # The message of a failed `()?`.
