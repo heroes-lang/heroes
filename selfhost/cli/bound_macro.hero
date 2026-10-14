@@ -45,6 +45,7 @@ use cli/bound_names
 use cli/bound_said
 use cli/bound_ask
 use cli/bound_told
+use cli/order_trial
 use cli/strings
 
 # The refusals of every list's names, each name told once.
@@ -148,7 +149,11 @@ function changed(steps: [str], from: i64, to: i64) -> i64
 
 # The names a doubted header leaves as an earlier group's macro made them,
 # asked again of that header with every earlier group that changed one of
-# them left out: told where it reads one otherwise and names it itself.
+# them left out: told where it reads one otherwise and names it itself, and
+# where the header still compiles after the macro, which is the shape no
+# clang refusal tells. One the macro breaks is refused by clang and told by
+# its readers, a header that compiles alone and not after another
+# (`cli/header_alone.hero`, defect 557) with the move that builds it.
 function earlier(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source, decls: [ast.Decl], headers: [str], said: {str: str}, doubted: [bound_names.Bound], text: str) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     place: i64 @= 1
@@ -182,7 +187,7 @@ function earlier(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Sourc
             lines @ strings.with_all(list: lines, more: bound_ask.questions(asked, place: place))
             alone = bound_ask.alone_answers(t, probe: probe, text: bound_ask.opening(lines))
 
-            if !alone.is_err()
+            if !alone.is_err() && compiles_up_to(t, probe: probe, headers: headers, place: place)
                 for b in asked
                     steps = places(said, b: b, count: headers.len())
                     read = alone.must().meanings[place.to_str() + " " + b.name].default("")
@@ -195,6 +200,16 @@ function earlier(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Sourc
         place @ place + 1
 
     return out
+
+# Whether the unit's opening compiles with the groups' headers up to the one
+# at `place`.
+function compiles_up_to(t: toolchain.Toolchain, probe: compiling.Probe, headers: [str], place: i64) -> bool
+    ran = order_trial.compiled(
+        t,
+        words: probe.words,
+        text: order_trial.opening(headers.slice(from: 0, to: place), question: "")
+    )
+    return ran.asked && ran.compiles
 
 # The last place before `before` whose answer differs from the one before it.
 function changed_last(steps: [str], before: i64) -> i64
