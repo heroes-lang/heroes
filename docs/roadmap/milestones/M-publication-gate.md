@@ -75,3 +75,13 @@ GitHub's branch-protection API answers *Branch not protected*. *SPDX headers
 across `runtime/`*: 24 of its 33 `.c` and `.h` files carry one. The first posts
 follow this gate at row 86 (M-launch-posts), and the question of a repository
 of the site's own reopens here.
+
+**Corrected 2026-10-15**: the correction above is itself wrong. *`main` is
+protected* was true. The repository ruleset *main is not rewritten*, active
+since 2026-09-08, refuses a deletion and a non-fast-forward update of `main`,
+and a second, *release and milestone tags are immovable*, refuses them for
+every `v*`, `m-*` and `site-v*` tag. The branch-protection API that
+correction read does not see rulesets; `gh api
+repos/heroes-lang/heroes/rules/branches/main` lists them. Both were suspended
+for the one rewrite of the history and put back the same (measurement 045
+§ 8).

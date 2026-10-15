@@ -99,6 +99,10 @@ record cites commit hashes and a rebase would falsify them. An issue's labels,
 class and closing are written by the maintainer; you do not need to learn the
 record's format to contribute to the compiler.
 
+**The history was rewritten once, on 2026-10-15**, to keep the compiler's
+generated seed at every tag and at the head of `main`; the commits as they were
+stand under `refs/archive/`, and it does not happen twice.
+
 ## What the licence lets you do anyway, and that is not withdrawn
 
 Heroes is Apache-2.0 (`LICENSE`), with a runtime exception

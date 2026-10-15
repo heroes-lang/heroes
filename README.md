@@ -153,6 +153,21 @@ working is a calculator, spread over four modules, with its own tests.
 The chain from here is `docs/ROADMAP.md` § The chain. What is already built has
 one journal each, indexed at `docs/records/journal/README.md`.
 
+> [!NOTE]
+> **This repository's history was rewritten once, on 2026-10-15, and will not be
+> again.** Until then `seed/heroes.c`, the compiler's own C, was committed at
+> every batch: 301 versions, 87% of what a fresh clone received, and the clone
+> was 617 MiB. The rewrite kept it at every tag and at the head of `main`; every
+> other byte of every commit, every message, author and date is as it was, and
+> every tag kept its name. A fresh clone is now 125 MiB. The commits as they
+> were, each with the seed it carried, stand under `refs/archive/`: every hash
+> the records cite still opens there, and an old commit is built or bisected
+> there, after `git fetch origin 'refs/archive/*:refs/archive/*'`. The numbers
+> are
+> `docs/measurements/045-the-seed-is-seventy-percent-of-the-history-and-a-rewrite-that-keeps-it-at-the-releases-clones-in-seventy-one-mebibytes.md`,
+> and the promise that `main` and the published tags are not rewritten again is
+> M-compatibility-promise's.
+
 ## Build and try it
 
 **A C compiler is the only thing you need.** `seed/heroes.c` is this compiler

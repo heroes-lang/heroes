@@ -261,3 +261,64 @@ each the original blob, each building a compiler that says its version,
 **What this leaves to the author**: which seeds the rewrite keeps, B, D, A
 or E, with the numbers above; then the force-push, the reset of the shared
 checkout, and the CI's release job around the re-pushed tags, each asked for.
+
+## 8. The run that counts, 2026-10-15
+
+The author chose A, its own decision issue. The run differs from § 7's in one
+way found that night: **the history before the seed is not rewritten at all.**
+Of the 3,621 commits of `main` and the tags, 2,947 hold the seed or descend
+from a commit that does, and a single commit bounds them, `13b678532`.
+`git filter-repo --refs` was given `main`, the 47 tags past that commit and
+`^13b678532`, with `--prune-degenerate never` beside § 7's flags. The 674
+commits before it, the five signed ones and 22 tags among them, keep their
+hashes and their signatures; § 5's variant C failed on ranges, and negatives
+beside whole refs do not. A partial run keeps the clone's own refs, so its
+`origin` was removed before the collection: the same procedure with it left
+in kept every old seed alive.
+
+Verified on the rewritten copy: `main` and 47 tags moved, 22 tags as they
+were; 2,947 commits changed, none with another author, committer, date or
+message and none with a tree that differs outside `seed/heroes.c`; the five
+signatures present on their own hashes; 124.90 MiB and 77,520 objects, 39
+seeds. **`main`'s tree is the old `main`'s, `6814b4a26`, all 12,557 files and
+the seed among them**, the old `main` being `7d554af2d` in the bundle kept
+aside. The remap that follows: 102 hashes in 75 files, 174 substitutions,
+each the one the commit map gives, and no other difference in any file, eight
+copies of a fixture's bytes kept. On that tree the fixpoint by `cmp` was
+identical; the full net read 8,630 passed and 0 failed, the compiler's own
+tests 1,677 and the net's own 405, all passed.
+
+**The copy kept aside**, by the author's instruction of that night, under
+`.claude/worktrees/backup-before-rewrite/`: a bundle of every ref at
+`7d554af2d` (578.5 MiB, `git bundle verify` okay, cloned back to 3,621 commits
+and 69 tags), a zip of a clone made from it (617.1 MiB, extracted elsewhere to
+a clean tree with 301 seed versions), a mirror of GitHub at `0a2ecfd7b`, and
+the SHA-256 of the two files.
+
+**The push.** The archive first: the old `main`, `7d554af2d`, and the 69 old
+tags under `refs/archive/`, 70 refs, each read back the same. Then the first
+force push of the tags was refused whole, `GH013`: two rulesets of this
+repository, *main is not rewritten* and *release and milestone tags are
+immovable*, active since 2026-09-08 with no bypass, refuse a deletion and a
+non-fast-forward update of `main` and of every `v*`, `m-*` and `site-v*` tag.
+The push was atomic, so no ref moved; the `heroes` workflow it had turned off
+stayed off until the second form. That form suspended both rulesets, turned
+the workflow off, made one atomic push of the 47 tags and `main`, and then,
+whatever had happened, put both rulesets back from their saved bodies and the
+workflow on; read back, both are active and the same as before, rule for rule.
+Before it, the release on a re-pointed tag was proved on a throwaway private
+repository: the release stayed published with its notes on the new tag
+object, and the old commit opened through `refs/archive/`.
+
+After it: `main` and the 69 tags on GitHub are the rewritten copy's, and the
+70 archive refs are untouched; `main`'s parent has the old `main`'s tree,
+`6814b4a26`; the three releases are published with their notes and their
+dates; an old `Record:` permalink answers 200 (once 503 a minute after the
+push, then 200 three times); no workflow started on any tag; Deploy site and
+CodeQL passed on the new `main`, and its four CI legs were running when this
+was written. **A clone from GitHub is 125.34 MiB, 77,625 objects and 39
+seeds, against 616.61 MiB the day before**, and took 27 seconds.
+
+And the copy kept aside went to a private repository of the author's too,
+`giuseppearici/heroes-before-rewrite`, its 76 refs read back the same as the
+bundle's.
