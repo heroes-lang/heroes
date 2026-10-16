@@ -1,0 +1,273 @@
+# Which group records hold a lock C forbids to copy, at any depth, asked of
+# clang at `build` beside the layout check (panel 215's R2, issue 1335;
+# design.md §1.11, §1.12, §4.19). The question and its reading are
+# `emit/lock_screen.hero`; the copies refused are `check/lock_copies.hero`.
+# `heroes check` asks clang nothing, so the refusal arrives at `build` and
+# `--emit-c`, as a field the header lacks does.
+#
+# **Which members are asked.** A record the layout screen vouched for names
+# every member its struct has, each a field whose Heroes type the build's
+# field assertions hold to the header's, so it is asked of its own type
+# alone, and what its fields hold follows from their own records. Every
+# `partial` record and every record the screen could not vouch for is read
+# from clang's record-layout dump, every member at every depth by its C path.
+#
+# **An array member's elements are dumped in a round of their own**
+# (`__typeof__` of `path[0]`), because the dump prints `struct c[2] many` as
+# one line and expands nothing below it (measured by the sitting on Apple
+# clang 21 and Debian clang 22.1.8). **The rounds have no bound, and end**:
+# the dump expands only what a type holds by value, a C struct cannot hold
+# itself by value, so each round asks of types strictly inside the last
+# one's. A bound would have been a silence: a lock five arrays deep, read
+# as no lock at all. The test at the bottom holds the premise, a struct that
+# points at an array of itself.
+
+use ast
+use source
+use check/state
+use ir/containers
+use emit/extern_union
+use emit/layout_text
+use emit/layout_rows
+use emit/layout_screen
+use emit/lock_screen
+use cli/toolchain
+use cli/process
+use cli/publish
+use cli/digest
+use cli/deps
+use cli/kept
+use cli/pointee
+use cli/read_back
+use cli/layout
+use cli/layout_runs
+use cli/compiling
+use parse
+use resolve
+use checker
+use ir/lower
+
+# The numbers element wrappers are dumped under, above every declaration's.
+constant ELEMENTS: i64
+    1000000000
+
+# A dumped wrapper's record, its C type, and the C path its members hang
+# from: empty for the record itself, `many[0]` for an element of `many`.
+record Owner
+    decl: i64
+    c_type: str
+    prefix: str
+
+# What the screen said about the records one probe holds, read from the
+# answer `layout.check_records` kept under the same key: the records it
+# could not vouch for are the ones this route reads the dump of.
+record Screened
+    wanted: [layout_text.Asked]
+    said: str
+    asking: layout_runs.Asking
+
+# The first lock clang found in each group record of `records`, by
+# declaration. Empty where the screen kept nothing: headers that did not
+# compile alone, which the program's own compile tells on the author's line.
+function found(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}) -> {i64: lock_screen.Found}
+    none: {i64: lock_screen.Found} = {}
+    screen = screened(t, p, c, s, decls, probe: probe, records: records)
+
+    if screen.is_err()
+        return none
+    sc = screen.must()
+    flagged = layout_screen.flagged(sc.said)
+    questions: [lock_screen.Question] @= []
+    asking: [layout_text.Asked] @= []
+    owners: {i64: Owner} @= {}
+
+    for one in sc.wanted
+        questions @ questions.push(lock_screen.Question(decl: one.decl, c_type: one.c_type, path: ""))
+
+        if is_partial(decls, decl: one.decl) || !flagged[one.decl].is_err()
+            asking @ asking.push(one)
+            owners[one.decl] @ Owner(decl: one.decl, c_type: one.c_type, prefix: "")
+
+    next: i64 @= ELEMENTS
+
+    while asking.len() > 0
+        made = dump_kept(sc.asking, text: layout_text.dump_unit(sc.asking.headers, wanted: asking))
+
+        if made.is_err()
+            break
+        rows = layout_rows.wrapper_rows(made.must())
+        heads = layout_text.heads(rows)
+        more: [layout_text.Asked] @= []
+
+        for one in asking
+            owner = owners[one.decl].must()
+            at = heads[one.decl]
+
+            if at.is_err()
+                continue
+            read = layout_text.members(rows: rows, from: at.must())
+
+            if read.is_err()
+                continue
+
+            for m in read.must()
+                if m.path.len() == 0 || m.bitfield
+                    continue
+                path: str @= m.path
+
+                if owner.prefix.len() > 0
+                    path @ owner.prefix + "." + m.path
+                rank = rank_of(m.type_text)
+                path @ path + "[0]".repeat(rank.to_u64().must())
+                questions @ questions.push(lock_screen.Question(decl: owner.decl, c_type: owner.c_type, path: path))
+
+                if rank > 0
+                    owners[next] @ Owner(decl: owner.decl, c_type: owner.c_type, prefix: path)
+                    more @ more.push(
+                        layout_text.Asked(decl: next, c_type: "__typeof__(((" + owner.c_type + " *)0)->" + path + ")")
+                    )
+                    next @ next + 1
+
+        asking @ more
+
+    said = asked_kept(sc.asking, text: lock_screen.unit(sc.asking.headers, questions: questions))
+
+    if said.is_err() || lock_screen.strays(said.must())
+        return none
+    return lock_screen.answers(said.must(), questions: questions)
+
+# The screen `layout.check_records` kept for these records, found by the one
+# spelling of its key (`layout.screen_dir`).
+function screened(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}) -> Screened?
+    wanted = layout.wanted_of(s, decls, records: ok(records))
+
+    if wanted.len() == 0 || probe.read.is_err()
+        return fail(code: "none", msg: "nothing to ask")
+    u = extern_union.used(p, c, decls)
+    screen_text = layout_screen.screen_unit(probe.headers, wanted, s, decls, c, u)
+    dir = layout.screen_dir(t, probe: probe, screen_text: screen_text, reads: probe.read.must())
+    memo: {str: str} @= probe.digests
+    known = deps.vouched(dir + "/screen.deps.txt", @memo)
+
+    if known.is_err()
+        return fail(code: "none", msg: "no screen kept")
+    said = kept.read(dir + "/screen-" + known.must() + ".txt")
+
+    if said.is_err()
+        return fail(code: "none", msg: "no screen kept")
+    a = layout_runs.Asking(t: t, dir: dir, headers: probe.headers, s: s, decls: decls, c: c, u: u, words: probe.words)
+    return ok(Screened(wanted: wanted, said: said.must(), asking: a))
+
+# How many array levels a C type's text ends with: `struct c[2]` 1,
+# `int[2][3]` 2, `int[]` 1, `int *` 0.
+function rank_of(type_text: str) -> i64
+    n: i64 @= 0
+    at: i64 @= type_text.len() - 1
+
+    while at >= 0 && type_text[at] == ']'
+        while at >= 0 && type_text[at] != '['
+            at @ at - 1
+
+        n @ n + 1
+        at @ at - 1
+
+    return n
+
+function is_partial(decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .record_decl rec                                             => return rec.partial
+        .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# A dump, kept under the digest of the unit that asked for it.
+function dump_kept(a: layout_runs.Asking, text: str) -> str?
+    path = a.dir + "/locks-dump-" + digest.digest(text) + ".txt"
+    known = kept.read(path)
+
+    if !known.is_err()
+        return known
+    made = layout_runs.dump(a, dump_text: text)
+
+    if !made.is_err() && made.must().len() <= layout_runs.KEPT_DUMP
+        kept.write(path: path, text: made.must())?
+    return made
+
+# What clang said of the identity unit, kept under the unit's digest.
+function asked_kept(a: layout_runs.Asking, text: str) -> str?
+    path = a.dir + "/locks-said-" + digest.digest(text) + ".txt"
+    known = kept.read(path)
+
+    if !known.is_err()
+        return known
+    unit = pointee.unit_path(dir: a.dir, stem: "locks", text: text)
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    err_path = publish.private_name(a.dir + "/locks-stderr.txt")
+    line: [str] @= ["clang", "-fsyntax-only", "-ferror-limit=0"]
+    line @ layout_runs.searched(a, line: line)
+    line @ line.push(unit)
+    ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
+    said = read_back.words(err_path)
+    publish.discard(err_path)
+
+    if !ran.started || said.is_err()
+        return fail(code: "unread", msg: "the lock unit was not run")
+    kept.write(path: path, text: said.must())?
+    return said
+
+## Tests
+
+test "a type's text ends in as many array levels as it closes"
+    assert rank_of("struct counter[2]") == 1
+    assert rank_of("int[2][3]") == 2
+    assert rank_of("int[]") == 1
+    assert rank_of("int *") == 0
+    assert rank_of("") == 0
+
+# **The element rounds end, and find a lock an array holds.** A `partial`
+# record holds an array of structs that each hold a lock, beside a pointer to
+# an array of pointers to itself and a pointer to an array of those structs;
+# a second record holds the two pointers alone. The dump expands only what a
+# type holds by value, so the rounds end and the pointers hold no lock. (A
+# pointer to an array of the struct itself is not C: its element type is
+# incomplete inside its own definition, which clang refuses.) The lock is the
+# platform's own, a POSIX mutex or a Windows critical section, so the case
+# reads one way on every leg.
+test "the element rounds find a lock an array of records holds, and end at a struct pointing at an array of itself"
+    text = "extern \"lk.h\"\n    record holder tag holder partial\n        n: i32\n    record light tag light partial\n        n: i32\n\nfunction main()\n    print(1)\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-locks-rounds"
+    headers_at = "build/selftest-locks-rounds-include"
+    assert !process.remove_tree(t.build).is_err()
+    assert !process.mkdir_all(headers_at).is_err()
+    header = "#include <stdint.h>\n#ifdef _WIN32\n#include <windows.h>\ntypedef CRITICAL_SECTION hero_lk;\n#else\n#include <pthread.h>\ntypedef pthread_mutex_t hero_lk;\n#endif\nstruct counter { int32_t k; hero_lk lock; };\nstruct holder { int32_t n; struct holder *(*next)[2]; struct counter (*more)[2]; struct counter many[2]; };\nstruct light { int32_t n; struct holder *(*next)[2]; struct counter (*more)[2]; };\n"
+    assert !write_file(path: headers_at + "/lk.h", text: header).is_err()
+    none: [str] = []
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [headers_at],
+        package_flags: none,
+        runtime: t.runtime,
+        source_dir: ""
+    )
+    probe = compiling.probe(t.build, under: under, headers: ["lk.h"])
+    every: {i64: bool} @= {}
+    named: {str: i64} @= {}
+    at: i64 @= 0
+
+    for d in parsed.decls
+        every[at] @ true
+        named[source.span_text(s, d.name)] @ at
+        at @ at + 1
+
+    assert !layout.check_records(t, low.program, c, s, parsed.decls, probe: probe, records: ok(every)).is_err()
+    held = found(t, low.program, c, s, parsed.decls, probe: probe, records: every)
+    assert held[named["holder"].must()].must().path == "many[0].lock"
+    assert held[named["light"].must()].is_err()

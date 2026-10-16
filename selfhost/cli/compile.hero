@@ -21,6 +21,7 @@ use diag_render
 use parse
 use modules
 use resolve
+use resolved
 use rename_fit
 use checker
 use check/state
@@ -132,8 +133,11 @@ record Artifact
     decls: [ast.Decl]
     checked: state.Checked
     program: containers.Program
+    # The resolver's answer, which `check/lock_copies.hero` walks at `build`
+    # for the copies of a record whose header holds a lock (panel 215's R2).
+    resolved: resolved.Resolved
 
-function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program) -> Artifact
+function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: containers.Program, r: resolved.Resolved) -> Artifact
     none_c: [str] = []
     none_p: [str] = []
     none_t: [str] = []
@@ -147,7 +151,8 @@ function halted(tree: ast.Ast, decls: [ast.Decl], c: state.Checked, p: container
         tree: tree,
         decls: decls,
         checked: c,
-        program: p
+        program: p,
+        resolved: r
     )
 
 # The pipeline to a translation unit. The failure's code carries the
@@ -209,7 +214,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
 
         if c.holes.len() > 0
             io.print_artifact(text: holes.report(parsed.tree, out, c, s, parsed.decls))
-        return ok(halted(parsed.tree, parsed.decls, c: c, p: p))
+        return ok(halted(parsed.tree, parsed.decls, c: c, p: p, r: out))
 
     # §4.16: the hole is not an error, and there is still no binary.
     # Both halves — and the files named are the ones the holes are IN,
@@ -307,7 +312,7 @@ function to_unit(s: source.Source, options: Options, version: str) -> Artifact?
         if !stop_n.is_err()
             return leave(stop_n.must(), stage_name: "the C emission")
     return ok(
-        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p)
+        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, packages: emitted.packages, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p, resolved: out)
     )
 
 # **A stage that stops names itself.** This used to answer "a stage

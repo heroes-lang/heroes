@@ -1,0 +1,18 @@
+# Panel 215's R2, issue 1335, 2026-10-16: a function of the program's own
+# taking a record that holds a mutex by value is told at its parameter, with
+# a `guess` fix to take it by place, and the call that copies is told at its
+# argument. A field read through the parameter would read in place; the
+# copy is the parameter itself.
+
+extern "ffi-lock-copied.h"
+    record Box tag box partial
+        n: i64
+    function box_init(@b: Box) -> i32
+
+function peek(b: Box) -> i64  #~ ffi_lock_copied
+    return b.n
+
+function main()
+    m: Box @= Box(n: 7, rest: zero)
+    _ = box_init(@m)
+    print(peek(m))  #~ ffi_lock_copied

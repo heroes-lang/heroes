@@ -1,0 +1,17 @@
+error[ffi_lock_copied]: this copies a `Box`, whose C struct `struct box` holds a `pthread_mutex_t` at `m`, which C forbids to copy
+  at tests/golden/unsupported/ffi-lock-copied-an-element-of-an-array.hero:12:22
+     |
+  12 |     boxes: [Box] @= [Box(n: 1, rest: zero)]  #~ ffi_lock_copied
+     |                      ^^^^^^^^^^^^^^^^^^^^^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: an array or a map holds its elements by value, so each element is a copy: keep each record in a cell of its own, `c: T @= T(...)`, and lend it with `@`
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`
+
+error[ffi_lock_copied]: this copies a `Box`, whose C struct `struct box` holds a `pthread_mutex_t` at `m`, which C forbids to copy
+  at tests/golden/unsupported/ffi-lock-copied-an-element-of-an-array.hero:13:24
+     |
+  13 |     boxes @ boxes.push(Box(n: 2, rest: zero))  #~ ffi_lock_copied
+     |                        ^^^^^^^^^^^^^^^^^^^^^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: an array or a map holds its elements by value, so each element is a copy: keep each record in a cell of its own, `c: T @= T(...)`, and lend it with `@`
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`

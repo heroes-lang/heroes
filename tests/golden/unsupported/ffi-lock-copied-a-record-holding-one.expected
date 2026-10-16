@@ -1,0 +1,7 @@
+error[ffi_lock_copied]: this copies a `Holder`, whose field `b` holds a `Box`, whose C struct `struct box` holds a `pthread_mutex_t` at `m`, which C forbids to copy
+  at tests/golden/unsupported/ffi-lock-copied-a-record-holding-one.hero:20:19
+     |
+  20 |     h2: Holder @= h  #~ ffi_lock_copied
+     |                   ^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`

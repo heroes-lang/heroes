@@ -1,8 +1,9 @@
 # The header's layout of every group record, asked of clang before any unit
 # compiles (design.md §4.19, §1.12; panel 186, defects 150, 151 and 156).
 # What is asked and how the answers are read is `emit/layout_screen.hero`
-# and `emit/layout_text.hero`; this file runs clang and keeps the answer, as
-# `cli/pointee.hero` does.
+# and `emit/layout_text.hero`; this file runs the screen and keeps its
+# answer, as `cli/pointee.hero` does, and the dump and the check unit run in
+# `cli/layout_runs.hero`.
 #
 # **One process on a warm build, two on a cold one, four at most.** The screen
 # runs once per (compiler, records and what the program does with them, the
@@ -32,11 +33,8 @@
 # the screen's stderr and the dump, from which the flagged set, the rows this
 # compiler asks for (`emit/layout_rows.hero`) and the check unit are
 # re-derived on every build, and the verdict keyed by the check unit's own
-# text. **A dump over `KEPT_DUMP` bytes is not kept at all**, and is asked of
-# clang again on the next build: over a deep by-value nest it is cubic in the
-# depth (panel 186's critic, 348 MB at a thousand), and keeping only its
-# asked rows was measured to be the stale-reading class above, the lane's own
-# reader changed and its kept rows read as the new one's (2026-10-02). A compiler that reads the dump differently therefore asks
+# text; a dump too large to keep is asked of clang again
+# (`layout_runs.KEPT_DUMP`). A compiler that reads the dump differently asks
 # clang again where it must, which is the lesson `cli/pointee.hero` paid for
 # on 2026-09-04: the key's fingerprint is the release's `VERSION`, a constant
 # between releases, and a kept reading outlives the reader that made it.
@@ -60,7 +58,6 @@ use emit/layout_check
 use cli/toolchain
 use cli/process
 use cli/publish
-use cli/response_file
 use cli/digest
 use cli/deps
 use cli/pointee
@@ -69,29 +66,11 @@ use cli/libraries
 use cli/strings
 use cli/read_back
 use cli/kept
+use cli/layout_runs
 use parse
 use resolve
 use checker
 use ir/lower
-
-# The largest dump kept under `build/`, in bytes: every real header measured
-# for panel 186 dumps far below it (`SDL3/SDL.h`, whole, 30 KB), and a
-# synthetic nest of three hundred structs passes it (10 MB).
-constant KEPT_DUMP: i64
-    4194304
-
-# Everything one check asks with.
-record Asking
-    t: toolchain.Toolchain
-    dir: str
-    headers: [str]
-    s: source.Source
-    decls: [ast.Decl]
-    c: state.Checked
-    u: extern_union.Used
-    # Every word the three runs compile under but each run's own
-    # (`compiling.probe_words`), the list the key names.
-    words: [str]
 
 function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe) -> ()?
     every: {i64: bool}? = fail(code: "every", msg: "every group record")
@@ -103,11 +82,7 @@ function check(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, 
 # `cli/probing.hero`). `p` is the whole program, whose every use of a record
 # is what the union questions ask about.
 function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], probe: compiling.Probe, records: {i64: bool}?) -> ()?
-    wanted: [layout_text.Asked] @= []
-
-    for one in layout_text.asked(s, decls)
-        if emit_externs.held(records, decl: one.decl)
-            wanted @ wanted.push(one)
+    wanted = wanted_of(s, decls, records: records)
 
     if wanted.len() == 0
         return ok()
@@ -119,14 +94,11 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
     headers = probe.headers
     u = extern_union.used(p, c, decls)
     screen_text = layout_screen.screen_unit(headers, wanted, s, decls, c, u)
-    key = digest.digest(
-        t.fingerprint + "|layout|" + t.compiler_key + "|" + screen_text + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.must() + "|" + t.runtime_key
-    )
-    dir = t.build + "/layout-" + key
+    dir = screen_dir(t, probe: probe, screen_text: screen_text, reads: probe.read.must())
     listed = dir + "/screen.deps.txt"
     memo: {str: str} @= probe.digests
     known = deps.vouched(listed, @memo)
-    a = Asking(t: t, dir: dir, headers: headers, s: s, decls: decls, c: c, u: u, words: probe.words)
+    a = layout_runs.Asking(t: t, dir: dir, headers: headers, s: s, decls: decls, c: c, u: u, words: probe.words)
 
     if !known.is_err()
         screen = kept.read(dir + "/screen-" + known.must() + ".txt")
@@ -138,7 +110,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
     publish.write_whole(path: screen_c, text: screen_text, keyed: true)?
     depfile = publish.private_name(dir + "/screen.d")
     err_path = publish.private_name(dir + "/screen-stderr.txt")
-    line: [str] @= searched(a, line: ["clang", "-fsyntax-only", "-ferror-limit=0"])
+    line: [str] @= layout_runs.searched(a, line: ["clang", "-fsyntax-only", "-ferror-limit=0"])
     line @ strings.with_all(list: line, more: ["-MD", "-MT", "dep", "-MF", depfile, screen_c])
     ran = process.run(program: "clang", words: line, out: process.discard(), err: err_path)
 
@@ -171,7 +143,7 @@ function check_records(t: toolchain.Toolchain, p: containers.Program, c: state.C
 # has no layout is refused first, by the screen's own two answers, unless
 # clang erred outside the screen too: then the headers did not compile
 # alone, and the program's own compile says so on the author's line.
-function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -> ()?
+function answered(a: layout_runs.Asking, wanted: [layout_text.Asked], sum: str, said: str) -> ()?
     opaque = layout_screen.no_layout(said, wanted: wanted)
 
     if opaque.len() > 0 && !layout_screen.strays(said)
@@ -193,7 +165,7 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
     if !layouts.is_err()
         rows @ layout_rows.wrapper_rows(layouts.must()).join("\n") + "\n"
     else
-        made = dump(a, dump_text: dump_text)
+        made = layout_runs.dump(a, dump_text: dump_text)
 
         # A dump that did not compile names a record the build's own
         # compile refuses on the author's line (every group record's type is
@@ -202,10 +174,10 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
             return ok()
         rows @ layout_rows.wrapper_rows(made.must()).join("\n") + "\n"
 
-        if made.must().len() <= KEPT_DUMP
+        if made.must().len() <= layout_runs.KEPT_DUMP
             kept.write(path: kept_path, text: made.must())?
     text = layout_check.check_unit(a.headers, dump: rows, wanted: dumped, s: a.s, decls: a.decls, u: a.u, c: a.c)?
-    return judged(a, sum: sum, text: text)
+    return layout_runs.judged(a, sum: sum, text: text)
 
 # **A record named after a typedef whose type has no layout, refused here,
 # before any unit compiles** (defect 191, 2026-10-02): the screen's two
@@ -217,7 +189,7 @@ function answered(a: Asking, wanted: [layout_text.Asked], sum: str, said: str) -
 # the public CI's Linux leg stopped at exit 2. Each line is the marker
 # `emit/ffi_incomplete.hero` reads into `ffi_unknown_tag`; a JSON that names
 # no type leaves the type unsaid, never the refusal.
-function refused_opaque(a: Asking, opaque: [layout_text.Asked]) -> ()?
+function refused_opaque(a: layout_runs.Asking, opaque: [layout_text.Asked]) -> ()?
     text = layout_screen.type_unit(a.headers, wanted: opaque)
     process.mkdir_all(a.dir)?
     unit = pointee.unit_path(dir: a.dir, stem: "type", text: text)
@@ -231,7 +203,7 @@ function refused_opaque(a: Asking, opaque: [layout_text.Asked]) -> ()?
         "-Xclang"
         "-ast-dump-filter=" + layout_screen.TYPED
     ]
-    line @ searched(a, line: line)
+    line @ layout_runs.searched(a, line: line)
     line @ line.push(unit)
     ran = process.run(program: "clang", words: line, out: out_path, err: process.discard())
 
@@ -249,74 +221,27 @@ function refused_opaque(a: Asking, opaque: [layout_text.Asked]) -> ()?
 
     return fail(code: "clang", msg: said.join("\n") + "\n")
 
-# clang's record-layout dump for the unit, or absent when it did not compile.
-function dump(a: Asking, dump_text: str) -> str?
-    dump_c = pointee.unit_path(dir: a.dir, stem: "dump", text: dump_text)
-    publish.write_whole(path: dump_c, text: dump_text, keyed: true)?
-    out_path = publish.private_name(a.dir + "/dump.txt")
-    err_path = publish.private_name(a.dir + "/dump-stderr.txt")
-    line: [str] @= ["clang", "-fsyntax-only", "-Xclang", "-fdump-record-layouts"]
-    line @ searched(a, line: line)
-    line @ line.push(dump_c)
-    ran = process.run(program: "clang", words: line, out: out_path, err: err_path)
+# The group records this check asks about: every one, or those `records`
+# holds where it is given.
+function wanted_of(s: source.Source, decls: [ast.Decl], records: {i64: bool}?) -> [layout_text.Asked]
+    wanted: [layout_text.Asked] @= []
 
-    # The dump names an anonymous member by where it stands, `(anonymous at
-    # <file>:5:32)`, the file as clang was given it: read back as the screen
-    # is (defect 337), the same byte written the same way at every mention.
-    dumped_text = read_back.words(out_path)
-    publish.discard(out_path)
-    publish.discard(err_path)
+    for one in layout_text.asked(s, decls)
+        if emit_externs.held(records, decl: one.decl)
+            wanted @ wanted.push(one)
 
-    if !ran.started || ran.code != 0 || dumped_text.is_err()
-        return fail(code: "unread", msg: "the dump did not compile")
-    return ok(dumped_text.must())
+    return wanted
 
-# The check unit's verdict, kept under the digest of its own text: a compiler
-# that writes the assertions differently never reads another's answer.
-function judged(a: Asking, sum: str, text: str) -> ()?
-    if text.len() == 0
-        return ok()
-    verdict = a.dir + "/verdict-" + sum + "-" + digest.digest(text) + ".txt"
-    known = kept.read(verdict)
-
-    if !known.is_err()
-        if known.must() == "ok\n"
-            return ok()
-        return fail(code: "clang", msg: known.must())
-    check_c = pointee.unit_path(dir: a.dir, stem: "check", text: text)
-    publish.write_whole(path: check_c, text: text, keyed: true)?
-    err_path = publish.private_name(a.dir + "/check-stderr.txt")
-    line: [str] @= ["clang", "-fsyntax-only", "-ferror-limit=0"]
-    line @ searched(a, line: line)
-    line @ line.push(check_c)
-
-    # A header's warning in what clang says is the program's own compile's to
-    # tell, as the pointee check's is (defect 248).
-    checked = toolchain.asked_of_clang(
-        line: line,
-        what: "checking the header's layout of the group records",
-        err_path: err_path
+# Where a screen's answer is kept, `build/layout-<key>/`, the key naming
+# what the head of this file lists. The one spelling of it:
+# `cli/locks.hero` reads the kept answer by it, and a second spelling that
+# drifted from this one would find nothing there, so a copy of a lock would
+# build in silence.
+function screen_dir(t: toolchain.Toolchain, probe: compiling.Probe, screen_text: str, reads: str) -> str
+    key = digest.digest(
+        t.fingerprint + "|layout|" + t.compiler_key + "|" + screen_text + "|words:" + libraries.key_text(probe.words) + "|reads:" + reads + "|" + t.runtime_key
     )
-    publish.discard(err_path)
-    said: str @= "ok\n"
-
-    match checked
-        .ok _ => said @ "ok\n"
-        .err e =>
-            if e.code != "clang"
-                return fail(code: e.code, msg: e.msg)
-            said @ e.msg
-
-    kept.write(path: verdict, text: said)?
-
-    if checked.is_err()
-        return fail(code: "clang", msg: said)
-    return ok()
-
-# The line with the probe's words after it, carried in a file (defect 586,
-# `response_file.carried`): a package's compile words are among them.
-function searched(a: Asking, line: [str]) -> [str]
-    return response_file.carried(line: strings.with_all(list: line, more: a.words), dir: a.dir)
+    return t.build + "/layout-" + key
 
 ## Tests
 

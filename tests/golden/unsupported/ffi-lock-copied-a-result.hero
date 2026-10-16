@@ -1,0 +1,19 @@
+# Panel 215's R2, issue 1335, 2026-10-16: a function of the program's own
+# returning a record that holds a mutex copies it out of its place, told at
+# the signature and at the `return`; the note says to build it where it
+# lives. The caller's binding of the result is not told again: what a call
+# returns lands in its cell.
+
+extern "ffi-lock-copied.h"
+    record Box tag box partial
+        n: i64
+    function box_init(@b: Box) -> i32
+
+function made() -> Box  #~ ffi_lock_copied
+    b: Box @= Box(n: 1, rest: zero)
+    _ = box_init(@b)
+    return b  #~ ffi_lock_copied
+
+function main()
+    m = made()
+    print(m.n)

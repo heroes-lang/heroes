@@ -1,0 +1,20 @@
+# Panel 215's R2, issue 1335, 2026-10-16: a group record whose C struct
+# holds a mutex, copied out of its place. Measured on both Linux legs before
+# the refusal (issue 1335's measurement, 2026-10-14): the copy of a held
+# mutex read held, `trylock` 16, then each unlocked, locked again and was
+# destroyed at 0, at exit 0: two locks where the program wrote one.
+
+extern "ffi-lock-copied.h"
+    record Box tag box partial
+        n: i64
+    function box_init(@b: Box) -> i32
+    function box_lock(@b: Box) -> i32
+    function box_unlock(@b: Box) -> i32
+
+function main()
+    m: Box @= Box(n: 0, rest: zero)
+    print(box_init(@m))
+    print(box_lock(@m))
+    m2: Box @= m  #~ ffi_lock_copied
+    print(box_unlock(@m2))
+    print(box_unlock(@m))

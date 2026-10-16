@@ -1,0 +1,16 @@
+error[ffi_lock_copied]: `made` returns a `Box`, whose C struct `struct box` holds a `pthread_mutex_t` at `m`, a copy out of its place, which C forbids
+  at tests/golden/unsupported/ffi-lock-copied-a-result.hero:12:10
+     |
+  12 | function made() -> Box  #~ ffi_lock_copied
+     |          ^^^^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: build it where it lives, `c: T @= T(...)`, then hand it to a function that takes `@c`
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`
+
+error[ffi_lock_copied]: this copies a `Box`, whose C struct `struct box` holds a `pthread_mutex_t` at `m`, which C forbids to copy
+  at tests/golden/unsupported/ffi-lock-copied-a-result.hero:15:12
+     |
+  15 |     return b  #~ ffi_lock_copied
+     |            ^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`

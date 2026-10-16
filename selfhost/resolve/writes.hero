@@ -310,10 +310,14 @@ function aliased_mutable_arguments(name: str, first: str?, span: token.Span) -> 
     d.notes @ d.notes.push(
         "with two copies of one place landing back on it the call's answer would depend on the copy-out order, and that is what `no aliasing exists among the values this language owns` rules out (panel 010)"
     )
+
+    # The two places made different comes first, since it holds for every
+    # value; a copy does not, a group record whose C struct holds a lock
+    # being refused as one (`ffi_lock_copied`, panel 215's R2).
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "pass a copy for one of them: declare a second cell holding the same value, pass `@` that cell, and write it back after the call", replacement: "", span: span, certainty: .guess)
+        diag.Fix(title: "make the two places different: distinct fields (`@p.x` and `@p.y`) and distinct literal indices (`@xs[0]` and `@xs[1]`) are accepted", replacement: "", span: span, certainty: .guess)
     )
     d.fixes @ d.fixes.push(
-        diag.Fix(title: "or make the two places different: distinct fields (`@p.x` and `@p.y`) and distinct literal indices (`@xs[0]` and `@xs[1]`) are accepted", replacement: "", span: span, certainty: .guess)
+        diag.Fix(title: "or, where the value may be copied, pass a copy for one of them: declare a second cell holding the same value, pass `@` that cell, and write it back after the call; a record whose C struct holds a lock may not be", replacement: "", span: span, certainty: .guess)
     )
     return d

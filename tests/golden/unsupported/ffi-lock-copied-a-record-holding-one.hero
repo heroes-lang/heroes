@@ -1,0 +1,22 @@
+# UNVERIFIED — pending debrief
+# Panel 215's R2, issue 1335, 2026-10-16, adversarial: a record of the
+# program's own holding a group record by value holds its mutex too, which
+# is `partial`'s "for it and for any value holding it" (spec § 13); its copy
+# is told naming the chain of fields down to the lock's C path.
+
+extern "ffi-lock-copied.h"
+    record Box tag box partial
+        n: i64
+    function box_init(@b: Box) -> i32
+    function box_lock(@b: Box) -> i32
+
+record Holder
+    b: Box
+    k: i64
+
+function main()
+    h: Holder @= Holder(b: Box(n: 0, rest: zero), k: 1)
+    _ = box_init(@h.b)
+    h2: Holder @= h  #~ ffi_lock_copied
+    _ = box_lock(@h2.b)
+    print(h2.k)

@@ -32,6 +32,9 @@ use cli/defined_twice
 use cli/pragma_ask
 use cli/bound_macro
 use diag
+use emit/lock_screen
+use check/lock_copies
+use cli/locks
 
 # What the rounds came back with: the verdict, the failure already told where
 # it is the author's (`whose.of_refusal`); where the binary landed; the tags
@@ -161,6 +164,16 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
             modules: checked.modules
         )
 
+    # A copy of a group record whose C struct holds a lock, told before any
+    # unit compiles (panel 215's R2, `cli/locks.hero`): the author's, said
+    # here, and no round after it.
+    copied = lock_told(t, art, s, planned.probings)
+
+    if copied.len() > 0
+        _ = compile.stage(copied, s).is_err()
+        locked: ()? = fail(code: "diagnostics", msg: "a group record whose C struct holds a lock is copied")
+        return assemble.Round(verdict: locked, refusals: [], binary: "", modules: [])
+
     # One C function two modules' groups bind and their headers declare two
     # ways, told before any unit compiles (panel 202's C1,
     # `cli/two_ways.hero`): the author's, said here, and no round after it.
@@ -230,3 +243,26 @@ function holds(list: [str], one: str) -> bool
             return true
 
     return false
+
+# Every probe's records asked which hold a lock, then the program's copies of
+# them (panel 215's R2).
+function lock_told(t: toolchain.Toolchain, art: compile.Artifact, s: source.Source, probings: [probing.Probing]) -> [diag.Diagnostic]
+    found: {i64: lock_screen.Found} @= {}
+
+    for one in probings
+        if !one.probe.is_err() && probing.laid_out(art.decls, records: one.records)
+            asked = locks.found(
+                t,
+                art.program,
+                art.checked,
+                s,
+                art.decls,
+                probe: one.probe.must(),
+                records: one.records
+            )
+
+            # ORDER: none — a union of answers by declaration.
+            for decl in keys(asked)
+                found[decl] @ asked[decl].must()
+
+    return lock_copies.copies(art.tree, art.resolved, s, art.decls, art.checked, found: found)

@@ -1,0 +1,16 @@
+error[ffi_lock_copied]: `b` takes by value a `Box`, whose C struct `struct box` holds a `pthread_mutex_t` at `m`, a copy C forbids
+  at tests/golden/unsupported/ffi-lock-copied-a-parameter-taken-by-value.hero:12:15
+     |
+  12 | function peek(b: Box) -> i64  #~ ffi_lock_copied
+     |               ^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`
+  fix (guess): take it by place, and lend it at each call with `@`
+
+error[ffi_lock_copied]: this copies a `Box`, whose C struct `struct box` holds a `pthread_mutex_t` at `m`, which C forbids to copy
+  at tests/golden/unsupported/ffi-lock-copied-a-parameter-taken-by-value.hero:18:16
+     |
+  18 |     print(peek(m))  #~ ffi_lock_copied
+     |                ^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`

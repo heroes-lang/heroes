@@ -1,0 +1,14 @@
+# UNVERIFIED — pending debrief
+# Panel 215's R2, issue 1335, 2026-10-16, adversarial: an array holds its
+# elements by value, so building one copies each record into its element,
+# the literal's and the one `push` takes alike. `@boxes[0]` alone would lend
+# the element's place; no element of a `[Box]` can be made without a copy.
+
+extern "ffi-lock-copied.h"
+    record Box tag box partial
+        n: i64
+
+function main()
+    boxes: [Box] @= [Box(n: 1, rest: zero)]  #~ ffi_lock_copied
+    boxes @ boxes.push(Box(n: 2, rest: zero))  #~ ffi_lock_copied
+    print(boxes.len())
