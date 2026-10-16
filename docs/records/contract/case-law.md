@@ -1449,6 +1449,30 @@ and nowhere in `suite_records.hero`.
 `contract` check judged the vendored maximum, and the contract sat 1806 tokens
 over its ceiling while the tool reported nine to spare.
 
+**Four sentences moved here from the contract on 2026-10-16** under the same
+repair, to pay for that day's two clauses: § 3's *every significant step is
+announced to the author as it is taken, in full detail, whatever it costs the
+conversation in tokens* (author instruction 2026-10-16), and § Precedence's
+*ranks 3 and 4 read together: robustness decides that a measured class closes,
+Principle 0 how* (panel 215's question 1, the author's answer of 2026-10-16).
+Measured on the vendored instrument the window judges: 6171 before, 6170 after,
+against the pin 6145. The sentences, each as the contract held it:
+
+- the preamble's *Nothing was dropped when this file was cut from 1247 lines on
+  2026-09-07: that change and its measurements are CL-069*, which this entry is;
+- § RUN IT's *author instruction 2026-09-17, after three defects in one
+  milestone turned out not to be what their own entry said*, the story CL-078
+  carries;
+- § 5's *The Rust it governed is `archive/bootstrap-rs/`, which nothing builds,
+  so it constrains no new code. What replaces it is the language: `selfhost/`
+  is Heroes, where value semantics and the absence of references need no
+  remembering*, the reasoning of CL-021;
+- § Verification's reason for the tag's one exception: *The author asked for
+  zero of both; a pending sitting is waiting on the author rather than broken,
+  and § 4's queue catches an unratified one only while that issue is open, so
+  the exception is named rather than the rule weakened* (the author's
+  instruction of 2026-09-08, amended 2026-10-02).
+
 
 
 

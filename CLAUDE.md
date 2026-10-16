@@ -12,9 +12,8 @@ comprehension is the objective, on the author's clock, never as a gate.
 **Each rule is written in exactly one place and everything else cites it.** What
 a rule COST to learn is one entry per rule in `docs/records/contract/case-law.md`, cited
 below as `CL-NNN`. Rules that bind one part of the tree live in
-`.claude/rules/` and load when it is touched (§ Where the rest lives). Nothing
-was dropped when this file was cut from 1247 lines on 2026-09-07: that change
-and its measurements are CL-069.
+`.claude/rules/` and load when it is touched (§ Where the rest lives). The cut
+of 2026-09-07 is CL-069.
 
 **This file's own cost is measured on the READER's tokeniser**, not a vendored
 one: `heroes measure CLAUDE.md`'s `real` row, which
@@ -82,9 +81,8 @@ question until somebody runs it (CL-061). Four shapes:
 **A repair is attacked at the shapes next to the one that provoked it**: one
 field, none, padded, nested, tagged, generic, empty. A class is not a class
 until its exceptions have been looked for (CL-061). **And this is the rule that
-changes WHAT is being repaired, not only how well** — author instruction
-2026-09-17, after three defects in one milestone turned out not to be what their
-own entry said. A defect is written down as the finder saw it, from where they
+changes WHAT is being repaired, not only how well** (author instruction
+2026-09-17). A defect is written down as the finder saw it, from where they
 stood; the shapes beside it are where what it actually is becomes visible
 (CL-078).
 
@@ -103,7 +101,11 @@ written down rather than left to the reader.
 5. **Process** (§ 3) and § Verification.
 6. **Conventions** (§ 11).
 
-Three consequences this file used to leave to the reader. *Never slow the
+Ranks 3 and 4 read together: robustness decides THAT a measured class of wrong
+programs closes, Principle 0 HOW, so a refusal lands at once and a new form
+still needs § 2's ticket (panel 215; the author, 2026-10-16).
+
+Three consequences. *Never slow the
 compiler down* sits at rank 5, so a guard that closes a corruption class lands,
 with its cost measured and reported rather than argued. *Never stop mid-step to
 ask* has exactly three exceptions, named in § 3. And, author instruction
@@ -147,8 +149,11 @@ and read through `tests/harness/issues.hero`; their rules are
 session and not only a loop: what is running, what is being waited on, what was
 just found (CL-034). When the author says they are following, every two minutes
 and **in full**, which function and which number and which file (CL-045). Every
-update carries a percentage and the parts that produce it (CL-038). Split a long
-wait into short probes, never one blocking call. **A wakeup is at most three
+update carries a percentage and the parts that produce it (CL-038). **Every
+significant step is announced to the author as it is taken, in full detail:
+what it is, why, which files and which commands, and what will judge it;
+absolutely, whatever it costs the conversation in tokens** (author instruction
+2026-10-16). Split a long wait into short probes, never one blocking call. **A wakeup is at most three
 minutes, in a `/loop` and everywhere else, whatever a skill advises** (author
 instruction 2026-09-15), and each recap says what advanced, what was already
 closed, and what was deliberately not done and why (CL-010).
@@ -191,10 +196,8 @@ input differs (CL-023). Briefs keep every command short, grep design.md and
 its `docs/panel/` file, a decision issue and its own commit.
 
 ## 5. The Heroes subset of Rust, the Cyclone rule
-Spent at the fixpoint, and what it bought is CL-021. The Rust it governed is
-`archive/bootstrap-rs/`, which nothing builds, so it constrains no new code.
-What replaces it is the language: `selfhost/` is Heroes, where value semantics
-and the absence of references need no remembering.
+Spent at the fixpoint (CL-021): the Rust it governed is `archive/bootstrap-rs/`,
+which nothing builds, and `selfhost/` is Heroes.
 
 ## 6. Nim: copy the surface, never the implementation
 `importc`-style FFI, per-module cache, `nim r` becoming `heroes run`: yes.
@@ -322,11 +325,8 @@ CL-060.
 - **A milestone is tagged only over a clean list** (author instruction
   2026-09-08, amended 2026-10-02): zero open `blocking` or `systemic` defect
   issues (`.claude/rules/verification.md` § Bounded discovery), and no
-  open decision that is not a `panel NNN` ratification. The author asked
-  for zero of both; a pending sitting is **waiting on the author rather than
-  broken**, and § 4's queue catches an unratified one only while that issue
-  is open, so the exception is named rather than the rule weakened. The executor
-  is `records/tagged`, asking GitHub what stood open at the newest `m-*` tag, so
+  open decision that is not a `panel NNN` ratification (the exception's
+  reason is CL-069). The executor is `records/tagged`, asking GitHub what stood open at the newest `m-*` tag, so
   an open defect mid-milestone stays legal and a tag over one does not.
 - **A platform fact is run on a platform or it is an inference**; the
   platforms are the CI's legs after the push, a red one filing a defect
