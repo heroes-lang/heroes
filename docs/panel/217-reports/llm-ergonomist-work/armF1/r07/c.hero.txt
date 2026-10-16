@@ -1,0 +1,54 @@
+# Two pthread-guarded counters from counter.h, kept in a Stats record.
+
+extern "counter.h" link "pthread"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter) -> i32
+    function counter_lock(@c: Counter) -> i32
+    function counter_unlock(@c: Counter) -> i32
+    function counter_value(c: Counter lent) -> i64
+
+# Two counters and the number of events counted so far.
+record Stats
+    first: Counter
+    second: Counter
+    events: i64
+
+# Sets up the caller's counter in place, so its mutex never moves after init.
+function new_counter(@c: Counter)
+    rc = counter_init(@c)
+    assert rc == 0
+
+# Adds one to the counter's `n` while holding its lock.
+function increment(@c: Counter)
+    locked = counter_lock(@c)
+    assert locked == 0
+    c.n @ c.n + 1
+    unlocked = counter_unlock(@c)
+    assert unlocked == 0
+
+# The counter's value doubled; the counter is only read.
+function doubled(c: Counter lent) -> i64
+    return counter_value(c) * 2
+
+function main()
+    s @= Stats(
+        first: Counter(n: 0, rest: zero),
+        second: Counter(n: 0, rest: zero),
+        events: 0
+    )
+    new_counter(@s.first)
+    new_counter(@s.second)
+    i @= 0
+    while i < 3
+        increment(@s.first)
+        s.events @ s.events + 1
+        i @ i + 1
+    j @= 0
+    while j < 2
+        increment(@s.second)
+        s.events @ s.events + 1
+        j @ j + 1
+    print(doubled(s.first))
+    print(doubled(s.second))
+    print(s.events)

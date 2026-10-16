@@ -1,0 +1,7 @@
+error[ffi_lock_copied]: this copies a `Counter`, whose C struct `struct counter` holds a `pthread_mutex_t` at `lock`, which C forbids to copy
+  at c.hero:18:9
+     |
+  18 |     c @ Counter(n: 0, rest: zero)
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `c: T lent` reads the caller's own cell and changes nothing, `f(c)`; one taking `@c` may change it, `f(@c)`; a field is read in place, `c.n`

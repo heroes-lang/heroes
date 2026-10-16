@@ -1,0 +1,45 @@
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(@c: Counter lent) -> i64
+
+record Stats
+    first: Counter
+    second: Counter
+    events: i64
+
+# Sets up a new counter in the caller's place.
+function setup(@c: Counter)
+    assert counter_init(@c) == 0
+
+# Adds one to the counter's n while holding its lock.
+function increment(@c: Counter)
+    assert counter_lock(@c) == 0
+    c.n @ c.n + 1
+    assert counter_unlock(@c) == 0
+
+# The counter's value doubled. It takes the caller's own counter by place, because
+# copying the lock is not allowed; counter_value only reads it.
+function doubled(@c: Counter) -> i64
+    return counter_value(@c) * 2
+
+function main()
+    s @= Stats(first: Counter(rest: zero), second: Counter(rest: zero), events: 0)
+    setup(@s.first)
+    setup(@s.second)
+    i @= 0
+    while i < 3
+        increment(@s.first)
+        s.events @ s.events + 1
+        i @ i + 1
+    j @= 0
+    while j < 2
+        increment(@s.second)
+        s.events @ s.events + 1
+        j @ j + 1
+    print(doubled(@s.first))
+    print(doubled(@s.second))
+    print(s.events)
