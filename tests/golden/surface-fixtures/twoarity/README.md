@@ -58,3 +58,15 @@ which is the route §4.19 prescribes, and the two `printf` declarations carry
 one is the same eight, and the claim the fixture refutes is untouched: two
 modules still bind one C symbol at two arities, exit 0, `n = 42` and
 `s = forty-two`.
+
+## Correction, 2026-10-17 (panel 217's R3(c), defect 2102)
+
+`as_text.hero`'s `value` stands past `printf`'s `...`, where C reads what a call
+hands it as whatever type it asks for, and a read-only lend there is refused:
+`printf(format: cstr lent, value: cstr lent)` is `ffi_writable_parameter` at
+exit 1 since defect 2102's repair. So `value` is declared `cstr` and the wrapper
+hands it a lease, a copy C may write, ended once `printf` returns; `format` keeps
+its `lent`, since it stands before the `...` and the probe's call holds it to the
+header's `const char *`. The claim the fixture refutes is untouched: two modules
+still bind one C symbol at two shapes, exit 0, `n = 42` and `s = forty-two`. The
+program as it stood is `../twoarity-lent/`, refused on its own module's `value`.

@@ -1,0 +1,12 @@
+# `twoarity/as_text.hero` as it stood until 2026-10-17: `value` lent
+# read-only past `printf`'s `...`, which panel 217's R3(c) refuses (defect
+# 2102), since C reads what it is handed there as whatever type it asks for.
+# The refusal lands HERE, on this module's `value`, and never on `as_int.hero`'s
+# `value: i64`, the same C name bound at another shape in another module:
+# found by its name alone, it was told there, as declared `cstr lent`.
+
+extern "stdio.h"
+    function printf(format: cstr lent, value: cstr lent) -> i32  #~ ffi_writable_parameter
+
+function say(format: str, value: str) -> i32
+    return printf(format: format.cstr(), value: value.cstr())

@@ -20,10 +20,18 @@
 # second's answer and its end, counts the beats, waits a second, and counts
 # again: the same count, the third ended with the one that ran it. `build/`
 # for the directory, `edges-file-args-exit.hero`'s reason.
+#
+# 2026-10-17: the signal is read through `case437_pdeathsig`, a prototype of
+# the case's own in `fixedbugs-437-pdeathsig.h`, where it read `prctl` bound
+# `prctl(option: i32, @signal: i32)`: glibc's `prctl` is variadic, and an `@`
+# lend past its `...` is refused since defect 2106. The group naming
+# `sys/prctl.h` stays, so the case is skipped where that header is not.
 
 extern "sys/prctl.h"
     constant PR_GET_PDEATHSIG: i32
-    function prctl(option: i32, @signal: i32) -> i32
+
+extern "fixedbugs-437-pdeathsig.h"
+    function case437_pdeathsig(@signal: i32) -> i32
 
 extern "signal.h"
     constant SIGKILL: i32
@@ -84,7 +92,7 @@ function beats(dir: str) -> i64
 # then the third, which kills it.
 function second(dir: str)
     asked: i32 @= 0
-    _ = prctl(option: PR_GET_PDEATHSIG, signal: @asked)
+    _ = case437_pdeathsig(@asked)
 
     if write_file(path: dir + "/asked", text: asked.to_str()).is_err()
         return

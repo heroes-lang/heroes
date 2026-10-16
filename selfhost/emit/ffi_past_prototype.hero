@@ -59,6 +59,9 @@ use bytes
 use emit/c_text
 use emit/ffi_lookup
 use emit/ffi_pointee
+use emit/ffi_site
+use emit/ffi_mutable
+use emit/externs as emit_externs
 use cli/pointee_ask
 use parse
 use resolve
@@ -163,17 +166,22 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
     name = parts[0]
     param = parts[1]
     kind = parts[2]
-    declared = ffi_lookup.declaration(s, decls, name: name)
+    at = ffi_site.location(s, line: line)
     fixed = ffi_lookup.number(text: ffi_pointee.trim_quote(parts[3]))
 
-    if declared.is_err() || fixed.is_err() || kind != READ && kind != COUNTED && kind != CELL
-        return fail(code: "none", msg: "no extern of that name, or not our marker")
-    span: token.Span @= declared.must().span
-    spans = ffi_pointee.parameter_spans(s, decls, tree, name: name, param: param)
+    if at.is_err() || fixed.is_err() || kind != READ && kind != COUNTED && kind != CELL
+        return fail(code: "none", msg: "not our marker at a line of ours")
+    decl = declared_at(s, decls, name: name, file: at.must().file, at_line: at.must().line)
+
+    if decl.is_err()
+        return fail(code: "none", msg: "no extern of that name is declared at that line")
+    header = emit_externs.unquoted(s, span: group_header(decls, decl: decl.must()).must())
+    span: token.Span @= decls[decl.must()].span
+    spans = ffi_mutable.spans_of(s, decls, tree, decl: decl.must(), param: param)
 
     if !spans.is_err()
         span @ spans.must().name
-    stands = "`" + declared.must().header + "` gives `" + name + "` " + given(fixed.must()) + " and then `...`, where `" + param + "` stands"
+    stands = "`" + header + "` gives `" + name + "` " + given(fixed.must()) + " and then `...`, where `" + param + "` stands"
 
     if kind == READ
         d: diag.Diagnostic @= diag.new_diagnostic(
@@ -199,7 +207,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
             "§4.19: what an `@` parameter points at is held to the header's own type, its width and sign, and past a header's `...` the header gives none: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was"
         )
         d.notes @ d.notes.push(
-            "write a header of your own that includes `" + declared.must().header + "` and declares a `static inline` function taking `" + param + "` at the C type `" + name + "` writes through it and handing it on to `" + name + "`; bind that function instead, and its prototype holds the width"
+            "write a header of your own that includes `" + header + "` and declares a `static inline` function taking `" + param + "` at the C type `" + name + "` writes through it and handing it on to `" + name + "`; bind that function instead, and its prototype holds the width"
         )
         return ok(d)
     d: diag.Diagnostic @= diag.new_diagnostic(
@@ -211,6 +219,32 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
         "§4.19: a counted lend hands C the program's own bytes, a field, an array or a record, and C counts them in what its pointer points at; past a header's `...` none of them can be held to a count, so declare `" + param + ": ptr` and hand it memory C gave you"
     )
     return ok(d)
+
+# The extern function of that name declared at the line clang names, where the
+# check unit `#line`s its question. Never by the name alone: two modules may
+# bind one C name at two shapes (`tests/golden/surface-fixtures/twoarity`), and
+# found by name, `printf`'s `value: cstr lent` past the `...` was told on the
+# other module's `value: i64` as declared `cstr lent`, a false message
+# (2026-10-17, caught by `suite_surface` before it landed).
+function declared_at(s: source.Source, decls: [ast.Decl], name: str, file: i64, at_line: i64) -> i64?
+    index: i64 @= 0
+
+    while index < decls.len()
+        start = decls[index].name.start
+        here = source.span_text(s, decls[index].name) == name && source.file_of(s, start) == file && source.file_line_of(s, start) == at_line
+
+        if here && !group_header(decls, decl: index).is_err()
+            return ok(index)
+        index @ index + 1
+
+    return fail(code: "none", msg: "no extern of that name is declared at that line")
+
+# The header string of the group a function is declared in, absent for a
+# function of the program's own.
+function group_header(decls: [ast.Decl], decl: i64) -> token.Span?
+    return match decls[decl].kind
+        .function_decl fd                                          => fd.value.header
+        .constant_decl | .record_decl | .variant_decl | .test_decl => fail(code: "none", msg: "not a function")
 
 # How many parameters the header gives before its `...`, in words.
 function given(count: i64) -> str

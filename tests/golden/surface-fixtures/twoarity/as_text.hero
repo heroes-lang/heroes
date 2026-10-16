@@ -4,13 +4,19 @@
 # groups in two modules naming one symbol is not a collision: the probes
 # are mangled per module (panel 053), and the call goes through the
 # header's own prototype, so C sees one function and Heroes sees two
-# bindings. Both parameters say `lent` (panel 171): `printf` reads them
-# while it runs and keeps neither.
+# bindings. `format` says `lent` (panel 171): `printf` reads it while it runs
+# and keeps nothing. `value` stands past `printf`'s `...`, where C reads what
+# it is handed as whatever type it asks for, so a read-only lend there is
+# refused (panel 217's R3(c), defect 2102, 2026-10-17) and it takes a lease, a
+# copy C may write; `twoarity-lent/` is the same program with the lend, refused.
 
 extern "stdio.h"
-    function printf(format: cstr lent, value: cstr lent) -> i32
+    function printf(format: cstr lent, value: cstr) -> i32
 
-# The wrapper takes two `str` and lends both inside itself, as `as_int.hero`
-# says why.
+# The wrapper takes two `str`, lends the format inside itself, as `as_int.hero`
+# says why, and hands the value over as a lease it ends once `printf` returns.
 function say(format: str, value: str) -> i32
-    return printf(format: format.cstr(), value: value.cstr())
+    copy: cstr @= value.lease()
+    said = printf(format: format.cstr(), value: copy)
+    end_lease(@copy)
+    return said
