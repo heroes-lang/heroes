@@ -1,0 +1,32 @@
+error[ffi_lock_copied]: `c` takes by value a `Counter`, whose C struct `struct counter` holds a `pthread_mutex_t` at `lock`, a copy C forbids
+  at previous.hero:33:18
+     |
+  33 | function doubled(c: Counter) -> i64
+     |                  ^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`
+  fix (guess): take it by place, and lend it at each call with `@`
+
+error[ffi_lock_copied]: this copies a `Counter`, whose C struct `struct counter` holds a `pthread_mutex_t` at `lock`, which C forbids to copy
+  at previous.hero:34:14
+     |
+  34 |     local @= c
+     |              ^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`
+
+error[ffi_lock_copied]: this copies a `Counter`, whose C struct `struct counter` holds a `pthread_mutex_t` at `lock`, which C forbids to copy
+  at previous.hero:51:19
+     |
+  51 |     print(doubled(s.first))
+     |                   ^^^^^^^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`
+
+error[ffi_lock_copied]: this copies a `Counter`, whose C struct `struct counter` holds a `pthread_mutex_t` at `lock`, which C forbids to copy
+  at previous.hero:52:19
+     |
+  52 |     print(doubled(s.second))
+     |                   ^^^^^^^^
+  note: a copy of a lock is a second lock holding the first one's state: the copy of a held mutex reads held, and unlocking one leaves the other locked
+  note: lend the place instead: a function taking `@c` receives the caller's own cell, `f(@c)`; a field is read in place, `c.n`

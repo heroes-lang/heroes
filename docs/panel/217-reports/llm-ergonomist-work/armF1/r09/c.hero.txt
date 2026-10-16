@@ -1,0 +1,46 @@
+# Two locked counters from `counter.h`, kept in a `Stats` with an event count.
+
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(c: Counter lent) -> i64
+
+record Stats
+    first: Counter
+    second: Counter
+    events: i64
+
+# Sets up the caller's counter in place, so its mutex never moves after init.
+function setup_counter(@c: Counter)
+    assert counter_init(@c) == 0
+
+# Adds one to `n` while holding the counter's lock.
+function increment(@c: Counter)
+    assert counter_lock(@c) == 0
+    c.n @ c.n + 1
+    assert counter_unlock(@c) == 0
+
+# The counter's value doubled; the counter is only read.
+function doubled(c: Counter lent) -> i64
+    return counter_value(c) * 2
+
+function main()
+    s @= Stats(first: Counter(n: 0, rest: zero), second: Counter(n: 0, rest: zero), events: 0)
+    setup_counter(@s.first)
+    setup_counter(@s.second)
+    increment(@s.first)
+    s.events @ s.events + 1
+    increment(@s.first)
+    s.events @ s.events + 1
+    increment(@s.first)
+    s.events @ s.events + 1
+    increment(@s.second)
+    s.events @ s.events + 1
+    increment(@s.second)
+    s.events @ s.events + 1
+    print(doubled(s.first))
+    print(doubled(s.second))
+    print(s.events)

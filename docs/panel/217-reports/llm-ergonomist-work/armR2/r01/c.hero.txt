@@ -1,0 +1,54 @@
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(@c: Counter lent) -> i64
+
+record Stats
+    first: Counter
+    second: Counter
+    events: i64
+
+# Sets up a new counter in the caller's own place, so the mutex is initialised where it lives.
+function setup(@c: Counter)
+    rc = counter_init(@c)
+    if rc != 0
+        print(f"counter_init failed: {rc}")
+        exit(code: 1)
+
+# Increments `n` while holding the counter's lock.
+function bump(@c: Counter)
+    locked = counter_lock(@c)
+    if locked != 0
+        print(f"counter_lock failed: {locked}")
+        exit(code: 1)
+    c.n @ c.n + 1
+    unlocked = counter_unlock(@c)
+    if unlocked != 0
+        print(f"counter_unlock failed: {unlocked}")
+        exit(code: 1)
+
+# The counter's value doubled. It is lent in place, never copied, because it holds a mutex;
+# only counter_value, which takes a const pointer, sees it, so nothing changes it.
+function doubled(@c: Counter) -> i64
+    return counter_value(@c) * 2
+
+function main()
+    stats @= Stats(first: Counter(rest: zero), second: Counter(rest: zero), events: 0)
+    setup(@stats.first)
+    setup(@stats.second)
+    bump(@stats.first)
+    stats.events @ stats.events + 1
+    bump(@stats.first)
+    stats.events @ stats.events + 1
+    bump(@stats.first)
+    stats.events @ stats.events + 1
+    bump(@stats.second)
+    stats.events @ stats.events + 1
+    bump(@stats.second)
+    stats.events @ stats.events + 1
+    print(doubled(@stats.first))
+    print(doubled(@stats.second))
+    print(stats.events)

@@ -1,0 +1,60 @@
+# Two `struct counter`s from counter.h, kept in a record of our own.
+
+extern "counter.h"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(c: Counter lent) -> i64
+
+# Two counters and the number of events counted so far.
+record Stats
+    first: Counter
+    second: Counter
+    events: i64
+
+# Sets up a new counter in the caller's own place, so the mutex never moves after init.
+function setup_counter(@c: Counter) -> ()?
+    c @ Counter(n: 0, rest: zero)
+    rc = counter_init(@c)
+    if rc != 0
+        return fail(code: "counter_init_failed", msg: f"counter_init returned {rc}")
+    return ok()
+
+# Adds one to the counter's `n` while holding its lock.
+function increment(@c: Counter) -> ()?
+    locked = counter_lock(@c)
+    if locked != 0
+        return fail(code: "counter_lock_failed", msg: f"counter_lock returned {locked}")
+    c.n @ c.n + 1
+    unlocked = counter_unlock(@c)
+    if unlocked != 0
+        return fail(code: "counter_unlock_failed", msg: f"counter_unlock returned {unlocked}")
+    return ok()
+
+# The counter's value, doubled; the counter is only read.
+function doubled(c: Counter lent) -> i64
+    return counter_value(c) * 2
+
+function main()
+    stats @= Stats(
+        first: Counter(n: 0, rest: zero),
+        second: Counter(n: 0, rest: zero),
+        events: 0
+    )
+    setup_counter(@stats.first).must()
+    setup_counter(@stats.second).must()
+    i @= 0
+    while i < 3
+        increment(@stats.first).must()
+        stats.events @ stats.events + 1
+        i @ i + 1
+    j @= 0
+    while j < 2
+        increment(@stats.second).must()
+        stats.events @ stats.events + 1
+        j @ j + 1
+    print(doubled(stats.first))
+    print(doubled(stats.second))
+    print(stats.events)

@@ -1,0 +1,51 @@
+# Two mutex-guarded C counters kept in a record, with an event count.
+
+extern "counter.h" link "pthread"
+    record Counter tag counter partial
+        n: i64
+    function counter_init(@c: Counter lent) -> i32
+    function counter_lock(@c: Counter lent) -> i32
+    function counter_unlock(@c: Counter lent) -> i32
+    function counter_value(c: Counter lent) -> i64
+
+record Stats
+    first: Counter
+    second: Counter
+    events: i64
+
+# Sets up the caller's counter in place, so the initialised mutex never moves.
+function setup_counter(@c: Counter) -> ()?
+    if counter_init(@c) != 0
+        return fail(code: "counter_init_failed", msg: "counter_init returned nonzero")
+    return ok()
+
+# Adds one to the counter's `n` while holding its lock.
+function increment(@c: Counter) -> ()?
+    if counter_lock(@c) != 0
+        return fail(code: "counter_lock_failed", msg: "counter_lock returned nonzero")
+    c.n @ c.n + 1
+    if counter_unlock(@c) != 0
+        return fail(code: "counter_unlock_failed", msg: "counter_unlock returned nonzero")
+    return ok()
+
+# The counter's value doubled; the counter is only read.
+function doubled(c: Counter lent) -> i64
+    return counter_value(c) * 2
+
+function main()
+    s @= Stats(first: Counter(n: 0, rest: zero), second: Counter(n: 0, rest: zero), events: 0)
+    setup_counter(@s.first).must()
+    setup_counter(@s.second).must()
+    i @= 0
+    while i < 3
+        increment(@s.first).must()
+        s.events @ s.events + 1
+        i @ i + 1
+    j @= 0
+    while j < 2
+        increment(@s.second).must()
+        s.events @ s.events + 1
+        j @ j + 1
+    print(doubled(s.first))
+    print(doubled(s.second))
+    print(s.events)
