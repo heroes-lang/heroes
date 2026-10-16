@@ -1,0 +1,22 @@
+# FIXED DEFECT 2106's route, 2026-10-17, lane land215.
+#
+# An `@` lend past a variadic header's `...` is refused, since nothing holds C
+# to the width the program lends there. A header of the program's own declares
+# a function with a prototype, `scan_int(const char *text, int32_t *n)`, that
+# hands its pointer to `sscanf` at the type its format writes: the program
+# binds that function, and its `@n: i32` is held to the prototype's
+# `int32_t *` like any other. A field lent there is written exactly, and the
+# field beside it keeps its value. The refused shape is
+# `tests/golden/unsupported/fixedbugs-2106-an-at-lend-past-a-variadic-prototype-is-refused.hero`.
+
+extern "fixedbugs-2106-own.h"
+    record Pair
+        a: i32
+        b: i32
+    function scan_int(text: cstr lent, @n: i32) -> i32
+
+function main()
+    p: Pair @= Pair(a: 1, b: 2)
+    print(scan_int(text: "41 apples".cstr(), n: @p.a))
+    print(p.a)
+    print(p.b)

@@ -19,7 +19,17 @@
 # - a COUNTED lend, `p: ptr counted_by 4 lent` or `@md: [u8] counted_by 4
 #   lent`: C counts in what its pointer points at, which there is nothing
 #   typed, so `emit/lend_extent.hero` found no unit and stopped the build at
-#   exit 2, blaming itself (defect 2103). Told as `ffi_parameter_type`.
+#   exit 2, blaming itself (defect 2103). Told as `ffi_parameter_type`;
+# - an `@` lend, the program's own cell: what C writes through it is held to
+#   the header's own type, and there is none, so C writing `int64_t` through
+#   `@p.a`, an `i32` field, overwrote the field beside it at exit 0, under
+#   `--sanitize` too (defect 2106). A local lent there is fenced and aborts
+#   when C writes past it, but nothing sees a narrower write, nor a field's or
+#   an element's neighbour. Told as `ffi_parameter_type`, the note naming a
+#   header of the program's own whose function has a prototype and calls this
+#   one: the coordinator's decision of 2026-10-17, the robust one; the
+#   conservative one, refusing only a place the fence does not guard, is
+#   written in its decision issue.
 #
 # **Whether a function is variadic is clang's own answer, read from the
 # dump**: its `FunctionDecl` carries `"variadic": true` among its own keys,
@@ -66,6 +76,9 @@ constant READ: str
 
 constant COUNTED: str
     "counted"
+
+constant CELL: str
+    "cell"
 
 ## The header's answer
 
@@ -121,6 +134,8 @@ function lines(wanted: [pointee_ask.Pointee], open: {str: i64}) -> [str]
             kind @ READ
         else if one.declared == pointee_ask.UNIT
             kind @ COUNTED
+        else if one.declared == pointee_ask.AT
+            kind @ CELL
 
         if kind.len() > 0
             out @ out.push(c_text.line_directive(at: one.line, file: one.file))
@@ -151,7 +166,7 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
     declared = ffi_lookup.declaration(s, decls, name: name)
     fixed = ffi_lookup.number(text: ffi_pointee.trim_quote(parts[3]))
 
-    if declared.is_err() || fixed.is_err() || kind != READ && kind != COUNTED
+    if declared.is_err() || fixed.is_err() || kind != READ && kind != COUNTED && kind != CELL
         return fail(code: "none", msg: "no extern of that name, or not our marker")
     span: token.Span @= declared.must().span
     spans = ffi_pointee.parameter_spans(s, decls, tree, name: name, param: param)
@@ -171,6 +186,20 @@ function refused(s: source.Source, decls: [ast.Decl], tree: ast.Ast, line: str) 
         )
         d.notes @ d.notes.push(
             "hand C a copy it may write instead: declare `" + param + ": cstr` without `lent`, pass it a lease, `x: cstr @= text.lease()`, and end the lease with `end_lease(@x)` once the call returns"
+        )
+        return ok(d)
+
+    if kind == CELL
+        d: diag.Diagnostic @= diag.new_diagnostic(
+            code: "ffi_parameter_type",
+            message: "`" + param + "` of `" + name + "` is an `@` parameter, and " + stands + " — C reads the pointer there as whatever type it asks for and writes as much as that type holds, so nothing holds it to the width this program lends",
+            span: span
+        )
+        d.notes @ d.notes.push(
+            "§4.19: what an `@` parameter points at is held to the header's own type, its width and sign, and past a header's `...` the header gives none: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was"
+        )
+        d.notes @ d.notes.push(
+            "write a header of your own that includes `" + declared.must().header + "` and declares a `static inline` function taking `" + param + "` at the C type `" + name + "` writes through it and handing it on to `" + name + "`; bind that function instead, and its prototype holds the width"
         )
         return ok(d)
     d: diag.Diagnostic @= diag.new_diagnostic(
@@ -230,7 +259,7 @@ test "a function the dump marks variadic is read with its fixed count, and only 
 # Past the fixed count a `lent` cstr and a counted parameter fail, each with
 # its kind; before it, a `cstr` without `lent` and a function that is not
 # variadic ask nothing.
-test "the check unit refuses a read-only and a counted lend past the prototype, and nothing else"
+test "the check unit refuses a read-only, a counted and an @ lend past the prototype, and nothing else"
     lent = pointee_ask.Pointee(
         name: "va",
         param: "s",
@@ -267,21 +296,40 @@ test "the check unit refuses a read-only and a counted lend past the prototype, 
         line: 2,
         depth: false
     )
+    cell = pointee_ask.Pointee(
+        name: "va",
+        param: "n",
+        index: 4,
+        declared: pointee_ask.AT,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
+    first = pointee_ask.Pointee(
+        name: "va",
+        param: "k",
+        index: 0,
+        declared: pointee_ask.AT,
+        file: "t.hero",
+        line: 2,
+        depth: false
+    )
     open: {str: i64} @= {}
     open["va"] @ 1
-    got = lines([lent, counted, leased, before], open: open)
-    assert got.len() == 4
+    got = lines([lent, counted, leased, before, cell, first], open: open)
+    assert got.len() == 6
     assert got[0] == c_text.line_directive(at: 2, file: "t.hero")
     assert got[1] == "_Static_assert(0, \"heroes-ffi-past-prototype va s read 1\");"
     assert got[3] == "_Static_assert(0, \"heroes-ffi-past-prototype va p counted 1\");"
+    assert got[5] == "_Static_assert(0, \"heroes-ffi-past-prototype va n cell 1\");"
     none: {str: i64} = {}
     assert lines([lent, counted], open: none).len() == 0
 
-# Defects 2102 and 2103: the failed line is read onto the parameter, a string
-# told its lease and a counted lend its pointer, and an echo or another
-# marker is not this one.
-test "a lend past a variadic prototype is told on its parameter (defects 2102 and 2103)"
-    text = "extern \"va.h\"\n    function va_scribble(k: i32, s: cstr lent) -> i64\n    function va_scrub(k: i32, p: ptr counted_by 4 lent) -> i64\n\nfunction main()\n    print(1)\n"
+# Defects 2102, 2103 and 2106: the failed line is read onto the parameter, a
+# string told its lease, a counted lend its pointer and an `@` lend a header of
+# the program's own, and an echo or another marker is not this one.
+test "a lend past a variadic prototype is told on its parameter (defects 2102, 2103 and 2106)"
+    text = "extern \"va.h\"\n    function va_scribble(k: i32, s: cstr lent) -> i64\n    function va_scrub(k: i32, p: ptr counted_by 4 lent) -> i64\n    function va_wide(k: i32, @n: i32) -> i64\n\nfunction main()\n    print(1)\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
@@ -306,6 +354,16 @@ test "a lend past a variadic prototype is told on its parameter (defects 2102 an
     assert counted.code == "ffi_parameter_type"
     assert source.span_text(s, counted.span) == "p"
     assert ffi_lookup.has(text: counted.notes[0], needle: "declare `p: ptr`")
+    cell = refused(
+        s,
+        parsed.decls,
+        parsed.tree,
+        line: "t.hero:4:5: error: static assertion failed: heroes-ffi-past-prototype va_wide n cell 1"
+    ).must()
+    assert cell.code == "ffi_parameter_type"
+    assert source.span_text(s, cell.span) == "n"
+    assert cell.message == "`n` of `va_wide` is an `@` parameter, and `va.h` gives `va_wide` 1 parameter and then `...`, where `n` stands — C reads the pointer there as whatever type it asks for and writes as much as that type holds, so nothing holds it to the width this program lends"
+    assert ffi_lookup.has(text: cell.notes[1], needle: "includes `va.h`")
     echo = "_Static_assert(0, \"heroes-ffi-past-prototype va_scribble s read 1\");"
     assert refused(s, parsed.decls, parsed.tree, line: echo).is_err()
     assert refused(

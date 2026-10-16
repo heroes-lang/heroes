@@ -46,6 +46,14 @@ constant READ: str
 constant LENT: str
     "lent"
 
+# An `@` parameter with no `counted_by`, the program's own cell C writes
+# through: asked only whether it stands past a header's `...`, where C reads
+# its pointer as whatever type it asks for and nothing holds what it writes to
+# the width the program lends (defect 2106, `emit/ffi_past_prototype.hero`).
+# A counted one asks its `UNIT`, which the same refusal reads there.
+constant AT: str
+    "at"
+
 # How many parameters the declaration gives, in `index`, asked of every
 # function with one: its parameters stand for the header's only where the two
 # counts agree, and a header that gives the function no prototype is refused

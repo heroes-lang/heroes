@@ -1,0 +1,15 @@
+error[ffi_parameter_type]: `n` of `va_wide` is an `@` parameter, and `fixedbugs-2106-variadic.h` gives `va_wide` 1 parameter and then `...`, where `n` stands — C reads the pointer there as whatever type it asks for and writes as much as that type holds, so nothing holds it to the width this program lends
+  at tests/golden/unsupported/fixedbugs-2106-an-at-lend-past-a-variadic-prototype-is-refused.hero:25:31
+     |
+  25 |     function va_wide(k: i32, @n: i32) -> i64  #~ ffi_parameter_type
+     |                               ^
+  note: §4.19: what an `@` parameter points at is held to the header's own type, its width and sign, and past a header's `...` the header gives none: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was
+  note: write a header of your own that includes `fixedbugs-2106-variadic.h` and declares a `static inline` function taking `n` at the C type `va_wide` writes through it and handing it on to `va_wide`; bind that function instead, and its prototype holds the width
+
+error[ffi_parameter_type]: `p` of `va_pair` is an `@` parameter, and `fixedbugs-2106-variadic.h` gives `va_pair` 1 parameter and then `...`, where `p` stands — C reads the pointer there as whatever type it asks for and writes as much as that type holds, so nothing holds it to the width this program lends
+  at tests/golden/unsupported/fixedbugs-2106-an-at-lend-past-a-variadic-prototype-is-refused.hero:26:31
+     |
+  26 |     function va_pair(k: i32, @p: Pair) -> i64  #~ ffi_parameter_type
+     |                               ^
+  note: §4.19: what an `@` parameter points at is held to the header's own type, its width and sign, and past a header's `...` the header gives none: a wider write overwrites what lies beside a field or an element, and a narrower one leaves part of the cell as it was
+  note: write a header of your own that includes `fixedbugs-2106-variadic.h` and declares a `static inline` function taking `p` at the C type `va_pair` writes through it and handing it on to `va_pair`; bind that function instead, and its prototype holds the width
