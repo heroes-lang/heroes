@@ -320,6 +320,22 @@ smaller blast radius, so nothing is owed here.
 from the Mac, where the author's credentials already are. The hunt needs to read
 code on Windows, not to act as the author from Windows.
 
+**The repository being public since 2026-09-08, the box can also fetch from
+GitHub with no credential**, and on 2026-10-16 that is how the history
+rewritten the day before arrived. `/c/w` held nothing that day (emptied
+2026-10-14 at 14:55 by the box's clock). A bare repository made with
+`git init --bare --initial-branch=main`, so that a clone of it checks out
+`main`, took the first push of `main` and the 69 tags from the Mac, and that
+push sat ten minutes at 0% CPU on both ends with nothing received, while
+one-line `ssh win` commands answered; why was not measured. Then
+`git -C /c/w/heroes.git fetch https://github.com/heroes-lang/heroes.git
+refs/heads/main:refs/heads/main "refs/tags/*:refs/tags/*"`, run in a session
+kept open (§ Two lessons about sessions), took 23 s for 126 MB, its 70 refs the
+Mac's by `diff`; the clone and the seed's build read `heroes 0.4.0` in 20 s,
+and `git push win main:main` answered *Everything up-to-date*. So a whole
+history comes from GitHub, and the push from the Mac stays the route for a
+commit GitHub does not hold yet.
+
 ## What is installed
 
 Measured 2026-08-31, all via `winget`:
