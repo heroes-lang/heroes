@@ -4276,15 +4276,21 @@ Build this. It is what separates this project from an opinion. Methodology harde
 
 **The control arm.** Every trial runs against `heroes check` *and* `heroes check --permissive` —
 the same compiler with the thesis-bearing checks disabled (`_` on variants allowed, positional
-same-typed arguments, no mandatory type on `@` declarations, non-exhaustive `match`, unused
-variables tolerated). Same model, same spec size, same unfamiliarity, opposite design choices: the
+same-typed arguments, non-exhaustive `match`, unused variables tolerated; *no mandatory type on
+`@` declarations* stood in this list until 2026-10-16, a check panel 209 retired on 2026-10-10
+when a cell's type became inferred). Same model, same spec size, same unfamiliarity, opposite design choices: the
 only comparison that isolates *design* from training-data familiarity. Without it there is no
 falsifiable claim. **A third category stays in the control arm** (panel 192's R4, ratified
 2026-10-05): a rule a program with a meaning breaks, kept because it guards what the person
 READING the source sees rather than adding the thesis, as panel 066's raw carriage return was the
 first. A raw control character, bidirectional control, U+2028 or U+2029 in a string or a comment,
 and the one spelling of a character by its code, are refused under `--permissive` as without it;
-`selfhost/diag.hero`'s `is_thesis_rule` says so beside its list.
+`selfhost/diag.hero`'s `is_thesis_rule` says so beside its list. **That list held no
+`non_exhaustive` until 2026-10-16** (issue 2078, the author's answer *4a*): both arms refused a
+`match` missing a case, so every measurement before that day credited exhaustiveness with nothing,
+`drop-case` reading 133 of 133 killed under `--permissive` as under `check` (measurement 024, and
+again on 2026-10-16 over the same 120 programs); from that day the control arm reads such a `match`
+as a language without the rule does, and `drop-case`'s control-arm column is the thesis's own.
 
 1. **Token counting.** With **two vendored BPE tokenisers** (Anthropic's legacy `claude.json` and
    `cl100k_base`), pinned by sha256 and read offline — no API key, no network. The **maximum over

@@ -1,0 +1,23 @@
+# Decided 2026-10-16, issue 2078: a `match` that forgets a case is told
+# nothing by the control arm. design.md Part 11 lists the non-exhaustive
+# `match` among the checks `check --permissive` drops, and until this day
+# `selfhost/diag.hero`'s `is_thesis_rule` did not hold `non_exhaustive`, so
+# both arms refused it and metric 3 credited exhaustiveness with nothing:
+# `drop-case` read 133 of 133 killed under either arm over `examples/`. The
+# type error in the second arm is the witness that the checker still walked
+# the arms the `match` does name.
+
+variant Shape
+    circle
+        r: i64
+    square
+        s: i64
+    dot
+
+function area(sh: Shape) -> i64
+    return match sh
+        .circle c => c.r * c.r * 3
+        .square q => q.s.to_str()  #~ type_mismatch
+
+function main()
+    print(area(.dot))

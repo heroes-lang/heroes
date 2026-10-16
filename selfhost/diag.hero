@@ -167,6 +167,16 @@ function new_unsupported(code: str, message: str, span: token.Span) -> Diagnosti
 # it), escape_in_header_name (clangs read a `\` apart, and one of them opens
 # another header) and option_like_name (resting on no `pkg-config`, and on
 # Windows a `link` beginning `-` is lld-link's own option, panel 188 § 22.5).
+# non_exhaustive joined by the author's answer of 2026-10-16 (issue 2078,
+# /decide): design.md Part 11 has listed the non-exhaustive `match` among the
+# checks the control arm drops since the harness was designed, and this list
+# never held it, so both arms refused a `match` missing a case and metric 3
+# credited exhaustiveness with nothing (drop-case 133 of 133 killed under
+# --permissive as under check, measured 2026-10-16 over examples/). Without
+# the rule a `match` missing a case still has a meaning, a program that runs
+# until the case it does not name arrives, which is the silent program the
+# thesis refuses; the arms it does name are walked all the same (the type
+# error in tests/golden/permissive/ is the witness).
 #
 # A THIRD CATEGORY, named by panel 192's R4 (ratified 2026-10-05): rules a
 # program with a meaning breaks, kept by --permissive all the same, because
@@ -207,6 +217,7 @@ function is_thesis_rule(d: Diagnostic) -> bool
         "unshowable_name"
         "package_comparison"
         "endless_recursion"
+        "non_exhaustive"
     ]
 
     for one in codes
@@ -248,4 +259,5 @@ test "a diagnostic starts empty and grows by mutation"
     assert !is_thesis_rule(new_diagnostic(code: "line_end_before_continuation", message: "m", span: u.span))
     assert is_thesis_rule(new_diagnostic(code: "continuation_outside_brackets", message: "m", span: u.span))
     assert is_thesis_rule(new_diagnostic(code: "unreachable_statement", message: "m", span: u.span))
+    assert is_thesis_rule(new_diagnostic(code: "non_exhaustive", message: "m", span: u.span))
     assert !is_thesis_rule(u)
